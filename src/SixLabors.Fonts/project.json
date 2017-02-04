@@ -1,0 +1,74 @@
+{
+  "version": "0.1.0-alpha1-*",
+  "title": "SixLabors.Fonts",
+  "description": "Netstandard, cross platform, font loading and layout library",
+  "authors": [
+    "Scott Williams and contributors"
+  ],
+  "packOptions": {
+    "owners": [
+      "Scott Williams and contributors"
+    ],
+    "summary": "Netstandard cross platform font loading and layout library",
+    "projectUrl": "https://github.com/SixLabors/Fonts",
+    "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
+    //"iconUrl": "https://raw.githubusercontent.com/SixLabors/Fonts/master/icons/icon.png",
+    "requireLicenseAcceptance": false,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/SixLabors/Fonts"
+    },
+    "tags": [
+      "font",
+      "truetype",
+      "opentype"
+    ]
+  },
+  "buildOptions": {
+    "allowUnsafe": true,
+    "xmlDoc": true,
+    "additionalArguments": [ "/additionalfile:../Shared/stylecop.json", "/ruleset:../../SixLabors.Fonts.ruleset" ],
+    "compile": [
+      "../Shared/*.cs"
+    ]
+  },
+  "configurations": {
+    "Release": {
+      "buildOptions": {
+        "warningsAsErrors": false,
+        "optimize": true
+      }
+    }
+  },
+  "dependencies": {
+    "StyleCop.Analyzers": {
+      "version": "1.0.0",
+      "type": "build"
+    },
+    "System.Collections.Immutable": "1.2.0",
+    "System.Buffers": "4.0.0"
+  },
+  "frameworks": {
+    "netstandard1.1": {
+      "dependencies": {
+        "System.Collections": "4.0.11",
+        "System.Diagnostics.Debug": "4.0.11",
+        "System.Diagnostics.Tools": "4.0.1",
+        "System.Linq": "4.1.0",
+        "System.ObjectModel": "4.0.12",
+        "System.Resources.ResourceManager": "4.0.1",
+        "System.Runtime.Extensions": "4.1.0",
+        "System.Runtime.InteropServices": "4.1.0",
+        "System.Numerics.Vectors": "4.1.1",
+        "System.Runtime.Numerics": "4.0.1"
+      }
+    },
+    "net451": {
+      "dependencies": {
+      }
+    }
+  },
+  "tools": {
+    "dotnet-version": "1.1.0"
+  }
+}

@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{C317F1B1-D75E-4C6D-83EB-80367343E0D7}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		global.json = global.json
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{815C0625-CD3D-440F-9F80-2D83856AB7AE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{56801022-D71A-4FBE-BC5B-CBA08E2284EC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{9E574A07-F879-4811-9C41-5CBDC6BAFDB7}"
+	ProjectSection(SolutionItems) = preProject
+		src\Shared\AssemblyInfo.Common.cs = src\Shared\AssemblyInfo.Common.cs
+	EndProjectSection
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SixLabors.Fonts", "src\SixLabors.Fonts\SixLabors.Fonts.xproj", "{09E744EC-4852-4FC7-BE78-C1B399F17967}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SixLabors.Fonts.Tests", "tests\SixLabors.Fonts.Tests\SixLabors.Fonts.Tests.xproj", "{F836E8E6-B4D9-4208-8346-140C74678B91}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{09E744EC-4852-4FC7-BE78-C1B399F17967}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09E744EC-4852-4FC7-BE78-C1B399F17967}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09E744EC-4852-4FC7-BE78-C1B399F17967}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09E744EC-4852-4FC7-BE78-C1B399F17967}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F836E8E6-B4D9-4208-8346-140C74678B91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F836E8E6-B4D9-4208-8346-140C74678B91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F836E8E6-B4D9-4208-8346-140C74678B91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F836E8E6-B4D9-4208-8346-140C74678B91}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9E574A07-F879-4811-9C41-5CBDC6BAFDB7} = {815C0625-CD3D-440F-9F80-2D83856AB7AE}
+		{09E744EC-4852-4FC7-BE78-C1B399F17967} = {815C0625-CD3D-440F-9F80-2D83856AB7AE}
+		{F836E8E6-B4D9-4208-8346-140C74678B91} = {56801022-D71A-4FBE-BC5B-CBA08E2284EC}
+	EndGlobalSection
+EndGlobal
