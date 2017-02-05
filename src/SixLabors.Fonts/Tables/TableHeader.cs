@@ -20,11 +20,6 @@ namespace SixLabors.Fonts.Tables
         public uint CheckSum { get; }
 
         public uint Length { get; }
-        
-        public override string ToString()
-        {
-            return "{" + this.Tag + "}";
-        }
 
         public static TableHeader Read(BinaryReader reader)
         {

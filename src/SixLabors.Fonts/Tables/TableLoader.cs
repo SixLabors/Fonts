@@ -20,7 +20,6 @@ namespace SixLabors.Fonts.Tables
         private Dictionary<string, Func<BinaryReader, Table>> loaders = new Dictionary<string, Func<BinaryReader, Table>>();
         private Dictionary<Type, string> types = new Dictionary<Type, string>();
 
-
         public string GetTag(Type type)
         {
             if (this.types.ContainsKey(type))
@@ -29,15 +28,6 @@ namespace SixLabors.Fonts.Tables
             }
 
             return null;
-        }
-        internal IEnumerable<string> TableTags(IEnumerable<Type> typeFilter)
-        {
-            if (typeFilter == null)
-            {
-                return this.types.Values;
-            }
-
-            return typeFilter.Select(x => this.types[x]).ToArray();
         }
 
         internal IEnumerable<Type> RegisterdTypes()

@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 using SixLabors.Fonts.Tables;
 
 using Xunit;
 
-namespace SixLabors.Fonts.Tests
+namespace SixLabors.Fonts.Tests.Tables
 {
     public class TableLoaderTests
     {
@@ -33,21 +32,13 @@ namespace SixLabors.Fonts.Tests
         {
             var tl = new TableLoader();
             Assert.Contains(type, tl.RegisterdTypes());
-            Assert.Contains(name, tl.TableTags(null));
+            Assert.Equal(name, tl.GetTag(type));
         }
 
         [Fact]
         public void DefaultIsnotNull()
         {
             Assert.NotNull(TableLoader.Default);
-        }
-
-        [Fact]
-        public void PassingNullToGetTagsReturnsAllRegisteredTableTags()
-        {
-            var loader = new TableLoader();
-
-            Assert.NotEmpty(loader.TableTags(null));
         }
 
         [Fact]
@@ -60,6 +51,15 @@ namespace SixLabors.Fonts.Tests
 
             var table = Assert.IsType<UnknownTable>(result);
             Assert.Equal(tag, table.Name);
+        }
+
+
+        [Fact]
+        public void NullForUnknownTypes()
+        {
+            var loader = new TableLoader();
+            var tag = loader.GetTag(typeof(TableLoaderTests));
+            Assert.Null(tag);
         }
     }
 }

@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-using SixLabors.Fonts.Tables;
+﻿using SixLabors.Fonts.Tables;
 
 using Xunit;
 
-namespace SixLabors.Fonts.Tests
+namespace SixLabors.Fonts.Tests.Tables
 {
     public class TableHeaderTests
     {

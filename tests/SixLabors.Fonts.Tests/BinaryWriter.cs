@@ -167,6 +167,12 @@ namespace SixLabors.Fonts.Tests
             this.WriteUint32(value ?? 0);
         }
 
+
+        public void WriteOffset16(ushort? value)
+        {
+            this.WriteUint16(value ?? 0);
+        }
+
         /// <summary>
         /// Writes a 32-bit unsigned integer to the stream, using the bit converter
         /// for this writer. 4 bytes are written.
