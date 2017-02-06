@@ -16,6 +16,7 @@ namespace SixLabors.Fonts.Tables
             // we will hard code mapping registration in here for all the tables
             this.Register(NameTable.Load);
             this.Register(CMapTable.Load);
+            this.Register(HeadTable.Load);
         }
 
         private Dictionary<string, Func<BinaryReader, Table>> loaders = new Dictionary<string, Func<BinaryReader, Table>>();
