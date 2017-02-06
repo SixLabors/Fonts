@@ -5,7 +5,7 @@ namespace SixLabors.Fonts.Tables
 {
     internal class TableHeader
     {
-        public TableHeader(string tag, uint checkSum, uint? offset, uint len)
+        public TableHeader(string tag, uint checkSum, uint offset, uint len)
         {
             this.Tag = tag;
             this.CheckSum = checkSum;
@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tables
 
         public string Tag { get; }
 
-        public uint? Offset { get; }
+        public uint Offset { get; }
 
         public uint CheckSum { get; }
 

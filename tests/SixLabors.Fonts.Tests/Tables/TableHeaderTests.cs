@@ -10,12 +10,12 @@ namespace SixLabors.Fonts.Tests.Tables
             new TheoryData<string, uint, uint?, uint>
                 {
                 { "TAG1", 98, 18, 1218 },
-                { "TAG2", 198, null, 121 },
+                { "TAG2", 198, 0, 121 },
         };
 
         [Theory]
         [MemberData(nameof(ReadAllValuesData))]
-        public void ReadAllValues(string tag, uint checksum, uint? offset, uint length)
+        public void ReadAllValues(string tag, uint checksum, uint offset, uint length)
         {
             var writer = new BinaryWriter();
             writer.WriteTableHeader(tag, checksum, offset, length);

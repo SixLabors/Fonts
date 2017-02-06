@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using SixLabors.Fonts.Utilities;
 using SixLabors.Fonts.WellKnownIds;
 
-namespace SixLabors.Fonts.Tables.General
+namespace SixLabors.Fonts.Tables.General.Name
 {
     internal class NameRecord
     {

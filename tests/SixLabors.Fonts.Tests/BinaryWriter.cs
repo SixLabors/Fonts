@@ -396,5 +396,12 @@ namespace SixLabors.Fonts.Tests
             this.BitConverter.CopyBytes(value, this.buffer, 0);
             this.WriteInternal(this.buffer, 2);
         }
+        public void WriteUint8(byte value)
+        {
+            this.buffer[0] = value;
+            this.WriteInternal(this.buffer, 1);
+        }
+
+        
     }
 }

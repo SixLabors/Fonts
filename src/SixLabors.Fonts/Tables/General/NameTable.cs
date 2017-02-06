@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-
+using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Utilities;
 using SixLabors.Fonts.WellKnownIds;
 

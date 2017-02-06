@@ -62,5 +62,25 @@ namespace SixLabors.Fonts.Tests
             // found not matching types
             Assert.Equal(0, reader.Tables.Length);
         }
+
+
+        [Fact]
+        public void ReadCMapTable()
+        {
+            var writer = new BinaryWriter();
+
+            writer.WriteTrueTypeFileHeader(new TableHeader("cmap", 0, 0, 20));
+
+            writer.WriteCMapTable(new[] {
+                new SixLabors.Fonts.Tables.General.CMap.Format0SubTable(0, WellKnownIds.PlatformIDs.Macintosh, 1, new byte[] {2,9})
+            });
+
+            var reader = new FontReader(writer.GetStream());
+            var cmap = reader.GetTable<CMapTable>();
+            Assert.NotNull(cmap);
+
+            // found not matching types
+            Assert.Equal(1, reader.Tables.Length);
+        }
     }
 }

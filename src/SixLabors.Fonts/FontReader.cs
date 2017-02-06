@@ -38,11 +38,11 @@ namespace SixLabors.Fonts
 
             List<Table> tables = new List<Table>(tableCountToLoad);
 
-            foreach (var header in headers.Where(x => x.Offset.HasValue).OrderBy(x => x.Offset.Value))
+            foreach (var header in headers.OrderBy(x => x.Offset))
             {
                 if (tablesToLoad == null || tablesToLoad.Contains(header.Tag))
                 {
-                    var startOfString = header.Offset.Value + startOfFilePosition;
+                    var startOfString = header.Offset + startOfFilePosition;
                     var diff = startOfString - reader.BaseStream.Position;
                     reader.BaseStream.Seek(diff, SeekOrigin.Current);// only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
 

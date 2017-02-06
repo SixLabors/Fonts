@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tests
@@ -31,11 +33,39 @@ namespace SixLabors.Fonts.Tests
             // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
             writer.WriteFileHeader(0x00010000, tableCount, searchRange, entrySelector, rangeShift);
         }
-
+        public static void WriteTrueTypeFileHeader(this BinaryWriter writer, params TableHeader[] headers)
+        {
+            // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
+            writer.WriteFileHeader(0x00010000, headers);
+        }
         public static void WriteCffFileHeader(this BinaryWriter writer, ushort tableCount, ushort searchRange, ushort entrySelector, ushort rangeShift)
         {
             // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
             writer.WriteFileHeader(0x4F54544F, tableCount, searchRange, entrySelector, rangeShift);
+        }
+
+        private static void WriteFileHeader(this BinaryWriter writer, uint version, params TableHeader[] headers)
+        {
+            // file header
+            // Type Name | name          | Description
+            // ----------|---------------|------------------------------
+            // uint32    | sfntVersion   | 0x00010000 or 0x4F54544F('OTTO') — see below.
+            // uint16    | numTables     | Number of tables.
+            // uint16    | searchRange   | (Maximum power of 2 <= numTables) x 16.
+            // uint16    | entrySelector | Log2(maximum power of 2 <= numTables).
+            // uint16    | rangeShift    | NumTables x 16 - searchRange.
+            writer.WriteUint32(version);
+            writer.WriteUint16((ushort)headers.Length);
+            writer.WriteUint16(0);
+            writer.WriteUint16(0);
+            writer.WriteUint16(0);
+            int offset = 12;
+            offset += headers.Length * 16;
+            foreach (var h in headers)
+            {
+                writer.WriteTableHeader(h.Tag, h.CheckSum, (uint)offset, h.Length);
+                offset +=(int)h.Length;
+            }
         }
 
         private static void WriteFileHeader(this BinaryWriter writer, uint version, ushort tableCount, ushort searchRange, ushort entrySelector, ushort rangeShift)
@@ -141,6 +171,76 @@ namespace SixLabors.Fonts.Tests
                     writer.WriteNoLength(n, Encoding.BigEndianUnicode);
                 }
             }
+        }
+
+        public static void WriteCMapTable(this BinaryWriter writer, IEnumerable<CMapSubTable> subtables)
+        {
+            // 'cmap' Header:
+            // Type           | Name                       | Description
+            // ---------------|----------------------------|------------------------------------
+            // uint16         | version                    |Table version number(0).
+            // uint16         | numTables                  |Number of encoding tables that follow.
+            // EncodingRecord | encodingRecords[numTables] |
+            writer.WriteUint16(0);
+            writer.WriteUint16((ushort)subtables.Count());
+
+            int offset = 4; // for for the cmap header
+            offset += (8 * subtables.Count()); // 8 bytes per encoding header
+            foreach (var table in subtables)
+            {
+                // EncodingRecord:
+                // Type     | Name       | Description
+                // ---------|------------|-----------------------------------------------
+                // uint16   | platformID | Platform ID.
+                // uint16   | encodingID | Platform - specific encoding ID.
+                // Offset32 | offset     | Byte offset from beginning of table to the subtable for this encoding.
+                writer.WriteUint16((ushort)table.Platform);
+                writer.WriteUint16((ushort)table.Encoding);
+                writer.WriteUint32((uint)offset);
+
+                offset += table.DataLength();
+                //calculate the size of each format
+            }
+            foreach (var table in subtables)
+            {
+                writer.WriteCMapSubTable(table);
+            }
+        }
+        public static void WriteCMapSubTable(this BinaryWriter writer, CMapSubTable subtable)
+        {
+            writer.WriteCMapSubTable(subtable as Format0SubTable);
+        }
+        public static void WriteCMapSubTable(this BinaryWriter writer, Format0SubTable subtable)
+        {
+            if(subtable == null)
+            {
+                return;
+            }
+
+            // Format 0 SubTable
+            // Type     |Name              | Description
+            // ---------|------------------|--------------------------------------------------------------------------
+            // uint16   |format            | Format number is set to 0.
+            // uint16   |length            | This is the length in bytes of the subtable.
+            // uint16   |language          | Please see “Note on the language field in 'cmap' subtables“ in this document.
+            // uint8    |glyphIdArray[glyphcount] | An array that maps character codes to glyph index values.
+            writer.WriteUint16(0);
+            writer.WriteUint16((ushort)subtable.DataLength());
+            writer.WriteUint16(subtable.Language);
+            
+            foreach(var c in subtable.glyphIds)
+            {
+                writer.WriteUint8(c);
+            }
+        }
+
+        private static int DataLength(this CMapSubTable subtable)
+        {
+            if (subtable is Format0SubTable)
+            {
+                return 6 + ((Format0SubTable)subtable).glyphIds.Length;
+            }
+            return 0;
         }
     }
 }

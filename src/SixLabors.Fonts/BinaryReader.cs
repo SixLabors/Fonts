@@ -133,6 +133,18 @@ namespace SixLabors.Fonts
             return this.BitConverter.ToUInt16(this.storageBuffer, 0);
         }
 
+
+        /// <summary>
+        /// Reads a 8-bit unsigned integer from the stream, using the bit converter
+        /// for this reader. 1 bytes are read.
+        /// </summary>
+        /// <returns>The 8-bit unsigned integer read</returns>
+        public byte ReadUInt8()
+        {
+            this.ReadInternal(this.storageBuffer, 1);
+            return this.storageBuffer[0];
+        }
+
         /// <summary>
         /// Reads a 32-bit unsigned integer from the stream, using the bit converter
         /// for this reader. 4 bytes are read.
@@ -144,15 +156,9 @@ namespace SixLabors.Fonts
             return this.BitConverter.ToUInt32(this.storageBuffer, 0);
         }
 
-        public uint? ReadOffset32()
+        public uint ReadOffset32()
         {
-            uint value = this.ReadUInt32();
-            if (value == 0)
-            {
-                return null;
-            }
-
-            return value;
+            return this.ReadUInt32();
         }
 
         /// <summary>
