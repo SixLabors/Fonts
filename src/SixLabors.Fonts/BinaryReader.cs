@@ -133,6 +133,36 @@ namespace SixLabors.Fonts
             return this.BitConverter.ToUInt16(this.storageBuffer, 0);
         }
 
+        /// <summary>
+        /// Reads a 16-bit unsigned integer from the stream, using the bit converter
+        /// for this reader. 2 bytes are read.
+        /// </summary>
+        /// <returns>The 16-bit unsigned integer read</returns>
+        public ushort[] ReadUInt16s(int length)
+        {
+            var data = new ushort[length];
+            for (var i = 0; i < length; i++)
+            {
+                data[i] = this.ReadUInt16();
+            }
+            return data;
+        }
+
+        /// <summary>
+        /// Reads a 16-bit unsigned integer from the stream, using the bit converter
+        /// for this reader. 2 bytes are read.
+        /// </summary>
+        /// <returns>The 16-bit unsigned integer read</returns>
+        public short[] ReadInt16s(int length)
+        {
+            var data = new short[length];
+            for (var i = 0; i < length; i++)
+            {
+                data[i] = this.ReadInt16();
+            }
+            return data;
+        }
+
 
         /// <summary>
         /// Reads a 8-bit unsigned integer from the stream, using the bit converter

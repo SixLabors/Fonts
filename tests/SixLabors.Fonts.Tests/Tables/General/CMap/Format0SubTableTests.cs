@@ -35,5 +35,25 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
                 1,2,3,4,5,6,7,8
             }, table.glyphIds);
         }
+
+        [Fact]
+        public void GetCharacter()
+        {
+            var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+
+            var id = format.GetGlyphId((char)4);
+
+            Assert.Equal(5, id);
+        }
+
+        [Fact]
+        public void GetCharacter_missing()
+        {
+            var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+
+            var id = format.GetGlyphId((char)99);
+
+            Assert.Equal(0, id);
+        }
     }
 }

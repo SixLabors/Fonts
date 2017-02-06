@@ -1,0 +1,128 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using SixLabors.Fonts.WellKnownIds;
+
+namespace SixLabors.Fonts.Tables.General.CMap
+{
+    internal class Format4SubTable : CMapSubTable
+    {
+        internal readonly Segment[] segments;
+
+        internal readonly ushort[] glyphIds;
+
+        public Format4SubTable(ushort language, PlatformIDs platform, ushort encoding, Segment[] segments, ushort[] glyphIds)
+            : base(platform, encoding)
+        {
+            this.Language = language;
+            this.segments = segments;
+            this.glyphIds = glyphIds;
+        }
+
+        public ushort Language { get; }
+
+        public override ushort GetGlyphId(char character)
+        {
+            uint charAsInt = character;
+            // TODO: Fast fegment lookup using bit operations?
+            foreach (var seg in segments)
+            {
+                if (seg.End >= charAsInt && seg.Start <= charAsInt)
+                {
+                    if (seg.Offset == 0)
+                    {
+                        return (ushort)((charAsInt + seg.Delta) % ushort.MaxValue); // TODO: bitmask instead?
+                    }
+                    else
+                    {
+                        var offset = (seg.Offset / 2) + (charAsInt - seg.Start);
+                        return glyphIds[offset - segments.Length + seg.Index];
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        public static Format4SubTable Load(EncodingRecord encoding, BinaryReader reader)
+        {
+            // 'cmap' Subtable Format 4:
+            // Type   | Name                       | Description
+            // -------|----------------------------|------------------------------------------------------------------------
+            // uint16 | format                     | Format number is set to 4.
+            // uint16 | length                     | This is the length in bytes of the subtable.
+            // uint16 | language                   | Please see “Note on the language field in 'cmap' subtables“ in this document.
+            // uint16 | segCountX2                 | 2 x segCount.
+            // uint16 | searchRange                | 2 x (2**floor(log2(segCount)))
+            // uint16 | entrySelector              | log2(searchRange/2)
+            // uint16 | rangeShift                 | 2 x segCount - searchRange
+            // uint16 | endCount[segCount]         | End characterCode for each segment, last=0xFFFF.
+            // uint16 | reservedPad                | Set to 0.
+            // uint16 | startCount[segCount]       | Start character code for each segment.
+            // int16  | idDelta[segCount]           | Delta for all character codes in segment.
+            // uint16 | idRangeOffset[segCount]    | Offsets into glyphIdArray or 0
+            // uint16 | glyphIdArray[ ]            | Glyph index array (arbitrary length)
+            // format has already been read by this point skip it
+            ushort length = reader.ReadUInt16();
+            ushort language = reader.ReadUInt16();
+            ushort segCountX2 = reader.ReadUInt16();
+            ushort searchRange = reader.ReadUInt16();
+            ushort entrySelector = reader.ReadUInt16();
+            ushort rangeShift = reader.ReadUInt16();
+            var segCount = segCountX2 / 2;
+            ushort[] endCounts = reader.ReadUInt16s(segCount);
+            ushort reserved = reader.ReadUInt16();
+
+            ushort[] startCounts = reader.ReadUInt16s(segCount);
+            short[] idDelta = reader.ReadInt16s(segCount);
+            ushort[] idRangeOffset = reader.ReadUInt16s(segCount);
+
+            // table length thus far
+            var headerLength = 16 + (segCount * 8);
+            var glyphIdCount = (length - headerLength) / 2;
+
+            ushort[] glyphIds = reader.ReadUInt16s(glyphIdCount);
+
+            var segments = Segment.Create(endCounts, startCounts, idDelta, idRangeOffset);
+
+            return new Format4SubTable(language, encoding.PlatformID, encoding.EncodingID, segments, glyphIds);
+        }
+
+        public class Segment
+        {
+            public short Delta { get; }
+
+            public ushort End { get; }
+            public ushort Offset { get; }
+            public ushort Start { get; }
+
+            public Segment(ushort index, ushort end, ushort start, short delta, ushort offset)
+            {
+                this.Index = index;
+                this.End = end;
+                this.Start = start;
+                this.Delta = delta;
+                this.Offset = offset;
+            }
+
+            public ushort Index { get; }
+
+            public static Segment[] Create(ushort[] endCounts, ushort[] startCode, short[] idDelta, ushort[] idRangeOffset)
+            {
+                var count = endCounts.Length;
+                Segment[] segments = new Segment[count];
+                for (ushort i = 0; i < count; i++)
+                {
+                    var start = startCode[i];
+                    var end = endCounts[i];
+                    var delta = idDelta[i];
+                    var offset = idRangeOffset[i];
+                    segments[i] = new Segment(i, end, start, delta, offset);
+                }
+                return segments;
+            }
+        }
+    }
+}
