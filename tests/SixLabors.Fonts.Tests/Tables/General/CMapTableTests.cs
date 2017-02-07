@@ -24,9 +24,9 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             var table = CMapTable.Load(writer.GetReader());
 
-            Assert.Equal(1, table.tables.Where(x=>x != null).Count());
+            Assert.Equal(1, table.Tables.Where(x=>x != null).Count());
 
-            var format0Tables = table.tables.OfType<Format0SubTable>().ToArray();
+            var format0Tables = table.Tables.OfType<Format0SubTable>().ToArray();
             Assert.Equal(1, format0Tables.Length);
         }       
     }

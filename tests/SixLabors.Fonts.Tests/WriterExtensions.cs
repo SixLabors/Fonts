@@ -239,7 +239,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16((ushort)subtable.DataLength());
             writer.WriteUInt16(subtable.Language);
 
-            foreach (var c in subtable.glyphIds)
+            foreach (var c in subtable.GlyphIds)
             {
                 writer.WriteUInt8(c);
             }
@@ -271,36 +271,36 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16(4);
             writer.WriteUInt16((ushort)subtable.DataLength());
             writer.WriteUInt16(subtable.Language);
-            var segCount = subtable.segments.Length;
-            writer.WriteUInt16((ushort)(subtable.segments.Length * 2));
+            var segCount = subtable.Segments.Length;
+            writer.WriteUInt16((ushort)(subtable.Segments.Length * 2));
             var searchRange = Math.Pow(2, Math.Floor(Math.Log(segCount, 2)));
             writer.WriteUInt16((ushort)searchRange);
             var entrySelector = Math.Log(searchRange / 2, 2);
             writer.WriteUInt16((ushort)entrySelector);
             var rangeShift = (2 * segCount) - searchRange;
             writer.WriteUInt16((ushort)rangeShift);
-            foreach (var seg in subtable.segments)
+            foreach (var seg in subtable.Segments)
             {
                 writer.WriteUInt16(seg.End);
             }
 
             writer.WriteUInt16(0);
-            foreach (var seg in subtable.segments)
+            foreach (var seg in subtable.Segments)
             {
                 writer.WriteUInt16(seg.Start);
             }
 
-            foreach (var seg in subtable.segments)
+            foreach (var seg in subtable.Segments)
             {
                 writer.WriteInt16(seg.Delta);
             }
 
-            foreach (var seg in subtable.segments)
+            foreach (var seg in subtable.Segments)
             {
                 writer.WriteUInt16(seg.Offset);
             }
 
-            foreach (var c in subtable.glyphIds)
+            foreach (var c in subtable.GlyphIds)
             {
                 writer.WriteUInt16(c);
             }
@@ -310,13 +310,13 @@ namespace SixLabors.Fonts.Tests
         {
             if (subtable is Format0SubTable)
             {
-                return 6 + ((Format0SubTable)subtable).glyphIds.Length;
+                return 6 + ((Format0SubTable)subtable).GlyphIds.Length;
             }
 
             if (subtable is Format4SubTable)
             {
-                var segs = ((Format4SubTable)subtable).segments;
-                var glyphs = ((Format4SubTable)subtable).glyphIds;
+                var segs = ((Format4SubTable)subtable).Segments;
+                var glyphs = ((Format4SubTable)subtable).GlyphIds;
                 return 16 + (segs.Length * 8) + (glyphs.Length * 2);
             }
 
@@ -377,20 +377,20 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt32(0);
             writer.WriteUInt32(0x5F0F3CF5);
 
-            writer.WriteUInt16((ushort)table.flags);
-            writer.WriteUInt16(table.unitsPerEm);
+            writer.WriteUInt16((ushort)table.Flags);
+            writer.WriteUInt16(table.UnitsPerEm);
 
             var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
-            writer.WriteInt64((long)table.created.Subtract(startDate).TotalSeconds);
-            writer.WriteInt64((long)table.modified.Subtract(startDate).TotalSeconds);
-            writer.WriteInt16(table.min.X);
-            writer.WriteInt16(table.min.Y);
-            writer.WriteInt16(table.max.X);
-            writer.WriteInt16(table.max.Y);
-            writer.WriteUInt16((ushort)table.macStyle);
-            writer.WriteUInt16(table.lowestRecPPEM);
+            writer.WriteInt64((long)table.Created.Subtract(startDate).TotalSeconds);
+            writer.WriteInt64((long)table.Modified.Subtract(startDate).TotalSeconds);
+            writer.WriteInt16(table.Min.X);
+            writer.WriteInt16(table.Min.Y);
+            writer.WriteInt16(table.Max.X);
+            writer.WriteInt16(table.Max.Y);
+            writer.WriteUInt16((ushort)table.MacStyle);
+            writer.WriteUInt16(table.LowestRecPPEM);
             writer.WriteInt16(2);
-            writer.WriteInt16(table.indexToLocFormat);
+            writer.WriteInt16(table.IndexToLocFormat);
             writer.WriteInt16(0);
         }
     }

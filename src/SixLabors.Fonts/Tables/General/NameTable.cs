@@ -47,7 +47,9 @@ namespace SixLabors.Fonts.Tables.General
             {
                 var startOfString = readable.Offset + startOfStrings;
                 var diff = startOfString - reader.BaseStream.Position;
-                reader.BaseStream.Seek(diff, SeekOrigin.Current);// only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
+
+                // only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
+                reader.BaseStream.Seek(diff, SeekOrigin.Current);
 
                 readable.LoadValue(reader);
             }

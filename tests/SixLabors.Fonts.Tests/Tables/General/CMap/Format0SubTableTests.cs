@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
             Assert.Equal(2, table.Encoding);
             Assert.Equal(new byte[] {
                 1,2,3,4,5,6,7,8
-            }, table.glyphIds);
+            }, table.GlyphIds);
         }
 
         [Fact]

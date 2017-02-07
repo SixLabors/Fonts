@@ -37,10 +37,10 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
             Assert.Equal(2, table.Encoding);
             Assert.Equal(new ushort[] {
                 1,2,3,4,5,6,7,8
-            }, table.glyphIds);
+            }, table.GlyphIds);
 
-            Assert.Equal(1, table.segments.Length);
-            var seg = table.segments[0];
+            Assert.Equal(1, table.Segments.Length);
+            var seg = table.Segments[0];
             Assert.Equal(0, seg.Index);
             Assert.Equal(1, seg.End);
             Assert.Equal(2, seg.Start);

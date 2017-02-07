@@ -9,13 +9,16 @@ namespace SixLabors.Fonts.Tables.General.CMap
     internal struct EncodingRecord
     {
         public PlatformIDs PlatformID { get; }
+
         public ushort EncodingID { get; }
+
         public uint Offset { get; }
+
         public EncodingRecord(PlatformIDs platformID, ushort encodingID, uint offset)
         {
-            PlatformID = platformID;
-            EncodingID = encodingID;
-            Offset = offset;
+            this.PlatformID = platformID;
+            this.EncodingID = encodingID;
+            this.Offset = offset;
         }
 
         public static EncodingRecord Read(BinaryReader reader)

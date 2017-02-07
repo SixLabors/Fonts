@@ -17,8 +17,8 @@ namespace SixLabors.Fonts.Tests.Tables.General
         {
             var writer = new BinaryWriter();
 
-            writer.WriteHeadTable(new HeadTable(HeadTable.Flags.None, 
-                HeadTable.MacStyle.Italic | HeadTable.MacStyle.Bold, 
+            writer.WriteHeadTable(new HeadTable(HeadTable.HeadFlags.None, 
+                HeadTable.HeadMacStyle.Italic | HeadTable.HeadMacStyle.Bold, 
                 1024, 
                 new DateTime(2017, 02, 06, 07, 47, 00), 
                 new DateTime(2017, 02, 07, 07, 47, 00), 
@@ -27,17 +27,17 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             var head = HeadTable.Load(writer.GetReader());
 
-            Assert.Equal(HeadTable.Flags.None, head.flags);
-            Assert.Equal(HeadTable.MacStyle.Italic | HeadTable.MacStyle.Bold, head.macStyle);
-            Assert.Equal(1024, head.unitsPerEm);
-            Assert.Equal(new DateTime(2017, 02, 06, 07, 47, 00), head.created);
-            Assert.Equal(new DateTime(2017, 02, 07, 07, 47, 00), head.modified);
-            Assert.Equal(0, head.min.X);
-            Assert.Equal(0, head.min.Y);
-            Assert.Equal(1024, head.max.X);
-            Assert.Equal(1022, head.max.Y);
-            Assert.Equal(0, head.lowestRecPPEM);
-            Assert.Equal(1, head.indexToLocFormat);
+            Assert.Equal(HeadTable.HeadFlags.None, head.Flags);
+            Assert.Equal(HeadTable.HeadMacStyle.Italic | HeadTable.HeadMacStyle.Bold, head.MacStyle);
+            Assert.Equal(1024, head.UnitsPerEm);
+            Assert.Equal(new DateTime(2017, 02, 06, 07, 47, 00), head.Created);
+            Assert.Equal(new DateTime(2017, 02, 07, 07, 47, 00), head.Modified);
+            Assert.Equal(0, head.Min.X);
+            Assert.Equal(0, head.Min.Y);
+            Assert.Equal(1024, head.Max.X);
+            Assert.Equal(1022, head.Max.Y);
+            Assert.Equal(0, head.LowestRecPPEM);
+            Assert.Equal(1, head.IndexToLocFormat);
         }
     }
 }

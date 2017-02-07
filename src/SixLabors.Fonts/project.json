@@ -1,7 +1,7 @@
 {
   "version": "0.1.0-alpha1-*",
   "title": "SixLabors.Fonts",
-  "description": "Netstandard, cross platform, font loading and layout library",
+  "description": "A cross-platform library for loading and laying out for processing and measuring; written in C#",
   "authors": [
     "Scott Williams and contributors"
   ],
@@ -9,7 +9,7 @@
     "owners": [
       "Scott Williams and contributors"
     ],
-    "summary": "Netstandard cross platform font loading and layout library",
+    "summary": "A cross-platform library for loading and laying out for processing and measuring; written in C#",
     "projectUrl": "https://github.com/SixLabors/Fonts",
     "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
     //"iconUrl": "https://raw.githubusercontent.com/SixLabors/Fonts/master/icons/icon.png",
@@ -27,7 +27,7 @@
   "buildOptions": {
     "allowUnsafe": true,
     "xmlDoc": true,
-    "additionalArguments": [ "/additionalfile:../Shared/stylecop.json", "/ruleset:../../SixLabors.Fonts.ruleset" ],
+    "additionalArguments": [ "/ruleset:../../SixLabors.Fonts.ruleset" ],
     "compile": [
       "../Shared/*.cs"
     ]

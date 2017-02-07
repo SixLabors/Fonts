@@ -10,24 +10,23 @@ namespace SixLabors.Fonts.Tables.General
     [TableName("cmap")]
     internal class CMapTable : Table
     {
-        internal CMapSubTable[] tables;
+        internal CMapSubTable[] Tables { get; }
 
         public CMapTable(CMapSubTable[] tables)
         {
-            this.tables = tables;
+            this.Tables = tables;
         }
 
         public ushort GetGlyphId(char character, PlatformIDs platform = PlatformIDs.Windows)
         {
             // find the most efficient way for storng this lookup after load
-            
-            foreach(var t in tables)
+            foreach (var t in this.Tables)
             {
-                if(t.Platform == platform)
+                if (t.Platform == platform)
                 {
-                    //keep looking until we have an index thats not the fallback.
+                    // keep looking until we have an index thats not the fallback.
                     var index = t.GetGlyphId(character);
-                    if(index > 0)
+                    if (index > 0)
                     {
                         return index;
                     }
@@ -44,12 +43,12 @@ namespace SixLabors.Fonts.Tables.General
             ushort numTables = reader.ReadUInt16();
 
             EncodingRecord[] encodings = new EncodingRecord[numTables];
-            for(var i = 0; i< numTables; i++)
+            for (var i = 0; i < numTables; i++)
             {
                 encodings[i] = EncodingRecord.Read(reader);
             }
 
-            //// foreach encoding we move forward looking for th subtables
+            // foreach encoding we move forward looking for th subtables
             SixLabors.Fonts.Tables.General.CMap.CMapSubTable[] tables = new SixLabors.Fonts.Tables.General.CMap.CMapSubTable[numTables];
             for (var i = 0; i < numTables; i++)
             {

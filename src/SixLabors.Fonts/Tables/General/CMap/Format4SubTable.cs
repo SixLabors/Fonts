@@ -9,16 +9,16 @@ namespace SixLabors.Fonts.Tables.General.CMap
 {
     internal class Format4SubTable : CMapSubTable
     {
-        internal readonly Segment[] segments;
+        internal Segment[] Segments { get; }
 
-        internal readonly ushort[] glyphIds;
+        internal ushort[] GlyphIds { get; }
 
         public Format4SubTable(ushort language, PlatformIDs platform, ushort encoding, Segment[] segments, ushort[] glyphIds)
             : base(platform, encoding)
         {
             this.Language = language;
-            this.segments = segments;
-            this.glyphIds = glyphIds;
+            this.Segments = segments;
+            this.GlyphIds = glyphIds;
         }
 
         public ushort Language { get; }
@@ -26,8 +26,8 @@ namespace SixLabors.Fonts.Tables.General.CMap
         public override ushort GetGlyphId(char character)
         {
             uint charAsInt = character;
-            // TODO: Fast fegment lookup using bit operations?
-            foreach (var seg in segments)
+
+            foreach (var seg in this.Segments)
             {
                 if (seg.End >= charAsInt && seg.Start <= charAsInt)
                 {
@@ -38,7 +38,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
                     else
                     {
                         var offset = (seg.Offset / 2) + (charAsInt - seg.Start);
-                        return glyphIds[offset - segments.Length + seg.Index];
+                        return this.GlyphIds[offset - this.Segments.Length + seg.Index];
                     }
                 }
             }
@@ -72,18 +72,18 @@ namespace SixLabors.Fonts.Tables.General.CMap
             ushort entrySelector = reader.ReadUInt16();
             ushort rangeShift = reader.ReadUInt16();
             var segCount = segCountX2 / 2;
-            ushort[] endCounts = reader.ReadUInt16s(segCount);
+            ushort[] endCounts = reader.ReadUInt16Array(segCount);
             ushort reserved = reader.ReadUInt16();
 
-            ushort[] startCounts = reader.ReadUInt16s(segCount);
-            short[] idDelta = reader.ReadInt16s(segCount);
-            ushort[] idRangeOffset = reader.ReadUInt16s(segCount);
+            ushort[] startCounts = reader.ReadUInt16Array(segCount);
+            short[] idDelta = reader.ReadInt16Array(segCount);
+            ushort[] idRangeOffset = reader.ReadUInt16Array(segCount);
 
             // table length thus far
             var headerLength = 16 + (segCount * 8);
             var glyphIdCount = (length - headerLength) / 2;
 
-            ushort[] glyphIds = reader.ReadUInt16s(glyphIdCount);
+            ushort[] glyphIds = reader.ReadUInt16Array(glyphIdCount);
 
             var segments = Segment.Create(endCounts, startCounts, idDelta, idRangeOffset);
 
@@ -95,7 +95,9 @@ namespace SixLabors.Fonts.Tables.General.CMap
             public short Delta { get; }
 
             public ushort End { get; }
+
             public ushort Offset { get; }
+
             public ushort Start { get; }
 
             public Segment(ushort index, ushort end, ushort start, short delta, ushort offset)
@@ -121,6 +123,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
                     var offset = idRangeOffset[i];
                     segments[i] = new Segment(i, end, start, delta, offset);
                 }
+
                 return segments;
             }
         }

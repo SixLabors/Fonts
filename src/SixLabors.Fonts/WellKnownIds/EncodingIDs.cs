@@ -46,27 +46,4 @@ namespace SixLabors.Fonts.WellKnownIds
         /// </summary>
         UnicodeFull = 6,
     }
-
-    /// <summary>
-    /// Converts encoding ID to TextEncoding
-    /// </summary>
-    public static class EncodingIDExtensions
-    {
-        /// <summary>
-        /// Converts encoding ID to TextEncoding
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <returns></returns>
-        public static Encoding AsEncoding(this EncodingIDs id)
-        {
-            switch (id)
-            {
-                case EncodingIDs.Unicode11:
-                case EncodingIDs.Unicode2:
-                    return Encoding.BigEndianUnicode;
-                default:
-                    return Encoding.UTF8;
-            }
-        }
-    }
 }

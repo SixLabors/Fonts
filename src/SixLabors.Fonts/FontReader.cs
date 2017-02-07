@@ -44,7 +44,9 @@ namespace SixLabors.Fonts
                 {
                     var startOfString = header.Offset + startOfFilePosition;
                     var diff = startOfString - reader.BaseStream.Position;
-                    reader.BaseStream.Seek(diff, SeekOrigin.Current);// only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
+
+                    // only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
+                    reader.BaseStream.Seek(diff, SeekOrigin.Current);
 
                     Table t = loader.Load(header.Tag, reader);
                     tables.Add(t);
@@ -68,7 +70,8 @@ namespace SixLabors.Fonts
         {
         }
 
-        public TTableType GetTable<TTableType>() where TTableType : Table
+        public TTableType GetTable<TTableType>()
+            where TTableType : Table
         {
             foreach (var table in this.Tables)
             {

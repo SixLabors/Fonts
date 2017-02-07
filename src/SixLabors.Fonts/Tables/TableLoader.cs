@@ -37,7 +37,8 @@ namespace SixLabors.Fonts.Tables
             return this.types.Keys;
         }
 
-        private void Register<T>(string tag, Func<BinaryReader, T> createFunc) where T : Table
+        private void Register<T>(string tag, Func<BinaryReader, T> createFunc)
+            where T : Table
         {
             lock (this.loaders)
             {
@@ -49,7 +50,8 @@ namespace SixLabors.Fonts.Tables
             }
         }
 
-        private void Register<T>(Func<BinaryReader, T> createFunc) where T : Table
+        private void Register<T>(Func<BinaryReader, T> createFunc)
+            where T : Table
         {
             var name =
                 typeof(T).GetTypeInfo()
@@ -60,16 +62,15 @@ namespace SixLabors.Fonts.Tables
             this.Register(name, createFunc);
         }
 
-        internal Table Load(string Tag, BinaryReader reader)
+        internal Table Load(string tag, BinaryReader reader)
         {
             // loader missing register an unknow type loader and carry on
-            if (!this.loaders.ContainsKey(Tag))
+            if (!this.loaders.ContainsKey(tag))
             {
-                return new UnknownTable(Tag);
+                return new UnknownTable(tag);
             }
 
-            return this.loaders[Tag]?.Invoke(reader);
+            return this.loaders[tag]?.Invoke(reader);
         }
-
     }
 }

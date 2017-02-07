@@ -9,10 +9,10 @@ using System.Runtime.CompilerServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyDescription("A cross-platform library for processing of image files; written in C#")]
+[assembly: AssemblyDescription("A cross-platform library for loading and laying out for processing and measuring; written in C#")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Scott Williams")]
-[assembly: AssemblyProduct("SixLabors.Shapes")]
+[assembly: AssemblyProduct("SixLabors.Fonts")]
 [assembly: AssemblyCopyright("Copyright (c) Scott Williams and contributors.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

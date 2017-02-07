@@ -14,32 +14,39 @@ namespace SixLabors.Fonts.Tables.General
     [TableName("head")]
     internal class HeadTable : Table
     {
-        internal DateTime created;
-        internal Flags flags;
-        internal short indexToLocFormat;
-        internal ushort lowestRecPPEM;
-        internal MacStyle macStyle;
-        internal DateTime modified;
-        internal Point min;
-        internal Point max;
-        internal ushort unitsPerEm;
+        internal DateTime Created { get; }
 
-        public HeadTable(Flags flags, MacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Point min, Point max, ushort lowestRecPPEM, short indexToLocFormat)
+        internal HeadFlags Flags { get; }
+
+        internal short IndexToLocFormat { get; }
+
+        internal ushort LowestRecPPEM { get; }
+
+        internal HeadMacStyle MacStyle { get; }
+
+        internal DateTime Modified { get; }
+
+        internal Point Min { get; }
+
+        internal Point Max { get; }
+
+        internal ushort UnitsPerEm { get; }
+
+        public HeadTable(HeadFlags flags, HeadMacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Point min, Point max, ushort lowestRecPPEM, short indexToLocFormat)
         {
-            this.flags = flags;
-            this.macStyle = macStyle;
-            this.unitsPerEm = unitsPerEm;
-            this.created = created;
-            this.modified = modified;
-            this.min = min;
-            this.max = max;
-            this.lowestRecPPEM = lowestRecPPEM;
-            this.indexToLocFormat = indexToLocFormat;
+            this.Flags = flags;
+            this.MacStyle = macStyle;
+            this.UnitsPerEm = unitsPerEm;
+            this.Created = created;
+            this.Modified = modified;
+            this.Min = min;
+            this.Max = max;
+            this.LowestRecPPEM = lowestRecPPEM;
+            this.IndexToLocFormat = indexToLocFormat;
         }
 
         public static HeadTable Load(BinaryReader reader)
         {
-
             // Type         | Name               | Description
             // -------------|--------------------|----------------------------------------------------------------------------------------------------
             // uint16       | majorVersion       | Major version number of the font header table — set to 1.
@@ -50,15 +57,15 @@ namespace SixLabors.Fonts.Tables.General
             // uint16       | flags              |    Bit 0: Baseline for font at y = 0;
             //                                            Bit 1: Left sidebearing point at x = 0(relevant only for TrueType rasterizers) — see the note below regarding variable fonts;
             //                                            Bit 2: Instructions may depend on point size;
-            //                                            Bit 3: Force ppem to integer values for all internal scaler math; may use fractional ppem sizes if this bit is clear; 
+            //                                            Bit 3: Force ppem to integer values for all internal scaler math; may use fractional ppem sizes if this bit is clear;
             //                                            Bit 4: Instructions may alter advance width(the advance widths might not scale linearly);
             //                                            Bit 5: This bit is not used in OpenType, and should not be set in order to ensure compatible behavior on all platforms.If set, it may result in different behavior for vertical layout in some platforms. (See Apple's specification for details regarding behavior in Apple platforms.)
-            //                                            Bits 6–10: These bits are not used in Opentype and should always be cleared. (See Apple's specification for details regarding legacy used in Apple platforms.) 
+            //                                            Bits 6–10: These bits are not used in Opentype and should always be cleared. (See Apple's specification for details regarding legacy used in Apple platforms.)
             //                                            Bit 11: Font data is ‘lossless’ as a results of having been subjected to optimizing transformation and/or compression (such as e.g.compression mechanisms defined by ISO/IEC 14496-18, MicroType Express, WOFF 2.0 or similar) where the original font functionality and features are retained but the binary compatibility between input and output font files is not guaranteed.As a result of the applied transform, the ‘DSIG’ Table may also be invalidated.
             //                                            Bit 12: Font converted (produce compatible metrics)
             //                                            Bit 13: Font optimized for ClearType™. Note, fonts that rely on embedded bitmaps (EBDT) for rendering should not be considered optimized for ClearType, and therefore should keep this bit cleared.
             //                                            Bit 14: Last Resort font.If set, indicates that the glyphs encoded in the cmap subtables are simply generic symbolic representations of code point ranges and don’t truly represent support for those code points.If unset, indicates that the glyphs encoded in the cmap subtables represent proper support for those code points.
-            //                                            Bit 15: Reserved, set to 0 
+            //                                            Bit 15: Reserved, set to 0
             // uint16       | unitsPerEm         | Valid range is from 16 to 16384. This value should be a power of 2 for fonts that have TrueType outlines.
             // LONGDATETIME | created            | Number of seconds since 12:00 midnight that started January 1st 1904 in GMT/UTC time zone. 64-bit integer
             // LONGDATETIME | modified           | Number of seconds since 12:00 midnight that started January 1st 1904 in GMT/UTC time zone. 64-bit integer
@@ -75,15 +82,14 @@ namespace SixLabors.Fonts.Tables.General
             //                                       Bit 6: Extended(if set to 1)
             //                                       Bits 7–15: Reserved(set to 0).
             // uint16       |lowestRecPPEM       |  Smallest readable size in pixels.
-            // int16        | fontDirectionHint  |  Deprecated(Set to 2). 
-            //                                          0: Fully mixed directional glyphs; 
-            //                                          1: Only strongly left to right; 
-            //                                          2: Like 1 but also contains neutrals; 
-            //                                          -1: Only strongly right to left; 
+            // int16        | fontDirectionHint  |  Deprecated(Set to 2).
+            //                                          0: Fully mixed directional glyphs;
+            //                                          1: Only strongly left to right;
+            //                                          2: Like 1 but also contains neutrals;
+            //                                          -1: Only strongly right to left;
             //                                          -2: Like -1 but also contains neutrals. 1
             // int16        | indexToLocFormat   | 0 for short offsets (Offset16), 1 for long (Offset32).
             // int16        | glyphDataFormat    | 0 for current format.
-
             var majorVersion = reader.ReadUInt16();
             var minorVersion = reader.ReadUInt16();
             var fontRevision = reader.ReadUInt32();
@@ -93,12 +99,14 @@ namespace SixLabors.Fonts.Tables.General
             {
                 throw new InvalidFontFileException("invalid magic number in 'head'");
             }
+
             var flags = reader.ReadUInt16();
             var unitsPerEm = reader.ReadUInt16();
             if (unitsPerEm < 16 || unitsPerEm > 16384)
             {
                 throw new InvalidFontFileException($"invalid units per em expected value between 16 and 16384 but found {unitsPerEm} in 'head'");
             }
+
             var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             var created = startDate.AddSeconds(reader.ReadInt64());
             var modified = startDate.AddSeconds(reader.ReadInt64());
@@ -113,8 +121,8 @@ namespace SixLabors.Fonts.Tables.General
             var glyphDataFormat = reader.ReadInt16();
 
             return new HeadTable(
-                (Flags)flags,
-                (MacStyle)macStyle,
+                (HeadFlags)flags,
+                (HeadMacStyle)macStyle,
                 unitsPerEm,
                 created,
                 modified,
@@ -124,27 +132,28 @@ namespace SixLabors.Fonts.Tables.General
                 indexToLocFormat);
         }
 
-
         [Flags]
-        public enum Flags : ushort
-        { // Bit 0: Baseline for font at y = 0;
+        public enum HeadFlags : ushort
+        {
+          // Bit 0: Baseline for font at y = 0;
           // Bit 1: Left sidebearing point at x = 0(relevant only for TrueType rasterizers) — see the note below regarding variable fonts;
           // Bit 2: Instructions may depend on point size;
-          // Bit 3: Force ppem to integer values for all internal scaler math; may use fractional ppem sizes if this bit is clear; 
+          // Bit 3: Force ppem to integer values for all internal scaler math; may use fractional ppem sizes if this bit is clear;
           // Bit 4: Instructions may alter advance width(the advance widths might not scale linearly);
           // Bit 5: This bit is not used in OpenType, and should not be set in order to ensure compatible behavior on all platforms.If set, it may result in different behavior for vertical layout in some platforms. (See Apple's specification for details regarding behavior in Apple platforms.)
-          // Bits 6–10: These bits are not used in Opentype and should always be cleared. (See Apple's specification for details regarding legacy used in Apple platforms.) 
+          // Bits 6–10: These bits are not used in Opentype and should always be cleared. (See Apple's specification for details regarding legacy used in Apple platforms.)
           // Bit 11: Font data is ‘lossless’ as a results of having been subjected to optimizing transformation and/or compression (such as e.g.compression mechanisms defined by ISO/IEC 14496-18, MicroType Express, WOFF 2.0 or similar) where the original font functionality and features are retained but the binary compatibility between input and output font files is not guaranteed.As a result of the applied transform, the ‘DSIG’ Table may also be invalidated.
           // Bit 12: Font converted (produce compatible metrics)
           // Bit 13: Font optimized for ClearType™. Note, fonts that rely on embedded bitmaps (EBDT) for rendering should not be considered optimized for ClearType, and therefore should keep this bit cleared.
           // Bit 14: Last Resort font.If set, indicates that the glyphs encoded in the cmap subtables are simply generic symbolic representations of code point ranges and don’t truly represent support for those code points.If unset, indicates that the glyphs encoded in the cmap subtables represent proper support for those code points.
-          // Bit 15: Reserved, set to 0 
+          // Bit 15: Reserved, set to 0
             None = 0,
             BaslineY0 = 1 << 0,
             LeftSidebearingPointAtX0 = 1 << 1,
             InstructionDependOnPointSize = 1 << 2,
             ForcePPEMToInt = 1 << 3,
             InstructionAlterAdvancedWidth = 1 << 4,
+
             // 1<<5 not used
             // 1<<6 - 1<<10 not used
             FontDataLossLess = 1 << 11,
@@ -153,9 +162,8 @@ namespace SixLabors.Fonts.Tables.General
             LastResortFont = 1 << 14,
         }
 
-
         [Flags]
-        public enum MacStyle : ushort
+        public enum HeadMacStyle : ushort
         {
             // Bit 0: Bold (if set to 1);
             // Bit 1: Italic(if set to 1)
@@ -173,19 +181,6 @@ namespace SixLabors.Fonts.Tables.General
             Shaddow = 1 << 4,
             Condensed = 1 << 5,
             Extended = 1 << 6,
-        }
-    }
-
-    internal class Point
-    {
-        public short X { get; }
-        public short Y { get; }
-
-
-        public Point(short x, short y)
-        {
-            this.X = x;
-            this.Y = y;
         }
     }
 }

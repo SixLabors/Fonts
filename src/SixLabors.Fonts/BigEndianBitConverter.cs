@@ -208,7 +208,6 @@ namespace SixLabors.Fonts
         /// <exception cref="System.ArgumentOutOfRangeException">
         /// startIndex is less than zero or greater than the length of value minus bytesRequired.
         /// </exception>
-        [SuppressMessage("ReSharper", "UnusedParameter.Local", Justification = "Keeps code DRY")]
         private static void CheckByteArgument(byte[] value, int startIndex, int bytesRequired)
         {
             if (value == null)

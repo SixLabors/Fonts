@@ -15,11 +15,6 @@ namespace SixLabors.Fonts
         private readonly byte[] storageBuffer = new byte[16];
 
         /// <summary>
-        /// Whether or not this reader has been disposed yet.
-        /// </summary>
-        private bool disposed;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="BinaryReader" /> class.
         /// Constructs a new binary reader with the given bit converter, reading
         /// to the given stream, using the given encoding.
@@ -55,7 +50,6 @@ namespace SixLabors.Fonts
         /// <param name="origin">Origin of seek operation.</param>
         public void Seek(int offset, SeekOrigin origin)
         {
-            this.CheckDisposed();
             this.BaseStream.Seek(offset, origin);
         }
 
@@ -134,17 +128,21 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads a 16-bit unsigned integer from the stream, using the bit converter
+        /// Reads array or 16-bit unsigned integers from the stream, using the bit converter
         /// for this reader. 2 bytes are read.
         /// </summary>
-        /// <returns>The 16-bit unsigned integer read</returns>
-        public ushort[] ReadUInt16s(int length)
+        /// <param name="length">The length.</param>
+        /// <returns>
+        /// The 16-bit unsigned integer read
+        /// </returns>
+        public ushort[] ReadUInt16Array(int length)
         {
             var data = new ushort[length];
             for (var i = 0; i < length; i++)
             {
                 data[i] = this.ReadUInt16();
             }
+
             return data;
         }
 
@@ -152,17 +150,20 @@ namespace SixLabors.Fonts
         /// Reads a 16-bit unsigned integer from the stream, using the bit converter
         /// for this reader. 2 bytes are read.
         /// </summary>
-        /// <returns>The 16-bit unsigned integer read</returns>
-        public short[] ReadInt16s(int length)
+        /// <param name="length">The length.</param>
+        /// <returns>
+        /// The 16-bit unsigned integer read
+        /// </returns>
+        public short[] ReadInt16Array(int length)
         {
             var data = new short[length];
             for (var i = 0; i < length; i++)
             {
                 data[i] = this.ReadInt16();
             }
+
             return data;
         }
-
 
         /// <summary>
         /// Reads a 8-bit unsigned integer from the stream, using the bit converter
@@ -247,8 +248,6 @@ namespace SixLabors.Fonts
         /// </returns>
         public int Read(byte[] buffer, int index, int count)
         {
-            this.CheckDisposed();
-
             int read = 0;
             while (count > 0)
             {
@@ -275,8 +274,6 @@ namespace SixLabors.Fonts
         /// <returns>The bytes read</returns>
         public byte[] ReadBytes(int count)
         {
-            this.CheckDisposed();
-
             byte[] ret = new byte[count];
             int index = 0;
             while (index < count)
@@ -320,8 +317,6 @@ namespace SixLabors.Fonts
         /// <returns>The 7-bit encoded integer read from the stream.</returns>
         public int Read7BitEncodedInt()
         {
-            this.CheckDisposed();
-
             int ret = 0;
             for (int shift = 0; shift < 35; shift += 7)
             {
@@ -359,20 +354,13 @@ namespace SixLabors.Fonts
             return encoding.GetString(data, 0, data.Length);
         }
 
+        /// <summary>
+        /// Reads the uint32 string.
+        /// </summary>
+        /// <returns>a 4 character long UTF8 encoded string</returns>
         public string ReadUint32String()
         {
             return this.ReadString(4, Encoding.UTF8);
-        }
-
-        /// <summary>
-        /// Checks whether or not the reader has been disposed, throwing an exception if so.
-        /// </summary>
-        private void CheckDisposed()
-        {
-            if (this.disposed)
-            {
-                throw new ObjectDisposedException("EndianBinaryReader");
-            }
         }
 
         /// <summary>
@@ -383,7 +371,6 @@ namespace SixLabors.Fonts
         /// <param name="size">Number of bytes to read</param>
         private void ReadInternal(byte[] data, int size)
         {
-            this.CheckDisposed();
             int index = 0;
             while (index < size)
             {
@@ -407,7 +394,6 @@ namespace SixLabors.Fonts
         /// <returns>Number of bytes actually read</returns>
         private int TryReadInternal(byte[] data, int size)
         {
-            this.CheckDisposed();
             int index = 0;
             while (index < size)
             {

@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.WellKnownIds
         /// <summary>
         /// [deprecated] ISO encoding
         /// </summary>
-        ISO = 2, 
+        ISO = 2,
 
         /// <summary>
         /// Window encoding

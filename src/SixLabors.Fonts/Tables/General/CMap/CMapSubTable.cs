@@ -14,8 +14,9 @@ namespace SixLabors.Fonts.Tables.General.CMap
             this.Encoding = encoding;
         }
 
-        public PlatformIDs Platform { get; private set; }
-        public ushort Encoding { get; private set; }
+        public PlatformIDs Platform { get; }
+
+        public ushort Encoding { get; }
 
         public abstract ushort GetGlyphId(char character);
     }

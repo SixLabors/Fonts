@@ -9,13 +9,13 @@ namespace SixLabors.Fonts.Tables.General.CMap
 {
     internal class Format0SubTable : CMapSubTable
     {
-        internal readonly byte[] glyphIds;
+        internal byte[] GlyphIds { get; }
 
         public Format0SubTable(ushort language, PlatformIDs platform, ushort encoding, byte[] glyphIds)
             : base(platform, encoding)
         {
             this.Language = language;
-            this.glyphIds = glyphIds;
+            this.GlyphIds = glyphIds;
         }
 
         public ushort Language { get; }
@@ -23,11 +23,12 @@ namespace SixLabors.Fonts.Tables.General.CMap
         public override ushort GetGlyphId(char character)
         {
             uint b = character;
-            if(b >= glyphIds.Length)
+            if (b >= this.GlyphIds.Length)
             {
                 return 0;
             }
-            return glyphIds[b];
+
+            return this.GlyphIds[b];
         }
 
         public static Format0SubTable Load(EncodingRecord encoding, BinaryReader reader)
