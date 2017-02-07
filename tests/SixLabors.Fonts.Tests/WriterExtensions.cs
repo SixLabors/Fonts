@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.WellKnownIds;
 
@@ -22,10 +23,10 @@ namespace SixLabors.Fonts.Tests
             // uint32      | checkSum | CheckSum for this table.
             // Offset32    | offset   | Offset from beginning of TrueType font file.
             // uint32      | length   | Length of this table.
-            writer.WriteUint32(tag);
-            writer.WriteUint32(checksum);
+            writer.WriteUInt32(tag);
+            writer.WriteUInt32(checksum);
             writer.WriteOffset32(offset);
-            writer.WriteUint32(length);
+            writer.WriteUInt32(length);
         }
 
         public static void WriteTrueTypeFileHeader(this BinaryWriter writer, ushort tableCount, ushort searchRange, ushort entrySelector, ushort rangeShift)
@@ -56,11 +57,11 @@ namespace SixLabors.Fonts.Tests
             // uint16    | searchRange   | (Maximum power of 2 <= numTables) x 16.
             // uint16    | entrySelector | Log2(maximum power of 2 <= numTables).
             // uint16    | rangeShift    | NumTables x 16 - searchRange.
-            writer.WriteUint32(version);
-            writer.WriteUint16((ushort)headers.Length);
-            writer.WriteUint16(0);
-            writer.WriteUint16(0);
-            writer.WriteUint16(0);
+            writer.WriteUInt32(version);
+            writer.WriteUInt16((ushort)headers.Length);
+            writer.WriteUInt16(0);
+            writer.WriteUInt16(0);
+            writer.WriteUInt16(0);
             int offset = 12;
             offset += headers.Length * 16;
             foreach (var h in headers)
@@ -80,11 +81,11 @@ namespace SixLabors.Fonts.Tests
             // uint16    | searchRange   | (Maximum power of 2 <= numTables) x 16.
             // uint16    | entrySelector | Log2(maximum power of 2 <= numTables).
             // uint16    | rangeShift    | NumTables x 16 - searchRange.
-            writer.WriteUint32(version);
-            writer.WriteUint16(tableCount);
-            writer.WriteUint16(searchRange);
-            writer.WriteUint16(entrySelector);
-            writer.WriteUint16(rangeShift);
+            writer.WriteUInt32(version);
+            writer.WriteUInt16(tableCount);
+            writer.WriteUInt16(searchRange);
+            writer.WriteUInt16(entrySelector);
+            writer.WriteUInt16(rangeShift);
         }
 
         public static void WriteNameTable(this BinaryWriter writer, Dictionary<NameIds, string> names, List<string> languages = null)
@@ -98,8 +99,8 @@ namespace SixLabors.Fonts.Tests
             // additionally if format = 1
             // uint16        | langTagCount                | Number of language-tag records.
             // LangTagRecord | langTagRecord[langTagCount] | The language-tag records where langTagCount is the number of records.
-            writer.WriteUint16((ushort)(languages == null ? 0 : 1));
-            writer.WriteUint16((ushort)names.Count);
+            writer.WriteUInt16((ushort)(languages == null ? 0 : 1));
+            writer.WriteUInt16((ushort)names.Count);
 
             int sizeOfHeader = 6;
             if (languages != null)
@@ -129,13 +130,13 @@ namespace SixLabors.Fonts.Tests
             List<int> offsets = new List<int>();
             foreach (var n in names)
             {
-                writer.WriteUint16(0); // hard code platform
-                writer.WriteUint16((ushort)EncodingIDs.Unicode2); // hard code encoding
-                writer.WriteUint16(0); // hard code language
-                writer.WriteUint16((ushort)n.Key);
+                writer.WriteUInt16(0); // hard code platform
+                writer.WriteUInt16((ushort)EncodingIDs.Unicode2); // hard code encoding
+                writer.WriteUInt16(0); // hard code language
+                writer.WriteUInt16((ushort)n.Key);
 
                 var length = Encoding.BigEndianUnicode.GetBytes(n.Value).Length;
-                writer.WriteUint16((ushort)length);
+                writer.WriteUInt16((ushort)length);
                 writer.WriteOffset16((ushort)stringOffset);
                 offsets.Add(stringOffset);
                 stringOffset += length;
@@ -143,7 +144,7 @@ namespace SixLabors.Fonts.Tests
 
             if (languages != null)
             {
-                writer.WriteUint16((ushort)languages.Count);
+                writer.WriteUInt16((ushort)languages.Count);
 
                 // language record
                 // uint16   | length     | String length (in bytes).
@@ -151,7 +152,7 @@ namespace SixLabors.Fonts.Tests
                 foreach (var n in languages)
                 {
                     var length = Encoding.BigEndianUnicode.GetBytes(n).Length;
-                    writer.WriteUint16((ushort)length);
+                    writer.WriteUInt16((ushort)length);
                     writer.WriteOffset16((ushort)stringOffset);
                     offsets.Add(stringOffset);
                     stringOffset += length;
@@ -186,8 +187,8 @@ namespace SixLabors.Fonts.Tests
             // uint16         | version                    |Table version number(0).
             // uint16         | numTables                  |Number of encoding tables that follow.
             // EncodingRecord | encodingRecords[numTables] |
-            writer.WriteUint16(0);
-            writer.WriteUint16((ushort)subtables.Count());
+            writer.WriteUInt16(0);
+            writer.WriteUInt16((ushort)subtables.Count());
 
             int offset = 4; // for for the cmap header
             offset += 8 * subtables.Count(); // 8 bytes per encoding header
@@ -199,9 +200,9 @@ namespace SixLabors.Fonts.Tests
                 // uint16   | platformID | Platform ID.
                 // uint16   | encodingID | Platform - specific encoding ID.
                 // Offset32 | offset     | Byte offset from beginning of table to the subtable for this encoding.
-                writer.WriteUint16((ushort)table.Platform);
-                writer.WriteUint16(table.Encoding);
-                writer.WriteUint32((uint)offset);
+                writer.WriteUInt16((ushort)table.Platform);
+                writer.WriteUInt16(table.Encoding);
+                writer.WriteUInt32((uint)offset);
 
                 offset += table.DataLength();
 
@@ -234,13 +235,13 @@ namespace SixLabors.Fonts.Tests
             // uint16   |length            | This is the length in bytes of the subtable.
             // uint16   |language          | Please see “Note on the language field in 'cmap' subtables“ in this document.
             // uint8    |glyphIdArray[glyphcount] | An array that maps character codes to glyph index values.
-            writer.WriteUint16(0);
-            writer.WriteUint16((ushort)subtable.DataLength());
-            writer.WriteUint16(subtable.Language);
+            writer.WriteUInt16(0);
+            writer.WriteUInt16((ushort)subtable.DataLength());
+            writer.WriteUInt16(subtable.Language);
 
             foreach (var c in subtable.glyphIds)
             {
-                writer.WriteUint8(c);
+                writer.WriteUInt8(c);
             }
         }
 
@@ -267,26 +268,26 @@ namespace SixLabors.Fonts.Tests
             // int16  | idDelta[segCount]           | Delta for all character codes in segment.
             // uint16 | idRangeOffset[segCount]    | Offsets into glyphIdArray or 0
             // uint16 | glyphIdArray[ ]            | Glyph index array (arbitrary length)
-            writer.WriteUint16(4);
-            writer.WriteUint16((ushort)subtable.DataLength());
-            writer.WriteUint16(subtable.Language);
+            writer.WriteUInt16(4);
+            writer.WriteUInt16((ushort)subtable.DataLength());
+            writer.WriteUInt16(subtable.Language);
             var segCount = subtable.segments.Length;
-            writer.WriteUint16((ushort)(subtable.segments.Length * 2));
+            writer.WriteUInt16((ushort)(subtable.segments.Length * 2));
             var searchRange = Math.Pow(2, Math.Floor(Math.Log(segCount, 2)));
-            writer.WriteUint16((ushort)searchRange);
+            writer.WriteUInt16((ushort)searchRange);
             var entrySelector = Math.Log(searchRange / 2, 2);
-            writer.WriteUint16((ushort)entrySelector);
+            writer.WriteUInt16((ushort)entrySelector);
             var rangeShift = (2 * segCount) - searchRange;
-            writer.WriteUint16((ushort)rangeShift);
+            writer.WriteUInt16((ushort)rangeShift);
             foreach (var seg in subtable.segments)
             {
-                writer.WriteUint16(seg.End);
+                writer.WriteUInt16(seg.End);
             }
 
-            writer.WriteUint16(0);
+            writer.WriteUInt16(0);
             foreach (var seg in subtable.segments)
             {
-                writer.WriteUint16(seg.Start);
+                writer.WriteUInt16(seg.Start);
             }
 
             foreach (var seg in subtable.segments)
@@ -296,12 +297,12 @@ namespace SixLabors.Fonts.Tests
 
             foreach (var seg in subtable.segments)
             {
-                writer.WriteUint16(seg.Offset);
+                writer.WriteUInt16(seg.Offset);
             }
 
             foreach (var c in subtable.glyphIds)
             {
-                writer.WriteUint16(c);
+                writer.WriteUInt16(c);
             }
         }
 
@@ -320,6 +321,77 @@ namespace SixLabors.Fonts.Tests
             }
 
             return 0;
+        }
+
+        public static void WriteHeadTable(this BinaryWriter writer, HeadTable table)
+        {
+
+
+            // Type         | Name               | Description
+            // -------------|--------------------|----------------------------------------------------------------------------------------------------
+            // uint16       | majorVersion       | Major version number of the font header table — set to 1.
+            // uint16       | minorVersion       | Minor version number of the font header table — set to 0.
+            // Fixed        | fontRevision       | Set by font manufacturer.
+            // uint32       | checkSumAdjustment | To compute: set it to 0, sum the entire font as uint32, then store 0xB1B0AFBA - sum.If the font is used as a component in a font collection file, the value of this field will be invalidated by changes to the file structure and font table directory, and must be ignored.
+            // uint32       | magicNumber        | Set to 0x5F0F3CF5.
+            // uint16       | flags              |    Bit 0: Baseline for font at y = 0;
+            //                                            Bit 1: Left sidebearing point at x = 0(relevant only for TrueType rasterizers) — see the note below regarding variable fonts;
+            //                                            Bit 2: Instructions may depend on point size;
+            //                                            Bit 3: Force ppem to integer values for all internal scaler math; may use fractional ppem sizes if this bit is clear; 
+            //                                            Bit 4: Instructions may alter advance width(the advance widths might not scale linearly);
+            //                                            Bit 5: This bit is not used in OpenType, and should not be set in order to ensure compatible behavior on all platforms.If set, it may result in different behavior for vertical layout in some platforms. (See Apple's specification for details regarding behavior in Apple platforms.)
+            //                                            Bits 6–10: These bits are not used in Opentype and should always be cleared. (See Apple's specification for details regarding legacy used in Apple platforms.) 
+            //                                            Bit 11: Font data is ‘lossless’ as a results of having been subjected to optimizing transformation and/or compression (such as e.g.compression mechanisms defined by ISO/IEC 14496-18, MicroType Express, WOFF 2.0 or similar) where the original font functionality and features are retained but the binary compatibility between input and output font files is not guaranteed.As a result of the applied transform, the ‘DSIG’ Table may also be invalidated.
+            //                                            Bit 12: Font converted (produce compatible metrics)
+            //                                            Bit 13: Font optimized for ClearType™. Note, fonts that rely on embedded bitmaps (EBDT) for rendering should not be considered optimized for ClearType, and therefore should keep this bit cleared.
+            //                                            Bit 14: Last Resort font.If set, indicates that the glyphs encoded in the cmap subtables are simply generic symbolic representations of code point ranges and don’t truly represent support for those code points.If unset, indicates that the glyphs encoded in the cmap subtables represent proper support for those code points.
+            //                                            Bit 15: Reserved, set to 0 
+            // uint16       | unitsPerEm         | Valid range is from 16 to 16384. This value should be a power of 2 for fonts that have TrueType outlines.
+            // LONGDATETIME | created            | Number of seconds since 12:00 midnight that started January 1st 1904 in GMT/UTC time zone. 64-bit integer
+            // LONGDATETIME | modified           | Number of seconds since 12:00 midnight that started January 1st 1904 in GMT/UTC time zone. 64-bit integer
+            // int16        | xMin               | For all glyph bounding boxes.
+            // int16        | yMin               | For all glyph bounding boxes.
+            // int16        | xMax               | For all glyph bounding boxes.
+            // int16        | yMax               | For all glyph bounding boxes.
+            // uint16       | macStyle           |   Bit 0: Bold (if set to 1);
+            //                                       Bit 1: Italic(if set to 1)
+            //                                       Bit 2: Underline(if set to 1)
+            //                                       Bit 3: Outline(if set to 1)
+            //                                       Bit 4: Shadow(if set to 1)
+            //                                       Bit 5: Condensed(if set to 1)
+            //                                       Bit 6: Extended(if set to 1)
+            //                                       Bits 7–15: Reserved(set to 0).
+            // uint16       |lowestRecPPEM       |  Smallest readable size in pixels.
+            // int16        | fontDirectionHint  |  Deprecated(Set to 2). 
+            //                                          0: Fully mixed directional glyphs; 
+            //                                          1: Only strongly left to right; 
+            //                                          2: Like 1 but also contains neutrals; 
+            //                                          -1: Only strongly right to left; 
+            //                                          -2: Like -1 but also contains neutrals. 1
+            // int16        | indexToLocFormat   | 0 for short offsets (Offset16), 1 for long (Offset32).
+            // int16        | glyphDataFormat    | 0 for current format.
+
+            writer.WriteUInt16(1);
+            writer.WriteUInt16(0);
+            writer.WriteUInt32(0);
+            writer.WriteUInt32(0);
+            writer.WriteUInt32(0x5F0F3CF5);
+
+            writer.WriteUInt16((ushort)table.flags);
+            writer.WriteUInt16(table.unitsPerEm);
+
+            var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
+            writer.WriteInt64((long)table.created.Subtract(startDate).TotalSeconds);
+            writer.WriteInt64((long)table.modified.Subtract(startDate).TotalSeconds);
+            writer.WriteInt16(table.min.X);
+            writer.WriteInt16(table.min.Y);
+            writer.WriteInt16(table.max.X);
+            writer.WriteInt16(table.max.Y);
+            writer.WriteUInt16((ushort)table.macStyle);
+            writer.WriteUInt16(table.lowestRecPPEM);
+            writer.WriteInt16(2);
+            writer.WriteInt16(table.indexToLocFormat);
+            writer.WriteInt16(0);
         }
     }
 }

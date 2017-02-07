@@ -156,21 +156,33 @@ namespace SixLabors.Fonts.Tests
             this.WriteInternal(this.buffer, 8);
         }
 
-        public void WriteUint32(uint value)
+        public void WriteUInt32(uint value)
         {
             this.BitConverter.CopyBytes(value, this.buffer, 0);
             this.WriteInternal(this.buffer, 4);
         }
 
+        public void WriteUInt64(ulong value)
+        {
+            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            this.WriteInternal(this.buffer, 8);
+        }
+
+        public void WriteInt64(long value)
+        {
+            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            this.WriteInternal(this.buffer, 8);
+        }
+
         public void WriteOffset32(uint? value)
         {
-            this.WriteUint32(value ?? 0);
+            this.WriteUInt32(value ?? 0);
         }
 
 
         public void WriteOffset16(ushort? value)
         {
-            this.WriteUint16(value ?? 0);
+            this.WriteUInt16(value ?? 0);
         }
 
         /// <summary>
@@ -300,7 +312,7 @@ namespace SixLabors.Fonts.Tests
             this.WriteInternal(data, data.Length);
         }
 
-        public void WriteUint32(string text)
+        public void WriteUInt32(string text)
         {
             if (text.Length != 4)
             {
@@ -391,7 +403,7 @@ namespace SixLabors.Fonts.Tests
             this.BaseStream.Write(bytes, 0, length);
         }
 
-        public void WriteUint16(ushort value)
+        public void WriteUInt16(ushort value)
         {
             this.BitConverter.CopyBytes(value, this.buffer, 0);
             this.WriteInternal(this.buffer, 2);
@@ -401,7 +413,7 @@ namespace SixLabors.Fonts.Tests
             this.BitConverter.CopyBytes(value, this.buffer, 0);
             this.WriteInternal(this.buffer, 2);
         }
-        public void WriteUint8(byte value)
+        public void WriteUInt8(byte value)
         {
             this.buffer[0] = value;
             this.WriteInternal(this.buffer, 1);

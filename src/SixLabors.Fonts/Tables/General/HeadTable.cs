@@ -14,25 +14,25 @@ namespace SixLabors.Fonts.Tables.General
     [TableName("head")]
     internal class HeadTable : Table
     {
-        private DateTime created;
-        private Flags flags;
-        private short indexToLocFormat;
-        private ushort lowestRecPPEM;
-        private MacStyle macStyle;
-        private DateTime modified;
-        private Point point1;
-        private Point point2;
-        private ushort unitsPerEm;
+        internal DateTime created;
+        internal Flags flags;
+        internal short indexToLocFormat;
+        internal ushort lowestRecPPEM;
+        internal MacStyle macStyle;
+        internal DateTime modified;
+        internal Point min;
+        internal Point max;
+        internal ushort unitsPerEm;
 
-        public HeadTable(Flags flags, MacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Point point1, Point point2, ushort lowestRecPPEM, short indexToLocFormat)
+        public HeadTable(Flags flags, MacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Point min, Point max, ushort lowestRecPPEM, short indexToLocFormat)
         {
             this.flags = flags;
             this.macStyle = macStyle;
             this.unitsPerEm = unitsPerEm;
             this.created = created;
             this.modified = modified;
-            this.point1 = point1;
-            this.point2 = point2;
+            this.min = min;
+            this.max = max;
             this.lowestRecPPEM = lowestRecPPEM;
             this.indexToLocFormat = indexToLocFormat;
         }
@@ -139,6 +139,7 @@ namespace SixLabors.Fonts.Tables.General
           // Bit 13: Font optimized for ClearType™. Note, fonts that rely on embedded bitmaps (EBDT) for rendering should not be considered optimized for ClearType, and therefore should keep this bit cleared.
           // Bit 14: Last Resort font.If set, indicates that the glyphs encoded in the cmap subtables are simply generic symbolic representations of code point ranges and don’t truly represent support for those code points.If unset, indicates that the glyphs encoded in the cmap subtables represent proper support for those code points.
           // Bit 15: Reserved, set to 0 
+            None = 0,
             BaslineY0 = 1 << 0,
             LeftSidebearingPointAtX0 = 1 << 1,
             InstructionDependOnPointSize = 1 << 2,
@@ -164,6 +165,7 @@ namespace SixLabors.Fonts.Tables.General
             // Bit 5: Condensed(if set to 1)
             // Bit 6: Extended(if set to 1)
             // Bits 7–15: Reserved(set to 0).
+            None = 0,
             Bold = 1 << 0,
             Italic = 1 << 1,
             Underline = 1 << 2,
@@ -176,13 +178,14 @@ namespace SixLabors.Fonts.Tables.General
 
     internal class Point
     {
-        private short xMin;
-        private short yMin;
+        public short X { get; }
+        public short Y { get; }
 
-        public Point(short xMin, short yMin)
+
+        public Point(short x, short y)
         {
-            this.xMin = xMin;
-            this.yMin = yMin;
+            this.X = x;
+            this.Y = y;
         }
     }
 }
