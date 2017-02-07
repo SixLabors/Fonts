@@ -7,9 +7,11 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General
 {
-    [TableName("cmap")]
+    [TableName(TableName)]
     internal class CMapTable : Table
     {
+        const string TableName = "cmap";
+
         internal CMapSubTable[] Tables { get; }
 
         public CMapTable(CMapSubTable[] tables)
@@ -34,6 +36,12 @@ namespace SixLabors.Fonts.Tables.General
             }
 
             return 0;
+        }
+
+
+        public static CMapTable Load(FontReader reader)
+        {   
+            return Load(reader.GetReaderAtTablePosition(TableName));
         }
 
         public static CMapTable Load(BinaryReader reader)
@@ -63,6 +71,9 @@ namespace SixLabors.Fonts.Tables.General
                 {
                     case 0:
                         tables[i] = SixLabors.Fonts.Tables.General.CMap.Format0SubTable.Load(encoding, reader);
+                        break;
+                    case 4:
+                        tables[i] = SixLabors.Fonts.Tables.General.CMap.Format4SubTable.Load(encoding, reader);
                         break;
                 }
             }

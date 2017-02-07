@@ -43,7 +43,7 @@ namespace SixLabors.Fonts
         public static FontDescription Load(Stream stream)
         {
             // only read the name table
-            var reader = new FontReader(stream, typeof(NameTable));
+            var reader = new FontReader(stream);
 
             var nameTable = reader.GetTable<NameTable>();
 

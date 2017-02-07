@@ -9,13 +9,13 @@ namespace SixLabors.Fonts.Tests
 
     public class FontLoaderTests
     {
-        //[Fact]
-        //public void LoadFontMetadata()
-        //{
-        //    FontDescription description = FontDescription.Load(TestFonts.SimpleFontFileData());
+        [Fact]
+        public void LoadFontMetadata()
+        {
+            FontDescription description = FontDescription.Load(TestFonts.SimpleFontFileData());
 
-        //    Assert.Equal("SixLaborsSamplesAB", description.FontName);
-        //    Assert.Equal("AB", description.FontSubFamilyName);
-        //}
+            Assert.Equal("SixLaborsSamplesAB", description.FontName);
+            Assert.Equal("AB", description.FontSubFamilyName);
+        }
     }
 }

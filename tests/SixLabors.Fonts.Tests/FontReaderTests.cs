@@ -37,19 +37,16 @@ namespace SixLabors.Fonts.Tests
         {
             var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader(2, 0, 0, 0);
-            writer.WriteTableHeader("TAG1", 0, 10, 0);
-            writer.WriteTableHeader("TAG2", 0, 1, 0);
+            writer.WriteTableHeader("name", 0, 10, 0);
+            writer.WriteTableHeader("cmap", 0, 1, 0);
 
             var reader = new FontReader(writer.GetStream());
 
-            Assert.Equal(2, reader.Tables.Length);
-            var names = reader.Tables.OfType<UnknownTable>().Select(x => x.Name);
-            Assert.Contains("TAG1", names);
-            Assert.Contains("TAG2", names);
+            Assert.Equal(2, reader.Headers.Count);
         }
 
         [Fact]
-        public void ReadTableHeadersSkipTables()
+        public void ReadTableHeadersSkipUnknownTables()
         {
             var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader(2, 0, 0, 0);
@@ -57,10 +54,10 @@ namespace SixLabors.Fonts.Tests
             writer.WriteTableHeader("TAG2", 0, 1, 0);
 
 
-            var reader = new FontReader(writer.GetStream(), new[] { typeof(NameTable) });
+            var reader = new FontReader(writer.GetStream());
 
             // found not matching types
-            Assert.Equal(0, reader.Tables.Length);
+            Assert.Equal(0, reader.Headers.Count);
         }
 
 
@@ -78,9 +75,6 @@ namespace SixLabors.Fonts.Tests
             var reader = new FontReader(writer.GetStream());
             var cmap = reader.GetTable<CMapTable>();
             Assert.NotNull(cmap);
-
-            // found not matching types
-            Assert.Equal(1, reader.Tables.Length);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,12 +12,18 @@ namespace SixLabors.Fonts
 {
     internal class FontReader
     {
-        internal FontReader(Stream stream, Type[] tableTypes, TableLoader loader)
-        {
-            BinaryReader reader;
-            var startOfFilePosition = stream.Position;
+        public IReadOnlyDictionary<string, TableHeader> Headers { get; }
+        Dictionary<Type, Table> loadedTables = new Dictionary<Type, Table>();
+        private readonly TableLoader loader;
 
-            reader = new BinaryReader(stream);
+        private readonly BinaryReader reader;
+
+        internal FontReader(Stream stream, TableLoader loader)
+        {
+            this.loader = loader;
+            var startOfFilePosition = stream.Position;
+            
+            this.reader = new BinaryReader(stream);
 
             // we should immediately read the table header to learn which tables we have and what order they are in
             uint version = reader.ReadUInt32();
@@ -26,62 +33,65 @@ namespace SixLabors.Fonts
             ushort entrySelector = reader.ReadUInt16();
             ushort rangeShift = reader.ReadUInt16();
 
-            TableHeader[] headers = new TableHeader[tableCount];
+            var allknowntables = loader.RegisterdTags().ToArray();
+
+            Dictionary<string, TableHeader> headers = new Dictionary<string, Tables.TableHeader>(tableCount);
             for (int i = 0; i < tableCount; i++)
             {
-                headers[i] = TableHeader.Read(reader);
-            }
-
-            var tablesToLoad = tableTypes?.Select(loader.GetTag).Where(x => x != null).ToArray();
-
-            var tableCountToLoad = tablesToLoad?.Length ?? tableCount;
-
-            List<Table> tables = new List<Table>(tableCountToLoad);
-
-            foreach (var header in headers.OrderBy(x => x.Offset))
-            {
-                if (tablesToLoad == null || tablesToLoad.Contains(header.Tag))
+                var tbl = TableHeader.Read(reader);
+                if (allknowntables.Contains(tbl.Tag))
                 {
-                    var startOfString = header.Offset + startOfFilePosition;
-                    var diff = startOfString - reader.BaseStream.Position;
-
-                    // only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
-                    reader.BaseStream.Seek(diff, SeekOrigin.Current);
-
-                    Table t = loader.Load(header.Tag, reader);
-                    tables.Add(t);
+                    headers.Add(tbl.Tag, tbl);
                 }
             }
 
-            this.Tables = ImmutableArray.Create(tables.ToArray());
+            this.Headers = new ReadOnlyDictionary<string, TableHeader>(headers);
         }
 
         public OutlineTypes OutlineType { get; }
 
-        public ImmutableArray<Table> Tables { get; }
-
         public FontReader(Stream stream)
-            : this(stream, null)
+            : this(stream, TableLoader.Default)
         {
         }
 
-        public FontReader(Stream stream, params Type[] tableToLoad)
-            : this(stream, tableToLoad, TableLoader.Default)
-        {
-        }
-
-        public TTableType GetTable<TTableType>()
+        public virtual TTableType GetTable<TTableType>()
             where TTableType : Table
         {
-            foreach (var table in this.Tables)
+            if (!loadedTables.ContainsKey(typeof(TTableType)))
             {
-                if (table is TTableType)
-                {
-                    return (TTableType)table;
-                }
+                loadedTables.Add(typeof(TTableType), loader.Load<TTableType>(this));
+            }
+
+            return (TTableType)loadedTables[typeof(TTableType)];
+        }
+
+        public virtual TableHeader GetHeader(string tag)
+        {
+            if (Headers.ContainsKey(tag))
+            {
+                return Headers[tag];
             }
 
             return null;
+        }
+
+        public virtual BinaryReader GetReader()
+        {
+            return reader;
+        }
+
+        public virtual BinaryReader GetReaderAtTablePosition(string tableName)
+        {
+            var header = GetHeader(tableName);
+            reader.Seek(header);
+            return reader;
+        }
+
+        public virtual BinaryReader GetReaderAtTablePosition(TableHeader header)
+        {
+            reader.Seek(header);
+            return reader;
         }
 
         public enum OutlineTypes : uint

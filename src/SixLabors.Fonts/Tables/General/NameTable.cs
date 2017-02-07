@@ -8,10 +8,17 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General
 {
-    [TableName("name")]
+    [TableName(TableName)]
     internal class NameTable : Table
     {
+        const string TableName = "name";
         private NameRecord[] names;
+
+        public static NameTable Load(FontReader reader)
+        {
+            //move to start of table
+            return Load(reader.GetReaderAtTablePosition(TableName));
+        }
 
         public static NameTable Load(BinaryReader reader)
         {

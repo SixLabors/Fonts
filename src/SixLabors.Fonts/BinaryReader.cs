@@ -54,6 +54,15 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Seeks within the stream.
+        /// </summary>
+        /// <param name="header">The header.</param>
+        public void Seek(Tables.TableHeader header)
+        {            
+            this.BaseStream.Seek(header.Offset, SeekOrigin.Begin);
+        }
+
+        /// <summary>
         /// Reads a single byte from the stream.
         /// </summary>
         /// <returns>The byte read</returns>
@@ -110,10 +119,11 @@ namespace SixLabors.Fonts
         /// for this reader. 4 bytes are read.
         /// </summary>
         /// <returns>The 32-bit integer read</returns>
-        public int ReadInt32()
+        public float ReadFixed()
         {
             this.ReadInternal(this.storageBuffer, 4);
-            return this.BitConverter.ToInt32(this.storageBuffer, 0);
+            var int32 = this.BitConverter.ToInt32(this.storageBuffer, 0);
+            return this.BitConverter.Int32BitsToSingle(int32);
         }
 
         /// <summary>
@@ -152,6 +162,18 @@ namespace SixLabors.Fonts
             for (var i = 0; i < length; i++)
             {
                 data[i] = this.ReadUInt16();
+            }
+
+            return data;
+        }
+
+
+        public byte[] ReadUInt8Array(int length)
+        {
+            var data = new byte[length];
+            for (var i = 0; i < length; i++)
+            {
+                data[i] = this.ReadUInt8();
             }
 
             return data;
@@ -369,7 +391,7 @@ namespace SixLabors.Fonts
         /// Reads the uint32 string.
         /// </summary>
         /// <returns>a 4 character long UTF8 encoded string</returns>
-        public string ReadUint32String()
+        public string ReadTag()
         {
             return this.ReadString(4, Encoding.UTF8);
         }

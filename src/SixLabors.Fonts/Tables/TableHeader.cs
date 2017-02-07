@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables
         public static TableHeader Read(BinaryReader reader)
         {
             return new TableHeader(
-                reader.ReadUint32String(),
+                reader.ReadTag(),
                 reader.ReadUInt32(),
                 reader.ReadOffset32(),
                 reader.ReadUInt32());

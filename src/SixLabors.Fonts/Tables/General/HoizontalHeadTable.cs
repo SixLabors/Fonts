@@ -11,9 +11,11 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General
 {
-    [TableName("hhea")]
+    [TableName(TableName)]
     internal class HoizontalHeadTable : Table
     {
+        const string TableName = "hhea";
+
         internal ushort AdvanceWidthMax { get; }
 
         internal short Ascender { get; }
@@ -49,6 +51,11 @@ namespace SixLabors.Fonts.Tables.General
             this.CaretSlopeRun = caretSlopeRun;
             this.CaretOffset = caretOffset;
             this.NumberOfHMetrics = numberOfHMetrics;
+        }
+
+        public static HoizontalHeadTable Load(FontReader reader)
+        {
+            return Load(reader.GetReaderAtTablePosition(TableName));
         }
 
         public static HoizontalHeadTable Load(BinaryReader reader)

@@ -11,9 +11,10 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General
 {
-    [TableName("head")]
+    [TableName(TableName)]
     internal class HeadTable : Table
     {
+        const string TableName = "head";
         internal DateTime Created { get; }
 
         internal HeadFlags Flags { get; }
@@ -43,6 +44,13 @@ namespace SixLabors.Fonts.Tables.General
             this.Max = max;
             this.LowestRecPPEM = lowestRecPPEM;
             this.IndexToLocFormat = indexToLocFormat;
+        }
+
+
+        public static HeadTable Load(FontReader reader)
+        {
+            //move to start of table
+            return Load(reader.GetReaderAtTablePosition(TableName));
         }
 
         public static HeadTable Load(BinaryReader reader)
@@ -135,18 +143,18 @@ namespace SixLabors.Fonts.Tables.General
         [Flags]
         public enum HeadFlags : ushort
         {
-          // Bit 0: Baseline for font at y = 0;
-          // Bit 1: Left sidebearing point at x = 0(relevant only for TrueType rasterizers) — see the note below regarding variable fonts;
-          // Bit 2: Instructions may depend on point size;
-          // Bit 3: Force ppem to integer values for all internal scaler math; may use fractional ppem sizes if this bit is clear;
-          // Bit 4: Instructions may alter advance width(the advance widths might not scale linearly);
-          // Bit 5: This bit is not used in OpenType, and should not be set in order to ensure compatible behavior on all platforms.If set, it may result in different behavior for vertical layout in some platforms. (See Apple's specification for details regarding behavior in Apple platforms.)
-          // Bits 6–10: These bits are not used in Opentype and should always be cleared. (See Apple's specification for details regarding legacy used in Apple platforms.)
-          // Bit 11: Font data is ‘lossless’ as a results of having been subjected to optimizing transformation and/or compression (such as e.g.compression mechanisms defined by ISO/IEC 14496-18, MicroType Express, WOFF 2.0 or similar) where the original font functionality and features are retained but the binary compatibility between input and output font files is not guaranteed.As a result of the applied transform, the ‘DSIG’ Table may also be invalidated.
-          // Bit 12: Font converted (produce compatible metrics)
-          // Bit 13: Font optimized for ClearType™. Note, fonts that rely on embedded bitmaps (EBDT) for rendering should not be considered optimized for ClearType, and therefore should keep this bit cleared.
-          // Bit 14: Last Resort font.If set, indicates that the glyphs encoded in the cmap subtables are simply generic symbolic representations of code point ranges and don’t truly represent support for those code points.If unset, indicates that the glyphs encoded in the cmap subtables represent proper support for those code points.
-          // Bit 15: Reserved, set to 0
+            // Bit 0: Baseline for font at y = 0;
+            // Bit 1: Left sidebearing point at x = 0(relevant only for TrueType rasterizers) — see the note below regarding variable fonts;
+            // Bit 2: Instructions may depend on point size;
+            // Bit 3: Force ppem to integer values for all internal scaler math; may use fractional ppem sizes if this bit is clear;
+            // Bit 4: Instructions may alter advance width(the advance widths might not scale linearly);
+            // Bit 5: This bit is not used in OpenType, and should not be set in order to ensure compatible behavior on all platforms.If set, it may result in different behavior for vertical layout in some platforms. (See Apple's specification for details regarding behavior in Apple platforms.)
+            // Bits 6–10: These bits are not used in Opentype and should always be cleared. (See Apple's specification for details regarding legacy used in Apple platforms.)
+            // Bit 11: Font data is ‘lossless’ as a results of having been subjected to optimizing transformation and/or compression (such as e.g.compression mechanisms defined by ISO/IEC 14496-18, MicroType Express, WOFF 2.0 or similar) where the original font functionality and features are retained but the binary compatibility between input and output font files is not guaranteed.As a result of the applied transform, the ‘DSIG’ Table may also be invalidated.
+            // Bit 12: Font converted (produce compatible metrics)
+            // Bit 13: Font optimized for ClearType™. Note, fonts that rely on embedded bitmaps (EBDT) for rendering should not be considered optimized for ClearType, and therefore should keep this bit cleared.
+            // Bit 14: Last Resort font.If set, indicates that the glyphs encoded in the cmap subtables are simply generic symbolic representations of code point ranges and don’t truly represent support for those code points.If unset, indicates that the glyphs encoded in the cmap subtables represent proper support for those code points.
+            // Bit 15: Reserved, set to 0
             None = 0,
             BaslineY0 = 1 << 0,
             LeftSidebearingPointAtX0 = 1 << 1,
