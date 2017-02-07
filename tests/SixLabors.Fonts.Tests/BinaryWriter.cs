@@ -419,6 +419,14 @@ namespace SixLabors.Fonts.Tests
             this.WriteInternal(this.buffer, 1);
         }
 
-        
+        public void WriteFWORD(short val)
+        {
+            this.WriteInt16(val);
+        }
+
+        public void WriteUFWORD(ushort value)
+        {
+            this.WriteUInt16(value);
+        }
     }
 }

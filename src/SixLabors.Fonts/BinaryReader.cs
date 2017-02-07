@@ -94,6 +94,17 @@ namespace SixLabors.Fonts
             return this.BitConverter.ToInt16(this.storageBuffer, 0);
         }
 
+        public short ReadFWORD()
+        {
+            return this.ReadInt16();
+        }
+
+        public ushort ReadUFWORD()
+        {
+            return this.ReadUInt16();
+        }
+
+
         /// <summary>
         /// Reads a 32-bit signed integer from the stream, using the bit converter
         /// for this reader. 4 bytes are read.
