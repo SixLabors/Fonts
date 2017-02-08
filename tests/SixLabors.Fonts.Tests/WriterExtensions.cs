@@ -433,7 +433,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16((ushort)table.MacStyle);
             writer.WriteUInt16(table.LowestRecPPEM);
             writer.WriteInt16(2);
-            writer.WriteInt16(table.IndexToLocFormat);
+            writer.WriteInt16((short)table.IndexLocationFormat);
             writer.WriteInt16(0);
         }
     }

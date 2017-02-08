@@ -104,7 +104,6 @@ namespace SixLabors.Fonts.Tables.General
             // uint16 |usMaxContext            |
             // uint16 |usLowerOpticalPointSize |
             // uint16 |usUpperOpticalPointSize |
-
             var version = reader.ReadUInt16(); // assert 0x0005
             var xAvgCharWidth = reader.ReadInt16();
             var usWeightClass = reader.ReadUInt16();

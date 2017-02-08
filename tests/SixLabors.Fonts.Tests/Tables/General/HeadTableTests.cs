@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 new DateTime(2017, 02, 06, 07, 47, 00), 
                 new DateTime(2017, 02, 07, 07, 47, 00), 
                 new Point(0,0), 
-                new Point(1024, 1022), 0, 1));
+                new Point(1024, 1022), 0, HeadTable.IndexLocationFormats.Offset16));
 
             var head = HeadTable.Load(writer.GetReader());
 
@@ -37,7 +37,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
             Assert.Equal(1024, head.Max.X);
             Assert.Equal(1022, head.Max.Y);
             Assert.Equal(0, head.LowestRecPPEM);
-            Assert.Equal(1, head.IndexToLocFormat);
+            Assert.Equal(HeadTable.IndexLocationFormats.Offset16, head.IndexLocationFormat);
         }
     }
 }

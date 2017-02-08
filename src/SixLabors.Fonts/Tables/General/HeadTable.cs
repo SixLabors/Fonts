@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Tables.General
 
         internal HeadFlags Flags { get; }
 
-        internal short IndexToLocFormat { get; }
+        internal IndexLocationFormats IndexLocationFormat { get; }
 
         internal ushort LowestRecPPEM { get; }
 
@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tables.General
 
         internal ushort UnitsPerEm { get; }
 
-        public HeadTable(HeadFlags flags, HeadMacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Point min, Point max, ushort lowestRecPPEM, short indexToLocFormat)
+        public HeadTable(HeadFlags flags, HeadMacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Point min, Point max, ushort lowestRecPPEM, IndexLocationFormats indexToLocFormat)
         {
             this.Flags = flags;
             this.MacStyle = macStyle;
@@ -43,7 +43,7 @@ namespace SixLabors.Fonts.Tables.General
             this.Min = min;
             this.Max = max;
             this.LowestRecPPEM = lowestRecPPEM;
-            this.IndexToLocFormat = indexToLocFormat;
+            this.IndexLocationFormat = indexToLocFormat;
         }
 
 
@@ -125,7 +125,7 @@ namespace SixLabors.Fonts.Tables.General
             var macStyle = reader.ReadUInt16();
             var lowestRecPPEM = reader.ReadUInt16();
             var fontDirectionHint = reader.ReadInt16();
-            var indexToLocFormat = reader.ReadInt16();
+            var indexToLocFormat = (IndexLocationFormats)reader.ReadInt16();
             var glyphDataFormat = reader.ReadInt16();
 
             return new HeadTable(
@@ -138,6 +138,12 @@ namespace SixLabors.Fonts.Tables.General
                 new Point(xMax, yMax),
                 lowestRecPPEM,
                 indexToLocFormat);
+        }
+
+        public enum IndexLocationFormats : short
+        {
+            Offset16 = 0,
+            Offset32 = 1,
         }
 
         [Flags]

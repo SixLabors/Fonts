@@ -21,6 +21,7 @@ namespace SixLabors.Fonts.Tables
             this.Register(HorizontalMetricsTable.Load);
             this.Register(MaximumProfileTable.Load);
             this.Register(OS2Table.Load);
+            this.Register(IndexLocationTable.Load);
         }
 
         private Dictionary<string, Func<FontReader, Table>> loaders = new Dictionary<string, Func<FontReader, Table>>();

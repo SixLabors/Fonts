@@ -58,7 +58,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="header">The header.</param>
         public void Seek(Tables.TableHeader header)
-        {            
+        {
             this.BaseStream.Seek(header.Offset, SeekOrigin.Begin);
         }
 
@@ -165,6 +165,50 @@ namespace SixLabors.Fonts
             }
 
             return data;
+        }
+
+        /// <summary>
+        /// Reads array or 16-bit unsigned integers from the stream, using the bit converter
+        /// for this reader. 2 bytes are read.
+        /// </summary>
+        /// <param name="length">The length.</param>
+        /// <returns>
+        /// The 16-bit unsigned integer read
+        /// </returns>
+        public uint[] ReadUInt32Array(int length)
+        {
+            var data = new uint[length];
+            for (var i = 0; i < length; i++)
+            {
+                data[i] = this.ReadUInt32();
+            }
+
+            return data;
+        }
+        /// <summary>
+        /// Reads array or 16-bit unsigned integers from the stream, using the bit converter
+        /// for this reader. 2 bytes are read.
+        /// </summary>
+        /// <param name="length">The length.</param>
+        /// <returns>
+        /// The 16-bit unsigned integer read
+        /// </returns>
+        public ushort[] Offset16Array(int length)
+        {
+            return ReadUInt16Array(length);
+        }
+
+        /// <summary>
+        /// Reads array or 16-bit unsigned integers from the stream, using the bit converter
+        /// for this reader. 2 bytes are read.
+        /// </summary>
+        /// <param name="length">The length.</param>
+        /// <returns>
+        /// The 16-bit unsigned integer read
+        /// </returns>
+        public uint[] Offset32Array(int length)
+        {
+            return ReadUInt32Array(length);
         }
 
 
