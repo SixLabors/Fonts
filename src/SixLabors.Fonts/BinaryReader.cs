@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts
 {
@@ -48,7 +49,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="offset">Offset to seek to.</param>
         /// <param name="origin">Origin of seek operation.</param>
-        public void Seek(int offset, SeekOrigin origin)
+        public void Seek(long offset, SeekOrigin origin)
         {
             this.BaseStream.Seek(offset, origin);
         }
@@ -92,6 +93,14 @@ namespace SixLabors.Fonts
             return this.BitConverter.ToBoolean(this.storageBuffer, 0);
         }
 
+        public float ReadF2dot14()
+        {
+            const float F2Dot14ToFloat = 16384.0f;
+
+            this.ReadInternal(this.storageBuffer, 2);
+            return this.BitConverter.ToInt16(this.storageBuffer, 0) / F2Dot14ToFloat;
+        }
+
         /// <summary>
         /// Reads a 16-bit signed integer from the stream, using the bit converter
         /// for this reader. 2 bytes are read.
@@ -103,6 +112,11 @@ namespace SixLabors.Fonts
             return this.BitConverter.ToInt16(this.storageBuffer, 0);
         }
 
+        public TEnum ReadInt16<TEnum>()
+        {
+            return CastTo<TEnum>.From(ReadInt16());
+        }
+        
         public short ReadFWORD()
         {
             return this.ReadInt16();
@@ -146,6 +160,11 @@ namespace SixLabors.Fonts
         {
             this.ReadInternal(this.storageBuffer, 2);
             return this.BitConverter.ToUInt16(this.storageBuffer, 0);
+        }
+
+        public TEnum ReadUInt16<TEnum>()
+        {
+            return CastTo<TEnum>.From(ReadUInt16());
         }
 
         /// <summary>
@@ -218,6 +237,18 @@ namespace SixLabors.Fonts
             for (var i = 0; i < length; i++)
             {
                 data[i] = this.ReadUInt8();
+            }
+
+            return data;
+        }
+
+        public TEnum[] ReadUInt8Array<TEnum>(int length)
+             where TEnum : struct
+        {
+            var data = new TEnum[length];
+            for (var i = 0; i < length; i++)
+            {
+                data[i] = CastTo<TEnum>.From(this.ReadUInt8());
             }
 
             return data;
@@ -484,6 +515,36 @@ namespace SixLabors.Fonts
             }
 
             return index;
+        }
+
+        /// <summary>
+        /// Class to cast to type <see cref="T"/>
+        /// </summary>
+        /// <typeparam name="T">Target type</typeparam>
+        public static class CastTo<T>
+        {
+            /// <summary>
+            /// Casts <see cref="S"/> to <see cref="T"/>.
+            /// This does not cause boxing for value types.
+            /// Useful in generic methods.
+            /// </summary>
+            /// <typeparam name="S">Source type to cast from. Usually a generic type.</typeparam>
+            public static T From<S>(S s)
+            {
+                return Cache<S>.caster(s);
+            }
+
+            private static class Cache<S>
+            {
+                public static readonly Func<S, T> caster = Get();
+
+                private static Func<S, T> Get()
+                {
+                    var p = System.Linq.Expressions.Expression.Parameter(typeof(S));
+                    var c = System.Linq.Expressions.Expression.ConvertChecked(p, typeof(T));
+                    return System.Linq.Expressions.Expression.Lambda<Func<S, T>>(c, p).Compile();
+                }
+            }
         }
     }
 }

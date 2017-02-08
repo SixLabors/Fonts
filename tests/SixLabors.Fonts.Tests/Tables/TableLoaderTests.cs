@@ -15,14 +15,21 @@ namespace SixLabors.Fonts.Tests.Tables
         {
             get
             {
-                var tableTypeInfo = typeof(Table).GetTypeInfo();
+                try
+                {
+                    var tableTypeInfo = typeof(Table).GetTypeInfo();
 
-                return
-                    typeof(Table).GetTypeInfo()
-                        .Assembly.DefinedTypes
-                        .Where(x => tableTypeInfo.IsAssignableFrom(x))
-                        .Select(x => new object[] { x.AsType(), x.GetCustomAttribute<TableNameAttribute>()?.Name })
-                        .Where(x => x[1] != null);
+                    return
+                        typeof(Table).GetTypeInfo()
+                            .Assembly.DefinedTypes
+                            .Where(x => tableTypeInfo.IsAssignableFrom(x))
+                            .Select(x => new object[] { x.AsType(), x.GetCustomAttribute<TableNameAttribute>()?.Name })
+                            .Where(x => x[1] != null);
+                }catch(Exception ex)
+                {
+                    Assert.False(true, "Failed laoding stuff");
+                    throw;
+                }
             }
         }
 

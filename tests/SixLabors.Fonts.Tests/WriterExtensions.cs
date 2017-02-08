@@ -426,10 +426,10 @@ namespace SixLabors.Fonts.Tests
             var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             writer.WriteInt64((long)table.Created.Subtract(startDate).TotalSeconds);
             writer.WriteInt64((long)table.Modified.Subtract(startDate).TotalSeconds);
-            writer.WriteInt16(table.Min.X);
-            writer.WriteInt16(table.Min.Y);
-            writer.WriteInt16(table.Max.X);
-            writer.WriteInt16(table.Max.Y);
+            writer.WriteInt16((short)table.Bounds.Min.X);
+            writer.WriteInt16((short)table.Bounds.Min.Y);
+            writer.WriteInt16((short)table.Bounds.Max.X);
+            writer.WriteInt16((short)table.Bounds.Max.Y);
             writer.WriteUInt16((ushort)table.MacStyle);
             writer.WriteUInt16(table.LowestRecPPEM);
             writer.WriteInt16(2);

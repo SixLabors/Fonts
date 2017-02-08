@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
         internal byte[] GlyphIds { get; }
 
         public Format0SubTable(ushort language, PlatformIDs platform, ushort encoding, byte[] glyphIds)
-            : base(platform, encoding)
+            : base(platform, encoding, 0)
         {
             this.Language = language;
             this.GlyphIds = glyphIds;

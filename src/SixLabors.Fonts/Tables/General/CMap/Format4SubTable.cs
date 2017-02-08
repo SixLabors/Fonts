@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
         internal ushort[] GlyphIds { get; }
 
         public Format4SubTable(ushort language, PlatformIDs platform, ushort encoding, Segment[] segments, ushort[] glyphIds)
-            : base(platform, encoding)
+            : base(platform, encoding, 4)
         {
             this.Language = language;
             this.Segments = segments;

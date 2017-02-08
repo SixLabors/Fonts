@@ -8,12 +8,14 @@ namespace SixLabors.Fonts.Tables.General.CMap
         {
         }
 
-        public CMapSubTable(PlatformIDs platform, ushort encoding)
+        public CMapSubTable(PlatformIDs platform, ushort encoding, ushort format)
         {
             this.Platform = platform;
             this.Encoding = encoding;
+            this.Format = format;
         }
 
+        public ushort Format { get; }
         public PlatformIDs Platform { get; }
 
         public ushort Encoding { get; }

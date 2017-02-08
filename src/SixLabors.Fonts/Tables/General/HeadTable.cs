@@ -27,21 +27,18 @@ namespace SixLabors.Fonts.Tables.General
 
         internal DateTime Modified { get; }
 
-        internal Point Min { get; }
-
-        internal Point Max { get; }
+        internal Bounds Bounds { get; }
 
         internal ushort UnitsPerEm { get; }
 
-        public HeadTable(HeadFlags flags, HeadMacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Point min, Point max, ushort lowestRecPPEM, IndexLocationFormats indexToLocFormat)
+        public HeadTable(HeadFlags flags, HeadMacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Bounds bounds, ushort lowestRecPPEM, IndexLocationFormats indexToLocFormat)
         {
             this.Flags = flags;
             this.MacStyle = macStyle;
             this.UnitsPerEm = unitsPerEm;
             this.Created = created;
             this.Modified = modified;
-            this.Min = min;
-            this.Max = max;
+            this.Bounds = bounds;
             this.LowestRecPPEM = lowestRecPPEM;
             this.IndexLocationFormat = indexToLocFormat;
         }
@@ -108,7 +105,7 @@ namespace SixLabors.Fonts.Tables.General
                 throw new InvalidFontFileException("invalid magic number in 'head'");
             }
 
-            var flags = reader.ReadUInt16();
+            var flags = reader.ReadUInt16<HeadFlags>();
             var unitsPerEm = reader.ReadUInt16();
             if (unitsPerEm < 16 || unitsPerEm > 16384)
             {
@@ -118,24 +115,22 @@ namespace SixLabors.Fonts.Tables.General
             var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             var created = startDate.AddSeconds(reader.ReadInt64());
             var modified = startDate.AddSeconds(reader.ReadInt64());
-            var xMin = reader.ReadInt16();
-            var yMin = reader.ReadInt16();
-            var xMax = reader.ReadInt16();
-            var yMax = reader.ReadInt16();
-            var macStyle = reader.ReadUInt16();
+
+            var bounds = Bounds.Load(reader); //xMin, yMin, xMax, yMax
+
+            var macStyle = reader.ReadUInt16<HeadMacStyle>();
             var lowestRecPPEM = reader.ReadUInt16();
             var fontDirectionHint = reader.ReadInt16();
-            var indexToLocFormat = (IndexLocationFormats)reader.ReadInt16();
+            var indexToLocFormat = reader.ReadInt16<IndexLocationFormats>();
             var glyphDataFormat = reader.ReadInt16();
 
             return new HeadTable(
-                (HeadFlags)flags,
-                (HeadMacStyle)macStyle,
+                flags,
+                macStyle,
                 unitsPerEm,
                 created,
                 modified,
-                new Point(xMin, yMin),
-                new Point(xMax, yMax),
+                bounds,
                 lowestRecPPEM,
                 indexToLocFormat);
         }

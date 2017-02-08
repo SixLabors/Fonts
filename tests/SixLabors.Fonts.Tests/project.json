@@ -13,7 +13,8 @@
     },
     "xunit": "2.2.0-*",
     "dotnet-test-xunit": "2.2.0-*",
-    "Moq": "4.6.38-alpha"
+    "Moq": "4.6.38-alpha",
+    "System.Numerics.Vectors": "4.3.0"
   },
   "frameworks": {
     "netcoreapp1.1": {

@@ -25,8 +25,8 @@ namespace SixLabors.Fonts.Tables.General
 
         public static IndexLocationTable Load(FontReader reader)
         {
-            var maxp = reader.GetTable<MaximumProfileTable>();
             var head = reader.GetTable<HeadTable>();
+            var maxp = reader.GetTable<MaximumProfileTable>();
             return Load(reader.GetReaderAtTablePosition(TableName), maxp.GlyphCount, head.IndexLocationFormat);
         }
 

@@ -11,27 +11,46 @@ namespace SixLabors.Fonts.Tables.General
     internal class CMapTable : Table
     {
         const string TableName = "cmap";
+        private readonly CMapSubTable table;
 
         internal CMapSubTable[] Tables { get; }
 
         public CMapTable(CMapSubTable[] tables)
         {
             this.Tables = tables;
-        }
+            // lets just pick the best table for us.. lets jsut treat everything as windows and get the format 4 if possible
 
-        public ushort GetGlyphId(char character, PlatformIDs platform = PlatformIDs.Windows)
-        {
-            // find the most efficient way for storng this lookup after load
+            CMapSubTable table = null;
             foreach (var t in this.Tables)
             {
-                if (t.Platform == platform)
+                if (t.Platform == PlatformIDs.Windows)
                 {
-                    // keep looking until we have an index thats not the fallback.
-                    var index = t.GetGlyphId(character);
-                    if (index > 0)
+                    ushort format = table?.Format ?? 0;
+                    if(t.Format > format)
                     {
-                        return index;
+                        table = t;
                     }
+                }
+            }
+            this.table = table;
+        }
+
+        public ushort GetGlyphId(char character)
+        {
+            // use the best match only
+            if(table != null)
+            {
+                return table.GetGlyphId(character);
+            }
+
+            // didn't have a windows match just use any and hope for the best
+            foreach (var t in this.Tables)
+            {
+                // keep looking until we have an index thats not the fallback.
+                var index = t.GetGlyphId(character);
+                if (index > 0)
+                {
+                    return index;
                 }
             }
 

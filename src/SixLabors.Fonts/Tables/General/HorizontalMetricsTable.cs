@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 
 using SixLabors.Fonts.Exceptions;
-using SixLabors.Fonts.Tables.General.HorizontalMetrics;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Utilities;
 using SixLabors.Fonts.WellKnownIds;
@@ -17,12 +16,17 @@ namespace SixLabors.Fonts.Tables.General
     {
         const string TableName = "hmtx";
         private short[] leftSideBearings;
-        private HorizontalMetricRecord[] records;
+        private ushort[] advancedWidths;
 
-        public HorizontalMetricsTable(HorizontalMetricRecord[] records, short[] leftSideBearings)
+        public HorizontalMetricsTable(ushort[] advancedWidths, short[] leftSideBearings)
         {
-            this.records = records;
+            this.advancedWidths = advancedWidths;
             this.leftSideBearings = leftSideBearings;
+        }
+
+        public ushort GetAdvancedWidth(int glyphIndex)
+        {
+            return this.advancedWidths[glyphIndex];
         }
 
         public static HorizontalMetricsTable Load(FontReader reader)
@@ -41,23 +45,26 @@ namespace SixLabors.Fonts.Tables.General
             // Type           | Name                                          | Description
             // longHorMetric  | hMetrics[numberOfHMetrics]                    | Paired advance width and left side bearing values for each glyph. Records are indexed by glyph ID.
             // int16          | leftSideBearing[numGlyphs - numberOfHMetrics] | Left side bearings for glyph IDs greater than or equal to numberOfHMetrics.
-
-
             var bearingCount = glyphCount - metricCount;
-            var records = new HorizontalMetrics.HorizontalMetricRecord[metricCount];
-            var leftSideBearings = new short[bearingCount];
+            var advancedWidth = new ushort[metricCount];
+            var leftSideBearings = new short[glyphCount];
 
             for (var i = 0; i < metricCount; i++)
             {
-                records[i] = HorizontalMetricRecord.Load(reader);
+                // longHorMetric Record:
+                // Type   | Name         | Description
+                // uint16 | advanceWidth | Glyph advance width, in font design units.
+                // int16  | lsb          | Glyph left side bearing, in font design units.
+                advancedWidth[i] = reader.ReadUInt16();
+                leftSideBearings[i] = reader.ReadInt16();
             }
 
             for (var i = 0; i < bearingCount; i++)
             {
-                leftSideBearings[i] = reader.ReadInt16();
+                leftSideBearings[glyphCount + i] = reader.ReadInt16();
             }
 
-            return new HorizontalMetricsTable(records, leftSideBearings);
+            return new HorizontalMetricsTable(advancedWidth, leftSideBearings);
         }
     }
 }
