@@ -61,7 +61,7 @@ namespace SixLabors.Fonts.Tables.General
 
             for (var i = 0; i < bearingCount; i++)
             {
-                leftSideBearings[glyphCount + i] = reader.ReadInt16();
+                leftSideBearings[metricCount + i] = reader.ReadInt16();
             }
 
             return new HorizontalMetricsTable(advancedWidth, leftSideBearings);

@@ -33,6 +33,12 @@ namespace SixLabors.Fonts
             return this.cmap.GetGlyphId(character);
         }
 
+        internal Glyph GetGlyph(char character)
+        {
+            var idx = this.GetGlyphIndex(character);
+            return this.GetGlyph(idx);
+        }
+
         internal Glyph GetGlyph(ushort index)
         {
             return this.glyphs.GetGlyph(index);
