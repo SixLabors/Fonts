@@ -16,11 +16,15 @@ namespace SixLabors.Fonts
         private readonly HorizontalMetricsTable horizontalMetrics;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontDescription"/> class.
+        /// Initializes a new instance of the <see cref="FontDescription" /> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
+        /// <param name="cmap">The cmap.</param>
+        /// <param name="glyphs">The glyphs.</param>
+        /// <param name="os2">The os2.</param>
+        /// <param name="horizontalMetrics">The horizontal metrics.</param>
         internal Font(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics)
-            :base(nameTable)
+            : base(nameTable)
         {
             this.cmap = cmap;
             this.os2 = os2;
@@ -53,21 +57,20 @@ namespace SixLabors.Fonts
         {
             var advance = this.horizontalMetrics.GetAdvancedWidth(first);
 
-            //TODO combin data from the kern table to offset this width
+            // TODO combin data from the kern table to offset this width
             return advance;
         }
-
 
         /// <summary>
         /// Reads a <see cref="FontDescription"/> from the specified stream.
         /// </summary>
         /// <param name="stream">The stream.</param>
         /// <returns>a <see cref="FontDescription"/>.</returns>
-        public static Font Load(Stream stream)
+        public static new Font Load(Stream stream)
         {
             var reader = new FontReader(stream);
 
-            //https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
+            // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // recomended order
             reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
             reader.GetTable<HoizontalHeadTable>(); // hhea
@@ -78,7 +81,7 @@ namespace SixLabors.Fonts
             // VDMX - Vertical device metrics
             // hdmx - Horizontal device metrics
             var cmap = reader.GetTable<CMapTable>(); // cmap
-            // fpgm - Font Program 
+            // fpgm - Font Program
             // prep - Control Value Program
             // cvt  - Control Value Table
             reader.GetTable<IndexLocationTable>(); // loca
@@ -89,7 +92,6 @@ namespace SixLabors.Fonts
             // gasp - Grid-fitting/Scan-conversion (optional table)
             // PCLT - PCL 5 data
             // DSIG - Digital signature
-
             return new Font(nameTable, cmap, glyphs, os2, horizontalMetrics);
         }
     }

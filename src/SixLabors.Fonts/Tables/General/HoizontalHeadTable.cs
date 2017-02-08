@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class HoizontalHeadTable : Table
     {
-        const string TableName = "hhea";
+        private const string TableName = "hhea";
 
         internal ushort AdvanceWidthMax { get; }
 
@@ -80,7 +80,6 @@ namespace SixLabors.Fonts.Tables.General
             // int16     | (reserved)           | set to 0
             // int16     | metricDataFormat     | 0 for current format.
             // uint16    | numberOfHMetrics     | Number of hMetric entries in 'hmtx' table
-
             var majorVersion = reader.ReadUInt16();
             var minorVersion = reader.ReadUInt16();
             var ascender = reader.ReadFWORD();
@@ -98,13 +97,15 @@ namespace SixLabors.Fonts.Tables.General
             reader.ReadInt16(); // reserved
             reader.ReadInt16(); // reserved
             var metricDataFormat = reader.ReadInt16(); // 0
-            if(metricDataFormat != 0)
+            if (metricDataFormat != 0)
             {
                 throw new InvalidFontTableException($"Expected metricDataFormat = 0 found {metricDataFormat}", "hhea");
             }
+
             var numberOfHMetrics = reader.ReadUInt16();
 
-            return new HoizontalHeadTable(ascender,
+            return new HoizontalHeadTable(
+                ascender,
                 descender,
                 lineGap,
                 advanceWidthMax,
@@ -114,8 +115,7 @@ namespace SixLabors.Fonts.Tables.General
                 caretSlopeRise,
                 caretSlopeRun,
                 caretOffset,
-                numberOfHMetrics
-                );
+                numberOfHMetrics);
         }
     }
 }

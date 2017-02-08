@@ -16,6 +16,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
         }
 
         public ushort Format { get; }
+
         public PlatformIDs Platform { get; }
 
         public ushort Encoding { get; }

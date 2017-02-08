@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class CMapTable : Table
     {
-        const string TableName = "cmap";
+        private const string TableName = "cmap";
         private readonly CMapSubTable table;
 
         internal CMapSubTable[] Tables { get; }
@@ -18,29 +18,30 @@ namespace SixLabors.Fonts.Tables.General
         public CMapTable(CMapSubTable[] tables)
         {
             this.Tables = tables;
-            // lets just pick the best table for us.. lets jsut treat everything as windows and get the format 4 if possible
 
+            // lets just pick the best table for us.. lets jsut treat everything as windows and get the format 4 if possible
             CMapSubTable table = null;
             foreach (var t in this.Tables)
             {
                 if (t.Platform == PlatformIDs.Windows)
                 {
                     ushort format = table?.Format ?? 0;
-                    if(t.Format > format)
+                    if (t.Format > format)
                     {
                         table = t;
                     }
                 }
             }
+
             this.table = table;
         }
 
         public ushort GetGlyphId(char character)
         {
             // use the best match only
-            if(table != null)
+            if (this.table != null)
             {
-                return table.GetGlyphId(character);
+                return this.table.GetGlyphId(character);
             }
 
             // didn't have a windows match just use any and hope for the best
@@ -57,9 +58,8 @@ namespace SixLabors.Fonts.Tables.General
             return 0;
         }
 
-
         public static CMapTable Load(FontReader reader)
-        {   
+        {
             return Load(reader.GetReaderAtTablePosition(TableName));
         }
 

@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class OS2Table : Table
     {
-        const string TableName = "OS/2";
+        private const string TableName = "OS/2";
         private ushort fsSelection;
         private ushort fsType;
         private byte[] panose;
@@ -137,10 +137,10 @@ namespace SixLabors.Fonts.Tables.General
             var usWinAscent = reader.ReadUInt16();
             var usWinDescent = reader.ReadUInt16();
 
-
             if (version == 0)
             {
-                return new OS2Table(xAvgCharWidth,
+                return new OS2Table(
+                    xAvgCharWidth,
                     xAvgCharWidth,
                 usWeightClass,
                 usWidthClass,
@@ -169,8 +169,7 @@ namespace SixLabors.Fonts.Tables.General
                 sTypoDescender,
                 sTypoLineGap,
                 usWinAscent,
-                usWinDescent
-                   );
+                usWinDescent);
             }
 
             ushort ulCodePageRange1 = 0;
@@ -192,7 +191,8 @@ namespace SixLabors.Fonts.Tables.General
             usMaxContext = reader.ReadUInt16();
             if (version < 5)
             {
-                return new OS2Table(xAvgCharWidth,
+                return new OS2Table(
+                    xAvgCharWidth,
                  xAvgCharWidth,
              usWeightClass,
              usWidthClass,
@@ -228,14 +228,14 @@ namespace SixLabors.Fonts.Tables.General
              sCapHeight,
              usDefaultChar,
              usBreakChar,
-             usMaxContext
-                );
+             usMaxContext);
             }
 
             ushort usLowerOpticalPointSize = reader.ReadUInt16();
             ushort usUpperOpticalPointSize = reader.ReadUInt16();
 
-            return new OS2Table(xAvgCharWidth,
+            return new OS2Table(
+                xAvgCharWidth,
                  xAvgCharWidth,
              usWeightClass,
              usWidthClass,
@@ -273,8 +273,7 @@ namespace SixLabors.Fonts.Tables.General
              usBreakChar,
              usMaxContext,
              usLowerOpticalPointSize,
-             usUpperOpticalPointSize
-                );
+             usUpperOpticalPointSize);
         }
 
         public OS2Table(short xAvgCharWidth1, short xAvgCharWidth2, ushort usWeightClass, ushort usWidthClass, ushort fsType, short ySubscriptXSize, short ySubscriptYSize, short ySubscriptXOffset, short ySubscriptYOffset, short ySuperscriptXSize, short ySuperscriptYSize, short ySuperscriptXOffset, short ySuperscriptYOffset, short yStrikeoutSize, short yStrikeoutPosition, short sFamilyClass, byte[] panose, uint ulUnicodeRange1, uint ulUnicodeRange2, uint ulUnicodeRange3, uint ulUnicodeRange4, string tag, ushort fsSelection, ushort usFirstCharIndex, ushort usLastCharIndex, short sTypoAscender, short sTypoDescender, short sTypoLineGap, ushort usWinAscent, ushort usWinDescent)
@@ -311,7 +310,7 @@ namespace SixLabors.Fonts.Tables.General
             this.usWinDescent = usWinDescent;
         }
 
-        public OS2Table(short xAvgCharWidth1, short xAvgCharWidth2, ushort usWeightClass, ushort usWidthClass, ushort fsType, short ySubscriptXSize, short ySubscriptYSize, short ySubscriptXOffset, short ySubscriptYOffset, short ySuperscriptXSize, short ySuperscriptYSize, short ySuperscriptXOffset, short ySuperscriptYOffset, short yStrikeoutSize, short yStrikeoutPosition, short sFamilyClass, byte[] panose, uint ulUnicodeRange1, uint ulUnicodeRange2, uint ulUnicodeRange3, uint ulUnicodeRange4, string tag, ushort fsSelection, ushort usFirstCharIndex, ushort usLastCharIndex, short sTypoAscender, short sTypoDescender, short sTypoLineGap, ushort usWinAscent, ushort usWinDescent, ushort ulCodePageRange1, ushort ulCodePageRange2, short sxHeight, short sCapHeight, ushort usDefaultChar, ushort usBreakChar, ushort usMaxContext) 
+        public OS2Table(short xAvgCharWidth1, short xAvgCharWidth2, ushort usWeightClass, ushort usWidthClass, ushort fsType, short ySubscriptXSize, short ySubscriptYSize, short ySubscriptXOffset, short ySubscriptYOffset, short ySuperscriptXSize, short ySuperscriptYSize, short ySuperscriptXOffset, short ySuperscriptYOffset, short yStrikeoutSize, short yStrikeoutPosition, short sFamilyClass, byte[] panose, uint ulUnicodeRange1, uint ulUnicodeRange2, uint ulUnicodeRange3, uint ulUnicodeRange4, string tag, ushort fsSelection, ushort usFirstCharIndex, ushort usLastCharIndex, short sTypoAscender, short sTypoDescender, short sTypoLineGap, ushort usWinAscent, ushort usWinDescent, ushort ulCodePageRange1, ushort ulCodePageRange2, short sxHeight, short sCapHeight, ushort usDefaultChar, ushort usBreakChar, ushort usMaxContext)
             : this(xAvgCharWidth1, xAvgCharWidth2, usWeightClass, usWidthClass, fsType, ySubscriptXSize, ySubscriptYSize, ySubscriptXOffset, ySubscriptYOffset, ySuperscriptXSize, ySuperscriptYSize, ySuperscriptXOffset, ySuperscriptYOffset, yStrikeoutSize, yStrikeoutPosition, sFamilyClass, panose, ulUnicodeRange1, ulUnicodeRange2, ulUnicodeRange3, ulUnicodeRange4, tag, fsSelection, usFirstCharIndex, usLastCharIndex, sTypoAscender, sTypoDescender, sTypoLineGap, usWinAscent, usWinDescent)
         {
             this.ulCodePageRange1 = ulCodePageRange1;
@@ -323,7 +322,7 @@ namespace SixLabors.Fonts.Tables.General
             this.usMaxContext = usMaxContext;
         }
 
-        public OS2Table(short xAvgCharWidth1, short xAvgCharWidth2, ushort usWeightClass, ushort usWidthClass, ushort fsType, short ySubscriptXSize, short ySubscriptYSize, short ySubscriptXOffset, short ySubscriptYOffset, short ySuperscriptXSize, short ySuperscriptYSize, short ySuperscriptXOffset, short ySuperscriptYOffset, short yStrikeoutSize, short yStrikeoutPosition, short sFamilyClass, byte[] panose, uint ulUnicodeRange1, uint ulUnicodeRange2, uint ulUnicodeRange3, uint ulUnicodeRange4, string tag, ushort fsSelection, ushort usFirstCharIndex, ushort usLastCharIndex, short sTypoAscender, short sTypoDescender, short sTypoLineGap, ushort usWinAscent, ushort usWinDescent, ushort ulCodePageRange1, ushort ulCodePageRange2, short sxHeight, short sCapHeight, ushort usDefaultChar, ushort usBreakChar, ushort usMaxContext, ushort usLowerOpticalPointSize, ushort usUpperOpticalPointSize) 
+        public OS2Table(short xAvgCharWidth1, short xAvgCharWidth2, ushort usWeightClass, ushort usWidthClass, ushort fsType, short ySubscriptXSize, short ySubscriptYSize, short ySubscriptXOffset, short ySubscriptYOffset, short ySuperscriptXSize, short ySuperscriptYSize, short ySuperscriptXOffset, short ySuperscriptYOffset, short yStrikeoutSize, short yStrikeoutPosition, short sFamilyClass, byte[] panose, uint ulUnicodeRange1, uint ulUnicodeRange2, uint ulUnicodeRange3, uint ulUnicodeRange4, string tag, ushort fsSelection, ushort usFirstCharIndex, ushort usLastCharIndex, short sTypoAscender, short sTypoDescender, short sTypoLineGap, ushort usWinAscent, ushort usWinDescent, ushort ulCodePageRange1, ushort ulCodePageRange2, short sxHeight, short sCapHeight, ushort usDefaultChar, ushort usBreakChar, ushort usMaxContext, ushort usLowerOpticalPointSize, ushort usUpperOpticalPointSize)
             : this(xAvgCharWidth1, xAvgCharWidth2, usWeightClass, usWidthClass, fsType, ySubscriptXSize, ySubscriptYSize, ySubscriptXOffset, ySubscriptYOffset, ySuperscriptXSize, ySuperscriptYSize, ySuperscriptXOffset, ySuperscriptYOffset, yStrikeoutSize, yStrikeoutPosition, sFamilyClass, panose, ulUnicodeRange1, ulUnicodeRange2, ulUnicodeRange3, ulUnicodeRange4, tag, fsSelection, usFirstCharIndex, usLastCharIndex, sTypoAscender, sTypoDescender, sTypoLineGap, usWinAscent, usWinDescent, ulCodePageRange1, ulCodePageRange2, sxHeight, sCapHeight, usDefaultChar, usBreakChar, usMaxContext)
         {
             this.usLowerOpticalPointSize = usLowerOpticalPointSize;

@@ -10,12 +10,12 @@ namespace SixLabors.Fonts
     {
         public Bounds(Vector2 min, Vector2 max)
         {
-            this.Min= min;
+            this.Min = min;
             this.Max = max;
         }
-        
+
         public Bounds(float minX, float minY, float maxX, float maxY)
-            :this(new Vector2(minX, minY), new Vector2(maxX, maxY))
+            : this(new Vector2(minX, minY), new Vector2(maxX, maxY))
         {
         }
 

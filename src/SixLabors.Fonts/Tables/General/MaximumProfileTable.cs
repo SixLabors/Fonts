@@ -14,20 +14,33 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class MaximumProfileTable : Table
     {
-        const string TableName = "maxp";
-        internal ushort maxPoints;
-        internal ushort maxContours;
-        internal ushort maxCompositePoints;
-        internal ushort maxCompositeContours;
-        internal ushort maxZones;
-        internal ushort maxTwilightPoints;
-        internal ushort maxStorage;
-        internal ushort maxFunctionDefs;
-        internal ushort maxInstructionDefs;
-        internal ushort maxStackElements;
-        internal ushort maxSizeOfInstructions;
-        internal ushort maxComponentElements;
-        internal ushort maxComponentDepth;
+        private const string TableName = "maxp";
+
+        internal ushort MaxPoints { get; }
+
+        internal ushort MaxContours { get; }
+
+        internal ushort MaxCompositePoints { get; }
+
+        internal ushort MaxCompositeContours { get; }
+
+        internal ushort MaxZones { get; }
+
+        internal ushort MaxTwilightPoints { get; }
+
+        internal ushort MaxStorage { get; }
+
+        internal ushort MaxFunctionDefs { get; }
+
+        internal ushort MaxInstructionDefs { get; }
+
+        internal ushort MaxStackElements { get; }
+
+        internal ushort MaxSizeOfInstructions { get; }
+
+        internal ushort MaxComponentElements { get; }
+
+        internal ushort MaxComponentDepth { get; }
 
         public ushort GlyphCount { get; }
 
@@ -37,21 +50,21 @@ namespace SixLabors.Fonts.Tables.General
         }
 
         public MaximumProfileTable(ushort numGlyphs, ushort maxPoints, ushort maxContours, ushort maxCompositePoints, ushort maxCompositeContours, ushort maxZones, ushort maxTwilightPoints, ushort maxStorage, ushort maxFunctionDefs, ushort maxInstructionDefs, ushort maxStackElements, ushort maxSizeOfInstructions, ushort maxComponentElements, ushort maxComponentDepth)
-            : this(numGlyphs)
+                : this(numGlyphs)
         {
-            this.maxPoints = maxPoints;
-            this.maxContours = maxContours;
-            this.maxCompositePoints = maxCompositePoints;
-            this.maxCompositeContours = maxCompositeContours;
-            this.maxZones = maxZones;
-            this.maxTwilightPoints = maxTwilightPoints;
-            this.maxStorage = maxStorage;
-            this.maxFunctionDefs = maxFunctionDefs;
-            this.maxInstructionDefs = maxInstructionDefs;
-            this.maxStackElements = maxStackElements;
-            this.maxSizeOfInstructions = maxSizeOfInstructions;
-            this.maxComponentElements = maxComponentElements;
-            this.maxComponentDepth = maxComponentDepth;
+            this.MaxPoints = maxPoints;
+            this.MaxContours = maxContours;
+            this.MaxCompositePoints = maxCompositePoints;
+            this.MaxCompositeContours = maxCompositeContours;
+            this.MaxZones = maxZones;
+            this.MaxTwilightPoints = maxTwilightPoints;
+            this.MaxStorage = maxStorage;
+            this.MaxFunctionDefs = maxFunctionDefs;
+            this.MaxInstructionDefs = maxInstructionDefs;
+            this.MaxStackElements = maxStackElements;
+            this.MaxSizeOfInstructions = maxSizeOfInstructions;
+            this.MaxComponentElements = maxComponentElements;
+            this.MaxComponentDepth = maxComponentDepth;
         }
 
         public static MaximumProfileTable Load(FontReader reader)
@@ -67,7 +80,6 @@ namespace SixLabors.Fonts.Tables.General
             // -------|----------------------|---------------------------------------
             // Fixed  | Table version number | 0x00005000 for version 0.5 (Note the difference in the representation of a non - zero fractional part, in Fixed numbers.)
             // uint16 | numGlyphs            | The number of glyphs in the font.
-
             var version = reader.ReadFixed();
             var numGlyphs = reader.ReadUInt16();
             if (version == 0.5)
@@ -93,7 +105,6 @@ namespace SixLabors.Fonts.Tables.General
             // uint16 | maxSizeOfInstructions | Maximum byte count for glyph instructions.
             // uint16 | maxComponentElements  | Maximum number of components referenced at “top level” for any composite glyph.
             // uint16 | maxComponentDepth     | Maximum levels of recursion; 1 for simple components.
-
             var maxPoints = reader.ReadUInt16();
             var maxContours = reader.ReadUInt16();
             var maxCompositePoints = reader.ReadUInt16();
@@ -109,7 +120,9 @@ namespace SixLabors.Fonts.Tables.General
             var maxComponentElements = reader.ReadUInt16();
             var maxComponentDepth = reader.ReadUInt16();
 
-            return new MaximumProfileTable(numGlyphs, maxPoints,
+            return new MaximumProfileTable(
+                numGlyphs,
+                maxPoints,
                 maxContours,
                 maxCompositePoints,
                 maxCompositeContours,
@@ -121,8 +134,7 @@ namespace SixLabors.Fonts.Tables.General
                 maxStackElements,
                 maxSizeOfInstructions,
                 maxComponentElements,
-                maxComponentDepth
-                );
+                maxComponentDepth);
         }
     }
 }

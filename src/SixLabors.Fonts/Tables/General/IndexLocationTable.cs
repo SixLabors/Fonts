@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class IndexLocationTable : Table
     {
-        const string TableName = "loca";
+        private const string TableName = "loca";
 
         public uint[] GlyphOffsets { get; }
 
@@ -39,7 +39,6 @@ namespace SixLabors.Fonts.Tables.General
                 // Type     | Name        | Description
                 // ---------|-------------|---------------------------------------
                 // Offset16 | offsets[n]  | The actual local offset divided by 2 is stored. The value of n is numGlyphs + 1. The value for numGlyphs is found in the 'maxp' table.
-
                 var data = reader.ReadUInt16Array(entrycount);
                 var convertedData = new uint[entrycount];
                 for (var i = 0; i < entrycount; i++)

@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class HorizontalMetricsTable : Table
     {
-        const string TableName = "hmtx";
+        private const string TableName = "hmtx";
         private short[] leftSideBearings;
         private ushort[] advancedWidths;
 
@@ -35,7 +35,7 @@ namespace SixLabors.Fonts.Tables.General
             var headTable = reader.GetTable<HoizontalHeadTable>();
             var profileTable = reader.GetTable<MaximumProfileTable>();
 
-            //move to start of table
+            // move to start of table
             var binaryReader = reader.GetReaderAtTablePosition(TableName);
             return Load(binaryReader, headTable.NumberOfHMetrics, profileTable.GlyphCount);
         }

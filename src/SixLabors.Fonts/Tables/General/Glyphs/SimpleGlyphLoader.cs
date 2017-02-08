@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {
-
     internal class SimpleGlyphLoader : GlyphLoader
     {
         private short[] xs;
@@ -33,15 +32,13 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public override Glyph CreateGlyph(GlyphTable table)
         {
-            // lets build some shapes ??? here from 
-
-            return new Glyph(xs, ys, onCurves, endPoints, bounds);
+            // lets build some shapes ??? here from
+            return new Glyph(this.xs, this.ys, this.onCurves, this.endPoints, this.bounds);
         }
-
 
         public static GlyphLoader LoadSimpleGlyph(BinaryReader reader, short count, Bounds bounds)
         {
-            if(count == 0)
+            if (count == 0)
             {
                 return new SimpleGlyphLoader(bounds);
             }
@@ -100,14 +97,16 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                         dx = reader.ReadInt16();
                     }
                 }
+
                 x += dx;
                 xs[i] = (short)x; // TODO: overflow?
             }
+
             return xs;
         }
 
         [Flags]
-        enum Flags : byte
+        private enum Flags : byte
         {
             ControlPoint = 0,
             OnCurve = 1,

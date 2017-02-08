@@ -5,10 +5,8 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {
-
     internal abstract class GlyphLoader
     {
-
         public abstract Glyph CreateGlyph(GlyphTable table);
 
         public static GlyphLoader Load(BinaryReader reader)

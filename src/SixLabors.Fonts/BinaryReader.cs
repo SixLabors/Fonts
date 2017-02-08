@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts
 {
@@ -114,9 +113,9 @@ namespace SixLabors.Fonts
 
         public TEnum ReadInt16<TEnum>()
         {
-            return CastTo<TEnum>.From(ReadInt16());
+            return CastTo<TEnum>.From(this.ReadInt16());
         }
-        
+
         public short ReadFWORD()
         {
             return this.ReadInt16();
@@ -126,7 +125,6 @@ namespace SixLabors.Fonts
         {
             return this.ReadUInt16();
         }
-
 
         /// <summary>
         /// Reads a 32-bit signed integer from the stream, using the bit converter
@@ -164,7 +162,7 @@ namespace SixLabors.Fonts
 
         public TEnum ReadUInt16<TEnum>()
         {
-            return CastTo<TEnum>.From(ReadUInt16());
+            return CastTo<TEnum>.From(this.ReadUInt16());
         }
 
         /// <summary>
@@ -204,6 +202,7 @@ namespace SixLabors.Fonts
 
             return data;
         }
+
         /// <summary>
         /// Reads array or 16-bit unsigned integers from the stream, using the bit converter
         /// for this reader. 2 bytes are read.
@@ -214,7 +213,7 @@ namespace SixLabors.Fonts
         /// </returns>
         public ushort[] Offset16Array(int length)
         {
-            return ReadUInt16Array(length);
+            return this.ReadUInt16Array(length);
         }
 
         /// <summary>
@@ -227,9 +226,8 @@ namespace SixLabors.Fonts
         /// </returns>
         public uint[] Offset32Array(int length)
         {
-            return ReadUInt32Array(length);
+            return this.ReadUInt32Array(length);
         }
-
 
         public byte[] ReadUInt8Array(int length)
         {
@@ -518,25 +516,26 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Class to cast to type <see cref="T"/>
+        /// Class to cast to type <typeparamref name="T"/>
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
         public static class CastTo<T>
         {
             /// <summary>
-            /// Casts <see cref="S"/> to <see cref="T"/>.
+            /// Casts <typeparamref name="S" /> to <typeparamref name="T" />.
             /// This does not cause boxing for value types.
             /// Useful in generic methods.
             /// </summary>
             /// <typeparam name="S">Source type to cast from. Usually a generic type.</typeparam>
+            /// <param name="s">The s.</param>
             public static T From<S>(S s)
             {
-                return Cache<S>.caster(s);
+                return Cache<S>.Caster(s);
             }
 
             private static class Cache<S>
             {
-                public static readonly Func<S, T> caster = Get();
+                public static readonly Func<S, T> Caster = Get();
 
                 private static Func<S, T> Get()
                 {

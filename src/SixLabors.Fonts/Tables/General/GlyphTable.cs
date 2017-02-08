@@ -11,15 +11,14 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class GlyphTable : Table
     {
-        const string TableName = "glyf";
+        private const string TableName = "glyf";
         private GlyphLoader[] loaders;
         private Glyph[] glyphs;
-
 
         public GlyphTable(GlyphLoader[] glyphLoaders)
         {
             this.loaders = glyphLoaders;
-            glyphs = new Glyph[glyphLoaders.Length];
+            this.glyphs = new Glyph[glyphLoaders.Length];
         }
 
         internal Glyph GetGlyph(int index)
@@ -29,7 +28,7 @@ namespace SixLabors.Fonts.Tables.General
                 this.glyphs[index] = this.loaders[index].CreateGlyph(this);
             }
 
-            return glyphs[index];
+            return this.glyphs[index];
         }
 
         public static GlyphTable Load(FontReader reader)
@@ -54,7 +53,7 @@ namespace SixLabors.Fonts.Tables.General
                 }
                 else
                 {
-                    //move to start of glyph
+                    // move to start of glyph
                     var position = start + locations[i];
                     reader.Seek(position, System.IO.SeekOrigin.Begin);
 
@@ -65,5 +64,4 @@ namespace SixLabors.Fonts.Tables.General
             return new GlyphTable(glyphs);
         }
     }
-
 }

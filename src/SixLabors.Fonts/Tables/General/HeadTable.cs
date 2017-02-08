@@ -14,7 +14,8 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class HeadTable : Table
     {
-        const string TableName = "head";
+        private const string TableName = "head";
+
         internal DateTime Created { get; }
 
         internal HeadFlags Flags { get; }
@@ -43,10 +44,9 @@ namespace SixLabors.Fonts.Tables.General
             this.IndexLocationFormat = indexToLocFormat;
         }
 
-
         public static HeadTable Load(FontReader reader)
         {
-            //move to start of table
+            // move to start of table
             return Load(reader.GetReaderAtTablePosition(TableName));
         }
 
@@ -116,7 +116,7 @@ namespace SixLabors.Fonts.Tables.General
             var created = startDate.AddSeconds(reader.ReadInt64());
             var modified = startDate.AddSeconds(reader.ReadInt64());
 
-            var bounds = Bounds.Load(reader); //xMin, yMin, xMax, yMax
+            var bounds = Bounds.Load(reader); // xMin, yMin, xMax, yMax
 
             var macStyle = reader.ReadUInt16<HeadMacStyle>();
             var lowestRecPPEM = reader.ReadUInt16();

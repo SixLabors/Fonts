@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {
-
     internal class CompositeGlyphLoader : GlyphLoader
     {
-        private List<Composite> result;
         private readonly Bounds bounds;
+        private List<Composite> result;
 
         public CompositeGlyphLoader(List<Composite> result, Bounds bounds)
         {
@@ -23,31 +22,23 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             List<Vector2> controlPoints = new List<Vector2>();
             List<bool> onCurves = new List<bool>();
             List<ushort> endPoints = new List<ushort>();
-            
-            List<Vector2> MinBounds = new List<Vector2>();
-            List<Vector2> MaxBounds = new List<Vector2>();
-
-
+            List<Vector2> minBounds = new List<Vector2>();
+            List<Vector2> maxBounds = new List<Vector2>();
             List<Glyph> parts = new List<Glyph>();
-            foreach (var composite in result)
+
+            foreach (var composite in this.result)
             {
                 var glyph = table.GetGlyph(composite.GlyphIndex);
                 var pointcount = glyph.PointCount;
-                for (var i = 0; i< pointcount; i++)
+                for (var i = 0; i < pointcount; i++)
                 {
                     controlPoints.Add(Vector2.Transform(glyph.ControlPoints[i], composite.Transformation));
                     onCurves.Add(glyph.OnCurves[i]);
                     endPoints.Add(glyph.EndPoints[i]);
-                    MinBounds.Add(Vector2.Transform(glyph.Bounds.Min, composite.Transformation));
-                    MaxBounds.Add(Vector2.Transform(glyph.Bounds.Max, composite.Transformation));
                 }
             }
-            var minX = MinBounds.Min(x => x.X);
-            var minY = MinBounds.Min(x => x.Y);
-            var maxX = MaxBounds.Max(x => x.X);
-            var maxY = MaxBounds.Max(x => x.Y);
 
-            return new Glyph(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), new Bounds(minX, minY, maxX, maxY));
+            return new Glyph(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds);
         }
 
         public static CompositeGlyphLoader LoadCompositeGlyph(BinaryReader reader, Bounds bounds)
@@ -110,16 +101,15 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 }
 
                 result.Add(new Composite(glyphIndex, transform));
-            } while (flags.HasFlag(CompositeFlags.MoreComponents));
+            }
+            while (flags.HasFlag(CompositeFlags.MoreComponents));
 
             if (flags.HasFlag(CompositeFlags.WeHaveInstructions))
             {
-                //USHORT numInstr
-                //BYTE instr[numInstr];
+                // TODO deal with instructions
             }
 
             return new CompositeGlyphLoader(result, bounds);
-            //return Glyph.Empty;
         }
 
         [Flags]
@@ -144,11 +134,12 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         {
             public Composite(ushort glyphIndex, Matrix3x2 transformation)
             {
-                GlyphIndex = glyphIndex;
-                Transformation = transformation;
+                this.GlyphIndex = glyphIndex;
+                this.Transformation = transformation;
             }
 
             public ushort GlyphIndex { get; }
+
             public Matrix3x2 Transformation { get; }
         }
     }

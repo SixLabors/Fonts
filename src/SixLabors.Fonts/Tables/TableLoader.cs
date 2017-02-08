@@ -86,16 +86,15 @@ namespace SixLabors.Fonts.Tables
             return this.loaders[tag]?.Invoke(reader);
         }
 
-
         internal TTable Load<TTable>(FontReader reader)
             where TTable : Table
         {
             // loader missing register an unknow type loader and carry on
             if (this.typesLoaders.ContainsKey(typeof(TTable)))
             {
-
                 return (TTable)this.typesLoaders[typeof(TTable)]?.Invoke(reader);
             }
+
             throw new Exception("font table not registered");
         }
     }

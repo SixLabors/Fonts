@@ -11,12 +11,12 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class NameTable : Table
     {
-        const string TableName = "name";
+        private const string TableName = "name";
         private NameRecord[] names;
 
         public static NameTable Load(FontReader reader)
         {
-            //move to start of table
+            // move to start of table
             return Load(reader.GetReaderAtTablePosition(TableName));
         }
 
