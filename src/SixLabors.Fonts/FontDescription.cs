@@ -44,7 +44,18 @@ namespace SixLabors.Fonts
         {
             // only read the name table
             var reader = new FontReader(stream);
+            return Load(reader);
+        }
 
+        /// <summary>
+        /// Reads a <see cref="FontDescription" /> from the specified stream.
+        /// </summary>
+        /// <param name="reader">The reader.</param>
+        /// <returns>
+        /// a <see cref="FontDescription" />.
+        /// </returns>
+        internal static FontDescription Load(FontReader reader)
+        {
             var nameTable = reader.GetTable<NameTable>();
 
             return new FontDescription(nameTable);

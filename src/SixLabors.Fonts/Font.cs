@@ -69,7 +69,11 @@ namespace SixLabors.Fonts
         public static new Font Load(Stream stream)
         {
             var reader = new FontReader(stream);
+            return Load(reader);
+        }
 
+        internal static new Font Load(FontReader reader)
+        {
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // recomended order
             reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
