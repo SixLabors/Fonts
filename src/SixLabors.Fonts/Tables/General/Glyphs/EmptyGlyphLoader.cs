@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         private byte counter = 0;
 
-        public override Glyph CreateGlyph(GlyphTable table)
+        public override Glyphs.GlyphVector CreateGlyph(GlyphTable table)
         {
             this.counter++;
             if (this.counter > 100)

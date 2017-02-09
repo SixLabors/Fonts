@@ -17,7 +17,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             this.bounds = bounds;
         }
 
-        public override Glyph CreateGlyph(GlyphTable table)
+        public override Glyphs.GlyphVector CreateGlyph(GlyphTable table)
         {
             List<Vector2> controlPoints = new List<Vector2>();
             List<bool> onCurves = new List<bool>();
@@ -30,15 +30,20 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             {
                 var glyph = table.GetGlyph(composite.GlyphIndex);
                 var pointcount = glyph.PointCount;
+                ushort endPointOffset = (ushort)controlPoints.Count;
                 for (var i = 0; i < pointcount; i++)
                 {
                     controlPoints.Add(Vector2.Transform(glyph.ControlPoints[i], composite.Transformation));
                     onCurves.Add(glyph.OnCurves[i]);
-                    endPoints.Add(glyph.EndPoints[i]);
+                }
+
+                foreach(var p in glyph.EndPoints)
+                {
+                    endPoints.Add((ushort)(p + endPointOffset));
                 }
             }
 
-            return new Glyph(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds);
+            return new Glyphs.GlyphVector(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds);
         }
 
         public static CompositeGlyphLoader LoadCompositeGlyph(BinaryReader reader, Bounds bounds)

@@ -26,6 +26,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public ushort GetAdvancedWidth(int glyphIndex)
         {
+            if(glyphIndex >= this.advancedWidths.Length)
+            {
+                return this.advancedWidths[0];
+            }
             return this.advancedWidths[glyphIndex];
         }
 

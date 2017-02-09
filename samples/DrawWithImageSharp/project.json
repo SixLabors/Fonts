@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "debugType": "portable",
+    "emitEntryPoint": true
+  },
+  "dependencies": {
+    "ImageSharp.Drawing.Paths": "1.0.0-alpha2-00002",
+    "ImageSharp.Formats.Png": "1.0.0-alpha2-00048"
+  },
+  "frameworks": {
+    "netcoreapp1.1": {
+      
+      "dependencies": {
+        "SixLabors.Fonts": {
+          "target": "project",
+          "include": "all"
+        },
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        }
+      },
+      "imports": "dnxcore50"
+    }
+  }
+}

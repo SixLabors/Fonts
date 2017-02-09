@@ -14,6 +14,7 @@ namespace SixLabors.Fonts
         private readonly GlyphTable glyphs;
         private readonly OS2Table os2;
         private readonly HorizontalMetricsTable horizontalMetrics;
+        private Glyph[] glyphCache;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontDescription" /> class.
@@ -30,6 +31,8 @@ namespace SixLabors.Fonts
             this.os2 = os2;
             this.glyphs = glyphs;
             this.horizontalMetrics = horizontalMetrics;
+
+            glyphCache = new Glyph[this.glyphs.GlyphCount];
         }
 
         internal ushort GetGlyphIndex(char character)
@@ -37,42 +40,53 @@ namespace SixLabors.Fonts
             return this.cmap.GetGlyphId(character);
         }
 
-        internal Glyph GetGlyph(char character)
+        public Glyph GetGlyph(char character)
         {
             var idx = this.GetGlyphIndex(character);
-            return this.GetGlyph(idx);
+            if (glyphCache[idx] == null)
+            {
+                var advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
+                var vector = this.glyphs.GetGlyph(idx);
+                glyphCache[idx] = new Glyph(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, idx);
+            }
+
+            return glyphCache[idx];
         }
 
-        internal Glyph GetGlyph(ushort index)
+        internal int GetAdvancedWidth(Glyph first, Glyph second)
         {
-            return this.glyphs.GetGlyph(index);
-        }
-
-        internal int GetAdvancedWidth(ushort index)
-        {
-            return this.horizontalMetrics.GetAdvancedWidth(index);
-        }
-
-        internal int GetAdvancedWidth(ushort first, ushort second)
-        {
-            var advance = this.horizontalMetrics.GetAdvancedWidth(first);
-
             // TODO combin data from the kern table to offset this width
-            return advance;
+            return first.AdvanceWidth;
         }
+
+#if FILESYSTEM
+        /// <summary>
+        /// Reads a <see cref="Font"/> from the specified stream.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <returns>a <see cref="Font"/>.</returns>
+        public static Font LoadFont(string path)
+        {
+            using (var fs = File.OpenRead(path))
+            {
+                var reader = new FontReader(fs);
+                return LoadFont(reader);
+            }
+        }
+#endif
 
         /// <summary>
-        /// Reads a <see cref="FontDescription"/> from the specified stream.
+        /// Reads a <see cref="Font"/> from the specified stream.
         /// </summary>
         /// <param name="stream">The stream.</param>
-        /// <returns>a <see cref="FontDescription"/>.</returns>
-        public static new Font Load(Stream stream)
+        /// <returns>a <see cref="Font"/>.</returns>
+        public static Font LoadFont(Stream stream)
         {
             var reader = new FontReader(stream);
-            return Load(reader);
+            return LoadFont(reader);
         }
 
-        internal static new Font Load(FontReader reader)
+        internal static Font LoadFont(FontReader reader)
         {
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // recomended order

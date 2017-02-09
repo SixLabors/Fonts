@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts
 {
-    internal class Bounds
+    public class Bounds
     {
         public Bounds(Vector2 min, Vector2 max)
         {
@@ -23,7 +23,7 @@ namespace SixLabors.Fonts
 
         public Vector2 Max { get; }
 
-        public static Bounds Load(BinaryReader reader)
+        internal static Bounds Load(BinaryReader reader)
         {
             var minX = reader.ReadInt16();
             var minY = reader.ReadInt16();
