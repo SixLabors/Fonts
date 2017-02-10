@@ -40,9 +40,10 @@ namespace SixLabors.Fonts
 
             // https://www.microsoft.com/typography/otspec/recom.htm#tad
             this.LineHeight = os2.TypoAscender - os2.TypoDescender + os2.TypoLineGap;
+            this.EmSize = this.head.UnitsPerEm;
         }
 
-        public float ScaleFactor => 72 * this.head.UnitsPerEm;
+        public ushort EmSize { get; }
 
         internal ushort GetGlyphIndex(char character)
         {
@@ -57,7 +58,7 @@ namespace SixLabors.Fonts
                 var advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
                 var lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
                 var vector = this.glyphs.GetGlyph(idx);
-                glyphCache[idx] = new Glyph(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, this.ScaleFactor, idx);
+                glyphCache[idx] = new Glyph(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, this.EmSize, idx);
             }
 
             return glyphCache[idx];

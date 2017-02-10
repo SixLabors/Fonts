@@ -17,6 +17,8 @@ namespace SixLabors.Fonts
             float lineHeight = 0f;
             Vector2 location = Vector2.Zero;
             Glyph previousGlyph = null;
+            ushort emSize = 0;
+            float scale = 0;
             for (var i = 0; i < text.Length; i++)
             {
                 if (spanStyle.End < i)
@@ -27,7 +29,8 @@ namespace SixLabors.Fonts
                 if (spanStyle.Font.LineHeight > lineHeight)
                 {
                     // get the larget lineheight thus far
-                    var scale = spanStyle.Font.ScaleFactor;
+                    scale = spanStyle.Font.EmSize * 72;
+                    emSize = spanStyle.Font.EmSize;
                     lineHeight = (spanStyle.Font.LineHeight * spanStyle.PointSize) / scale;
                 }
                 var c = text[i];
@@ -41,14 +44,22 @@ namespace SixLabors.Fonts
                     case '\n':
                         // carrage return resets the XX cordinate to startXX 
                         location.X = 0;
-                        location.Y += spanStyle.Font.LineHeight;
+                        location.Y += lineHeight;
                         lineHeight = 0;// reset lighthight tracking fro next line 
                         previousGlyph = null;
                         break;
-
+                    case '\t':
+                        {
+                            var glyph = spanStyle.Font.GetGlyph(c);
+                            var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
+                            var tabStop = width * 4;
+                            //advance to a position > width away that 
+                            var dist = tabStop - ((location.X + width) % tabStop);
+                            location.X += dist;
+                        }
+                        break;
                     case ' ':
                         {
-                            var scale = spanStyle.Font.ScaleFactor;
                             var glyph = spanStyle.Font.GetGlyph(c);
                             var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                             location.X += width;
@@ -56,11 +67,11 @@ namespace SixLabors.Fonts
                         break;
                     default:
                         {
-                            var scale = spanStyle.Font.ScaleFactor;
                             var glyph = spanStyle.Font.GetGlyph(c);
                             var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
+                            var height = (glyph.Height * spanStyle.PointSize) / scale;
 
-                            layout.Add(new GlyphLayout(glyph, location, width, lineHeight, spanStyle.PointSize));
+                            layout.Add(new GlyphLayout(glyph, location, width, height, spanStyle.PointSize));
                             if (previousGlyph != null)
                             {
                                 // if there is special instructions for this glyph pair use that width

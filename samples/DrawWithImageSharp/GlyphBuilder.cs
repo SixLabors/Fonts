@@ -11,19 +11,17 @@ namespace SixLabors.Fonts.DrawWithImageSharp
     {
         PathBuilder builder = new PathBuilder();
         Vector2 currentPoint = default(Vector2);
-        private float resolution;
         private Vector2 origin;
 
         public List<IPath> Paths { get; private set; } = new List<IPath>();
 
-        public GlyphBuilder(float resolution = 96)
+        public GlyphBuilder()
         {
-            this.resolution = resolution;
         }
         
         public void BeginGlyph()
         {
-            var matrix = Matrix3x2.CreateScale(resolution, -resolution);
+            var matrix = Matrix3x2.CreateScale(1, -1);
             builder = new PathBuilder(matrix); // TODO add clear to path builder
             builder.SetOrigin(Vector2.Transform(this.origin, matrix));
         }

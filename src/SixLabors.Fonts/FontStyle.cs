@@ -15,7 +15,10 @@ namespace SixLabors.Fonts
         }
 
         public float PointSize { get; }
+
         public Font Font { get; }
+
+        public float TabWidth { get; }
 
         /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream

@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tests
 
             var glyph = font.GetGlyph('a');
             var r = new GlyphRenderer();
-            glyph.RenderTo(r);
+            glyph.RenderTo(r, 12, 72);
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(3, r.ControlPoints.Count);
         }

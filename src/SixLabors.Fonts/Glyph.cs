@@ -13,16 +13,18 @@ namespace SixLabors.Fonts
         private readonly bool[] onCurves;
         private readonly ushort[] endPoints;
         private ushort index;
+        private readonly ushort emSize;
 
-        internal Glyph(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, float scaleFactor, ushort index)
+        internal Glyph(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, ushort emSize, ushort index)
         {
-            this.scaleFactor = scaleFactor;
+            this.emSize = emSize;
             this.controlPoints = controlPoints;
             this.onCurves = onCurves;
             this.endPoints = endPoints;
             this.Bounds = bounds;
             this.AdvanceWidth = advanceWidth;
             this.Index = index;
+            this.Height = emSize - Bounds.Min.Y;
         }
 
         public Bounds Bounds { get; }
@@ -35,23 +37,34 @@ namespace SixLabors.Fonts
         /// </value>
         public ushort AdvanceWidth { get; }
 
-        internal ushort Index { get; }
+        public float Height { get; }
 
-        public float scaleFactor { get; private set; }
+        internal ushort Index { get; }
+        
+        /// <summary>
+        /// Renders to.
+        /// </summary>
+        /// <param name="surface">The surface.</param>
+        /// <param name="pointSize">Size of the point.</param>
+        /// <param name="dpi">The dpi.</param>
+        public void RenderTo(IGlyphRender surface, float pointSize, float dpi)
+        {
+            RenderTo(surface, pointSize, new Vector2(dpi));
+        }
 
         /// <summary>
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
         /// </summary>
         /// <param name="surface">The surface.</param>
-        /// <param name="scale">The scale.</param>
-        /// <exception cref="System.NotSupportedException">
-        /// Too many control points
-        /// </exception>
-        public void RenderTo(IGlyphRender surface, float pointSize = 12)
+        /// <param name="pointSize">Size of the point.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <exception cref="System.NotSupportedException">Too many control points</exception>
+        public void RenderTo(IGlyphRender surface, float pointSize, Vector2 dpi)
         {
             int npoints = controlPoints.Length;
             int startContour = 0;
             int cpoint_index = 0;
+            var scaleFactor = (float)(emSize * 72f);
 
             surface.BeginGlyph();
 
@@ -68,7 +81,7 @@ namespace SixLabors.Fonts
 
                 for (; cpoint_index < nextContour; ++cpoint_index)
                 {
-                    var vpoint = (controlPoints[cpoint_index] * pointSize) / scaleFactor; // scale each point as we go, w will now have the correct relative point size
+                    var vpoint = (controlPoints[cpoint_index] * pointSize * dpi)  / scaleFactor ; // scale each point as we go, w will now have the correct relative point size
 
                     if (onCurves[cpoint_index])
                     {

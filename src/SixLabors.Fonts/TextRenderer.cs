@@ -23,15 +23,20 @@ namespace SixLabors.Fonts
         {
         }
 
-        public void RenderText(string text, FontStyle style)
+        public void RenderText(string text, FontStyle style, Vector2 dpi)
         {
             var glyphsToRender = layoutEngine.GenerateLayout(text, style);
 
             foreach (var g in glyphsToRender)
             {
-                renderer.SetOrigin(g.Location);
-                g.Glyph.RenderTo(renderer,  g.PointSize);
+                renderer.SetOrigin(g.Location * dpi);
+                g.Glyph.RenderTo(renderer, g.PointSize, dpi);
             }
+        }
+
+        public void RenderText(string text, FontStyle style, float dpi)
+        {
+            RenderText(text, style, new Vector2(dpi));
         }
     }
 }

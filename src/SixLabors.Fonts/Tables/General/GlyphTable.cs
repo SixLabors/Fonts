@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.General
             this.loaders = glyphLoaders;
         }
 
-        internal Glyphs.GlyphVector GetGlyph(int index)
+        internal virtual Glyphs.GlyphVector GetGlyph(int index)
         {
             return this.loaders[index].CreateGlyph(this);
         }
