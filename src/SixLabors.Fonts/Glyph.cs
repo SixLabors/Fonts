@@ -14,8 +14,9 @@ namespace SixLabors.Fonts
         private readonly ushort[] endPoints;
         private ushort index;
 
-        internal Glyph(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, ushort index)
+        internal Glyph(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, float scaleFactor, ushort index)
         {
+            this.scaleFactor = scaleFactor;
             this.controlPoints = controlPoints;
             this.onCurves = onCurves;
             this.endPoints = endPoints;
@@ -36,19 +37,23 @@ namespace SixLabors.Fonts
 
         internal ushort Index { get; }
 
+        public float scaleFactor { get; private set; }
+
         /// <summary>
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
         /// </summary>
         /// <param name="surface">The surface.</param>
-        public void RenderTo(IRenderSurface surface)
+        /// <param name="scale">The scale.</param>
+        /// <exception cref="System.NotSupportedException">
+        /// Too many control points
+        /// </exception>
+        public void RenderTo(IGlyphRender surface, float pointSize = 12)
         {
-
             int npoints = controlPoints.Length;
             int startContour = 0;
             int cpoint_index = 0;
 
             surface.BeginGlyph();
-
 
             Vector2 lastMove = Vector2.Zero;
 
@@ -63,8 +68,8 @@ namespace SixLabors.Fonts
 
                 for (; cpoint_index < nextContour; ++cpoint_index)
                 {
+                    var vpoint = (controlPoints[cpoint_index] * pointSize) / scaleFactor; // scale each point as we go, w will now have the correct relative point size
 
-                    var vpoint = controlPoints[cpoint_index];
                     if (onCurves[cpoint_index])
                     {
                         //on curve
@@ -123,7 +128,7 @@ namespace SixLabors.Fonts
                                     //we already have prev second control point
                                     //so auto calculate line to 
                                     //between 2 point
-                                    Vector2 mid = (secondControlPoint + vpoint)/2;
+                                    Vector2 mid = (secondControlPoint + vpoint) / 2;
                                     surface.QuadraticBezierTo(
                                         secondControlPoint,
                                         mid);

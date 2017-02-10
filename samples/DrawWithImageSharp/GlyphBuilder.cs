@@ -7,15 +7,25 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts.DrawWithImageSharp
 {
-    public class GlyphBuilder : IRenderSurface
+    public class GlyphBuilder : IMultiGlyphRenderer
     {
         PathBuilder builder = new PathBuilder();
         Vector2 currentPoint = default(Vector2);
-        public IPath Path { get; private set; }
+        private float resolution;
+        private Vector2 origin;
 
+        public List<IPath> Paths { get; private set; } = new List<IPath>();
+
+        public GlyphBuilder(float resolution = 96)
+        {
+            this.resolution = resolution;
+        }
+        
         public void BeginGlyph()
         {
-            builder = new PathBuilder(Matrix3x2.CreateScale(1,-1)); // TODO add clear to path builder
+            var matrix = Matrix3x2.CreateScale(resolution, -resolution);
+            builder = new PathBuilder(matrix); // TODO add clear to path builder
+            builder.SetOrigin(Vector2.Transform(this.origin, matrix));
         }
 
         public void BeginFigure()
@@ -31,7 +41,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public void EndGlyph()
         {
-            Path = builder.Build();
+            Paths.Add(builder.Build());
         }
 
         public void EndFigure()
@@ -59,6 +69,12 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             builder.AddBezier(currentPoint, c1, c2, point);
             this.currentPoint = point;
+        }
+
+        public void SetOrigin(Vector2 vector)
+        {
+            this.origin = vector;
+            builder.SetOrigin(vector);
         }
     }
 }

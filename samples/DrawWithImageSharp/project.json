@@ -6,7 +6,8 @@
   },
   "dependencies": {
     "ImageSharp.Drawing.Paths": "1.0.0-alpha2-00002",
-    "ImageSharp.Formats.Png": "1.0.0-alpha2-00048"
+    "ImageSharp.Formats.Png": "1.0.0-alpha2-00048",
+    "SixLabors.Shapes": "0.1.0-ci0103"
   },
   "frameworks": {
     "netcoreapp1.1": {

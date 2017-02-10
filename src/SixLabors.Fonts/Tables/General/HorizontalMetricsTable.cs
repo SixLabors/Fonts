@@ -26,11 +26,22 @@ namespace SixLabors.Fonts.Tables.General
 
         public ushort GetAdvancedWidth(int glyphIndex)
         {
-            if(glyphIndex >= this.advancedWidths.Length)
+            if (glyphIndex >= this.advancedWidths.Length)
             {
                 return this.advancedWidths[0];
             }
+
             return this.advancedWidths[glyphIndex];
+        }
+        
+        internal short GetLeftSideBearing(ushort glyphIndex)
+        {
+            if (glyphIndex >= this.leftSideBearings.Length)
+            {
+                return this.leftSideBearings[0];
+            }
+
+            return this.leftSideBearings[glyphIndex];
         }
 
         public static HorizontalMetricsTable Load(FontReader reader)

@@ -2,6 +2,7 @@
 using System.IO;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
+using System.Numerics;
 
 namespace SixLabors.Fonts
 {
@@ -15,6 +16,9 @@ namespace SixLabors.Fonts
         private readonly OS2Table os2;
         private readonly HorizontalMetricsTable horizontalMetrics;
         private Glyph[] glyphCache;
+        private readonly HeadTable head;
+
+        public int LineHeight { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontDescription" /> class.
@@ -24,16 +28,21 @@ namespace SixLabors.Fonts
         /// <param name="glyphs">The glyphs.</param>
         /// <param name="os2">The os2.</param>
         /// <param name="horizontalMetrics">The horizontal metrics.</param>
-        internal Font(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics)
+        internal Font(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head)
             : base(nameTable)
         {
             this.cmap = cmap;
             this.os2 = os2;
             this.glyphs = glyphs;
             this.horizontalMetrics = horizontalMetrics;
-
+            this.head = head;
             glyphCache = new Glyph[this.glyphs.GlyphCount];
+
+            // https://www.microsoft.com/typography/otspec/recom.htm#tad
+            this.LineHeight = os2.TypoAscender - os2.TypoDescender + os2.TypoLineGap;
         }
+
+        public float ScaleFactor => 72 * this.head.UnitsPerEm;
 
         internal ushort GetGlyphIndex(char character)
         {
@@ -46,8 +55,9 @@ namespace SixLabors.Fonts
             if (glyphCache[idx] == null)
             {
                 var advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
+                var lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
                 var vector = this.glyphs.GetGlyph(idx);
-                glyphCache[idx] = new Glyph(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, idx);
+                glyphCache[idx] = new Glyph(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, this.ScaleFactor, idx);
             }
 
             return glyphCache[idx];
@@ -90,7 +100,7 @@ namespace SixLabors.Fonts
         {
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // recomended order
-            reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
+            var head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
             reader.GetTable<HoizontalHeadTable>(); // hhea
             reader.GetTable<MaximumProfileTable>(); // maxp
             var os2 = reader.GetTable<OS2Table>(); // OS/2
@@ -110,7 +120,7 @@ namespace SixLabors.Fonts
             // gasp - Grid-fitting/Scan-conversion (optional table)
             // PCLT - PCL 5 data
             // DSIG - Digital signature
-            return new Font(nameTable, cmap, glyphs, os2, horizontalMetrics);
+            return new Font(nameTable, cmap, glyphs, os2, horizontalMetrics, head);
         }
     }
 }

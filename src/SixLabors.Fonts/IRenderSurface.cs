@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts
 {
-    public interface IRenderSurface
+    public interface IGlyphRender
     {
         void BeginFigure();
         void MoveTo(Vector2 point);
@@ -16,5 +16,11 @@ namespace SixLabors.Fonts
         void EndFigure();
         void EndGlyph();
         void BeginGlyph();
+    }
+
+    public interface IMultiGlyphRenderer : IGlyphRender
+    {
+        // note: at this point we can map rotations * resolutions for the glyph based on the origin set :)
+        void SetOrigin(Vector2 vector);
     }
 }

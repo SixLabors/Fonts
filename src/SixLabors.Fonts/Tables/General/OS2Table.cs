@@ -20,9 +20,6 @@ namespace SixLabors.Fonts.Tables.General
         private byte[] panose;
         private short sCapHeight;
         private short sFamilyClass;
-        private short sTypoAscender;
-        private short sTypoDescender;
-        private short sTypoLineGap;
         private short sxHeight;
         private string tag;
         private ushort ulCodePageRange1;
@@ -54,6 +51,10 @@ namespace SixLabors.Fonts.Tables.General
         private short ySuperscriptXSize;
         private short ySuperscriptYOffset;
         private short ySuperscriptYSize;
+
+        public int TypoAscender { get; }
+        public short TypoDescender { get; }
+        public short TypoLineGap { get; }
 
         public static OS2Table Load(FontReader reader)
         {
@@ -303,9 +304,9 @@ namespace SixLabors.Fonts.Tables.General
             this.fsSelection = fsSelection;
             this.usFirstCharIndex = usFirstCharIndex;
             this.usLastCharIndex = usLastCharIndex;
-            this.sTypoAscender = sTypoAscender;
-            this.sTypoDescender = sTypoDescender;
-            this.sTypoLineGap = sTypoLineGap;
+            this.TypoAscender = sTypoAscender;
+            this.TypoDescender = sTypoDescender;
+            this.TypoLineGap = sTypoLineGap;
             this.usWinAscent = usWinAscent;
             this.usWinDescent = usWinDescent;
         }
