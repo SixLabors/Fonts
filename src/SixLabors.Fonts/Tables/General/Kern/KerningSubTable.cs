@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
 {
     internal abstract class KerningSubTable
     {
-        public KerningCoverage coverage;
+        private KerningCoverage coverage;
 
         public KerningSubTable(KerningCoverage coverage)
         {
@@ -16,8 +16,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
         }
 
         public static KerningSubTable Load(BinaryReader reader)
-        { 
-            // common subtable header
+        {
             // Kerning subtables will share the same header format. This header is used to identify the format of the subtable and the kind of information it contains:
             // Type   | Field    | Description
             // -------|----------|-----------------------------------------
@@ -29,7 +28,6 @@ namespace SixLabors.Fonts.Tables.General.Kern
 
             var coverage = KerningCoverage.Read(reader);
 
-          
             if (coverage.Format == 0)
             {
                 return Format0SubTable.Load(reader, coverage);
@@ -46,12 +44,12 @@ namespace SixLabors.Fonts.Tables.General.Kern
         public void ApplyOffset(ushort index1, ushort index2, ref Vector2 result)
         {
             short offset = 0;
-            if (TryGetOffset(index1, index2, out offset))
+            if (this.TryGetOffset(index1, index2, out offset))
             {
-                if (coverage.Horizontal)
+                if (this.coverage.Horizontal)
                 {
                     // apply to X
-                    if (coverage.OverrideAccumulator)
+                    if (this.coverage.OverrideAccumulator)
                     {
                         result.X = offset;
                     }
@@ -63,7 +61,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
                 else
                 {
                     // apply to Y
-                    if (coverage.OverrideAccumulator)
+                    if (this.coverage.OverrideAccumulator)
                     {
                         result.Y = offset;
                     }

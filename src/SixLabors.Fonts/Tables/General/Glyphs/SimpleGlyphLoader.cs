@@ -107,8 +107,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                         repeatCount = reader.ReadByte();
                     }
                 }
+
                 result[c++] = flag;
             }
+
             return result;
         }
 

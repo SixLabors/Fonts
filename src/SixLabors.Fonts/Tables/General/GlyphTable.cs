@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General
         private const string TableName = "glyf";
         private GlyphLoader[] loaders;
 
-        public int GlyphCount => loaders.Length;
+        public int GlyphCount => this.loaders.Length;
 
         public GlyphTable(GlyphLoader[] glyphLoaders)
         {

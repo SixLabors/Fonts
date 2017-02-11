@@ -23,7 +23,6 @@ namespace SixLabors.Fonts.Tables.General.Kern
             // uint16 | searchRange   | The largest power of two less than or equal to the value of nPairs, multiplied by the size in bytes of an entry in the table.
             // uint16 | entrySelector | This is calculated as log2 of the largest power of two less than or equal to the value of nPairs.This value indicates how many iterations of the search loop will have to be made. (For example, in a list of eight items, there would have to be three iterations of the loop).
             // uint16 | rangeShift    | The value of nPairs minus the largest power of two less than or equal to nPairs, and then multiplied by the size in bytes of an entry in the table.
-
             var pairCount = reader.ReadUInt16();
             var searchRange = reader.ReadUInt16();
             var entrySelector = reader.ReadUInt16();
@@ -47,6 +46,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
                 offset = pair.Offset;
                 return true;
             }
+
             offset = 0;
             return false;
         }

@@ -7,8 +7,17 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts
 {
+    /// <summary>
+    /// Encapsulated logic or laying out text.
+    /// </summary>
     public class TextLayout
     {
+        /// <summary>
+        /// Generates the layout.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="style">The style.</param>
+        /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
         public ImmutableArray<GlyphLayout> GenerateLayout(string text, FontStyle style)
         {
             AppliedFontStyle spanStyle = style.GetStyle(0, text.Length);
@@ -17,7 +26,6 @@ namespace SixLabors.Fonts
             float lineHeight = 0f;
             Vector2 location = Vector2.Zero;
             Glyph previousGlyph = null;
-            ushort emSize = 0;
             float scale = 0;
             for (var i = 0; i < text.Length; i++)
             {
@@ -26,38 +34,43 @@ namespace SixLabors.Fonts
                     spanStyle = style.GetStyle(i, text.Length);
                     previousGlyph = null;
                 }
+
                 if (spanStyle.Font.LineHeight > lineHeight)
                 {
                     // get the larget lineheight thus far
                     scale = spanStyle.Font.EmSize * 72;
-                    emSize = spanStyle.Font.EmSize;
                     lineHeight = (spanStyle.Font.LineHeight * spanStyle.PointSize) / scale;
                 }
+
                 var c = text[i];
                 switch (c)
                 {
                     case '\r':
-                        // carrage return resets the XX cordinate to startXX 
+                        // carrage return resets the XX coordinate to 0
                         location.X = 0;
                         previousGlyph = null;
+
                         break;
                     case '\n':
-                        // carrage return resets the XX cordinate to startXX 
+                        // carrage return resets the XX coordinate to 0
                         location.X = 0;
                         location.Y += lineHeight;
-                        lineHeight = 0;// reset lighthight tracking fro next line 
+                        lineHeight = 0; // reset line height tracking for next line
                         previousGlyph = null;
+
                         break;
                     case '\t':
                         {
                             var glyph = spanStyle.Font.GetGlyph(c);
                             var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                             var tabStop = width * spanStyle.TabWidth;
-                            //advance to a position > width away that 
+
+                            // advance to a position > width away that
                             var dist = tabStop - ((location.X + width) % tabStop);
                             location.X += dist;
                             previousGlyph = null;
                         }
+
                         break;
                     case ' ':
                         {
@@ -66,6 +79,7 @@ namespace SixLabors.Fonts
                             location.X += width;
                             previousGlyph = null;
                         }
+
                         break;
                     default:
                         {
@@ -80,6 +94,7 @@ namespace SixLabors.Fonts
                                 var scaledOffset = (spanStyle.Font.GetOffset(glyph, previousGlyph) * spanStyle.PointSize) / scale;
 
                                 glyphLocation += scaledOffset;
+
                                 // only fix the 'X' of the current tracked location but use the actual 'X'/'Y' of the offset
                                 location.X = glyphLocation.X;
                             }
@@ -90,6 +105,7 @@ namespace SixLabors.Fonts
                             location.X += width;
                             previousGlyph = glyph;
                         }
+
                         break;
                 }
             }
@@ -98,9 +114,12 @@ namespace SixLabors.Fonts
         }
     }
 
+    /// <summary>
+    /// A glyphs layout and location
+    /// </summary>
     public struct GlyphLayout
     {
-        public GlyphLayout(Glyph glyph, Vector2 location, float width, float height, float pointSize)
+        internal GlyphLayout(Glyph glyph, Vector2 location, float width, float height, float pointSize)
         {
             this.Glyph = glyph;
             this.Location = location;
@@ -109,10 +128,44 @@ namespace SixLabors.Fonts
             this.PointSize = pointSize;
         }
 
+        /// <summary>
+        /// Gets the glyph.
+        /// </summary>
+        /// <value>
+        /// The glyph.
+        /// </value>
         public Glyph Glyph { get; private set; }
+
+        /// <summary>
+        /// Gets the location.
+        /// </summary>
+        /// <value>
+        /// The location.
+        /// </value>
         public Vector2 Location { get; }
+
+        /// <summary>
+        /// Gets the width.
+        /// </summary>
+        /// <value>
+        /// The width.
+        /// </value>
         public float Width { get; }
+
+        /// <summary>
+        /// Gets the height.
+        /// </summary>
+        /// <value>
+        /// The height.
+        /// </value>
         public float Height { get; }
+
+        /// <summary>
+        /// Gets the size of the point.
+        /// </summary>
+        /// <value>
+        /// The size of the point.
+        /// </value>
         public float PointSize { get; }
     }
 }

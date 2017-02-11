@@ -7,13 +7,15 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts
 {
+    /// <summary>
+    /// A glyph from a particular font face.
+    /// </summary>
     public class Glyph
     {
+        private readonly ushort emSize;
         private readonly Vector2[] controlPoints;
         private readonly bool[] onCurves;
         private readonly ushort[] endPoints;
-        private ushort index;
-        private readonly ushort emSize;
 
         internal Glyph(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, ushort emSize, ushort index)
         {
@@ -24,10 +26,16 @@ namespace SixLabors.Fonts
             this.Bounds = bounds;
             this.AdvanceWidth = advanceWidth;
             this.Index = index;
-            this.Height = emSize - Bounds.Min.Y;
+            this.Height = emSize - this.Bounds.Min.Y;
         }
 
-        public Bounds Bounds { get; }
+        /// <summary>
+        /// Gets the bounds.
+        /// </summary>
+        /// <value>
+        /// The bounds.
+        /// </value>
+        internal Bounds Bounds { get; }
 
         /// <summary>
         /// Gets the width of the advance.
@@ -37,10 +45,22 @@ namespace SixLabors.Fonts
         /// </value>
         public ushort AdvanceWidth { get; }
 
+        /// <summary>
+        /// Gets the height.
+        /// </summary>
+        /// <value>
+        /// The height.
+        /// </value>
         public float Height { get; }
 
+        /// <summary>
+        /// Gets the index.
+        /// </summary>
+        /// <value>
+        /// The index.
+        /// </value>
         internal ushort Index { get; }
-        
+
         /// <summary>
         /// Renders to.
         /// </summary>
@@ -49,7 +69,7 @@ namespace SixLabors.Fonts
         /// <param name="dpi">The dpi.</param>
         public void RenderTo(IGlyphRender surface, float pointSize, float dpi)
         {
-            RenderTo(surface, pointSize, new Vector2(dpi));
+            this.RenderTo(surface, pointSize, new Vector2(dpi));
         }
 
         /// <summary>
@@ -61,55 +81,49 @@ namespace SixLabors.Fonts
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRender surface, float pointSize, Vector2 dpi)
         {
-            int npoints = controlPoints.Length;
             int startContour = 0;
-            int cpoint_index = 0;
-            var scaleFactor = (float)(emSize * 72f);
+            int pointIndex = 0;
+            var scaleFactor = (float)(this.emSize * 72f);
 
             surface.BeginGlyph();
 
             Vector2 lastMove = Vector2.Zero;
 
             int controlPointCount = 0;
-            for (int i = 0; i < endPoints.Length; i++)
+            for (int i = 0; i < this.endPoints.Length; i++)
             {
-                int nextContour = endPoints[startContour] + 1;
+                int nextContour = this.endPoints[startContour] + 1;
                 bool isFirstPoint = true;
-                Vector2 secondControlPoint = new Vector2();
-                Vector2 thirdControlPoint = new Vector2();
+                Vector2 secondControlPoint = default(Vector2);
+                Vector2 thirdControlPoint = default(Vector2);
                 bool justFromCurveMode = false;
 
-                for (; cpoint_index < nextContour; ++cpoint_index)
+                for (; pointIndex < nextContour; ++pointIndex)
                 {
-                    var vpoint = (controlPoints[cpoint_index] * pointSize * dpi)  / scaleFactor ; // scale each point as we go, w will now have the correct relative point size
+                    var point = (this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor; // scale each point as we go, w will now have the correct relative point size
 
-                    if (onCurves[cpoint_index])
+                    if (this.onCurves[pointIndex])
                     {
-                        //on curve
+                        // on curve
                         if (justFromCurveMode)
                         {
                             switch (controlPointCount)
                             {
                                 case 1:
-                                    {
-                                        surface.QuadraticBezierTo(
-                                            secondControlPoint,
-                                            vpoint);
-                                    }
+                                    surface.QuadraticBezierTo(
+                                        secondControlPoint,
+                                        point);
                                     break;
                                 case 2:
-                                    {
-                                        surface.CubicBezierTo(
-                                                secondControlPoint,
-                                                thirdControlPoint,
-                                                vpoint);
-                                    }
+                                    surface.CubicBezierTo(
+                                            secondControlPoint,
+                                            thirdControlPoint,
+                                            point);
                                     break;
                                 default:
-                                    {
-                                        throw new NotSupportedException();
-                                    }
+                                    throw new NotSupportedException();
                             }
+
                             controlPointCount = 0;
                             justFromCurveMode = false;
                         }
@@ -118,12 +132,12 @@ namespace SixLabors.Fonts
                             if (isFirstPoint)
                             {
                                 isFirstPoint = false;
-                                lastMove = vpoint;
+                                lastMove = point;
                                 surface.MoveTo(lastMove);
                             }
                             else
                             {
-                                surface.LineTo(vpoint);
+                                surface.LineTo(point);
                             }
                         }
                     }
@@ -132,66 +146,58 @@ namespace SixLabors.Fonts
                         switch (controlPointCount)
                         {
                             case 0:
-                                {
-                                    secondControlPoint = vpoint;
-                                }
+                                secondControlPoint = point;
                                 break;
                             case 1:
-                                {
-                                    //we already have prev second control point
-                                    //so auto calculate line to 
-                                    //between 2 point
-                                    Vector2 mid = (secondControlPoint + vpoint) / 2;
-                                    surface.QuadraticBezierTo(
-                                        secondControlPoint,
-                                        mid);
-                                    controlPointCount--;
-                                    secondControlPoint = vpoint;
-                                }
+                                // we already have prev second control point
+                                // so auto calculate line to
+                                // between 2 point
+                                Vector2 mid = (secondControlPoint + point) / 2;
+                                surface.QuadraticBezierTo(
+                                    secondControlPoint,
+                                    mid);
+                                controlPointCount--;
+                                secondControlPoint = point;
                                 break;
                             default:
-                                {
-                                    throw new NotSupportedException("Too many control points");
-                                }
+                                throw new NotSupportedException("Too many control points");
                         }
 
                         controlPointCount++;
                         justFromCurveMode = true;
                     }
                 }
-                //--------
-                //close figure
-                //if in curve mode
+
+                // close figure
+                // if in curve mode
                 if (justFromCurveMode)
                 {
                     switch (controlPointCount)
                     {
                         case 0: break;
                         case 1:
-                            {
-                                surface.QuadraticBezierTo(
-                                    secondControlPoint,
-                                    lastMove);
-                            }
+                            surface.QuadraticBezierTo(
+                                secondControlPoint,
+                                lastMove);
                             break;
                         case 2:
-                            {
-                                surface.CubicBezierTo(
-                                    secondControlPoint,
-                                    thirdControlPoint,
-                                    lastMove);
-                            }
+                            surface.CubicBezierTo(
+                                secondControlPoint,
+                                thirdControlPoint,
+                                lastMove);
                             break;
                         default:
-                            { throw new NotSupportedException("Too many control points"); }
+                            throw new NotSupportedException("Too many control points");
                     }
+
                     justFromCurveMode = false;
                     controlPointCount = 0;
                 }
+
                 surface.EndFigure();
-                //--------                   
                 startContour++;
             }
+
             surface.EndGlyph();
         }
     }

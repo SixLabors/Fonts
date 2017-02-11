@@ -1,8 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Numerics;
+
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
-using System.Numerics;
 
 namespace SixLabors.Fonts
 {
@@ -13,13 +14,18 @@ namespace SixLabors.Fonts
     {
         private readonly CMapTable cmap;
         private readonly GlyphTable glyphs;
+        private readonly HeadTable head;
         private readonly OS2Table os2;
         private readonly HorizontalMetricsTable horizontalMetrics;
-        private Glyph[] glyphCache;
-        private readonly HeadTable head;
+        private readonly Glyph[] glyphCache;
+        private readonly KerningTable kerning;
 
-        private KerningTable kerning;
-
+        /// <summary>
+        /// Gets the height of the line.
+        /// </summary>
+        /// <value>
+        /// The height of the line.
+        /// </value>
         public int LineHeight { get; }
 
         /// <summary>
@@ -30,6 +36,8 @@ namespace SixLabors.Fonts
         /// <param name="glyphs">The glyphs.</param>
         /// <param name="os2">The os2.</param>
         /// <param name="horizontalMetrics">The horizontal metrics.</param>
+        /// <param name="head">The head.</param>
+        /// <param name="kern">The kern.</param>
         internal Font(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern)
             : base(nameTable)
         {
@@ -38,7 +46,7 @@ namespace SixLabors.Fonts
             this.glyphs = glyphs;
             this.horizontalMetrics = horizontalMetrics;
             this.head = head;
-            glyphCache = new Glyph[this.glyphs.GlyphCount];
+            this.glyphCache = new Glyph[this.glyphs.GlyphCount];
 
             // https://www.microsoft.com/typography/otspec/recom.htm#tad
             this.LineHeight = os2.TypoAscender - os2.TypoDescender + os2.TypoLineGap;
@@ -46,6 +54,12 @@ namespace SixLabors.Fonts
             this.kerning = kern;
         }
 
+        /// <summary>
+        /// Gets the size of the em.
+        /// </summary>
+        /// <value>
+        /// The size of the em.
+        /// </value>
         public ushort EmSize { get; }
 
         internal ushort GetGlyphIndex(char character)
@@ -53,20 +67,31 @@ namespace SixLabors.Fonts
             return this.cmap.GetGlyphId(character);
         }
 
+        /// <summary>
+        /// Gets the glyph.
+        /// </summary>
+        /// <param name="character">The character.</param>
+        /// <returns>the glyph for a known character.</returns>
         public Glyph GetGlyph(char character)
         {
             var idx = this.GetGlyphIndex(character);
-            if (glyphCache[idx] == null)
+            if (this.glyphCache[idx] == null)
             {
                 var advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
                 var lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
                 var vector = this.glyphs.GetGlyph(idx);
-                glyphCache[idx] = new Glyph(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, this.EmSize, idx);
+                this.glyphCache[idx] = new Glyph(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, this.EmSize, idx);
             }
 
-            return glyphCache[idx];
+            return this.glyphCache[idx];
         }
 
+        /// <summary>
+        /// Gets the amount the <paramref name="glyph"/> should be ofset if it was proceeded by the <paramref name="previousGlyph"/>.
+        /// </summary>
+        /// <param name="glyph">The glyph.</param>
+        /// <param name="previousGlyph">The previous glyph.</param>
+        /// <returns>A <see cref="Vector2"/> represting the offset that should be applied to the <paramref name="glyph"/>. </returns>
         public Vector2 GetOffset(Glyph glyph, Glyph previousGlyph)
         {
             // we also want to wire int sub/super script offsetting into here too
@@ -74,8 +99,8 @@ namespace SixLabors.Fonts
             {
                 return Vector2.Zero;
             }
-            
-            // once we wire in the kerning caclulations this will return real data
+
+            // once we wire in the kerning calculations this will return real data
             return this.kerning.GetOffset(previousGlyph.Index, glyph.Index);
         }
 

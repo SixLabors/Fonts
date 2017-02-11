@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts
 {
-    public class Bounds
+    internal class Bounds
     {
         public Bounds(Vector2 min, Vector2 max)
         {

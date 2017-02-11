@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts
 {
+    /// <summary>
+    /// Encapulated logic for laying out and measuring text.
+    /// </summary>
     public class TextMeasurer
     {
         private TextLayout layoutEngine;
@@ -16,27 +19,62 @@ namespace SixLabors.Fonts
             this.layoutEngine = layoutEngine;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextMeasurer"/> class.
+        /// </summary>
         public TextMeasurer()
             : this(new TextLayout())
         {
         }
 
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="font">The font.</param>
+        /// <param name="pointSize">Size of the point.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
         public Size MeasureText(string text, Font font, float pointSize, float dpi)
         {
-            return MeasureText(text, new FontStyle(font) { PointSize = pointSize }, new Vector2(dpi));
-        }
-        public Size MeasureText(string text, Font font, float pointSize, Vector2 dpi)
-        {
-            return MeasureText(text, new FontStyle(font) { PointSize = pointSize }, dpi);
-        }
-        public Size MeasureText(string text, FontStyle style, float dpi)
-        {
-            return MeasureText(text, style, new Vector2(dpi));
+            return this.MeasureText(text, new FontStyle(font) { PointSize = pointSize }, new Vector2(dpi));
         }
 
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="font">The font.</param>
+        /// <param name="pointSize">Size of the point.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
+        public Size MeasureText(string text, Font font, float pointSize, Vector2 dpi)
+        {
+            return this.MeasureText(text, new FontStyle(font) { PointSize = pointSize }, dpi);
+        }
+
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="style">The style.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
+        public Size MeasureText(string text, FontStyle style, float dpi)
+        {
+            return this.MeasureText(text, style, new Vector2(dpi));
+        }
+
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="style">The style.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
         public Size MeasureText(string text, FontStyle style, Vector2 dpi)
         {
-            var glyphsToRender = layoutEngine.GenerateLayout(text, style);
+            var glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 
             var left = glyphsToRender.Min(x => x.Location.X);
             var right = glyphsToRender.Max(x => x.Location.X + x.Width);

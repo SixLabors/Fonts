@@ -17,7 +17,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             this.Bounds = bounds;
         }
 
-
         public int PointCount => this.ControlPoints.Length;
 
         public Vector2[] ControlPoints { get; private set; }

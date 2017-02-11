@@ -53,7 +53,9 @@ namespace SixLabors.Fonts.Tables.General
         private short ySuperscriptYSize;
 
         public int TypoAscender { get; }
+
         public short TypoDescender { get; }
+
         public short TypoLineGap { get; }
 
         public static OS2Table Load(FontReader reader)

@@ -37,7 +37,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                     onCurves.Add(glyph.OnCurves[i]);
                 }
 
-                foreach(var p in glyph.EndPoints)
+                foreach (var p in glyph.EndPoints)
                 {
                     endPoints.Add((ushort)(p + endPointOffset));
                 }
