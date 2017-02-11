@@ -51,7 +51,7 @@ namespace SixLabors.Fonts.Tests
         {
             var root = new Uri(typeof(TestFonts).GetTypeInfo().Assembly.CodeBase).LocalPath;
 
-            var paths = new[] { "Fonts", @"..\..\Fonts", @"..\..\..\..\Fonts" };
+            var paths = new[] { "Fonts", @"..\..\Fonts", @"..\..\..\..\Fonts", @"..\..\..\..\..\Fonts" };
             var fullPaths = paths.Select(x => Path.GetFullPath(Path.Combine(root, x)));
             var rootPath = fullPaths
                                 .Where(x => Directory.Exists(x))

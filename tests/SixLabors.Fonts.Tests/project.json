@@ -26,6 +26,9 @@
         },
         "Microsoft.CodeCoverage": "1.0.2"
       }
+    },
+    "net451":{
+      
     }
   },
   "testRunner": "xunit"
