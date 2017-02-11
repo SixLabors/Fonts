@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tests
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, 72);
             // the test font only has characters .notdef, 'a' & 'b' defined
-            Assert.Equal(4, r.ControlPoints.Count);
+            Assert.Equal(7, r.ControlPoints.Count);
         }
     }
 }
