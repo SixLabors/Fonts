@@ -8,17 +8,18 @@ namespace SixLabors.Fonts
 {
     public class FontStyle
     {
-        public FontStyle(Font font, float pointSize)
+        public FontStyle(Font font)
         {
             this.Font = font;
-            this.PointSize = pointSize;
         }
 
-        public float PointSize { get; }
+        public float PointSize { get; set; } = 12;
 
         public Font Font { get; }
 
-        public float TabWidth { get; }
+        public float TabWidth { get; set; } = 4;
+
+        public bool ApplyKerning { get; set; } = true;
 
         /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream
@@ -32,8 +33,10 @@ namespace SixLabors.Fonts
             {
                 Start = 0,
                 End = length - 1,
-                Font = Font,
-                PointSize = PointSize
+                Font = this.Font,
+                PointSize = this.PointSize,
+                TabWidth = this.TabWidth,
+                ApplyKerning = this.ApplyKerning
             };
         }
     }
@@ -42,7 +45,9 @@ namespace SixLabors.Fonts
     {
         public Font Font;
         public float PointSize;
+        public float TabWidth;
         public int Start;
         public int End;
+        public bool ApplyKerning;
     }
 }

@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tests
 
         internal FakeFont(List<FakeGlyphSource> glyphs)
             : base(GenerateNameTable(), GenerateCMapTable(glyphs), new FakeGlyphTable(glyphs)
-                  , GenerateOS2Table(), GenerateHorizontalMetricsTable(glyphs), GenerateHeadTable(glyphs))
+                  , GenerateOS2Table(), GenerateHorizontalMetricsTable(glyphs), GenerateHeadTable(glyphs), new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]))
         {
 
         }

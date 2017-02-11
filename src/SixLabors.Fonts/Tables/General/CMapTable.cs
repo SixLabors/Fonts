@@ -23,12 +23,15 @@ namespace SixLabors.Fonts.Tables.General
             CMapSubTable table = null;
             foreach (var t in this.Tables)
             {
-                if (t.Platform == PlatformIDs.Windows)
+                if (t != null)
                 {
-                    ushort format = table?.Format ?? 0;
-                    if (t.Format > format)
+                    if (t.Platform == PlatformIDs.Windows)
                     {
-                        table = t;
+                        ushort format = table?.Format ?? 0;
+                        if (t.Format > format)
+                        {
+                            table = t;
+                        }
                     }
                 }
             }

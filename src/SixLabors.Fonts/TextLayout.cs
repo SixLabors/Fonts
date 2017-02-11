@@ -52,10 +52,11 @@ namespace SixLabors.Fonts
                         {
                             var glyph = spanStyle.Font.GetGlyph(c);
                             var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
-                            var tabStop = width * 4;
+                            var tabStop = width * spanStyle.TabWidth;
                             //advance to a position > width away that 
                             var dist = tabStop - ((location.X + width) % tabStop);
                             location.X += dist;
+                            previousGlyph = null;
                         }
                         break;
                     case ' ':
@@ -63,6 +64,7 @@ namespace SixLabors.Fonts
                             var glyph = spanStyle.Font.GetGlyph(c);
                             var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                             location.X += width;
+                            previousGlyph = null;
                         }
                         break;
                     default:
@@ -71,16 +73,22 @@ namespace SixLabors.Fonts
                             var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                             var height = (glyph.Height * spanStyle.PointSize) / scale;
 
-                            layout.Add(new GlyphLayout(glyph, location, width, height, spanStyle.PointSize));
-                            if (previousGlyph != null)
+                            var glyphLocation = location;
+                            if (spanStyle.ApplyKerning && previousGlyph != null)
                             {
                                 // if there is special instructions for this glyph pair use that width
-                                location.X += spanStyle.Font.GetAdvancedWidth(glyph, previousGlyph);
+                                var scaledOffset = (spanStyle.Font.GetOffset(glyph, previousGlyph) * spanStyle.PointSize) / scale;
+
+                                glyphLocation += scaledOffset;
+                                // only fix the 'X' of the current tracked location but use the actual 'X'/'Y' of the offset
+                                location.X = glyphLocation.X;
                             }
-                            else
-                            {
-                                location.X += width;
-                            }
+
+                            layout.Add(new GlyphLayout(glyph, glyphLocation, width, height, spanStyle.PointSize));
+
+                            // move foraward the actual with of the glyph, we are retaining the baseline
+                            location.X += width;
+                            previousGlyph = glyph;
                         }
                         break;
                 }

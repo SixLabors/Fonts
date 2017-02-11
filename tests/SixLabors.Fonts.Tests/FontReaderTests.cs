@@ -46,22 +46,6 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void ReadTableHeadersSkipUnknownTables()
-        {
-            var writer = new BinaryWriter();
-            writer.WriteTrueTypeFileHeader(2, 0, 0, 0);
-            writer.WriteTableHeader("TAG1", 0, 10, 0);
-            writer.WriteTableHeader("TAG2", 0, 1, 0);
-
-
-            var reader = new FontReader(writer.GetStream());
-
-            // found not matching types
-            Assert.Equal(0, reader.Headers.Count);
-        }
-
-
-        [Fact]
         public void ReadCMapTable()
         {
             var writer = new BinaryWriter();

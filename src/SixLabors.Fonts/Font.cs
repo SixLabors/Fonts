@@ -18,6 +18,8 @@ namespace SixLabors.Fonts
         private Glyph[] glyphCache;
         private readonly HeadTable head;
 
+        private KerningTable kerning;
+
         public int LineHeight { get; }
 
         /// <summary>
@@ -28,7 +30,7 @@ namespace SixLabors.Fonts
         /// <param name="glyphs">The glyphs.</param>
         /// <param name="os2">The os2.</param>
         /// <param name="horizontalMetrics">The horizontal metrics.</param>
-        internal Font(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head)
+        internal Font(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern)
             : base(nameTable)
         {
             this.cmap = cmap;
@@ -41,6 +43,7 @@ namespace SixLabors.Fonts
             // https://www.microsoft.com/typography/otspec/recom.htm#tad
             this.LineHeight = os2.TypoAscender - os2.TypoDescender + os2.TypoLineGap;
             this.EmSize = this.head.UnitsPerEm;
+            this.kerning = kern;
         }
 
         public ushort EmSize { get; }
@@ -64,10 +67,16 @@ namespace SixLabors.Fonts
             return glyphCache[idx];
         }
 
-        internal int GetAdvancedWidth(Glyph first, Glyph second)
+        public Vector2 GetOffset(Glyph glyph, Glyph previousGlyph)
         {
-            // TODO combin data from the kern table to offset this width
-            return first.AdvanceWidth;
+            // we also want to wire int sub/super script offsetting into here too
+            if (previousGlyph == null)
+            {
+                return Vector2.Zero;
+            }
+            
+            // once we wire in the kerning caclulations this will return real data
+            return this.kerning.GetOffset(previousGlyph.Index, glyph.Index);
         }
 
 #if FILESYSTEM
@@ -115,13 +124,13 @@ namespace SixLabors.Fonts
             // cvt  - Control Value Table
             reader.GetTable<IndexLocationTable>(); // loca
             var glyphs = reader.GetTable<GlyphTable>(); // glyf
-            // kern - Kerning
+            var kern = reader.GetTable<KerningTable>(); // kern - Kerning
             var nameTable = reader.GetTable<NameTable>(); // name
             // post - PostScript information
             // gasp - Grid-fitting/Scan-conversion (optional table)
             // PCLT - PCL 5 data
             // DSIG - Digital signature
-            return new Font(nameTable, cmap, glyphs, os2, horizontalMetrics, head);
+            return new Font(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern);
         }
     }
 }

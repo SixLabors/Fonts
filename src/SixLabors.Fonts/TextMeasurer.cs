@@ -23,11 +23,11 @@ namespace SixLabors.Fonts
 
         public Size MeasureText(string text, Font font, float pointSize, float dpi)
         {
-            return MeasureText(text, new FontStyle(font, pointSize), new Vector2(dpi));
+            return MeasureText(text, new FontStyle(font) { PointSize = pointSize }, new Vector2(dpi));
         }
         public Size MeasureText(string text, Font font, float pointSize, Vector2 dpi)
         {
-            return MeasureText(text, new FontStyle(font, pointSize), dpi);
+            return MeasureText(text, new FontStyle(font) { PointSize = pointSize }, dpi);
         }
         public Size MeasureText(string text, FontStyle style, float dpi)
         {

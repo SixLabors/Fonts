@@ -35,16 +35,11 @@ namespace SixLabors.Fonts
             ushort entrySelector = this.reader.ReadUInt16();
             ushort rangeShift = this.reader.ReadUInt16();
 
-            var allknowntables = loader.RegisterdTags().ToArray();
-
             Dictionary<string, TableHeader> headers = new Dictionary<string, Tables.TableHeader>(tableCount);
             for (int i = 0; i < tableCount; i++)
             {
                 var tbl = TableHeader.Read(this.reader);
-                if (allknowntables.Contains(tbl.Tag))
-                {
-                    headers.Add(tbl.Tag, tbl);
-                }
+                headers.Add(tbl.Tag, tbl);
             }
 
             this.Headers = new ReadOnlyDictionary<string, TableHeader>(headers);
@@ -62,7 +57,9 @@ namespace SixLabors.Fonts
         {
             if (!this.loadedTables.ContainsKey(typeof(TTableType)))
             {
-                this.loadedTables.Add(typeof(TTableType), this.loader.Load<TTableType>(this));
+                var table = this.loader.Load<TTableType>(this);
+
+                this.loadedTables.Add(typeof(TTableType), table);
             }
 
             return (TTableType)this.loadedTables[typeof(TTableType)];
@@ -86,6 +83,11 @@ namespace SixLabors.Fonts
         public virtual BinaryReader GetReaderAtTablePosition(string tableName)
         {
             var header = this.GetHeader(tableName);
+            if (header == null)
+            {
+                return null;
+            }
+
             this.reader.Seek(header);
             return this.reader;
         }

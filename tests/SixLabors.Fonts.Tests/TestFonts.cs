@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tests
     public static class TestFonts
     {
         private static Dictionary<string, Stream> cache=  new Dictionary<string, Stream>();
-        public static string SimpleFontFile => GetFullPath("SixLaborsSamplesAB.ttf");
+        public static string SimpleFontFile => GetFullPath("SixLaborsSampleAB.ttf");
         public static Stream SimpleFontFileData() => OpenStream(SimpleFontFile);
 
         private static Stream OpenStream(string path)
