@@ -8,7 +8,7 @@ if not "%errorlevel%"=="0" goto failure
 
 REM run only if gitversion has ran i.e. from appveyor    
  if not "%GitVersion_NuGetVersion%" == "" (
-     cd src/SixLabors.Shapes
+     cd src/SixLabors.Fonts
      ECHO Setting version number to "%GitVersion_NuGetVersion%"
      dotnet version "%GitVersion_NuGetVersion%"
      cd ../../
@@ -17,7 +17,7 @@ REM run only if gitversion has ran i.e. from appveyor
 
 ECHO Building nuget packages
 if not "%GitVersion_NuGetVersion%" == "" (
-	dotnet pack -c Release --output ./artifacts ./src/SixLabors.Fonts/project.json 
+	dotnet pack -c Release --output ./artifacts ./src/SixLabors.Fonts/project.json
 )ELSE ( 
 	dotnet pack -c Release --version-suffix "local-build"  --output ./artifacts ./src/SixLabors.Fonts/project.json
 )
