@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 {
     internal abstract class GlyphLoader
     {
-        public abstract Glyph CreateGlyph(GlyphTable table);
+        public abstract Glyphs.GlyphVector CreateGlyph(GlyphTable table);
 
         public static GlyphLoader Load(BinaryReader reader)
         {

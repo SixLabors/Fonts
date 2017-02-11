@@ -13,22 +13,17 @@ namespace SixLabors.Fonts.Tables.General
     {
         private const string TableName = "glyf";
         private GlyphLoader[] loaders;
-        private Glyph[] glyphs;
+
+        public int GlyphCount => loaders.Length;
 
         public GlyphTable(GlyphLoader[] glyphLoaders)
         {
             this.loaders = glyphLoaders;
-            this.glyphs = new Glyph[glyphLoaders.Length];
         }
 
-        internal Glyph GetGlyph(int index)
+        internal virtual Glyphs.GlyphVector GetGlyph(int index)
         {
-            if (this.glyphs[index] == null)
-            {
-                this.glyphs[index] = this.loaders[index].CreateGlyph(this);
-            }
-
-            return this.glyphs[index];
+            return this.loaders[index].CreateGlyph(this);
         }
 
         public static GlyphTable Load(FontReader reader)

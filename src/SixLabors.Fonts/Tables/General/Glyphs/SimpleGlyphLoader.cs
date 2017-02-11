@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
@@ -30,10 +31,22 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             this.bounds = bounds;
         }
 
-        public override Glyph CreateGlyph(GlyphTable table)
+        public override Glyphs.GlyphVector CreateGlyph(GlyphTable table)
         {
             // lets build some shapes ??? here from
-            return new Glyph(this.xs, this.ys, this.onCurves, this.endPoints, this.bounds);
+            return new Glyphs.GlyphVector(Convert(this.xs, this.ys), this.onCurves, this.endPoints, this.bounds);
+        }
+
+        private static Vector2[] Convert(short[] xs, short[] ys)
+        {
+            Vector2[] vectors = new Vector2[xs.Length];
+            Vector2 current = Vector2.Zero;
+            for (var i = 0; i < xs.Length; i++)
+            {
+                vectors[i] = new Vector2(xs[i], ys[i]);
+            }
+
+            return vectors;
         }
 
         public static GlyphLoader LoadSimpleGlyph(BinaryReader reader, short count, Bounds bounds)
@@ -61,7 +74,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 pointCount = endPoints[count - 1] + 1;
             }
 
-            var flags = reader.ReadUInt8Array<Flags>(pointCount);
+            var flags = ReadFlags(reader, pointCount);
             var xs = ReadCoordinates(reader, pointCount, flags, Flags.XByte, Flags.XSignOrSame);
             var ys = ReadCoordinates(reader, pointCount, flags, Flags.YByte, Flags.YSignOrSame);
 
@@ -72,6 +85,31 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             }
 
             return new SimpleGlyphLoader(xs, ys, onCurves, endPoints, bounds);
+        }
+
+        private static Flags[] ReadFlags(BinaryReader reader, int flagCount)
+        {
+            var result = new Flags[flagCount];
+            int c = 0;
+            int repeatCount = 0;
+            var flag = (Flags)0;
+            while (c < flagCount)
+            {
+                if (repeatCount > 0)
+                {
+                    repeatCount--;
+                }
+                else
+                {
+                    flag = (Flags)reader.ReadUInt8();
+                    if (flag.HasFlag(Flags.Repeat))
+                    {
+                        repeatCount = reader.ReadByte();
+                    }
+                }
+                result[c++] = flag;
+            }
+            return result;
         }
 
         private static short[] ReadCoordinates(BinaryReader reader, int pointCount, Flags[] flags, Flags isByte, Flags signOrSame)
@@ -88,7 +126,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 }
                 else
                 {
-                    if (signOrSame.HasFlag(flags[i]))
+                    if (flags[i].HasFlag(signOrSame))
                     {
                         dx = 0;
                     }

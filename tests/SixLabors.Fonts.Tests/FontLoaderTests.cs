@@ -12,23 +12,25 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontMetadata()
         {
-            FontDescription description = FontDescription.Load(TestFonts.SimpleFontFileData());
+            FontDescription description = FontDescription.LoadDescription(TestFonts.SimpleFontFileData());
 
             Assert.Equal("SixLaborsSamplesAB", description.FontName);
             Assert.Equal("AB", description.FontSubFamilyName);
         }
+
         [Fact]
         public void LoadFont()
         {
-            Font font = Font.Load(TestFonts.SimpleFontFileData());
+            Font font = Font.LoadFont(TestFonts.SimpleFontFileData());
 
             Assert.Equal("SixLaborsSamplesAB", font.FontName);
             Assert.Equal("AB", font.FontSubFamilyName);
 
             var glyph = font.GetGlyph('a');
-
+            var r = new GlyphRenderer();
+            glyph.RenderTo(r, 12, 72);
             // the test font only has characters .notdef, 'a' & 'b' defined
-            Assert.Equal(3, glyph.ControlPoints.Length);
+            Assert.Equal(3, r.ControlPoints.Count);
         }
     }
 }

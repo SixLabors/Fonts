@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tests
                          { WellKnownIds.NameIds.FontFamilyName, "fam" }
                     });
 
-            var description = FontDescription.Load(writer.GetStream());
+            var description = FontDescription.LoadDescription(writer.GetStream());
             Assert.Equal("name", description.FontName);
             Assert.Equal("sub", description.FontSubFamilyName);
             Assert.Equal("fam", description.FontFamily);
