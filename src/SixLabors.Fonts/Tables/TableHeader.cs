@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Text;
 
 namespace SixLabors.Fonts.Tables
@@ -28,6 +30,13 @@ namespace SixLabors.Fonts.Tables
                 reader.ReadUInt32(),
                 reader.ReadOffset32(),
                 reader.ReadUInt32());
+        }
+
+        public virtual BinaryReader CreateReader(Stream stream)
+        {
+            stream.Seek(this.Offset, SeekOrigin.Begin);
+         
+           return new BinaryReader(stream, true);
         }
     }
 }

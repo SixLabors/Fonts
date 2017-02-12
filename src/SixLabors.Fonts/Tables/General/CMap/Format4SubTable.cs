@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             return 0;
         }
 
-        public static Format4SubTable Load(EncodingRecord encoding, BinaryReader reader)
+        public static IEnumerable<Format4SubTable> Load(IEnumerable<EncodingRecord> encodings, BinaryReader reader)
         {
             // 'cmap' Subtable Format 4:
             // Type   | Name                       | Description
@@ -86,8 +86,10 @@ namespace SixLabors.Fonts.Tables.General.CMap
             ushort[] glyphIds = reader.ReadUInt16Array(glyphIdCount);
 
             var segments = Segment.Create(endCounts, startCounts, idDelta, idRangeOffset);
-
-            return new Format4SubTable(language, encoding.PlatformID, encoding.EncodingID, segments, glyphIds);
+            foreach (var encoding in encodings)
+            {
+                yield return new Format4SubTable(language, encoding.PlatformID, encoding.EncodingID, segments, glyphIds);
+            }
         }
 
         public class Segment

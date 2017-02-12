@@ -85,7 +85,7 @@ namespace SixLabors.Fonts.Tests
 
         public BinaryReader GetReader()
         {
-            return new BinaryReader(GetStream());
+            return new BinaryReader(GetStream(), true);
         }
 
         public MemoryStream GetStream()

@@ -46,8 +46,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public static HeadTable Load(FontReader reader)
         {
-            // move to start of table
-            return Load(reader.GetReaderAtTablePosition(TableName));
+            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            {
+                return Load(binaryReader);
+            }
         }
 
         public static HeadTable Load(BinaryReader reader)

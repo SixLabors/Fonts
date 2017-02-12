@@ -27,7 +27,12 @@ namespace SixLabors.Fonts.Tables.General
         {
             var head = reader.GetTable<HeadTable>();
             var maxp = reader.GetTable<MaximumProfileTable>();
-            return Load(reader.GetReaderAtTablePosition(TableName), maxp.GlyphCount, head.IndexLocationFormat);
+
+            // must not get a binary reader untill all depended data is retrieved in case they need to use the stream
+            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            {
+                return Load(binaryReader, maxp.GlyphCount, head.IndexLocationFormat);
+            }
         }
 
         public static IndexLocationTable Load(BinaryReader reader, int glyphCount, HeadTable.IndexLocationFormats format)

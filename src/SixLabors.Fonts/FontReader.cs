@@ -16,34 +16,82 @@ namespace SixLabors.Fonts
 
         private readonly TableLoader loader;
 
-        private readonly BinaryReader reader;
+        private readonly Stream stream;
 
         public IReadOnlyDictionary<string, TableHeader> Headers { get; }
 
         internal FontReader(Stream stream, TableLoader loader)
         {
             this.loader = loader;
+
+            Func<BinaryReader, TableHeader> loadHeader = TableHeader.Read;
             var startOfFilePosition = stream.Position;
 
-            this.reader = new BinaryReader(stream);
+            this.stream = stream;
+            var reader = new BinaryReader(stream, true);
 
             // we should immediately read the table header to learn which tables we have and what order they are in
-            uint version = this.reader.ReadUInt32();
-            this.OutlineType = (OutlineTypes)version;
-            ushort tableCount = this.reader.ReadUInt16();
-            ushort searchRange = this.reader.ReadUInt16();
-            ushort entrySelector = this.reader.ReadUInt16();
-            ushort rangeShift = this.reader.ReadUInt16();
+            uint version = reader.ReadUInt32();
+            ushort tableCount = 0;
+            if (version == 0x774F4646)
+            {
+                // this is a woff file
+                // WOFFHeader               
+                // UInt32 | signature      | 0x774F4646 'wOFF'
+                // UInt32 | flavor         | The "sfnt version" of the input font.
+                // UInt32 | length         | Total size of the WOFF file.
+                // UInt16 | numTables      | Number of entries in directory of font tables.
+                // UInt16 | reserved       | Reserved; set to zero.
+                // UInt32 | totalSfntSize  | Total size needed for the uncompressed font data, including the sfnt header, directory, and font tables(including padding).
+                // UInt16 | majorVersion   | Major version of the WOFF file.
+                // UInt16 | minorVersion   | Minor version of the WOFF file.
+                // UInt32 | metaOffset     | Offset to metadata block, from beginning of WOFF file.
+                // UInt32 | metaLength     | Length of compressed metadata block.
+                // UInt32 | metaOrigLength | Uncompressed size of metadata block.
+                // UInt32 | privOffset     | Offset to private data block, from beginning of WOFF file.
+                // UInt32 | privLength     | Length of private data block.
+                uint flavor = reader.ReadUInt32();
+                this.OutlineType = (OutlineTypes)flavor;
+                uint length = reader.ReadUInt32();
+                tableCount = reader.ReadUInt16();
+                var reserved = reader.ReadUInt16();
+                var totalSfntSize = reader.ReadUInt32();
+                var majorVersion = reader.ReadUInt16();
+                var minorVersion = reader.ReadUInt16();
+                var metaOffset = reader.ReadUInt32();
+                var metaLength = reader.ReadUInt32();
+                var metaOrigLength = reader.ReadUInt32();
+                var privOffset = reader.ReadUInt32();
+                var privLength = reader.ReadUInt32();
+                this.CompressedTableData = true;
+                loadHeader = WoffTableHeader.Read;
+            }
+            else
+            {
+                // this is a standard *.otf file
+                this.OutlineType = (OutlineTypes)version;
+                tableCount = reader.ReadUInt16();
+                ushort searchRange = reader.ReadUInt16();
+                ushort entrySelector = reader.ReadUInt16();
+                ushort rangeShift = reader.ReadUInt16();
+                this.CompressedTableData = false;
+            }
 
+            if (this.OutlineType != OutlineTypes.TrueType)
+            {
+                throw new Exceptions.InvalidFontFileException("Invalid glyph format, only TTF glyph outlines supported.");
+            }
             Dictionary<string, TableHeader> headers = new Dictionary<string, Tables.TableHeader>(tableCount);
             for (int i = 0; i < tableCount; i++)
             {
-                var tbl = TableHeader.Read(this.reader);
+                var tbl = loadHeader(reader);
                 headers.Add(tbl.Tag, tbl);
             }
 
             this.Headers = new ReadOnlyDictionary<string, TableHeader>(headers);
         }
+
+        public bool CompressedTableData { get; private set; }
 
         public OutlineTypes OutlineType { get; }
 
@@ -75,27 +123,11 @@ namespace SixLabors.Fonts
             return null;
         }
 
-        public virtual BinaryReader GetReader()
-        {
-            return this.reader;
-        }
 
         public virtual BinaryReader GetReaderAtTablePosition(string tableName)
         {
             var header = this.GetHeader(tableName);
-            if (header == null)
-            {
-                return null;
-            }
-
-            this.reader.Seek(header);
-            return this.reader;
-        }
-
-        public virtual BinaryReader GetReaderAtTablePosition(TableHeader header)
-        {
-            this.reader.Seek(header);
-            return this.reader;
+            return header?.CreateReader(this.stream);
         }
 
         public enum OutlineTypes : uint

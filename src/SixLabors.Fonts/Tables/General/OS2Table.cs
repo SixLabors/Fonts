@@ -60,7 +60,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public static OS2Table Load(FontReader reader)
         {
-            return Load(reader.GetReaderAtTablePosition(TableName));
+            using (var r = reader.GetReaderAtTablePosition(TableName))
+            {
+                return Load(r);
+            }
         }
 
         public static OS2Table Load(BinaryReader reader)

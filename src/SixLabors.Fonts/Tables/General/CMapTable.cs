@@ -63,12 +63,14 @@ namespace SixLabors.Fonts.Tables.General
 
         public static CMapTable Load(FontReader reader)
         {
-            return Load(reader.GetReaderAtTablePosition(TableName));
+            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            {
+                return Load(binaryReader);
+            }
         }
 
         public static CMapTable Load(BinaryReader reader)
         {
-            var startOfTable = reader.BaseStream.Position;
             ushort version = reader.ReadUInt16();
             ushort numTables = reader.ReadUInt16();
 
@@ -78,29 +80,27 @@ namespace SixLabors.Fonts.Tables.General
                 encodings[i] = EncodingRecord.Read(reader);
             }
 
+
             // foreach encoding we move forward looking for th subtables
-            SixLabors.Fonts.Tables.General.CMap.CMapSubTable[] tables = new SixLabors.Fonts.Tables.General.CMap.CMapSubTable[numTables];
-            for (var i = 0; i < numTables; i++)
+            List<CMapSubTable> tables = new List<CMapSubTable>(numTables);
+            foreach (var encoding in encodings.GroupBy(x => x.Offset))
             {
-                var encoding = encodings[i];
-                var finalPostion = startOfTable + encoding.Offset;
-                var seekDistance = finalPostion - reader.BaseStream.Position;
-                reader.Seek((int)seekDistance, System.IO.SeekOrigin.Current);
+                reader.Seek(encoding.Key, System.IO.SeekOrigin.Begin);
 
                 var subTypeTableFormat = reader.ReadUInt16();
 
                 switch (subTypeTableFormat)
                 {
                     case 0:
-                        tables[i] = SixLabors.Fonts.Tables.General.CMap.Format0SubTable.Load(encoding, reader);
+                        tables.AddRange(Format0SubTable.Load(encoding, reader));
                         break;
                     case 4:
-                        tables[i] = SixLabors.Fonts.Tables.General.CMap.Format4SubTable.Load(encoding, reader);
+                        tables.AddRange(Format4SubTable.Load(encoding, reader));
                         break;
                 }
             }
 
-            return new CMapTable(tables);
+            return new CMapTable(tables.ToArray());
         }
     }
 }

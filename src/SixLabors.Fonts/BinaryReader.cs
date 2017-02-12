@@ -7,12 +7,14 @@ namespace SixLabors.Fonts
     /// <summary>
     /// BinaryReader using bigendian encoding.
     /// </summary>
-    internal class BinaryReader
+    internal class BinaryReader : IDisposable
     {
         /// <summary>
         /// Buffer used for temporary storage before conversion into primitives
         /// </summary>
         private readonly byte[] storageBuffer = new byte[16];
+
+        private readonly bool leaveOpen;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BinaryReader" /> class.
@@ -20,16 +22,20 @@ namespace SixLabors.Fonts
         /// to the given stream, using the given encoding.
         /// </summary>
         /// <param name="stream">Stream to read data from</param>
-        public BinaryReader(Stream stream)
+        public BinaryReader(Stream stream, bool leaveOpen)
         {
             this.BaseStream = stream;
+            this.StartOfStream = stream.Position;
+            this.leaveOpen = leaveOpen;
             this.BitConverter = new BigEndianBitConverter();
         }
+
+        private long StartOfStream { get; }
 
         /// <summary>
         /// Gets the underlying stream of the EndianBinaryReader.
         /// </summary>
-        public Stream BaseStream { get; }
+        private Stream BaseStream { get; }
 
         /// <summary>
         /// Gets the bit converter used to read values from the stream.
@@ -50,6 +56,12 @@ namespace SixLabors.Fonts
         /// <param name="origin">Origin of seek operation.</param>
         public void Seek(long offset, SeekOrigin origin)
         {
+            // if begin offsert the offset by the start of stream postion
+            if (origin == SeekOrigin.Begin)
+            {
+                offset = offset + this.StartOfStream;
+            }
+
             this.BaseStream.Seek(offset, origin);
         }
 
@@ -513,6 +525,14 @@ namespace SixLabors.Fonts
             }
 
             return index;
+        }
+
+        public void Dispose()
+        {
+            if (!this.leaveOpen)
+            {
+                this.BaseStream?.Dispose();
+            }
         }
 
         /// <summary>

@@ -51,8 +51,10 @@ namespace SixLabors.Fonts.Tables.General
             var profileTable = reader.GetTable<MaximumProfileTable>();
 
             // move to start of table
-            var binaryReader = reader.GetReaderAtTablePosition(TableName);
-            return Load(binaryReader, headTable.NumberOfHMetrics, profileTable.GlyphCount);
+            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            {
+                return Load(binaryReader, headTable.NumberOfHMetrics, profileTable.GlyphCount);
+            }
         }
 
         public static HorizontalMetricsTable Load(BinaryReader reader, int metricCount, int glyphCount)

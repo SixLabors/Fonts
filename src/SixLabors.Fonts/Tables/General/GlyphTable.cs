@@ -29,12 +29,14 @@ namespace SixLabors.Fonts.Tables.General
         public static GlyphTable Load(FontReader reader)
         {
             var locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
-            return Load(reader.GetReaderAtTablePosition(TableName), locations);
+            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            {
+                return Load(binaryReader, locations);
+            }
         }
 
         public static GlyphTable Load(BinaryReader reader, uint[] locations)
         {
-            var start = reader.BaseStream.Position;
             var empty = new Glyphs.EmptyGlyphLoader();
             var entryCount = locations.Length;
             var glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
@@ -49,8 +51,7 @@ namespace SixLabors.Fonts.Tables.General
                 else
                 {
                     // move to start of glyph
-                    var position = start + locations[i];
-                    reader.Seek(position, System.IO.SeekOrigin.Begin);
+                    reader.Seek(locations[i], System.IO.SeekOrigin.Begin);
 
                     glyphs[i] = GlyphLoader.Load(reader);
                 }

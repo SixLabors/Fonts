@@ -55,7 +55,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public static HoizontalHeadTable Load(FontReader reader)
         {
-            return Load(reader.GetReaderAtTablePosition(TableName));
+            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            {
+                return Load(binaryReader);
+            }
         }
 
         public static HoizontalHeadTable Load(BinaryReader reader)

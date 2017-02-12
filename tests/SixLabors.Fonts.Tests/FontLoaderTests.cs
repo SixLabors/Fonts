@@ -19,9 +19,33 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
+        public void LoadFontMetadataWoff()
+        {
+            FontDescription description = FontDescription.LoadDescription(TestFonts.SimpleFontFileWoffData());
+
+            Assert.Equal("SixLaborsSampleAB regular", description.FontName);
+            Assert.Equal("Regular", description.FontSubFamilyName);
+        }
+
+        [Fact]
         public void LoadFont()
         {
             Font font = Font.LoadFont(TestFonts.SimpleFontFileData());
+
+            Assert.Equal("SixLaborsSampleAB regular", font.FontName);
+            Assert.Equal("Regular", font.FontSubFamilyName);
+
+            var glyph = font.GetGlyph('a');
+            var r = new GlyphRenderer();
+            glyph.RenderTo(r, 12, 72);
+            // the test font only has characters .notdef, 'a' & 'b' defined
+            Assert.Equal(7, r.ControlPoints.Count);
+        }
+
+        [Fact]
+        public void LoadFontWoff()
+        {
+            Font font = Font.LoadFont(TestFonts.SimpleFontFileWoffData());
 
             Assert.Equal("SixLaborsSampleAB regular", font.FontName);
             Assert.Equal("Regular", font.FontSubFamilyName);

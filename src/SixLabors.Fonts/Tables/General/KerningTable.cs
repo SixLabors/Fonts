@@ -24,15 +24,17 @@ namespace SixLabors.Fonts.Tables.General
 
         public static KerningTable Load(FontReader reader)
         {
-            var binaryReader = reader.GetReaderAtTablePosition(TableName);
-            if (binaryReader == null)
+            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
-                // this table is optional.
-                return new KerningTable(new KerningSubTable[0]);
-            }
+                if (binaryReader == null)
+                {
+                    // this table is optional.
+                    return new KerningTable(new KerningSubTable[0]);
+                }
 
-            // move to start of table
-            return Load(binaryReader);
+                // move to start of table
+                return Load(binaryReader);
+            }
         }
 
         public static KerningTable Load(BinaryReader reader)

@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
             var reader = writer.GetReader();
             var format = reader.ReadUInt16(); // read format before we pass along as thats whet the cmap table does
             Assert.Equal(0, format);
-            var table = Format0SubTable.Load(new EncodingRecord(PlatformIDs.Windows, 2, 0), reader);
+            var table = Format0SubTable.Load(new[] { new EncodingRecord(PlatformIDs.Windows, 2, 0) }, reader).Single();
 
             Assert.Equal(0, table.Language);
             Assert.Equal(PlatformIDs.Windows, table.Platform);

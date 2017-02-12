@@ -14,12 +14,15 @@ namespace SixLabors.Fonts.DrawWithImageSharp
     {
         public static void Main(string[] args)
         {
-            var font = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
+            //var font = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
             //RenderLetter(font, 'a');
             //RenderLetter(font, 'b');
             //RenderLetter(font, 'u');
-            RenderText(font, "abc", 72);
-            RenderText(font, "ABd", 72);
+            //RenderText(font, "abc", 72);
+            //RenderText(font, "ABd", 72);
+            var fontWoff = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
+            RenderText(fontWoff, "abe", 72);
+            RenderText(fontWoff, "ABf", 72);
             //var font2 = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
             //RenderLetter(font2, 'a', 72);
             //RenderLetter(font2, 'b', 72);

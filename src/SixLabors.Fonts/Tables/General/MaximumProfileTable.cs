@@ -69,7 +69,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public static MaximumProfileTable Load(FontReader reader)
         {
-            return Load(reader.GetReaderAtTablePosition(TableName));
+            using (var r = reader.GetReaderAtTablePosition(TableName))
+            {
+                return Load(r);
+            }
         }
 
         public static MaximumProfileTable Load(BinaryReader reader)

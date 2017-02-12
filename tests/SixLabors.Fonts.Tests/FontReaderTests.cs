@@ -27,9 +27,11 @@ namespace SixLabors.Fonts.Tests
         {
             var writer = new BinaryWriter();
             writer.WriteCffFileHeader(0, 0, 0, 0);
-
-            var reader = new FontReader(writer.GetStream());
-            Assert.Equal(FontReader.OutlineTypes.CFF, reader.OutlineType);
+            Assert.Throws<Exceptions.InvalidFontFileException>(
+                () =>
+                    {
+                        var reader = new FontReader(writer.GetStream());
+                    });
         }
 
         [Fact]

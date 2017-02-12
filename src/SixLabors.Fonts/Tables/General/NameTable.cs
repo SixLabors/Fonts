@@ -16,8 +16,11 @@ namespace SixLabors.Fonts.Tables.General
 
         public static NameTable Load(FontReader reader)
         {
-            // move to start of table
-            return Load(reader.GetReaderAtTablePosition(TableName));
+            using (var r = reader.GetReaderAtTablePosition(TableName))
+            {
+                // move to start of table
+                return Load(r);
+            }
         }
 
         public static NameTable Load(BinaryReader reader)
@@ -49,14 +52,12 @@ namespace SixLabors.Fonts.Tables.General
                 }
             }
 
-            var startOfStrings = reader.BaseStream.Position;
             foreach (var readable in strings.OrderBy(x => x.Offset))
             {
-                var startOfString = readable.Offset + startOfStrings;
-                var diff = startOfString - reader.BaseStream.Position;
+                var diff = stringOffset + readable.Offset;
 
                 // only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
-                reader.BaseStream.Seek(diff, SeekOrigin.Current);
+                reader.Seek(diff, SeekOrigin.Begin);
 
                 readable.LoadValue(reader);
             }

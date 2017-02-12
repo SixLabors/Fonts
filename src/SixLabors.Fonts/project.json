@@ -47,7 +47,8 @@
     },
     "System.Collections.Immutable": "1.2.0",
     "System.Buffers": "4.0.0",
-    "System.Numerics.Vectors": "4.3.0"
+    "System.Numerics.Vectors": "4.3.0",
+    "System.IO.Compression": "4.3.0"
   },
   "frameworks": {
     "netstandard1.3": {
