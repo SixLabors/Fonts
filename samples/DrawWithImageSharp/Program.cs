@@ -14,28 +14,28 @@ namespace SixLabors.Fonts.DrawWithImageSharp
     {
         public static void Main(string[] args)
         {
-            //var font = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
-            //RenderLetter(font, 'a');
-            //RenderLetter(font, 'b');
-            //RenderLetter(font, 'u');
-            //RenderText(font, "abc", 72);
-            //RenderText(font, "ABd", 72);
+            var font = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
+            RenderLetter(font, 'a');
+            RenderLetter(font, 'b');
+            RenderLetter(font, 'u');
+            RenderText(font, "abc", 72);
+            RenderText(font, "ABd", 72);
             var fontWoff = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
             RenderText(fontWoff, "abe", 72);
             RenderText(fontWoff, "ABf", 72);
-            //var font2 = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
-            //RenderLetter(font2, 'a', 72);
-            //RenderLetter(font2, 'b', 72);
-            //RenderLetter(font2, 'u', 72);
-            //RenderLetter(font2, 'o', 72);
-            //RenderText(font2, "ov", 72);
-            //RenderText(font2, "Hello World", 72);
-            //RenderText(font2, "a\ta", 72);
-            //RenderText(font2, "aa\ta", 72);
-            //RenderText(font2, "aaa\ta", 72);
-            //RenderText(font2, "aaaa\ta", 72);
-            //RenderText(font2, "aaaaa\ta", 72);
-            //RenderText(font2, "aaaaaa\ta", 72);
+            var font2 = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
+            RenderLetter(font2, 'a', 72);
+            RenderLetter(font2, 'b', 72);
+            RenderLetter(font2, 'u', 72);
+            RenderLetter(font2, 'o', 72);
+            RenderText(font2, "ov", 72);
+            RenderText(font2, "Hello World", 72);
+            RenderText(font2, "a\ta", 72);
+            RenderText(font2, "aa\ta", 72);
+            RenderText(font2, "aaa\ta", 72);
+            RenderText(font2, "aaaa\ta", 72);
+            RenderText(font2, "aaaaa\ta", 72);
+            RenderText(font2, "aaaaaa\ta", 72);
         }
         public static void RenderText(Font font, string text, float pointSize = 12)
         {
