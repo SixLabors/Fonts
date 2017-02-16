@@ -14,16 +14,22 @@ namespace SixLabors.Fonts.DrawWithImageSharp
     {
         public static void Main(string[] args)
         {
-            var font = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
+            FontCollection fonts = new FontCollection();
+            var sampleFontDesc = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
+            var fontWoffDesc = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
+            var font2Desc = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
+
+            var font = new FontFamily(sampleFontDesc, fonts);
+            var fontWoff = new FontFamily(fontWoffDesc, fonts);
+            var font2 = new FontFamily(font2Desc, fonts);
+
             RenderLetter(font, 'a');
             RenderLetter(font, 'b');
             RenderLetter(font, 'u');
             RenderText(font, "abc", 72);
             RenderText(font, "ABd", 72);
-            var fontWoff = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
             RenderText(fontWoff, "abe", 72);
             RenderText(fontWoff, "ABf", 72);
-            var font2 = Font.LoadFont(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
             RenderLetter(font2, 'a', 72);
             RenderLetter(font2, 'b', 72);
             RenderLetter(font2, 'u', 72);
@@ -37,24 +43,25 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, "aaaaa\ta", 72);
             RenderText(font2, "aaaaaa\ta", 72);
         }
-        public static void RenderText(Font font, string text, float pointSize = 12)
+        public static void RenderText(FontFamily font, string text, float pointSize = 12)
         {
             var builder = new GlyphBuilder();
             var renderer = new TextRenderer(builder);
 
-            renderer.RenderText(text, new FontStyle(font) { PointSize = pointSize, ApplyKerning = true }, 128);
+            renderer.RenderText(text, new FontSpan(new Font(font, pointSize)) { ApplyKerning = true }, 128);
 
             builder.Paths
-                .SaveImage(font.FontName, text + ".png");
+                .SaveImage(font.Name, text + ".png");
         }
 
-        public static void RenderLetter(Font font, char character, float pointSize = 12)
+        public static void RenderLetter(FontFamily fontFam, char character, float pointSize = 12)
         {
+            var font = new Font(fontFam, pointSize);
             var g = font.GetGlyph(character);
             var builder = new GlyphBuilder();
-            g.RenderTo(builder, pointSize, 72f);
+            g.RenderTo(builder, Vector2.Zero, 72f);
             builder.Paths
-                .SaveImage(font.FontName, character + ".png");
+                .SaveImage(fontFam.Name, character + ".png");
         }
 
         public static void SaveImage(this IEnumerable<IPath> shapes, params string[] path)

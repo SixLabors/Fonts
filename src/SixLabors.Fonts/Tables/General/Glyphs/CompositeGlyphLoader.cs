@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             List<ushort> endPoints = new List<ushort>();
             List<Vector2> minBounds = new List<Vector2>();
             List<Vector2> maxBounds = new List<Vector2>();
-            List<Glyph> parts = new List<Glyph>();
+            List<GlyphInstance> parts = new List<GlyphInstance>();
 
             foreach (var composite in this.result)
             {

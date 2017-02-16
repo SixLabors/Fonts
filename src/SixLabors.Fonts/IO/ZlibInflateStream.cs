@@ -175,6 +175,7 @@ namespace SixLabors.Fonts.IO
                 {
                     this.ReadByte();
                 }
+
                 return position;
             }
 

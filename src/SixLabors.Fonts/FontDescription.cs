@@ -9,43 +9,46 @@ namespace SixLabors.Fonts
     /// </summary>
     public class FontDescription
     {
-        private NameTable nameTable;
+        internal FontDescription(string fontName, string fontFamily, string fontSubFamilyName, FontStyle style)
+        {
+            this.FontName = fontName;
+            this.FontFamily = fontFamily;
+            this.FontSubFamilyName = fontSubFamilyName;
+            this.Style = style;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontDescription"/> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
-        internal FontDescription(NameTable nameTable)
+        internal FontDescription(NameTable nameTable, OS2Table os2, HeadTable head)
+            : this(nameTable.FontName, nameTable.FontFamilyName, nameTable.FontSubFamilyName, ConvertStyle(os2, head))
         {
-            this.nameTable = nameTable;
         }
 
         /// <summary>
-        /// Gets the name of the font.
+        /// Gets the style.
         /// </summary>
-        public string FontName => this.nameTable.FontName;
+        /// <value>
+        /// The style.
+        /// </value>
+        public FontStyle Style { get; }
 
         /// <summary>
         /// Gets the name of the font.
         /// </summary>
-        public string FontFamily => this.nameTable.FontFamilyName;
+        public string FontName { get; }
+
+        /// <summary>
+        /// Gets the name of the font.
+        /// </summary>
+        public string FontFamily { get; }
 
         /// <summary>
         /// Gets the font sub family.
         /// </summary>
-        public string FontSubFamilyName => this.nameTable.FontSubFamilyName;
+        public string FontSubFamilyName { get; }
 
-        /// <summary>
-        /// Reads a <see cref="FontDescription"/> from the specified stream.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>a <see cref="FontDescription"/>.</returns>
-        public static FontDescription LoadDescription(Stream stream)
-        {
-            // only read the name table
-            var reader = new FontReader(stream);
-            return LoadDescription(reader);
-        }
 
 #if FILESYSTEM
         /// <summary>
@@ -64,6 +67,18 @@ namespace SixLabors.Fonts
 #endif
 
         /// <summary>
+        /// Reads a <see cref="FontDescription"/> from the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>a <see cref="FontDescription"/>.</returns>
+        public static FontDescription LoadDescription(Stream stream)
+        {
+            // only read the name table
+            var reader = new FontReader(stream);
+            return LoadDescription(reader);
+        }
+
+        /// <summary>
         /// Reads a <see cref="FontDescription" /> from the specified stream.
         /// </summary>
         /// <param name="reader">The reader.</param>
@@ -72,9 +87,41 @@ namespace SixLabors.Fonts
         /// </returns>
         internal static FontDescription LoadDescription(FontReader reader)
         {
+            var head = reader.GetTable<HeadTable>();
+            var os2 = reader.GetTable<OS2Table>();
             var nameTable = reader.GetTable<NameTable>();
 
-            return new FontDescription(nameTable);
+            return new FontDescription(nameTable, os2, head);
+        }
+
+        private static FontStyle ConvertStyle(OS2Table os2, HeadTable head)
+        {
+            FontStyle style = FontStyle.Regular;
+            if (os2 != null)
+            {
+                if (os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.BOLD))
+                {
+                    style |= FontStyle.Bold;
+                }
+
+                if (os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.ITALIC))
+                {
+                    style |= FontStyle.Italic;
+                }
+            }
+            else if(head != null)
+            {
+                if (head.MacStyle.HasFlag(HeadTable.HeadMacStyle.Bold))
+                {
+                    style |= FontStyle.Bold;
+                }
+
+                if (head.MacStyle.HasFlag(HeadTable.HeadMacStyle.Italic))
+                {
+                    style |= FontStyle.Italic;
+                }
+            }
+            return style;
         }
     }
 }

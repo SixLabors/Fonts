@@ -18,14 +18,14 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="style">The style.</param>
         /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
-        public ImmutableArray<GlyphLayout> GenerateLayout(string text, FontStyle style)
+        public ImmutableArray<GlyphLayout> GenerateLayout(string text, FontSpan style)
         {
             AppliedFontStyle spanStyle = style.GetStyle(0, text.Length);
             List<GlyphLayout> layout = new List<GlyphLayout>(text.Length);
 
             float lineHeight = 0f;
             Vector2 location = Vector2.Zero;
-            Glyph previousGlyph = null;
+            GlyphInstance previousGlyph = null;
             float scale = 0;
             for (var i = 0; i < text.Length; i++)
             {
@@ -99,7 +99,7 @@ namespace SixLabors.Fonts
                                 location.X = glyphLocation.X;
                             }
 
-                            layout.Add(new GlyphLayout(glyph, glyphLocation, width, height, spanStyle.PointSize));
+                            layout.Add(new GlyphLayout(new Glyph(glyph, spanStyle.PointSize), glyphLocation, width, height));
 
                             // move foraward the actual with of the glyph, we are retaining the baseline
                             location.X += width;
@@ -119,13 +119,12 @@ namespace SixLabors.Fonts
     /// </summary>
     public struct GlyphLayout
     {
-        internal GlyphLayout(Glyph glyph, Vector2 location, float width, float height, float pointSize)
+        internal GlyphLayout(Glyph glyph, Vector2 location, float width, float height)
         {
             this.Glyph = glyph;
             this.Location = location;
             this.Width = width;
             this.Height = height;
-            this.PointSize = pointSize;
         }
 
         /// <summary>
@@ -159,13 +158,5 @@ namespace SixLabors.Fonts
         /// The height.
         /// </value>
         public float Height { get; }
-
-        /// <summary>
-        /// Gets the size of the point.
-        /// </summary>
-        /// <value>
-        /// The size of the point.
-        /// </value>
-        public float PointSize { get; }
     }
 }

@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tests
     using System.Numerics;
     using Xunit;
 
-    public class GlyphRenderer : IGlyphRender
+    public class GlyphRenderer : IGlyphRenderer
     {
         public int FiguresCount = 0;
         public List<Vector2> ControlPoints = new List<Vector2>();

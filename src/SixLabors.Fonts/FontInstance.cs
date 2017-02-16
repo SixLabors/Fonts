@@ -1,0 +1,163 @@
+﻿using System;
+using System.IO;
+using System.Numerics;
+
+using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Tables.General;
+
+namespace SixLabors.Fonts
+{
+    /// <summary>
+    /// provide metadata about a font.
+    /// </summary>
+    internal class FontInstance : IFontInstance
+    {
+        private readonly CMapTable cmap;
+        private readonly GlyphTable glyphs;
+        private readonly HeadTable head;
+        private readonly OS2Table os2;
+        private readonly HorizontalMetricsTable horizontalMetrics;
+        private readonly GlyphInstance[] glyphCache;
+        private readonly KerningTable kerning;
+        
+        /// <summary>
+        /// Gets the height of the line.
+        /// </summary>
+        /// <value>
+        /// The height of the line.
+        /// </value>
+        public int LineHeight { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontDescription" /> class.
+        /// </summary>
+        /// <param name="nameTable">The name table.</param>
+        /// <param name="cmap">The cmap.</param>
+        /// <param name="glyphs">The glyphs.</param>
+        /// <param name="os2">The os2.</param>
+        /// <param name="horizontalMetrics">The horizontal metrics.</param>
+        /// <param name="head">The head.</param>
+        /// <param name="kern">The kern.</param>
+        internal FontInstance(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern)
+        {
+            this.cmap = cmap;
+            this.os2 = os2;
+            this.glyphs = glyphs;
+            this.horizontalMetrics = horizontalMetrics;
+            this.head = head;
+            this.glyphCache = new GlyphInstance[this.glyphs.GlyphCount];
+
+            // https://www.microsoft.com/typography/otspec/recom.htm#tad
+            this.LineHeight = os2.TypoAscender - os2.TypoDescender + os2.TypoLineGap;
+            this.EmSize = this.head.UnitsPerEm;
+            this.kerning = kern;
+            this.Description = new FontDescription(nameTable, os2, head);
+        }
+
+        /// <summary>
+        /// Gets the size of the em.
+        /// </summary>
+        /// <value>
+        /// The size of the em.
+        /// </value>
+        public ushort EmSize { get; }
+
+        public FontDescription Description { get; }
+
+        internal ushort GetGlyphIndex(char character)
+        {
+            return this.cmap.GetGlyphId(character);
+        }
+
+        /// <summary>
+        /// Gets the glyph.
+        /// </summary>
+        /// <param name="character">The character.</param>
+        /// <returns>the glyph for a known character.</returns>
+        public GlyphInstance GetGlyph(char character)
+        {
+            var idx = this.GetGlyphIndex(character);
+            if (this.glyphCache[idx] == null)
+            {
+                var advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
+                var lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
+                var vector = this.glyphs.GetGlyph(idx);
+                this.glyphCache[idx] = new GlyphInstance(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, this.EmSize, idx);
+            }
+
+            return this.glyphCache[idx];
+        }
+
+        /// <summary>
+        /// Gets the amount the <paramref name="glyph"/> should be ofset if it was proceeded by the <paramref name="previousGlyph"/>.
+        /// </summary>
+        /// <param name="glyph">The glyph.</param>
+        /// <param name="previousGlyph">The previous glyph.</param>
+        /// <returns>A <see cref="Vector2"/> represting the offset that should be applied to the <paramref name="glyph"/>. </returns>
+        public Vector2 GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
+        {
+            // we also want to wire int sub/super script offsetting into here too
+            if (previousGlyph == null)
+            {
+                return Vector2.Zero;
+            }
+
+            // once we wire in the kerning calculations this will return real data
+            return this.kerning.GetOffset(previousGlyph.Index, glyph.Index);
+        }
+
+#if FILESYSTEM
+        /// <summary>
+        /// Reads a <see cref="FontInstance"/> from the specified stream.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <returns>a <see cref="FontInstance"/>.</returns>
+        public static FontInstance LoadFont(string path)
+        {
+            using (var fs = File.OpenRead(path))
+            {
+                var reader = new FontReader(fs);
+                return LoadFont(reader);
+            }
+        }
+#endif
+
+        /// <summary>
+        /// Reads a <see cref="FontInstance"/> from the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>a <see cref="FontInstance"/>.</returns>
+        public static FontInstance LoadFont(Stream stream)
+        {
+            var reader = new FontReader(stream);
+            return LoadFont(reader);
+        }
+
+        internal static FontInstance LoadFont(FontReader reader)
+        {
+            // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
+            // recomended order
+            var head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
+            reader.GetTable<HoizontalHeadTable>(); // hhea
+            reader.GetTable<MaximumProfileTable>(); // maxp
+            var os2 = reader.GetTable<OS2Table>(); // OS/2
+            var horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
+            // LTSH - Linear threshold data
+            // VDMX - Vertical device metrics
+            // hdmx - Horizontal device metrics
+            var cmap = reader.GetTable<CMapTable>(); // cmap
+            // fpgm - Font Program
+            // prep - Control Value Program
+            // cvt  - Control Value Table
+            reader.GetTable<IndexLocationTable>(); // loca
+            var glyphs = reader.GetTable<GlyphTable>(); // glyf
+            var kern = reader.GetTable<KerningTable>(); // kern - Kerning
+            var nameTable = reader.GetTable<NameTable>(); // name
+            // post - PostScript information
+            // gasp - Grid-fitting/Scan-conversion (optional table)
+            // PCLT - PCL 5 data
+            // DSIG - Digital signature
+            return new FontInstance(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern);
+        }
+    }
+}

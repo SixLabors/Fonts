@@ -35,9 +35,9 @@ namespace SixLabors.Fonts
         /// <param name="pointSize">Size of the point.</param>
         /// <param name="dpi">The dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public Size MeasureText(string text, Font font, float pointSize, float dpi)
+        public Size MeasureText(string text, Font font, float dpi)
         {
-            return this.MeasureText(text, new FontStyle(font) { PointSize = pointSize }, new Vector2(dpi));
+            return this.MeasureText(text, new FontSpan(font), new Vector2(dpi));
         }
 
         /// <summary>
@@ -48,9 +48,9 @@ namespace SixLabors.Fonts
         /// <param name="pointSize">Size of the point.</param>
         /// <param name="dpi">The dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public Size MeasureText(string text, Font font, float pointSize, Vector2 dpi)
+        public Size MeasureText(string text, Font font, Vector2 dpi)
         {
-            return this.MeasureText(text, new FontStyle(font) { PointSize = pointSize }, dpi);
+            return this.MeasureText(text, new FontSpan(font), dpi);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace SixLabors.Fonts
         /// <param name="style">The style.</param>
         /// <param name="dpi">The dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public Size MeasureText(string text, FontStyle style, float dpi)
+        public Size MeasureText(string text, FontSpan style, float dpi)
         {
             return this.MeasureText(text, style, new Vector2(dpi));
         }
@@ -72,7 +72,7 @@ namespace SixLabors.Fonts
         /// <param name="style">The style.</param>
         /// <param name="dpi">The dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public Size MeasureText(string text, FontStyle style, Vector2 dpi)
+        public Size MeasureText(string text, FontSpan style, Vector2 dpi)
         {
             var glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 

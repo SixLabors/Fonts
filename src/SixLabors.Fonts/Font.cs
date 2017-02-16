@@ -8,51 +8,117 @@ using SixLabors.Fonts.Tables.General;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// provide metadata about a font.
+    /// Defines a particular format for text, including font face, size, and style attributes. This class cannot be inherited.
     /// </summary>
-    public class Font : FontDescription
+    public sealed class Font
     {
-        private readonly CMapTable cmap;
-        private readonly GlyphTable glyphs;
-        private readonly HeadTable head;
-        private readonly OS2Table os2;
-        private readonly HorizontalMetricsTable horizontalMetrics;
-        private readonly Glyph[] glyphCache;
-        private readonly KerningTable kerning;
+        private readonly FontStyle requestedStyle;
+        private readonly Lazy<IFontInstance> instance;
 
         /// <summary>
-        /// Gets the height of the line.
+        /// Initializes a new instance of the <see cref="Font"/> class.
+        /// </summary>
+        /// <param name="description">The description.</param>
+        /// <param name="size">The size.</param>
+        /// <param name="collection">The collection.</param>
+        public Font(FontDescription description, float size, FontCollection collection)
+            : this(new FontFamily(description, collection), size, description.Style)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Font"/> class.
+        /// </summary>
+        /// <param name="family">The family.</param>
+        /// <param name="size">The size.</param>
+        /// <param name="style">The style.</param>
+        public Font(FontFamily family, float size, FontStyle style)
+        {
+            this.Family = family;
+            this.requestedStyle = style;
+            this.Size = size;
+            this.instance = new Lazy<IFontInstance>(() => this.Family.Find(style));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Font"/> class.
+        /// </summary>
+        /// <param name="family">The family.</param>
+        /// <param name="size">The size.</param>
+        public Font(FontFamily family, float size)
+            : this(family, size, FontStyle.Regular)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Font"/> class.
+        /// </summary>
+        /// <param name="prototype">The prototype.</param>
+        /// <param name="style">The style.</param>
+        public Font(Font prototype, FontStyle style)
+            : this(prototype.Family, prototype.Size, style)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Font"/> class.
+        /// </summary>
+        /// <param name="prototype">The prototype.</param>
+        /// <param name="size">The size.</param>
+        /// <param name="style">The style.</param>
+        public Font(Font prototype, float size, FontStyle style)
+            : this(prototype.Family, size, style)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Font"/> class.
+        /// </summary>
+        /// <param name="prototype">The prototype.</param>
+        /// <param name="size">The size.</param>
+        public Font(Font prototype, float size)
+            : this(prototype.Family, size, prototype.requestedStyle)
+        {
+        }
+
+        /// <summary>
+        /// Gets the family.
         /// </summary>
         /// <value>
-        /// The height of the line.
+        /// The family.
         /// </value>
-        public int LineHeight { get; }
+        public FontFamily Family { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontDescription" /> class.
+        /// Gets the name.
         /// </summary>
-        /// <param name="nameTable">The name table.</param>
-        /// <param name="cmap">The cmap.</param>
-        /// <param name="glyphs">The glyphs.</param>
-        /// <param name="os2">The os2.</param>
-        /// <param name="horizontalMetrics">The horizontal metrics.</param>
-        /// <param name="head">The head.</param>
-        /// <param name="kern">The kern.</param>
-        internal Font(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern)
-            : base(nameTable)
-        {
-            this.cmap = cmap;
-            this.os2 = os2;
-            this.glyphs = glyphs;
-            this.horizontalMetrics = horizontalMetrics;
-            this.head = head;
-            this.glyphCache = new Glyph[this.glyphs.GlyphCount];
+        /// <value>
+        /// The name.
+        /// </value>
+        public string Name => this.instance.Value.Description.FontName;
+        /// <summary>
+        /// Gets the size.
+        /// </summary>
+        /// <value>
+        /// The size.
+        /// </value>
+        public float Size { get; }
 
-            // https://www.microsoft.com/typography/otspec/recom.htm#tad
-            this.LineHeight = os2.TypoAscender - os2.TypoDescender + os2.TypoLineGap;
-            this.EmSize = this.head.UnitsPerEm;
-            this.kerning = kern;
-        }
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="Font"/> is bold.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if bold; otherwise, <c>false</c>.
+        /// </value>
+        public bool Bold => (instance.Value.Description.Style & FontStyle.Bold) == FontStyle.Bold;
+
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="Font"/> is italic.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if italic; otherwise, <c>false</c>.
+        /// </value>
+        public bool Italic => (instance.Value.Description.Style & FontStyle.Italic) == FontStyle.Italic;
 
         /// <summary>
         /// Gets the size of the em.
@@ -60,102 +126,49 @@ namespace SixLabors.Fonts
         /// <value>
         /// The size of the em.
         /// </value>
-        public ushort EmSize { get; }
+        public ushort EmSize => instance.Value.EmSize;
 
-        internal ushort GetGlyphIndex(char character)
-        {
-            return this.cmap.GetGlyphId(character);
-        }
+        /// <summary>
+        /// Gets the font instance.
+        /// </summary>
+        /// <value>
+        /// The font instance.
+        /// </value>
+        internal IFontInstance FontInstance => instance.Value;
 
         /// <summary>
         /// Gets the glyph.
         /// </summary>
         /// <param name="character">The character.</param>
-        /// <returns>the glyph for a known character.</returns>
+        /// <returns></returns>
         public Glyph GetGlyph(char character)
         {
-            var idx = this.GetGlyphIndex(character);
-            if (this.glyphCache[idx] == null)
+            return new Glyph(instance.Value.GetGlyph(character), Size);
+        }
+
+        private IFontInstance LoadInstanceInternal()
+        {
+            var instance = Family.Find(requestedStyle);
+
+            if (instance == null && requestedStyle.HasFlag(FontStyle.Italic))
             {
-                var advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
-                var lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
-                var vector = this.glyphs.GetGlyph(idx);
-                this.glyphCache[idx] = new Glyph(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, this.EmSize, idx);
+                // can find style requested and they want one thats atleast partial itallic try the regual italic
+                instance = Family.Find(FontStyle.Italic);
             }
 
-            return this.glyphCache[idx];
-        }
-
-        /// <summary>
-        /// Gets the amount the <paramref name="glyph"/> should be ofset if it was proceeded by the <paramref name="previousGlyph"/>.
-        /// </summary>
-        /// <param name="glyph">The glyph.</param>
-        /// <param name="previousGlyph">The previous glyph.</param>
-        /// <returns>A <see cref="Vector2"/> represting the offset that should be applied to the <paramref name="glyph"/>. </returns>
-        public Vector2 GetOffset(Glyph glyph, Glyph previousGlyph)
-        {
-            // we also want to wire int sub/super script offsetting into here too
-            if (previousGlyph == null)
+            if (instance == null && requestedStyle.HasFlag(FontStyle.Bold))
             {
-                return Vector2.Zero;
+                // can find style requested and they want one thats atleast partial bold try the regular bold
+                instance = Family.Find(FontStyle.Bold);
             }
 
-            // once we wire in the kerning calculations this will return real data
-            return this.kerning.GetOffset(previousGlyph.Index, glyph.Index);
-        }
-
-#if FILESYSTEM
-        /// <summary>
-        /// Reads a <see cref="Font"/> from the specified stream.
-        /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <returns>a <see cref="Font"/>.</returns>
-        public static Font LoadFont(string path)
-        {
-            using (var fs = File.OpenRead(path))
+            if (instance == null)
             {
-                var reader = new FontReader(fs);
-                return LoadFont(reader);
+                // cant find style requested and lets just try returning teh default
+                instance = Family.Find(Family.DefaultStyle);
             }
-        }
-#endif
 
-        /// <summary>
-        /// Reads a <see cref="Font"/> from the specified stream.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>a <see cref="Font"/>.</returns>
-        public static Font LoadFont(Stream stream)
-        {
-            var reader = new FontReader(stream);
-            return LoadFont(reader);
-        }
-
-        internal static Font LoadFont(FontReader reader)
-        {
-            // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
-            // recomended order
-            var head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
-            reader.GetTable<HoizontalHeadTable>(); // hhea
-            reader.GetTable<MaximumProfileTable>(); // maxp
-            var os2 = reader.GetTable<OS2Table>(); // OS/2
-            var horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
-            // LTSH - Linear threshold data
-            // VDMX - Vertical device metrics
-            // hdmx - Horizontal device metrics
-            var cmap = reader.GetTable<CMapTable>(); // cmap
-            // fpgm - Font Program
-            // prep - Control Value Program
-            // cvt  - Control Value Table
-            reader.GetTable<IndexLocationTable>(); // loca
-            var glyphs = reader.GetTable<GlyphTable>(); // glyf
-            var kern = reader.GetTable<KerningTable>(); // kern - Kerning
-            var nameTable = reader.GetTable<NameTable>(); // name
-            // post - PostScript information
-            // gasp - Grid-fitting/Scan-conversion (optional table)
-            // PCLT - PCL 5 data
-            // DSIG - Digital signature
-            return new Font(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern);
+            return instance;
         }
     }
 }

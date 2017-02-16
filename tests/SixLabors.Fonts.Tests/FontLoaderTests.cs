@@ -30,14 +30,14 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFont()
         {
-            Font font = Font.LoadFont(TestFonts.SimpleFontFileData());
+            FontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileData());
 
-            Assert.Equal("SixLaborsSampleAB regular", font.FontName);
-            Assert.Equal("Regular", font.FontSubFamilyName);
+            Assert.Equal("SixLaborsSampleAB regular", font.Description.FontName);
+            Assert.Equal("Regular", font.Description.FontSubFamilyName);
 
             var glyph = font.GetGlyph('a');
             var r = new GlyphRenderer();
-            glyph.RenderTo(r, 12, 72);
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72));
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(7, r.ControlPoints.Count);
         }
@@ -45,14 +45,14 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontWoff()
         {
-            Font font = Font.LoadFont(TestFonts.SimpleFontFileWoffData());
+            FontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileWoffData());
 
-            Assert.Equal("SixLaborsSampleAB regular", font.FontName);
-            Assert.Equal("Regular", font.FontSubFamilyName);
+            Assert.Equal("SixLaborsSampleAB regular", font.Description.FontName);
+            Assert.Equal("Regular", font.Description.FontSubFamilyName);
 
             var glyph = font.GetGlyph('a');
             var r = new GlyphRenderer();
-            glyph.RenderTo(r, 12, 72);
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72));
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(7, r.ControlPoints.Count);
         }

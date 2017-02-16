@@ -9,7 +9,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// A surface that can have a glyph renered to it as a series of actions.
     /// </summary>
-    public interface IGlyphRender
+    public interface IGlyphRenderer
     {
         /// <summary>
         /// Begins the figure.

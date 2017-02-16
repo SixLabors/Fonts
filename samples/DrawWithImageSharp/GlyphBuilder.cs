@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts.DrawWithImageSharp
 {
-    public class GlyphBuilder : IMultiGlyphRenderer
+    public class GlyphBuilder : IGlyphRenderer
     {
         PathBuilder builder = new PathBuilder();
         Vector2 currentPoint = default(Vector2);

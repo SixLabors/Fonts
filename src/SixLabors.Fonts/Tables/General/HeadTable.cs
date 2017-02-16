@@ -48,6 +48,10 @@ namespace SixLabors.Fonts.Tables.General
         {
             using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
+                if(binaryReader == null)
+                {
+                    return null;
+                }
                 return Load(binaryReader);
             }
         }

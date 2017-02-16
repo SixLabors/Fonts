@@ -13,9 +13,9 @@ namespace SixLabors.Fonts
     public class TextRenderer
     {
         private TextLayout layoutEngine;
-        private IMultiGlyphRenderer renderer;
+        private IGlyphRenderer renderer;
 
-        internal TextRenderer(IMultiGlyphRenderer renderer, TextLayout layoutEngine)
+        internal TextRenderer(IGlyphRenderer renderer, TextLayout layoutEngine)
         {
             this.layoutEngine = layoutEngine;
             this.renderer = renderer;
@@ -25,7 +25,7 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="TextRenderer"/> class.
         /// </summary>
         /// <param name="renderer">The renderer.</param>
-        public TextRenderer(IMultiGlyphRenderer renderer)
+        public TextRenderer(IGlyphRenderer renderer)
             : this(renderer, new TextLayout())
         {
         }
@@ -36,14 +36,13 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="style">The style.</param>
         /// <param name="dpi">The dpi.</param>
-        public void RenderText(string text, FontStyle style, Vector2 dpi)
+        public void RenderText(string text, FontSpan style, Vector2 dpi)
         {
             var glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 
             foreach (var g in glyphsToRender)
             {
-                this.renderer.SetOrigin(g.Location * dpi);
-                g.Glyph.RenderTo(this.renderer, g.PointSize, dpi);
+                g.Glyph.RenderTo(this.renderer, g.Location, dpi);
             }
         }
 
@@ -53,7 +52,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="style">The style.</param>
         /// <param name="dpi">The dpi.</param>
-        public void RenderText(string text, FontStyle style, float dpi)
+        public void RenderText(string text, FontSpan style, float dpi)
         {
             this.RenderText(text, style, new Vector2(dpi));
         }
