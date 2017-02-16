@@ -18,7 +18,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var sampleFontDesc = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
             var fontWoffDesc = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
             var font2Desc = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
-
             var font = new FontFamily(sampleFontDesc, fonts);
             var fontWoff = new FontFamily(fontWoffDesc, fonts);
             var font2 = new FontFamily(font2Desc, fonts);

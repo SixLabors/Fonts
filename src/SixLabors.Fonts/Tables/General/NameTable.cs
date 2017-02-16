@@ -70,24 +70,10 @@ namespace SixLabors.Fonts.Tables.General
         internal NameTable(NameRecord[] names, string[] languages)
         {
             this.names = names;
-            foreach (var name in names)
-            {
-                switch (name.NameID)
-                {
-                    case NameIds.FontFamilyName:
-                        this.FontFamilyName = name.Value;
-                        break;
-                    case NameIds.FontSubfamilyName:
-                        this.FontSubFamilyName = name.Value;
-                        break;
-                    case NameIds.UniqueFontID:
-                        this.Id = name.Value;
-                        break;
-                    case NameIds.FullFontName:
-                        this.FontName = name.Value;
-                        break;
-                }
-            }
+            this.FontFamilyName = GetNameById(NameIds.FontFamilyName);
+            this.FontSubFamilyName = GetNameById(NameIds.FontSubfamilyName);
+            this.Id = GetNameById(NameIds.UniqueFontID);
+            this.FontName = GetNameById(NameIds.FullFontName);
         }
 
         /// <summary>
@@ -124,6 +110,28 @@ namespace SixLabors.Fonts.Tables.General
 
         public string GetNameById(NameIds nameId)
         {
+            foreach (var name in this.names)
+            {
+                if (name.Platform == PlatformIDs.Windows && name.LanguageID == 0409)
+                {
+                    if (name.NameID == nameId)
+                    {
+                        return name.Value;
+                    }
+                }
+            }
+
+            foreach (var name in this.names)
+            {
+                if (name.Platform == PlatformIDs.Windows)
+                {
+                    if (name.NameID == nameId)
+                    {
+                        return name.Value;
+                    }
+                }
+            }
+
             foreach (var name in this.names)
             {
                 if (name.NameID == nameId)
