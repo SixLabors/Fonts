@@ -49,7 +49,6 @@ namespace SixLabors.Fonts
         /// </summary>
         public string FontSubFamilyName { get; }
 
-
 #if FILESYSTEM
         /// <summary>
         /// Reads a <see cref="FontDescription"/> from the specified stream.
@@ -109,7 +108,7 @@ namespace SixLabors.Fonts
                     style |= FontStyle.Italic;
                 }
             }
-            else if(head != null)
+            else if (head != null)
             {
                 if (head.MacStyle.HasFlag(HeadTable.HeadMacStyle.Bold))
                 {

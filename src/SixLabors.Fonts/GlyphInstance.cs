@@ -12,21 +12,21 @@ namespace SixLabors.Fonts
     /// </summary>
     internal class GlyphInstance
     {
-        private readonly ushort emSize;
+        private readonly ushort sizeOfEm;
         private readonly Vector2[] controlPoints;
         private readonly bool[] onCurves;
         private readonly ushort[] endPoints;
 
-        internal GlyphInstance(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, ushort emSize, ushort index)
+        internal GlyphInstance(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, ushort sizeOfEm, ushort index)
         {
-            this.emSize = emSize;
+            this.sizeOfEm = sizeOfEm;
             this.controlPoints = controlPoints;
             this.onCurves = onCurves;
             this.endPoints = endPoints;
             this.Bounds = bounds;
             this.AdvanceWidth = advanceWidth;
             this.Index = index;
-            this.Height = emSize - this.Bounds.Min.Y;
+            this.Height = sizeOfEm - this.Bounds.Min.Y;
         }
 
         /// <summary>
@@ -72,21 +72,18 @@ namespace SixLabors.Fonts
         {
             location = location * dpi;
 
-            int startContour = 0;
             int pointIndex = 0;
-            var scaleFactor = (float)(this.emSize * 72f);
+            var scaleFactor = (float)(this.sizeOfEm * 72f);
 
             surface.BeginGlyph();
 
-            Vector2 lastMove = Vector2.Zero;
+            Vector2 firstPoint = Vector2.Zero;
 
-            int controlPointCount = 0;
             for (int i = 0; i < this.endPoints.Length; i++)
             {
-                int nextContour = this.endPoints[startContour] + 1;
+                int nextContour = this.endPoints[i] + 1;
                 bool isFirstPoint = true;
-                Vector2 secondControlPoint = default(Vector2);
-                Vector2 thirdControlPoint = default(Vector2);
+                ControlPointCollection points = new ControlPointCollection();
                 bool justFromCurveMode = false;
 
                 for (; pointIndex < nextContour; ++pointIndex)
@@ -98,33 +95,15 @@ namespace SixLabors.Fonts
                         // on curve
                         if (justFromCurveMode)
                         {
-                            switch (controlPointCount)
-                            {
-                                case 1:
-                                    surface.QuadraticBezierTo(
-                                        secondControlPoint,
-                                        point);
-                                    break;
-                                case 2:
-                                    surface.CubicBezierTo(
-                                            secondControlPoint,
-                                            thirdControlPoint,
-                                            point);
-                                    break;
-                                default:
-                                    throw new NotSupportedException();
-                            }
-
-                            controlPointCount = 0;
-                            justFromCurveMode = false;
+                            points = DrawPoints(surface, points, point);
                         }
                         else
                         {
                             if (isFirstPoint)
                             {
                                 isFirstPoint = false;
-                                lastMove = point;
-                                surface.MoveTo(lastMove);
+                                firstPoint = point;
+                                surface.MoveTo(firstPoint);
                             }
                             else
                             {
@@ -134,62 +113,93 @@ namespace SixLabors.Fonts
                     }
                     else
                     {
-                        switch (controlPointCount)
+                        switch (points.Count)
                         {
                             case 0:
-                                secondControlPoint = point;
+                                points.Add(point);
                                 break;
                             case 1:
                                 // we already have prev second control point
                                 // so auto calculate line to
                                 // between 2 point
-                                Vector2 mid = (secondControlPoint + point) / 2;
+                                Vector2 mid = (points.SecondControlPoint + point) / 2;
                                 surface.QuadraticBezierTo(
-                                    secondControlPoint,
+                                    points.SecondControlPoint,
                                     mid);
-                                controlPointCount--;
-                                secondControlPoint = point;
+                                points.SecondControlPoint = point; //replace 2nd
                                 break;
                             default:
                                 throw new NotSupportedException("Too many control points");
                         }
-
-                        controlPointCount++;
-                        justFromCurveMode = true;
                     }
+                    justFromCurveMode = !this.onCurves[pointIndex];
                 }
 
                 // close figure
                 // if in curve mode
                 if (justFromCurveMode)
                 {
-                    switch (controlPointCount)
-                    {
-                        case 0: break;
-                        case 1:
-                            surface.QuadraticBezierTo(
-                                secondControlPoint,
-                                lastMove);
-                            break;
-                        case 2:
-                            surface.CubicBezierTo(
-                                secondControlPoint,
-                                thirdControlPoint,
-                                lastMove);
-                            break;
-                        default:
-                            throw new NotSupportedException("Too many control points");
-                    }
-
-                    justFromCurveMode = false;
-                    controlPointCount = 0;
+                    DrawPoints(surface, points, firstPoint);
                 }
 
                 surface.EndFigure();
-                startContour++;
             }
 
             surface.EndGlyph();
+        }
+
+        private static ControlPointCollection DrawPoints(IGlyphRenderer surface, ControlPointCollection points, Vector2 point)
+        {
+            switch (points.Count)
+            {
+                case 0: break;
+                case 1:
+                    surface.QuadraticBezierTo(
+                        points.SecondControlPoint,
+                        point);
+                    break;
+                case 2:
+                    surface.CubicBezierTo(
+                        points.SecondControlPoint,
+                        points.ThirdControlPoint,
+                        point);
+                    break;
+                default:
+                    throw new NotSupportedException("Too many control points");
+            }
+            points.Clear();
+            return points;
+        }
+
+        private struct ControlPointCollection
+        {
+            public Vector2 SecondControlPoint;
+            public Vector2 ThirdControlPoint;
+            public int Count;
+            public void Add(Vector2 point)
+            {
+                switch (Count++)
+                {
+                    case 0:
+                        SecondControlPoint = point;
+                        break;
+                    case 1:
+                        ThirdControlPoint = point;
+                        break;
+                    default:
+                        throw new NotSupportedException("Too many control points");
+                }
+            }
+            public void ReplaceLast(Vector2 point)
+            {
+                Count--;
+                Add(point);
+            }
+
+            public void Clear()
+            {
+                Count = 0;
+            }
         }
     }
 }

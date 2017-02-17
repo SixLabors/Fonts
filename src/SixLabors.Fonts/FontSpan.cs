@@ -20,7 +20,6 @@ namespace SixLabors.Fonts
             this.Font = font;
         }
 
-
         /// <summary>
         /// Gets the font.
         /// </summary>
