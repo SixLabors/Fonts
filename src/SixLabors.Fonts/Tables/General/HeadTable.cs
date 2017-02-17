@@ -48,6 +48,10 @@ namespace SixLabors.Fonts.Tables.General
         {
             using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
+                if (binaryReader == null)
+                {
+                    return null;
+                }
                 return Load(binaryReader);
             }
         }
@@ -115,9 +119,18 @@ namespace SixLabors.Fonts.Tables.General
             }
 
             var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
-            var created = startDate.AddSeconds(reader.ReadInt64());
-            var modified = startDate.AddSeconds(reader.ReadInt64());
-
+            var seconds = reader.ReadInt64();
+            var created = startDate;
+            if (seconds > 0)
+            {
+                created = startDate.AddSeconds(seconds);
+            }
+            seconds = reader.ReadInt64();
+            var modified = startDate;
+            if (seconds > 0)
+            {
+                modified = startDate.AddSeconds(seconds);
+            }
             var bounds = Bounds.Load(reader); // xMin, yMin, xMax, yMax
 
             var macStyle = reader.ReadUInt16<HeadMacStyle>();

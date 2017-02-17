@@ -83,7 +83,7 @@ namespace SixLabors.Fonts.Tables.General
 
             // foreach encoding we move forward looking for th subtables
             List<CMapSubTable> tables = new List<CMapSubTable>(numTables);
-            foreach (var encoding in encodings.GroupBy(x => x.Offset))
+            foreach (var encoding in encodings.Where(x => x.PlatformID == PlatformIDs.Windows).GroupBy(x => x.Offset))
             {
                 reader.Seek(encoding.Key, System.IO.SeekOrigin.Begin);
 

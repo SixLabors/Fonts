@@ -539,7 +539,7 @@ namespace SixLabors.Fonts
         /// Class to cast to type <typeparamref name="T"/>
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
-        public static class CastTo<T>
+        private static class CastTo<T>
         {
             /// <summary>
             /// Casts <typeparamref name="S" /> to <typeparamref name="T" />.
