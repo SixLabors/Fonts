@@ -10,32 +10,18 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Provides a collection of fonts.
     /// </summary>
-    public sealed class FontCollection
+    public sealed class FontCollection : IFontCollection
     {
 #if FILESYSTEM
-        private static Lazy<FontCollection> lazySystemFonts = new Lazy<FontCollection>(CreateSystemFontsCollection);
-        public static FontCollection SystemFonts => lazySystemFonts.Value;
+        private static Lazy<SystemFontCollection> lazySystemFonts = new Lazy<SystemFontCollection>(() => new SystemFontCollection());
 
-        private static FontCollection CreateSystemFontsCollection()
-        {
-            var collection = new FontCollection();
-
-            string[] paths = new[] {
-                // windows directories
-                "%SYSTEMROOT%\\Fonts",
-            };
-
-            var expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
-            var found = expanded.Where(x => Directory.Exists(x)).ToArray();
-
-            var fonts = found.SelectMany(x => Directory.EnumerateFiles(x, "*.ttf")).Select(x => new FileFontInstance(x)).ToArray();
-            foreach (var f in fonts)
-            {
-                collection.Install(f);
-            }
-
-            return collection;
-        }
+        /// <summary>
+        /// Gets the globably installed system fonts.
+        /// </summary>
+        /// <value>
+        /// The system fonts.
+        /// </value>
+        public static SystemFontCollection SystemFonts => lazySystemFonts.Value;
 #endif
 
         Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.OrdinalIgnoreCase);
@@ -87,7 +73,7 @@ namespace SixLabors.Fonts
         /// Finds the specified font family.
         /// </summary>
         /// <param name="fontFamily">The font family.</param>
-        /// <returns></returns>
+        /// <returns>The family if installed otherwise null</returns>
         public FontFamily Find(string fontFamily)
         {
             if (this.families.ContainsKey(fontFamily))

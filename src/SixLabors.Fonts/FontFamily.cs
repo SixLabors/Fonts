@@ -21,7 +21,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="collection">The collection.</param>
-        public FontFamily(string name, FontCollection collection)
+        internal FontFamily(string name, FontCollection collection)
         {
             this.collection = collection;
             this.Name = name;
