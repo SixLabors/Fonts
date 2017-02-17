@@ -28,17 +28,6 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontFamily"/> class.
-        /// </summary>
-        /// <param name="description">The description.</param>
-        /// <param name="collection">The collection.</param>
-        public FontFamily(FontDescription description, FontCollection collection)
-        {
-            this.collection = collection;
-            this.Name = description.FontFamily;
-        }
-
-        /// <summary>
         /// Gets the name of the <see cref="FontFamily"/>.
         /// </summary>
         /// <value>

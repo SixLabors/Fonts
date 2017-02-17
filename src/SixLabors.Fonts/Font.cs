@@ -18,17 +18,6 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="Font"/> class.
         /// </summary>
-        /// <param name="description">The description.</param>
-        /// <param name="size">The size.</param>
-        /// <param name="collection">The collection.</param>
-        public Font(FontDescription description, float size, FontCollection collection)
-            : this(new FontFamily(description, collection), size, description.Style)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Font"/> class.
-        /// </summary>
         /// <param name="family">The family.</param>
         /// <param name="size">The size.</param>
         /// <param name="style">The style.</param>
@@ -37,7 +26,7 @@ namespace SixLabors.Fonts
             this.Family = family;
             this.requestedStyle = style;
             this.Size = size;
-            this.instance = new Lazy<IFontInstance>(() => this.Family.Find(style));
+            this.instance = new Lazy<IFontInstance>(this.LoadInstanceInternal);
         }
 
         /// <summary>

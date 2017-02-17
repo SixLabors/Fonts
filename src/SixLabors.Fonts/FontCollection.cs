@@ -39,7 +39,7 @@ namespace SixLabors.Fonts
 #endif
 
         Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.OrdinalIgnoreCase);
-        private List<FontFamily> families = new List<FontFamily>();
+        Dictionary<string, FontFamily> families = new Dictionary<string, FontFamily>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontCollection"/> class.
@@ -54,7 +54,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The families.
         /// </value>
-        public IEnumerable<FontFamily> Families => families.ToImmutableArray();
+        public IEnumerable<FontFamily> Families => families.Values.ToImmutableArray();
 
 #if FILESYSTEM
         /// <summary>
@@ -62,7 +62,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="path">The path.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontDescription Install(string path)
+        public Font Install(string path)
         {
             using (var fs = File.OpenRead(path))
             {
@@ -76,7 +76,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontStream">The font stream.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontDescription Install(Stream fontStream)
+        public Font Install(Stream fontStream)
         {
             var instance = FontInstance.LoadFont(fontStream);
 
@@ -90,7 +90,12 @@ namespace SixLabors.Fonts
         /// <returns></returns>
         public FontFamily Find(string fontFamily)
         {
-            return this.families.FirstOrDefault(x => x.Name.Equals(fontFamily, StringComparison.OrdinalIgnoreCase));
+            if (this.families.ContainsKey(fontFamily))
+            {
+                return this.families[fontFamily];
+            }
+
+            return null;
         }
 
         internal IEnumerable<FontStyle> AvailibleStyles(string fontFamily)
@@ -98,21 +103,26 @@ namespace SixLabors.Fonts
             return FindAll(fontFamily).Select(X => X.Description.Style).ToImmutableArray();
         }
 
-        internal FontDescription Install(IFontInstance instance)
+        internal Font Install(IFontInstance instance)
         {
-            if (instance != null)
+            if (instance != null && instance.Description != null)
             {
                 lock (instances)
                 {
                     if (!instances.ContainsKey(instance.Description.FontFamily))
                     {
                         instances.Add(instance.Description.FontFamily, new List<IFontInstance>(4));
-                        families.Add(new FontFamily(instance.Description, this));
                     }
+
+                    if (!this.families.ContainsKey(instance.Description.FontFamily))
+                    {
+                        families.Add(instance.Description.FontFamily, new FontFamily(instance.Description.FontFamily, this));
+                    }
+
                     instances[instance.Description.FontFamily].Add(instance);
                 }
 
-                return instance.Description;
+                return new Font(families[instance.Description.FontFamily], 12, instance.Description.Style);
             }
 
             return null;

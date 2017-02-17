@@ -40,11 +40,29 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(width, size.Width, 4);
         }
 
+
+        [Theory]
+        [InlineData("ab", 939, 1148, false)] // no kerning rules defined for lowercase ab so widths should stay the same
+        [InlineData("ab", 939, 1148, true)]
+        [InlineData("AB", 885, 1148, false)] // width changes between kerning enabled or not
+        [InlineData("AB", 885, 769, true)]
+        public void MeasureTextWithKerning(string text, float height, float width, bool enableKerning)
+        {
+            FontCollection c = new FontCollection();
+            var font = c.Install(TestFonts.SimpleFontFileData());
+            
+            var scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
+            var size = new TextMeasurer().MeasureText(text, new FontSpan(new Font(font, 1)) { ApplyKerning = enableKerning }, 72 * font.EmSize);
+
+            Assert.Equal(height, size.Height, 4);
+            Assert.Equal(width, size.Width, 4);
+        }
+
         public static Font CreateFont(string text)
         {
             var fc = new FontCollection();
             var d = fc.Install(new FakeFontInstance(text));
-            return new Font(d, 1, fc);
+            return new Font(d, 1);
         }
     }
 
