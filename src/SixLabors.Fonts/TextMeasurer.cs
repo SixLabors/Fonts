@@ -32,7 +32,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="font">The font.</param>
-        /// <param name="pointSize">Size of the point.</param>
         /// <param name="dpi">The dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public Size MeasureText(string text, Font font, float dpi)
@@ -45,7 +44,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="font">The font.</param>
-        /// <param name="pointSize">Size of the point.</param>
         /// <param name="dpi">The dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public Size MeasureText(string text, Font font, Vector2 dpi)
