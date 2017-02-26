@@ -12,7 +12,7 @@
     "summary": "A cross-platform library for loading and laying out for processing and measuring; written in C#",
     "projectUrl": "https://github.com/SixLabors/Fonts",
     "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
-    //"iconUrl": "https://raw.githubusercontent.com/SixLabors/Fonts/master/icons/icon.png",
+    "iconUrl": "https://raw.githubusercontent.com/SixLabors/Fonts/master/icons/icon.png",
     "requireLicenseAcceptance": false,
     "repository": {
       "type": "git",
@@ -21,7 +21,8 @@
     "tags": [
       "font",
       "truetype",
-      "opentype"
+      "opentype",
+      "woff"
     ]
   },
   "buildOptions": {
