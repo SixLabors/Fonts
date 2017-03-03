@@ -1,7 +1,8 @@
 ---
 layout: default
-title: Installing the SixLabors.Font
-section: docs/gettingstarted
+title: Installing the SixLabors.Font library
+menu-title: Installation
+menu-order : 2
 ---
 
 ## Installing the library

@@ -8,6 +8,7 @@
     <meta name="author" content="">
     <!-- Le styles -->
     <link href="/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="/assets/css/highlighter.css" rel="stylesheet">
     <style>
       body { padding-top: 60px; /* 60px to make the container go all the way
       to the bottom of the topbar */ }
@@ -50,12 +51,26 @@
     <div class="container">
       <div class="row">
         <div class="span3">
+
           <ul id="menu" class="nav nav-list" data-spy="affix">
             <li class="nav-header">The docs</li>
-            <li data-section=""><a href="/">Home</a></li>
-            <li data-section="docs/installation"><a href="/docs/installation.html">Installation</a></li>
-            <li data-section="docs/installation"><a href="/other-projects.html">Projects using Fonts</a></li>
+                 {% assign sorted_pages = site.pages | sort:'menu-order', 'last'  %}
+      {% for p in sorted_pages %}
+        
+        {% if p.menu-hide != true %}
+        <li {% if p.url == page.url %}class="active"{% endif %}>
+              <a href="{{ p.url }}">
+                {% if p.menu-title %}
+                  {{p.menu-title}}
+                {% else %}
+                  {{p.title}}
+                {% endif %}
+              </a>
+        </li>
+        {% endif %}
+      {% endfor %}
           </ul>
+
         </div>
         <div class="span9">
 {{content}}

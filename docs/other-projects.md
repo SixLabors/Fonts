@@ -1,6 +1,8 @@
 ---
 layout: default
 title: Other projects using SixLabors.Fonts
+menu-order: 9999  
+menu-hide: true  
 ---
 
 ## Other projects using SixLabors.Fonts

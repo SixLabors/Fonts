@@ -130,7 +130,7 @@ body {
   background-image: linear-gradient(90deg, #dc534b 0%, #d96f5f 100%);
   background-image: -moz-linear-gradient(90deg, #dc534b 0%, #d96f5f 100%);
   background-image: -webkit-linear-gradient(90deg, #dc534b 0%, #d96f5f 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .2)
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
   padding: 0px 10px;
 }
 .orange-button {
@@ -140,5 +140,18 @@ body {
   body {
     padding-top: 0px;
   }
+}
+
+
+h1 code,
+h2 code,
+h3 code,
+h4 code,
+h5 code,
+h6 code
+{
+  font-size: inherit;
+  color: inherit;
+    font-weight: normal;
 }
 
