@@ -31,20 +31,21 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderLetter(font2, 'u', 72);
             RenderLetter(font2, 'o', 72);
             RenderText(font2, "ov", 72);
-            RenderText(font2, "Hello World", 72);
             RenderText(font2, "a\ta", 72);
             RenderText(font2, "aa\ta", 72);
             RenderText(font2, "aaa\ta", 72);
             RenderText(font2, "aaaa\ta", 72);
             RenderText(font2, "aaaaa\ta", 72);
             RenderText(font2, "aaaaaa\ta", 72);
+            RenderText(font2, "Hello\nWorld", 72);
         }
+
         public static void RenderText(FontFamily font, string text, float pointSize = 12)
         {
             var builder = new GlyphBuilder();
             var renderer = new TextRenderer(builder);
 
-            renderer.RenderText(text, new FontSpan(new Font(font, pointSize)) { ApplyKerning = true }, 128);
+            renderer.RenderText(text, new FontSpan(new Font(font, pointSize)) { ApplyKerning = true }, 96);
 
             builder.Paths
                 .SaveImage(font.Name, text + ".png");
@@ -58,6 +59,32 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             g.RenderTo(builder, Vector2.Zero, 72f);
             builder.Paths
                 .SaveImage(fontFam.Name, character + ".png");
+        }
+
+        public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)
+        {
+            path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
+            var fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+
+            using (var img = new Image(width, height))
+            {
+                img.Fill(Color.DarkBlue);
+
+                foreach (var s in shapes)
+                {
+                    // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
+                    img.Fill(Color.HotPink, s.Translate(new Vector2(0, 0)));
+                }
+                // img.Draw(Color.LawnGreen, 1, shape);
+
+                // Ensure directory exists
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+
+                using (var fs = File.Create(fullPath))
+                {
+                    img.SaveAsPng(fs);
+                }
+            }
         }
 
         public static void SaveImage(this IEnumerable<IPath> shapes, params string[] path)

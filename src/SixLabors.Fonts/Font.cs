@@ -10,7 +10,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Defines a particular format for text, including font face, size, and style attributes. This class cannot be inherited.
     /// </summary>
-    public sealed class Font
+    public sealed class Font : IFont
     {
         private readonly FontStyle requestedStyle;
         private readonly Lazy<IFontInstance> instance;

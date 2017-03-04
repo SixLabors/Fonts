@@ -78,6 +78,7 @@ namespace SixLabors.Fonts
             surface.BeginGlyph();
 
             Vector2 firstPoint = Vector2.Zero;
+            Vector2 scale = new Vector2(1, -1);
 
             for (int i = 0; i < this.endPoints.Length; i++)
             {
@@ -88,7 +89,7 @@ namespace SixLabors.Fonts
 
                 for (; pointIndex < nextContour; ++pointIndex)
                 {
-                    var point = location + ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor); // scale each point as we go, w will now have the correct relative point size
+                    var point = location + (scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
 
                     if (this.onCurves[pointIndex])
                     {

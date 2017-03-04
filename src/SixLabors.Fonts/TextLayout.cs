@@ -25,6 +25,8 @@ namespace SixLabors.Fonts
 
             float lineHeight = 0f;
             Vector2 location = Vector2.Zero;
+            float lineHeightOfFirstLine = 0;
+            bool firstLine = true;
             GlyphInstance previousGlyph = null;
             float scale = 0;
             for (var i = 0; i < text.Length; i++)
@@ -40,6 +42,12 @@ namespace SixLabors.Fonts
                     // get the larget lineheight thus far
                     scale = spanStyle.Font.EmSize * 72;
                     lineHeight = (spanStyle.Font.LineHeight * spanStyle.PointSize) / scale;
+                    
+                }
+
+                if(firstLine && lineHeight > lineHeightOfFirstLine)
+                {
+                    lineHeightOfFirstLine = lineHeight;
                 }
 
                 var c = text[i];
@@ -57,7 +65,7 @@ namespace SixLabors.Fonts
                         location.Y += lineHeight;
                         lineHeight = 0; // reset line height tracking for next line
                         previousGlyph = null;
-
+                        firstLine = false;
                         break;
                     case '\t':
                         {
@@ -110,6 +118,12 @@ namespace SixLabors.Fonts
                 }
             }
 
+            var offset = new Vector2(0, lineHeightOfFirstLine);
+            for(var i =0; i< layout.Count; i++)
+            {
+                var glyphLayout = layout[i];
+                layout[i] = new GlyphLayout(glyphLayout.Glyph, glyphLayout.Location + offset, glyphLayout.Width, glyphLayout.Height);
+            }
             return layout.ToImmutableArray();
         }
     }
