@@ -22,6 +22,7 @@ namespace SixLabors.Fonts
         /// to the given stream, using the given encoding.
         /// </summary>
         /// <param name="stream">Stream to read data from</param>
+        /// <param name="leaveOpen">if set to <c>true</c> [leave open].</param>
         public BinaryReader(Stream stream, bool leaveOpen)
         {
             this.BaseStream = stream;

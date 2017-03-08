@@ -66,6 +66,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="surface">The surface.</param>
         /// <param name="pointSize">Size of the point.</param>
+        /// <param name="location">The location.</param>
         /// <param name="dpi">The dpi.</param>
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi)

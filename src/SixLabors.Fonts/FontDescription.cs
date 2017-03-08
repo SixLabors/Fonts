@@ -18,9 +18,11 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontDescription"/> class.
+        /// Initializes a new instance of the <see cref="FontDescription" /> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
+        /// <param name="os2">The os2.</param>
+        /// <param name="head">The head.</param>
         internal FontDescription(NameTable nameTable, OS2Table os2, HeadTable head)
             : this(nameTable.FontName, nameTable.FontFamilyName, nameTable.FontSubFamilyName, ConvertStyle(os2, head))
         {

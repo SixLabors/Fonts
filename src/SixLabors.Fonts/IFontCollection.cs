@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts
 {
+    /// <summary>
+    /// A readable and writable collection of fonts.
+    /// </summary>
+    /// <seealso cref="SixLabors.Fonts.IReadonlyFontCollection" />
     public interface IFontCollection : IReadonlyFontCollection
     {
 #if FILESYSTEM

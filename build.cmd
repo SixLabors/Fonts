@@ -1,27 +1,26 @@
 @echo Off
 
-REM No glob support on Windows
 dotnet restore 
-dotnet test ./tests/SixLabors.Fonts.Tests/ -c Release
-
-if not "%errorlevel%"=="0" goto failure
-
-REM run only if gitversion has ran i.e. from appveyor    
- if not "%GitVersion_NuGetVersion%" == "" (
-     cd src/SixLabors.Fonts
-     ECHO Setting version number to "%GitVersion_NuGetVersion%"
-     dotnet version "%GitVersion_NuGetVersion%"
-     cd ../../
-     if not "%errorlevel%"=="0" goto failure
- )
 
 ECHO Building nuget packages
-if not "%GitVersion_NuGetVersion%" == "" (
-	dotnet pack -c Release --output ./artifacts ./src/SixLabors.Fonts/project.json
+ if not "%GitVersion_NuGetVersion%" == "" (
+    dotnet build -c Release /p:packageversion=%GitVersion_NuGetVersion%
 )ELSE ( 
-	dotnet pack -c Release --version-suffix "local-build"  --output ./artifacts ./src/SixLabors.Fonts/project.json
+    dotnet build -c Release
+)
+     if not "%errorlevel%"=="0" goto failure
+
+dotnet test ./tests/SixLabors.Fonts.Tests/SixLabors.Fonts.Tests.csproj
+
+
+if not "%GitVersion_NuGetVersion%" == "" (
+    dotnet pack ./src/SixLabors.Fonts/ -c Release --output ../../artifacts --no-build /p:packageversion=%GitVersion_NuGetVersion%
+)ELSE ( 
+    dotnet pack ./src/SixLabors.Fonts/ -c Release --output ../../artifacts --no-build
 )
 if not "%errorlevel%"=="0" goto failure
+
+
 
 :success
 ECHO successfully built project
