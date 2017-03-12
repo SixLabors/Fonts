@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <DebugType>portable</DebugType>
+    <AssemblyName>DrawWithImageSharp</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>DrawWithImageSharp</PackageId>
+    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
+    <RuntimeFrameworkVersion>1.0.4</RuntimeFrameworkVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
+    <ProjectReference Include="..\..\src\SixLabors.Fonts\SixLabors.Fonts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ImageSharp.Drawing.Paths" Version="1.0.0-alpha2-00002" />
+    <PackageReference Include="ImageSharp.Formats.Png" Version="1.0.0-alpha2-00048" />
+    <PackageReference Include="SixLabors.Shapes" Version="0.1.0-ci0105" />
+  </ItemGroup>
+
+</Project>

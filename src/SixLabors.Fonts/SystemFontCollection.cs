@@ -32,8 +32,19 @@ namespace SixLabors.Fonts
             }
         }
 
+        /// <summary>
+        /// Gets the collection of <see cref="FontFamily"/> objects associated with this <see cref="FontCollection"/>.
+        /// </summary>
+        /// <value>
+        /// The families.
+        /// </value>
         public IEnumerable<FontFamily> Families => collection.Families;
 
+        /// <summary>
+        /// Finds the specified font family.
+        /// </summary>
+        /// <param name="fontFamily">The font family.</param>
+        /// <returns>The family if installed otherwise null</returns>
         public FontFamily Find(string fontFamily) => collection.Find(fontFamily);
     }
 #endif

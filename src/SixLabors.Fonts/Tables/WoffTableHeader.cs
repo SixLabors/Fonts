@@ -10,23 +10,10 @@ namespace SixLabors.Fonts.Tables
         public WoffTableHeader(string tag, uint offset, uint compressedLength, uint origLength, uint checkSum)
             : base(tag, checkSum, offset, origLength)
         {
-            this.Tag = tag;
-            this.CheckSum = checkSum;
-            this.Offset = offset;
-            this.Length = origLength;
             this.CompressedLength = compressedLength;
         }
 
-        public string Tag { get; }
-
-        public uint Offset { get; }
-
-        public uint CheckSum { get; }
-
-        public uint Length { get; }
-
         public uint CompressedLength { get; }
-
 
         public override BinaryReader CreateReader(Stream stream)
         {
@@ -43,7 +30,7 @@ namespace SixLabors.Fonts.Tables
             }
         }
 
-        public static WoffTableHeader Read(BinaryReader reader)
+        public static new WoffTableHeader Read(BinaryReader reader)
         {
             // WOFF TableDirectoryEntry
             // UInt32 | tag          | 4-byte sfnt table identifier.

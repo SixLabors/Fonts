@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Encapulated logic for laying out and then rendering text to a <see cref="IMultiGlyphRenderer"/> surface.
+    /// Encapulated logic for laying out and then rendering text to a <see cref="IGlyphRenderer"/> surface.
     /// </summary>
     public class TextRenderer
     {
