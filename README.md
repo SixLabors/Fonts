@@ -17,8 +17,7 @@
 
 **Pre-release downloads**
 
-At present the code is pre-release and not yet released on nuget.org.
-<!--At present the code is pre-release we have initial pre-releases availible on [nuget](https://www.nuget.org/packages/SixLabors.Fonts/).-->
+At present the code is pre-release we have initial pre-releases availible on [nuget](https://www.nuget.org/packages/SixLabors.Fonts/).
 
 We also have a [MyGet package repository](https://www.myget.org/gallery/SixLabors) - for bleeding-edge / development NuGet releases.
 
@@ -26,7 +25,7 @@ We also have a [MyGet package repository](https://www.myget.org/gallery/SixLabor
 
 If you prefer, you can compile SixLabors.Shapes yourself (please do and help!), you'll need:
 
-- [Visual Studio 2015 with Update 3 (or above)](https://www.visualstudio.com/news/releasenotes/vs2015-update3-vs)
+- [Visual Studio 2017](https://www.visualstudio.com/en-us/news/releasenotes/vs2017-relnotes)
 - The [.NET Core 1.0 SDK Installer](https://www.microsoft.com/net/core#windows) - Non VSCode link.
 
 To clone it locally click the "Clone in Windows" button above or run the following git commands.
@@ -71,11 +70,9 @@ Font font2 = fonts.Install("./path/to/font2.woff");
 
 Please... Spread the word, contribute algorithms, submit performance improvements, unit tests. 
 
-<!--
 ### Projects using SixLabors.Fonts
 
 * [ImageSharp](https://github.com/jimBobSquarePants/ImageSharp) - cross platform, fully manged, image manipultion and drawing library.
--->
 
 ### The SixLabors.Fonts Team
 
