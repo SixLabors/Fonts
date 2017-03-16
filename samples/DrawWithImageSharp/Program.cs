@@ -38,6 +38,28 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, "aaaaa\ta", 72);
             RenderText(font2, "aaaaaa\ta", 72);
             RenderText(font2, "Hello\nWorld", 72);
+          //  RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular),
+                "PGEP0JK867", 200, 50);
+        }
+
+        public static void RenderText(Font font, string text, int width, int height)
+        {
+            var path = System.IO.Path.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
+            var fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+
+            using (var img = new Image(width, height))
+            {
+                img.Fill(Color.White);
+
+                img.DrawText(text, font, Color.Black, new Vector2(50f, 4f));
+
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+
+                using (var fs = File.Create(fullPath+".png"))
+                {
+                    img.SaveAsPng(fs);
+                }
+            }
         }
 
         public static void RenderText(FontFamily font, string text, float pointSize = 12)
@@ -60,7 +82,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             builder.Paths
                 .SaveImage(fontFam.Name, character + ".png");
         }
-
+    
         public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)
         {
             path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();

@@ -82,7 +82,7 @@ namespace SixLabors.Fonts
                 var advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
                 var lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
                 var vector = this.glyphs.GetGlyph(idx);
-                this.glyphCache[idx] = new GlyphInstance(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, this.EmSize, idx);
+                this.glyphCache[idx] = new GlyphInstance(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, lsb, this.EmSize, idx);
             }
 
             return this.glyphCache[idx];

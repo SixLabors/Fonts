@@ -16,8 +16,9 @@ namespace SixLabors.Fonts
         private readonly Vector2[] controlPoints;
         private readonly bool[] onCurves;
         private readonly ushort[] endPoints;
+        private readonly short leftSideBearing;
 
-        internal GlyphInstance(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, ushort sizeOfEm, ushort index)
+        internal GlyphInstance(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index)
         {
             this.sizeOfEm = sizeOfEm;
             this.controlPoints = controlPoints;
@@ -27,6 +28,7 @@ namespace SixLabors.Fonts
             this.AdvanceWidth = advanceWidth;
             this.Index = index;
             this.Height = sizeOfEm - this.Bounds.Min.Y;
+            this.leftSideBearing = leftSideBearing;
         }
 
         /// <summary>
@@ -71,6 +73,20 @@ namespace SixLabors.Fonts
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi)
         {
+            this.RenderTo(surface, pointSize, location, dpi, Vector2.Zero);
+        }
+
+        /// <summary>
+        /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
+        /// </summary>
+        /// <param name="surface">The surface.</param>
+        /// <param name="pointSize">Size of the point.</param>
+        /// <param name="location">The location.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <param name="offset">The offset.</param>
+        /// <exception cref="System.NotSupportedException">Too many control points</exception>
+        public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, Vector2 offset)
+        {
             location = location * dpi;
 
             int pointIndex = 0;
@@ -81,19 +97,28 @@ namespace SixLabors.Fonts
             Vector2 firstPoint = Vector2.Zero;
             Vector2 scale = new Vector2(1, -1);
 
+            // apply left sidebearing 
+            offset = offset + (scale * ((new Vector2(this.leftSideBearing, 0) * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
+            AlignToGrid(ref offset);
+
             for (int i = 0; i < this.endPoints.Length; i++)
             {
                 int nextContour = this.endPoints[i] + 1;
                 bool isFirstPoint = true;
                 ControlPointCollection points = new ControlPointCollection();
                 bool justFromCurveMode = false;
-
+                
                 for (; pointIndex < nextContour; ++pointIndex)
                 {
                     var point = location + (scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
 
+                    point += offset;
+
                     if (this.onCurves[pointIndex])
                     {
+                        // only pixel grid align on curve points
+                        //AlignToGrid(ref point);
+
                         // on curve
                         if (justFromCurveMode)
                         {
@@ -148,6 +173,34 @@ namespace SixLabors.Fonts
             }
 
             surface.EndGlyph();
+        }
+
+        private static void AlignToGrid(ref Vector2 point)
+        {
+            Vector2 floorPoint = new Vector2(
+                                        (float)Math.Floor(point.X),
+                                        (float)Math.Floor(point.Y));
+            var decimalPart = point - floorPoint;
+
+            if (decimalPart.X < 0.5)
+            {
+                decimalPart.X = 0;
+            }
+            else
+            {
+                decimalPart.X = 1;
+            }
+
+            if (decimalPart.Y <0.5)
+            {
+                decimalPart.Y = 0;
+            }
+            else
+            {
+                decimalPart.Y = 1f;
+            }
+
+            point = floorPoint + decimalPart;
         }
 
         private static ControlPointCollection DrawPoints(IGlyphRenderer surface, ControlPointCollection points, Vector2 point)

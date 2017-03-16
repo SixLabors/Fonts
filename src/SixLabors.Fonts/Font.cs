@@ -99,7 +99,7 @@ namespace SixLabors.Fonts
         /// <value>
         ///   <c>true</c> if bold; otherwise, <c>false</c>.
         /// </value>
-        public bool Bold => (instance.Value.Description.Style & FontStyle.Bold) == FontStyle.Bold;
+        public bool Bold => (this.instance.Value.Description.Style & FontStyle.Bold) == FontStyle.Bold;
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="Font"/> is italic.

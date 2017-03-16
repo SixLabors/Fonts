@@ -29,7 +29,19 @@ namespace SixLabors.Fonts
         /// <param name="dpi">The dpi.</param>
         public void RenderTo(IGlyphRenderer surface, Vector2 location, float dpi)
         {
-            this.RenderTo(surface, location, new Vector2(dpi));
+            this.RenderTo(surface, location, dpi, Vector2.Zero);
+        }
+
+        /// <summary>
+        /// Renders to.
+        /// </summary>
+        /// <param name="surface">The surface.</param>
+        /// <param name="location">The location.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <param name="offset">The offset.</param>
+        public void RenderTo(IGlyphRenderer surface, Vector2 location, float dpi, Vector2 offset)
+        {
+            this.RenderTo(surface, location, new Vector2(dpi), offset);
         }
 
         /// <summary>
@@ -41,7 +53,20 @@ namespace SixLabors.Fonts
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRenderer surface, Vector2 location, Vector2 dpi)
         {
-            this.instance.RenderTo(surface, this.pointSize, location, dpi);
+            this.RenderTo(surface, location, dpi, Vector2.Zero);
+        }
+
+        /// <summary>
+        /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
+        /// </summary>
+        /// <param name="surface">The surface.</param>
+        /// <param name="location">The location.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <param name="offset">The offset.</param>
+        /// <exception cref="System.NotSupportedException">Too many control points</exception>
+        public void RenderTo(IGlyphRenderer surface, Vector2 location, Vector2 dpi, Vector2 offset)
+        {
+            this.instance.RenderTo(surface, this.pointSize, location, dpi, offset);
         }
     }
 }
