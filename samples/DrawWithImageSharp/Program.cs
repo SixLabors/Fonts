@@ -38,8 +38,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, "aaaaa\ta", 72);
             RenderText(font2, "aaaaaa\ta", 72);
             RenderText(font2, "Hello\nWorld", 72);
-          //  RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular),
-                "PGEP0JK867", 200, 50);
+          //  RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
         }
 
         public static void RenderText(Font font, string text, int width, int height)
