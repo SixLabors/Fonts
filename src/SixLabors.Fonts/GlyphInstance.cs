@@ -99,7 +99,7 @@ namespace SixLabors.Fonts
 
             // apply left sidebearing 
             offset = offset + (scale * ((new Vector2(this.leftSideBearing, 0) * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
-            AlignToGrid(ref offset);
+            //AlignToGrid(ref offset);
 
             for (int i = 0; i < this.endPoints.Length; i++)
             {
