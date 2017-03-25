@@ -20,15 +20,34 @@ namespace SixLabors.Fonts
             string[] paths = new[] {
                 // windows directories
                 "%SYSTEMROOT%\\Fonts",
+
+                // linux directlty list
+                "~/.fonts/",
+                "/usr/local/share/fonts/",
+                "/usr/share/fonts/",
+
+                // mac fonts
+                "~/Library/Fonts/",
+                "/Library/Fonts/",
+                "/Network/Library/Fonts/",
+                "/System/Library/Fonts/",
+                "/System Folder/Fonts/",
             };
 
             var expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
             var found = expanded.Where(x => Directory.Exists(x)).ToArray();
 
-            var fonts = found.SelectMany(x => Directory.EnumerateFiles(x, "*.ttf")).Select(x => new FileFontInstance(x)).ToArray();
+            var fonts = found.SelectMany(x => Directory.EnumerateFiles(x, "*.ttf", SearchOption.AllDirectories)).Select(x => new FileFontInstance(x)).ToArray();
             foreach (var f in fonts)
             {
-                collection.Install(f);
+                try
+                {
+                    collection.Install(f);
+                }
+                catch
+                {
+                    // we swollow exceptions installing system fonts as we hold no garuntiie about permissions etc.
+                }
             }
         }
 

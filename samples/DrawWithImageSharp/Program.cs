@@ -19,25 +19,25 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff").Family;
             var font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf").Family;
 
-            //RenderLetter(font, 'a');
-            //RenderLetter(font, 'b');
-            //RenderLetter(font, 'u');
-            //RenderText(font, "abc", 72);
-            //RenderText(font, "ABd", 72);
-            //RenderText(fontWoff, "abe", 72);
-            //RenderText(fontWoff, "ABf", 72);
-            //RenderLetter(font2, 'a', 72);
-            //RenderLetter(font2, 'b', 72);
-            //RenderLetter(font2, 'u', 72);
-            //RenderLetter(font2, 'o', 72);
-            //RenderText(font2, "ov", 72);
-            //RenderText(font2, "a\ta", 72);
-            //RenderText(font2, "aa\ta", 72);
-            //RenderText(font2, "aaa\ta", 72);
-            //RenderText(font2, "aaaa\ta", 72);
-            //RenderText(font2, "aaaaa\ta", 72);
-            //RenderText(font2, "aaaaaa\ta", 72);
-            //RenderText(font2, "Hello\nWorld", 72);
+            RenderLetter(font, 'a');
+            RenderLetter(font, 'b');
+            RenderLetter(font, 'u');
+            RenderText(font, "abc", 72);
+            RenderText(font, "ABd", 72);
+            RenderText(fontWoff, "abe", 72);
+            RenderText(fontWoff, "ABf", 72);
+            RenderLetter(font2, 'a', 72);
+            RenderLetter(font2, 'b', 72);
+            RenderLetter(font2, 'u', 72);
+            RenderLetter(font2, 'o', 72);
+            RenderText(font2, "ov", 72);
+            RenderText(font2, "a\ta", 72);
+            RenderText(font2, "aa\ta", 72);
+            RenderText(font2, "aaa\ta", 72);
+            RenderText(font2, "aaaa\ta", 72);
+            RenderText(font2, "aaaaa\ta", 72);
+            RenderText(font2, "aaaaaa\ta", 72);
+            RenderText(font2, "Hello\nWorld", 72);
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
         }
 
