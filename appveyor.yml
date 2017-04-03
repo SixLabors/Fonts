@@ -27,4 +27,7 @@ deploy:
     on:
       branch: master
 
+# prevent the double build when a branch has an active PR
+skip_branch_with_pr: true
+
 test: off
