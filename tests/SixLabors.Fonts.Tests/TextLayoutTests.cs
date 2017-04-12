@@ -41,6 +41,27 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(width, size.Width, 4);
         }
 
+
+
+        [Theory]
+        [InlineData("hello world", 20, 330)]
+        [InlineData("hello world hello world",
+            50, //30 actaul line height + 20 actual height
+            330)]
+        public void MeasureTextWordWrapping(string text, float height, float width)
+        {
+            var font = CreateFont(text);
+
+            var scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
+            var size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
+            {
+                WrappingWidth = 340
+            });
+
+            Assert.Equal(height, size.Height, 4);
+            Assert.Equal(width, size.Width, 4);
+        }
+
         [Theory]
         [InlineData("ab", 939, 1148, false)] // no kerning rules defined for lowercase ab so widths should stay the same
         [InlineData("ab", 939, 1148, true)]
@@ -50,9 +71,9 @@ namespace SixLabors.Fonts.Tests
         {
             FontCollection c = new FontCollection();
             var font = c.Install(TestFonts.SimpleFontFileData());
-            
+
             var scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            var size = new TextMeasurer().MeasureText(text, new FontSpan(new Font(font, 1)) { ApplyKerning = enableKerning }, 72 * font.EmSize);
+            var size = new TextMeasurer().MeasureText(text, new FontSpan(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning });
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace SixLabors.Fonts
@@ -16,8 +17,31 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="font">The font.</param>
         public FontSpan(Font font)
+            : this(font, new Vector2(72))
         {
             this.Font = font;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontSpan"/> class.
+        /// </summary>
+        /// <param name="font">The font.</param>
+        /// <param name="dpi">The dpi.</param>
+        public FontSpan(Font font, float dpi)
+            : this(font, new Vector2(dpi))
+        {
+            this.Font = font;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontSpan"/> class.
+        /// </summary>
+        /// <param name="font">The font.</param>
+        /// <param name="dpi">The dpi.</param>
+        public FontSpan(Font font, Vector2 dpi)
+        {
+            this.Font = font;
+            this.DPI = dpi;
         }
 
         /// <summary>
@@ -43,6 +67,19 @@ namespace SixLabors.Fonts
         ///   <c>true</c> if [apply kerning]; otherwise, <c>false</c>.
         /// </value>
         public bool ApplyKerning { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the the current DPI to render/measure the text at.
+        /// </summary>
+        public Vector2 DPI { get; set; }
+
+        /// <summary>
+        /// Get or sets the width relative to the current DPI at which text will automatically wrap onto a newline
+        /// </summary>
+        /// <value>
+        ///     if value is -1 then wrapping is disabled.
+        /// </value>
+        public int WrappingWidth { get; set; } = -1;
 
         /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream

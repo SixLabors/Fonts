@@ -20,6 +20,12 @@ namespace SixLabors.Fonts
         /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
         public ImmutableArray<GlyphLayout> GenerateLayout(string text, FontSpan style)
         {
+            float maxWidth = float.MaxValue;
+            if(style.WrappingWidth > 0)
+            {
+                maxWidth = style.WrappingWidth / style.DPI.X ;
+            }
+
             AppliedFontStyle spanStyle = style.GetStyle(0, text.Length);
             List<GlyphLayout> layout = new List<GlyphLayout>(text.Length);
 
@@ -29,6 +35,7 @@ namespace SixLabors.Fonts
             bool firstLine = true;
             GlyphInstance previousGlyph = null;
             float scale = 0;
+            int lastWrappableLocation = -1;
             for (var i = 0; i < text.Length; i++)
             {
                 if (spanStyle.End < i)
@@ -51,6 +58,14 @@ namespace SixLabors.Fonts
                 }
 
                 var c = text[i];
+
+
+                if (char.IsWhiteSpace(c))
+                {
+                    //find the index in the layout where we last enabled back tracking from
+                    lastWrappableLocation = layout.Count;
+                }
+
                 switch (c)
                 {
                     case '\r':
@@ -66,6 +81,7 @@ namespace SixLabors.Fonts
                         lineHeight = 0; // reset line height tracking for next line
                         previousGlyph = null;
                         firstLine = false;
+                        lastWrappableLocation = -1;
                         break;
                     case '\t':
                         {
@@ -111,6 +127,27 @@ namespace SixLabors.Fonts
 
                             // move foraward the actual with of the glyph, we are retaining the baseline
                             location.X += width;
+
+                            if(location.X >= maxWidth && lastWrappableLocation > 0)
+                            {
+                                if (lastWrappableLocation < layout.Count)
+                                {
+                                    var wrappingOffset = layout[lastWrappableLocation].Location.X;
+                                    // the word just extended passed the end of the box 
+                                    for (var j = lastWrappableLocation; j < layout.Count; j++)
+                                    {
+                                        var current = layout[j].Location;
+                                        layout[j] = new GlyphLayout(layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height);
+
+                                        location.X = layout[j].Location.X + layout[j].Width;
+                                    }
+
+                                    location.Y += lineHeight;
+                                    firstLine = false;
+                                    lastWrappableLocation = -1;
+                                }
+                            }
+
                             previousGlyph = glyph;
                         }
 

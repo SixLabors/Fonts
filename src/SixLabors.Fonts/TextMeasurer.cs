@@ -36,7 +36,7 @@ namespace SixLabors.Fonts
         /// <returns>The size of the text if it was to be rendered.</returns>
         public Size MeasureText(string text, Font font, float dpi)
         {
-            return this.MeasureText(text, new FontSpan(font), new Vector2(dpi));
+            return this.MeasureText(text, new FontSpan(font, dpi));
         }
 
         /// <summary>
@@ -48,9 +48,9 @@ namespace SixLabors.Fonts
         /// <returns>The size of the text if it was to be rendered.</returns>
         public Size MeasureText(string text, Font font, Vector2 dpi)
         {
-            return this.MeasureText(text, new FontSpan(font), dpi);
+            return this.MeasureText(text, new FontSpan(font, dpi));
         }
-
+        
         /// <summary>
         /// Measures the text.
         /// </summary>
@@ -58,30 +58,18 @@ namespace SixLabors.Fonts
         /// <param name="style">The style.</param>
         /// <param name="dpi">The dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public Size MeasureText(string text, FontSpan style, float dpi)
-        {
-            return this.MeasureText(text, style, new Vector2(dpi));
-        }
-
-        /// <summary>
-        /// Measures the text.
-        /// </summary>
-        /// <param name="text">The text.</param>
-        /// <param name="style">The style.</param>
-        /// <param name="dpi">The dpi.</param>
-        /// <returns>The size of the text if it was to be rendered.</returns>
-        public Size MeasureText(string text, FontSpan style, Vector2 dpi)
+        public Size MeasureText(string text, FontSpan style)
         {
             var glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
-
+            
             var left = glyphsToRender.Min(x => x.Location.X);
             var right = glyphsToRender.Max(x => x.Location.X + x.Width);
 
             var top = glyphsToRender.Min(x => x.Location.Y);
             var bottom = glyphsToRender.Max(x => x.Location.Y + x.Height);
 
-            var topLeft = new Vector2(left, top) * dpi;
-            var bottomRight = new Vector2(right, bottom) * dpi;
+            var topLeft = new Vector2(left, top) * style.DPI;
+            var bottomRight = new Vector2(right, bottom) * style.DPI;
 
             return new Size(bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
         }
