@@ -23,7 +23,7 @@ namespace SixLabors.Fonts
         /// <param name="style">The style.</param>
         public Font(FontFamily family, float size, FontStyle style)
         {
-            this.Family = family;
+            this.Family = family ?? throw new ArgumentNullException(nameof(family));
             this.requestedStyle = style;
             this.Size = size;
             this.instance = new Lazy<IFontInstance>(this.LoadInstanceInternal);
@@ -45,7 +45,7 @@ namespace SixLabors.Fonts
         /// <param name="prototype">The prototype.</param>
         /// <param name="style">The style.</param>
         public Font(Font prototype, FontStyle style)
-            : this(prototype.Family, prototype.Size, style)
+            : this(prototype?.Family ?? throw new ArgumentNullException(nameof(prototype)), prototype.Size, style)
         {
         }
 
@@ -56,7 +56,7 @@ namespace SixLabors.Fonts
         /// <param name="size">The size.</param>
         /// <param name="style">The style.</param>
         public Font(Font prototype, float size, FontStyle style)
-            : this(prototype.Family, size, style)
+            : this(prototype?.Family ?? throw new ArgumentNullException(nameof(prototype)), size, style)
         {
         }
 

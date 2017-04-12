@@ -1,0 +1,24 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using Xunit;
+
+namespace SixLabors.Fonts.Tests
+{
+    public class ConstructorGuards
+    {
+        [Fact]
+        public void FontClass_NullFontFamilyThrowsException()
+        {
+            var ex = Assert.Throws<ArgumentNullException>(() => new Font((FontFamily)null, 0f, FontStyle.Regular));
+            Assert.Equal("family", ex.ParamName);
+        }
+
+        [Fact]
+        public void FontClass_NullFontThrowsException()
+        {
+            var ex = Assert.Throws<ArgumentNullException>(() => new Font((Font)null, 0f, FontStyle.Regular));
+            Assert.Equal("prototype", ex.ParamName);
+        }
+    }
+}
