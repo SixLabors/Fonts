@@ -79,7 +79,7 @@ namespace SixLabors.Fonts
         /// <value>
         ///     if value is -1 then wrapping is disabled.
         /// </value>
-        public int WrappingWidth { get; set; } = -1;
+        public float WrappingWidth { get; set; } = -1;
 
         /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream
