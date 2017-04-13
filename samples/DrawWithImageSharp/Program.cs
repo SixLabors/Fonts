@@ -18,7 +18,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf").Family;
             var fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff").Family;
             var font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf").Family;
+            var carter= fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf").Family;
 
+            RenderLetter(carter, '\0');
             RenderLetter(font, 'a');
             RenderLetter(font, 'b');
             RenderLetter(font, 'u');
@@ -38,7 +40,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, "aaaaa\ta", 72);
             RenderText(font2, "aaaaaa\ta", 72);
             RenderText(font2, "Hello\nWorld", 72);
-            RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
+            RenderText(carter, "Hello\0World", 72);
+            RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
         }
 
@@ -137,7 +140,14 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             // pad even amount around shape
             int width = (int)(shape.Bounds.Left + shape.Bounds.Right);
             int height = (int)(shape.Bounds.Top + shape.Bounds.Bottom);
-
+            if (width < 1)
+            {
+                width = 1;
+            }
+            if (height< 1)
+            {
+                height = 1;
+            }
             using (var img = new Image(width, height))
             {
                 img.Fill(Color.DarkBlue);

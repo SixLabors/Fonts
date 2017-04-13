@@ -10,6 +10,14 @@ namespace SixLabors.Fonts.Tests
     public class FontLoaderTests
     {
         [Fact]
+        public void Issue21_LoopDetectedLoadingGlyphs()
+        {
+            var font = new FontCollection().Install(TestFonts.CarterOneFileData());
+
+            GlyphInstance g = font.FontInstance.GetGlyph('\0');
+        }
+
+        [Fact]
         public void LoadFontMetadata()
         {
             FontDescription description = FontDescription.LoadDescription(TestFonts.SimpleFontFileData());
