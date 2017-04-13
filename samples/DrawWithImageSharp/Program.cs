@@ -70,7 +70,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var builder = new GlyphBuilder();
             var renderer = new TextRenderer(builder);
 
-            renderer.RenderText(text, new FontSpan(new Font(font, pointSize)) { ApplyKerning = true }, 96);
+            renderer.RenderText(text, new FontSpan(new Font(font, pointSize), 96) { ApplyKerning = true, WrappingWidth = 340 });
 
             builder.Paths
                 .SaveImage(font.Name, text + ".png");

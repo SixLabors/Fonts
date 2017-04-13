@@ -23,7 +23,7 @@ namespace SixLabors.Fonts
         /// <param name="collection">The collection.</param>
         internal FontFamily(string name, FontCollection collection)
         {
-            this.collection = collection;
+            this.collection = collection ?? throw new ArgumentNullException(nameof(collection));
             this.Name = name;
         }
 
