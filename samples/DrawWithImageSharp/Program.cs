@@ -19,6 +19,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff").Family;
             var font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf").Family;
             var carter= fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf").Family;
+            var Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf").Family;
 
             RenderLetter(carter, '\0');
             RenderLetter(font, 'a');
@@ -41,8 +42,29 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, "aaaaaa\ta", 72);
             RenderText(font2, "Hello\nWorld", 72);
             RenderText(carter, "Hello\0World", 72);
+            RenderText(Wendy_One, "Hello\0World", 72);
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
+
+            StringBuilder sb = new StringBuilder();
+            for (var c = 'a'; c <= 'z'; c++)
+            {
+                sb.Append(c);
+            }
+            for (var c = 'A'; c <= 'Z'; c++)
+            {
+                sb.Append(c);
+            }
+            for (var c = '0'; c <= '9'; c++)
+            {
+                sb.Append(c);
+            }
+            var text = sb.ToString();
+
+            foreach (var f in fonts.Families)
+            {
+                RenderText(f, text, 72);
+            }
         }
 
         public static void RenderText(Font font, string text, int width, int height)

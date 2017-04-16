@@ -13,9 +13,9 @@ namespace SixLabors.Fonts.Tests
         public int FiguresCount = 0;
         public List<Vector2> ControlPoints = new List<Vector2>();
         public List<Vector2> ControlPointsOnCurve = new List<Vector2>();
+
         public void BeginGlyph()
         {
-
         }
 
         public void BeginFigure()

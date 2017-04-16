@@ -52,10 +52,11 @@ namespace SixLabors.Fonts
         /// Ends the glyph.
         /// </summary>
         void EndGlyph();
-
+        
         /// <summary>
         /// Begins the glyph.
         /// </summary>
+        /// <param name="location">The location trhe glyph will be rendered.</param>
         void BeginGlyph();
     }
 }

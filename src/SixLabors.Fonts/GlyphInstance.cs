@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace SixLabors.Fonts
@@ -10,7 +11,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// A glyph from a particular font face.
     /// </summary>
-    internal class GlyphInstance
+    internal partial class GlyphInstance
     {
         private readonly ushort sizeOfEm;
         private readonly Vector2[] controlPoints;
@@ -89,84 +90,86 @@ namespace SixLabors.Fonts
         {
             location = location * dpi;
 
-            int pointIndex = 0;
             var scaleFactor = (float)(this.sizeOfEm * 72f);
 
-            surface.BeginGlyph();
 
             Vector2 firstPoint = Vector2.Zero;
             Vector2 scale = new Vector2(1, -1);
 
             // apply left sidebearing 
-            offset = offset + (scale * ((new Vector2(this.leftSideBearing, 0) * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
-            //AlignToGrid(ref offset);
+            // applying the left side bearing seems to break lowercase j characters on quite a few fonts
+            // skip it.
+            // offset = offset + (scale * ((new Vector2(this.leftSideBearing, 0) * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
 
+            surface.BeginGlyph();
+
+            offset += location;
+
+            int startOfContor = 0;
+            int endOfContor = -1;                                                                       //AlignToGrid(ref offset);
             for (int i = 0; i < this.endPoints.Length; i++)
             {
-                int nextContour = this.endPoints[i] + 1;
-                bool isFirstPoint = true;
-                ControlPointCollection points = new ControlPointCollection();
-                bool justFromCurveMode = false;
-                
-                for (; pointIndex < nextContour; ++pointIndex)
+                surface.BeginFigure();
+                startOfContor = endOfContor + 1;
+                endOfContor = this.endPoints[i];
+
+
+                Vector2 prev = Vector2.Zero;
+                Vector2 curr = GetPoint(pointSize, dpi, offset, scaleFactor, scale, endOfContor);
+                Vector2 next = GetPoint(pointSize, dpi, offset, scaleFactor, scale, startOfContor);
+
+                if (this.onCurves[endOfContor])
                 {
-                    var point = location + (scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
-
-                    point += offset;
-
-                    if (this.onCurves[pointIndex])
+                    surface.MoveTo(curr);
+                }
+                else
+                {
+                    if (this.onCurves[startOfContor])
                     {
-                        // only pixel grid align on curve points
-                        //AlignToGrid(ref point);
-
-                        // on curve
-                        if (justFromCurveMode)
-                        {
-                            points = DrawPoints(surface, points, point);
-                        }
-                        else
-                        {
-                            if (isFirstPoint)
-                            {
-                                isFirstPoint = false;
-                                firstPoint = point;
-                                surface.MoveTo(firstPoint);
-                            }
-                            else
-                            {
-                                surface.LineTo(point);
-                            }
-                        }
+                        surface.MoveTo(next);
                     }
                     else
                     {
-                        switch (points.Count)
-                        {
-                            case 0:
-                                points.Add(point);
-                                break;
-                            case 1:
-                                // we already have prev second control point
-                                // so auto calculate line to
-                                // between 2 point
-                                Vector2 mid = (points.SecondControlPoint + point) / 2;
-                                surface.QuadraticBezierTo(
-                                    points.SecondControlPoint,
-                                    mid);
-                                points.SecondControlPoint = point; //replace 2nd
-                                break;
-                            default:
-                                throw new NotSupportedException("Too many control points");
-                        }
+                        // If both first and last points are off-curve, start at their middle.
+                        Vector2 startPoint = (curr + next) / 2;
+                        surface.MoveTo(startPoint);
                     }
-                    justFromCurveMode = !this.onCurves[pointIndex];
                 }
 
-                // close figure
-                // if in curve mode
-                if (justFromCurveMode)
+                int length = (endOfContor - startOfContor) + 1;
+                for (int p = 0; p < length; p++)
                 {
-                    DrawPoints(surface, points, firstPoint);
+                    prev = curr;
+                    curr = next;
+                    int currentIndex = startOfContor + p;
+                    int nextIndex = startOfContor + (p + 1) % length;
+                    int prevIndex = startOfContor + ((length + p) - 1) % length;
+                    next = GetPoint(pointSize, dpi, offset, scaleFactor, scale, nextIndex);
+
+                    if (this.onCurves[currentIndex])
+                    {
+                        // This is a straight line.
+                        surface.LineTo(curr);
+                    }
+                    else
+                    {
+                        var prev2 = prev;
+                        var next2 = next;
+
+                        if (!this.onCurves[prevIndex])
+                        {
+                            prev2 = (curr + prev) / 2;
+                            surface.LineTo(prev2);
+                        }
+
+                        if (!this.onCurves[nextIndex])
+                        {
+                            next2 = (curr + next) / 2;
+                        }
+
+                        surface.LineTo(prev2);
+                        surface.QuadraticBezierTo(curr, next2);
+                    }
                 }
 
                 surface.EndFigure();
@@ -175,6 +178,15 @@ namespace SixLabors.Fonts
             surface.EndGlyph();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Vector2 GetPoint(float pointSize, Vector2 dpi, Vector2 offset, float scaleFactor, Vector2 scale, int pointIndex)
+        {
+            var point = (scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
+
+            point += offset;
+            return point;
+        }
+        
         private static void AlignToGrid(ref Vector2 point)
         {
             Vector2 floorPoint = new Vector2(
@@ -191,7 +203,7 @@ namespace SixLabors.Fonts
                 decimalPart.X = 1;
             }
 
-            if (decimalPart.Y <0.5)
+            if (decimalPart.Y < 0.5)
             {
                 decimalPart.Y = 0;
             }

@@ -14,8 +14,10 @@ namespace SixLabors.Fonts.Tests
     {
         private static Dictionary<string, Stream> cache=  new Dictionary<string, Stream>();
         public static string CarterOneFile => GetFullPath("Carter_One/CarterOne.ttf");
+        public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");
         public static string SimpleFontFile => GetFullPath("SixLaborsSampleAB.ttf");
         public static string SimpleFontFileWoff => GetFullPath("SixLaborsSampleAB.woff");
+        public static Stream WendyOneFileData() => OpenStream(WendyOneFile);
         public static Stream CarterOneFileData() => OpenStream(CarterOneFile);
         public static Stream SimpleFontFileData() => OpenStream(SimpleFontFile);
         public static Stream SimpleFontFileWoffData() => OpenStream(SimpleFontFileWoff);
