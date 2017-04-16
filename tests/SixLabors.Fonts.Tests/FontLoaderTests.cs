@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Tests
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72));
             // the test font only has characters .notdef, 'a' & 'b' defined
-            Assert.Equal(7, r.ControlPoints.Count);
+            Assert.Equal(6, r.ControlPoints.Distinct().Count());
         }
 
         [Fact]
@@ -62,7 +62,7 @@ namespace SixLabors.Fonts.Tests
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72));
             // the test font only has characters .notdef, 'a' & 'b' defined
-            Assert.Equal(7, r.ControlPoints.Count);
+            Assert.Equal(6, r.ControlPoints.Distinct().Count());
         }
     }
 }
