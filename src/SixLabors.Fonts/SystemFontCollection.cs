@@ -34,15 +34,15 @@ namespace SixLabors.Fonts
                 "/System Folder/Fonts/",
             };
 
-            var expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
-            var found = expanded.Where(x => Directory.Exists(x)).ToArray();
+            string[] expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
+            string[] found = expanded.Where(x => Directory.Exists(x)).ToArray();
 
-            var fonts = found.SelectMany(x => Directory.EnumerateFiles(x, "*.ttf", SearchOption.AllDirectories)).Select(x => new FileFontInstance(x)).ToArray();
-            foreach (var f in fonts)
+            FileFontInstance[] fonts = found.SelectMany(x => Directory.EnumerateFiles(x, "*.ttf", SearchOption.AllDirectories)).Select(x => new FileFontInstance(x)).ToArray();
+            foreach (FileFontInstance f in fonts)
             {
                 try
                 {
-                    collection.Install(f);
+                    this.collection.Install(f);
                 }
                 catch
                 {
@@ -57,14 +57,14 @@ namespace SixLabors.Fonts
         /// <value>
         /// The families.
         /// </value>
-        public IEnumerable<FontFamily> Families => collection.Families;
+        public IEnumerable<FontFamily> Families => this.collection.Families;
 
         /// <summary>
         /// Finds the specified font family.
         /// </summary>
         /// <param name="fontFamily">The font family.</param>
         /// <returns>The family if installed otherwise null</returns>
-        public FontFamily Find(string fontFamily) => collection.Find(fontFamily);
+        public FontFamily Find(string fontFamily) => this.collection.Find(fontFamily);
     }
 #endif
 }

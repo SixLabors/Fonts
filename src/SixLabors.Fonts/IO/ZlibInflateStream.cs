@@ -119,7 +119,7 @@ namespace SixLabors.Fonts.IO
         {
             get
             {
-                return position;
+                return this.position;
             }
 
             set
@@ -155,7 +155,7 @@ namespace SixLabors.Fonts.IO
                 }
             }
 
-            position += read;
+            this.position += read;
             return read;
         }
 
@@ -165,18 +165,18 @@ namespace SixLabors.Fonts.IO
             if (origin == SeekOrigin.Begin)
             {
                 origin = SeekOrigin.Current;
-                offset = offset - position;
+                offset = offset - this.position;
             }
 
             if (origin == SeekOrigin.Current && offset >= 0)
             {
                 // consume bytes
-                for (var i = 0; i < offset; i++)
+                for (int i = 0; i < offset; i++)
                 {
                     this.ReadByte();
                 }
 
-                return position;
+                return this.position;
             }
 
             throw new NotSupportedException("can only seek forwards");

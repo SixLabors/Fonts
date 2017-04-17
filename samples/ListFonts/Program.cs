@@ -10,10 +10,10 @@ namespace ListFonts
     {
         static void Main(string[] args)
         {
-            var families = FontCollection.SystemFonts.Families;
-            var orderd = families.OrderBy(x => x.Name);
-            var len = families.Max(x => x.Name.Length);
-            foreach (var f in orderd)
+            System.Collections.Generic.IEnumerable<FontFamily> families = FontCollection.SystemFonts.Families;
+            IOrderedEnumerable<FontFamily> orderd = families.OrderBy(x => x.Name);
+            int len = families.Max(x => x.Name.Length);
+            foreach (FontFamily f in orderd)
             {
                 Console.Write(f.Name.PadRight(len));
                 Console.Write('\t');

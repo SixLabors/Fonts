@@ -23,10 +23,10 @@ namespace SixLabors.Fonts.Tables.General.Kern
             // uint16 | version  | Kern subtable version number
             // uint16 | length   | Length of the subtable, in bytes(including this header).
             // uint16 | coverage | What type of information is contained in this table.
-            var subVersion = reader.ReadUInt16();
-            var length = reader.ReadUInt16();
+            ushort subVersion = reader.ReadUInt16();
+            ushort length = reader.ReadUInt16();
 
-            var coverage = KerningCoverage.Read(reader);
+            KerningCoverage coverage = KerningCoverage.Read(reader);
 
             if (coverage.Format == 0)
             {

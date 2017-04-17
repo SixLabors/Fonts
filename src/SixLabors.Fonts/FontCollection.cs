@@ -40,7 +40,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The families.
         /// </value>
-        public IEnumerable<FontFamily> Families => families.Values.ToImmutableArray();
+        public IEnumerable<FontFamily> Families => this.families.Values.ToImmutableArray();
 
 #if FILESYSTEM
         /// <summary>
@@ -50,7 +50,7 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public Font Install(string path)
         {
-            using (var fs = File.OpenRead(path))
+            using (FileStream fs = File.OpenRead(path))
             {
                 return this.Install(fs);
             }
@@ -64,7 +64,7 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public Font Install(Stream fontStream)
         {
-            var instance = FontInstance.LoadFont(fontStream);
+            FontInstance instance = FontInstance.LoadFont(fontStream);
 
             return Install(instance);
         }
@@ -93,22 +93,22 @@ namespace SixLabors.Fonts
         {
             if (instance != null && instance.Description != null)
             {
-                lock (instances)
+                lock (this.instances)
                 {
-                    if (!instances.ContainsKey(instance.Description.FontFamily))
+                    if (!this.instances.ContainsKey(instance.Description.FontFamily))
                     {
-                        instances.Add(instance.Description.FontFamily, new List<IFontInstance>(4));
+                        this.instances.Add(instance.Description.FontFamily, new List<IFontInstance>(4));
                     }
 
                     if (!this.families.ContainsKey(instance.Description.FontFamily))
                     {
-                        families.Add(instance.Description.FontFamily, new FontFamily(instance.Description.FontFamily, this));
+                        this.families.Add(instance.Description.FontFamily, new FontFamily(instance.Description.FontFamily, this));
                     }
 
-                    instances[instance.Description.FontFamily].Add(instance);
+                    this.instances[instance.Description.FontFamily].Add(instance);
                 }
 
-                return new Font(families[instance.Description.FontFamily], 12, instance.Description.Style);
+                return new Font(this.families[instance.Description.FontFamily], 12, instance.Description.Style);
             }
 
             return null;
@@ -122,7 +122,7 @@ namespace SixLabors.Fonts
             }
 
             // once we have to support verient fonts then we 
-            var inFamily = this.instances[fontFamily];
+            List<IFontInstance> inFamily = this.instances[fontFamily];
 
             return inFamily.FirstOrDefault(x => x.Description.Style == style);
         }

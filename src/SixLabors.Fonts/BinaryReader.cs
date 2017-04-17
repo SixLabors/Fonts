@@ -147,7 +147,7 @@ namespace SixLabors.Fonts
         public float ReadFixed()
         {
             this.ReadInternal(this.storageBuffer, 4);
-            var int32 = this.BitConverter.ToInt32(this.storageBuffer, 0);
+            int int32 = this.BitConverter.ToInt32(this.storageBuffer, 0);
             return this.BitConverter.Int32BitsToSingle(int32);
         }
 
@@ -188,8 +188,8 @@ namespace SixLabors.Fonts
         /// </returns>
         public ushort[] ReadUInt16Array(int length)
         {
-            var data = new ushort[length];
-            for (var i = 0; i < length; i++)
+            ushort[] data = new ushort[length];
+            for (int i = 0; i < length; i++)
             {
                 data[i] = this.ReadUInt16();
             }
@@ -207,8 +207,8 @@ namespace SixLabors.Fonts
         /// </returns>
         public uint[] ReadUInt32Array(int length)
         {
-            var data = new uint[length];
-            for (var i = 0; i < length; i++)
+            uint[] data = new uint[length];
+            for (int i = 0; i < length; i++)
             {
                 data[i] = this.ReadUInt32();
             }
@@ -244,8 +244,8 @@ namespace SixLabors.Fonts
 
         public byte[] ReadUInt8Array(int length)
         {
-            var data = new byte[length];
-            for (var i = 0; i < length; i++)
+            byte[] data = new byte[length];
+            for (int i = 0; i < length; i++)
             {
                 data[i] = this.ReadUInt8();
             }
@@ -256,8 +256,8 @@ namespace SixLabors.Fonts
         public TEnum[] ReadUInt8Array<TEnum>(int length)
              where TEnum : struct
         {
-            var data = new TEnum[length];
-            for (var i = 0; i < length; i++)
+            TEnum[] data = new TEnum[length];
+            for (int i = 0; i < length; i++)
             {
                 data[i] = CastTo<TEnum>.From(this.ReadUInt8());
             }
@@ -275,8 +275,8 @@ namespace SixLabors.Fonts
         /// </returns>
         public short[] ReadInt16Array(int length)
         {
-            var data = new short[length];
-            for (var i = 0; i < length; i++)
+            short[] data = new short[length];
+            for (int i = 0; i < length; i++)
             {
                 data[i] = this.ReadInt16();
             }
@@ -560,8 +560,8 @@ namespace SixLabors.Fonts
 
                 private static Func<S, T> Get()
                 {
-                    var p = System.Linq.Expressions.Expression.Parameter(typeof(S));
-                    var c = System.Linq.Expressions.Expression.ConvertChecked(p, typeof(T));
+                    System.Linq.Expressions.ParameterExpression p = System.Linq.Expressions.Expression.Parameter(typeof(S));
+                    System.Linq.Expressions.UnaryExpression c = System.Linq.Expressions.Expression.ConvertChecked(p, typeof(T));
                     return System.Linq.Expressions.Expression.Lambda<Func<S, T>>(c, p).Compile();
                 }
             }

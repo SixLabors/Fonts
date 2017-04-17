@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         {
             Vector2[] vectors = new Vector2[xs.Length];
             Vector2 current = Vector2.Zero;
-            for (var i = 0; i < xs.Length; i++)
+            for (int i = 0; i < xs.Length; i++)
             {
                 vectors[i] = new Vector2(xs[i], ys[i]);
             }
@@ -62,23 +62,23 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             // uint8          | flags[n]            | Array of flags for each coordinate in outline; n is the number of flags.
             // uint8 or int16 | xCoordinates[ ]     | First coordinates relative to(0, 0); others are relative to previous point.
             // uint8 or int16 | yCoordinates[]      | First coordinates relative to (0, 0); others are relative to previous point.
-            var endPoints = reader.ReadUInt16Array(count);
+            ushort[] endPoints = reader.ReadUInt16Array(count);
 
-            var instructionSize = reader.ReadUInt16();
-            var instructions = reader.ReadUInt8Array(instructionSize);
+            ushort instructionSize = reader.ReadUInt16();
+            byte[] instructions = reader.ReadUInt8Array(instructionSize);
 
             // TODO: should this take the max points rather?
-            var pointCount = 0;
+            int pointCount = 0;
             if (count > 0)
             {
                 pointCount = endPoints[count - 1] + 1;
             }
 
-            var flags = ReadFlags(reader, pointCount);
-            var xs = ReadCoordinates(reader, pointCount, flags, Flags.XByte, Flags.XSignOrSame);
-            var ys = ReadCoordinates(reader, pointCount, flags, Flags.YByte, Flags.YSignOrSame);
+            Flags[] flags = ReadFlags(reader, pointCount);
+            short[] xs = ReadCoordinates(reader, pointCount, flags, Flags.XByte, Flags.XSignOrSame);
+            short[] ys = ReadCoordinates(reader, pointCount, flags, Flags.YByte, Flags.YSignOrSame);
 
-            var onCurves = new bool[flags.Length];
+            bool[] onCurves = new bool[flags.Length];
             for (int i = flags.Length - 1; i >= 0; --i)
             {
                 onCurves[i] = flags[i].HasFlag(Flags.OnCurve);
@@ -89,10 +89,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         private static Flags[] ReadFlags(BinaryReader reader, int flagCount)
         {
-            var result = new Flags[flagCount];
+            Flags[] result = new Flags[flagCount];
             int c = 0;
             int repeatCount = 0;
-            var flag = (Flags)0;
+            Flags flag = (Flags)0;
             while (c < flagCount)
             {
                 if (repeatCount > 0)
@@ -116,14 +116,14 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         private static short[] ReadCoordinates(BinaryReader reader, int pointCount, Flags[] flags, Flags isByte, Flags signOrSame)
         {
-            var xs = new short[pointCount];
+            short[] xs = new short[pointCount];
             int x = 0;
             for (int i = 0; i < pointCount; i++)
             {
                 int dx;
                 if (flags[i].HasFlag(isByte))
                 {
-                    var b = reader.ReadByte();
+                    byte b = reader.ReadByte();
                     dx = flags[i].HasFlag(signOrSame) ? b : -b;
                 }
                 else

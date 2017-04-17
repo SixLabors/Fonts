@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadHead()
         {
-            var writer = new BinaryWriter();
+            BinaryWriter writer = new BinaryWriter();
 
             writer.WriteHeadTable(new HeadTable(HeadTable.HeadFlags.None, 
                 HeadTable.HeadMacStyle.Italic | HeadTable.HeadMacStyle.Bold, 
@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 new DateTime(2017, 02, 07, 07, 47, 00), 
                 new Bounds(0,0, 1024, 1022), 0, HeadTable.IndexLocationFormats.Offset16));
 
-            var head = HeadTable.Load(writer.GetReader());
+            HeadTable head = HeadTable.Load(writer.GetReader());
 
             Assert.Equal(HeadTable.HeadFlags.None, head.Flags);
             Assert.Equal(HeadTable.HeadMacStyle.Italic | HeadTable.HeadMacStyle.Bold, head.MacStyle);

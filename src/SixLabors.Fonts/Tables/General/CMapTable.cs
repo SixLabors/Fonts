@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.General
 
             // lets just pick the best table for us.. lets jsut treat everything as windows and get the format 4 if possible
             CMapSubTable table = null;
-            foreach (var t in this.Tables)
+            foreach (CMapSubTable t in this.Tables)
             {
                 if (t != null)
                 {
@@ -48,10 +48,10 @@ namespace SixLabors.Fonts.Tables.General
             }
 
             // didn't have a windows match just use any and hope for the best
-            foreach (var t in this.Tables)
+            foreach (CMapSubTable t in this.Tables)
             {
                 // keep looking until we have an index thats not the fallback.
-                var index = t.GetGlyphId(character);
+                ushort index = t.GetGlyphId(character);
                 if (index > 0)
                 {
                     return index;
@@ -63,7 +63,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static CMapTable Load(FontReader reader)
         {
-            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(binaryReader);
             }
@@ -75,7 +75,7 @@ namespace SixLabors.Fonts.Tables.General
             ushort numTables = reader.ReadUInt16();
 
             EncodingRecord[] encodings = new EncodingRecord[numTables];
-            for (var i = 0; i < numTables; i++)
+            for (int i = 0; i < numTables; i++)
             {
                 encodings[i] = EncodingRecord.Read(reader);
             }
@@ -83,11 +83,11 @@ namespace SixLabors.Fonts.Tables.General
 
             // foreach encoding we move forward looking for th subtables
             List<CMapSubTable> tables = new List<CMapSubTable>(numTables);
-            foreach (var encoding in encodings.Where(x => x.PlatformID == PlatformIDs.Windows).GroupBy(x => x.Offset))
+            foreach (IGrouping<uint, EncodingRecord> encoding in encodings.Where(x => x.PlatformID == PlatformIDs.Windows).GroupBy(x => x.Offset))
             {
                 reader.Seek(encoding.Key, System.IO.SeekOrigin.Begin);
 
-                var subTypeTableFormat = reader.ReadUInt16();
+                ushort subTypeTableFormat = reader.ReadUInt16();
 
                 switch (subTypeTableFormat)
                 {

@@ -64,7 +64,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16(0);
             int offset = 12;
             offset += headers.Length * 16;
-            foreach (var h in headers)
+            foreach (TableHeader h in headers)
             {
                 writer.WriteTableHeader(h.Tag, h.CheckSum, (uint)offset, h.Length);
                 offset += (int)h.Length;
@@ -128,14 +128,14 @@ namespace SixLabors.Fonts.Tests
             Encoding encoding = Encoding.BigEndianUnicode; // this is Unicode2
             int stringOffset = 0;
             List<int> offsets = new List<int>();
-            foreach (var n in names)
+            foreach (KeyValuePair<NameIds, string> n in names)
             {
                 writer.WriteUInt16(0); // hard code platform
                 writer.WriteUInt16((ushort)EncodingIDs.Unicode2); // hard code encoding
                 writer.WriteUInt16(0); // hard code language
                 writer.WriteUInt16((ushort)n.Key);
 
-                var length = Encoding.BigEndianUnicode.GetBytes(n.Value).Length;
+                int length = Encoding.BigEndianUnicode.GetBytes(n.Value).Length;
                 writer.WriteUInt16((ushort)length);
                 writer.WriteOffset16((ushort)stringOffset);
                 offsets.Add(stringOffset);
@@ -149,9 +149,9 @@ namespace SixLabors.Fonts.Tests
                 // language record
                 // uint16   | length     | String length (in bytes).
                 // Offset16 | offset     | String offset from start of storage area(in bytes).
-                foreach (var n in languages)
+                foreach (string n in languages)
                 {
-                    var length = Encoding.BigEndianUnicode.GetBytes(n).Length;
+                    int length = Encoding.BigEndianUnicode.GetBytes(n).Length;
                     writer.WriteUInt16((ushort)length);
                     writer.WriteOffset16((ushort)stringOffset);
                     offsets.Add(stringOffset);
@@ -161,18 +161,18 @@ namespace SixLabors.Fonts.Tests
 
             int currentItem = 0;
 
-            foreach (var n in names)
+            foreach (KeyValuePair<NameIds, string> n in names)
             {
-                var expectedPosition = offsets[currentItem];
+                int expectedPosition = offsets[currentItem];
                 currentItem++;
                 writer.WriteNoLength(n.Value, Encoding.BigEndianUnicode);
             }
 
             if (languages != null)
             {
-                foreach (var n in languages)
+                foreach (string n in languages)
                 {
-                    var expectedPosition = offsets[currentItem];
+                    int expectedPosition = offsets[currentItem];
                     currentItem++;
                     writer.WriteNoLength(n, Encoding.BigEndianUnicode);
                 }
@@ -192,7 +192,7 @@ namespace SixLabors.Fonts.Tests
 
             int offset = 4; // for for the cmap header
             offset += 8 * subtables.Count(); // 8 bytes per encoding header
-            foreach (var table in subtables)
+            foreach (CMapSubTable table in subtables)
             {
                 // EncodingRecord:
                 // Type     | Name       | Description
@@ -209,7 +209,7 @@ namespace SixLabors.Fonts.Tests
                 // calculate the size of each format
             }
 
-            foreach (var table in subtables)
+            foreach (CMapSubTable table in subtables)
             {
                 writer.WriteCMapSubTable(table);
             }
@@ -239,7 +239,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16((ushort)subtable.DataLength());
             writer.WriteUInt16(subtable.Language);
 
-            foreach (var c in subtable.GlyphIds)
+            foreach (byte c in subtable.GlyphIds)
             {
                 writer.WriteUInt8(c);
             }
@@ -271,36 +271,36 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16(4);
             writer.WriteUInt16((ushort)subtable.DataLength());
             writer.WriteUInt16(subtable.Language);
-            var segCount = subtable.Segments.Length;
+            int segCount = subtable.Segments.Length;
             writer.WriteUInt16((ushort)(subtable.Segments.Length * 2));
-            var searchRange = Math.Pow(2, Math.Floor(Math.Log(segCount, 2)));
+            double searchRange = Math.Pow(2, Math.Floor(Math.Log(segCount, 2)));
             writer.WriteUInt16((ushort)searchRange);
-            var entrySelector = Math.Log(searchRange / 2, 2);
+            double entrySelector = Math.Log(searchRange / 2, 2);
             writer.WriteUInt16((ushort)entrySelector);
-            var rangeShift = (2 * segCount) - searchRange;
+            double rangeShift = (2 * segCount) - searchRange;
             writer.WriteUInt16((ushort)rangeShift);
-            foreach (var seg in subtable.Segments)
+            foreach (Format4SubTable.Segment seg in subtable.Segments)
             {
                 writer.WriteUInt16(seg.End);
             }
 
             writer.WriteUInt16(0);
-            foreach (var seg in subtable.Segments)
+            foreach (Format4SubTable.Segment seg in subtable.Segments)
             {
                 writer.WriteUInt16(seg.Start);
             }
 
-            foreach (var seg in subtable.Segments)
+            foreach (Format4SubTable.Segment seg in subtable.Segments)
             {
                 writer.WriteInt16(seg.Delta);
             }
 
-            foreach (var seg in subtable.Segments)
+            foreach (Format4SubTable.Segment seg in subtable.Segments)
             {
                 writer.WriteUInt16(seg.Offset);
             }
 
-            foreach (var c in subtable.GlyphIds)
+            foreach (ushort c in subtable.GlyphIds)
             {
                 writer.WriteUInt16(c);
             }
@@ -315,8 +315,8 @@ namespace SixLabors.Fonts.Tests
 
             if (subtable is Format4SubTable)
             {
-                var segs = ((Format4SubTable)subtable).Segments;
-                var glyphs = ((Format4SubTable)subtable).GlyphIds;
+                Format4SubTable.Segment[] segs = ((Format4SubTable)subtable).Segments;
+                ushort[] glyphs = ((Format4SubTable)subtable).GlyphIds;
                 return 16 + (segs.Length * 8) + (glyphs.Length * 2);
             }
 
@@ -423,7 +423,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16((ushort)table.Flags);
             writer.WriteUInt16(table.UnitsPerEm);
 
-            var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
+            DateTime startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             writer.WriteInt64((long)table.Created.Subtract(startDate).TotalSeconds);
             writer.WriteInt64((long)table.Modified.Subtract(startDate).TotalSeconds);
             writer.WriteInt16((short)table.Bounds.Min.X);

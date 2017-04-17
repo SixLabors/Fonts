@@ -35,7 +35,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="style">The style.</param>
-        /// <param name="dpi">The dpi.</param>
         public void RenderText(string text, FontSpan style)
         {
             this.RenderText(text, style, Vector2.Zero);
@@ -46,13 +45,12 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="style">The style.</param>
-        /// <param name="dpi">The dpi.</param>
         /// <param name="location">The location.</param>
         public void RenderText(string text, FontSpan style, Vector2 location)
         {
-            var glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
+            ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 
-            foreach (var g in glyphsToRender)
+            foreach (GlyphLayout g in glyphsToRender)
             {
                 g.Glyph.RenderTo(this.renderer, g.Location, style.DPI, location);
             }

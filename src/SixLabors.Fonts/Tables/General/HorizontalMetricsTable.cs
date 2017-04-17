@@ -47,11 +47,11 @@ namespace SixLabors.Fonts.Tables.General
         public static HorizontalMetricsTable Load(FontReader reader)
         {
             // you should load all dependent tables prior to manipulating the reader
-            var headTable = reader.GetTable<HoizontalHeadTable>();
-            var profileTable = reader.GetTable<MaximumProfileTable>();
+            HoizontalHeadTable headTable = reader.GetTable<HoizontalHeadTable>();
+            MaximumProfileTable profileTable = reader.GetTable<MaximumProfileTable>();
 
             // move to start of table
-            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(binaryReader, headTable.NumberOfHMetrics, profileTable.GlyphCount);
             }
@@ -62,11 +62,11 @@ namespace SixLabors.Fonts.Tables.General
             // Type           | Name                                          | Description
             // longHorMetric  | hMetrics[numberOfHMetrics]                    | Paired advance width and left side bearing values for each glyph. Records are indexed by glyph ID.
             // int16          | leftSideBearing[numGlyphs - numberOfHMetrics] | Left side bearings for glyph IDs greater than or equal to numberOfHMetrics.
-            var bearingCount = glyphCount - metricCount;
-            var advancedWidth = new ushort[metricCount];
-            var leftSideBearings = new short[glyphCount];
+            int bearingCount = glyphCount - metricCount;
+            ushort[] advancedWidth = new ushort[metricCount];
+            short[] leftSideBearings = new short[glyphCount];
 
-            for (var i = 0; i < metricCount; i++)
+            for (int i = 0; i < metricCount; i++)
             {
                 // longHorMetric Record:
                 // Type   | Name         | Description
@@ -76,7 +76,7 @@ namespace SixLabors.Fonts.Tables.General
                 leftSideBearings[i] = reader.ReadInt16();
             }
 
-            for (var i = 0; i < bearingCount; i++)
+            for (int i = 0; i < bearingCount; i++)
             {
                 leftSideBearings[metricCount + i] = reader.ReadInt16();
             }

@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static MaximumProfileTable Load(FontReader reader)
         {
-            using (var r = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader r = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(r);
             }
@@ -83,8 +83,8 @@ namespace SixLabors.Fonts.Tables.General
             // -------|----------------------|---------------------------------------
             // Fixed  | Table version number | 0x00005000 for version 0.5 (Note the difference in the representation of a non - zero fractional part, in Fixed numbers.)
             // uint16 | numGlyphs            | The number of glyphs in the font.
-            var version = reader.ReadFixed();
-            var numGlyphs = reader.ReadUInt16();
+            float version = reader.ReadFixed();
+            ushort numGlyphs = reader.ReadUInt16();
             if (version == 0.5)
             {
                 return new MaximumProfileTable(numGlyphs);
@@ -108,20 +108,20 @@ namespace SixLabors.Fonts.Tables.General
             // uint16 | maxSizeOfInstructions | Maximum byte count for glyph instructions.
             // uint16 | maxComponentElements  | Maximum number of components referenced at “top level” for any composite glyph.
             // uint16 | maxComponentDepth     | Maximum levels of recursion; 1 for simple components.
-            var maxPoints = reader.ReadUInt16();
-            var maxContours = reader.ReadUInt16();
-            var maxCompositePoints = reader.ReadUInt16();
-            var maxCompositeContours = reader.ReadUInt16();
+            ushort maxPoints = reader.ReadUInt16();
+            ushort maxContours = reader.ReadUInt16();
+            ushort maxCompositePoints = reader.ReadUInt16();
+            ushort maxCompositeContours = reader.ReadUInt16();
 
-            var maxZones = reader.ReadUInt16();
-            var maxTwilightPoints = reader.ReadUInt16();
-            var maxStorage = reader.ReadUInt16();
-            var maxFunctionDefs = reader.ReadUInt16();
-            var maxInstructionDefs = reader.ReadUInt16();
-            var maxStackElements = reader.ReadUInt16();
-            var maxSizeOfInstructions = reader.ReadUInt16();
-            var maxComponentElements = reader.ReadUInt16();
-            var maxComponentDepth = reader.ReadUInt16();
+            ushort maxZones = reader.ReadUInt16();
+            ushort maxTwilightPoints = reader.ReadUInt16();
+            ushort maxStorage = reader.ReadUInt16();
+            ushort maxFunctionDefs = reader.ReadUInt16();
+            ushort maxInstructionDefs = reader.ReadUInt16();
+            ushort maxStackElements = reader.ReadUInt16();
+            ushort maxSizeOfInstructions = reader.ReadUInt16();
+            ushort maxComponentElements = reader.ReadUInt16();
+            ushort maxComponentDepth = reader.ReadUInt16();
 
             return new MaximumProfileTable(
                 numGlyphs,

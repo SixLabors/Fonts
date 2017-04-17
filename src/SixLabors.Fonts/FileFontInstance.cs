@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
 
         public FileFontInstance(string path)
         {
-            Description = FontDescription.LoadDescription(path);
+            this.Description = FontDescription.LoadDescription(path);
             this.font = new Lazy<Fonts.FontInstance>(() => FontInstance.LoadFont(path));
         }
 

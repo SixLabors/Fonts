@@ -28,10 +28,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public static GlyphTable Load(FontReader reader)
         {
-            var locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
-            var fallbackEmptyBounds = reader.GetTable<HeadTable>().Bounds;
+            uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
+            Bounds fallbackEmptyBounds = reader.GetTable<HeadTable>().Bounds;
             
-            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(binaryReader, locations, fallbackEmptyBounds);
             }
@@ -40,11 +40,11 @@ namespace SixLabors.Fonts.Tables.General
         public static GlyphTable Load(BinaryReader reader, uint[] locations, Bounds fallbackEmptyBounds)
         {
 
-            var empty = new Glyphs.EmptyGlyphLoader(fallbackEmptyBounds);
-            var entryCount = locations.Length;
-            var glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
+            EmptyGlyphLoader empty = new Glyphs.EmptyGlyphLoader(fallbackEmptyBounds);
+            int entryCount = locations.Length;
+            int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
             Glyphs.GlyphLoader[] glyphs = new Glyphs.GlyphLoader[glyphCount];
-            for (var i = 0; i < glyphCount; i++)
+            for (int i = 0; i < glyphCount; i++)
             {
                 if (locations[i] == locations[i + 1])
                 {

@@ -23,13 +23,13 @@ namespace SixLabors.Fonts.Tables.General.Kern
             // uint16 | searchRange   | The largest power of two less than or equal to the value of nPairs, multiplied by the size in bytes of an entry in the table.
             // uint16 | entrySelector | This is calculated as log2 of the largest power of two less than or equal to the value of nPairs.This value indicates how many iterations of the search loop will have to be made. (For example, in a list of eight items, there would have to be three iterations of the loop).
             // uint16 | rangeShift    | The value of nPairs minus the largest power of two less than or equal to nPairs, and then multiplied by the size in bytes of an entry in the table.
-            var pairCount = reader.ReadUInt16();
-            var searchRange = reader.ReadUInt16();
-            var entrySelector = reader.ReadUInt16();
-            var rangeShift = reader.ReadUInt16();
+            ushort pairCount = reader.ReadUInt16();
+            ushort searchRange = reader.ReadUInt16();
+            ushort entrySelector = reader.ReadUInt16();
+            ushort rangeShift = reader.ReadUInt16();
 
             Kern.KearningPair[] pairs = new KearningPair[pairCount];
-            for (var i = 0; i < pairCount; i++)
+            for (int i = 0; i < pairCount; i++)
             {
                 pairs[i] = KearningPair.Read(reader);
             }
@@ -39,10 +39,10 @@ namespace SixLabors.Fonts.Tables.General.Kern
 
         protected override bool TryGetOffset(ushort index1, ushort index2, out short offset)
         {
-            var index = Array.BinarySearch(this.pairs, new KearningPair(index1, index2, 0));
+            int index = Array.BinarySearch(this.pairs, new KearningPair(index1, index2, 0));
             if (index >= 0)
             {
-                var pair = this.pairs[index];
+                KearningPair pair = this.pairs[index];
                 offset = pair.Offset;
                 return true;
             }

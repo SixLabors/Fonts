@@ -76,12 +76,12 @@ namespace SixLabors.Fonts
         /// <returns>the glyph for a known character.</returns>
         public GlyphInstance GetGlyph(char character)
         {
-            var idx = this.GetGlyphIndex(character);
+            ushort idx = this.GetGlyphIndex(character);
             if (this.glyphCache[idx] == null)
             {
-                var advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
-                var lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
-                var vector = this.glyphs.GetGlyph(idx);
+                ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
+                short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
+                Tables.General.Glyphs.GlyphVector vector = this.glyphs.GetGlyph(idx);
                 this.glyphCache[idx] = new GlyphInstance(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, lsb, this.EmSize, idx);
             }
 
@@ -114,9 +114,9 @@ namespace SixLabors.Fonts
         /// <returns>a <see cref="FontInstance"/>.</returns>
         public static FontInstance LoadFont(string path)
         {
-            using (var fs = File.OpenRead(path))
+            using (FileStream fs = File.OpenRead(path))
             {
-                var reader = new FontReader(fs);
+                FontReader reader = new FontReader(fs);
                 return LoadFont(reader);
             }
         }
@@ -129,7 +129,7 @@ namespace SixLabors.Fonts
         /// <returns>a <see cref="FontInstance"/>.</returns>
         public static FontInstance LoadFont(Stream stream)
         {
-            var reader = new FontReader(stream);
+            FontReader reader = new FontReader(stream);
             return LoadFont(reader);
         }
 
@@ -137,22 +137,22 @@ namespace SixLabors.Fonts
         {
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // recomended order
-            var head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
+            HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
             reader.GetTable<HoizontalHeadTable>(); // hhea
             reader.GetTable<MaximumProfileTable>(); // maxp
-            var os2 = reader.GetTable<OS2Table>(); // OS/2
-            var horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
+            OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
+            HorizontalMetricsTable horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
             // LTSH - Linear threshold data
             // VDMX - Vertical device metrics
             // hdmx - Horizontal device metrics
-            var cmap = reader.GetTable<CMapTable>(); // cmap
+            CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
             // fpgm - Font Program
             // prep - Control Value Program
             // cvt  - Control Value Table
             reader.GetTable<IndexLocationTable>(); // loca
-            var glyphs = reader.GetTable<GlyphTable>(); // glyf
-            var kern = reader.GetTable<KerningTable>(); // kern - Kerning
-            var nameTable = reader.GetTable<NameTable>(); // name
+            GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
+            KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
+            NameTable nameTable = reader.GetTable<NameTable>(); // name
             // post - PostScript information
             // gasp - Grid-fitting/Scan-conversion (optional table)
             // PCLT - PCL 5 data

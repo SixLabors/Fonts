@@ -36,7 +36,7 @@ namespace SixLabors.Fonts.Tests
                     return cache[path].Clone();
                 }
 
-                using (var fs = File.OpenRead(path))
+                using (FileStream fs = File.OpenRead(path))
                 {
                     cache.Add(path, fs.Clone());
                     return cache[path].Clone();
@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tests
 
         private static Stream Clone(this Stream src)
         {
-            var ms = new MemoryStream();
+            MemoryStream ms = new MemoryStream();
             src.Position = 0;
             src.CopyTo(ms);
             ms.Position = 0;
@@ -55,11 +55,11 @@ namespace SixLabors.Fonts.Tests
 
         private static string GetFullPath(string path)
         {
-            var root = new Uri(typeof(TestFonts).GetTypeInfo().Assembly.CodeBase).LocalPath;
+            string root = new Uri(typeof(TestFonts).GetTypeInfo().Assembly.CodeBase).LocalPath;
 
-            var paths = new[] { "Fonts", @"..\..\Fonts", @"..\..\..\..\Fonts", @"..\..\..\..\..\Fonts" };
-            var fullPaths = paths.Select(x => Path.GetFullPath(Path.Combine(root, x)));
-            var rootPath = fullPaths
+            string[] paths = new[] { "Fonts", @"..\..\Fonts", @"..\..\..\..\Fonts", @"..\..\..\..\..\Fonts" };
+            IEnumerable<string> fullPaths = paths.Select(x => Path.GetFullPath(Path.Combine(root, x)));
+            string rootPath = fullPaths
                                 .Where(x => Directory.Exists(x))
                                 .FirstOrDefault();
 

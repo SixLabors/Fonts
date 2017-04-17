@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Tests.Fakes
 
         internal override GlyphVector GetGlyph(int index)
         {
-            foreach (var c in glyphs)
+            foreach (FakeGlyphSource c in this.glyphs)
             {
                 if (c.Index == index)
                 {

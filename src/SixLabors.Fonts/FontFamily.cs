@@ -41,7 +41,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The availible styles.
         /// </value>
-        public IEnumerable<FontStyle> AvailibleStyles => collection.AvailibleStyles(this.Name);
+        public IEnumerable<FontStyle> AvailibleStyles => this.collection.AvailibleStyles(this.Name);
 
         /// <summary>
         /// Determines whether the specified <see cref="FontStyle"/> is availible.
@@ -52,11 +52,11 @@ namespace SixLabors.Fonts
         /// </returns>
         public bool IsStyleAvailible(FontStyle style) => this.AvailibleStyles.Contains(style);
 
-        internal FontStyle DefaultStyle => IsStyleAvailible(FontStyle.Regular) ? FontStyle.Regular : AvailibleStyles.First();
+        internal FontStyle DefaultStyle => IsStyleAvailible(FontStyle.Regular) ? FontStyle.Regular : this.AvailibleStyles.First();
 
         internal IFontInstance Find(FontStyle style)
         {
-            return collection.Find(this.Name, style);
+            return this.collection.Find(this.Name, style);
         }
 
         /// <summary>

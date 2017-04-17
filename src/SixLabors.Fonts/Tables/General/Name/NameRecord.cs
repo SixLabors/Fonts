@@ -33,13 +33,13 @@ namespace SixLabors.Fonts.Tables.General.Name
 
         public static NameRecord Read(BinaryReader reader)
         {
-            var platform = reader.ReadUInt16<PlatformIDs>();
+            PlatformIDs platform = reader.ReadUInt16<PlatformIDs>();
             EncodingIDs encodingId = reader.ReadUInt16<EncodingIDs>();
             Encoding encoding = encodingId.AsEncoding();
-            var languageID = reader.ReadUInt16();
-            var nameID = reader.ReadUInt16<NameIds>();
+            ushort languageID = reader.ReadUInt16();
+            NameIds nameID = reader.ReadUInt16<NameIds>();
 
-            var stringReader = StringLoader.Create(reader, encoding);
+            StringLoader stringReader = StringLoader.Create(reader, encoding);
 
             return new NameRecord(platform, languageID, nameID, null)
             {

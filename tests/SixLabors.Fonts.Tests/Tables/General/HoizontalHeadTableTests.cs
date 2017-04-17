@@ -15,11 +15,11 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadHoizontalHeadTable()
         {
-            var writer = new BinaryWriter();
+            BinaryWriter writer = new BinaryWriter();
 
             writer.WriteHoizontalHeadTable(new HoizontalHeadTable(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
 
-            var tbl = HoizontalHeadTable.Load(writer.GetReader());
+            HoizontalHeadTable tbl = HoizontalHeadTable.Load(writer.GetReader());
 
             Assert.Equal(1, tbl.Ascender);
             Assert.Equal(2, tbl.Descender);

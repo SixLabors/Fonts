@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests.Tables
         {
             get
             {
-                var tableTypeInfo = typeof(Table).GetTypeInfo();
+                TypeInfo tableTypeInfo = typeof(Table).GetTypeInfo();
 
                 return
                     typeof(Table).GetTypeInfo()
@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tests.Tables
         [MemberData(nameof(RegisterableTableTypes))]
         public void AllNamedTablesAreRegistered(Type type, string name)
         {
-            var tl = new TableLoader();
+            TableLoader tl = new TableLoader();
             Assert.Contains(type, tl.RegisterdTypes());
             Assert.Equal(name, tl.GetTag(type));
         }
@@ -44,12 +44,12 @@ namespace SixLabors.Fonts.Tests.Tables
         [Fact]
         public void TryingToLoadUnregisteredTagReturnsUnknownTable()
         {
-            var loader = new TableLoader();
+            TableLoader loader = new TableLoader();
 
             string tag = Guid.NewGuid().ToString();
-            var result = loader.Load(tag, null);
+            Table result = loader.Load(tag, null);
 
-            var table = Assert.IsType<UnknownTable>(result);
+            UnknownTable table = Assert.IsType<UnknownTable>(result);
             Assert.Equal(tag, table.Name);
         }
 
@@ -57,8 +57,8 @@ namespace SixLabors.Fonts.Tests.Tables
         [Fact]
         public void NullForUnknownTypes()
         {
-            var loader = new TableLoader();
-            var tag = loader.GetTag(typeof(TableLoaderTests));
+            TableLoader loader = new TableLoader();
+            string tag = loader.GetTag(typeof(TableLoaderTests));
             Assert.Null(tag);
         }
     }

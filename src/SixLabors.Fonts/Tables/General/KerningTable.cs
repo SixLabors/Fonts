@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static KerningTable Load(FontReader reader)
         {
-            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 if (binaryReader == null)
                 {
@@ -43,13 +43,13 @@ namespace SixLabors.Fonts.Tables.General
             // -------|----------|-----------------------------------------
             // uint16 | version  | Table version number(0)
             // uint16 | nTables  | Number of subtables in the kerning table.
-            var version = reader.ReadUInt16();
-            var subtableCount = reader.ReadUInt16();
+            ushort version = reader.ReadUInt16();
+            ushort subtableCount = reader.ReadUInt16();
 
             List<Kern.KerningSubTable> tables = new List<Kern.KerningSubTable>(subtableCount);
-            for (var i = 0; i < subtableCount; i++)
+            for (int i = 0; i < subtableCount; i++)
             {
-                var t = KerningSubTable.Load(reader); // returns null for unknown/supported table format
+                KerningSubTable t = KerningSubTable.Load(reader); // returns null for unknown/supported table format
                 if (t != null)
                 {
                     tables.Add(t);
@@ -61,8 +61,8 @@ namespace SixLabors.Fonts.Tables.General
 
         public Vector2 GetOffset(ushort left, ushort right)
         {
-            var result = Vector2.Zero;
-            foreach (var sub in this.kerningSubTable)
+            Vector2 result = Vector2.Zero;
+            foreach (KerningSubTable sub in this.kerningSubTable)
             {
                 sub.ApplyOffset(left, right, ref result);
             }

@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontDescription()
         {
-            var writer = new BinaryWriter();
+            BinaryWriter writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(
@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tests
                          { WellKnownIds.NameIds.FontFamilyName, "fam" }
                     });
 
-            var description = FontDescription.LoadDescription(writer.GetStream());
+            FontDescription description = FontDescription.LoadDescription(writer.GetStream());
             Assert.Equal("name", description.FontName);
             Assert.Equal("sub", description.FontSubFamilyName);
             Assert.Equal("fam", description.FontFamily);

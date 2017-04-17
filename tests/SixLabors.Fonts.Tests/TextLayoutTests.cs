@@ -17,8 +17,8 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void FakeFontGetGlyph()
         {
-            var font = CreateFont("hello world");
-            var glyph = font.GetGlyph('h');
+            Font font = CreateFont("hello world");
+            Glyph glyph = font.GetGlyph('h');
             Assert.NotNull(glyph);
         }
 
@@ -32,10 +32,10 @@ namespace SixLabors.Fonts.Tests
             150)]
         public void MeasureText(string text, float height, float width)
         {
-            var font = CreateFont(text);
+            Font font = CreateFont(text);
 
-            var scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            var size = new TextMeasurer().MeasureText(text, font, 72 * font.EmSize);
+            int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
+            Size size = new TextMeasurer().MeasureText(text, font, 72 * font.EmSize);
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
@@ -50,10 +50,10 @@ namespace SixLabors.Fonts.Tests
             330)]
         public void MeasureTextWordWrapping(string text, float height, float width)
         {
-            var font = CreateFont(text);
+            Font font = CreateFont(text);
 
-            var scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            var size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
+            int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
+            Size size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
             {
                 WrappingWidth = 340
             });
@@ -70,10 +70,10 @@ namespace SixLabors.Fonts.Tests
         public void MeasureTextWithKerning(string text, float height, float width, bool enableKerning)
         {
             FontCollection c = new FontCollection();
-            var font = c.Install(TestFonts.SimpleFontFileData());
+            Font font = c.Install(TestFonts.SimpleFontFileData());
 
-            var scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            var size = new TextMeasurer().MeasureText(text, new FontSpan(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning });
+            int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
+            Size size = new TextMeasurer().MeasureText(text, new FontSpan(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning });
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
@@ -81,8 +81,8 @@ namespace SixLabors.Fonts.Tests
 
         public static Font CreateFont(string text)
         {
-            var fc = new FontCollection();
-            var d = fc.Install(new FakeFontInstance(text));
+            FontCollection fc = new FontCollection();
+            Font d = fc.Install(new FakeFontInstance(text));
             return new Font(d, 1);
         }
     }

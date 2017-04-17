@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadFormat0()
         {
-            var writer = new BinaryWriter();
+            BinaryWriter writer = new BinaryWriter();
 
             writer.WriteNameTable(new Dictionary<WellKnownIds.NameIds, string>
                                       {
@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 { (NameIds)91, "other2" }
                                       });
 
-            var table = NameTable.Load(writer.GetReader());
+            NameTable table = NameTable.Load(writer.GetReader());
 
             Assert.Equal("fullname", table.FontName);
             Assert.Equal("family", table.FontFamilyName);
@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadFormat1()
         {
-            var writer = new BinaryWriter();
+            BinaryWriter writer = new BinaryWriter();
 
             writer.WriteNameTable(new Dictionary<WellKnownIds.NameIds, string>
                                       {
@@ -58,7 +58,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                                                  "lang2"
                                              });
 
-            var table = NameTable.Load(writer.GetReader());
+            NameTable table = NameTable.Load(writer.GetReader());
 
             Assert.Equal("fullname", table.FontName);
             Assert.Equal("family", table.FontFamilyName);

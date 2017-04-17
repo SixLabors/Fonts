@@ -18,10 +18,10 @@ namespace SixLabors.Fonts.Tests
         [InlineData('õ')]
         public void MeasuringAccentedCharacterDoesNotThrow(char c)
         {
-            var arial = FontCollection.SystemFonts.Find("Arial");
-            var font = new Font(arial, 1f, FontStyle.Regular);
+            FontFamily arial = FontCollection.SystemFonts.Find("Arial");
+            Font font = new Font(arial, 1f, FontStyle.Regular);
 
-            var size = new TextMeasurer().MeasureText(c.ToString(), font, 72);
+            Size size = new TextMeasurer().MeasureText(c.ToString(), font, 72);
         }
 
         [Theory]
@@ -35,10 +35,10 @@ namespace SixLabors.Fonts.Tests
         [InlineData('õ')]
         public void MeasuringWordWithAccentedCharacterDoesNotThrow(char c)
         {
-            var arial = FontCollection.SystemFonts.Find("Arial");
-            var font = new Font(arial, 1f, FontStyle.Regular);
+            FontFamily arial = FontCollection.SystemFonts.Find("Arial");
+            Font font = new Font(arial, 1f, FontStyle.Regular);
 
-            var size = new TextMeasurer().MeasureText($"abc{c}def", font, 72);
+            Size size = new TextMeasurer().MeasureText($"abc{c}def", font, 72);
         }
     }
 }

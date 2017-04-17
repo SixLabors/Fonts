@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static HoizontalHeadTable Load(FontReader reader)
         {
-            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(binaryReader);
             }
@@ -83,29 +83,29 @@ namespace SixLabors.Fonts.Tables.General
             // int16     | (reserved)           | set to 0
             // int16     | metricDataFormat     | 0 for current format.
             // uint16    | numberOfHMetrics     | Number of hMetric entries in 'hmtx' table
-            var majorVersion = reader.ReadUInt16();
-            var minorVersion = reader.ReadUInt16();
-            var ascender = reader.ReadFWORD();
-            var descender = reader.ReadFWORD();
-            var lineGap = reader.ReadFWORD();
-            var advanceWidthMax = reader.ReadUFWORD();
-            var minLeftSideBearing = reader.ReadFWORD();
-            var minRightSideBearing = reader.ReadFWORD();
-            var xMaxExtent = reader.ReadFWORD();
-            var caretSlopeRise = reader.ReadInt16();
-            var caretSlopeRun = reader.ReadInt16();
-            var caretOffset = reader.ReadInt16();
+            ushort majorVersion = reader.ReadUInt16();
+            ushort minorVersion = reader.ReadUInt16();
+            short ascender = reader.ReadFWORD();
+            short descender = reader.ReadFWORD();
+            short lineGap = reader.ReadFWORD();
+            ushort advanceWidthMax = reader.ReadUFWORD();
+            short minLeftSideBearing = reader.ReadFWORD();
+            short minRightSideBearing = reader.ReadFWORD();
+            short xMaxExtent = reader.ReadFWORD();
+            short caretSlopeRise = reader.ReadInt16();
+            short caretSlopeRun = reader.ReadInt16();
+            short caretOffset = reader.ReadInt16();
             reader.ReadInt16(); // reserved
             reader.ReadInt16(); // reserved
             reader.ReadInt16(); // reserved
             reader.ReadInt16(); // reserved
-            var metricDataFormat = reader.ReadInt16(); // 0
+            short metricDataFormat = reader.ReadInt16(); // 0
             if (metricDataFormat != 0)
             {
                 throw new InvalidFontTableException($"Expected metricDataFormat = 0 found {metricDataFormat}", "hhea");
             }
 
-            var numberOfHMetrics = reader.ReadUInt16();
+            ushort numberOfHMetrics = reader.ReadUInt16();
 
             return new HoizontalHeadTable(
                 ascender,

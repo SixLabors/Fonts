@@ -59,9 +59,9 @@ namespace SixLabors.Fonts
         /// <returns>a <see cref="FontDescription"/>.</returns>
         public static FontDescription LoadDescription(string path)
         {
-            using (var fs = File.OpenRead(path))
+            using (FileStream fs = File.OpenRead(path))
             {
-                var reader = new FontReader(fs);
+                FontReader reader = new FontReader(fs);
                 return LoadDescription(reader);
             }
         }
@@ -75,7 +75,7 @@ namespace SixLabors.Fonts
         public static FontDescription LoadDescription(Stream stream)
         {
             // only read the name table
-            var reader = new FontReader(stream);
+            FontReader reader = new FontReader(stream);
             return LoadDescription(reader);
         }
 
@@ -88,9 +88,9 @@ namespace SixLabors.Fonts
         /// </returns>
         internal static FontDescription LoadDescription(FontReader reader)
         {
-            var head = reader.GetTable<HeadTable>();
-            var os2 = reader.GetTable<OS2Table>();
-            var nameTable = reader.GetTable<NameTable>();
+            HeadTable head = reader.GetTable<HeadTable>();
+            OS2Table os2 = reader.GetTable<OS2Table>();
+            NameTable nameTable = reader.GetTable<NameTable>();
 
             return new FontDescription(nameTable, os2, head);
         }

@@ -11,9 +11,9 @@ namespace SixLabors.Fonts.Tests.Issues
         public void BleadingFonts()
         {
             // wendy one returns wrong points for 'o'
-            var font = new FontCollection().Install(TestFonts.WendyOneFile);
+            Font font = new FontCollection().Install(TestFonts.WendyOneFile);
 
-            var r = new GlyphRenderer();
+            GlyphRenderer r = new GlyphRenderer();
 
             new TextRenderer(r).RenderText("o", new FontSpan(new Font(font, 30), 72));
 

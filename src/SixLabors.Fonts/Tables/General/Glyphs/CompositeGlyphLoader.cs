@@ -26,18 +26,18 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             List<Vector2> maxBounds = new List<Vector2>();
             List<GlyphInstance> parts = new List<GlyphInstance>();
 
-            foreach (var composite in this.result)
+            foreach (Composite composite in this.result)
             {
-                var glyph = table.GetGlyph(composite.GlyphIndex);
-                var pointcount = glyph.PointCount;
+                GlyphVector glyph = table.GetGlyph(composite.GlyphIndex);
+                int pointcount = glyph.PointCount;
                 ushort endPointOffset = (ushort)controlPoints.Count;
-                for (var i = 0; i < pointcount; i++)
+                for (int i = 0; i < pointcount; i++)
                 {
                     controlPoints.Add(Vector2.Transform(glyph.ControlPoints[i], composite.Transformation));
                     onCurves.Add(glyph.OnCurves[i]);
                 }
 
-                foreach (var p in glyph.EndPoints)
+                foreach (ushort p in glyph.EndPoints)
                 {
                     endPoints.Add((ushort)(p + endPointOffset));
                 }
@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                     dy = 0;
                 }
 
-                var transform = Matrix3x2.Identity;
+                Matrix3x2 transform = Matrix3x2.Identity;
                 transform.Translation = new Vector2(dx, dy);
                 if (flags.HasFlag(CompositeFlags.WeHaveAScale))
                 {

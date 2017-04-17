@@ -36,7 +36,7 @@ namespace SixLabors.Fonts
             GlyphInstance previousGlyph = null;
             float scale = 0;
             int lastWrappableLocation = -1;
-            for (var i = 0; i < text.Length; i++)
+            for (int i = 0; i < text.Length; i++)
             {
                 if (spanStyle.End < i)
                 {
@@ -57,7 +57,7 @@ namespace SixLabors.Fonts
                     lineHeightOfFirstLine = lineHeight;
                 }
 
-                var c = text[i];
+                char c = text[i];
 
 
                 if (char.IsWhiteSpace(c))
@@ -85,12 +85,12 @@ namespace SixLabors.Fonts
                         break;
                     case '\t':
                         {
-                            var glyph = spanStyle.Font.GetGlyph(c);
-                            var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
-                            var tabStop = width * spanStyle.TabWidth;
+                            GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
+                            float width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
+                            float tabStop = width * spanStyle.TabWidth;
 
                             // advance to a position > width away that
-                            var dist = tabStop - ((location.X + width) % tabStop);
+                            float dist = tabStop - ((location.X + width) % tabStop);
                             location.X += dist;
                             previousGlyph = null;
                         }
@@ -98,8 +98,8 @@ namespace SixLabors.Fonts
                         break;
                     case ' ':
                         {
-                            var glyph = spanStyle.Font.GetGlyph(c);
-                            var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
+                            GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
+                            float width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                             location.X += width;
                             previousGlyph = null;
                         }
@@ -107,15 +107,15 @@ namespace SixLabors.Fonts
                         break;
                     default:
                         {
-                            var glyph = spanStyle.Font.GetGlyph(c);
-                            var width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
-                            var height = (glyph.Height * spanStyle.PointSize) / scale;
+                            GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
+                            float width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
+                            float height = (glyph.Height * spanStyle.PointSize) / scale;
 
-                            var glyphLocation = location;
+                            Vector2 glyphLocation = location;
                             if (spanStyle.ApplyKerning && previousGlyph != null)
                             {
                                 // if there is special instructions for this glyph pair use that width
-                                var scaledOffset = (spanStyle.Font.GetOffset(glyph, previousGlyph) * spanStyle.PointSize) / scale;
+                                Vector2 scaledOffset = (spanStyle.Font.GetOffset(glyph, previousGlyph) * spanStyle.PointSize) / scale;
 
                                 glyphLocation += scaledOffset;
 
@@ -132,11 +132,11 @@ namespace SixLabors.Fonts
                             {
                                 if (lastWrappableLocation < layout.Count)
                                 {
-                                    var wrappingOffset = layout[lastWrappableLocation].Location.X;
+                                    float wrappingOffset = layout[lastWrappableLocation].Location.X;
                                     // the word just extended passed the end of the box 
-                                    for (var j = lastWrappableLocation; j < layout.Count; j++)
+                                    for (int j = lastWrappableLocation; j < layout.Count; j++)
                                     {
-                                        var current = layout[j].Location;
+                                        Vector2 current = layout[j].Location;
                                         layout[j] = new GlyphLayout(layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height);
 
                                         location.X = layout[j].Location.X + layout[j].Width;
@@ -155,10 +155,10 @@ namespace SixLabors.Fonts
                 }
             }
 
-            var offset = new Vector2(0, lineHeightOfFirstLine);
-            for(var i =0; i< layout.Count; i++)
+            Vector2 offset = new Vector2(0, lineHeightOfFirstLine);
+            for(int i =0; i< layout.Count; i++)
             {
-                var glyphLayout = layout[i];
+                GlyphLayout glyphLayout = layout[i];
                 layout[i] = new GlyphLayout(glyphLayout.Glyph, glyphLayout.Location + offset, glyphLayout.Width, glyphLayout.Height);
             }
             return layout.ToImmutableArray();

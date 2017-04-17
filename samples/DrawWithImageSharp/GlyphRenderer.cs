@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         /// <summary>
         /// Begins the glyph.
         /// </summary>
-        void IGlyphRenderer.BeginGlyph()
+        void IGlyphRenderer.BeginGlyph(Vector2 location)
         {
             this.builder.Clear();
         }

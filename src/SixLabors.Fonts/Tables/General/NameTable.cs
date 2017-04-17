@@ -16,7 +16,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static NameTable Load(FontReader reader)
         {
-            using (var r = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader r = reader.GetReaderAtTablePosition(TableName))
             {
                 // move to start of table
                 return Load(r);
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Tables.General
 
             NameRecord[] names = new NameRecord[nameCount];
 
-            for (var i = 0; i < nameCount; i++)
+            for (int i = 0; i < nameCount; i++)
             {
                 names[i] = NameRecord.Read(reader);
                 strings.Add(names[i].StringReader);
@@ -45,16 +45,16 @@ namespace SixLabors.Fonts.Tables.General
                 ushort langCount = reader.ReadUInt16();
                 langs = new StringLoader[langCount];
 
-                for (var i = 0; i < langCount; i++)
+                for (int i = 0; i < langCount; i++)
                 {
                     langs[i] = StringLoader.Create(reader);
                     strings.Add(langs[i]);
                 }
             }
 
-            foreach (var readable in strings.OrderBy(x => x.Offset))
+            foreach (StringLoader readable in strings.OrderBy(x => x.Offset))
             {
-                var diff = stringOffset + readable.Offset;
+                int diff = stringOffset + readable.Offset;
 
                 // only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
                 reader.Seek(diff, SeekOrigin.Begin);
@@ -62,7 +62,7 @@ namespace SixLabors.Fonts.Tables.General
                 readable.LoadValue(reader);
             }
 
-            var langNames = langs?.Select(x => x.Value).ToArray() ?? new string[0];
+            string[] langNames = langs?.Select(x => x.Value).ToArray() ?? new string[0];
 
             return new NameTable(names, langNames);
         }
@@ -110,7 +110,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public string GetNameById(NameIds nameId)
         {
-            foreach (var name in this.names)
+            foreach (NameRecord name in this.names)
             {
                 if (name.Platform == PlatformIDs.Windows && name.LanguageID == 0409)
                 {
@@ -121,7 +121,7 @@ namespace SixLabors.Fonts.Tables.General
                 }
             }
 
-            foreach (var name in this.names)
+            foreach (NameRecord name in this.names)
             {
                 if (name.Platform == PlatformIDs.Windows)
                 {
@@ -132,7 +132,7 @@ namespace SixLabors.Fonts.Tables.General
                 }
             }
 
-            foreach (var name in this.names)
+            foreach (NameRecord name in this.names)
             {
                 if (name.NameID == nameId)
                 {

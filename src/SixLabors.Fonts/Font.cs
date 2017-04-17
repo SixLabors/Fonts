@@ -107,7 +107,7 @@ namespace SixLabors.Fonts
         /// <value>
         ///   <c>true</c> if italic; otherwise, <c>false</c>.
         /// </value>
-        public bool Italic => (instance.Value.Description.Style & FontStyle.Italic) == FontStyle.Italic;
+        public bool Italic => (this.instance.Value.Description.Style & FontStyle.Italic) == FontStyle.Italic;
 
         /// <summary>
         /// Gets the size of the em.
@@ -115,7 +115,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The size of the em.
         /// </value>
-        public ushort EmSize => instance.Value.EmSize;
+        public ushort EmSize => this.instance.Value.EmSize;
 
         /// <summary>
         /// Gets the font instance.
@@ -123,7 +123,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The font instance.
         /// </value>
-        internal IFontInstance FontInstance => instance.Value;
+        internal IFontInstance FontInstance => this.instance.Value;
 
         /// <summary>
         /// Gets the glyph.
@@ -132,29 +132,29 @@ namespace SixLabors.Fonts
         /// <returns></returns>
         public Glyph GetGlyph(char character)
         {
-            return new Glyph(instance.Value.GetGlyph(character), Size);
+            return new Glyph(this.instance.Value.GetGlyph(character), this.Size);
         }
 
         private IFontInstance LoadInstanceInternal()
         {
-            var instance = Family.Find(requestedStyle);
+            IFontInstance instance = this.Family.Find(this.requestedStyle);
 
-            if (instance == null && requestedStyle.HasFlag(FontStyle.Italic))
+            if (instance == null && this.requestedStyle.HasFlag(FontStyle.Italic))
             {
                 // can find style requested and they want one thats atleast partial itallic try the regual italic
-                instance = Family.Find(FontStyle.Italic);
+                instance = this.Family.Find(FontStyle.Italic);
             }
 
-            if (instance == null && requestedStyle.HasFlag(FontStyle.Bold))
+            if (instance == null && this.requestedStyle.HasFlag(FontStyle.Bold))
             {
                 // can find style requested and they want one thats atleast partial bold try the regular bold
-                instance = Family.Find(FontStyle.Bold);
+                instance = this.Family.Find(FontStyle.Bold);
             }
 
             if (instance == null)
             {
                 // cant find style requested and lets just try returning teh default
-                instance = Family.Find(Family.DefaultStyle);
+                instance = this.Family.Find(this.Family.DefaultStyle);
             }
 
             return instance;

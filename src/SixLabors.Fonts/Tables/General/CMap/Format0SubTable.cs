@@ -34,15 +34,15 @@ namespace SixLabors.Fonts.Tables.General.CMap
         public static IEnumerable< Format0SubTable> Load(IEnumerable< EncodingRecord> encodings, BinaryReader reader)
         {
             // format has already been read by this point skip it
-            var length = reader.ReadUInt16();
+            ushort length = reader.ReadUInt16();
             ushort language = reader.ReadUInt16();
-            var glyphsCount = length - 6;
+            int glyphsCount = length - 6;
 
             // char 'A' == 65 thus glyph = glyphIds[65];
             byte[] glyphIds = reader.ReadBytes(glyphsCount);
 
 
-            foreach (var encoding in encodings)
+            foreach (EncodingRecord encoding in encodings)
             {
                 yield return new Format0SubTable(language, encoding.PlatformID, encoding.EncodingID, glyphIds);
             }

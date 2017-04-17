@@ -27,7 +27,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
         {
             uint charAsInt = character;
 
-            foreach (var seg in this.Segments)
+            foreach (Segment seg in this.Segments)
             {
                 if (seg.End >= charAsInt && seg.Start <= charAsInt)
                 {
@@ -37,7 +37,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
                     }
                     else
                     {
-                        var offset = (seg.Offset / 2) + (charAsInt - seg.Start);
+                        long offset = (seg.Offset / 2) + (charAsInt - seg.Start);
                         return this.GlyphIds[offset - this.Segments.Length + seg.Index];
                     }
                 }
@@ -71,7 +71,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             ushort searchRange = reader.ReadUInt16();
             ushort entrySelector = reader.ReadUInt16();
             ushort rangeShift = reader.ReadUInt16();
-            var segCount = segCountX2 / 2;
+            int segCount = segCountX2 / 2;
             ushort[] endCounts = reader.ReadUInt16Array(segCount);
             ushort reserved = reader.ReadUInt16();
 
@@ -80,13 +80,13 @@ namespace SixLabors.Fonts.Tables.General.CMap
             ushort[] idRangeOffset = reader.ReadUInt16Array(segCount);
 
             // table length thus far
-            var headerLength = 16 + (segCount * 8);
-            var glyphIdCount = (length - headerLength) / 2;
+            int headerLength = 16 + (segCount * 8);
+            int glyphIdCount = (length - headerLength) / 2;
 
             ushort[] glyphIds = reader.ReadUInt16Array(glyphIdCount);
 
-            var segments = Segment.Create(endCounts, startCounts, idDelta, idRangeOffset);
-            foreach (var encoding in encodings)
+            Segment[] segments = Segment.Create(endCounts, startCounts, idDelta, idRangeOffset);
+            foreach (EncodingRecord encoding in encodings)
             {
                 yield return new Format4SubTable(language, encoding.PlatformID, encoding.EncodingID, segments, glyphIds);
             }
@@ -115,14 +115,14 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
             public static Segment[] Create(ushort[] endCounts, ushort[] startCode, short[] idDelta, ushort[] idRangeOffset)
             {
-                var count = endCounts.Length;
+                int count = endCounts.Length;
                 Segment[] segments = new Segment[count];
                 for (ushort i = 0; i < count; i++)
                 {
-                    var start = startCode[i];
-                    var end = endCounts[i];
-                    var delta = idDelta[i];
-                    var offset = idRangeOffset[i];
+                    ushort start = startCode[i];
+                    ushort end = endCounts[i];
+                    short delta = idDelta[i];
+                    ushort offset = idRangeOffset[i];
                     segments[i] = new Segment(i, end, start, delta, offset);
                 }
 

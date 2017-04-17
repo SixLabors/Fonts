@@ -11,8 +11,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public static GlyphLoader Load(BinaryReader reader)
         {
-            var contoursCount = reader.ReadInt16();
-            var bounds = Bounds.Load(reader);
+            short contoursCount = reader.ReadInt16();
+            Bounds bounds = Bounds.Load(reader);
 
             if (contoursCount >= 0)
             {

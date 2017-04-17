@@ -15,11 +15,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         public static void Main(string[] args)
         {
             FontCollection fonts = new FontCollection();
-            var font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf").Family;
-            var fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff").Family;
-            var font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf").Family;
-            var carter= fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf").Family;
-            var Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf").Family;
+            FontFamily font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf").Family;
+            FontFamily fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff").Family;
+            FontFamily font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf").Family;
+            FontFamily carter = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf").Family;
+            FontFamily Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf").Family;
 
             RenderLetter(carter, '\0');
             RenderLetter(font, 'a');
@@ -47,21 +47,21 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
 
             StringBuilder sb = new StringBuilder();
-            for (var c = 'a'; c <= 'z'; c++)
+            for (char c = 'a'; c <= 'z'; c++)
             {
                 sb.Append(c);
             }
-            for (var c = 'A'; c <= 'Z'; c++)
+            for (char c = 'A'; c <= 'Z'; c++)
             {
                 sb.Append(c);
             }
-            for (var c = '0'; c <= '9'; c++)
+            for (char c = '0'; c <= '9'; c++)
             {
                 sb.Append(c);
             }
-            var text = sb.ToString();
+            string text = sb.ToString();
 
-            foreach (var f in fonts.Families)
+            foreach (FontFamily f in fonts.Families)
             {
                 RenderText(f, text, 72);
             }
@@ -69,10 +69,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderText(Font font, string text, int width, int height)
         {
-            var path = System.IO.Path.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
-            var fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            string path = System.IO.Path.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
+            string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
 
-            using (var img = new Image(width, height))
+            using (Image img = new Image(width, height))
             {
                 img.Fill(Color.White);
 
@@ -80,7 +80,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
 
-                using (var fs = File.Create(fullPath+".png"))
+                using (FileStream fs = File.Create(fullPath+".png"))
                 {
                     img.SaveAsPng(fs);
                 }
@@ -89,8 +89,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderText(FontFamily font, string text, float pointSize = 12)
         {
-            var builder = new GlyphBuilder();
-            var renderer = new TextRenderer(builder);
+            GlyphBuilder builder = new GlyphBuilder();
+            TextRenderer renderer = new TextRenderer(builder);
 
             renderer.RenderText(text, new FontSpan(new Font(font, pointSize), 96) { ApplyKerning = true, WrappingWidth = 340 });
 
@@ -100,9 +100,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderLetter(FontFamily fontFam, char character, float pointSize = 12)
         {
-            var font = new Font(fontFam, pointSize);
-            var g = font.GetGlyph(character);
-            var builder = new GlyphBuilder();
+            Font font = new Font(fontFam, pointSize);
+            Glyph g = font.GetGlyph(character);
+            GlyphBuilder builder = new GlyphBuilder();
             g.RenderTo(builder, Vector2.Zero, 72f);
             builder.Paths
                 .SaveImage(fontFam.Name, character + ".png");
@@ -111,13 +111,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)
         {
             path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
-            var fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
 
-            using (var img = new Image(width, height))
+            using (Image img = new Image(width, height))
             {
                 img.Fill(Color.DarkBlue);
 
-                foreach (var s in shapes)
+                foreach (IPath s in shapes)
                 {
                     // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
                     img.Fill(Color.HotPink, s.Translate(new Vector2(0, 0)));
@@ -127,7 +127,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 // Ensure directory exists
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
 
-                using (var fs = File.Create(fullPath))
+                using (FileStream fs = File.Create(fullPath))
                 {
                     img.SaveAsPng(fs);
                 }
@@ -141,10 +141,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     .Translate(new Vector2(10)); // move in from top left
 
             StringBuilder sb = new StringBuilder();
-            var converted = shape.Flatten();
+            System.Collections.Immutable.ImmutableArray<ISimplePath> converted = shape.Flatten();
             converted.Aggregate(sb, (s, p) =>
             {
-                foreach (var point in p.Points)
+                foreach (Vector2 point in p.Points)
                 {
                     sb.Append(point.X);
                     sb.Append('x');
@@ -154,11 +154,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 s.Append('\n');
                 return s;
             });
-            var str = sb.ToString();
+            string str = sb.ToString();
             shape = new ComplexPolygon(converted.Select(x => new Polygon(new LinearLineSegment(x.Points))).ToArray());
 
             path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
-            var fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
             // pad even amount around shape
             int width = (int)(shape.Bounds.Left + shape.Bounds.Right);
             int height = (int)(shape.Bounds.Top + shape.Bounds.Bottom);
@@ -170,7 +170,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 height = 1;
             }
-            using (var img = new Image(width, height))
+            using (Image img = new Image(width, height))
             {
                 img.Fill(Color.DarkBlue);
 
@@ -181,7 +181,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 // Ensure directory exists
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
 
-                using (var fs = File.Create(fullPath))
+                using (FileStream fs = File.Create(fullPath))
                 {
                     img.SaveAsPng(fs);
                 }

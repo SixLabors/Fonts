@@ -40,7 +40,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
             // override     | 3        |  1   | If this bit is set to 1 the value in this table should replace the value currently being accumulated.
             // reserved1    | 4 -7     |  4   | Reserved.This should be set to zero.
             // format       | 8 -15    |  8   | Format of the subtable. Only formats 0 and 2 have been defined.Formats 1 and 3 through 255 are reserved for future use.
-            var coverage = reader.ReadUInt16();
+            ushort coverage = reader.ReadUInt16();
             bool horizontal = (coverage & 0x1) == 1;
             bool hasMinimum = ((coverage >> 1) & 0x1) == 1;
             bool crossStream = ((coverage >> 2) & 0x1) == 1;

@@ -90,7 +90,7 @@ namespace SixLabors.Fonts
         {
             location = location * dpi;
 
-            var scaleFactor = (float)(this.sizeOfEm * 72f);
+            float scaleFactor = (float)(this.sizeOfEm * 72f);
 
 
             Vector2 firstPoint = Vector2.Zero;
@@ -101,7 +101,7 @@ namespace SixLabors.Fonts
             // skip it.
             // offset = offset + (scale * ((new Vector2(this.leftSideBearing, 0) * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
 
-            surface.BeginGlyph();
+            surface.BeginGlyph(offset);
 
             offset += location;
 
@@ -153,8 +153,8 @@ namespace SixLabors.Fonts
                     }
                     else
                     {
-                        var prev2 = prev;
-                        var next2 = next;
+                        Vector2 prev2 = prev;
+                        Vector2 next2 = next;
 
                         if (!this.onCurves[prevIndex])
                         {
@@ -181,7 +181,7 @@ namespace SixLabors.Fonts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector2 GetPoint(float pointSize, Vector2 dpi, Vector2 offset, float scaleFactor, Vector2 scale, int pointIndex)
         {
-            var point = (scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
+            Vector2 point = (scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
 
             point += offset;
             return point;
@@ -192,7 +192,7 @@ namespace SixLabors.Fonts
             Vector2 floorPoint = new Vector2(
                                         (float)Math.Floor(point.X),
                                         (float)Math.Floor(point.Y));
-            var decimalPart = point - floorPoint;
+            Vector2 decimalPart = point - floorPoint;
 
             if (decimalPart.X < 0.5)
             {
@@ -245,13 +245,13 @@ namespace SixLabors.Fonts
             public int Count;
             public void Add(Vector2 point)
             {
-                switch (Count++)
+                switch (this.Count++)
                 {
                     case 0:
-                        SecondControlPoint = point;
+                        this.SecondControlPoint = point;
                         break;
                     case 1:
-                        ThirdControlPoint = point;
+                        this.ThirdControlPoint = point;
                         break;
                     default:
                         throw new NotSupportedException("Too many control points");
@@ -259,13 +259,13 @@ namespace SixLabors.Fonts
             }
             public void ReplaceLast(Vector2 point)
             {
-                Count--;
+                this.Count--;
                 Add(point);
             }
 
             public void Clear()
             {
-                Count = 0;
+                this.Count = 0;
             }
         }
     }

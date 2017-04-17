@@ -16,7 +16,7 @@ namespace SixLabors.Fonts.Tests.Fakes
         }
         public override ushort GetGlyphId(char character)
         {
-            foreach (var c in glyphs)
+            foreach (FakeGlyphSource c in this.glyphs)
             {
                 if (c.Character == character)
                 {

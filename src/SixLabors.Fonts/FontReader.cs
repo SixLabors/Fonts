@@ -25,10 +25,10 @@ namespace SixLabors.Fonts
             this.loader = loader;
 
             Func<BinaryReader, TableHeader> loadHeader = TableHeader.Read;
-            var startOfFilePosition = stream.Position;
+            long startOfFilePosition = stream.Position;
 
             this.stream = stream;
-            var reader = new BinaryReader(stream, true);
+            BinaryReader reader = new BinaryReader(stream, true);
 
             // we should immediately read the table header to learn which tables we have and what order they are in
             uint version = reader.ReadUInt32();
@@ -54,15 +54,15 @@ namespace SixLabors.Fonts
                 this.OutlineType = (OutlineTypes)flavor;
                 uint length = reader.ReadUInt32();
                 tableCount = reader.ReadUInt16();
-                var reserved = reader.ReadUInt16();
-                var totalSfntSize = reader.ReadUInt32();
-                var majorVersion = reader.ReadUInt16();
-                var minorVersion = reader.ReadUInt16();
-                var metaOffset = reader.ReadUInt32();
-                var metaLength = reader.ReadUInt32();
-                var metaOrigLength = reader.ReadUInt32();
-                var privOffset = reader.ReadUInt32();
-                var privLength = reader.ReadUInt32();
+                ushort reserved = reader.ReadUInt16();
+                uint totalSfntSize = reader.ReadUInt32();
+                ushort majorVersion = reader.ReadUInt16();
+                ushort minorVersion = reader.ReadUInt16();
+                uint metaOffset = reader.ReadUInt32();
+                uint metaLength = reader.ReadUInt32();
+                uint metaOrigLength = reader.ReadUInt32();
+                uint privOffset = reader.ReadUInt32();
+                uint privLength = reader.ReadUInt32();
                 this.CompressedTableData = true;
                 loadHeader = WoffTableHeader.Read;
             }
@@ -84,7 +84,7 @@ namespace SixLabors.Fonts
             Dictionary<string, TableHeader> headers = new Dictionary<string, Tables.TableHeader>(tableCount);
             for (int i = 0; i < tableCount; i++)
             {
-                var tbl = loadHeader(reader);
+                TableHeader tbl = loadHeader(reader);
                 headers.Add(tbl.Tag, tbl);
             }
 
@@ -105,7 +105,7 @@ namespace SixLabors.Fonts
         {
             if (!this.loadedTables.ContainsKey(typeof(TTableType)))
             {
-                var table = this.loader.Load<TTableType>(this);
+                TTableType table = this.loader.Load<TTableType>(this);
 
                 this.loadedTables.Add(typeof(TTableType), table);
             }
@@ -126,7 +126,7 @@ namespace SixLabors.Fonts
 
         public virtual BinaryReader GetReaderAtTablePosition(string tableName)
         {
-            var header = this.GetHeader(tableName);
+            TableHeader header = this.GetHeader(tableName);
             return header?.CreateReader(this.stream);
         }
 

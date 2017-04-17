@@ -14,21 +14,21 @@ namespace SixLabors.Fonts.Tests
         public List<Vector2> ControlPoints = new List<Vector2>();
         public List<Vector2> ControlPointsOnCurve = new List<Vector2>();
 
-        public void BeginGlyph()
+        public void BeginGlyph(Vector2 location)
         {
         }
 
         public void BeginFigure()
         {
-            FiguresCount++;
+            this.FiguresCount++;
         }
 
         public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
         {
-            ControlPoints.Add(secondControlPoint);
-            ControlPoints.Add(thirdControlPoint);
-            ControlPoints.Add(point);
-            ControlPointsOnCurve.Add(point);
+            this.ControlPoints.Add(secondControlPoint);
+            this.ControlPoints.Add(thirdControlPoint);
+            this.ControlPoints.Add(point);
+            this.ControlPointsOnCurve.Add(point);
         }
 
         public void EndGlyph()
@@ -43,21 +43,21 @@ namespace SixLabors.Fonts.Tests
 
         public void LineTo(Vector2 point)
         {
-            ControlPoints.Add(point);
-            ControlPointsOnCurve.Add(point);
+            this.ControlPoints.Add(point);
+            this.ControlPointsOnCurve.Add(point);
         }
 
         public void MoveTo(Vector2 point)
         {
-            ControlPoints.Add(point);
-            ControlPointsOnCurve.Add(point);
+            this.ControlPoints.Add(point);
+            this.ControlPointsOnCurve.Add(point);
         }
 
         public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
         {
-            ControlPoints.Add(secondControlPoint);
-            ControlPoints.Add(point);
-            ControlPointsOnCurve.Add(point);
+            this.ControlPoints.Add(secondControlPoint);
+            this.ControlPoints.Add(point);
+            this.ControlPointsOnCurve.Add(point);
         }
     }
 }

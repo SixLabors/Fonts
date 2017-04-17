@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static HeadTable Load(FontReader reader)
         {
-            using (var binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 if (binaryReader == null)
                 {
@@ -101,43 +101,43 @@ namespace SixLabors.Fonts.Tables.General
             //                                          -2: Like -1 but also contains neutrals. 1
             // int16        | indexToLocFormat   | 0 for short offsets (Offset16), 1 for long (Offset32).
             // int16        | glyphDataFormat    | 0 for current format.
-            var majorVersion = reader.ReadUInt16();
-            var minorVersion = reader.ReadUInt16();
-            var fontRevision = reader.ReadUInt32();
-            var checkSumAdjustment = reader.ReadUInt32();
-            var magincnumber = reader.ReadUInt32();
+            ushort majorVersion = reader.ReadUInt16();
+            ushort minorVersion = reader.ReadUInt16();
+            uint fontRevision = reader.ReadUInt32();
+            uint checkSumAdjustment = reader.ReadUInt32();
+            uint magincnumber = reader.ReadUInt32();
             if (magincnumber != 0x5F0F3CF5)
             {
                 throw new InvalidFontFileException("invalid magic number in 'head'");
             }
 
-            var flags = reader.ReadUInt16<HeadFlags>();
-            var unitsPerEm = reader.ReadUInt16();
+            HeadFlags flags = reader.ReadUInt16<HeadFlags>();
+            ushort unitsPerEm = reader.ReadUInt16();
             if (unitsPerEm < 16 || unitsPerEm > 16384)
             {
                 throw new InvalidFontFileException($"invalid units per em expected value between 16 and 16384 but found {unitsPerEm} in 'head'");
             }
 
-            var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
-            var seconds = reader.ReadInt64();
-            var created = startDate;
+            DateTime startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
+            long seconds = reader.ReadInt64();
+            DateTime created = startDate;
             if (seconds > 0)
             {
                 created = startDate.AddSeconds(seconds);
             }
             seconds = reader.ReadInt64();
-            var modified = startDate;
+            DateTime modified = startDate;
             if (seconds > 0)
             {
                 modified = startDate.AddSeconds(seconds);
             }
-            var bounds = Bounds.Load(reader); // xMin, yMin, xMax, yMax
+            Bounds bounds = Bounds.Load(reader); // xMin, yMin, xMax, yMax
 
-            var macStyle = reader.ReadUInt16<HeadMacStyle>();
-            var lowestRecPPEM = reader.ReadUInt16();
-            var fontDirectionHint = reader.ReadInt16();
-            var indexToLocFormat = reader.ReadInt16<IndexLocationFormats>();
-            var glyphDataFormat = reader.ReadInt16();
+            HeadMacStyle macStyle = reader.ReadUInt16<HeadMacStyle>();
+            ushort lowestRecPPEM = reader.ReadUInt16();
+            short fontDirectionHint = reader.ReadInt16();
+            IndexLocationFormats indexToLocFormat = reader.ReadInt16<IndexLocationFormats>();
+            short glyphDataFormat = reader.ReadInt16();
 
             return new HeadTable(
                 flags,

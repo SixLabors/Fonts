@@ -56,20 +56,19 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="style">The style.</param>
-        /// <param name="dpi">The dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public Size MeasureText(string text, FontSpan style)
         {
-            var glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
-            
-            var left = glyphsToRender.Min(x => x.Location.X);
-            var right = glyphsToRender.Max(x => x.Location.X + x.Width);
+            ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 
-            var top = glyphsToRender.Min(x => x.Location.Y);
-            var bottom = glyphsToRender.Max(x => x.Location.Y + x.Height);
+            float left = glyphsToRender.Min(x => x.Location.X);
+            float right = glyphsToRender.Max(x => x.Location.X + x.Width);
 
-            var topLeft = new Vector2(left, top) * style.DPI;
-            var bottomRight = new Vector2(right, bottom) * style.DPI;
+            float top = glyphsToRender.Min(x => x.Location.Y);
+            float bottom = glyphsToRender.Max(x => x.Location.Y + x.Height);
+
+            Vector2 topLeft = new Vector2(left, top) * style.DPI;
+            Vector2 bottomRight = new Vector2(right, bottom) * style.DPI;
 
             return new Size(bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
         }

@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tests
 
         public BinaryWriter(Stream stream)
         {
-            var bitConverter = new BigEndianBitConverter();
+            BigEndianBitConverter bitConverter = new BigEndianBitConverter();
 
             // TODO: Use Guard
             if (bitConverter == null)
@@ -91,10 +91,10 @@ namespace SixLabors.Fonts.Tests
         public MemoryStream GetStream()
         {
             this.Flush();
-            var p = this.BaseStream.Position;
+            long p = this.BaseStream.Position;
             this.BaseStream.Position = 0;
 
-            var ms = new MemoryStream();
+            MemoryStream ms = new MemoryStream();
             this.BaseStream.CopyTo(ms);
             ms.Position = 0;
             this.BaseStream.Position = 0;

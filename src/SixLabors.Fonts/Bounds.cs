@@ -25,10 +25,10 @@ namespace SixLabors.Fonts
 
         internal static Bounds Load(BinaryReader reader)
         {
-            var minX = reader.ReadInt16();
-            var minY = reader.ReadInt16();
-            var maxX = reader.ReadInt16();
-            var maxY = reader.ReadInt16();
+            short minX = reader.ReadInt16();
+            short minY = reader.ReadInt16();
+            short maxX = reader.ReadInt16();
+            short maxY = reader.ReadInt16();
 
             return new Bounds(minX, minY, maxX, maxY);
         }

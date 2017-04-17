@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void Issue21_LoopDetectedLoadingGlyphs()
         {
-            var font = new FontCollection().Install(TestFonts.CarterOneFileData());
+            Font font = new FontCollection().Install(TestFonts.CarterOneFileData());
 
             GlyphInstance g = font.FontInstance.GetGlyph('\0');
         }
@@ -43,8 +43,8 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontName);
             Assert.Equal("Regular", font.Description.FontSubFamilyName);
 
-            var glyph = font.GetGlyph('a');
-            var r = new GlyphRenderer();
+            GlyphInstance glyph = font.GetGlyph('a');
+            GlyphRenderer r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72));
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());
@@ -58,8 +58,8 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontName);
             Assert.Equal("Regular", font.Description.FontSubFamilyName);
 
-            var glyph = font.GetGlyph('a');
-            var r = new GlyphRenderer();
+            GlyphInstance glyph = font.GetGlyph('a');
+            GlyphRenderer r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72));
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());

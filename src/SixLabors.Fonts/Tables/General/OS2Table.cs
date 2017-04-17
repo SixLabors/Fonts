@@ -59,7 +59,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static OS2Table Load(FontReader reader)
         {
-            using (var r = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader r = reader.GetReaderAtTablePosition(TableName))
             {
                 if (r == null)
                 {
@@ -114,40 +114,40 @@ namespace SixLabors.Fonts.Tables.General
             // uint16 |usMaxContext            |
             // uint16 |usLowerOpticalPointSize |
             // uint16 |usUpperOpticalPointSize |
-            var version = reader.ReadUInt16(); // assert 0x0005
-            var averageCharWidth = reader.ReadInt16();
-            var weightClass = reader.ReadUInt16();
-            var widthClass = reader.ReadUInt16();
-            var styleType = reader.ReadUInt16();
-            var subscriptXSize = reader.ReadInt16();
-            var subscriptYSize = reader.ReadInt16();
-            var subscriptXOffset = reader.ReadInt16();
-            var subscriptYOffset = reader.ReadInt16();
+            ushort version = reader.ReadUInt16(); // assert 0x0005
+            short averageCharWidth = reader.ReadInt16();
+            ushort weightClass = reader.ReadUInt16();
+            ushort widthClass = reader.ReadUInt16();
+            ushort styleType = reader.ReadUInt16();
+            short subscriptXSize = reader.ReadInt16();
+            short subscriptYSize = reader.ReadInt16();
+            short subscriptXOffset = reader.ReadInt16();
+            short subscriptYOffset = reader.ReadInt16();
 
-            var superscriptXSize = reader.ReadInt16();
-            var superscriptYSize = reader.ReadInt16();
-            var superscriptXOffset = reader.ReadInt16();
-            var superscriptYOffset = reader.ReadInt16();
+            short superscriptXSize = reader.ReadInt16();
+            short superscriptYSize = reader.ReadInt16();
+            short superscriptXOffset = reader.ReadInt16();
+            short superscriptYOffset = reader.ReadInt16();
 
-            var strikeoutSize = reader.ReadInt16();
-            var strikeoutPosition = reader.ReadInt16();
-            var familyClass = reader.ReadInt16();
-            var panose = reader.ReadUInt8Array(10);
-            var unicodeRange1 = reader.ReadUInt32(); // Bits 0–31
-            var unicodeRange2 = reader.ReadUInt32(); // Bits 32–63
-            var unicodeRange3 = reader.ReadUInt32(); // Bits 64–95
-            var unicodeRange4 = reader.ReadUInt32(); // Bits 96–127
-            var tag = reader.ReadTag();
-            var fontStyle = reader.ReadUInt16<FontStyleSelection>();
-            var firstCharIndex = reader.ReadUInt16();
-            var lastCharIndex = reader.ReadUInt16();
-            var typoAscender = reader.ReadInt16();
-            var typoDescender = reader.ReadInt16();
-            var typoLineGap = reader.ReadInt16();
-            var winAscent = reader.ReadUInt16();
-            var winDescent = reader.ReadUInt16();
+            short strikeoutSize = reader.ReadInt16();
+            short strikeoutPosition = reader.ReadInt16();
+            short familyClass = reader.ReadInt16();
+            byte[] panose = reader.ReadUInt8Array(10);
+            uint unicodeRange1 = reader.ReadUInt32(); // Bits 0–31
+            uint unicodeRange2 = reader.ReadUInt32(); // Bits 32–63
+            uint unicodeRange3 = reader.ReadUInt32(); // Bits 64–95
+            uint unicodeRange4 = reader.ReadUInt32(); // Bits 96–127
+            string tag = reader.ReadTag();
+            FontStyleSelection fontStyle = reader.ReadUInt16<FontStyleSelection>();
+            ushort firstCharIndex = reader.ReadUInt16();
+            ushort lastCharIndex = reader.ReadUInt16();
+            short typoAscender = reader.ReadInt16();
+            short typoDescender = reader.ReadInt16();
+            short typoLineGap = reader.ReadInt16();
+            ushort winAscent = reader.ReadUInt16();
+            ushort winDescent = reader.ReadUInt16();
 
-            var version0Table = new OS2Table(
+            OS2Table version0Table = new OS2Table(
                     averageCharWidth,
                 weightClass,
                 widthClass,
@@ -201,7 +201,7 @@ namespace SixLabors.Fonts.Tables.General
             breakChar = reader.ReadUInt16();
             maxContext = reader.ReadUInt16();
 
-            var versionLessthan5Table = new OS2Table(
+            OS2Table versionLessthan5Table = new OS2Table(
                     version0Table,
              codePageRange1,
              codePageRange2,

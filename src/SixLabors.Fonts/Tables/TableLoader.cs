@@ -67,7 +67,7 @@ namespace SixLabors.Fonts.Tables
         private void Register<T>(Func<FontReader, T> createFunc)
             where T : Table
         {
-            var name =
+            string name =
                 typeof(T).GetTypeInfo()
                     .CustomAttributes
                     .First(x => x.AttributeType == typeof(TableNameAttribute))
