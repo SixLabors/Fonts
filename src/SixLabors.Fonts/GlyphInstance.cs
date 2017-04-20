@@ -101,9 +101,9 @@ namespace SixLabors.Fonts
             // skip it.
             // offset = offset + (scale * ((new Vector2(this.leftSideBearing, 0) * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
 
+            offset += location;
             surface.BeginGlyph(offset);
 
-            offset += location;
 
             int startOfContor = 0;
             int endOfContor = -1;                                                                       //AlignToGrid(ref offset);
