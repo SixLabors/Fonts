@@ -50,7 +50,7 @@ namespace SixLabors.Fonts
         {
             return this.MeasureText(text, new FontSpan(font, dpi));
         }
-        
+
         /// <summary>
         /// Measures the text.
         /// </summary>
