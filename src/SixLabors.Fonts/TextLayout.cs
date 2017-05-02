@@ -25,7 +25,20 @@ namespace SixLabors.Fonts
             if(style.WrappingWidth > 0)
             {
                 maxWidth = style.WrappingWidth / style.DPI.X ;
-                xOrigin = maxWidth / 2f;
+
+                switch (style.Alignment)
+                {
+                    case TextAlignment.Right:
+                        xOrigin = maxWidth;
+                        break;
+                    case TextAlignment.Center:
+                        xOrigin = maxWidth / 2f;
+                        break;
+                    case TextAlignment.Left:
+                    default:
+                        xOrigin = 0;
+                        break;
+                }
             }
 
             AppliedFontStyle spanStyle = style.GetStyle(0, text.Length);

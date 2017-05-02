@@ -25,6 +25,7 @@ namespace SixLabors.Fonts.Tests
 
         [Theory]
         [InlineData(TextAlignment.Left,
+            null,
             "hello world\nhello",
             1,
             20,
@@ -32,6 +33,7 @@ namespace SixLabors.Fonts.Tests
             0,
             330)]
         [InlineData(TextAlignment.Left,
+            null,
             "hello world\nhello",
             2,
             20,
@@ -39,6 +41,7 @@ namespace SixLabors.Fonts.Tests
             0,
             150)]
         [InlineData(TextAlignment.Right,
+            null,
             "hello world\nhello",
             1,
             20,
@@ -46,6 +49,7 @@ namespace SixLabors.Fonts.Tests
             -330,
             0)]
         [InlineData(TextAlignment.Right,
+            null,
             "hello world\nhello",
             2,
             20,
@@ -53,28 +57,86 @@ namespace SixLabors.Fonts.Tests
             -150,
             0)]
         [InlineData(TextAlignment.Center,
+            null,
             "hello world\nhello",
             1,
             20,
             330,
-            -330 /2f,
-            330/2f)]
+            -330 / 2f,
+            330 / 2f)]
         [InlineData(TextAlignment.Center,
+            null,
             "hello world\nhello",
             2,
             20,
             150,
             -150 / 2f,
-            150 /2f)]
-        public void AlignLines_NoWidth(TextAlignment alignment, string text, int line, float height, float width, float left, float right)
+            150 / 2f)]
+
+
+        [InlineData(TextAlignment.Left,
+            500,
+            "hello world\nhello",
+            1,
+            20,
+            330,
+            0,
+            330)]
+        [InlineData(TextAlignment.Left,
+            500,
+            "hello world\nhello",
+            2,
+            20,
+            150,
+            0,
+            150)]
+        [InlineData(TextAlignment.Right,
+            500,
+            "hello world\nhello",
+            1,
+            20,
+            330,
+           500 - 330,
+            500)]
+        [InlineData(TextAlignment.Right,
+            500,
+            "hello world\nhello",
+            2,
+            20,
+            150,
+            500 - 150,
+            500)]
+        [InlineData(TextAlignment.Center,
+            500,
+            "hello world\nhello",
+            1,
+            20,
+            330,
+            250 - (330 / 2f),
+            250 + (330 / 2f))]
+        [InlineData(TextAlignment.Center,
+            500,
+            "hello world\nhello",
+            2,
+            20,
+            150,
+            250 - (150 / 2f),
+            250 + (150 / 2f))]
+        public void AlignLines_NoWidth(TextAlignment alignment, int? maxWidth, string text, int line, float height, float width, float left, float right)
         {
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            ImmutableArray<GlyphLayout> glyphsToRender = new TextLayout().GenerateLayout(text, new FontSpan(font, scaleFactor)
+            FontSpan span = new FontSpan(font, scaleFactor)
             {
                 Alignment = alignment
-            });
+            };
+
+            if (maxWidth.HasValue)
+            {
+                span.WrappingWidth = maxWidth.Value;
+            }
+            ImmutableArray<GlyphLayout> glyphsToRender = new TextLayout().GenerateLayout(text, span);
 
             List<int> startOfLines = glyphsToRender.Select((x, i) => new { x, i }).Where(x => x.x.StartOfLine).Select(x => x.i).ToList();
             startOfLines.Add(glyphsToRender.Length);
@@ -95,10 +157,10 @@ namespace SixLabors.Fonts.Tests
 
             Size size = new Size(bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
 
-            Assert.Equal(height, size.Height, 4);
-            Assert.Equal(width, size.Width, 4);
-            Assert.Equal(left, actualLeft, 4);
-            Assert.Equal(right, actualRight, 4);
+            Assert.Equal(height, size.Height, 3);
+            Assert.Equal(width, size.Width, 3);
+            Assert.Equal(left, actualLeft, 3);
+            Assert.Equal(right, actualRight, 3);
         }
 
         [Theory]
