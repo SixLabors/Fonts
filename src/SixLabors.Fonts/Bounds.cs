@@ -10,8 +10,8 @@ namespace SixLabors.Fonts
     {
         public Bounds(Vector2 min, Vector2 max)
         {
-            this.Min = min;
-            this.Max = max;
+            this.Min = Vector2.Min(min, max);
+            this.Max = Vector2.Max(min, max);
         }
 
         public Bounds(float minX, float minY, float maxX, float maxY)
@@ -22,6 +22,11 @@ namespace SixLabors.Fonts
         public Vector2 Min { get; }
 
         public Vector2 Max { get; }
+
+        public Size Size()
+        {
+            return new Size(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
+        }
 
         internal static Bounds Load(BinaryReader reader)
         {

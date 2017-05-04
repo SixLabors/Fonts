@@ -24,144 +24,84 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Theory]
-        [InlineData(TextAlignment.Left,
-            null,
+        [InlineData(
+            VerticalAlignment.Top,
+            HorizontalAlignment.Left,
             "hello world\nhello",
-            1,
-            20,
-            330,
             0,
-            330)]
-        [InlineData(TextAlignment.Left,
-            null,
-            "hello world\nhello",
-            2,
-            20,
-            150,
-            0,
-            150)]
-        [InlineData(TextAlignment.Right,
-            null,
-            "hello world\nhello",
-            1,
-            20,
-            330,
-            -330,
             0)]
-        [InlineData(TextAlignment.Right,
-            null,
+        [InlineData(
+            VerticalAlignment.Top,
+            HorizontalAlignment.Right,
             "hello world\nhello",
-            2,
-            20,
-            150,
-            -150,
+            0,
+            -330)]
+        [InlineData(
+            VerticalAlignment.Top,
+            HorizontalAlignment.Center,
+            "hello world\nhello",
+            0,
+            -165)]
+        [InlineData(
+            VerticalAlignment.Bottom,
+            HorizontalAlignment.Left,
+            "hello world\nhello",
+            -50,
             0)]
-        [InlineData(TextAlignment.Center,
-            null,
+        [InlineData(
+            VerticalAlignment.Bottom,
+            HorizontalAlignment.Right,
             "hello world\nhello",
-            1,
-            20,
-            330,
-            -330 / 2f,
-            330 / 2f)]
-        [InlineData(TextAlignment.Center,
-            null,
+            -50,
+            -330)]
+        [InlineData(
+            VerticalAlignment.Bottom,
+            HorizontalAlignment.Center,
             "hello world\nhello",
-            2,
-            20,
-            150,
-            -150 / 2f,
-            150 / 2f)]
-
-
-        [InlineData(TextAlignment.Left,
-            500,
+            -50,
+            -165)]
+        [InlineData(
+            VerticalAlignment.Center,
+            HorizontalAlignment.Left,
             "hello world\nhello",
-            1,
-            20,
-            330,
-            0,
-            330)]
-        [InlineData(TextAlignment.Left,
-            500,
+            -25,
+            0)]
+        [InlineData(
+            VerticalAlignment.Center,
+            HorizontalAlignment.Right,
             "hello world\nhello",
-            2,
-            20,
-            150,
-            0,
-            150)]
-        [InlineData(TextAlignment.Right,
-            500,
+            -25,
+            -330)]
+        [InlineData(
+            VerticalAlignment.Center,
+            HorizontalAlignment.Center,
             "hello world\nhello",
-            1,
-            20,
-            330,
-           500 - 330,
-            500)]
-        [InlineData(TextAlignment.Right,
-            500,
-            "hello world\nhello",
-            2,
-            20,
-            150,
-            500 - 150,
-            500)]
-        [InlineData(TextAlignment.Center,
-            500,
-            "hello world\nhello",
-            1,
-            20,
-            330,
-            250 - (330 / 2f),
-            250 + (330 / 2f))]
-        [InlineData(TextAlignment.Center,
-            500,
-            "hello world\nhello",
-            2,
-            20,
-            150,
-            250 - (150 / 2f),
-            250 + (150 / 2f))]
-        public void AlignLines_NoWidth(TextAlignment alignment, int? maxWidth, string text, int line, float height, float width, float left, float right)
+            -25,
+            -165)]
+        public void VerticalAlignmentTests(
+            VerticalAlignment vertical,
+            HorizontalAlignment horizental,
+            string text, float top, float left)
         {
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
             FontSpan span = new FontSpan(font, scaleFactor)
             {
-                Alignment = alignment
+                HorizontalAlignment = horizental,
+                VerticalAlignment = vertical
             };
 
-            if (maxWidth.HasValue)
-            {
-                span.WrappingWidth = maxWidth.Value;
-            }
             ImmutableArray<GlyphLayout> glyphsToRender = new TextLayout().GenerateLayout(text, span);
+            var fontInst = span.Font.FontInstance;
+            float lineHeight = (fontInst.LineHeight * span.Font.Size) / (fontInst.EmSize * 72);
+            lineHeight *= scaleFactor;
+            Bounds bound = TextMeasurer.Measure(glyphsToRender, span.DPI);
 
-            List<int> startOfLines = glyphsToRender.Select((x, i) => new { x, i }).Where(x => x.x.StartOfLine).Select(x => x.i).ToList();
-            startOfLines.Add(glyphsToRender.Length);
-
-            line--; // zero based indexes
-            int startOfLine = startOfLines[line];
-            int endOfLine = startOfLines[line + 1];
-            int count = endOfLine - startOfLine;
-
-            float actualLeft = glyphsToRender.Skip(startOfLine).Take(count).Min(x => x.Location.X) * scaleFactor;
-            float actualRight = glyphsToRender.Skip(startOfLine).Take(count).Max(x => x.Location.X + x.Width) * scaleFactor;
-
-            float actualTop = glyphsToRender.Skip(startOfLine).Take(count).Min(x => x.Location.Y) * scaleFactor;
-            float actualBottom = glyphsToRender.Skip(startOfLine).Take(count).Max(x => x.Location.Y + x.Height) * scaleFactor;
-
-            Vector2 topLeft = new Vector2(actualLeft, actualTop);
-            Vector2 bottomRight = new Vector2(actualRight, actualBottom);
-
-            Size size = new Size(bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
-
-            Assert.Equal(height, size.Height, 3);
-            Assert.Equal(width, size.Width, 3);
-            Assert.Equal(left, actualLeft, 3);
-            Assert.Equal(right, actualRight, 3);
+            Assert.Equal(left, bound.Min.X, 3);
+            Assert.Equal(top, bound.Min.Y - lineHeight, 3);
         }
+
 
         [Theory]
         [InlineData("hello", 20, 150)]

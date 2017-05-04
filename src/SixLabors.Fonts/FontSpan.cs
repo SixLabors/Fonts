@@ -82,12 +82,14 @@ namespace SixLabors.Fonts
         public float WrappingWidth { get; set; } = -1;
 
         /// <summary>
-        /// Get or sets the width relative to the current DPI at which text will automatically wrap onto a newline
+        /// Get or sets the Horizontal alignment of the text.
         /// </summary>
-        /// <value>
-        ///     if value is -1 then wrapping is disabled.
-        /// </value>
-        public TextAlignment Alignment { get; set; }
+        public HorizontalAlignment HorizontalAlignment { get; set; }
+
+        /// <summary>
+        /// Get or sets the Vertical alignment of the text.
+        /// </summary>
+        public VerticalAlignment VerticalAlignment { get; set; }
 
         /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream

@@ -61,16 +61,24 @@ namespace SixLabors.Fonts
         {
             ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 
-            float left = glyphsToRender.Min(x => x.Location.X);
-            float right = glyphsToRender.Max(x => x.Location.X + x.Width);
+            Bounds bound = Measure(glyphsToRender, style.DPI);
 
-            float top = glyphsToRender.Min(x => x.Location.Y);
-            float bottom = glyphsToRender.Max(x => x.Location.Y + x.Height);
+            return bound.Size();
+        }
 
-            Vector2 topLeft = new Vector2(left, top) * style.DPI;
-            Vector2 bottomRight = new Vector2(right, bottom) * style.DPI;
+        internal static Bounds Measure(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
+        {
+            float left = glyphLayouts.Min(x => x.Location.X );
+            float right = glyphLayouts.Max(x => x.Location.X + x.Width);
 
-            return new Size(bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
+            // location is bottom left of the line
+            float top = glyphLayouts.Min(x => x.Location.Y);
+            float bottom = glyphLayouts.Max(x => x.Location.Y + x.Height);
+
+            Vector2 topLeft = new Vector2(left, top) * dpi;
+            Vector2 bottomRight = new Vector2(right, bottom) * dpi;
+
+            return new Bounds(topLeft, bottomRight);
         }
     }
 }

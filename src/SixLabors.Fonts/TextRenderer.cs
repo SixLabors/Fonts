@@ -50,10 +50,16 @@ namespace SixLabors.Fonts
         {
             ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 
+            Size size = TextMeasurer.Measure(glyphsToRender, style.DPI).Size();
+
+            this.renderer.BeginText(location, size);
+
             foreach (GlyphLayout g in glyphsToRender)
             {
                 g.Glyph.RenderTo(this.renderer, g.Location, style.DPI, location);
             }
+
+            this.renderer.EndText();
         }
     }
 }

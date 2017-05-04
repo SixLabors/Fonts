@@ -1,9 +1,9 @@
 ﻿namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Alignemnt modes availible
+    /// Horizontal alignment modes.
     /// </summary>
-    public enum TextAlignment
+    public enum HorizontalAlignment
     {
         /// <summary>
         /// Aligns text from the left.

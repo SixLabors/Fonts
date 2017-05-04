@@ -52,11 +52,25 @@ namespace SixLabors.Fonts
         /// Ends the glyph.
         /// </summary>
         void EndGlyph();
-        
+
         /// <summary>
         /// Begins the glyph.
         /// </summary>
-        /// <param name="location">The location trhe glyph will be rendered.</param>
-        void BeginGlyph(Vector2 location);
+        /// <param name="location">The location the glyph will be rendered.</param>
+        /// <param name="size">The size of the glyphe that will be rendered.</param>
+        void BeginGlyph(Vector2 location, Size size);
+
+
+        /// <summary>
+        /// Called once all glyphs have completed rendering
+        /// </summary>
+        void EndText();
+
+        /// <summary>
+        /// Called before any glyphs have been rendered.
+        /// </summary>
+        /// <param name="location">The location of the origion of the glyphs being renderd.</param>
+        /// <param name="size">The size of the bounding box around all the glyphs.</param>
+        void BeginText(Vector2 location, Size size);
     }
 }
