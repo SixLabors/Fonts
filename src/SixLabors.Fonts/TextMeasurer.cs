@@ -12,6 +12,8 @@ namespace SixLabors.Fonts
     /// </summary>
     public class TextMeasurer
     {
+        internal static TextMeasurer Default { get; set; } = new TextMeasurer();
+
         private TextLayout layoutEngine;
 
         internal TextMeasurer(TextLayout layoutEngine)
@@ -23,7 +25,7 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="TextMeasurer"/> class.
         /// </summary>
         public TextMeasurer()
-            : this(new TextLayout())
+            : this(TextLayout.Default)
         {
         }
 
@@ -61,14 +63,53 @@ namespace SixLabors.Fonts
         {
             ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 
-            Bounds bound = Measure(glyphsToRender, style.DPI);
-
-            return bound.Size();
+            return GetSize(glyphsToRender, style.DPI);
         }
 
-        internal static Bounds Measure(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
+
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="font">The font.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
+        public static Size Measure(string text, Font font, float dpi)
+            => Default.MeasureText(text, font, dpi);
+
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="font">The font.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
+        public static Size Measure(string text, Font font, Vector2 dpi)
+            => Default.MeasureText(text, font, dpi);
+
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="style">The style.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
+        public static Size Measure(string text, FontSpan style)
+            => Default.MeasureText(text, style);
+
+        internal static Size GetSize(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
         {
-            float left = glyphLayouts.Min(x => x.Location.X );
+            if (glyphLayouts.IsEmpty)
+            {
+                return new Size(0, 0);
+            }
+
+            return GetBounds(glyphLayouts, dpi).Size();
+        }
+
+        internal static Bounds GetBounds(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
+        {
+
+            float left = glyphLayouts.Min(x => x.Location.X);
             float right = glyphLayouts.Max(x => x.Location.X + x.Width);
 
             // location is bottom left of the line

@@ -10,8 +10,10 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Encapsulated logic or laying out text.
     /// </summary>
-    public class TextLayout
+    internal class TextLayout
     {
+        internal static TextLayout Default { get; set; } = new TextLayout();
+
         /// <summary>
         /// Generates the layout.
         /// </summary>
@@ -236,7 +238,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// A glyphs layout and location
     /// </summary>
-    public struct GlyphLayout
+    internal struct GlyphLayout
     {
         internal GlyphLayout(Glyph glyph, Vector2 location, float width, float height, bool startOfLine)
         {

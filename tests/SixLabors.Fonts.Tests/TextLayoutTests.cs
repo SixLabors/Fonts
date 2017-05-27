@@ -96,7 +96,7 @@ namespace SixLabors.Fonts.Tests
             var fontInst = span.Font.FontInstance;
             float lineHeight = (fontInst.LineHeight * span.Font.Size) / (fontInst.EmSize * 72);
             lineHeight *= scaleFactor;
-            Bounds bound = TextMeasurer.Measure(glyphsToRender, span.DPI);
+            Bounds bound = TextMeasurer.GetBounds(glyphsToRender, span.DPI);
 
             Assert.Equal(left, bound.Min.X, 3);
             Assert.Equal(top, bound.Min.Y - lineHeight, 3);
