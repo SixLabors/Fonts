@@ -4,6 +4,7 @@ using System.IO;
 
 namespace SixLabors.Fonts.DrawWithImageSharp
 {
+    using global::DrawWithImageSharp;
     using Shapes;
     using System.Collections.Generic;
     using System.Linq;
@@ -46,6 +47,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
 
+            TextAlignment.Generate(new Font(font2, 50));
+
             StringBuilder sb = new StringBuilder();
             for (char c = 'a'; c <= 'z'; c++)
             {
@@ -66,6 +69,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 RenderText(f, text, 72);
             }
         }
+
 
         public static void RenderText(Font font, string text, int width, int height)
         {

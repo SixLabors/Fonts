@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         /// <summary>
         /// Begins the glyph.
         /// </summary>
-        void IGlyphRenderer.BeginGlyph(Vector2 location)
+        void IGlyphRenderer.BeginGlyph(Vector2 location, Size size)
         {
             this.builder.Clear();
         }
@@ -114,6 +114,14 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             this.builder.AddBezier(this.currentPoint, c1, c2, point);
             this.currentPoint = point;
+        }
+
+        public void EndText()
+        {
+        }
+
+        public void BeginText(Vector2 location, Size size)
+        {
         }
     }
 }

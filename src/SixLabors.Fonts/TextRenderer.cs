@@ -26,7 +26,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="renderer">The renderer.</param>
         public TextRenderer(IGlyphRenderer renderer)
-            : this(renderer, new TextLayout())
+            : this(renderer, TextLayout.Default)
         {
         }
 
@@ -50,10 +50,16 @@ namespace SixLabors.Fonts
         {
             ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 
+            Size size = TextMeasurer.GetBounds(glyphsToRender, style.DPI).Size();
+
+            this.renderer.BeginText(location, size);
+
             foreach (GlyphLayout g in glyphsToRender)
             {
                 g.Glyph.RenderTo(this.renderer, g.Location, style.DPI, location);
             }
+
+            this.renderer.EndText();
         }
     }
 }

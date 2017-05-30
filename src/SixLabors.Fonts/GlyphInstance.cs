@@ -96,13 +96,10 @@ namespace SixLabors.Fonts
             Vector2 firstPoint = Vector2.Zero;
             Vector2 scale = new Vector2(1, -1);
 
-            // apply left sidebearing 
-            // applying the left side bearing seems to break lowercase j characters on quite a few fonts
-            // skip it.
-            // offset = offset + (scale * ((new Vector2(this.leftSideBearing, 0) * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
+            Vector2 sizeVector = (new Vector2(this.AdvanceWidth, this.Height) * pointSize * dpi) / scaleFactor;
 
             offset += location;
-            surface.BeginGlyph(offset);
+            surface.BeginGlyph(offset, new Size(sizeVector.X, sizeVector.Y));
 
 
             int startOfContor = 0;
