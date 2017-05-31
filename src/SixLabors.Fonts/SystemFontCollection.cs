@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SixLabors.Fonts.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -37,16 +38,17 @@ namespace SixLabors.Fonts
             string[] expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
             string[] found = expanded.Where(x => Directory.Exists(x)).ToArray();
 
-            FileFontInstance[] fonts = found.SelectMany(x => Directory.EnumerateFiles(x, "*.ttf", SearchOption.AllDirectories)).Select(x => new FileFontInstance(x)).ToArray();
-            foreach (FileFontInstance f in fonts)
+            IEnumerable<string> files = found.SelectMany(x => Directory.EnumerateFiles(x, "*.ttf", SearchOption.AllDirectories));
+
+            foreach(string path in files)
             {
                 try
                 {
-                    this.collection.Install(f);
+                    this.collection.Install(new FileFontInstance(path));
                 }
                 catch
                 {
-                    // we swollow exceptions installing system fonts as we hold no garuntiie about permissions etc.
+                    // we swollow exceptions installing system fonts as we hold no garantees about permissions etc.
                 }
             }
         }
