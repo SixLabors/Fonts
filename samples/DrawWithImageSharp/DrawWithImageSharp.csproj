@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ImageSharp" Version="1.0.0-alpha6-00049" />
-    <PackageReference Include="ImageSharp.Drawing" Version="1.0.0-alpha6-00010" />
+    <PackageReference Include="ImageSharp" Version="1.0.0-alpha9-00139" />
+    <PackageReference Include="ImageSharp.Drawing" Version="1.0.0-alpha9-00134" />
   </ItemGroup>
 
 </Project>

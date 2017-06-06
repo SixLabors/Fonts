@@ -44,6 +44,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, "Hello\nWorld", 72);
             RenderText(carter, "Hello\0World", 72);
             RenderText(Wendy_One, "Hello\0World", 72);
+
+            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
+            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "One Tab");
+
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
 
@@ -76,30 +81,33 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             string path = System.IO.Path.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
             string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
 
-            using (Image img = new Image(width, height))
+            using (var img = new Image<Rgba32>(width, height))
             {
-                img.Fill(Color.White);
+                img.Fill(Rgba32.White);
 
-                img.DrawText(text, font, Color.Black, new Vector2(50f, 4f));
+                img.DrawText(text, font, Rgba32.Black, new Vector2(50f, 4f));
 
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
 
-                using (FileStream fs = File.Create(fullPath+".png"))
+                using (FileStream fs = File.Create(fullPath + ".png"))
                 {
                     img.SaveAsPng(fs);
                 }
             }
         }
-
-        public static void RenderText(FontFamily font, string text, float pointSize = 12)
+        public static void RenderText(FontSpan font, string text)
         {
             GlyphBuilder builder = new GlyphBuilder();
             TextRenderer renderer = new TextRenderer(builder);
 
-            renderer.RenderText(text, new FontSpan(new Font(font, pointSize), 96) { ApplyKerning = true, WrappingWidth = 340 });
+            renderer.RenderText(text, font);
 
             builder.Paths
-                .SaveImage(font.Name, text + ".png");
+                .SaveImage(font.Font.Name, text + ".png");
+        }
+        public static void RenderText(FontFamily font, string text, float pointSize = 12)
+        {
+            RenderText(new FontSpan(new Font(font, pointSize), 96) { ApplyKerning = true, WrappingWidth = 340 }, text);
         }
 
         public static void RenderLetter(FontFamily fontFam, char character, float pointSize = 12)
@@ -111,20 +119,20 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             builder.Paths
                 .SaveImage(fontFam.Name, character + ".png");
         }
-    
+
         public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)
         {
             path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
             string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
 
-            using (Image img = new Image(width, height))
+            using (Image<Rgba32> img = new Image<Rgba32>(width, height))
             {
-                img.Fill(Color.DarkBlue);
+                img.Fill(Rgba32.DarkBlue);
 
                 foreach (IPath s in shapes)
                 {
                     // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
-                    img.Fill(Color.HotPink, s.Translate(new Vector2(0, 0)));
+                    img.Fill(Rgba32.HotPink, s.Translate(new Vector2(0, 0)));
                 }
                 // img.Draw(Color.LawnGreen, 1, shape);
 
@@ -170,16 +178,16 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 width = 1;
             }
-            if (height< 1)
+            if (height < 1)
             {
                 height = 1;
             }
-            using (Image img = new Image(width, height))
+            using (Image<Rgba32> img = new Image<Rgba32>(width, height))
             {
-                img.Fill(Color.DarkBlue);
+                img.Fill(Rgba32.DarkBlue);
 
                 // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
-                img.Fill(Color.HotPink, shape);
+                img.Fill(Rgba32.HotPink, shape);
                 // img.Draw(Color.LawnGreen, 1, shape);
 
                 // Ensure directory exists

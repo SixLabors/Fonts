@@ -109,10 +109,13 @@ namespace SixLabors.Fonts
                             GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
                             float width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                             float tabStop = width * spanStyle.TabWidth;
+                            if (tabStop > 0)
+                            {
+                                float dist = tabStop - ((location.X + width) % tabStop);
 
-                            // advance to a position > width away that
-                            float dist = tabStop - ((location.X + width) % tabStop);
-                            location.X += dist;
+                                // advance to a position > width away that
+                                location.X += dist;
+                            }
                             previousGlyph = null;
                         }
 

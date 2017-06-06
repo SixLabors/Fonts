@@ -14,7 +14,7 @@ namespace DrawWithImageSharp
 
         public static void Generate(Font font)
         {
-            using (var img = new Image(1000, 1000))
+            using (var img = new Image<Rgba32>(1000, 1000))
             {
 
                 foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
@@ -28,7 +28,7 @@ namespace DrawWithImageSharp
             }
         }
 
-        public static void Draw(Image img, Font font, VerticalAlignment vert, HorizontalAlignment horiz)
+        public static void Draw(Image<Rgba32> img, Font font, VerticalAlignment vert, HorizontalAlignment horiz)
         {
             Vector2 location = Vector2.Zero;
 
@@ -83,7 +83,7 @@ namespace DrawWithImageSharp
             System.Collections.Generic.IEnumerable<SixLabors.Shapes.IPath> shapesToDraw = glyphBuilder.Paths;
             foreach (SixLabors.Shapes.IPath s in shapesToDraw)
             {
-                img.Fill(Color.Black, s);
+                img.Fill(Rgba32.Black, s);
             }
         }
     }
