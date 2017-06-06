@@ -47,7 +47,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
             RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "One Tab");
+            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
+            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
+            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
+            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
+            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
+
+
 
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
             RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
@@ -103,7 +109,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             renderer.RenderText(text, font);
 
             builder.Paths
-                .SaveImage(font.Font.Name, text + ".png");
+                .SaveImage(1300, 100, font.Font.Name, text + ".png");
         }
         public static void RenderText(FontFamily font, string text, float pointSize = 12)
         {
