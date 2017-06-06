@@ -108,14 +108,19 @@ namespace SixLabors.Fonts
                         {
                             GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
                             float width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
+                            float height = (glyph.Height * spanStyle.PointSize) / scale;
                             float tabStop = width * spanStyle.TabWidth;
+                            float finalWidth = 0;
+
                             if (tabStop > 0)
                             {
-                                float dist = tabStop - ((location.X + width) % tabStop);
+                                finalWidth = tabStop - ((location.X + width) % tabStop);
 
-                                // advance to a position > width away that
-                                location.X += dist;
                             }
+                            layout.Add(new GlyphLayout(null, location, finalWidth, height, startOfLine));
+                            startOfLine = false;
+                            // advance to a position > width away that
+                            location.X += finalWidth;
                             previousGlyph = null;
                         }
 
@@ -124,6 +129,9 @@ namespace SixLabors.Fonts
                         {
                             GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
                             float width = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
+                            float height = (glyph.Height * spanStyle.PointSize) / scale;
+                            layout.Add(new GlyphLayout(null, location, width, height, startOfLine));
+                            startOfLine = false;
                             location.X += width;
                             previousGlyph = null;
                         }
@@ -243,7 +251,8 @@ namespace SixLabors.Fonts
     /// </summary>
     internal struct GlyphLayout
     {
-        internal GlyphLayout(Glyph glyph, Vector2 location, float width, float height, bool startOfLine)
+
+        internal GlyphLayout(Glyph? glyph, Vector2 location, float width, float height, bool startOfLine)
         {
             this.Glyph = glyph;
             this.Location = location;
@@ -258,7 +267,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The glyph.
         /// </value>
-        public Glyph Glyph { get; private set; }
+        public Glyph? Glyph { get; private set; }
 
         /// <summary>
         /// Gets the location.
