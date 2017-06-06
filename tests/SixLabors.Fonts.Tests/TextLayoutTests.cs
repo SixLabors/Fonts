@@ -129,7 +129,7 @@ namespace SixLabors.Fonts.Tests
         [Theory]
         [InlineData("hello world", 20, 330)]
         [InlineData("hello world hello world",
-            50, //30 actaul line height + 20 actual height
+            80, //30 actaul line height + 20 actual height
             330)]
         public void MeasureTextWordWrapping(string text, float height, float width)
         {
@@ -138,11 +138,11 @@ namespace SixLabors.Fonts.Tests
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
             Size size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
             {
-                WrappingWidth = 340
+                WrappingWidth = 350
             });
 
-            Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
+            Assert.Equal(height, size.Height, 4);
         }
 
         [Theory]
