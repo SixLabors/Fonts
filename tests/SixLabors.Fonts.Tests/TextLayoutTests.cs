@@ -46,37 +46,37 @@ namespace SixLabors.Fonts.Tests
             VerticalAlignment.Bottom,
             HorizontalAlignment.Left,
             "hello world\nhello",
-            -50,
+            -60,
             0)]
         [InlineData(
             VerticalAlignment.Bottom,
             HorizontalAlignment.Right,
             "hello world\nhello",
-            -50,
+            -60,
             -330)]
         [InlineData(
             VerticalAlignment.Bottom,
             HorizontalAlignment.Center,
             "hello world\nhello",
-            -50,
+            -60,
             -165)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Left,
             "hello world\nhello",
-            -25,
+            -30,
             0)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Right,
             "hello world\nhello",
-            -25,
+            -30,
             -330)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Center,
             "hello world\nhello",
-            -25,
+            -30,
             -165)]
         public void VerticalAlignmentTests(
             VerticalAlignment vertical,

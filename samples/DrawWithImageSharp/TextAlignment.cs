@@ -16,6 +16,7 @@ namespace DrawWithImageSharp
         {
             using (var img = new Image<Rgba32>(1000, 1000))
             {
+                img.Fill(Rgba32.White);
 
                 foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
                 {
