@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SixLabors.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -37,7 +38,7 @@ namespace SixLabors.Fonts
         /// <param name="style">The style.</param>
         public void RenderText(string text, FontSpan style)
         {
-            this.RenderText(text, style, Vector2.Zero);
+            this.RenderText(text, style, PointF.Zero);
         }
 
         /// <summary>
@@ -46,17 +47,17 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="style">The style.</param>
         /// <param name="location">The location.</param>
-        public void RenderText(string text, FontSpan style, Vector2 location)
+        public void RenderText(string text, FontSpan style, PointF location)
         {
             ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
 
-            Size size = TextMeasurer.GetBounds(glyphsToRender, style.DPI).Size();
+            SizeF size = TextMeasurer.GetBounds(glyphsToRender, new Vector2(style.DpiX, style.DpiY)).Size();
 
             this.renderer.BeginText(location, size);
 
             foreach (GlyphLayout g in glyphsToRender.Where(x=>x.Glyph.HasValue))
             {
-                g.Glyph.Value.RenderTo(this.renderer, g.Location, style.DPI, location);
+                g.Glyph.Value.RenderTo(this.renderer, g.Location, style.DpiX, style.DpiY, location);
             }
 
             this.renderer.EndText();

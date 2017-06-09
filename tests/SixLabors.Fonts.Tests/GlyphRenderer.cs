@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace SixLabors.Fonts.Tests
 {
+    using SixLabors.Primitives;
     using System.Numerics;
     using Xunit;
 
@@ -14,7 +15,7 @@ namespace SixLabors.Fonts.Tests
         public List<Vector2> ControlPoints = new List<Vector2>();
         public List<Vector2> ControlPointsOnCurve = new List<Vector2>();
 
-        public void BeginGlyph(Vector2 location, Size size)
+        public void BeginGlyph(Vector2 location, SizeF size)
         {
         }
 
@@ -65,7 +66,7 @@ namespace SixLabors.Fonts.Tests
         {
         }
 
-        public void BeginText(Vector2 location, Size size)
+        public void BeginText(Vector2 location, SizeF size)
         {
         }
     }

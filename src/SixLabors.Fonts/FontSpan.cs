@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="font">The font.</param>
         public FontSpan(Font font)
-            : this(font, new Vector2(72))
+            : this(font, 72, 72)
         {
             this.Font = font;
         }
@@ -28,7 +28,7 @@ namespace SixLabors.Fonts
         /// <param name="font">The font.</param>
         /// <param name="dpi">The dpi.</param>
         public FontSpan(Font font, float dpi)
-            : this(font, new Vector2(dpi))
+            : this(font, dpi, dpi)
         {
             this.Font = font;
         }
@@ -37,11 +37,13 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="FontSpan"/> class.
         /// </summary>
         /// <param name="font">The font.</param>
-        /// <param name="dpi">The dpi.</param>
-        public FontSpan(Font font, Vector2 dpi)
+        /// <param name="dpiX">The X dpi.</param>
+        /// <param name="dpiY">The Y dpi.</param>
+        public FontSpan(Font font, float dpiX, float dpiY)
         {
             this.Font = font;
-            this.DPI = dpi;
+            this.DpiX = dpiX;
+            this.DpiY = dpiY;
         }
 
         /// <summary>
@@ -69,9 +71,14 @@ namespace SixLabors.Fonts
         public bool ApplyKerning { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the the current DPI to render/measure the text at.
+        /// Gets or sets the the current X DPI to render/measure the text at.
         /// </summary>
-        public Vector2 DPI { get; set; }
+        public float DpiX { get; set; }
+
+        /// <summary>
+        /// Gets or sets the the current Ys DPI to render/measure the text at.
+        /// </summary>
+        public float DpiY { get; set; }
 
         /// <summary>
         /// Get or sets the width relative to the current DPI at which text will automatically wrap onto a newline

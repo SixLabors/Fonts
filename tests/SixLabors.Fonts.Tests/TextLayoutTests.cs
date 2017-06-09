@@ -10,6 +10,7 @@ using SixLabors.Fonts.Tables.General.Glyphs;
 using Xunit;
 using SixLabors.Fonts.Tests.Fakes;
 using System.Collections.Immutable;
+using SixLabors.Primitives;
 
 namespace SixLabors.Fonts.Tests
 {
@@ -96,7 +97,7 @@ namespace SixLabors.Fonts.Tests
             var fontInst = span.Font.FontInstance;
             float lineHeight = (fontInst.LineHeight * span.Font.Size) / (fontInst.EmSize * 72);
             lineHeight *= scaleFactor;
-            Bounds bound = TextMeasurer.GetBounds(glyphsToRender, span.DPI);
+            Bounds bound = TextMeasurer.GetBounds(glyphsToRender, new Vector2(span.DpiX, span.DpiY));
 
             Assert.Equal(left, bound.Min.X, 3);
             Assert.Equal(top, bound.Min.Y - lineHeight, 3);
@@ -117,7 +118,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            Size size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
+            SizeF size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
             {
 
             });
@@ -136,7 +137,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            Size size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
+            SizeF size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
             {
                 WrappingWidth = 350
             });
@@ -156,7 +157,7 @@ namespace SixLabors.Fonts.Tests
             Font font = c.Install(TestFonts.SimpleFontFileData());
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            Size size = new TextMeasurer().MeasureText(text, new FontSpan(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning });
+            SizeF size = new TextMeasurer().MeasureText(text, new FontSpan(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning });
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);

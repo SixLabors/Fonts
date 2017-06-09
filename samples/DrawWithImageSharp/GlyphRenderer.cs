@@ -1,4 +1,5 @@
-﻿using SixLabors.Shapes;
+﻿using SixLabors.Primitives;
+using SixLabors.Shapes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         /// <summary>
         /// Begins the glyph.
         /// </summary>
-        void IGlyphRenderer.BeginGlyph(Vector2 location, Size size)
+        void IGlyphRenderer.BeginGlyph(Vector2 location, SizeF size)
         {
             this.builder.Clear();
         }
@@ -120,7 +121,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         {
         }
 
-        public void BeginText(Vector2 location, Size size)
+        public void BeginText(Vector2 location, SizeF size)
         {
         }
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SixLabors.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -27,9 +28,9 @@ namespace SixLabors.Fonts
         /// <param name="surface">The surface.</param>
         /// <param name="location">The location.</param>
         /// <param name="dpi">The dpi.</param>
-        public void RenderTo(IGlyphRenderer surface, Vector2 location, float dpi)
+        public void RenderTo(IGlyphRenderer surface, PointF location, float dpi)
         {
-            this.RenderTo(surface, location, dpi, Vector2.Zero);
+            this.RenderTo(surface, location, dpi, PointF.Zero);
         }
 
         /// <summary>
@@ -39,9 +40,9 @@ namespace SixLabors.Fonts
         /// <param name="location">The location.</param>
         /// <param name="dpi">The dpi.</param>
         /// <param name="offset">The offset.</param>
-        public void RenderTo(IGlyphRenderer surface, Vector2 location, float dpi, Vector2 offset)
+        public void RenderTo(IGlyphRenderer surface, PointF location, float dpi, PointF offset)
         {
-            this.RenderTo(surface, location, new Vector2(dpi), offset);
+            this.RenderTo(surface, location, dpi, dpi, offset);
         }
 
         /// <summary>
@@ -49,11 +50,12 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="surface">The surface.</param>
         /// <param name="location">The location.</param>
-        /// <param name="dpi">The dpi.</param>
+        /// <param name="dpiX">The X dpi.</param>
+        /// <param name="dpiY">The Y dpi.</param>
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
-        public void RenderTo(IGlyphRenderer surface, Vector2 location, Vector2 dpi)
+        public void RenderTo(IGlyphRenderer surface, PointF location, float dpiX, float dpiY)
         {
-            this.RenderTo(surface, location, dpi, Vector2.Zero);
+            this.RenderTo(surface, location, dpiX, dpiY, PointF.Zero);
         }
 
         /// <summary>
@@ -61,12 +63,13 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="surface">The surface.</param>
         /// <param name="location">The location.</param>
-        /// <param name="dpi">The dpi.</param>
+        /// <param name="dpiX">The dpi.</param>
+        /// <param name="dpiY">The dpi.</param>
         /// <param name="offset">The offset.</param>
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
-        public void RenderTo(IGlyphRenderer surface, Vector2 location, Vector2 dpi, Vector2 offset)
+        public void RenderTo(IGlyphRenderer surface, PointF location, float dpiX, float dpiY, PointF offset)
         {
-            this.instance.RenderTo(surface, this.pointSize, location, dpi, offset);
+            this.instance.RenderTo(surface, this.pointSize, location, new Vector2(dpiX, dpiY), offset);
         }
     }
 }

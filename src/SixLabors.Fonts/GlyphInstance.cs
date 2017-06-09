@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SixLabors.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -92,14 +93,13 @@ namespace SixLabors.Fonts
 
             float scaleFactor = (float)(this.sizeOfEm * 72f);
 
-
             Vector2 firstPoint = Vector2.Zero;
             Vector2 scale = new Vector2(1, -1);
 
             Vector2 sizeVector = (new Vector2(this.AdvanceWidth, this.Height) * pointSize * dpi) / scaleFactor;
 
             offset += location;
-            surface.BeginGlyph(offset, new Size(sizeVector.X, sizeVector.Y));
+            surface.BeginGlyph(offset, new SizeF(sizeVector.X, sizeVector.Y));
 
 
             int startOfContor = 0;

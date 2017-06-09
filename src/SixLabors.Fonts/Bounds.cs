@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SixLabors.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -23,9 +24,9 @@ namespace SixLabors.Fonts
 
         public Vector2 Max { get; }
 
-        public Size Size()
+        public SizeF Size()
         {
-            return new Size(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
+            return new SizeF(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
         }
 
         internal static Bounds Load(BinaryReader reader)

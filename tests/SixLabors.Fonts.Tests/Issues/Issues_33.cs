@@ -1,4 +1,5 @@
 ﻿using SixLabors.Fonts.Tests.Fakes;
+using SixLabors.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,7 +19,7 @@ namespace SixLabors.Fonts.Tests.Issues
         public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height )
         {
             var font  = CreateFont(text);
-            Size size = TextMeasurer.Measure(text, new FontSpan(font, (72 * font.EmSize))
+            SizeF size = TextMeasurer.Measure(text, new FontSpan(font, (72 * font.EmSize))
             {
             });
 

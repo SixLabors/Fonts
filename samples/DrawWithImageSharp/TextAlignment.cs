@@ -66,10 +66,8 @@ namespace DrawWithImageSharp
             GlyphBuilder glyphBuilder = new GlyphBuilder(location);
 
             TextRenderer renderer = new TextRenderer(glyphBuilder);
-
-            Vector2 dpi = new Vector2(72);
-
-            FontSpan style = new FontSpan(font, dpi)
+            
+            FontSpan style = new FontSpan(font, 72)
             {
                 ApplyKerning = true,
                 TabWidth = 4,
