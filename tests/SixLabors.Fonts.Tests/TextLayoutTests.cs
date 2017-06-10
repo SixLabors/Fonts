@@ -16,6 +16,8 @@ namespace SixLabors.Fonts.Tests
 {
     public class TextLayoutTests
     {
+        private float expectedY;
+
         [Fact]
         public void FakeFontGetGlyph()
         {
@@ -28,62 +30,54 @@ namespace SixLabors.Fonts.Tests
         [InlineData(
             VerticalAlignment.Top,
             HorizontalAlignment.Left,
-            "hello world\nhello",
             0,
             0)]
         [InlineData(
             VerticalAlignment.Top,
             HorizontalAlignment.Right,
-            "hello world\nhello",
             0,
             -330)]
         [InlineData(
             VerticalAlignment.Top,
             HorizontalAlignment.Center,
-            "hello world\nhello",
             0,
             -165)]
         [InlineData(
             VerticalAlignment.Bottom,
             HorizontalAlignment.Left,
-            "hello world\nhello",
             -60,
             0)]
         [InlineData(
             VerticalAlignment.Bottom,
             HorizontalAlignment.Right,
-            "hello world\nhello",
             -60,
             -330)]
         [InlineData(
             VerticalAlignment.Bottom,
             HorizontalAlignment.Center,
-            "hello world\nhello",
             -60,
             -165)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Left,
-            "hello world\nhello",
             -30,
             0)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Right,
-            "hello world\nhello",
             -30,
             -330)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Center,
-            "hello world\nhello",
             -30,
             -165)]
         public void VerticalAlignmentTests(
             VerticalAlignment vertical,
             HorizontalAlignment horizental,
-            string text, float top, float left)
+            float top, float left)
         {
+            var text = "hello world\nhello";
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
@@ -97,22 +91,20 @@ namespace SixLabors.Fonts.Tests
             var fontInst = span.Font.FontInstance;
             float lineHeight = (fontInst.LineHeight * span.Font.Size) / (fontInst.EmSize * 72);
             lineHeight *= scaleFactor;
-            Bounds bound = TextMeasurer.GetBounds(glyphsToRender, new Vector2(span.DpiX, span.DpiY));
+            RectangleF bound = TextMeasurer.GetBounds(glyphsToRender, new Vector2(span.DpiX, span.DpiY));
 
-            Assert.Equal(left, bound.Min.X, 3);
-            Assert.Equal(top, bound.Min.Y - lineHeight, 3);
+            Assert.Equal(330, bound.Width, 3);
+            Assert.Equal(60, bound.Height, 3);
+            Assert.Equal(left, bound.Left, 3);
+            Assert.Equal(top, bound.Top, 3);
         }
 
 
         [Theory]
-        [InlineData("hello", 20, 150)]
-        [InlineData("hello world", 20, 330)]
-        [InlineData("hello world\nhello world",
-            50, //30 actaul line height + 20 actual height
-            330)]
-        [InlineData("hello\nworld",
-            50, //30 actaul line height + 20 actual height
-            150)]
+        [InlineData("hello", 30, 150)]
+        [InlineData("hello world", 30, 330)]
+        [InlineData("hello world\nhello world", 60, 330)]
+        [InlineData("hello\nworld", 60, 150)]
         public void MeasureText(string text, float height, float width)
         {
             Font font = CreateFont(text);
@@ -128,9 +120,9 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Theory]
-        [InlineData("hello world", 20, 330)]
+        [InlineData("hello world", 30, 330)]
         [InlineData("hello world hello world",
-            80, //30 actaul line height + 20 actual height
+            90, //30 actaul line height + 20 actual height
             330)]
         public void MeasureTextWordWrapping(string text, float height, float width)
         {
@@ -147,10 +139,10 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Theory]
-        [InlineData("ab", 939, 1148, false)] // no kerning rules defined for lowercase ab so widths should stay the same
-        [InlineData("ab", 939, 1148, true)]
-        [InlineData("AB", 885, 1148, false)] // width changes between kerning enabled or not
-        [InlineData("AB", 885, 769, true)]
+        [InlineData("ab", 1236, 1148, false)] // no kerning rules defined for lowercase ab so widths should stay the same
+        [InlineData("ab", 1236, 1148, true)]
+        [InlineData("AB", 1236, 1148, false)] // width changes between kerning enabled or not
+        [InlineData("AB", 1236, 769, true)]
         public void MeasureTextWithKerning(string text, float height, float width, bool enableKerning)
         {
             FontCollection c = new FontCollection();
@@ -161,6 +153,21 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
+        }
+
+        [Theory]
+        [InlineData("a", 100, 100, 100, 100)] 
+        public void LayoutWithLocation(string text, float x, float y, float expectedX, float expectedY)
+        {
+            FontCollection c = new FontCollection();
+            Font font = c.Install(TestFonts.SimpleFontFileData());
+
+            int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
+            var glyphRenderer = new GlyphRenderer();
+            var renderer = new TextRenderer(glyphRenderer);
+            renderer.RenderText(text, new FontSpan(new Font(font, 1), 72 * font.EmSize), new PointF(x, y));
+
+            Assert.Equal(new PointF(expectedX, expectedY), glyphRenderer.GlyphRects[0].Location);
         }
 
         public static Font CreateFont(string text)

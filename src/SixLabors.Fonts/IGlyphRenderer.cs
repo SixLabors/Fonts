@@ -57,9 +57,8 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Begins the glyph.
         /// </summary>
-        /// <param name="location">The location the glyph will be rendered.</param>
-        /// <param name="size">The size of the glyphe that will be rendered.</param>
-        void BeginGlyph(PointF location, SizeF size);
+        /// <param name="bounds">The bounds the glyph will be rendered at and at what size.</param>
+        void BeginGlyph(RectangleF bounds);
 
 
         /// <summary>
@@ -70,8 +69,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Called before any glyphs have been rendered.
         /// </summary>
-        /// <param name="location">The location of the origion of the glyphs being renderd.</param>
-        /// <param name="size">The size of the bounding box around all the glyphs.</param>
-        void BeginText(PointF location, SizeF size);
+        /// <param name="bounds">The bounds the text will be rendered at and at whats size.</param>
+        void BeginText(RectangleF bounds);
     }
 }

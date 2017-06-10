@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Tests.Issues
             });
 
             // tab width of 0 should make tabs not render at all
-            Assert.Equal(20, size.Height, 4);
+            Assert.Equal(30, size.Height, 4);
             Assert.Equal(300, size.Width, 4);
         }
 

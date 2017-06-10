@@ -10,12 +10,12 @@ namespace SixLabors.Fonts.Tests.Issues
     public class Issues_33
     {
         [Theory]
-        [InlineData("\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs", 750, 110)]
-        [InlineData("\n\tHelloworld", 390, 50)]
-        [InlineData("\tHelloworld", 390, 20)]
-        [InlineData("  Helloworld", 360, 20)]
-        [InlineData("Hell owor ld\t", 450, 20)]
-        [InlineData("Helloworld  ", 360, 20)]
+        [InlineData("\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs", 750, 120)]
+        [InlineData("\n\tHelloworld", 390, 60)]
+        [InlineData("\tHelloworld", 390, 30)]
+        [InlineData("  Helloworld", 360, 30)]
+        [InlineData("Hell owor ld\t", 450, 30)]
+        [InlineData("Helloworld  ", 360, 30)]
         public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height )
         {
             var font  = CreateFont(text);

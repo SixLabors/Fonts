@@ -130,7 +130,7 @@ namespace SixLabors.Fonts
             return header?.CreateReader(this.stream);
         }
 
-        public enum OutlineTypes : uint
+        internal enum OutlineTypes : uint
         {
             TrueType = 0x00010000,
             CFF = 0x4F54544F

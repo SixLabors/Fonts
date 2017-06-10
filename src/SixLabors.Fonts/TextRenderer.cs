@@ -49,15 +49,31 @@ namespace SixLabors.Fonts
         /// <param name="location">The location.</param>
         public void RenderText(string text, FontSpan style, PointF location)
         {
-            ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
+            ImmutableArray<GlyphLayout> glyphsToRender;
+            var dpi = new Vector2(style.DpiX, style.DpiY);
 
-            SizeF size = TextMeasurer.GetBounds(glyphsToRender, new Vector2(style.DpiX, style.DpiY)).Size();
-
-            this.renderer.BeginText(location, size);
-
-            foreach (GlyphLayout g in glyphsToRender.Where(x=>x.Glyph.HasValue))
+            if (location != PointF.Empty)
             {
-                g.Glyph.Value.RenderTo(this.renderer, g.Location, style.DpiX, style.DpiY, location);
+                Vector2 locationVector = location;
+
+                locationVector = locationVector / dpi;
+
+                glyphsToRender = this.layoutEngine.GenerateLayout(text, style, locationVector);
+            }
+            else
+            {
+                glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
+            }
+
+            RectangleF rect = TextMeasurer.GetBounds(glyphsToRender, dpi);
+
+            rect.Offset(location);
+
+            this.renderer.BeginText(rect);
+
+            foreach (GlyphLayout g in glyphsToRender.Where(x => x.Glyph.HasValue))
+            {
+                g.Glyph.Value.RenderTo(this.renderer, g.Location, style.DpiX, style.DpiY, g.LineHeight);
             }
 
             this.renderer.EndText();

@@ -130,7 +130,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="character">The character.</param>
         /// <returns></returns>
-        public Glyph GetGlyph(char character)
+        internal Glyph GetGlyph(char character)
         {
             return new Glyph(this.instance.Value.GetGlyph(character), this.Size);
         }

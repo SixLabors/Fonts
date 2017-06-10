@@ -68,7 +68,6 @@ namespace SixLabors.Fonts
             return GetSize(glyphsToRender, new Vector2(style.DpiX, style.DpiY));
         }
 
-
         /// <summary>
         /// Measures the text.
         /// </summary>
@@ -106,23 +105,23 @@ namespace SixLabors.Fonts
                 return new SizeF(0, 0);
             }
 
-            return GetBounds(glyphLayouts, dpi).Size();
+            return GetBounds(glyphLayouts, dpi).Size;
         }
 
-        internal static Bounds GetBounds(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
+        internal static RectangleF GetBounds(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
         {
-
             float left = glyphLayouts.Min(x => x.Location.X);
             float right = glyphLayouts.Max(x => x.Location.X + x.Width);
 
             // location is bottom left of the line
-            float top = glyphLayouts.Min(x => x.Location.Y);
-            float bottom = glyphLayouts.Max(x => x.Location.Y + x.Height);
+            float top = glyphLayouts.Min(x => x.Location.Y - x.LineHeight);
+            float bottom = glyphLayouts.Max(x => x.Location.Y);
 
             Vector2 topLeft = new Vector2(left, top) * dpi;
             Vector2 bottomRight = new Vector2(right, bottom) * dpi;
 
-            return new Bounds(topLeft, bottomRight);
+            var size = bottomRight - topLeft;
+            return new RectangleF(topLeft.X, topLeft.Y, size.X, size.Y);
         }
     }
 }

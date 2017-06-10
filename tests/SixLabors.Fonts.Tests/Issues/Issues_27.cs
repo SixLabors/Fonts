@@ -18,7 +18,7 @@ namespace SixLabors.Fonts.Tests.Issues
             var size = new TextMeasurer().MeasureText("          ", new FontSpan(new Font(font, 30), 72));
 
             Assert.Equal(60, size.Width, 1);
-            Assert.Equal(37.1, size.Height, 1);
+            Assert.Equal(31.6, size.Height, 1);
         }
     }
 }

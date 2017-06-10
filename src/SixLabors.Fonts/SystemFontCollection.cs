@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Provides a collection of fonts.
     /// </summary>
-    public sealed class SystemFontCollection : IReadonlyFontCollection
+    internal sealed class SystemFontCollection : IReadOnlyFontCollection
     {
         private readonly FontCollection collection = new FontCollection();
 
@@ -60,13 +60,11 @@ namespace SixLabors.Fonts
         /// The families.
         /// </value>
         public IEnumerable<FontFamily> Families => this.collection.Families;
-
-        /// <summary>
-        /// Finds the specified font family.
-        /// </summary>
-        /// <param name="fontFamily">The font family.</param>
-        /// <returns>The family if installed otherwise null</returns>
+    
+        ///<inheritdocs />
         public FontFamily Find(string fontFamily) => this.collection.Find(fontFamily);
+        ///<inheritdocs />
+        public bool TryFind(string fontFamily, out FontFamily family) => this.collection.TryFind(fontFamily, out family);
     }
 #endif
 }
