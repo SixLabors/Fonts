@@ -40,6 +40,6 @@ You need to make a `Font` instance to start working with glyphs.
 To make a font you will need to find the `FontFamily` you are interested in, and instanciate a new `Font` object with your required size and style.
 
 ```c#
-var family = collection.CreateFont("Arial"); //assumes arial has been installed in to the collection.
+var family = collection.Find("Arial"); //assumes arial has been installed in to the collection.
 var font = new Font(family, 50, FontStyle.Bold); //assumes the version of arial that was installed was a bold veriant.
 ```
