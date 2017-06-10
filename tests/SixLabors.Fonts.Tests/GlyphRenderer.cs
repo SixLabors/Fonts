@@ -12,10 +12,10 @@ namespace SixLabors.Fonts.Tests
     public class GlyphRenderer : IGlyphRenderer
     {
         public int FiguresCount = 0;
-        public List<Vector2> ControlPoints = new List<Vector2>();
-        public List<Vector2> ControlPointsOnCurve = new List<Vector2>();
+        public List<PointF> ControlPoints = new List<PointF>();
+        public List<PointF> ControlPointsOnCurve = new List<PointF>();
 
-        public void BeginGlyph(Vector2 location, SizeF size)
+        public void BeginGlyph(PointF location, SizeF size)
         {
         }
 
@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tests
             this.FiguresCount++;
         }
 
-        public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
+        public void CubicBezierTo(PointF secondControlPoint, PointF thirdControlPoint, PointF point)
         {
             this.ControlPoints.Add(secondControlPoint);
             this.ControlPoints.Add(thirdControlPoint);
@@ -42,19 +42,19 @@ namespace SixLabors.Fonts.Tests
             
         }
 
-        public void LineTo(Vector2 point)
+        public void LineTo(PointF point)
         {
             this.ControlPoints.Add(point);
             this.ControlPointsOnCurve.Add(point);
         }
 
-        public void MoveTo(Vector2 point)
+        public void MoveTo(PointF point)
         {
             this.ControlPoints.Add(point);
             this.ControlPointsOnCurve.Add(point);
         }
 
-        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
+        public void QuadraticBezierTo(PointF secondControlPoint, PointF point)
         {
             this.ControlPoints.Add(secondControlPoint);
             this.ControlPoints.Add(point);
@@ -66,7 +66,7 @@ namespace SixLabors.Fonts.Tests
         {
         }
 
-        public void BeginText(Vector2 location, SizeF size)
+        public void BeginText(PointF location, SizeF size)
         {
         }
     }

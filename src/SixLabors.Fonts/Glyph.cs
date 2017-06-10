@@ -30,7 +30,7 @@ namespace SixLabors.Fonts
         /// <param name="dpi">The dpi.</param>
         public void RenderTo(IGlyphRenderer surface, PointF location, float dpi)
         {
-            this.RenderTo(surface, location, dpi, PointF.Zero);
+            this.RenderTo(surface, location, dpi, PointF.Empty);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRenderer surface, PointF location, float dpiX, float dpiY)
         {
-            this.RenderTo(surface, location, dpiX, dpiY, PointF.Zero);
+            this.RenderTo(surface, location, dpiX, dpiY, PointF.Empty);
         }
 
         /// <summary>

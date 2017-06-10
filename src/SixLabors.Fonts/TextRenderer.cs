@@ -38,7 +38,7 @@ namespace SixLabors.Fonts
         /// <param name="style">The style.</param>
         public void RenderText(string text, FontSpan style)
         {
-            this.RenderText(text, style, PointF.Zero);
+            this.RenderText(text, style, PointF.Empty);
         }
 
         /// <summary>

@@ -103,7 +103,7 @@ namespace SixLabors.Fonts
 
 
             int startOfContor = 0;
-            int endOfContor = -1;                                                                       //AlignToGrid(ref offset);
+            int endOfContor = -1;
             for (int i = 0; i < this.endPoints.Length; i++)
             {
                 surface.BeginFigure();

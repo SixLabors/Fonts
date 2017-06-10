@@ -18,31 +18,31 @@ namespace SixLabors.Fonts
         void BeginFigure();
 
         /// <summary>
-        /// Moves to.
+        /// Sets a new start point to draw lines from
         /// </summary>
         /// <param name="point">The point.</param>
-        void MoveTo(Vector2 point);
+        void MoveTo(PointF point);
 
         /// <summary>
-        /// Quadratics the bezier to.
+        /// Draw a quadratic bezier curve connecting the previous point to <paramref name="point"/>.
         /// </summary>
         /// <param name="secondControlPoint">The second control point.</param>
         /// <param name="point">The point.</param>
-        void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point);
+        void QuadraticBezierTo(PointF secondControlPoint, PointF point);
 
         /// <summary>
-        /// Cubics the bezier to.
+        /// Draw a Cubics bezier curve connecting the previous point to <paramref name="point"/>.
         /// </summary>
         /// <param name="secondControlPoint">The second control point.</param>
         /// <param name="thirdControlPoint">The third control point.</param>
         /// <param name="point">The point.</param>
-        void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point);
+        void CubicBezierTo(PointF secondControlPoint, PointF thirdControlPoint, PointF point);
 
         /// <summary>
-        /// Lines to.
+        /// Draw a straight line connecting the previous point to <paramref name="point"/>.
         /// </summary>
         /// <param name="point">The point.</param>
-        void LineTo(Vector2 point);
+        void LineTo(PointF point);
 
         /// <summary>
         /// Ends the figure.
@@ -59,7 +59,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="location">The location the glyph will be rendered.</param>
         /// <param name="size">The size of the glyphe that will be rendered.</param>
-        void BeginGlyph(Vector2 location, SizeF size);
+        void BeginGlyph(PointF location, SizeF size);
 
 
         /// <summary>
@@ -72,6 +72,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="location">The location of the origion of the glyphs being renderd.</param>
         /// <param name="size">The size of the bounding box around all the glyphs.</param>
-        void BeginText(Vector2 location, SizeF size);
+        void BeginText(PointF location, SizeF size);
     }
 }
