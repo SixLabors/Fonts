@@ -37,7 +37,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="path">The path.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public Font Install(string path)
+        public FontFamily Install(string path)
         {
             using (FileStream fs = File.OpenRead(path))
             {
@@ -51,7 +51,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontStream">The font stream.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public Font Install(Stream fontStream)
+        public FontFamily Install(Stream fontStream)
         {
             FontInstance instance = FontInstance.LoadFont(fontStream);
 
@@ -97,7 +97,7 @@ namespace SixLabors.Fonts
             return FindAll(fontFamily).Select(X => X.Description.Style).ToImmutableArray();
         }
 
-        internal Font Install(IFontInstance instance)
+        internal FontFamily Install(IFontInstance instance)
         {
             if (instance != null && instance.Description != null)
             {
@@ -116,7 +116,7 @@ namespace SixLabors.Fonts
                     this.instances[instance.Description.FontFamily].Add(instance);
                 }
 
-                return new Font(this.families[instance.Description.FontFamily], 12, instance.Description.Style);
+                return this.families[instance.Description.FontFamily];
             }
 
             return null;

@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tests.Issues
         public void ThrowsMeasureingWhitespace()
         {
             // wendy one returns wrong points for 'o'
-            Font font = new FontCollection().Install(TestFonts.WendyOneFile);
+            Font font = new FontCollection().Install(TestFonts.WendyOneFile).CreateFont(12);
 
             GlyphRenderer r = new GlyphRenderer();
 

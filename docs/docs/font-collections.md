@@ -9,7 +9,7 @@ The `FontCollection` is the root object that manages font styles and families.
 
 ### System fonts
 
-We have a pre-configured `FontCollection` at `FontCollection.SystemFonts`. `FontCollection.SystemFonts` is a read only collection with access to all the supported fonts installed in your operating system that the process can find.
+We have a pre-configured `FontCollection` at `SystemFonts.Collection`. `SystemFonts.Collection` is a read only collection with access to all the supported fonts installed in your operating system that the process can find. `SystemFonts` also exposes its standard methods to access the collectio directl fromthe static class.
 
 ### Installing fonts
  

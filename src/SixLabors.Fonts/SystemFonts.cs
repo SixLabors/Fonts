@@ -45,6 +45,23 @@ namespace SixLabors.Fonts
         /// <param name="family">The found family.</param>
         /// <returns>true if a font of that family has been installed into the font collection.</returns>
         public static bool TryFind(string fontFamily, out FontFamily family) => Collection.TryFind(fontFamily, out family);
+     
+        /// <summary>
+        /// Create a new instance of the <see cref="Font"/> for the named font family. 
+        /// </summary>
+        /// <param name="collection">The the ont collection to retrieve the font family from.</param>
+        /// <param name="fontFamily">The family.</param>
+        /// <param name="size">The size.</param>
+        /// <param name="style">The style.</param>
+        public static Font CreateFont(string fontFamily, float size, FontStyle style) => Collection.CreateFont(fontFamily, size, style);
+
+        /// <summary>
+        /// Create a new instance of the <see cref="Font"/> for the named font family with regular styling. 
+        /// </summary>
+        /// <param name="collection">The the ont collection to retrieve the font family from.</param>
+        /// <param name="fontFamily">The family.</param>
+        /// <param name="size">The size.</param>
+        public static Font CreateFont(string fontFamily, float size) => Collection.CreateFont(fontFamily, size);
     }
 #endif
 }

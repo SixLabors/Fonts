@@ -18,7 +18,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="path">The path.</param>
         /// <returns>the description of the font just loaded.</returns>
-        Font Install(string path);
+        FontFamily Install(string path);
 #endif
 
         /// <summary>
@@ -26,6 +26,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontStream">The font stream.</param>
         /// <returns>the description of the font just loaded.</returns>
-        Font Install(Stream fontStream);
+        FontFamily Install(Stream fontStream);
     }
 }

@@ -16,11 +16,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         public static void Main(string[] args)
         {
             FontCollection fonts = new FontCollection();
-            FontFamily font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf").Family;
-            FontFamily fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff").Family;
-            FontFamily font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf").Family;
-            FontFamily carter = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf").Family;
-            FontFamily Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf").Family;
+            FontFamily font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
+            FontFamily fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
+            FontFamily font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
+            FontFamily carter = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf");
+            FontFamily Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf");
 
             RenderText(font, "abc", 72);
             RenderText(font, "ABd", 72);

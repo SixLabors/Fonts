@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void Issue21_LoopDetectedLoadingGlyphs()
         {
-            Font font = new FontCollection().Install(TestFonts.CarterOneFileData());
+            Font font = new FontCollection().Install(TestFonts.CarterOneFileData()).CreateFont(12);
 
             GlyphInstance g = font.FontInstance.GetGlyph('\0');
         }

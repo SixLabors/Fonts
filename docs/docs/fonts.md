@@ -5,7 +5,7 @@ title: Font Instance
 
 ## Working with a Font
 
-`Font`s are immutable all properties on a font object must be changed by insnciating a new `Font` class with the correct constructor overload
+`Font`s are immutable all properties on a font object must be changed by instanciating a new `Font` class with the correct constructor overload
 
 ```c#
 var newFont = new Font(oldFont, 50, FontStyle.Bold);

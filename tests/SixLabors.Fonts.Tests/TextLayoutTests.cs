@@ -146,7 +146,7 @@ namespace SixLabors.Fonts.Tests
         public void MeasureTextWithKerning(string text, float height, float width, bool enableKerning)
         {
             FontCollection c = new FontCollection();
-            Font font = c.Install(TestFonts.SimpleFontFileData());
+            Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
             SizeF size = new TextMeasurer().MeasureText(text, new FontSpan(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning });
@@ -160,7 +160,7 @@ namespace SixLabors.Fonts.Tests
         public void LayoutWithLocation(string text, float x, float y, float expectedX, float expectedY)
         {
             FontCollection c = new FontCollection();
-            Font font = c.Install(TestFonts.SimpleFontFileData());
+            Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
             var glyphRenderer = new GlyphRenderer();
@@ -173,7 +173,7 @@ namespace SixLabors.Fonts.Tests
         public static Font CreateFont(string text)
         {
             FontCollection fc = new FontCollection();
-            Font d = fc.Install(new FakeFontInstance(text));
+            Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
             return new Font(d, 1);
         }
     }
