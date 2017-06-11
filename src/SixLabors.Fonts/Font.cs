@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class Font
     {
-        private readonly FontVariant requestedStyle;
+        private readonly FontStyle requestedStyle;
         private readonly Lazy<IFontInstance> instance;
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace SixLabors.Fonts
         /// <param name="family">The family.</param>
         /// <param name="size">The size.</param>
         /// <param name="style">The style.</param>
-        public Font(FontFamily family, float size, FontVariant style)
+        public Font(FontFamily family, float size, FontStyle style)
         {
             this.Family = family ?? throw new ArgumentNullException(nameof(family));
             this.requestedStyle = style;
@@ -35,7 +35,7 @@ namespace SixLabors.Fonts
         /// <param name="family">The family.</param>
         /// <param name="size">The size.</param>
         public Font(FontFamily family, float size)
-            : this(family, size, FontVariant.Regular)
+            : this(family, size, FontStyle.Regular)
         {
         }
 
@@ -44,7 +44,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="prototype">The prototype.</param>
         /// <param name="style">The style.</param>
-        public Font(Font prototype, FontVariant style)
+        public Font(Font prototype, FontStyle style)
             : this(prototype?.Family ?? throw new ArgumentNullException(nameof(prototype)), prototype.Size, style)
         {
         }
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts
         /// <param name="prototype">The prototype.</param>
         /// <param name="size">The size.</param>
         /// <param name="style">The style.</param>
-        public Font(Font prototype, float size, FontVariant style)
+        public Font(Font prototype, float size, FontStyle style)
             : this(prototype?.Family ?? throw new ArgumentNullException(nameof(prototype)), size, style)
         {
         }
@@ -99,7 +99,7 @@ namespace SixLabors.Fonts
         /// <value>
         ///   <c>true</c> if bold; otherwise, <c>false</c>.
         /// </value>
-        public bool Bold => (this.instance.Value.Description.Style & FontVariant.Bold) == FontVariant.Bold;
+        public bool Bold => (this.instance.Value.Description.Style & FontStyle.Bold) == FontStyle.Bold;
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="Font"/> is italic.
@@ -107,7 +107,7 @@ namespace SixLabors.Fonts
         /// <value>
         ///   <c>true</c> if italic; otherwise, <c>false</c>.
         /// </value>
-        public bool Italic => (this.instance.Value.Description.Style & FontVariant.Italic) == FontVariant.Italic;
+        public bool Italic => (this.instance.Value.Description.Style & FontStyle.Italic) == FontStyle.Italic;
 
         /// <summary>
         /// Gets the size of the em.
@@ -139,16 +139,16 @@ namespace SixLabors.Fonts
         {
             IFontInstance instance = this.Family.Find(this.requestedStyle);
 
-            if (instance == null && this.requestedStyle.HasFlag(FontVariant.Italic))
+            if (instance == null && this.requestedStyle.HasFlag(FontStyle.Italic))
             {
                 // can find style requested and they want one thats atleast partial itallic try the regual italic
-                instance = this.Family.Find(FontVariant.Italic);
+                instance = this.Family.Find(FontStyle.Italic);
             }
 
-            if (instance == null && this.requestedStyle.HasFlag(FontVariant.Bold))
+            if (instance == null && this.requestedStyle.HasFlag(FontStyle.Bold))
             {
                 // can find style requested and they want one thats atleast partial bold try the regular bold
-                instance = this.Family.Find(FontVariant.Bold);
+                instance = this.Family.Find(FontStyle.Bold);
             }
 
             if (instance == null)

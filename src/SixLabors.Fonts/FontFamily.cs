@@ -36,25 +36,25 @@ namespace SixLabors.Fonts
         public string Name { get; }
 
         /// <summary>
-        /// Gets the availible <see cref="FontVariant"/> that are currently availible.
+        /// Gets the availible <see cref="FontStyle"/> that are currently availible.
         /// </summary>
         /// <value>
         /// The availible styles.
         /// </value>
-        public IEnumerable<FontVariant> AvailibleStyles => this.collection.AvailibleStyles(this.Name);
+        public IEnumerable<FontStyle> AvailibleStyles => this.collection.AvailibleStyles(this.Name);
 
         /// <summary>
-        /// Determines whether the specified <see cref="FontVariant"/> is availible.
+        /// Determines whether the specified <see cref="FontStyle"/> is availible.
         /// </summary>
         /// <param name="style">The style.</param>
         /// <returns>
-        ///   <c>true</c> if the specified <see cref="FontVariant"/> is availible; otherwise, <c>false</c>.
+        ///   <c>true</c> if the specified <see cref="FontStyle"/> is availible; otherwise, <c>false</c>.
         /// </returns>
-        public bool IsStyleAvailible(FontVariant style) => this.AvailibleStyles.Contains(style);
+        public bool IsStyleAvailible(FontStyle style) => this.AvailibleStyles.Contains(style);
 
-        internal FontVariant DefaultStyle => IsStyleAvailible(FontVariant.Regular) ? FontVariant.Regular : this.AvailibleStyles.First();
+        internal FontStyle DefaultStyle => IsStyleAvailible(FontStyle.Regular) ? FontStyle.Regular : this.AvailibleStyles.First();
 
-        internal IFontInstance Find(FontVariant style)
+        internal IFontInstance Find(FontStyle style)
         {
             return this.collection.Find(this.Name, style);
         }

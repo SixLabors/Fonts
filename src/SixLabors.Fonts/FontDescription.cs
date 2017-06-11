@@ -9,7 +9,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public class FontDescription
     {
-        internal FontDescription(string fontName, string fontFamily, string fontSubFamilyName, FontVariant style)
+        internal FontDescription(string fontName, string fontFamily, string fontSubFamilyName, FontStyle style)
         {
             this.FontName = fontName;
             this.FontFamily = fontFamily;
@@ -34,7 +34,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The style.
         /// </value>
-        public FontVariant Style { get; }
+        public FontStyle Style { get; }
 
         /// <summary>
         /// Gets the name of the font.
@@ -95,31 +95,31 @@ namespace SixLabors.Fonts
             return new FontDescription(nameTable, os2, head);
         }
 
-        private static FontVariant ConvertStyle(OS2Table os2, HeadTable head)
+        private static FontStyle ConvertStyle(OS2Table os2, HeadTable head)
         {
-            FontVariant style = FontVariant.Regular;
+            FontStyle style = FontStyle.Regular;
             if (os2 != null)
             {
                 if (os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.BOLD))
                 {
-                    style |= FontVariant.Bold;
+                    style |= FontStyle.Bold;
                 }
 
                 if (os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.ITALIC))
                 {
-                    style |= FontVariant.Italic;
+                    style |= FontStyle.Italic;
                 }
             }
             else if (head != null)
             {
                 if (head.MacStyle.HasFlag(HeadTable.HeadMacStyle.Bold))
                 {
-                    style |= FontVariant.Bold;
+                    style |= FontStyle.Bold;
                 }
 
                 if (head.MacStyle.HasFlag(HeadTable.HeadMacStyle.Italic))
                 {
-                    style |= FontVariant.Italic;
+                    style |= FontStyle.Italic;
                 }
             }
             return style;

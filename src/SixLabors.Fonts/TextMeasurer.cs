@@ -11,63 +11,8 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Encapulated logic for laying out and measuring text.
     /// </summary>
-    public class TextMeasurer
+    public static class TextMeasurer
     {
-        internal static TextMeasurer Default { get; set; } = new TextMeasurer();
-
-        private TextLayout layoutEngine;
-
-        internal TextMeasurer(TextLayout layoutEngine)
-        {
-            this.layoutEngine = layoutEngine;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TextMeasurer"/> class.
-        /// </summary>
-        public TextMeasurer()
-            : this(TextLayout.Default)
-        {
-        }
-
-        /// <summary>
-        /// Measures the text.
-        /// </summary>
-        /// <param name="text">The text.</param>
-        /// <param name="font">The font.</param>
-        /// <param name="dpi">The dpi.</param>
-        /// <returns>The size of the text if it was to be rendered.</returns>
-        public SizeF MeasureText(string text, Font font, float dpi)
-        {
-            return this.MeasureText(text, new RendererOptions(font, dpi));
-        }
-
-        /// <summary>
-        /// Measures the text.
-        /// </summary>
-        /// <param name="text">The text.</param>
-        /// <param name="font">The font.</param>
-        /// <param name="dpiX">The x dpi.</param>
-        /// <param name="dpiY">The y dpi.</param>
-        /// <returns>The size of the text if it was to be rendered.</returns>
-        public SizeF MeasureText(string text, Font font, float dpiX, float dpiY)
-        {
-            return this.MeasureText(text, new RendererOptions(font, dpiX, dpiY));
-        }
-
-        /// <summary>
-        /// Measures the text.
-        /// </summary>
-        /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
-        /// <returns>The size of the text if it was to be rendered.</returns>
-        public SizeF MeasureText(string text, RendererOptions options)
-        {
-            ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
-
-            return GetSize(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
-        }
-
         /// <summary>
         /// Measures the text.
         /// </summary>
@@ -76,7 +21,7 @@ namespace SixLabors.Fonts
         /// <param name="dpi">The dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public static SizeF Measure(string text, Font font, float dpi)
-            => Default.MeasureText(text, font, dpi);
+            => TextMeasurerInt.Default.Measure(text, font, dpi);
 
         /// <summary>
         /// Measures the text.
@@ -87,7 +32,7 @@ namespace SixLabors.Fonts
         /// <param name="dpiY">The Y dpi.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public static SizeF Measure(string text, Font font, float dpiX, float dpiY)
-            => Default.MeasureText(text, font, dpiX, dpiY);
+            => TextMeasurerInt.Default.Measure(text, font, dpiX, dpiY);
 
         /// <summary>
         /// Measures the text.
@@ -96,7 +41,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public static SizeF Measure(string text, RendererOptions options)
-            => Default.MeasureText(text, options);
+            => TextMeasurerInt.Default.Measure(text, options);
 
         internal static SizeF GetSize(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
         {
@@ -122,6 +67,64 @@ namespace SixLabors.Fonts
 
             var size = bottomRight - topLeft;
             return new RectangleF(topLeft.X, topLeft.Y, size.X, size.Y);
+        }
+
+        internal class TextMeasurerInt
+        {
+            internal static TextMeasurerInt Default { get; set; } = new TextMeasurerInt();
+
+            private TextLayout layoutEngine;
+
+            internal TextMeasurerInt(TextLayout layoutEngine)
+            {
+                this.layoutEngine = layoutEngine;
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="TextMeasurer"/> class.
+            /// </summary>
+            internal TextMeasurerInt()
+            : this(TextLayout.Default)
+            {
+            }
+
+            /// <summary>
+            /// Measures the text.
+            /// </summary>
+            /// <param name="text">The text.</param>
+            /// <param name="font">The font.</param>
+            /// <param name="dpi">The dpi.</param>
+            /// <returns>The size of the text if it was to be rendered.</returns>
+            internal SizeF Measure(string text, Font font, float dpi)
+            {
+                return this.Measure(text, new RendererOptions(font, dpi));
+            }
+
+            /// <summary>
+            /// Measures the text.
+            /// </summary>
+            /// <param name="text">The text.</param>
+            /// <param name="font">The font.</param>
+            /// <param name="dpiX">The x dpi.</param>
+            /// <param name="dpiY">The y dpi.</param>
+            /// <returns>The size of the text if it was to be rendered.</returns>
+            internal SizeF Measure(string text, Font font, float dpiX, float dpiY)
+            {
+                return this.Measure(text, new RendererOptions(font, dpiX, dpiY));
+            }
+
+            /// <summary>
+            /// Measures the text.
+            /// </summary>
+            /// <param name="text">The text.</param>
+            /// <param name="options">The style.</param>
+            /// <returns>The size of the text if it was to be rendered.</returns>
+            internal SizeF Measure(string text, RendererOptions options)
+            {
+                ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
+
+                return GetSize(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
+            }
         }
     }
 }

@@ -20,9 +20,9 @@ namespace SixLabors.Fonts.Tests
         public void MeasuringAccentedCharacterDoesNotThrow(char c)
         {
             FontFamily arial = SystemFonts.Find("Arial");
-            Font font = new Font(arial, 1f, FontVariant.Regular);
+            Font font = new Font(arial, 1f, FontStyle.Regular);
 
-            SizeF size = new TextMeasurer().MeasureText(c.ToString(), font, 72);
+            SizeF size = TextMeasurer.Measure(c.ToString(), font, 72);
         }
 
         [Theory]
@@ -37,9 +37,9 @@ namespace SixLabors.Fonts.Tests
         public void MeasuringWordWithAccentedCharacterDoesNotThrow(char c)
         {
             FontFamily arial = SystemFonts.Find("Arial");
-            Font font = new Font(arial, 1f, FontVariant.Regular);
+            Font font = new Font(arial, 1f, FontStyle.Regular);
 
-            SizeF size = new TextMeasurer().MeasureText($"abc{c}def", font, 72);
+            SizeF size = TextMeasurer.Measure($"abc{c}def", font, 72);
         }
     }
 }

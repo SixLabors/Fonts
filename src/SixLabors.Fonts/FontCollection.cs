@@ -92,7 +92,7 @@ namespace SixLabors.Fonts
             return false;
         }
 
-        internal IEnumerable<FontVariant> AvailibleStyles(string fontFamily)
+        internal IEnumerable<FontStyle> AvailibleStyles(string fontFamily)
         {
             return FindAll(fontFamily).Select(X => X.Description.Style).ToImmutableArray();
         }
@@ -122,7 +122,7 @@ namespace SixLabors.Fonts
             return null;
         }
 
-        internal IFontInstance Find(string fontFamily, FontVariant style)
+        internal IFontInstance Find(string fontFamily, FontStyle style)
         {
             if (!this.instances.ContainsKey(fontFamily))
             {

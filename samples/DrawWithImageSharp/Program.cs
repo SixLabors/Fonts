@@ -46,8 +46,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
 
-            RenderText(new Font(SystemFonts.Find("Arial"), 20f, FontVariant.Regular), "á é í ó ú ç ã õ", 200, 50);
-            RenderText(new Font(SystemFonts.Find("Arial"), 10f, FontVariant.Regular), "PGEP0JK867", 200, 50);
+            RenderText(new Font(SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
+            RenderText(new Font(SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
 
             TextAlignment.Generate(new Font(font2, 50));
 

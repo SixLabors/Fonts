@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="renderer">The target renderer surface.</param>
         /// <param name="text">The text.</param>
-        /// <param name="style">The style.</param>
+        /// <param name="options">The options.</param>
         /// <returns>Returns the orginonal <paramref name="renderer"/></returns>
         public static IGlyphRenderer Render(this IGlyphRenderer renderer, string text, RendererOptions options)
         {

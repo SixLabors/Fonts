@@ -150,14 +150,14 @@ namespace SixLabors.Fonts.Tables.General
                 indexToLocFormat);
         }
 
-        public enum IndexLocationFormats : short
+        internal enum IndexLocationFormats : short
         {
             Offset16 = 0,
             Offset32 = 1,
         }
 
         [Flags]
-        public enum HeadFlags : ushort
+        internal enum HeadFlags : ushort
         {
             // Bit 0: Baseline for font at y = 0;
             // Bit 1: Left sidebearing point at x = 0(relevant only for TrueType rasterizers) — see the note below regarding variable fonts;
@@ -187,7 +187,7 @@ namespace SixLabors.Fonts.Tables.General
         }
 
         [Flags]
-        public enum HeadMacStyle : ushort
+        internal enum HeadMacStyle : ushort
         {
             // Bit 0: Bold (if set to 1);
             // Bit 1: Italic(if set to 1)
