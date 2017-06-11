@@ -8,7 +8,6 @@ using SixLabors.Primitives;
 
 namespace SixLabors.Shapes.Temp
 {
-
     /// <summary>
     /// rendering surface that Fonts can use to generate Shapes by following a path
     /// </summary>
@@ -16,7 +15,7 @@ namespace SixLabors.Shapes.Temp
     {
         private readonly IPath path;
 
-        private float yOffset = 0;
+        private float offsetY = 0;
 
         const float Pi = (float)Math.PI;
         const float HalfPi = Pi / 2f;
@@ -33,14 +32,14 @@ namespace SixLabors.Shapes.Temp
 
         protected override void BeginText(RectangleF rect)
         {
-            this.yOffset = rect.Height;
+            this.offsetY = rect.Height;
         }
 
         protected override void BeginGlyph(RectangleF rect)
         {
             var point = this.path.PointAlongPath(rect.X);
 
-            var targetPoint = (Vector2)point.Point + new Vector2(0, (rect.Y - this.yOffset));
+            var targetPoint = point.Point + new Vector2(0, rect.Y - this.offsetY);
 
             // due to how matrix combining works you have to combine thins in the revers order of operation
             // this one rotates the glype then moves it.

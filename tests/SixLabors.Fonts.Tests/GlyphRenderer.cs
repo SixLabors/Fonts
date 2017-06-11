@@ -12,10 +12,10 @@ namespace SixLabors.Fonts.Tests
     public class GlyphRenderer : IGlyphRenderer
     {
         public int FiguresCount = 0;
-        public List<PointF> ControlPoints = new List<PointF>();
-        public List<PointF> ControlPointsOnCurve = new List<PointF>();
+        public List<PointF> ControlPoints { get; } = new List<PointF>();
+        public List<PointF> ControlPointsOnCurve { get; } = new List<PointF>();
 
-        public List<RectangleF> GlyphRects = new List<RectangleF>();
+        public List<RectangleF> GlyphRects { get; } = new List<RectangleF>();
         public void BeginGlyph(RectangleF rect)
         {
             this.GlyphRects.Add(rect);
@@ -63,11 +63,9 @@ namespace SixLabors.Fonts.Tests
             this.ControlPointsOnCurve.Add(point);
         }
 
-
         public void EndText()
         {
         }
-
         
         public void BeginText(RectangleF rect)
         {

@@ -41,7 +41,7 @@ namespace SixLabors.Fonts
         /// <param name="dpiX">The X dpi.</param>
         /// <param name="dpiY">The Y dpi.</param>
         public RendererOptions(Font font, float dpiX, float dpiY)
-            :this(font, dpiX, dpiY, PointF.Empty)
+            : this(font, dpiX, dpiY, PointF.Empty)
         {
         }
 
@@ -136,7 +136,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Get or sets the rendering origin.
         /// </summary>
-        public PointF Origin { get;  set; }
+        public PointF Origin { get; set; }
 
         /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream

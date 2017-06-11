@@ -2,6 +2,7 @@
 using ImageSharp.Drawing;
 using SixLabors.Fonts;
 using SixLabors.Fonts.DrawWithImageSharp;
+using SixLabors.Shapes.Temp;
 using System;
 using System.Collections.Generic;
 using System.Numerics;

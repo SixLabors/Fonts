@@ -28,7 +28,7 @@ namespace SixLabors.Fonts
             Vector2 origin = (Vector2)options.Origin / dpi;
 
             float maxWidth = float.MaxValue;
-            float xOrigin = 0;
+            float originX = 0;
             if (options.WrappingWidth > 0)
             {
                 maxWidth = options.WrappingWidth / options.DpiX;
@@ -36,14 +36,14 @@ namespace SixLabors.Fonts
                 switch (options.HorizontalAlignment)
                 {
                     case HorizontalAlignment.Right:
-                        xOrigin = maxWidth;
+                        originX = maxWidth;
                         break;
                     case HorizontalAlignment.Center:
-                        xOrigin = maxWidth / 2f;
+                        originX = maxWidth / 2f;
                         break;
                     case HorizontalAlignment.Left:
                     default:
-                        xOrigin = 0;
+                        originX = 0;
                         break;
                 }
             }
@@ -74,7 +74,6 @@ namespace SixLabors.Fonts
                     // get the larget lineheight thus far
                     scale = spanStyle.Font.EmSize * 72;
                     lineHeight = (spanStyle.Font.LineHeight * spanStyle.PointSize) / scale;
-
                 }
 
                 if (firstLine && lineHeight > lineHeightOfFirstLine)
@@ -83,7 +82,6 @@ namespace SixLabors.Fonts
                 }
 
                 char c = text[i];
-
 
                 if (char.IsWhiteSpace(c))
                 {
@@ -126,10 +124,11 @@ namespace SixLabors.Fonts
                             if (tabStop > 0)
                             {
                                 finalWidth = tabStop - ((location.X + glyphWidth) % tabStop);
-
                             }
+
                             layout.Add(new GlyphLayout(c, null, location, finalWidth, glyphHeight, lineHeight, startOfLine));
                             startOfLine = false;
+
                             // advance to a position > width away that
                             location.X += finalWidth;
                             previousGlyph = null;
@@ -197,7 +196,6 @@ namespace SixLabors.Fonts
                         break;
                 }
             }
-            //totalHeight += lineHeightOfFirstLine;
 
             Vector2 offset = new Vector2(0, lineHeightOfFirstLine);
 
@@ -229,19 +227,19 @@ namespace SixLabors.Fonts
                         {
                             break;
                         }
-                        width = layout[j].Location.X + layout[j].Width;// rhs
+                        width = layout[j].Location.X + layout[j].Width; // rhs
                     }
                     switch (options.HorizontalAlignment)
                     {
                         case HorizontalAlignment.Right:
-                            lineOffset = new Vector2(xOrigin - width, 0) + offset;
+                            lineOffset = new Vector2(originX - width, 0) + offset;
                             break;
                         case HorizontalAlignment.Center:
-                            lineOffset = new Vector2(xOrigin - (width / 2f), 0) + offset;
+                            lineOffset = new Vector2(originX - (width / 2f), 0) + offset;
                             break;
                         case HorizontalAlignment.Left:
                         default:
-                            lineOffset = new Vector2(xOrigin, 0) + offset;
+                            lineOffset = new Vector2(originX, 0) + offset;
                             break;
                     }
                 }

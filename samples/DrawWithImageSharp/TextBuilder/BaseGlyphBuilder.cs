@@ -8,7 +8,6 @@ using SixLabors.Primitives;
 
 namespace SixLabors.Shapes.Temp
 {
-
     /// <summary>
     /// rendering surface that Fonts can use to generate Shapes.
     /// </summary>
@@ -26,7 +25,6 @@ namespace SixLabors.Shapes.Temp
             // glyphs are renderd realative to bottom left so invert the Y axis to allow it to render on top left origin surface
             this.builder = new PathBuilder();
         }
-
 
         /// <summary>
         /// Gets the paths that have been rendered by this.

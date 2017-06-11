@@ -6,6 +6,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 {
     using global::DrawWithImageSharp;
     using Shapes;
+    using SixLabors.Shapes.Temp;
     using System.Collections.Generic;
     using System.Linq;
     using System.Numerics;

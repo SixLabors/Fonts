@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests
     public class GlyphTests
     {
         GlyphRenderer renderer = new GlyphRenderer();
-        Glyph glyph = new Glyph(new GlyphInstance(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1),0, 0, 1, 0), 10);
+        Glyph glyph = new Glyph(new GlyphInstance(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1), 0, 0, 1, 0), 10);
         [Fact]
         public void RenderToPointAndSingleDPI()
         {

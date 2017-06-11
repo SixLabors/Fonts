@@ -7,7 +7,6 @@ using SixLabors.Shapes;
 
 namespace SixLabors.Shapes.Temp
 {
-
     /// <summary>
     /// rendering surface that Fonts can use to generate Shapes.
     /// </summary>

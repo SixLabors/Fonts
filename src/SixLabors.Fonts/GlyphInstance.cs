@@ -87,7 +87,6 @@ namespace SixLabors.Fonts
 
             surface.BeginGlyph(new RectangleF(location.X, location.Y - (lineHeight * dpi.Y), sizeVector.X, sizeVector.Y));
 
-
             int startOfContor = 0;
             int endOfContor = -1;
             for (int i = 0; i < this.endPoints.Length; i++)
@@ -95,7 +94,6 @@ namespace SixLabors.Fonts
                 surface.BeginFigure();
                 startOfContor = endOfContor + 1;
                 endOfContor = this.endPoints[i];
-
 
                 Vector2 prev = Vector2.Zero;
                 Vector2 curr = GetPoint(pointSize, dpi, scaleFactor, scale, endOfContor) + location;
@@ -125,8 +123,8 @@ namespace SixLabors.Fonts
                     prev = curr;
                     curr = next;
                     int currentIndex = startOfContor + p;
-                    int nextIndex = startOfContor + (p + 1) % length;
-                    int prevIndex = startOfContor + ((length + p) - 1) % length;
+                    int nextIndex = startOfContor + ((p + 1) % length);
+                    int prevIndex = startOfContor + (((length + p) - 1) % length);
                     next = GetPoint(pointSize, dpi, scaleFactor, scale, nextIndex) + location;
 
                     if (this.onCurves[currentIndex])
@@ -164,7 +162,7 @@ namespace SixLabors.Fonts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector2 GetPoint(float pointSize, Vector2 dpi, float scaleFactor, Vector2 scale, int pointIndex)
         {
-            Vector2 point = (scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
+            Vector2 point = scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor); // scale each point as we go, w will now have the correct relative point size
 
             return point;
         }
