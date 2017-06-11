@@ -12,7 +12,6 @@ namespace SixLabors.Shapes.Temp
     /// </summary>
     internal class GlyphBuilder : BaseGlyphBuilder
     {
-
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphBuilder"/> class.
         /// </summary>

@@ -73,7 +73,6 @@ namespace SixLabors.Fonts
             throw new FontFamilyNotFountException(fontFamily);
         }
 
-
         /// <summary>
         /// Finds the specified font family.
         /// </summary>
