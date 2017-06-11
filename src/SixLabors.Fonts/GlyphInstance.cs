@@ -98,8 +98,8 @@ namespace SixLabors.Fonts
 
 
                 Vector2 prev = Vector2.Zero;
-                Vector2 curr = GetPoint(pointSize, dpi, scaleFactor, scale, endOfContor);
-                Vector2 next = GetPoint(pointSize, dpi, scaleFactor, scale, startOfContor);
+                Vector2 curr = GetPoint(pointSize, dpi, scaleFactor, scale, endOfContor) + location;
+                Vector2 next = GetPoint(pointSize, dpi, scaleFactor, scale, startOfContor) + location;
 
                 if (this.onCurves[endOfContor])
                 {
@@ -127,7 +127,7 @@ namespace SixLabors.Fonts
                     int currentIndex = startOfContor + p;
                     int nextIndex = startOfContor + (p + 1) % length;
                     int prevIndex = startOfContor + ((length + p) - 1) % length;
-                    next = GetPoint(pointSize, dpi, scaleFactor, scale, nextIndex);
+                    next = GetPoint(pointSize, dpi, scaleFactor, scale, nextIndex) + location;
 
                     if (this.onCurves[currentIndex])
                     {
