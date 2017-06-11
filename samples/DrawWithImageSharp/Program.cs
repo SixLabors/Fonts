@@ -37,17 +37,17 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(carter, "Hello\0World", 72);
             RenderText(Wendy_One, "Hello\0World", 72);
 
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
 
-            RenderText(new Font(SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
-            RenderText(new Font(SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
+            RenderText(new Font(SystemFonts.Find("Arial"), 20f, FontVariant.Regular), "á é í ó ú ç ã õ", 200, 50);
+            RenderText(new Font(SystemFonts.Find("Arial"), 10f, FontVariant.Regular), "PGEP0JK867", 200, 50);
 
             TextAlignment.Generate(new Font(font2, 50));
 
@@ -82,7 +82,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 img.Fill(Rgba32.White);
 
-                var shapes = SixLabors.Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Primitives.PointF(50f, 4f), new FontSpan(font, 72));
+                var shapes = SixLabors.Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Primitives.PointF(50f, 4f), new RendererOptions(font, 72));
                 img.Fill(Rgba32.Black, shapes);
 
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
@@ -93,7 +93,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 }
             }
         }
-        public static void RenderText(FontSpan font, string text)
+        public static void RenderText(RendererOptions font, string text)
         {
             GlyphBuilder builder = new GlyphBuilder();
             TextRenderer renderer = new TextRenderer(builder);
@@ -105,7 +105,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         }
         public static void RenderText(FontFamily font, string text, float pointSize = 12)
         {
-            RenderText(new FontSpan(new Font(font, pointSize), 96) { ApplyKerning = true, WrappingWidth = 340 }, text);
+            RenderText(new RendererOptions(new Font(font, pointSize), 96) { ApplyKerning = true, WrappingWidth = 340 }, text);
         }
 
         public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)

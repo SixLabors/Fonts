@@ -9,7 +9,7 @@ namespace SixLabors.Fonts
     /// The font styles
     /// </summary>
     [Flags]
-    public enum FontStyle
+    public enum FontVariant
     {
         /// <summary>
         /// Regular

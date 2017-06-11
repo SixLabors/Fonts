@@ -18,7 +18,7 @@ namespace SixLabors.Fonts
         /// <param name="fontFamily">The family.</param>
         /// <param name="size">The size.</param>
         /// <param name="style">The style.</param>
-        public static Font CreateFont(this FontFamily fontFamily, float size, FontStyle style)
+        public static Font CreateFont(this FontFamily fontFamily, float size, FontVariant style)
         {
             return new Font(fontFamily, size, style);
         }

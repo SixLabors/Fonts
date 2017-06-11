@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             var text = "Hello\tworld";
             var font  = CreateFont(text);
-            SizeF size = TextMeasurer.Measure(text, new FontSpan(font, (72 * font.EmSize))
+            SizeF size = TextMeasurer.Measure(text, new RendererOptions(font, (72 * font.EmSize))
             {
                 TabWidth = 0
             });

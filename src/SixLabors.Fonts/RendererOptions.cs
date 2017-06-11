@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SixLabors.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -10,37 +11,71 @@ namespace SixLabors.Fonts
     /// <summary>
     /// The font style to render onto a peice of text.
     /// </summary>
-    public class FontSpan
+    public sealed class RendererOptions
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontSpan"/> class.
+        /// Initializes a new instance of the <see cref="RendererOptions"/> class.
         /// </summary>
         /// <param name="font">The font.</param>
-        public FontSpan(Font font)
+        public RendererOptions(Font font)
             : this(font, 72, 72)
         {
             this.Font = font;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontSpan"/> class.
+        /// Initializes a new instance of the <see cref="RendererOptions"/> class.
         /// </summary>
         /// <param name="font">The font.</param>
         /// <param name="dpi">The dpi.</param>
-        public FontSpan(Font font, float dpi)
+        public RendererOptions(Font font, float dpi)
             : this(font, dpi, dpi)
         {
             this.Font = font;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontSpan"/> class.
+        /// Initializes a new instance of the <see cref="RendererOptions"/> class.
         /// </summary>
         /// <param name="font">The font.</param>
         /// <param name="dpiX">The X dpi.</param>
         /// <param name="dpiY">The Y dpi.</param>
-        public FontSpan(Font font, float dpiX, float dpiY)
+        public RendererOptions(Font font, float dpiX, float dpiY)
+            :this(font, dpiX, dpiY, PointF.Empty)
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RendererOptions"/> class.
+        /// </summary>
+        /// <param name="font">The font.</param>
+        /// <param name="origin">The origin location.</param>
+        public RendererOptions(Font font, PointF origin)
+            : this(font, 72, 72, origin)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RendererOptions"/> class.
+        /// </summary>
+        /// <param name="font">The font.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <param name="origin">The origin location.</param>
+        public RendererOptions(Font font, float dpi, PointF origin)
+            : this(font, dpi, dpi, origin)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RendererOptions"/> class.
+        /// </summary>
+        /// <param name="font">The font.</param>
+        /// <param name="dpiX">The X dpi.</param>
+        /// <param name="dpiY">The Y dpi.</param>
+        /// <param name="origin">The origin location.</param>
+        public RendererOptions(Font font, float dpiX, float dpiY, PointF origin)
+        {
+            this.Origin = origin;
             this.Font = font;
             this.DpiX = dpiX;
             this.DpiY = dpiY;
@@ -99,6 +134,11 @@ namespace SixLabors.Fonts
         public VerticalAlignment VerticalAlignment { get; set; }
 
         /// <summary>
+        /// Get or sets the rendering origin.
+        /// </summary>
+        public PointF Origin { get;  set; }
+
+        /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream
         /// </summary>
         /// <param name="index">The index.</param>
@@ -106,7 +146,7 @@ namespace SixLabors.Fonts
         /// <returns>
         /// The Font style that applies to a region of text.
         /// </returns>
-        internal virtual AppliedFontStyle GetStyle(int index, int length)
+        internal AppliedFontStyle GetStyle(int index, int length)
         {
             return new AppliedFontStyle
             {

@@ -53,7 +53,7 @@ namespace SixLabors.Fonts
         /// <param name="fontFamily">The family.</param>
         /// <param name="size">The size.</param>
         /// <param name="style">The style.</param>
-        public static Font CreateFont(string fontFamily, float size, FontStyle style) => Collection.CreateFont(fontFamily, size, style);
+        public static Font CreateFont(string fontFamily, float size, FontVariant style) => Collection.CreateFont(fontFamily, size, style);
 
         /// <summary>
         /// Create a new instance of the <see cref="Font"/> for the named font family with regular styling. 

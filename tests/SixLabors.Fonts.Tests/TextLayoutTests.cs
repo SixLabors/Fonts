@@ -81,7 +81,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            FontSpan span = new FontSpan(font, scaleFactor)
+            RendererOptions span = new RendererOptions(font, scaleFactor)
             {
                 HorizontalAlignment = horizental,
                 VerticalAlignment = vertical
@@ -110,7 +110,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            SizeF size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
+            SizeF size = new TextMeasurer().MeasureText(text, new RendererOptions(font, 72 * font.EmSize)
             {
 
             });
@@ -129,7 +129,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            SizeF size = new TextMeasurer().MeasureText(text, new FontSpan(font, 72 * font.EmSize)
+            SizeF size = new TextMeasurer().MeasureText(text, new RendererOptions(font, 72 * font.EmSize)
             {
                 WrappingWidth = 350
             });
@@ -149,7 +149,7 @@ namespace SixLabors.Fonts.Tests
             Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            SizeF size = new TextMeasurer().MeasureText(text, new FontSpan(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning });
+            SizeF size = new TextMeasurer().MeasureText(text, new RendererOptions(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning });
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
@@ -165,7 +165,7 @@ namespace SixLabors.Fonts.Tests
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
             var glyphRenderer = new GlyphRenderer();
             var renderer = new TextRenderer(glyphRenderer);
-            renderer.RenderText(text, new FontSpan(new Font(font, 1), 72 * font.EmSize), new PointF(x, y));
+            renderer.RenderText(text, new RendererOptions(new Font(font, 1), 72 * font.EmSize, new PointF(x, y)));
 
             Assert.Equal(new PointF(expectedX, expectedY), glyphRenderer.GlyphRects[0].Location);
         }

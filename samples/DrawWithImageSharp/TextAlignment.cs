@@ -67,7 +67,7 @@ namespace DrawWithImageSharp
 
             TextRenderer renderer = new TextRenderer(glyphBuilder);
             
-            FontSpan style = new FontSpan(font, 72)
+            RendererOptions style = new RendererOptions(font, 72)
             {
                 ApplyKerning = true,
                 TabWidth = 4,

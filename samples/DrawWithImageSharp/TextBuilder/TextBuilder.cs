@@ -20,7 +20,7 @@ namespace SixLabors.Shapes.Temp
         /// <param name="location">The location</param>
         /// <param name="style">The style and settings to use while rendering the glyphs</param>
         /// <returns></returns>
-        public static IPathCollection GenerateGlyphs(string text, PointF location, FontSpan style)
+        public static IPathCollection GenerateGlyphs(string text, PointF location, RendererOptions style)
         {
             var glyphBuilder = new GlyphBuilder(location);
 
@@ -37,7 +37,7 @@ namespace SixLabors.Shapes.Temp
         /// <param name="text">The text to generate glyphs for</param>
         /// <param name="style">The style and settings to use while rendering the glyphs</param>
         /// <returns></returns>
-        public static IPathCollection GenerateGlyphs(string text, FontSpan style)
+        public static IPathCollection GenerateGlyphs(string text, RendererOptions style)
         {
             return GenerateGlyphs(text, PointF.Empty, style);
         }
@@ -49,7 +49,7 @@ namespace SixLabors.Shapes.Temp
         /// <param name="path">The path to draw the text in relation to</param>
         /// <param name="style">The style and settings to use while rendering the glyphs</param>
         /// <returns></returns>
-        public static IPathCollection GenerateGlyphs(string text, IPath path, FontSpan style)
+        public static IPathCollection GenerateGlyphs(string text, IPath path, RendererOptions style)
         {
             var glyphBuilder = new PathGlyphBuilder(path);
 

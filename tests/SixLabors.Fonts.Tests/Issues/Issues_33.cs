@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Tests.Issues
         public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height )
         {
             var font  = CreateFont(text);
-            SizeF size = TextMeasurer.Measure(text, new FontSpan(font, (72 * font.EmSize))
+            SizeF size = TextMeasurer.Measure(text, new RendererOptions(font, (72 * font.EmSize))
             {
             });
 

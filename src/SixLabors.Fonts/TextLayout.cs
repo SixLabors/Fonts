@@ -14,34 +14,26 @@ namespace SixLabors.Fonts
     internal class TextLayout
     {
         internal static TextLayout Default { get; set; } = new TextLayout();
-
+        
         /// <summary>
         /// Generates the layout.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="style">The style.</param>
-        /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
-        public ImmutableArray<GlyphLayout> GenerateLayout(string text, FontSpan style)
-        {
-            return GenerateLayout(text, style, Vector2.Zero);
-        }
-
-        /// <summary>
-        /// Generates the layout.
-        /// </summary>
-        /// <param name="text">The text.</param>
-        /// <param name="style">The style.</param>
+        /// <param name="options">The style.</param>
         /// <param name="origin">The origin point in font space (real location divided by dpi).</param>
         /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
-        public ImmutableArray<GlyphLayout> GenerateLayout(string text, FontSpan style, Vector2 origin)
+        public ImmutableArray<GlyphLayout> GenerateLayout(string text, RendererOptions options)
         {
+            var dpi = new Vector2(options.DpiX, options.DpiY);
+            Vector2 origin = (Vector2)options.Origin / dpi;
+
             float maxWidth = float.MaxValue;
             float xOrigin = 0;
-            if (style.WrappingWidth > 0)
+            if (options.WrappingWidth > 0)
             {
-                maxWidth = style.WrappingWidth / style.DpiX;
+                maxWidth = options.WrappingWidth / options.DpiX;
 
-                switch (style.HorizontalAlignment)
+                switch (options.HorizontalAlignment)
                 {
                     case HorizontalAlignment.Right:
                         xOrigin = maxWidth;
@@ -56,7 +48,7 @@ namespace SixLabors.Fonts
                 }
             }
 
-            AppliedFontStyle spanStyle = style.GetStyle(0, text.Length);
+            AppliedFontStyle spanStyle = options.GetStyle(0, text.Length);
             List<GlyphLayout> layout = new List<GlyphLayout>(text.Length);
 
             float lineHeight = 0f;
@@ -73,7 +65,7 @@ namespace SixLabors.Fonts
             {
                 if (spanStyle.End < i)
                 {
-                    spanStyle = style.GetStyle(i, text.Length);
+                    spanStyle = options.GetStyle(i, text.Length);
                     previousGlyph = null;
                 }
 
@@ -209,7 +201,7 @@ namespace SixLabors.Fonts
 
             Vector2 offset = new Vector2(0, lineHeightOfFirstLine);
 
-            switch (style.VerticalAlignment)
+            switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Center:
                     offset += new Vector2(0, -(totalHeight / 2));
@@ -239,7 +231,7 @@ namespace SixLabors.Fonts
                         }
                         width = layout[j].Location.X + layout[j].Width;// rhs
                     }
-                    switch (style.HorizontalAlignment)
+                    switch (options.HorizontalAlignment)
                     {
                         case HorizontalAlignment.Right:
                             lineOffset = new Vector2(xOrigin - width, 0) + offset;
