@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SixLabors.Fonts.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -12,18 +13,6 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection
     {
-#if FILESYSTEM
-        private static Lazy<SystemFontCollection> lazySystemFonts = new Lazy<SystemFontCollection>(() => new SystemFontCollection());
-
-        /// <summary>
-        /// Gets the globably installed system fonts.
-        /// </summary>
-        /// <value>
-        /// The system fonts.
-        /// </value>
-        public static SystemFontCollection SystemFonts => lazySystemFonts.Value;
-#endif
-
         Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.OrdinalIgnoreCase);
         Dictionary<string, FontFamily> families = new Dictionary<string, FontFamily>(StringComparer.OrdinalIgnoreCase);
 
@@ -48,7 +37,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="path">The path.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public Font Install(string path)
+        public FontFamily Install(string path)
         {
             using (FileStream fs = File.OpenRead(path))
             {
@@ -62,7 +51,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontStream">The font stream.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public Font Install(Stream fontStream)
+        public FontFamily Install(Stream fontStream)
         {
             FontInstance instance = FontInstance.LoadFont(fontStream);
 
@@ -73,15 +62,33 @@ namespace SixLabors.Fonts
         /// Finds the specified font family.
         /// </summary>
         /// <param name="fontFamily">The font family.</param>
-        /// <returns>The family if installed otherwise null</returns>
+        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFountException"/></returns>
         public FontFamily Find(string fontFamily)
+        {
+            if (TryFind(fontFamily, out FontFamily result))
+            {
+                return result;
+            }
+
+            throw new FontFamilyNotFountException(fontFamily);
+        }
+
+        /// <summary>
+        /// Finds the specified font family.
+        /// </summary>
+        /// <param name="fontFamily">The font family to find.</param>
+        /// <param name="family">The found family.</param>
+        /// <returns>true if a font of that family has been installed into the font collection.</returns>
+        public bool TryFind(string fontFamily, out FontFamily family)
         {
             if (this.families.ContainsKey(fontFamily))
             {
-                return this.families[fontFamily];
+                family = this.families[fontFamily];
+                return true;
             }
 
-            return null;
+            family = null;
+            return false;
         }
 
         internal IEnumerable<FontStyle> AvailibleStyles(string fontFamily)
@@ -89,7 +96,7 @@ namespace SixLabors.Fonts
             return FindAll(fontFamily).Select(X => X.Description.Style).ToImmutableArray();
         }
 
-        internal Font Install(IFontInstance instance)
+        internal FontFamily Install(IFontInstance instance)
         {
             if (instance != null && instance.Description != null)
             {
@@ -108,7 +115,7 @@ namespace SixLabors.Fonts
                     this.instances[instance.Description.FontFamily].Add(instance);
                 }
 
-                return new Font(this.families[instance.Description.FontFamily], 12, instance.Description.Style);
+                return this.families[instance.Description.FontFamily];
             }
 
             return null;

@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.WellKnownIds
     /// <summary>
     /// Common name ids
     /// </summary>
-    public enum NameIds : ushort
+    internal enum NameIds : ushort
     {
         /// <summary>
         /// The copyright notice

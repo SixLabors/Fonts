@@ -1,49 +1,62 @@
-﻿using SixLabors.Shapes;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 
-namespace SixLabors.Fonts.DrawWithImageSharp
+using SixLabors.Fonts;
+using SixLabors.Shapes;
+using SixLabors.Primitives;
+
+namespace SixLabors.Shapes.Temp
 {
-    internal class GlyphBuilder : IGlyphRenderer
+    /// <summary>
+    /// rendering surface that Fonts can use to generate Shapes.
+    /// </summary>
+    internal class BaseGlyphBuilder : IGlyphRenderer
     {
-        private readonly PathBuilder builder = new PathBuilder();
+        protected readonly PathBuilder builder = new PathBuilder();
         private readonly List<IPath> paths = new List<IPath>();
         private Vector2 currentPoint = default(Vector2);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphBuilder"/> class.
         /// </summary>
-        public GlyphBuilder()
-            : this(Vector2.Zero)
+        public BaseGlyphBuilder()
         {
             // glyphs are renderd realative to bottom left so invert the Y axis to allow it to render on top left origin surface
             this.builder = new PathBuilder();
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlyphBuilder"/> class.
-        /// </summary>
-        /// <param name="origin">The origin.</param>
-        public GlyphBuilder(Vector2 origin)
-        {
-            this.builder = new PathBuilder();
-            this.builder.SetOrigin(origin);
-        }
-
-        /// <summary>
         /// Gets the paths that have been rendered by this.
         /// </summary>
-        public IEnumerable<IPath> Paths => this.paths;
+        public IPathCollection Paths => new PathCollection(this.paths);
+
+        void IGlyphRenderer.EndText()
+        {
+        }
+
+        void IGlyphRenderer.BeginText(RectangleF rect)
+        {
+            BeginText(rect);
+        }
+
+        protected virtual void BeginText(RectangleF rect)
+        {
+        }
 
         /// <summary>
         /// Begins the glyph.
         /// </summary>
-        void IGlyphRenderer.BeginGlyph(Vector2 location, Size size)
+        /// <param name="location">The offset that the glyph will be rendered at.</param>
+        /// <param name="size">The size.</param>
+        void IGlyphRenderer.BeginGlyph(RectangleF rect)
         {
             this.builder.Clear();
+            BeginGlyph(rect);
+        }
+
+        protected virtual void BeginGlyph(RectangleF rect)
+        {
         }
 
         /// <summary>
@@ -60,7 +73,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         /// <param name="secondControlPoint">The second control point.</param>
         /// <param name="thirdControlPoint">The third control point.</param>
         /// <param name="point">The point.</param>
-        void IGlyphRenderer.CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
+        void IGlyphRenderer.CubicBezierTo(PointF secondControlPoint, PointF thirdControlPoint, PointF point)
         {
             this.builder.AddBezier(this.currentPoint, secondControlPoint, thirdControlPoint, point);
             this.currentPoint = point;
@@ -71,7 +84,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         /// </summary>
         void IGlyphRenderer.EndGlyph()
         {
-            this.paths.Add(this.builder.Build());//.Transform(matrix));
+            this.paths.Add(this.builder.Build());
         }
 
         /// <summary>
@@ -86,7 +99,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         /// Draws a line from the current point  to the <paramref name="point"/>.
         /// </summary>
         /// <param name="point">The point.</param>
-        void IGlyphRenderer.LineTo(Vector2 point)
+        void IGlyphRenderer.LineTo(PointF point)
         {
             this.builder.AddLine(this.currentPoint, point);
             this.currentPoint = point;
@@ -96,7 +109,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         /// Moves to current point to the supplied vector.
         /// </summary>
         /// <param name="point">The point.</param>
-        void IGlyphRenderer.MoveTo(Vector2 point)
+        void IGlyphRenderer.MoveTo(PointF point)
         {
             this.builder.StartFigure();
             this.currentPoint = point;
@@ -107,21 +120,17 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         /// </summary>
         /// <param name="secondControlPoint">The second control point.</param>
         /// <param name="point">The point.</param>
-        void IGlyphRenderer.QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
+        void IGlyphRenderer.QuadraticBezierTo(PointF secondControlPoint, PointF endPoint)
         {
-            Vector2 c1 = (((secondControlPoint - this.currentPoint) * 2) / 3) + this.currentPoint;
-            Vector2 c2 = (((secondControlPoint - point) * 2) / 3) + point;
+            Vector2 startPointVector = this.currentPoint;
+            Vector2 controlPointVector = secondControlPoint;
+            Vector2 endPointVector = endPoint;
 
-            this.builder.AddBezier(this.currentPoint, c1, c2, point);
-            this.currentPoint = point;
-        }
+            Vector2 c1 = (((controlPointVector - startPointVector) * 2) / 3) + startPointVector;
+            Vector2 c2 = (((controlPointVector - endPointVector) * 2) / 3) + endPointVector;
 
-        public void EndText()
-        {
-        }
-
-        public void BeginText(Vector2 location, Size size)
-        {
+            this.builder.AddBezier(startPointVector, c1, c2, endPoint);
+            this.currentPoint = endPoint;
         }
     }
 }

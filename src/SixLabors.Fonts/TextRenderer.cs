@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SixLabors.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -31,32 +32,34 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Renders the text.
+        /// Renders the text to the <paramref name="renderer"/>.
         /// </summary>
+        /// <param name="renderer">The target renderer.</param>
         /// <param name="text">The text.</param>
-        /// <param name="style">The style.</param>
-        public void RenderText(string text, FontSpan style)
+        /// <param name="options">The style.</param>
+        public static void RenderTextTo(IGlyphRenderer renderer, string text, RendererOptions options)
         {
-            this.RenderText(text, style, Vector2.Zero);
+            new TextRenderer(renderer).RenderText(text, options);
         }
 
         /// <summary>
         /// Renders the text.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="style">The style.</param>
-        /// <param name="location">The location.</param>
-        public void RenderText(string text, FontSpan style, Vector2 location)
+        /// <param name="options">The style.</param>
+        public void RenderText(string text, RendererOptions options)
         {
-            ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, style);
+            ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
-            Size size = TextMeasurer.GetBounds(glyphsToRender, style.DPI).Size();
+            var dpi = new Vector2(options.DpiX, options.DpiY);
 
-            this.renderer.BeginText(location, size);
+            RectangleF rect = TextMeasurer.GetBounds(glyphsToRender, dpi);
 
-            foreach (GlyphLayout g in glyphsToRender.Where(x=>x.Glyph.HasValue))
+            this.renderer.BeginText(rect);
+
+            foreach (GlyphLayout g in glyphsToRender.Where(x => x.Glyph.HasValue))
             {
-                g.Glyph.Value.RenderTo(this.renderer, g.Location, style.DPI, location);
+                g.Glyph.Value.RenderTo(this.renderer, g.Location, options.DpiX, options.DpiY, g.LineHeight);
             }
 
             this.renderer.EndText();

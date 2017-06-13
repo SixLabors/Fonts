@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             }
         }
 
-        public class Segment
+        internal class Segment
         {
             public short Delta { get; }
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SixLabors.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace SixLabors.Fonts
         private readonly short leftSideBearing;
 
         internal GlyphInstance(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index)
-        {
+         {
             this.sizeOfEm = sizeOfEm;
             this.controlPoints = controlPoints;
             this.onCurves = onCurves;
@@ -71,49 +72,32 @@ namespace SixLabors.Fonts
         /// <param name="pointSize">Size of the point.</param>
         /// <param name="location">The location.</param>
         /// <param name="dpi">The dpi.</param>
+        /// <param name="lineHeight">The lineHeight the current glyph was draw agains to offset topLeft while calling out to IGlyphRenderer.</param>
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
-        public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi)
-        {
-            this.RenderTo(surface, pointSize, location, dpi, Vector2.Zero);
-        }
-
-        /// <summary>
-        /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
-        /// </summary>
-        /// <param name="surface">The surface.</param>
-        /// <param name="pointSize">Size of the point.</param>
-        /// <param name="location">The location.</param>
-        /// <param name="dpi">The dpi.</param>
-        /// <param name="offset">The offset.</param>
-        /// <exception cref="System.NotSupportedException">Too many control points</exception>
-        public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, Vector2 offset)
+        public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, float lineHeight)
         {
             location = location * dpi;
 
             float scaleFactor = (float)(this.sizeOfEm * 72f);
-
 
             Vector2 firstPoint = Vector2.Zero;
             Vector2 scale = new Vector2(1, -1);
 
             Vector2 sizeVector = (new Vector2(this.AdvanceWidth, this.Height) * pointSize * dpi) / scaleFactor;
 
-            offset += location;
-            surface.BeginGlyph(offset, new Size(sizeVector.X, sizeVector.Y));
-
+            surface.BeginGlyph(new RectangleF(location.X, location.Y - (lineHeight * dpi.Y), sizeVector.X, sizeVector.Y));
 
             int startOfContor = 0;
-            int endOfContor = -1;                                                                       //AlignToGrid(ref offset);
+            int endOfContor = -1;
             for (int i = 0; i < this.endPoints.Length; i++)
             {
                 surface.BeginFigure();
                 startOfContor = endOfContor + 1;
                 endOfContor = this.endPoints[i];
 
-
                 Vector2 prev = Vector2.Zero;
-                Vector2 curr = GetPoint(pointSize, dpi, offset, scaleFactor, scale, endOfContor);
-                Vector2 next = GetPoint(pointSize, dpi, offset, scaleFactor, scale, startOfContor);
+                Vector2 curr = GetPoint(pointSize, dpi, scaleFactor, scale, endOfContor) + location;
+                Vector2 next = GetPoint(pointSize, dpi, scaleFactor, scale, startOfContor) + location;
 
                 if (this.onCurves[endOfContor])
                 {
@@ -139,9 +123,9 @@ namespace SixLabors.Fonts
                     prev = curr;
                     curr = next;
                     int currentIndex = startOfContor + p;
-                    int nextIndex = startOfContor + (p + 1) % length;
-                    int prevIndex = startOfContor + ((length + p) - 1) % length;
-                    next = GetPoint(pointSize, dpi, offset, scaleFactor, scale, nextIndex);
+                    int nextIndex = startOfContor + ((p + 1) % length);
+                    int prevIndex = startOfContor + (((length + p) - 1) % length);
+                    next = GetPoint(pointSize, dpi, scaleFactor, scale, nextIndex) + location;
 
                     if (this.onCurves[currentIndex])
                     {
@@ -176,14 +160,13 @@ namespace SixLabors.Fonts
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Vector2 GetPoint(float pointSize, Vector2 dpi, Vector2 offset, float scaleFactor, Vector2 scale, int pointIndex)
+        private Vector2 GetPoint(float pointSize, Vector2 dpi, float scaleFactor, Vector2 scale, int pointIndex)
         {
-            Vector2 point = (scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor)); // scale each point as we go, w will now have the correct relative point size
+            Vector2 point = scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor); // scale each point as we go, w will now have the correct relative point size
 
-            point += offset;
             return point;
         }
-        
+
         private static void AlignToGrid(ref Vector2 point)
         {
             Vector2 floorPoint = new Vector2(

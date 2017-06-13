@@ -6,6 +6,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 {
     using global::DrawWithImageSharp;
     using Shapes;
+    using SixLabors.Shapes.Temp;
     using System.Collections.Generic;
     using System.Linq;
     using System.Numerics;
@@ -16,24 +17,16 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         public static void Main(string[] args)
         {
             FontCollection fonts = new FontCollection();
-            FontFamily font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf").Family;
-            FontFamily fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff").Family;
-            FontFamily font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf").Family;
-            FontFamily carter = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf").Family;
-            FontFamily Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf").Family;
+            FontFamily font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
+            FontFamily fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
+            FontFamily font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
+            FontFamily carter = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf");
+            FontFamily Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf");
 
-            RenderLetter(carter, '\0');
-            RenderLetter(font, 'a');
-            RenderLetter(font, 'b');
-            RenderLetter(font, 'u');
             RenderText(font, "abc", 72);
             RenderText(font, "ABd", 72);
             RenderText(fontWoff, "abe", 72);
             RenderText(fontWoff, "ABf", 72);
-            RenderLetter(font2, 'a', 72);
-            RenderLetter(font2, 'b', 72);
-            RenderLetter(font2, 'u', 72);
-            RenderLetter(font2, 'o', 72);
             RenderText(font2, "ov", 72);
             RenderText(font2, "a\ta", 72);
             RenderText(font2, "aa\ta", 72);
@@ -45,17 +38,17 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(carter, "Hello\0World", 72);
             RenderText(Wendy_One, "Hello\0World", 72);
 
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
-            RenderText(new FontSpan(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
 
-            RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
-            RenderText(new Font(FontCollection.SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
+            RenderText(new Font(SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
+            RenderText(new Font(SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
 
             TextAlignment.Generate(new Font(font2, 50));
 
@@ -90,7 +83,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 img.Fill(Rgba32.White);
 
-                img.DrawText(text, font, Rgba32.Black, new Vector2(50f, 4f));
+                var shapes = SixLabors.Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Primitives.PointF(50f, 4f), new RendererOptions(font, 72));
+                img.Fill(Rgba32.Black, shapes);
 
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
 
@@ -100,7 +94,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 }
             }
         }
-        public static void RenderText(FontSpan font, string text)
+        public static void RenderText(RendererOptions font, string text)
         {
             GlyphBuilder builder = new GlyphBuilder();
             TextRenderer renderer = new TextRenderer(builder);
@@ -112,17 +106,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         }
         public static void RenderText(FontFamily font, string text, float pointSize = 12)
         {
-            RenderText(new FontSpan(new Font(font, pointSize), 96) { ApplyKerning = true, WrappingWidth = 340 }, text);
-        }
-
-        public static void RenderLetter(FontFamily fontFam, char character, float pointSize = 12)
-        {
-            Font font = new Font(fontFam, pointSize);
-            Glyph g = font.GetGlyph(character);
-            GlyphBuilder builder = new GlyphBuilder();
-            g.RenderTo(builder, Vector2.Zero, 72f);
-            builder.Paths
-                .SaveImage(fontFam.Name, character + ".png");
+            RenderText(new RendererOptions(new Font(font, pointSize), 96) { ApplyKerning = true, WrappingWidth = 340 }, text);
         }
 
         public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)

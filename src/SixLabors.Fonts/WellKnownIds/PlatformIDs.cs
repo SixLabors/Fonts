@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.WellKnownIds
     /// <summary>
     /// platforms ids
     /// </summary>
-    public enum PlatformIDs : ushort
+    internal enum PlatformIDs : ushort
     {
         /// <summary>
         /// Unicode platform

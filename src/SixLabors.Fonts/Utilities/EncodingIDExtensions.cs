@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Utilities
     /// <summary>
     /// Converts encoding ID to TextEncoding
     /// </summary>
-    public static class EncodingIDExtensions
+    internal static class EncodingIDExtensions
     {
         /// <summary>
         /// Converts encoding ID to TextEncoding

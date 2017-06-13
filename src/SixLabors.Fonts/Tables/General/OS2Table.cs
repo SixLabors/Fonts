@@ -312,7 +312,7 @@ namespace SixLabors.Fonts.Tables.General
             this.upperOpticalPointSize = upperOpticalPointSize;
         }
 
-        public enum FontStyleSelection : ushort
+        internal enum FontStyleSelection : ushort
         {
             //0	bit 1	ITALIC  Font contains italic or oblique characters, otherwise they are upright.
             ITALIC = 1,

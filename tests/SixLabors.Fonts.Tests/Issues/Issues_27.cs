@@ -11,14 +11,14 @@ namespace SixLabors.Fonts.Tests.Issues
         public void ThrowsMeasureingWhitespace()
         {
             // wendy one returns wrong points for 'o'
-            Font font = new FontCollection().Install(TestFonts.WendyOneFile);
+            Font font = new FontCollection().Install(TestFonts.WendyOneFile).CreateFont(12);
 
             GlyphRenderer r = new GlyphRenderer();
 
-            var size = new TextMeasurer().MeasureText("          ", new FontSpan(new Font(font, 30), 72));
+            var size = TextMeasurer.Measure("          ", new RendererOptions(new Font(font, 30), 72));
 
             Assert.Equal(60, size.Width, 1);
-            Assert.Equal(37.1, size.Height, 1);
+            Assert.Equal(31.6, size.Height, 1);
         }
     }
 }
