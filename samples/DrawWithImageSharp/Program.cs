@@ -38,6 +38,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(carter, "Hello\0World", 72);
             RenderText(Wendy_One, "Hello\0World", 72);
 
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\tx");
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\t\tx");
+
+            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");

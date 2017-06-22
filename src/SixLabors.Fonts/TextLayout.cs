@@ -123,7 +123,14 @@ namespace SixLabors.Fonts
 
                             if (tabStop > 0)
                             {
-                                finalWidth = tabStop - ((location.X + glyphWidth) % tabStop);
+                                finalWidth = tabStop - (location.X % tabStop);
+                            }
+
+                            if (finalWidth < glyphWidth)
+                            {
+                                // if we are not going to tab atleast a glyph width add another tabstop to it ??? 
+                                // should I be doing this?
+                                finalWidth += tabStop;
                             }
 
                             layout.Add(new GlyphLayout(c, null, location, finalWidth, glyphHeight, lineHeight, startOfLine));
