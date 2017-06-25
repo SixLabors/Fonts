@@ -16,9 +16,12 @@ namespace SixLabors.Fonts.Tests
         public List<PointF> ControlPointsOnCurve { get; } = new List<PointF>();
 
         public List<RectangleF> GlyphRects { get; } = new List<RectangleF>();
-        public void BeginGlyph(RectangleF rect)
+        public List<int> GlyphKeys { get; } = new List<int>();
+        public bool BeginGlyph(RectangleF rect, int cacheKey)
         {
             this.GlyphRects.Add(rect);
+            this.GlyphKeys.Add(cacheKey);
+            return true;
         }
 
         public void BeginFigure()

@@ -85,75 +85,79 @@ namespace SixLabors.Fonts
 
             Vector2 sizeVector = (new Vector2(this.AdvanceWidth, this.Height) * pointSize * dpi) / scaleFactor;
 
-            surface.BeginGlyph(new RectangleF(location.X, location.Y - (lineHeight * dpi.Y), sizeVector.X, sizeVector.Y));
+            var hash = HashHelpers.Combine(this.GetHashCode(), sizeVector.GetHashCode());
 
-            int startOfContor = 0;
-            int endOfContor = -1;
-            for (int i = 0; i < this.endPoints.Length; i++)
+            if (surface.BeginGlyph(new RectangleF(location.X, location.Y - (lineHeight * dpi.Y), sizeVector.X, sizeVector.Y), hash))
             {
-                surface.BeginFigure();
-                startOfContor = endOfContor + 1;
-                endOfContor = this.endPoints[i];
 
-                Vector2 prev = Vector2.Zero;
-                Vector2 curr = GetPoint(pointSize, dpi, scaleFactor, scale, endOfContor) + location;
-                Vector2 next = GetPoint(pointSize, dpi, scaleFactor, scale, startOfContor) + location;
+                int startOfContor = 0;
+                int endOfContor = -1;
+                for (int i = 0; i < this.endPoints.Length; i++)
+                {
+                    surface.BeginFigure();
+                    startOfContor = endOfContor + 1;
+                    endOfContor = this.endPoints[i];
 
-                if (this.onCurves[endOfContor])
-                {
-                    surface.MoveTo(curr);
-                }
-                else
-                {
-                    if (this.onCurves[startOfContor])
+                    Vector2 prev = Vector2.Zero;
+                    Vector2 curr = GetPoint(pointSize, dpi, scaleFactor, scale, endOfContor) + location;
+                    Vector2 next = GetPoint(pointSize, dpi, scaleFactor, scale, startOfContor) + location;
+
+                    if (this.onCurves[endOfContor])
                     {
-                        surface.MoveTo(next);
+                        surface.MoveTo(curr);
                     }
                     else
                     {
-                        // If both first and last points are off-curve, start at their middle.
-                        Vector2 startPoint = (curr + next) / 2;
-                        surface.MoveTo(startPoint);
-                    }
-                }
-
-                int length = (endOfContor - startOfContor) + 1;
-                for (int p = 0; p < length; p++)
-                {
-                    prev = curr;
-                    curr = next;
-                    int currentIndex = startOfContor + p;
-                    int nextIndex = startOfContor + ((p + 1) % length);
-                    int prevIndex = startOfContor + (((length + p) - 1) % length);
-                    next = GetPoint(pointSize, dpi, scaleFactor, scale, nextIndex) + location;
-
-                    if (this.onCurves[currentIndex])
-                    {
-                        // This is a straight line.
-                        surface.LineTo(curr);
-                    }
-                    else
-                    {
-                        Vector2 prev2 = prev;
-                        Vector2 next2 = next;
-
-                        if (!this.onCurves[prevIndex])
+                        if (this.onCurves[startOfContor])
                         {
-                            prev2 = (curr + prev) / 2;
+                            surface.MoveTo(next);
+                        }
+                        else
+                        {
+                            // If both first and last points are off-curve, start at their middle.
+                            Vector2 startPoint = (curr + next) / 2;
+                            surface.MoveTo(startPoint);
+                        }
+                    }
+
+                    int length = (endOfContor - startOfContor) + 1;
+                    for (int p = 0; p < length; p++)
+                    {
+                        prev = curr;
+                        curr = next;
+                        int currentIndex = startOfContor + p;
+                        int nextIndex = startOfContor + ((p + 1) % length);
+                        int prevIndex = startOfContor + (((length + p) - 1) % length);
+                        next = GetPoint(pointSize, dpi, scaleFactor, scale, nextIndex) + location;
+
+                        if (this.onCurves[currentIndex])
+                        {
+                            // This is a straight line.
+                            surface.LineTo(curr);
+                        }
+                        else
+                        {
+                            Vector2 prev2 = prev;
+                            Vector2 next2 = next;
+
+                            if (!this.onCurves[prevIndex])
+                            {
+                                prev2 = (curr + prev) / 2;
+                                surface.LineTo(prev2);
+                            }
+
+                            if (!this.onCurves[nextIndex])
+                            {
+                                next2 = (curr + next) / 2;
+                            }
+
                             surface.LineTo(prev2);
+                            surface.QuadraticBezierTo(curr, next2);
                         }
-
-                        if (!this.onCurves[nextIndex])
-                        {
-                            next2 = (curr + next) / 2;
-                        }
-
-                        surface.LineTo(prev2);
-                        surface.QuadraticBezierTo(curr, next2);
                     }
-                }
 
-                surface.EndFigure();
+                    surface.EndFigure();
+                }
             }
 
             surface.EndGlyph();

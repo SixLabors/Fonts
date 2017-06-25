@@ -49,10 +49,16 @@ namespace SixLabors.Shapes.Temp
         /// </summary>
         /// <param name="location">The offset that the glyph will be rendered at.</param>
         /// <param name="size">The size.</param>
-        void IGlyphRenderer.BeginGlyph(RectangleF rect)
+        bool IGlyphRenderer.BeginGlyph(RectangleF rect, int cachKey)
         {
             this.builder.Clear();
+            return BeginGlyph(rect, cachKey);
+        }
+
+        protected virtual bool BeginGlyph(RectangleF rect, int cachKey)
+        {
             BeginGlyph(rect);
+            return true;
         }
 
         protected virtual void BeginGlyph(RectangleF rect)

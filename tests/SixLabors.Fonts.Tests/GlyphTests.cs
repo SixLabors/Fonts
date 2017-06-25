@@ -23,5 +23,48 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(new RectangleF(99, 99, 0, 0), renderer.GlyphRects.Single());
         }
+
+        [Fact]
+        public void IdenticalGlyphsInDiferentPalcesCreateIdenticalKeys()
+        {
+            var fakeFont = CreateFont("AB");
+            var textRenderer = new TextRenderer(renderer);
+
+            textRenderer.RenderText("ABA", new RendererOptions(fakeFont));
+
+            Assert.Equal(renderer.GlyphKeys[0], renderer.GlyphKeys[2]);
+            Assert.NotEqual(renderer.GlyphKeys[1], renderer.GlyphKeys[2]);
+        }
+
+        [Fact]
+        public void BeginGLyph_returnsfalse_skiprenderingfigures()
+        {
+            var renderer = new Mock<IGlyphRenderer>();
+            renderer.Setup(x => x.BeginGlyph(It.IsAny<RectangleF>(), It.IsAny<int>())).Returns(false);
+            var fakeFont = CreateFont("A");
+            var textRenderer = new TextRenderer(renderer.Object);
+
+            textRenderer.RenderText("ABA", new RendererOptions(fakeFont));
+            renderer.Verify(x => x.BeginFigure(), Times.Never);
+        }
+
+        [Fact]
+        public void BeginGLyph_returnstrue_rendersfigures()
+        {
+            var renderer = new Mock<IGlyphRenderer>();
+            renderer.Setup(x => x.BeginGlyph(It.IsAny<RectangleF>(), It.IsAny<int>())).Returns(true);
+            var fakeFont = CreateFont("A");
+            var textRenderer = new TextRenderer(renderer.Object);
+
+            textRenderer.RenderText("ABA", new RendererOptions(fakeFont));
+            renderer.Verify(x => x.BeginFigure(), Times.Exactly(3));
+        }
+
+        public static Font CreateFont(string text)
+        {
+            FontCollection fc = new FontCollection();
+            Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
+            return new Font(d, 1);
+        }
     }
 }
