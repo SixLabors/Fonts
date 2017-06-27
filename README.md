@@ -3,8 +3,8 @@
 
 **SixLabors.Fonts** is a new cross-platform font loadings and drawing library.
 
-[![Build status](https://ci.appveyor.com/api/projects/status/i91ikeleqhco6nqt/branch/master?svg=true)](https://ci.appveyor.com/project/tocsoft/fonts/branch/master)
-[![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/master/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
+[![Build status](https://ci.appveyor.com/api/projects/status/26dab7lf874b5ib3/branch/master?svg=true)](https://ci.appveyor.com/project/six-labors/fonts/branch/develop)
+[![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/develop/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/SixLabors/Fonts/master/LICENSE)
 
 [![Join the chat at https://gitter.im/SixLabors/Shapes](https://badges.gitter.im/SixLabors/Fonts.svg)](https://gitter.im/SixLabors/Fonts?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
