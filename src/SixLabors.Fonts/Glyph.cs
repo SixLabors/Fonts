@@ -18,7 +18,7 @@ namespace SixLabors.Fonts
 
         public RectangleF BoundingBox(PointF location, Vector2 dpi)
         {
-            return instance.BoundingBox(location, pointSize, dpi);
+            return this.instance.BoundingBox(location, this.pointSize * dpi);
         }
 
         internal Glyph(GlyphInstance instance, float pointSize)

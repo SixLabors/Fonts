@@ -245,10 +245,8 @@ namespace SixLabors.Fonts
         public byte[] ReadUInt8Array(int length)
         {
             byte[] data = new byte[length];
-            for (int i = 0; i < length; i++)
-            {
-                data[i] = this.ReadUInt8();
-            }
+
+            this.ReadInternal(data, length);
 
             return data;
         }

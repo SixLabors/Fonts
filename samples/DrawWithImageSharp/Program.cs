@@ -16,12 +16,12 @@ namespace SixLabors.Fonts.DrawWithImageSharp
     {
         public static void Main(string[] args)
         {
-            FontCollection fonts = new FontCollection();
-            FontFamily font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
-            FontFamily fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
-            FontFamily font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
-            FontFamily carter = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf");
-            FontFamily Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf");
+            //FontCollection fonts = new FontCollection();
+            //FontFamily font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
+            //FontFamily fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
+            //FontFamily font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
+            //FontFamily carter = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf");
+            //FontFamily Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf");
 
             //RenderText(font, "abc", 72);
             //RenderText(font, "ABd", 72);
@@ -61,7 +61,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
 
-            TextAlignment.Generate(new Font(font2, 50));
+            TextAlignment.Generate(SystemFonts.CreateFont("arial", 50f));
 
             //StringBuilder sb = new StringBuilder();
             //for (char c = 'a'; c <= 'z'; c++)

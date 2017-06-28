@@ -30,8 +30,6 @@ namespace SixLabors.Fonts
             this.Bounds = bounds;
             this.AdvanceWidth = advanceWidth;
             this.Index = index;
-            this.TopOffset = sizeOfEm - this.Bounds.Max.Y;
-            this.ActualHeight = this.Bounds.Max.Y + this.Bounds.Min.Y;
             this.Height = sizeOfEm - this.Bounds.Min.Y;
 
             this.leftSideBearing = leftSideBearing;
@@ -69,15 +67,13 @@ namespace SixLabors.Fonts
         /// The index.
         /// </value>
         internal ushort Index { get; }
-        public float TopOffset { get; private set; }
-        public float ActualHeight { get; private set; }
 
         private static readonly Vector2 scale = new Vector2(1, -1);
 
-        internal RectangleF BoundingBox(Vector2 origin, float pointSize, Vector2 dpi)
+        internal RectangleF BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
-            var size = ((this.Bounds.Size() * dpi) / this.scaleFactor) * pointSize;
-            var loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * dpi) / this.scaleFactor) * pointSize * scale;
+            var size = ((this.Bounds.Size() * scaledPointSize) / this.scaleFactor) ;
+            var loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * scale;
 
             loc = origin + loc;
 
@@ -99,8 +95,9 @@ namespace SixLabors.Fonts
 
             Vector2 firstPoint = Vector2.Zero;
 
-            var box = BoundingBox(location, pointSize, dpi);
+            var scaledPoint = dpi * pointSize;
 
+            var box = BoundingBox(location, scaledPoint);
 
             var hash = HashHelpers.Combine(this.GetHashCode(), pointSize.GetHashCode());
             hash = HashHelpers.Combine(hash, dpi.GetHashCode());
@@ -118,8 +115,8 @@ namespace SixLabors.Fonts
                     endOfContor = this.endPoints[i];
 
                     Vector2 prev = Vector2.Zero;
-                    Vector2 curr = GetPoint(pointSize, dpi, scale, endOfContor) + location;
-                    Vector2 next = GetPoint(pointSize, dpi, scale, startOfContor) + location;
+                    Vector2 curr = GetPoint(ref scaledPoint, endOfContor) + location;
+                    Vector2 next = GetPoint(ref scaledPoint, startOfContor) + location;
 
                     if (this.onCurves[endOfContor])
                     {
@@ -147,7 +144,7 @@ namespace SixLabors.Fonts
                         int currentIndex = startOfContor + p;
                         int nextIndex = startOfContor + ((p + 1) % length);
                         int prevIndex = startOfContor + (((length + p) - 1) % length);
-                        next = GetPoint(pointSize, dpi, scale, nextIndex) + location;
+                        next = GetPoint(ref scaledPoint, nextIndex) + location;
 
                         if (this.onCurves[currentIndex])
                         {
@@ -183,9 +180,9 @@ namespace SixLabors.Fonts
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Vector2 GetPoint(float pointSize, Vector2 dpi, Vector2 scale, int pointIndex)
+        private Vector2 GetPoint(ref Vector2 scaledPoint, int pointIndex)
         {
-            Vector2 point = scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
+            Vector2 point = scale * ((this.controlPoints[pointIndex] * scaledPoint) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
 
             return point;
         }
