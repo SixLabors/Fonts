@@ -5,6 +5,7 @@ using System.Numerics;
 using SixLabors.Fonts;
 using SixLabors.Shapes;
 using SixLabors.Primitives;
+using System.Linq;
 
 namespace SixLabors.Shapes.Temp
 {
@@ -14,6 +15,7 @@ namespace SixLabors.Shapes.Temp
     internal class BaseGlyphBuilder : IGlyphRenderer
     {
         protected readonly PathBuilder builder = new PathBuilder();
+        private readonly List<RectangleF> glyphBounds = new List<RectangleF>();
         private readonly List<IPath> paths = new List<IPath>();
         private Vector2 currentPoint = default(Vector2);
 
@@ -31,12 +33,23 @@ namespace SixLabors.Shapes.Temp
         /// </summary>
         public IPathCollection Paths => new PathCollection(this.paths);
 
+        /// <summary>
+        /// Gets the paths that have been rendered by this.
+        /// </summary>
+        public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new SixLabors.Shapes.RectangularePolygon(x)));
+
+        /// <summary>
+        /// Gets the paths that have been rendered by this.
+        /// </summary>
+        public IPath TextBox { get; private set; }
+
         void IGlyphRenderer.EndText()
         {
         }
 
         void IGlyphRenderer.BeginText(RectangleF rect)
         {
+            this.TextBox = new SixLabors.Shapes.RectangularePolygon(rect);
             BeginText(rect);
         }
 
@@ -52,6 +65,7 @@ namespace SixLabors.Shapes.Temp
         bool IGlyphRenderer.BeginGlyph(RectangleF rect, int cachKey)
         {
             this.builder.Clear();
+            this.glyphBounds.Add(rect);
             return BeginGlyph(rect, cachKey);
         }
 

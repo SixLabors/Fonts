@@ -17,11 +17,11 @@ namespace SixLabors.Fonts.Tests.Issues
             SizeF size = TextMeasurer.Measure(text, new RendererOptions(font, (72 * font.EmSize))
             {
                 TabWidth = 0
-            });
+            }).Size;
 
             // tab width of 0 should make tabs not render at all
-            Assert.Equal(30, size.Height, 4);
-            Assert.Equal(300, size.Width, 4);
+            Assert.Equal(10, size.Height, 4);
+            Assert.Equal(280, size.Width, 4);
         }
 
         public static Font CreateFont(string text)

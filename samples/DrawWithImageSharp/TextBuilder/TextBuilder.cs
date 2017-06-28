@@ -20,7 +20,7 @@ namespace SixLabors.Shapes.Temp
         /// <param name="location">The location</param>
         /// <param name="style">The style and settings to use while rendering the glyphs</param>
         /// <returns></returns>
-        public static IPathCollection GenerateGlyphs(string text, PointF location, RendererOptions style)
+        public static (IPathCollection paths, IPathCollection boxes, IPath textBox) GenerateGlyphsWithBox(string text, PointF location, RendererOptions style)
         {
             var glyphBuilder = new GlyphBuilder(location);
 
@@ -28,7 +28,19 @@ namespace SixLabors.Shapes.Temp
 
             renderer.RenderText(text, style);
 
-            return glyphBuilder.Paths;
+            return (glyphBuilder.Paths, glyphBuilder.Boxes, glyphBuilder.TextBox);
+        }
+
+        /// <summary>
+        /// Generates the shapes corresponding the glyphs described by the font and with the setting ing withing the FontSpan
+        /// </summary>
+        /// <param name="text">The text to generate glyphs for</param>
+        /// <param name="location">The location</param>
+        /// <param name="style">The style and settings to use while rendering the glyphs</param>
+        /// <returns></returns>
+        public static IPathCollection GenerateGlyphs(string text, PointF location, RendererOptions style)
+        {
+            return GenerateGlyphsWithBox(text, location, style).paths;
         }
 
         /// <summary>
@@ -40,6 +52,17 @@ namespace SixLabors.Shapes.Temp
         public static IPathCollection GenerateGlyphs(string text, RendererOptions style)
         {
             return GenerateGlyphs(text, PointF.Empty, style);
+        }
+
+        /// <summary>
+        /// Generates the shapes corresponding the glyphs described by the font and with the setting ing withing the FontSpan
+        /// </summary>
+        /// <param name="text">The text to generate glyphs for</param>
+        /// <param name="style">The style and settings to use while rendering the glyphs</param>
+        /// <returns></returns>
+        public static (IPathCollection paths, IPathCollection boxes, IPath textBox) GenerateGlyphsWithBox(string text, RendererOptions style)
+        {
+            return GenerateGlyphsWithBox(text, PointF.Empty, style);
         }
 
         /// <summary>

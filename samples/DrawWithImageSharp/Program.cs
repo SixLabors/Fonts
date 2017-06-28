@@ -23,61 +23,65 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily carter = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf");
             FontFamily Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf");
 
-            RenderText(font, "abc", 72);
-            RenderText(font, "ABd", 72);
-            RenderText(fontWoff, "abe", 72);
-            RenderText(fontWoff, "ABf", 72);
-            RenderText(font2, "ov", 72);
-            RenderText(font2, "a\ta", 72);
-            RenderText(font2, "aa\ta", 72);
-            RenderText(font2, "aaa\ta", 72);
-            RenderText(font2, "aaaa\ta", 72);
-            RenderText(font2, "aaaaa\ta", 72);
-            RenderText(font2, "aaaaaa\ta", 72);
-            RenderText(font2, "Hello\nWorld", 72);
-            RenderText(carter, "Hello\0World", 72);
-            RenderText(Wendy_One, "Hello\0World", 72);
+            //RenderText(font, "abc", 72);
+            //RenderText(font, "ABd", 72);
+            //RenderText(fontWoff, "abe", 72);
+            //RenderText(fontWoff, "ABf", 72);
+            //RenderText(font2, "ov", 72);
+            //RenderText(font2, "a\ta", 72);
+            //RenderText(font2, "aa\ta", 72);
+            //RenderText(font2, "aaa\ta", 72);
+            //RenderText(font2, "aaaa\ta", 72);
+            //RenderText(font2, "aaaaa\ta", 72);
+            //RenderText(font2, "aaaaaa\ta", 72);
+            //RenderText(font2, "Hello\nWorld", 72);
+            //RenderText(carter, "Hello\0World", 72);
+            //RenderText(Wendy_One, "Hello\0World", 72);
 
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\tx");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\t\tx");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\tx");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\t\tx");
 
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
 
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
+            //RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
 
-            RenderText(new Font(SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
-            RenderText(new Font(SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
+            //RenderText(new Font(SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
+            //RenderText(new Font(SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
+
+            RenderText(new RendererOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
+
+            BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
 
             TextAlignment.Generate(new Font(font2, 50));
 
-            StringBuilder sb = new StringBuilder();
-            for (char c = 'a'; c <= 'z'; c++)
-            {
-                sb.Append(c);
-            }
-            for (char c = 'A'; c <= 'Z'; c++)
-            {
-                sb.Append(c);
-            }
-            for (char c = '0'; c <= '9'; c++)
-            {
-                sb.Append(c);
-            }
-            string text = sb.ToString();
+            //StringBuilder sb = new StringBuilder();
+            //for (char c = 'a'; c <= 'z'; c++)
+            //{
+            //    sb.Append(c);
+            //}
+            //for (char c = 'A'; c <= 'Z'; c++)
+            //{
+            //    sb.Append(c);
+            //}
+            //for (char c = '0'; c <= '9'; c++)
+            //{
+            //    sb.Append(c);
+            //}
+            //string text = sb.ToString();
 
-            foreach (FontFamily f in fonts.Families)
-            {
-                RenderText(f, text, 72);
-            }
+            //foreach (FontFamily f in fonts.Families)
+            //{
+            //    RenderText(f, text, 72);
+            //}
         }
 
 
@@ -101,6 +105,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 }
             }
         }
+
         public static void RenderText(RendererOptions font, string text)
         {
             GlyphBuilder builder = new GlyphBuilder();
@@ -149,7 +154,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     .Translate(new Vector2(10)); // move in from top left
 
             StringBuilder sb = new StringBuilder();
-            System.Collections.Immutable.ImmutableArray<ISimplePath> converted = shape.Flatten();
+            var converted = shape.Flatten();
             converted.Aggregate(sb, (s, p) =>
             {
                 foreach (Vector2 point in p.Points)

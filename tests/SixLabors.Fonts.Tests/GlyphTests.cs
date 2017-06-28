@@ -18,10 +18,10 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void RenderToPointAndSingleDPI()
         {
-            var locationInFontSpace = new PointF(99, 99) / 72;
+            var locationInFontSpace = new PointF(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
             glyph.RenderTo(renderer, locationInFontSpace, 72, 0);
 
-            Assert.Equal(new RectangleF(99, 99, 0, 0), renderer.GlyphRects.Single());
+            Assert.Equal(new RectangleF(99, 89, 0, 0), renderer.GlyphRects.Single());
         }
 
         [Fact]

@@ -10,18 +10,18 @@ namespace SixLabors.Fonts.Tests.Issues
     public class Issues_33
     {
         [Theory]
-        [InlineData("\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs", 780, 120)]
-        [InlineData("\n\tHelloworld", 420, 60)]
-        [InlineData("\tHelloworld", 420, 30)]
-        [InlineData("  Helloworld", 360, 30)]
-        [InlineData("Hell owor ld\t", 480, 30)]
-        [InlineData("Helloworld  ", 360, 30)]
+        [InlineData("\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs", 760, 70)] // newlines arn't directly measured but it is used for offseting
+        [InlineData("\n\tHelloworld", 400, 10)]
+        [InlineData("\tHelloworld", 400, 10)]
+        [InlineData("  Helloworld", 340, 10)]
+        [InlineData("Hell owor ld\t", 480, 10)]
+        [InlineData("Helloworld  ", 360, 10)]
         public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height )
         {
             var font  = CreateFont(text);
             SizeF size = TextMeasurer.Measure(text, new RendererOptions(font, (72 * font.EmSize))
             {
-            });
+            }).Size;
 
             Assert.Equal(height, size.Height, 2);
             Assert.Equal(width, size.Width, 2);

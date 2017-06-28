@@ -57,9 +57,10 @@ namespace SixLabors.Fonts
 
             this.renderer.BeginText(rect);
 
-            foreach (GlyphLayout g in glyphsToRender.Where(x => x.Glyph.HasValue))
+            foreach (GlyphLayout g in glyphsToRender.Where(x => !x.IsWhiteSpace))
             {
-                g.Glyph.Value.RenderTo(this.renderer, g.Location, options.DpiX, options.DpiY, g.LineHeight);
+
+                g.Glyph.RenderTo(this.renderer, g.Location, options.DpiX, options.DpiY, g.LineHeight);
             }
 
             this.renderer.EndText();

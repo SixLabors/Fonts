@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tests
             FontFamily arial = SystemFonts.Find("Arial");
             Font font = new Font(arial, 1f, FontStyle.Regular);
 
-            SizeF size = TextMeasurer.Measure(c.ToString(), font, 72);
+            SizeF size = TextMeasurer.Measure(c.ToString(), new RendererOptions(font, 72)).Size;
         }
 
         [Theory]
@@ -39,7 +39,7 @@ namespace SixLabors.Fonts.Tests
             FontFamily arial = SystemFonts.Find("Arial");
             Font font = new Font(arial, 1f, FontStyle.Regular);
 
-            SizeF size = TextMeasurer.Measure($"abc{c}def", font, 72);
+            SizeF size = TextMeasurer.Measure($"abc{c}def", new RendererOptions(font, 72)).Size;
         }
     }
 }

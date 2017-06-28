@@ -16,6 +16,11 @@ namespace SixLabors.Fonts
         private readonly GlyphInstance instance;
         private readonly float pointSize;
 
+        public RectangleF BoundingBox(PointF location, Vector2 dpi)
+        {
+            return instance.BoundingBox(location, pointSize, dpi);
+        }
+
         internal Glyph(GlyphInstance instance, float pointSize)
         {
             this.instance = instance;
