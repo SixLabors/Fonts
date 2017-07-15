@@ -20,7 +20,7 @@ namespace DrawWithImageSharp
             {
                 img.Fill(Rgba32.White);
 
-                var box = TextMeasurer.Measure(text, new RendererOptions(font));
+                var box = TextMeasurer.MeasureBounds(text, new RendererOptions(font));
                 var data = TextBuilder.GenerateGlyphsWithBox(text, new RendererOptions(font));
 
                 var f = Rgba32.Fuchsia;

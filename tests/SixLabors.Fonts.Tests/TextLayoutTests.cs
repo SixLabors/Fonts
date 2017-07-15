@@ -111,7 +111,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            SizeF size = TextMeasurer.Measure(text, new RendererOptions(font, 72 * font.EmSize)
+            SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, 72 * font.EmSize)
             {
 
             }).Size;
@@ -130,7 +130,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            SizeF size = TextMeasurer.Measure(text, new RendererOptions(font, 72 * font.EmSize)
+            SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, 72 * font.EmSize)
             {
                 WrappingWidth = 350
             }).Size;
@@ -150,7 +150,7 @@ namespace SixLabors.Fonts.Tests
             Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            SizeF size = TextMeasurer.Measure(text, new RendererOptions(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning }).Size;
+            SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(new Font(font, 1), 72 * font.EmSize) { ApplyKerning = enableKerning }).Size;
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);

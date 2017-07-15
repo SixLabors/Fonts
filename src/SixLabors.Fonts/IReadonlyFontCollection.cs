@@ -23,7 +23,7 @@ namespace SixLabors.Fonts
         /// Finds the specified font family.
         /// </summary>
         /// <param name="fontFamily">The font family.</param>
-        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFountException"/></returns>
+        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFoundException"/></returns>
         FontFamily Find(string fontFamily);
 
         /// <summary>

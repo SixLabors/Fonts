@@ -19,8 +19,38 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static RectangleF Measure(string text, RendererOptions options)
+        public static SizeF Measure(string text, RendererOptions options)
             => TextMeasurerInt.Default.Measure(text, options);
+
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The style.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
+        public static RectangleF MeasureBounds(string text, RendererOptions options)
+            => TextMeasurerInt.Default.MeasureBounds(text, options);
+
+        internal static SizeF GetSize(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
+        {
+            if (glyphLayouts.IsEmpty)
+            {
+                return Size.Empty;
+            }
+
+            float left = glyphLayouts.Min(x => x.Location.X);
+            float right = glyphLayouts.Max(x => x.Location.X + x.Width);
+
+            // location is bottom left of the line
+            float top = glyphLayouts.Min(x => x.Location.Y - x.LineHeight);
+            float bottom = glyphLayouts.Max(x => x.Location.Y - x.LineHeight + x.Height);
+
+            Vector2 topLeft = new Vector2(left, top) * dpi;
+            Vector2 bottomRight = new Vector2(right, bottom) * dpi;
+
+            var size = bottomRight - topLeft;
+            return new RectangleF(topLeft.X, topLeft.Y, size.X, size.Y).Size;
+        }
 
         internal static RectangleF GetBounds(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
         {
@@ -98,11 +128,24 @@ namespace SixLabors.Fonts
             /// <param name="text">The text.</param>
             /// <param name="options">The style.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal RectangleF Measure(string text, RendererOptions options)
+            internal RectangleF MeasureBounds(string text, RendererOptions options)
             {
                 ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
                 return GetBounds(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
+            }
+
+            /// <summary>
+            /// Measures the text.
+            /// </summary>
+            /// <param name="text">The text.</param>
+            /// <param name="options">The style.</param>
+            /// <returns>The size of the text if it was to be rendered.</returns>
+            internal SizeF Measure(string text, RendererOptions options)
+            {
+                ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
+
+                return GetSize(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
             }
         }
     }

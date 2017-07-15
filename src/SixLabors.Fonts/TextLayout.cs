@@ -21,7 +21,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
-        /// <param name="origin">The origin point in font space (real location divided by dpi).</param>
         /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
         public ImmutableArray<GlyphLayout> GenerateLayout(string text, RendererOptions options)
         {

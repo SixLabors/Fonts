@@ -62,7 +62,7 @@ namespace SixLabors.Fonts
         /// Finds the specified font family.
         /// </summary>
         /// <param name="fontFamily">The font family.</param>
-        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFountException"/></returns>
+        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFoundException"/></returns>
         public FontFamily Find(string fontFamily)
         {
             if (TryFind(fontFamily, out FontFamily result))
@@ -70,7 +70,7 @@ namespace SixLabors.Fonts
                 return result;
             }
 
-            throw new FontFamilyNotFountException(fontFamily);
+            throw new FontFamilyNotFoundException(fontFamily);
         }
 
         /// <summary>
