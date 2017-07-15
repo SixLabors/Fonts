@@ -281,7 +281,7 @@ namespace SixLabors.Fonts
         internal RectangleF BoundingBox(Vector2 dpi)
         {
             var box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
-            if(this.IsWhiteSpace)
+            if (this.IsWhiteSpace)
             {
                 box.Width = this.Width * dpi.X;
             }

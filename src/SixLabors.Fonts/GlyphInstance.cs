@@ -22,7 +22,7 @@ namespace SixLabors.Fonts
         private readonly float scaleFactor;
 
         internal GlyphInstance(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index)
-         {
+        {
             this.sizeOfEm = sizeOfEm;
             this.controlPoints = controlPoints;
             this.onCurves = onCurves;
@@ -72,7 +72,7 @@ namespace SixLabors.Fonts
 
         internal RectangleF BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
-            var size = ((this.Bounds.Size() * scaledPointSize) / this.scaleFactor) ;
+            var size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
             var loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * scale;
 
             loc = origin + loc;

@@ -13,7 +13,6 @@ namespace DrawWithImageSharp
 {
     public static class BoundingBoxes
     {
-
         public static void Generate(string text, Font font)
         {
             using (var img = new Image<Rgba32>(1000, 1000))
