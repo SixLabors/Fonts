@@ -1,10 +1,10 @@
-﻿using SixLabors.Primitives;
-using System;
-using System.Collections.Generic;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
+using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
@@ -115,7 +115,7 @@ namespace SixLabors.Fonts
             }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="TextMeasurer"/> class.
+            /// Initializes a new instance of the <see cref="TextMeasurerInt"/> class.
             /// </summary>
             internal TextMeasurerInt()
             : this(TextLayout.Default)

@@ -1,5 +1,4 @@
 ﻿using ImageSharp;
-using System;
 using System.IO;
 
 namespace SixLabors.Fonts.DrawWithImageSharp

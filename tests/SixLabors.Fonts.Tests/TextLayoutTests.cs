@@ -1,12 +1,4 @@
-﻿using Moq;
-using SixLabors.Fonts.Tables.General;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Numerics;
-using SixLabors.Fonts.Tables.General.CMap;
-using SixLabors.Fonts.Tables.General.Glyphs;
+﻿using System.Numerics;
 using Xunit;
 using SixLabors.Fonts.Tests.Fakes;
 using System.Collections.Immutable;

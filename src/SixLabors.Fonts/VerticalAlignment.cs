@@ -1,4 +1,7 @@
-﻿namespace SixLabors.Fonts
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
+namespace SixLabors.Fonts
 {
     /// <summary>
     /// Vertial alignment modes.

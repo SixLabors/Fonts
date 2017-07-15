@@ -1,7 +1,8 @@
-﻿using System;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.WellKnownIds;
 
@@ -79,7 +80,6 @@ namespace SixLabors.Fonts.Tables.General
             {
                 encodings[i] = EncodingRecord.Read(reader);
             }
-
 
             // foreach encoding we move forward looking for th subtables
             List<CMapSubTable> tables = new List<CMapSubTable>(numTables);

@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {

@@ -1,10 +1,10 @@
-﻿using System;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
+using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 
 using SixLabors.Fonts.Tables;
 
@@ -122,7 +122,6 @@ namespace SixLabors.Fonts
 
             return null;
         }
-
 
         public virtual BinaryReader GetReaderAtTablePosition(string tableName)
         {

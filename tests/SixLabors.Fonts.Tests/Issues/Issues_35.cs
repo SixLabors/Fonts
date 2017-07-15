@@ -1,8 +1,5 @@
 ﻿using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Primitives;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues

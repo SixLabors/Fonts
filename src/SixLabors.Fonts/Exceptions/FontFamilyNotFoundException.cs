@@ -1,4 +1,5 @@
-using System;
+// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
 
 namespace SixLabors.Fonts.Exceptions
 {
@@ -9,12 +10,7 @@ namespace SixLabors.Fonts.Exceptions
     public class FontFamilyNotFoundException : FontException
     {
         /// <summary>
-        /// The name of the font familiy we failed to find.
-        /// </summary>
-        public string FontFamily { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FontException"/> class.
+        /// Initializes a new instance of the <see cref="FontFamilyNotFoundException"/> class.
         /// </summary>
         /// <param name="family">The name of the missing font family.</param>
         public FontFamilyNotFoundException(string family)
@@ -22,5 +18,10 @@ namespace SixLabors.Fonts.Exceptions
         {
             this.FontFamily = family;
         }
+
+        /// <summary>
+        /// Gets the name of the font familiy we failed to find.
+        /// </summary>
+        public string FontFamily { get; }
     }
 }

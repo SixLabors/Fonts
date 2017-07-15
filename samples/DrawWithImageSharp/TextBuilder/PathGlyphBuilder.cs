@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Numerics;
-
-using SixLabors.Fonts;
-using SixLabors.Shapes;
 using SixLabors.Primitives;
 
 namespace SixLabors.Shapes.Temp

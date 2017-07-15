@@ -1,13 +1,6 @@
 ﻿using ImageSharp;
-using ImageSharp.Drawing;
 using SixLabors.Fonts;
-using SixLabors.Fonts.DrawWithImageSharp;
-using SixLabors.Primitives;
 using SixLabors.Shapes.Temp;
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
 
 namespace DrawWithImageSharp
 {

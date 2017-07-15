@@ -1,8 +1,8 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
 
-using SixLabors.Fonts.Tables;
+using System;
+using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts
 {

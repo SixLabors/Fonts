@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 using SixLabors.Fonts.Tables.General;
-using SixLabors.Fonts.WellKnownIds;
 
 using Xunit;
 

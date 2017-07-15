@@ -1,10 +1,5 @@
 ﻿using SixLabors.Fonts;
 using SixLabors.Primitives;
-using SixLabors.Shapes.Temp;
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
 
 namespace SixLabors.Shapes.Temp
 {
