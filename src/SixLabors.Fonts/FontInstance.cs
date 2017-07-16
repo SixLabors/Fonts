@@ -1,8 +1,8 @@
-﻿using System;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.IO;
 using System.Numerics;
-
-using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
 
 namespace SixLabors.Fonts
@@ -29,7 +29,7 @@ namespace SixLabors.Fonts
         public int LineHeight { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontDescription" /> class.
+        /// Initializes a new instance of the <see cref="FontInstance"/> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
         /// <param name="cmap">The cmap.</param>

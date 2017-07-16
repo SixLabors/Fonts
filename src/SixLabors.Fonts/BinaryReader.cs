@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using System;
 using System.IO;
 using System.Text;
@@ -245,10 +248,8 @@ namespace SixLabors.Fonts
         public byte[] ReadUInt8Array(int length)
         {
             byte[] data = new byte[length];
-            for (int i = 0; i < length; i++)
-            {
-                data[i] = this.ReadUInt8();
-            }
+
+            this.ReadInternal(data, length);
 
             return data;
         }
@@ -537,32 +538,32 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Class to cast to type <typeparamref name="T"/>
+        /// Class to cast to type <typeparamref name="TTarget"/>
         /// </summary>
-        /// <typeparam name="T">Target type</typeparam>
-        private static class CastTo<T>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        private static class CastTo<TTarget>
         {
             /// <summary>
-            /// Casts <typeparamref name="S" /> to <typeparamref name="T" />.
+            /// Casts <typeparamref name="TSource" /> to <typeparamref name="TTarget" />.
             /// This does not cause boxing for value types.
             /// Useful in generic methods.
             /// </summary>
-            /// <typeparam name="S">Source type to cast from. Usually a generic type.</typeparam>
+            /// <typeparam name="TSource">Source type to cast from. Usually a generic type.</typeparam>
             /// <param name="s">The s.</param>
-            public static T From<S>(S s)
+            public static TTarget From<TSource>(TSource s)
             {
-                return Cache<S>.Caster(s);
+                return Cache<TSource>.Caster(s);
             }
 
-            private static class Cache<S>
+            private static class Cache<TSource>
             {
-                public static readonly Func<S, T> Caster = Get();
+                public static readonly Func<TSource, TTarget> Caster = Get();
 
-                private static Func<S, T> Get()
+                private static Func<TSource, TTarget> Get()
                 {
-                    System.Linq.Expressions.ParameterExpression p = System.Linq.Expressions.Expression.Parameter(typeof(S));
-                    System.Linq.Expressions.UnaryExpression c = System.Linq.Expressions.Expression.ConvertChecked(p, typeof(T));
-                    return System.Linq.Expressions.Expression.Lambda<Func<S, T>>(c, p).Compile();
+                    System.Linq.Expressions.ParameterExpression p = System.Linq.Expressions.Expression.Parameter(typeof(TSource));
+                    System.Linq.Expressions.UnaryExpression c = System.Linq.Expressions.Expression.ConvertChecked(p, typeof(TTarget));
+                    return System.Linq.Expressions.Expression.Lambda<Func<TSource, TTarget>>(c, p).Compile();
                 }
             }
         }

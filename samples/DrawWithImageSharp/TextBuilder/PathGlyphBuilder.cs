@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Numerics;
-
-using SixLabors.Fonts;
-using SixLabors.Shapes;
 using SixLabors.Primitives;
 
 namespace SixLabors.Shapes.Temp
@@ -39,11 +35,11 @@ namespace SixLabors.Shapes.Temp
         {
             var point = this.path.PointAlongPath(rect.X);
 
-            var targetPoint = point.Point + new Vector2(0, rect.Y - this.offsetY);
+            var targetPoint = point.Point + new PointF(0, rect.Y - this.offsetY);
 
             // due to how matrix combining works you have to combine thins in the revers order of operation
             // this one rotates the glype then moves it.
-            var matrix = Matrix3x2.CreateTranslation(targetPoint - (Vector2)rect.Location) * Matrix3x2.CreateRotation(point.Angle - Pi, point.Point);
+            var matrix = Matrix3x2.CreateTranslation(targetPoint - rect.Location) * Matrix3x2.CreateRotation(point.Angle - Pi, point.Point);
             this.builder.SetTransform(matrix);
         }
     }

@@ -1,7 +1,6 @@
-﻿// <copyright file="AssemblyInfo.Common.cs" company="Scott Williams">
-// Copyright (c) Scott Williams and contributors.
+﻿// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
-// </copyright>
+
 using System.Reflection;
 using System.Resources;
 using System.Runtime.CompilerServices;
@@ -11,9 +10,9 @@ using System.Runtime.CompilerServices;
 // associated with an assembly.
 [assembly: AssemblyDescription("A cross-platform library for loading and laying out for processing and measuring; written in C#")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Scott Williams")]
+[assembly: AssemblyCompany("Six Labors")]
 [assembly: AssemblyProduct("SixLabors.Fonts")]
-[assembly: AssemblyCopyright("Copyright (c) Scott Williams and contributors.")]
+[assembly: AssemblyCopyright("Copyright (c) Six Labors and contributors.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: NeutralResourcesLanguage("en")]

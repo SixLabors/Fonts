@@ -1,5 +1,4 @@
 ﻿using ImageSharp;
-using System;
 using System.IO;
 
 namespace SixLabors.Fonts.DrawWithImageSharp
@@ -57,7 +56,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(new Font(SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
             RenderText(new Font(SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
 
-            TextAlignment.Generate(new Font(font2, 50));
+            RenderText(new RendererOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
+
+            BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
+
+            TextAlignment.Generate(SystemFonts.CreateFont("arial", 50f));
 
             StringBuilder sb = new StringBuilder();
             for (char c = 'a'; c <= 'z'; c++)
@@ -101,6 +104,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 }
             }
         }
+
         public static void RenderText(RendererOptions font, string text)
         {
             GlyphBuilder builder = new GlyphBuilder();
@@ -149,7 +153,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     .Translate(new Vector2(10)); // move in from top left
 
             StringBuilder sb = new StringBuilder();
-            System.Collections.Immutable.ImmutableArray<ISimplePath> converted = shape.Flatten();
+            var converted = shape.Flatten();
             converted.Aggregate(sb, (s, p) =>
             {
                 foreach (Vector2 point in p.Points)

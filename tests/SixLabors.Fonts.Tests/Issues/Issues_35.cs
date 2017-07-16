@@ -1,8 +1,5 @@
 ﻿using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Primitives;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
@@ -13,10 +10,10 @@ namespace SixLabors.Fonts.Tests.Issues
         public void RenderingTabAtStartOrLineTooShort()
         {
             var font = CreateFont("\t x");
-            SizeF xWidth = TextMeasurer.Measure("x", new RendererOptions(font, (72 * font.EmSize)));
-            SizeF tabWidth = TextMeasurer.Measure("\t", new RendererOptions(font, (72 * font.EmSize)));
-            SizeF doublTabWidth = TextMeasurer.Measure("\t\t", new RendererOptions(font, (72 * font.EmSize)));
-            SizeF tabWithXWidth = TextMeasurer.Measure("\tx", new RendererOptions(font, (72 * font.EmSize)));
+            SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
+            SizeF tabWidth = TextMeasurer.MeasureBounds("\t", new RendererOptions(font, (72 * font.EmSize))).Size;
+            SizeF doublTabWidth = TextMeasurer.MeasureBounds("\t\t", new RendererOptions(font, (72 * font.EmSize))).Size;
+            SizeF tabWithXWidth = TextMeasurer.MeasureBounds("\tx", new RendererOptions(font, (72 * font.EmSize))).Size;
 
             Assert.Equal(tabWidth.Width + xWidth.Width, tabWithXWidth.Width, 2);
         }
@@ -26,9 +23,9 @@ namespace SixLabors.Fonts.Tests.Issues
         public void Rendering2TabsAtStartOfLineTooShort()
         {
             var font = CreateFont("\t x");
-            SizeF xWidth = TextMeasurer.Measure("x", new RendererOptions(font, (72 * font.EmSize)));
-            SizeF tabWidth = TextMeasurer.Measure("\t\t", new RendererOptions(font, (72 * font.EmSize)));
-            SizeF tabWithXWidth = TextMeasurer.Measure("\t\tx", new RendererOptions(font, (72 * font.EmSize)));
+            SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
+            SizeF tabWidth = TextMeasurer.MeasureBounds("\t\t", new RendererOptions(font, (72 * font.EmSize))).Size;
+            SizeF tabWithXWidth = TextMeasurer.MeasureBounds("\t\tx", new RendererOptions(font, (72 * font.EmSize))).Size;
 
             Assert.Equal(tabWidth.Width + xWidth.Width, tabWithXWidth.Width, 2);
         }
@@ -37,9 +34,9 @@ namespace SixLabors.Fonts.Tests.Issues
         public void TwoTabsAreDoubleWidthOfOneTab()
         {
             var font = CreateFont("\t x");
-            SizeF xWidth = TextMeasurer.Measure("x", new RendererOptions(font, (72 * font.EmSize)));
-            SizeF tabWidth = TextMeasurer.Measure("\t", new RendererOptions(font, (72 * font.EmSize)));
-            SizeF twoTabWidth = TextMeasurer.Measure("\t\t", new RendererOptions(font, (72 * font.EmSize)));
+            SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
+            SizeF tabWidth = TextMeasurer.MeasureBounds("\t", new RendererOptions(font, (72 * font.EmSize))).Size;
+            SizeF twoTabWidth = TextMeasurer.MeasureBounds("\t\t", new RendererOptions(font, (72 * font.EmSize))).Size;
 
             Assert.Equal(twoTabWidth.Width, tabWidth.Width * 2, 2);
         }
@@ -49,9 +46,9 @@ namespace SixLabors.Fonts.Tests.Issues
         public void TwoTabsAreDoubleWidthOfOneTabMinusXWidth()
         {
             var font = CreateFont("\t x");
-            SizeF xWidth = TextMeasurer.Measure("x", new RendererOptions(font, (72 * font.EmSize)));
-            SizeF tabWidth = TextMeasurer.Measure("\tx", new RendererOptions(font, (72 * font.EmSize)));
-            SizeF twoTabWidth = TextMeasurer.Measure("\t\tx", new RendererOptions(font, (72 * font.EmSize)));
+            SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
+            SizeF tabWidth = TextMeasurer.MeasureBounds("\tx", new RendererOptions(font, (72 * font.EmSize))).Size;
+            SizeF twoTabWidth = TextMeasurer.MeasureBounds("\t\tx", new RendererOptions(font, (72 * font.EmSize))).Size;
 
             Assert.Equal(twoTabWidth.Width - xWidth.Width, (tabWidth.Width - xWidth.Width) * 2, 2);
         }

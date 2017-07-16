@@ -1,10 +1,10 @@
-﻿using SixLabors.Primitives;
-using System;
-using System.Collections.Generic;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
+using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
@@ -57,9 +57,9 @@ namespace SixLabors.Fonts
 
             this.renderer.BeginText(rect);
 
-            foreach (GlyphLayout g in glyphsToRender.Where(x => x.Glyph.HasValue))
+            foreach (GlyphLayout g in glyphsToRender.Where(x => !x.IsWhiteSpace))
             {
-                g.Glyph.Value.RenderTo(this.renderer, g.Location, options.DpiX, options.DpiY, g.LineHeight);
+                g.Glyph.RenderTo(this.renderer, g.Location, options.DpiX, options.DpiY, g.LineHeight);
             }
 
             this.renderer.EndText();

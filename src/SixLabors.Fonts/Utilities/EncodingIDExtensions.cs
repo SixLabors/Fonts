@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Text;
-using System.Threading.Tasks;
 using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Utilities

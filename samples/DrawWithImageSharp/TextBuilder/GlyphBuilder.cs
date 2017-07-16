@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
-
-using SixLabors.Fonts;
-using SixLabors.Shapes;
+﻿using System.Numerics;
 
 namespace SixLabors.Shapes.Temp
 {

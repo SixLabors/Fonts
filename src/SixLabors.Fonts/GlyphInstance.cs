@@ -1,11 +1,10 @@
-﻿using SixLabors.Primitives;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
@@ -19,9 +18,10 @@ namespace SixLabors.Fonts
         private readonly bool[] onCurves;
         private readonly ushort[] endPoints;
         private readonly short leftSideBearing;
+        private readonly float scaleFactor;
 
         internal GlyphInstance(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index)
-         {
+        {
             this.sizeOfEm = sizeOfEm;
             this.controlPoints = controlPoints;
             this.onCurves = onCurves;
@@ -30,7 +30,9 @@ namespace SixLabors.Fonts
             this.AdvanceWidth = advanceWidth;
             this.Index = index;
             this.Height = sizeOfEm - this.Bounds.Min.Y;
+
             this.leftSideBearing = leftSideBearing;
+            this.scaleFactor = (float)(this.sizeOfEm * 72f);
         }
 
         /// <summary>
@@ -65,6 +67,18 @@ namespace SixLabors.Fonts
         /// </value>
         internal ushort Index { get; }
 
+        private static readonly Vector2 scale = new Vector2(1, -1);
+
+        internal RectangleF BoundingBox(Vector2 origin, Vector2 scaledPointSize)
+        {
+            var size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
+            var loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * scale;
+
+            loc = origin + loc;
+
+            return new RectangleF(loc.X, loc.Y, size.X, size.Y);
+        }
+
         /// <summary>
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
         /// </summary>
@@ -78,16 +92,17 @@ namespace SixLabors.Fonts
         {
             location = location * dpi;
 
-            float scaleFactor = (float)(this.sizeOfEm * 72f);
-
             Vector2 firstPoint = Vector2.Zero;
-            Vector2 scale = new Vector2(1, -1);
 
-            Vector2 sizeVector = (new Vector2(this.AdvanceWidth, this.Height) * pointSize * dpi) / scaleFactor;
+            var scaledPoint = dpi * pointSize;
 
-            var hash = HashHelpers.Combine(this.GetHashCode(), sizeVector.GetHashCode());
+            var box = BoundingBox(location, scaledPoint);
 
-            if (surface.BeginGlyph(new RectangleF(location.X, location.Y - (lineHeight * dpi.Y), sizeVector.X, sizeVector.Y), hash))
+            var hash = HashHelpers.Combine(this.GetHashCode(), pointSize.GetHashCode());
+            hash = HashHelpers.Combine(hash, dpi.GetHashCode());
+
+            // (lineHeight * dpi.Y)
+            if (surface.BeginGlyph(box, hash))
             {
 
                 int startOfContor = 0;
@@ -99,8 +114,8 @@ namespace SixLabors.Fonts
                     endOfContor = this.endPoints[i];
 
                     Vector2 prev = Vector2.Zero;
-                    Vector2 curr = GetPoint(pointSize, dpi, scaleFactor, scale, endOfContor) + location;
-                    Vector2 next = GetPoint(pointSize, dpi, scaleFactor, scale, startOfContor) + location;
+                    Vector2 curr = GetPoint(ref scaledPoint, endOfContor) + location;
+                    Vector2 next = GetPoint(ref scaledPoint, startOfContor) + location;
 
                     if (this.onCurves[endOfContor])
                     {
@@ -128,7 +143,7 @@ namespace SixLabors.Fonts
                         int currentIndex = startOfContor + p;
                         int nextIndex = startOfContor + ((p + 1) % length);
                         int prevIndex = startOfContor + (((length + p) - 1) % length);
-                        next = GetPoint(pointSize, dpi, scaleFactor, scale, nextIndex) + location;
+                        next = GetPoint(ref scaledPoint, nextIndex) + location;
 
                         if (this.onCurves[currentIndex])
                         {
@@ -164,9 +179,9 @@ namespace SixLabors.Fonts
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Vector2 GetPoint(float pointSize, Vector2 dpi, float scaleFactor, Vector2 scale, int pointIndex)
+        private Vector2 GetPoint(ref Vector2 scaledPoint, int pointIndex)
         {
-            Vector2 point = scale * ((this.controlPoints[pointIndex] * pointSize * dpi) / scaleFactor); // scale each point as we go, w will now have the correct relative point size
+            Vector2 point = scale * ((this.controlPoints[pointIndex] * scaledPoint) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
 
             return point;
         }

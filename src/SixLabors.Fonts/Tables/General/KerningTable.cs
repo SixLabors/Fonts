@@ -1,13 +1,10 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
+using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 
 using SixLabors.Fonts.Tables.General.Kern;
-using SixLabors.Fonts.Tables.General.Name;
-using SixLabors.Fonts.Utilities;
-using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General
 {

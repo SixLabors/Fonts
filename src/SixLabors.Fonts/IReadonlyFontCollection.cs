@@ -1,8 +1,8 @@
-﻿using SixLabors.Fonts.Exceptions;
-using System;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts
 {
@@ -23,7 +23,7 @@ namespace SixLabors.Fonts
         /// Finds the specified font family.
         /// </summary>
         /// <param name="fontFamily">The font family.</param>
-        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFountException"/></returns>
+        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFoundException"/></returns>
         FontFamily Find(string fontFamily);
 
         /// <summary>

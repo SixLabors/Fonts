@@ -1,12 +1,8 @@
 ﻿using ImageSharp;
-using ImageSharp.Drawing;
 using SixLabors.Fonts;
-using SixLabors.Fonts.DrawWithImageSharp;
 using SixLabors.Shapes.Temp;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 
 namespace DrawWithImageSharp
 {
@@ -64,11 +60,11 @@ namespace DrawWithImageSharp
                     break;
             }
 
-            GlyphBuilder glyphBuilder = new GlyphBuilder(location);
+            GlyphBuilder glyphBuilder = new GlyphBuilder();
 
             TextRenderer renderer = new TextRenderer(glyphBuilder);
             
-            RendererOptions style = new RendererOptions(font, 72)
+            RendererOptions style = new RendererOptions(font, 72, location)
             {
                 ApplyKerning = true,
                 TabWidth = 4,
@@ -77,14 +73,18 @@ namespace DrawWithImageSharp
                 VerticalAlignment = vert
             };
 
-            string text = $"{horiz}\n{vert}";
+            string text = $"{horiz} x y z\n{vert} x y z";
             renderer.RenderText(text, style);
 
             System.Collections.Generic.IEnumerable<SixLabors.Shapes.IPath> shapesToDraw = glyphBuilder.Paths;
-            foreach (SixLabors.Shapes.IPath s in shapesToDraw)
-            {
-                img.Fill(Rgba32.Black, s);
-            }
+                img.Fill(Rgba32.Black, glyphBuilder.Paths);
+
+            var f = Rgba32.Fuchsia;
+            f.A = 128;
+            img.Fill(Rgba32.Black, glyphBuilder.Paths);
+            img.Draw(f, 1, glyphBuilder.Boxes);
+
+            img.Draw(Rgba32.Lime, 1, glyphBuilder.TextBox);
         }
     }
 }

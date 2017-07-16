@@ -1,13 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-
-using SixLabors.Fonts.Exceptions;
-using SixLabors.Fonts.Tables.General.Name;
-using SixLabors.Fonts.Utilities;
-using SixLabors.Fonts.WellKnownIds;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
 
 namespace SixLabors.Fonts.Tables.General
 {

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using SixLabors.Fonts.Tables.General.CMap;
+﻿// Copyright (c) Six Labors and contributors.
+// Licensed under the Apache License, Version 2.0.
+
 using SixLabors.Fonts.Tables.General.Glyphs;
-using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General
 {

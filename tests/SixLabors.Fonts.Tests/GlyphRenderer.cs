@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace SixLabors.Fonts.Tests
 {
     using SixLabors.Primitives;
-    using System.Numerics;
-    using Xunit;
 
     public class GlyphRenderer : IGlyphRenderer
     {
