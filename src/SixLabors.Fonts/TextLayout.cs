@@ -128,7 +128,7 @@ namespace SixLabors.Fonts
 
                             if (finalWidth < glyphWidth)
                             {
-                                // if we are not going to tab atleast a glyph width add another tabstop to it ??? 
+                                // if we are not going to tab atleast a glyph width add another tabstop to it ???
                                 // should I be doing this?
                                 finalWidth += tabStop;
                             }
@@ -177,7 +177,7 @@ namespace SixLabors.Fonts
                                 {
                                     float wrappingOffset = layout[lastWrappableLocation].Location.X;
                                     startOfLine = true;
-                                    // the word just extended passed the end of the box 
+                                    // the word just extended passed the end of the box
                                     for (int j = lastWrappableLocation; j < layout.Count; j++)
                                     {
                                         Vector2 current = layout[j].Location;

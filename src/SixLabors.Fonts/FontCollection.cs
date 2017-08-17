@@ -15,8 +15,8 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection
     {
-        Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.OrdinalIgnoreCase);
-        Dictionary<string, FontFamily> families = new Dictionary<string, FontFamily>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, FontFamily> families = new Dictionary<string, FontFamily>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontCollection"/> class.
@@ -57,7 +57,7 @@ namespace SixLabors.Fonts
         {
             FontInstance instance = FontInstance.LoadFont(fontStream);
 
-            return Install(instance);
+            return this.Install(instance);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace SixLabors.Fonts
         /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFoundException"/></returns>
         public FontFamily Find(string fontFamily)
         {
-            if (TryFind(fontFamily, out FontFamily result))
+            if (this.TryFind(fontFamily, out FontFamily result))
             {
                 return result;
             }
@@ -95,7 +95,7 @@ namespace SixLabors.Fonts
 
         internal IEnumerable<FontStyle> AvailibleStyles(string fontFamily)
         {
-            return FindAll(fontFamily).Select(X => X.Description.Style).ToImmutableArray();
+            return this.FindAll(fontFamily).Select(x => x.Description.Style).ToImmutableArray();
         }
 
         internal FontFamily Install(IFontInstance instance)
@@ -130,7 +130,7 @@ namespace SixLabors.Fonts
                 return null;
             }
 
-            // once we have to support verient fonts then we 
+            // once we have to support verient fonts then we
             List<IFontInstance> inFamily = this.instances[fontFamily];
 
             return inFamily.FirstOrDefault(x => x.Description.Style == style);
@@ -143,7 +143,7 @@ namespace SixLabors.Fonts
                 return Enumerable.Empty<IFontInstance>();
             }
 
-            // once we have to support verient fonts then we 
+            // once we have to support verient fonts then we
             return this.instances[name];
         }
     }

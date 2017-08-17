@@ -96,7 +96,7 @@ namespace SixLabors.Fonts
 
             var scaledPoint = dpi * pointSize;
 
-            var box = BoundingBox(location, scaledPoint);
+            var box = this.BoundingBox(location, scaledPoint);
 
             var hash = HashHelpers.Combine(this.GetHashCode(), pointSize.GetHashCode());
             hash = HashHelpers.Combine(hash, dpi.GetHashCode());
@@ -114,8 +114,8 @@ namespace SixLabors.Fonts
                     endOfContor = this.endPoints[i];
 
                     Vector2 prev = Vector2.Zero;
-                    Vector2 curr = GetPoint(ref scaledPoint, endOfContor) + location;
-                    Vector2 next = GetPoint(ref scaledPoint, startOfContor) + location;
+                    Vector2 curr = this.GetPoint(ref scaledPoint, endOfContor) + location;
+                    Vector2 next = this.GetPoint(ref scaledPoint, startOfContor) + location;
 
                     if (this.onCurves[endOfContor])
                     {
@@ -143,7 +143,7 @@ namespace SixLabors.Fonts
                         int currentIndex = startOfContor + p;
                         int nextIndex = startOfContor + ((p + 1) % length);
                         int prevIndex = startOfContor + (((length + p) - 1) % length);
-                        next = GetPoint(ref scaledPoint, nextIndex) + location;
+                        next = this.GetPoint(ref scaledPoint, nextIndex) + location;
 
                         if (this.onCurves[currentIndex])
                         {
@@ -259,7 +259,7 @@ namespace SixLabors.Fonts
             public void ReplaceLast(Vector2 point)
             {
                 this.Count--;
-                Add(point);
+                this.Add(point);
             }
 
             public void Clear()

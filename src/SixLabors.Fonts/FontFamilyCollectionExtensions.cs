@@ -9,7 +9,7 @@ namespace SixLabors.Fonts
     public static class FontFamilyCollectionExtensions
     {
         /// <summary>
-        /// Create a new instance of the <see cref="Font"/> for the named font family. 
+        /// Create a new instance of the <see cref="Font"/> for the named font family.
         /// </summary>
         /// <param name="fontFamily">The family.</param>
         /// <param name="size">The size.</param>
@@ -20,7 +20,7 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Create a new instance of the <see cref="Font"/> for the named font family with regular styling. 
+        /// Create a new instance of the <see cref="Font"/> for the named font family with regular styling.
         /// </summary>
         /// <param name="fontFamily">The family.</param>
         /// <param name="size">The size.</param>

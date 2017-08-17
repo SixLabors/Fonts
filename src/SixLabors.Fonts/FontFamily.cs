@@ -50,7 +50,7 @@ namespace SixLabors.Fonts
         /// </returns>
         public bool IsStyleAvailible(FontStyle style) => this.AvailibleStyles.Contains(style);
 
-        internal FontStyle DefaultStyle => IsStyleAvailible(FontStyle.Regular) ? FontStyle.Regular : this.AvailibleStyles.First();
+        internal FontStyle DefaultStyle => this.IsStyleAvailible(FontStyle.Regular) ? FontStyle.Regular : this.AvailibleStyles.First();
 
         internal IFontInstance Find(FontStyle style)
         {
@@ -58,10 +58,10 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
+        /// A <see cref="string" /> that represents this instance.
         /// </returns>
         public override string ToString()
         {

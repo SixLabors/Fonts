@@ -19,7 +19,7 @@ namespace SixLabors.Fonts
         private readonly HorizontalMetricsTable horizontalMetrics;
         private readonly GlyphInstance[] glyphCache;
         private readonly KerningTable kerning;
-        
+
         /// <summary>
         /// Gets the height of the line.
         /// </summary>

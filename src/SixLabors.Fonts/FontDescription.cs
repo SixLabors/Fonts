@@ -124,6 +124,7 @@ namespace SixLabors.Fonts
                     style |= FontStyle.Italic;
                 }
             }
+
             return style;
         }
     }

@@ -35,7 +35,7 @@ namespace SixLabors.Fonts.Tables
         public virtual BinaryReader CreateReader(Stream stream)
         {
             stream.Seek(this.Offset, SeekOrigin.Begin);
-         
+
            return new BinaryReader(stream, true);
         }
     }

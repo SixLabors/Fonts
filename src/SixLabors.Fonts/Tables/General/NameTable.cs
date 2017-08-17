@@ -72,10 +72,10 @@ namespace SixLabors.Fonts.Tables.General
         internal NameTable(NameRecord[] names, string[] languages)
         {
             this.names = names;
-            this.FontFamilyName = GetNameById(NameIds.FontFamilyName);
-            this.FontSubFamilyName = GetNameById(NameIds.FontSubfamilyName);
-            this.Id = GetNameById(NameIds.UniqueFontID);
-            this.FontName = GetNameById(NameIds.FullFontName);
+            this.FontFamilyName = this.GetNameById(NameIds.FontFamilyName);
+            this.FontSubFamilyName = this.GetNameById(NameIds.FontSubfamilyName);
+            this.Id = this.GetNameById(NameIds.UniqueFontID);
+            this.FontName = this.GetNameById(NameIds.FullFontName);
         }
 
         /// <summary>

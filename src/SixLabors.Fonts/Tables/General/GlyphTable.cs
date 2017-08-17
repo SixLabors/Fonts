@@ -27,7 +27,7 @@ namespace SixLabors.Fonts.Tables.General
         {
             uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
             Bounds fallbackEmptyBounds = reader.GetTable<HeadTable>().Bounds;
-            
+
             using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(binaryReader, locations, fallbackEmptyBounds);

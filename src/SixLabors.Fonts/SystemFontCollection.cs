@@ -60,7 +60,7 @@ namespace SixLabors.Fonts
         /// The families.
         /// </value>
         public IEnumerable<FontFamily> Families => this.collection.Families;
-    
+
         ///<inheritdocs />
         public FontFamily Find(string fontFamily) => this.collection.Find(fontFamily);
         ///<inheritdocs />

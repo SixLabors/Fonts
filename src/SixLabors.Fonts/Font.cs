@@ -83,6 +83,7 @@ namespace SixLabors.Fonts
         /// The name.
         /// </value>
         public string Name => this.instance.Value.Description.FontName;
+
         /// <summary>
         /// Gets the size.
         /// </summary>
@@ -127,7 +128,7 @@ namespace SixLabors.Fonts
         /// Gets the glyph.
         /// </summary>
         /// <param name="character">The character.</param>
-        /// <returns></returns>
+        /// <returns>Returns the glyph</returns>
         internal Glyph GetGlyph(char character)
         {
             return new Glyph(this.instance.Value.GetGlyph(character), this.Size);

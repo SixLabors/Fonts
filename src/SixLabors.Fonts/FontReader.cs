@@ -36,7 +36,7 @@ namespace SixLabors.Fonts
             if (version == 0x774F4646)
             {
                 // this is a woff file
-                // WOFFHeader               
+                // WOFFHeader
                 // UInt32 | signature      | 0x774F4646 'wOFF'
                 // UInt32 | flavor         | The "sfnt version" of the input font.
                 // UInt32 | length         | Total size of the WOFF file.
