@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
@@ -10,11 +11,11 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
     internal class CompositeGlyphLoader : GlyphLoader
     {
         private readonly Bounds bounds;
-        private List<Composite> result;
+        private readonly Composite[] result;
 
-        public CompositeGlyphLoader(List<Composite> result, Bounds bounds)
+        public CompositeGlyphLoader(IEnumerable<Composite> result, Bounds bounds)
         {
-            this.result = result;
+            this.result = result.ToArray();
             this.bounds = bounds;
         }
 
