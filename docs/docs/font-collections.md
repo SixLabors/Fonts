@@ -9,7 +9,7 @@ The `FontCollection` is the root object that manages font styles and families.
 
 ### System fonts
 
-We have a pre-configured `FontCollection` at `SystemFonts.Collection`. `SystemFonts.Collection` is a read only collection with access to all the supported fonts installed in your operating system that the process can find. `SystemFonts` also exposes its standard methods to access the collectio directl fromthe static class.
+We have a pre-configured `FontCollection` at `SystemFonts.Collection`. `SystemFonts.Collection` is a read only collection with access to all the supported fonts installed in your operating system that the process can find. `SystemFonts` also exposes its standard methods to access the collection directly from the static class.
 
 ### Installing fonts
  
@@ -53,4 +53,4 @@ Installs a new font from a file path into the collection and returns a `Font` th
 
 #### `Find(string familyName)`
 
-Searchs the collectino for a named `FontFamily` returning null if not found.
+Searches the collection for a named `FontFamily` returning null if not found.
