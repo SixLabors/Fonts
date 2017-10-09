@@ -61,8 +61,8 @@ string name = description.FontName;
 
 ```c#
 FontCollection fonts = new FontCollection();
-Font font1 = fonts.Install("./path/to/font1.ttf");
-Font font2 = fonts.Install("./path/to/font2.woff");
+FontFamily font1 = fonts.Install("./path/to/font1.ttf");
+FontFamily font2 = fonts.Install("./path/to/font2.woff");
 
 ```
 
