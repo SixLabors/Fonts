@@ -114,8 +114,8 @@ namespace SixLabors.Fonts.Tests
 
         [Theory]
         [InlineData("hello world", 10, 310)]
-        [InlineData("hello world hello world",
-            40, // 30 actual line height + 10 actual height
+        [InlineData("hello world hello world hello world",
+            70, // 30 actual line height * 2 + 10 actual height
             310)]
         public void MeasureTextWordWrapping(string text, float height, float width)
         {
