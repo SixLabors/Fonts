@@ -176,20 +176,15 @@ namespace SixLabors.Fonts
                             {
                                 if (lastWrappableLocation < layout.Count)
                                 {
-                                    float wrappingOffset = layout[lastWrappableLocation].Location.X;
+                                    // remove the white space from the end of the line
+                                    float wrappingOffset = layout[lastWrappableLocation].Location.X + layout[lastWrappableLocation].Width;
+                                    layout.RemoveAt(lastWrappableLocation);
+
                                     startOfLine = true;
 
-                                    // move the characters to the next line
+                                    // move the remaining characters to the next line
                                     for (int j = lastWrappableLocation; j < layout.Count; j++)
                                     {
-                                        if (layout[j].IsWhiteSpace)
-                                        {
-                                            wrappingOffset += layout[j].Width;
-                                            layout.RemoveAt(j);
-                                            j--;
-                                            continue;
-                                        }
-
                                         Vector2 current = layout[j].Location;
                                         layout[j] = new GlyphLayout(layout[j].Character, layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height, layout[j].LineHeight, startOfLine, layout[j].IsWhiteSpace, layout[j].IsControlCharacter);
                                         startOfLine = false;
