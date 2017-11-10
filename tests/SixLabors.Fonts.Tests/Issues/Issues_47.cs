@@ -32,13 +32,13 @@ namespace SixLabors.Fonts.Tests.Issues
         }
 
         [Theory]
-        [InlineData(HorizontalAlignment.Left)]
-        [InlineData(HorizontalAlignment.Right)]
-        [InlineData(HorizontalAlignment.Center)]
-        public void NewWrappedLinesShouldNotStartOrEndWithWhiteSpace(HorizontalAlignment horiAlignment)
+        [InlineData("hello world hello world hello world hello world", HorizontalAlignment.Left)]
+        [InlineData("hello world hello world hello world hello world", HorizontalAlignment.Right)]
+        [InlineData("hello world hello world hello world hello world", HorizontalAlignment.Center)]
+        [InlineData("hello   world   hello   world   hello   hello   world", HorizontalAlignment.Left)]
+        public void NewWrappedLinesShouldNotStartOrEndWithWhiteSpace(string text, HorizontalAlignment horiAlignment)
         {
             var font = CreateFont("\t x");
-            var text = "hello world hello world hello world hello world";
 
             GlyphRenderer r = new GlyphRenderer();
 

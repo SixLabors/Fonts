@@ -85,8 +85,15 @@ namespace SixLabors.Fonts
 
                 if (char.IsWhiteSpace(c))
                 {
-                    //find the index in the layout where we last enabled back tracking from
-                    lastWrappableLocation = layout.Count;
+                    // keep a record of where to wrap text and ensure that no line starts with white space
+                    for (int j = layout.Count - 1; j >= 0; j--)
+                    {
+                        if (!layout[j].IsWhiteSpace)
+                        {
+                            lastWrappableLocation = j + 1;
+                            break;
+                        }
+                    }
                 }
                 GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
                 float glyphWidth = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
@@ -177,14 +184,21 @@ namespace SixLabors.Fonts
                                 if (lastWrappableLocation < layout.Count)
                                 {
                                     // remove the white space from the end of the line
-                                    float wrappingOffset = layout[lastWrappableLocation].Location.X + layout[lastWrappableLocation].Width;
-                                    layout.RemoveAt(lastWrappableLocation);
+                                    float wrappingOffset = layout[lastWrappableLocation].Location.X;
 
                                     startOfLine = true;
 
                                     // move the remaining characters to the next line
                                     for (int j = lastWrappableLocation; j < layout.Count; j++)
                                     {
+                                        if (layout[j].IsWhiteSpace)
+                                        {
+                                            wrappingOffset += layout[j].Width;
+                                            layout.RemoveAt(j);
+                                            j--;
+                                            continue;
+                                        }
+
                                         Vector2 current = layout[j].Location;
                                         layout[j] = new GlyphLayout(layout[j].Character, layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height, layout[j].LineHeight, startOfLine, layout[j].IsWhiteSpace, layout[j].IsControlCharacter);
                                         startOfLine = false;
