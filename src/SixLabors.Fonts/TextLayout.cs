@@ -168,18 +168,28 @@ namespace SixLabors.Fonts
                             layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), glyphLocation, glyphWidth, glyphHeight, lineHeight, startOfLine, false, false));
                             startOfLine = false;
 
-                            // move foraward the actual with of the glyph, we are retaining the baseline
+                            // move forward the actual width of the glyph, we are retaining the baseline
                             location.X += glyphWidth;
 
+                            // if the word extended pass the end of the box, wrap it
                             if (location.X >= maxWidth && lastWrappableLocation > 0)
                             {
                                 if (lastWrappableLocation < layout.Count)
                                 {
                                     float wrappingOffset = layout[lastWrappableLocation].Location.X;
                                     startOfLine = true;
-                                    // the word just extended passed the end of the box
+
+                                    // move the characters to the next line
                                     for (int j = lastWrappableLocation; j < layout.Count; j++)
                                     {
+                                        if (layout[j].IsWhiteSpace)
+                                        {
+                                            wrappingOffset += layout[j].Width;
+                                            layout.RemoveAt(j);
+                                            j--;
+                                            continue;
+                                        }
+
                                         Vector2 current = layout[j].Location;
                                         layout[j] = new GlyphLayout(layout[j].Character, layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height, layout[j].LineHeight, startOfLine, layout[j].IsWhiteSpace, layout[j].IsControlCharacter);
                                         startOfLine = false;
