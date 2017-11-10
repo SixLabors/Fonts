@@ -31,6 +31,36 @@ namespace SixLabors.Fonts.Tests.Issues
             }
         }
 
+        [Theory]
+        [InlineData(HorizontalAlignment.Left)]
+        [InlineData(HorizontalAlignment.Right)]
+        [InlineData(HorizontalAlignment.Center)]
+        public void WrappedTextShouldNotEndOrStartWithWhiteSpace(HorizontalAlignment horiAlignment)
+        {
+            var font = CreateFont("\t x");
+            var text = "hello world hello world hello world hello world";
+
+            GlyphRenderer r = new GlyphRenderer();
+
+            ImmutableArray<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            {
+                WrappingWidth = 350,
+                HorizontalAlignment = horiAlignment
+            });
+
+            float lineYPos = layout[0].Location.Y;
+            for (int i = 0; i < layout.Length; i++)
+            {
+                GlyphLayout glyph = layout[i];
+                if (lineYPos != glyph.Location.Y)
+                {
+                    Assert.Equal(false, glyph.IsWhiteSpace);
+                    Assert.Equal(false, layout[i - 1].IsWhiteSpace);
+                    lineYPos = glyph.Location.Y;
+                }
+            }
+        }
+
         public static Font CreateFont(string text)
         {
             FontCollection fc = new FontCollection();
