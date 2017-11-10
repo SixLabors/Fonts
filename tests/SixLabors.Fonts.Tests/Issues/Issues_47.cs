@@ -35,7 +35,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [InlineData(HorizontalAlignment.Left)]
         [InlineData(HorizontalAlignment.Right)]
         [InlineData(HorizontalAlignment.Center)]
-        public void WrappedTextShouldNotEndOrStartWithWhiteSpace(HorizontalAlignment horiAlignment)
+        public void NewWrappedLinesShouldNotEndOrStartWithWhiteSpace(HorizontalAlignment horiAlignment)
         {
             var font = CreateFont("\t x");
             var text = "hello world hello world hello world hello world";
