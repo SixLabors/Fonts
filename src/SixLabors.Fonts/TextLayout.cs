@@ -183,9 +183,7 @@ namespace SixLabors.Fonts
                             {
                                 if (lastWrappableLocation < layout.Count)
                                 {
-                                    // remove the white space from the end of the line
                                     float wrappingOffset = layout[lastWrappableLocation].Location.X;
-
                                     startOfLine = true;
 
                                     // move the remaining characters to the next line
