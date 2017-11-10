@@ -83,7 +83,7 @@ namespace SixLabors.Fonts
 
                 char c = text[i];
 
-                if (char.IsWhiteSpace(c))
+                if (options.WrappingWidth > 0 && char.IsWhiteSpace(c))
                 {
                     // keep a record of where to wrap text and ensure that no line starts with white space
                     for (int j = layout.Count - 1; j >= 0; j--)
