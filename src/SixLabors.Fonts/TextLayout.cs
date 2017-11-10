@@ -83,9 +83,17 @@ namespace SixLabors.Fonts
 
                 char c = text[i];
 
-                if (char.IsWhiteSpace(c))
+                // if text is supposed to be left aligned, only wrap the text after the whitespace
+                if (options.HorizontalAlignment == HorizontalAlignment.Left)
                 {
-                    //find the index in the layout where we last enabled back tracking from
+                    if (i > 0 && char.IsWhiteSpace(text[i - 1]))
+                    {
+                        lastWrappableLocation = layout.Count;
+                    }
+                }
+                else if (char.IsWhiteSpace(c))
+                {
+                    // find the index in the layout where we last enabled back tracking from
                     lastWrappableLocation = layout.Count;
                 }
                 GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
