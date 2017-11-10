@@ -87,7 +87,9 @@ namespace SixLabors.Fonts
                 if (options.HorizontalAlignment == HorizontalAlignment.Left)
                 {
                     if (i > 0 && char.IsWhiteSpace(text[i - 1]))
+                    {
                         lastWrappableLocation = layout.Count;
+                    }
                 }
                 else if (char.IsWhiteSpace(c))
                 {
