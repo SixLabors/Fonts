@@ -186,7 +186,7 @@ namespace SixLabors.Fonts
                                     float wrappingOffset = layout[lastWrappableLocation].Location.X;
                                     startOfLine = true;
 
-                                    // move the remaining characters to the next line
+                                    // move the characters to the next line
                                     for (int j = lastWrappableLocation; j < layout.Count; j++)
                                     {
                                         if (layout[j].IsWhiteSpace)
