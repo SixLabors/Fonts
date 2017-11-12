@@ -31,6 +31,9 @@ namespace SixLabors.Fonts
             float originX = 0;
             if (options.WrappingWidth > 0)
             {
+                // trim trailing white spaces from the text
+                text = text.TrimEnd(null);
+
                 maxWidth = options.WrappingWidth / options.DpiX;
 
                 switch (options.HorizontalAlignment)
@@ -83,10 +86,17 @@ namespace SixLabors.Fonts
 
                 char c = text[i];
 
-                if (char.IsWhiteSpace(c))
+                if (options.WrappingWidth > 0 && char.IsWhiteSpace(c))
                 {
-                    //find the index in the layout where we last enabled back tracking from
-                    lastWrappableLocation = layout.Count;
+                    // keep a record of where to wrap text and ensure that no line starts with white space
+                    for (int j = layout.Count - 1; j >= 0; j--)
+                    {
+                        if (!layout[j].IsWhiteSpace)
+                        {
+                            lastWrappableLocation = j + 1;
+                            break;
+                        }
+                    }
                 }
                 GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
                 float glyphWidth = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
@@ -168,18 +178,28 @@ namespace SixLabors.Fonts
                             layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), glyphLocation, glyphWidth, glyphHeight, lineHeight, startOfLine, false, false));
                             startOfLine = false;
 
-                            // move foraward the actual with of the glyph, we are retaining the baseline
+                            // move forward the actual width of the glyph, we are retaining the baseline
                             location.X += glyphWidth;
 
+                            // if the word extended pass the end of the box, wrap it
                             if (location.X >= maxWidth && lastWrappableLocation > 0)
                             {
                                 if (lastWrappableLocation < layout.Count)
                                 {
                                     float wrappingOffset = layout[lastWrappableLocation].Location.X;
                                     startOfLine = true;
-                                    // the word just extended passed the end of the box
+
+                                    // move the characters to the next line
                                     for (int j = lastWrappableLocation; j < layout.Count; j++)
                                     {
+                                        if (layout[j].IsWhiteSpace)
+                                        {
+                                            wrappingOffset += layout[j].Width;
+                                            layout.RemoveAt(j);
+                                            j--;
+                                            continue;
+                                        }
+
                                         Vector2 current = layout[j].Location;
                                         layout[j] = new GlyphLayout(layout[j].Character, layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height, layout[j].LineHeight, startOfLine, layout[j].IsWhiteSpace, layout[j].IsControlCharacter);
                                         startOfLine = false;
