@@ -31,6 +31,9 @@ namespace SixLabors.Fonts
             float originX = 0;
             if (options.WrappingWidth > 0)
             {
+                // trim trailing white spaces from the text
+                text = text.TrimEnd(null);
+
                 maxWidth = options.WrappingWidth / options.DpiX;
 
                 switch (options.HorizontalAlignment)

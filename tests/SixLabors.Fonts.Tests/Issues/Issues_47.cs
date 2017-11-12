@@ -79,6 +79,24 @@ namespace SixLabors.Fonts.Tests.Issues
             Assert.Equal(true, layout[2].IsWhiteSpace);
         }
 
+        [Fact]
+        public void WhiteSpaceAtTheEndOfTextShouldBeTrimmed()
+        {
+            var font = CreateFont("\t x");
+            var text = "hello world hello world hello world   ";
+
+            GlyphRenderer r = new GlyphRenderer();
+
+            ImmutableArray<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            {
+                WrappingWidth = 350
+            });
+
+            Assert.Equal(false, layout[layout.Length - 1].IsWhiteSpace);
+            Assert.Equal(false, layout[layout.Length - 2].IsWhiteSpace);
+            Assert.Equal(false, layout[layout.Length - 3].IsWhiteSpace);
+        }
+
         public static Font CreateFont(string text)
         {
             FontCollection fc = new FontCollection();
