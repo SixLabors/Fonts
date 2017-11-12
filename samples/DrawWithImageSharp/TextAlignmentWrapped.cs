@@ -6,12 +6,14 @@ using System.Numerics;
 
 namespace DrawWithImageSharp
 {
-    public static class TextAlignment
+    public static class TextAlignmentWrapped
     {
 
         public static void Generate(Font font)
         {
-            using (var img = new Image<Rgba32>(1000, 1000))
+            int wrappingWidth = 400;
+            var size = (wrappingWidth + wrappingWidth/3) * 3;
+            using (var img = new Image<Rgba32>(size, size))
             {
                 img.Mutate(x => x.Fill(Rgba32.White));
 
@@ -19,17 +21,16 @@ namespace DrawWithImageSharp
                 {
                     foreach (HorizontalAlignment h in Enum.GetValues(typeof(HorizontalAlignment)))
                     {
-                        Draw(img, font, v, h);
+                        Draw(img, font, v, h, wrappingWidth);
                     }
                 }
-                img.Save("Output/Alignment.png");
+                img.Save("Output/AlignmentWrapped.png");
             }
         }
 
-        public static void Draw(Image<Rgba32> img, Font font, VerticalAlignment vert, HorizontalAlignment horiz)
+        public static void Draw(Image<Rgba32> img, Font font, VerticalAlignment vert, HorizontalAlignment horiz, float wrappingWidth)
         {
             Vector2 location = Vector2.Zero;
-
             switch (vert)
             {
                 case VerticalAlignment.Top:
@@ -51,10 +52,10 @@ namespace DrawWithImageSharp
                     location.X = 0;
                     break;
                 case HorizontalAlignment.Right:
-                    location.X = img.Width;
+                    location.X = img.Width - wrappingWidth;
                     break;
                 case HorizontalAlignment.Center:
-                    location.X = img.Width / 2;
+                    location.X = (img.Width - wrappingWidth) / 2;
                     break;
                 default:
                     break;
@@ -68,12 +69,12 @@ namespace DrawWithImageSharp
             {
                 ApplyKerning = true,
                 TabWidth = 4,
-                WrappingWidth = 0,
+                WrappingWidth = wrappingWidth,
                 HorizontalAlignment = horiz,
                 VerticalAlignment = vert
             };
 
-            string text = $"{horiz} x y z\n{vert} x y z";
+            string text = $"    {horiz}     {vert}         {horiz}     {vert}         {horiz}     {vert}     ";
             renderer.RenderText(text, style);
 
             System.Collections.Generic.IEnumerable<SixLabors.Shapes.IPath> shapesToDraw = glyphBuilder.Paths;

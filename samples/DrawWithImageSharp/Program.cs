@@ -1,4 +1,4 @@
-﻿using ImageSharp;
+﻿using SixLabors.ImageSharp;
 using System.IO;
 
 namespace SixLabors.Fonts.DrawWithImageSharp
@@ -61,6 +61,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
 
             TextAlignment.Generate(SystemFonts.CreateFont("arial", 50f));
+            TextAlignmentWrapped.Generate(SystemFonts.CreateFont("arial", 50f));
 
             StringBuilder sb = new StringBuilder();
             for (char c = 'a'; c <= 'z'; c++)
@@ -91,10 +92,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             using (var img = new Image<Rgba32>(width, height))
             {
-                img.Fill(Rgba32.White);
+                img.Mutate(x=>x.Fill(Rgba32.White));
 
                 var shapes = SixLabors.Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Primitives.PointF(50f, 4f), new RendererOptions(font, 72));
-                img.Fill(Rgba32.Black, shapes);
+                img.Mutate(x => x.Fill(Rgba32.Black, shapes));
 
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
 
@@ -127,12 +128,12 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             using (Image<Rgba32> img = new Image<Rgba32>(width, height))
             {
-                img.Fill(Rgba32.DarkBlue);
+                img.Mutate(x => x.Fill(Rgba32.DarkBlue));
 
                 foreach (IPath s in shapes)
                 {
                     // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
-                    img.Fill(Rgba32.HotPink, s.Translate(new Vector2(0, 0)));
+                    img.Mutate(x => x.Fill(Rgba32.HotPink, s.Translate(new Vector2(0, 0))));
                 }
                 // img.Draw(Color.LawnGreen, 1, shape);
 
@@ -184,10 +185,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
             using (Image<Rgba32> img = new Image<Rgba32>(width, height))
             {
-                img.Fill(Rgba32.DarkBlue);
+                img.Mutate(x => x.Fill(Rgba32.DarkBlue));
 
                 // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
-                img.Fill(Rgba32.HotPink, shape);
+                img.Mutate(x => x.Fill(Rgba32.HotPink, shape));
                 // img.Draw(Color.LawnGreen, 1, shape);
 
                 // Ensure directory exists
