@@ -1,55 +1,54 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <Description>A cross-platform library for loading and laying out for processing and measuring; written in C#</Description>
-    <AssemblyTitle>SixLabors.Fonts</AssemblyTitle>
-    <VersionPrefix Condition="$(packageversion) != ''">$(packageversion)</VersionPrefix>
-    <VersionPrefix Condition="$(packageversion) == ''">0.1.0-alpha1</VersionPrefix>
-    <Authors>Six Labors and contributors</Authors>
-    <TargetFrameworks>netstandard1.3;netstandard1.1</TargetFrameworks>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyName>SixLabors.Fonts</AssemblyName>
-    <PackageId>SixLabors.Fonts</PackageId>
-    <PackageTags>font;truetype;opentype;woff</PackageTags>
-    <PackageIconUrl>https://raw.githubusercontent.com/SixLabors/Fonts/master/icons/icon.png</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/SixLabors/Fonts</PackageProjectUrl>
-    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/SixLabors/Fonts</RepositoryUrl>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <DebugType Condition="$(codecov) != ''">full</DebugType>
-  </PropertyGroup>
+    <PropertyGroup>
+        <Description>A cross-platform library for loading and laying out for processing and measuring; written in C#</Description>
+        <AssemblyTitle>SixLabors.Fonts</AssemblyTitle>
+        <VersionPrefix Condition="$(packageversion) != ''">$(packageversion)</VersionPrefix>
+        <VersionPrefix Condition="$(packageversion) == ''">0.1.0-alpha1</VersionPrefix>
+        <Authors>Six Labors and contributors</Authors>
+        <TargetFrameworks>netstandard2.0;netstandard1.3;netstandard1.1</TargetFrameworks>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AssemblyName>SixLabors.Fonts</AssemblyName>
+        <PackageId>SixLabors.Fonts</PackageId>
+        <PackageTags>font;truetype;opentype;woff</PackageTags>
+        <PackageIconUrl>https://raw.githubusercontent.com/SixLabors/Fonts/master/icons/icon.png</PackageIconUrl>
+        <PackageProjectUrl>https://github.com/SixLabors/Fonts</PackageProjectUrl>
+        <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/SixLabors/Fonts</RepositoryUrl>
+        <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+        <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+        <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
+        <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+        <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+        <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+        <DebugType Condition="$(codecov) != ''">full</DebugType>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="..\Shared\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
-  </ItemGroup>
-  
-  <PropertyGroup>
-    <CodeAnalysisRuleSet>..\SixLabors.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="..\Shared\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <AdditionalFiles Include="..\..\stylecop.json" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta004">
-      <PrivateAssets>All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="System.Collections.Immutable" Version="1.4.0" />
-    <PackageReference Include="SixLabors.Core" Version="1.0.0-beta0003" />
-  </ItemGroup>
+    <PropertyGroup>
+        <CodeAnalysisRuleSet>..\SixLabors.ruleset</CodeAnalysisRuleSet>
+    </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
-    <DefineConstants>$(DefineConstants);FILESYSTEM</DefineConstants>
-  </PropertyGroup>
+    <ItemGroup>
+        <AdditionalFiles Include="..\..\stylecop.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta004">
+            <PrivateAssets>All</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="System.Collections.Immutable" Version="1.4.0" />
+        <PackageReference Include="SixLabors.Core" Version="1.0.0-beta0004" />
+    </ItemGroup>
+    <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' OR '$(TargetFramework)' == 'netstandard2.0'">
+        <DefineConstants>$(DefineConstants);FILESYSTEM</DefineConstants>
+    </PropertyGroup>
 </Project>
