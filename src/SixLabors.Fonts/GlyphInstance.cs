@@ -104,7 +104,6 @@ namespace SixLabors.Fonts
             // (lineHeight * dpi.Y)
             if (surface.BeginGlyph(box, hash))
             {
-
                 int startOfContor = 0;
                 int endOfContor = -1;
                 for (int i = 0; i < this.endPoints.Length; i++)
