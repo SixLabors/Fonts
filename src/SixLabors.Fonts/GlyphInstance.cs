@@ -104,7 +104,6 @@ namespace SixLabors.Fonts
             // (lineHeight * dpi.Y)
             if (surface.BeginGlyph(box, hash))
             {
-
                 int startOfContor = 0;
                 int endOfContor = -1;
                 for (int i = 0; i < this.endPoints.Length; i++)
@@ -188,9 +187,7 @@ namespace SixLabors.Fonts
 
         private static void AlignToGrid(ref Vector2 point)
         {
-            Vector2 floorPoint = new Vector2(
-                                        (float)Math.Floor(point.X),
-                                        (float)Math.Floor(point.Y));
+            Vector2 floorPoint = new Vector2(MathF.Floor(point.X), MathF.Floor(point.Y));
             Vector2 decimalPart = point - floorPoint;
 
             if (decimalPart.X < 0.5)
