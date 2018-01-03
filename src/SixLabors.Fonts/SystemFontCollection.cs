@@ -38,7 +38,10 @@ namespace SixLabors.Fonts
             string[] expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
             string[] found = expanded.Where(x => Directory.Exists(x)).ToArray();
 
-            IEnumerable<string> files = found.SelectMany(x => Directory.EnumerateFiles(x, "*.ttf", SearchOption.AllDirectories));
+            IEnumerable<string> files = found
+                                            // we do this to provide a consistent experience with case sensitive file systems.
+                                            .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
+                                            .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase));;
 
             foreach(string path in files)
             {
