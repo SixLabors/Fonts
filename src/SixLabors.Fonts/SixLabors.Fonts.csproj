@@ -12,7 +12,7 @@
         <AssemblyName>SixLabors.Fonts</AssemblyName>
         <PackageId>SixLabors.Fonts</PackageId>
         <PackageTags>font;truetype;opentype;woff</PackageTags>
-        <PackageIconUrl>https://raw.githubusercontent.com/SixLabors/Fonts/master/icons/icon.png</PackageIconUrl>
+        <PackageIconUrl>https://raw.githubusercontent.com/SixLabors/Branding/master/icons/fonts/sixlabors.fonts.128.png</PackageIconUrl>
         <PackageProjectUrl>https://github.com/SixLabors/Fonts</PackageProjectUrl>
         <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
         <RepositoryType>git</RepositoryType>
