@@ -1,7 +1,11 @@
+<h1 align="center">
 
-#  <img src="icons/icon.png" width="52" height="52" /> SixLabors.Fonts
+<img src="https://raw.githubusercontent.com/SixLabors/Branding/master/icons/fonts/sixlabors.fonts.512.png" alt="SixLabors.Fonts" width="256"/>
+<br/>
+SixLabors.Fonts
+</h1>
 
-**SixLabors.Fonts** is a new cross-platform font loadings and drawing library.
+<div align="center">
 
 [![Build status](https://ci.appveyor.com/api/projects/status/26dab7lf874b5ib3/branch/master?svg=true)](https://ci.appveyor.com/project/six-labors/fonts/branch/master)
 [![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/master/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
@@ -12,6 +16,9 @@
 [![GitHub stars](https://img.shields.io/github/stars/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/network)
 
+</div>
+
+**SixLabors.Fonts** is a new cross-platform font loadings and drawing library.
 
 ### Installation
 
@@ -50,7 +57,7 @@ we currently only support otf and woff fonts with True Type outlines.
 ```c#
 FontDescription description = null;
 using(var fs = File.OpenReader("Font.ttf")){
-    description = FontDescription.Load(fs); // once it has loaded the data the stream is no longer required and can be disposed off
+    description = FontDescription.Load(fs); // once it has loaded the data the stream is no longer required and can be disposed of
 }
 
 string name = description.FontName;
@@ -72,9 +79,14 @@ Please... Spread the word, contribute algorithms, submit performance improvement
 
 ### Projects using SixLabors.Fonts
 
-* [ImageSharp](https://github.com/jimBobSquarePants/ImageSharp) - cross platform, fully manged, image manipultion and drawing library.
+* [SixLabors.ImageSharp](https://github.com/jimBobSquarePants/ImageSharp) - cross platform, fully managed, image manipulation and drawing library.
 
 ### The SixLabors.Fonts Team
 
 Lead
 - [Scott Williams](https://github.com/tocsoft)
+
+Core Team
+- [Dirk Lemstra](https://github.com/dlemstra)
+- [Anton Firsov](https://github.com/antonfirsov)
+- [James Jackson-South](https://github.com/jimbobsquarepants)
