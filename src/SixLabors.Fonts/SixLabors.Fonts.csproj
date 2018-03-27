@@ -46,7 +46,7 @@
             <PrivateAssets>All</PrivateAssets>
         </PackageReference>
         <PackageReference Include="System.Collections.Immutable" Version="1.4.0" />
-        <PackageReference Include="SixLabors.Core" Version="1.0.0-beta0004" />
+        <PackageReference Include="SixLabors.Core" Version="1.0.0-beta0005" />
     </ItemGroup>
     <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' OR '$(TargetFramework)' == 'netstandard2.0'">
         <DefineConstants>$(DefineConstants);FILESYSTEM</DefineConstants>
