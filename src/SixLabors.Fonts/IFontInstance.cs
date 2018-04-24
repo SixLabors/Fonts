@@ -10,6 +10,9 @@ namespace SixLabors.Fonts
         FontDescription Description { get; }
         ushort EmSize { get; }
         int LineHeight { get; }
+        short Ascender { get; }
+        short Descender { get; }
+        short LineGap { get; }
 
         GlyphInstance GetGlyph(char character);
         Vector2 GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph);

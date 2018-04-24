@@ -29,6 +29,21 @@ namespace SixLabors.Fonts
         public int LineHeight { get; }
 
         /// <summary>
+        /// Gets the ascender.
+        /// </summary>
+        public short Ascender { get; }
+
+        /// <summary>
+        /// Gets the descender.
+        /// </summary>
+        public short Descender { get; }
+
+        /// <summary>
+        /// Gets the line gap.
+        /// </summary>
+        public short LineGap { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="FontInstance"/> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
@@ -49,6 +64,9 @@ namespace SixLabors.Fonts
 
             // https://www.microsoft.com/typography/otspec/recom.htm#tad
             this.LineHeight = os2.TypoAscender - os2.TypoDescender + os2.TypoLineGap;
+            this.Ascender = os2.TypoAscender;
+            this.Descender = os2.TypoDescender;
+            this.LineGap = os2.TypoLineGap;
             this.EmSize = this.head.UnitsPerEm;
             this.kerning = kern;
             this.Description = new FontDescription(nameTable, os2, head);
