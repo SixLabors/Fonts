@@ -132,6 +132,11 @@ namespace SixLabors.Fonts
         public short LineGap => this.instance.Value.LineGap;
 
         /// <summary>
+        /// Gets the line height.
+        /// </summary>
+        public int LineHeight => this.instance.Value.LineHeight;
+
+        /// <summary>
         /// Gets the font instance.
         /// </summary>
         /// <value>
