@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
@@ -8,7 +9,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a <see cref="Glyph"/> metric.
     /// </summary>
-    public struct GlyphMetric
+    public readonly struct GlyphMetric
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphMetric"/> struct.
