@@ -41,8 +41,8 @@ namespace SixLabors.Fonts
         /// <param name="options">The style.</param>
         /// <param name="characterBounds">The list of character bounds of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty bounds.</returns>
-        public static bool MeasureCharacterBounds(string text, RendererOptions options, out IReadOnlyList<GlyphMetric> characterBounds)
-            => TextMeasurerInt.Default.MeasureCharacterBounds(text, options, out characterBounds);
+        public static bool TryMeasureCharacterBounds(string text, RendererOptions options, out IReadOnlyList<GlyphMetric> characterBounds)
+            => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
 
         internal static SizeF GetSize(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
         {
@@ -116,7 +116,7 @@ namespace SixLabors.Fonts
             return new RectangleF(left, top, width, height);
         }
 
-        internal static bool GetCharacterBounds(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi, out IReadOnlyList<GlyphMetric> characterBounds)
+        internal static bool TryGetCharacterBounds(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi, out IReadOnlyList<GlyphMetric> characterBounds)
         {
             bool hasSize = false;
             if (glyphLayouts.IsEmpty)
@@ -183,11 +183,11 @@ namespace SixLabors.Fonts
             /// <param name="options">The style.</param>
             /// <param name="characterBounds">The character bounds list.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal bool MeasureCharacterBounds(string text, RendererOptions options, out IReadOnlyList<GlyphMetric> characterBounds)
+            internal bool TryMeasureCharacterBounds(string text, RendererOptions options, out IReadOnlyList<GlyphMetric> characterBounds)
             {
                 ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
-                return GetCharacterBounds(glyphsToRender, new Vector2(options.DpiX, options.DpiY), out characterBounds);
+                return TryGetCharacterBounds(glyphsToRender, new Vector2(options.DpiX, options.DpiY), out characterBounds);
             }
 
             /// <summary>
