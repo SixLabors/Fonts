@@ -3,6 +3,7 @@ using Xunit;
 using SixLabors.Fonts.Tests.Fakes;
 using System.Collections.Immutable;
 using SixLabors.Primitives;
+using System.Collections.Generic;
 
 namespace SixLabors.Fonts.Tests
 {
@@ -110,6 +111,29 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
+        }
+
+        [Fact]
+        public void TryMeasureCharacterBounds() {
+            string text = "a b\nc";
+            GlyphMetric[] expectedGlyphMetrics = new GlyphMetric[] {
+                new GlyphMetric('a', new RectangleF(10, 10, 10, 10), false),
+                new GlyphMetric(' ', new RectangleF(40, 10, 30, 10), false),
+                new GlyphMetric('b', new RectangleF(70, 10, 10, 10), false),
+                new GlyphMetric('\n', new RectangleF(100, 10, 0, 10), true),
+                new GlyphMetric('c', new RectangleF(10, 40, 10, 10), false),
+            };
+            Font font = CreateFont(text);
+
+            int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
+            IReadOnlyList<GlyphMetric> glyphMetrics;
+            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, new RendererOptions(font, 72 * font.EmSize), out glyphMetrics));
+
+            Assert.Equal(text.Length, glyphMetrics.Count);
+            int i = 0;
+            foreach (GlyphMetric glyphMetric in glyphMetrics) {
+                Assert.Equal(expectedGlyphMetrics[i++], glyphMetric);
+            }
         }
 
         [Theory]
