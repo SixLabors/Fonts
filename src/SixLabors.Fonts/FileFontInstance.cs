@@ -24,6 +24,12 @@ namespace SixLabors.Fonts
 
         public ushort EmSize => this.font.Value.EmSize;
 
+        public short Ascender => this.font.Value.Ascender;
+
+        public short Descender => this.font.Value.Descender;
+
+        public short LineGap => this.font.Value.LineGap;
+
         public int LineHeight => this.font.Value.LineHeight;
 
         public GlyphInstance GetGlyph(char character)
