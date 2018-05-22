@@ -42,7 +42,7 @@ namespace SixLabors.Fonts
                         originX = maxWidth;
                         break;
                     case HorizontalAlignment.Center:
-                        originX = maxWidth / 2f;
+                        originX = 0.5f * maxWidth;
                         break;
                     case HorizontalAlignment.Left:
                     default:
@@ -54,9 +54,17 @@ namespace SixLabors.Fonts
             AppliedFontStyle spanStyle = options.GetStyle(0, text.Length);
             List<GlyphLayout> layout = new List<GlyphLayout>(text.Length);
 
+            float unscaledLineHeight = 0f;
             float lineHeight = 0f;
+            float unscaledLineMaxAscender = 0f;
+            float lineMaxAscender = 0f;
             Vector2 location = Vector2.Zero;
             float lineHeightOfFirstLine = 0;
+
+            // Remember where the top of the layouted text is for accurate vertical alignment.
+            // This is important because there is considerable space between the lineHeight at the glyph's ascender.
+            float top = 0;
+
             bool firstLine = true;
             GlyphInstance previousGlyph = null;
             float scale = 0;
@@ -72,16 +80,29 @@ namespace SixLabors.Fonts
                     previousGlyph = null;
                 }
 
-                if (spanStyle.Font.LineHeight > lineHeight)
+                if (spanStyle.Font.LineHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
+                    unscaledLineHeight = spanStyle.Font.LineHeight;
                     scale = spanStyle.Font.EmSize * 72;
-                    lineHeight = (spanStyle.Font.LineHeight * spanStyle.PointSize) / scale;
+                    lineHeight = (unscaledLineHeight * spanStyle.PointSize) / scale;
                 }
 
-                if (firstLine && lineHeight > lineHeightOfFirstLine)
+                if (spanStyle.Font.Ascender > unscaledLineMaxAscender)
                 {
-                    lineHeightOfFirstLine = lineHeight;
+                    unscaledLineMaxAscender = spanStyle.Font.Ascender;
+                    scale = spanStyle.Font.EmSize * 72;
+                    lineMaxAscender = (unscaledLineMaxAscender * spanStyle.PointSize) / scale;
+                }
+
+                if (firstLine)
+                {
+                    if (lineHeight > lineHeightOfFirstLine)
+                    {
+                        lineHeightOfFirstLine = lineHeight;
+                    }
+
+                    top = lineHeightOfFirstLine - lineMaxAscender;
                 }
 
                 char c = text[i];
@@ -98,6 +119,7 @@ namespace SixLabors.Fonts
                         }
                     }
                 }
+
                 GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
                 float glyphWidth = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                 float glyphHeight = (glyph.Height * spanStyle.PointSize) / scale;
@@ -224,12 +246,13 @@ namespace SixLabors.Fonts
                 }
             }
 
-            Vector2 offset = new Vector2(0, lineHeightOfFirstLine);
+            totalHeight -= top;
+            Vector2 offset = new Vector2(0, lineHeightOfFirstLine - top);
 
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Center:
-                    offset += new Vector2(0, -(totalHeight / 2));
+                    offset += new Vector2(0, -0.5f * totalHeight);
                     break;
                 case VerticalAlignment.Bottom:
                     offset += new Vector2(0, -totalHeight);
