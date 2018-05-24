@@ -160,10 +160,12 @@ namespace SixLabors.Fonts
             reader.GetTable<MaximumProfileTable>(); // maxp
             OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
             HorizontalMetricsTable horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
+
             // LTSH - Linear threshold data
             // VDMX - Vertical device metrics
             // hdmx - Horizontal device metrics
             CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
+
             // fpgm - Font Program
             // prep - Control Value Program
             // cvt  - Control Value Table
@@ -171,6 +173,7 @@ namespace SixLabors.Fonts
             GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
             KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
             NameTable nameTable = reader.GetTable<NameTable>(); // name
+
             // post - PostScript information
             // gasp - Grid-fitting/Scan-conversion (optional table)
             // PCLT - PCL 5 data

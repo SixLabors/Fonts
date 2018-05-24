@@ -18,7 +18,8 @@ namespace SixLabors.Fonts
 
         internal SystemFontCollection()
         {
-            string[] paths = new[] {
+            string[] paths = new[]
+            {
                 // windows directories
                 "%SYSTEMROOT%\\Fonts",
 
@@ -38,12 +39,12 @@ namespace SixLabors.Fonts
             string[] expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
             string[] found = expanded.Where(x => Directory.Exists(x)).ToArray();
 
+            // we do this to provide a consistent experience with case sensitive file systems.
             IEnumerable<string> files = found
-                                            // we do this to provide a consistent experience with case sensitive file systems.
-                                            .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
-                                            .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase));;
+                                .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
+                                .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase));
 
-            foreach(string path in files)
+            foreach (string path in files)
             {
                 try
                 {
@@ -64,9 +65,10 @@ namespace SixLabors.Fonts
         /// </value>
         public IEnumerable<FontFamily> Families => this.collection.Families;
 
-        ///<inheritdocs />
+        /// <inheritdocs />
         public FontFamily Find(string fontFamily) => this.collection.Find(fontFamily);
-        ///<inheritdocs />
+
+        /// <inheritdocs />
         public bool TryFind(string fontFamily, out FontFamily family) => this.collection.TryFind(fontFamily, out family);
     }
 #endif

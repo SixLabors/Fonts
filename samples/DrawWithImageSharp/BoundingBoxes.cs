@@ -1,6 +1,9 @@
 ﻿using SixLabors.ImageSharp;
 using SixLabors.Fonts;
 using SixLabors.Shapes.Temp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Drawing;
 
 namespace DrawWithImageSharp
 {
@@ -20,7 +23,7 @@ namespace DrawWithImageSharp
 
                 img.Mutate(x => x.Fill(Rgba32.Black, data.paths)
                                 .Draw(f, 1, data.boxes)
-                                .Draw(Rgba32.Lime, 1, new SixLabors.Shapes.RectangularePolygon(box)));
+                                .Draw(Rgba32.Lime, 1, new SixLabors.Shapes.RectangularPolygon(box)));
 
                 img.Save("Output/Boxed.png");
             }

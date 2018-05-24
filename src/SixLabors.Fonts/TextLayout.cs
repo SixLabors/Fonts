@@ -42,7 +42,7 @@ namespace SixLabors.Fonts
                         originX = maxWidth;
                         break;
                     case HorizontalAlignment.Center:
-                        originX = maxWidth / 2f;
+                        originX = 0.5f * maxWidth;
                         break;
                     case HorizontalAlignment.Left:
                     default:
@@ -54,9 +54,17 @@ namespace SixLabors.Fonts
             AppliedFontStyle spanStyle = options.GetStyle(0, text.Length);
             List<GlyphLayout> layout = new List<GlyphLayout>(text.Length);
 
+            float unscaledLineHeight = 0f;
             float lineHeight = 0f;
+            float unscaledLineMaxAscender = 0f;
+            float lineMaxAscender = 0f;
             Vector2 location = Vector2.Zero;
             float lineHeightOfFirstLine = 0;
+
+            // Remember where the top of the layouted text is for accurate vertical alignment.
+            // This is important because there is considerable space between the lineHeight at the glyph's ascender.
+            float top = 0;
+
             bool firstLine = true;
             GlyphInstance previousGlyph = null;
             float scale = 0;
@@ -72,16 +80,29 @@ namespace SixLabors.Fonts
                     previousGlyph = null;
                 }
 
-                if (spanStyle.Font.LineHeight > lineHeight)
+                if (spanStyle.Font.LineHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
+                    unscaledLineHeight = spanStyle.Font.LineHeight;
                     scale = spanStyle.Font.EmSize * 72;
-                    lineHeight = (spanStyle.Font.LineHeight * spanStyle.PointSize) / scale;
+                    lineHeight = (unscaledLineHeight * spanStyle.PointSize) / scale;
                 }
 
-                if (firstLine && lineHeight > lineHeightOfFirstLine)
+                if (spanStyle.Font.Ascender > unscaledLineMaxAscender)
                 {
-                    lineHeightOfFirstLine = lineHeight;
+                    unscaledLineMaxAscender = spanStyle.Font.Ascender;
+                    scale = spanStyle.Font.EmSize * 72;
+                    lineMaxAscender = (unscaledLineMaxAscender * spanStyle.PointSize) / scale;
+                }
+
+                if (firstLine)
+                {
+                    if (lineHeight > lineHeightOfFirstLine)
+                    {
+                        lineHeightOfFirstLine = lineHeight;
+                    }
+
+                    top = lineHeightOfFirstLine - lineMaxAscender;
                 }
 
                 char c = text[i];
@@ -98,6 +119,7 @@ namespace SixLabors.Fonts
                         }
                     }
                 }
+
                 GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
                 float glyphWidth = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                 float glyphHeight = (glyph.Height * spanStyle.PointSize) / scale;
@@ -119,12 +141,14 @@ namespace SixLabors.Fonts
                             layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
                             location.X = 0;
                             location.Y += lineHeight;
-                            lineHeight = 0; // reset line height tracking for next line
+                            unscaledLineHeight = 0;
+                            unscaledLineMaxAscender = 0;
                             previousGlyph = null;
                             firstLine = false;
                             lastWrappableLocation = -1;
                             startOfLine = true;
                         }
+
                         break;
                     case '\t':
                         {
@@ -212,11 +236,13 @@ namespace SixLabors.Fonts
                                     lastWrappableLocation = -1;
                                 }
                             }
+
                             float bottom = location.Y + lineHeight;
                             if (bottom > totalHeight)
                             {
                                 totalHeight = bottom;
                             }
+
                             previousGlyph = glyph;
                         }
 
@@ -224,12 +250,13 @@ namespace SixLabors.Fonts
                 }
             }
 
-            Vector2 offset = new Vector2(0, lineHeightOfFirstLine);
+            totalHeight -= top;
+            Vector2 offset = new Vector2(0, lineHeightOfFirstLine - top);
 
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Center:
-                    offset += new Vector2(0, -(totalHeight / 2));
+                    offset += new Vector2(0, -0.5f * totalHeight);
                     break;
                 case VerticalAlignment.Bottom:
                     offset += new Vector2(0, -totalHeight);
@@ -239,6 +266,7 @@ namespace SixLabors.Fonts
                     // no change
                     break;
             }
+
             Vector2 lineOffset = offset;
             for (int i = 0; i < layout.Count; i++)
             {
@@ -246,6 +274,7 @@ namespace SixLabors.Fonts
                 if (glyphLayout.StartOfLine)
                 {
                     lineOffset = offset;
+
                     // scan ahead measuring width
                     float width = glyphLayout.Width;
                     for (int j = i + 1; j < layout.Count; j++)
@@ -254,8 +283,10 @@ namespace SixLabors.Fonts
                         {
                             break;
                         }
+
                         width = layout[j].Location.X + layout[j].Width; // rhs
                     }
+
                     switch (options.HorizontalAlignment)
                     {
                         case HorizontalAlignment.Right:
@@ -284,7 +315,6 @@ namespace SixLabors.Fonts
     /// </summary>
     internal struct GlyphLayout
     {
-
         internal GlyphLayout(char character, Glyph glyph, Vector2 location, float width, float height, float lineHeight, bool startOfLine, bool isWhiteSpace, bool isControlCharacter)
         {
             this.LineHeight = lineHeight;
@@ -298,18 +328,8 @@ namespace SixLabors.Fonts
             this.IsControlCharacter = isControlCharacter;
         }
 
-        internal RectangleF BoundingBox(Vector2 dpi)
-        {
-            var box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
-            if (this.IsWhiteSpace)
-            {
-                box.Width = this.Width * dpi.X;
-            }
-            return box;
-        }
-
         /// <summary>
-        /// Gets the IsWhiteSpace.
+        /// Gets a value indicating whether gets the glyphe represents a whitespace character.
         /// </summary>
         /// <value>
         /// The bounds.
@@ -349,12 +369,27 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets weather this glyph is the first glyph on a new line.
+        /// Gets or sets a value indicating whether this glyph is the first glyph on a new line.
         /// </summary>
         public bool StartOfLine { get; set; }
+
         public char Character { get; private set; }
+
         public float LineHeight { get; private set; }
+
         public bool IsControlCharacter { get; private set; }
+
+        internal RectangleF BoundingBox(Vector2 dpi)
+        {
+            RectangleF box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
+
+            if (this.IsWhiteSpace)
+            {
+                box.Width = this.Width * dpi.X;
+            }
+
+            return box;
+        }
 
         public override string ToString()
         {
@@ -369,6 +404,7 @@ namespace SixLabors.Fonts
             {
                 sb.Append('!');
             }
+
             sb.Append('\'');
             switch (this.Character)
             {
@@ -380,6 +416,7 @@ namespace SixLabors.Fonts
                     sb.Append(this.Character);
                     break;
             }
+
             sb.Append('\'');
             sb.Append(' ');
 

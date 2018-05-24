@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Utilities
 
         public void LoadValue(BinaryReader reader)
         {
-            this.Value = reader.ReadString(this.Length, this.Encoding).Replace("\0", "");
+            this.Value = reader.ReadString(this.Length, this.Encoding).Replace("\0", string.Empty);
         }
     }
 }

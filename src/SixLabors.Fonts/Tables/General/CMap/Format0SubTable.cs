@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             return this.GlyphIds[b];
         }
 
-        public static IEnumerable< Format0SubTable> Load(IEnumerable< EncodingRecord> encodings, BinaryReader reader)
+        public static IEnumerable<Format0SubTable> Load(IEnumerable<EncodingRecord> encodings, BinaryReader reader)
         {
             // format has already been read by this point skip it
             ushort length = reader.ReadUInt16();

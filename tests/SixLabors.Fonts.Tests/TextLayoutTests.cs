@@ -21,17 +21,17 @@ namespace SixLabors.Fonts.Tests
         [InlineData(
             VerticalAlignment.Top,
             HorizontalAlignment.Left,
-            10,
+            0,
             10)]
         [InlineData(
             VerticalAlignment.Top,
             HorizontalAlignment.Right,
-            10,
+            0,
             -320)]
         [InlineData(
             VerticalAlignment.Top,
             HorizontalAlignment.Center,
-            10,
+            0,
             -155)]
         [InlineData(
             VerticalAlignment.Bottom,
@@ -51,17 +51,17 @@ namespace SixLabors.Fonts.Tests
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Left,
-            -20,
+            -25,
             10)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Right,
-            -20,
+            -25,
             -320)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Center,
-            -20,
+            -25,
             -155)]
         public void VerticalAlignmentTests(
             VerticalAlignment vertical,
@@ -114,14 +114,15 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void TryMeasureCharacterBounds() {
+        public void TryMeasureCharacterBounds()
+        {
             string text = "a b\nc";
             GlyphMetric[] expectedGlyphMetrics = new GlyphMetric[] {
-                new GlyphMetric('a', new RectangleF(10, 10, 10, 10), false),
-                new GlyphMetric(' ', new RectangleF(40, 10, 30, 10), false),
-                new GlyphMetric('b', new RectangleF(70, 10, 10, 10), false),
-                new GlyphMetric('\n', new RectangleF(100, 10, 0, 10), true),
-                new GlyphMetric('c', new RectangleF(10, 40, 10, 10), false),
+                new GlyphMetric('a', new RectangleF(10, 0, 10, 10), false),
+                new GlyphMetric(' ', new RectangleF(40, 0, 30, 10), false),
+                new GlyphMetric('b', new RectangleF(70, 0, 10, 10), false),
+                new GlyphMetric('\n', new RectangleF(100, 0, 0, 10), true),
+                new GlyphMetric('c', new RectangleF(10, 30, 10, 10), false),
             };
             Font font = CreateFont(text);
 
@@ -130,9 +131,17 @@ namespace SixLabors.Fonts.Tests
             Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, new RendererOptions(font, 72 * font.EmSize), out glyphMetrics));
 
             Assert.Equal(text.Length, glyphMetrics.Count);
-            int i = 0;
-            foreach (GlyphMetric glyphMetric in glyphMetrics) {
-                Assert.Equal(expectedGlyphMetrics[i++], glyphMetric);
+            for (var i = 0; i < glyphMetrics.Count; i++)
+            {
+                var expected = expectedGlyphMetrics[i];
+                var actual = glyphMetrics[i];
+                Assert.Equal(expected.Character, actual.Character);
+                Assert.Equal(expected.IsControlCharacter, actual.IsControlCharacter);
+                // 4 dp as there is minor offset difference in the float values
+                Assert.Equal(expected.Bounds.X, actual.Bounds.X, 4);
+                Assert.Equal(expected.Bounds.Y, actual.Bounds.Y, 4);
+                Assert.Equal(expected.Bounds.Height, actual.Bounds.Height, 4);
+                Assert.Equal(expected.Bounds.Width, actual.Bounds.Width, 4);
             }
         }
 
@@ -173,7 +182,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Theory]
-        [InlineData("a", 100, 100, 125, 828)] 
+        [InlineData("a", 100, 100, 125, 452)]
         public void LayoutWithLocation(string text, float x, float y, float expectedX, float expectedY)
         {
             FontCollection c = new FontCollection();
@@ -184,7 +193,8 @@ namespace SixLabors.Fonts.Tests
             var renderer = new TextRenderer(glyphRenderer);
             renderer.RenderText(text, new RendererOptions(new Font(font, 1), 72 * font.EmSize, new PointF(x, y)));
 
-            Assert.Equal(new PointF(expectedX, expectedY), glyphRenderer.GlyphRects[0].Location);
+            Assert.Equal(expectedX, glyphRenderer.GlyphRects[0].Location.X, 2);
+            Assert.Equal(expectedY, glyphRenderer.GlyphRects[0].Location.Y, 2);
         }
 
         public static Font CreateFont(string text)

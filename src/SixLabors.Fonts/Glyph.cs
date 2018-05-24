@@ -14,15 +14,15 @@ namespace SixLabors.Fonts
         private readonly GlyphInstance instance;
         private readonly float pointSize;
 
-        public RectangleF BoundingBox(PointF location, Vector2 dpi)
-        {
-            return this.instance.BoundingBox(location, this.pointSize * dpi);
-        }
-
         internal Glyph(GlyphInstance instance, float pointSize)
         {
             this.instance = instance;
             this.pointSize = pointSize;
+        }
+
+        public RectangleF BoundingBox(PointF location, Vector2 dpi)
+        {
+            return this.instance.BoundingBox(location, this.pointSize * dpi);
         }
 
         /// <summary>
@@ -42,8 +42,8 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="surface">The surface.</param>
         /// <param name="location">The location.</param>
-        /// <param name="dpiX">The dpi.</param>
-        /// <param name="dpiY">The dpi.</param>
+        /// <param name="dpiX">The dpi along the X axis.</param>
+        /// <param name="dpiY">The dpi along the Y axis.</param>
         /// <param name="lineHeight">The line height.</param>
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
         internal void RenderTo(IGlyphRenderer surface, PointF location, float dpiX, float dpiY, float lineHeight)

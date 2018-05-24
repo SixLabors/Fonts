@@ -5,6 +5,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 {
     using global::DrawWithImageSharp;
     using Shapes;
+    using SixLabors.ImageSharp.PixelFormats;
+    using SixLabors.ImageSharp.Processing;
+    using SixLabors.ImageSharp.Processing.Drawing;
     using SixLabors.Shapes.Temp;
     using System.Collections.Generic;
     using System.Linq;

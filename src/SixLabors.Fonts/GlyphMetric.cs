@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
         /// <param name="character">The character.</param>
         /// <param name="bounds">The bounds.</param>
         /// <param name="isControlCharacter">Whether the character is a control character.</param>
-        public GlyphMetric(char character, RectangleF bounds, bool isControlCharacter) 
+        public GlyphMetric(char character, RectangleF bounds, bool isControlCharacter)
         {
             this.Character = character;
             this.Bounds = bounds;
@@ -40,7 +40,8 @@ namespace SixLabors.Fonts
         public bool IsControlCharacter { get; }
 
         /// <inheritdoc/>
-        public override string ToString() {
+        public override string ToString()
+        {
             return $"Char: {this.Character}, bounds: {this.Bounds}, is control char: {this.IsControlCharacter}";
         }
     }

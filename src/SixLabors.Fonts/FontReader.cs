@@ -18,8 +18,6 @@ namespace SixLabors.Fonts
 
         private readonly Stream stream;
 
-        public IReadOnlyDictionary<string, TableHeader> Headers { get; }
-
         internal FontReader(Stream stream, TableLoader loader)
         {
             this.loader = loader;
@@ -81,6 +79,7 @@ namespace SixLabors.Fonts
             {
                 throw new Exceptions.InvalidFontFileException("Invalid glyph format, only TTF glyph outlines supported.");
             }
+
             Dictionary<string, TableHeader> headers = new Dictionary<string, Tables.TableHeader>(tableCount);
             for (int i = 0; i < tableCount; i++)
             {
@@ -91,14 +90,16 @@ namespace SixLabors.Fonts
             this.Headers = new ReadOnlyDictionary<string, TableHeader>(headers);
         }
 
-        public bool CompressedTableData { get; private set; }
-
-        public OutlineTypes OutlineType { get; }
-
         public FontReader(Stream stream)
             : this(stream, TableLoader.Default)
         {
         }
+
+        public IReadOnlyDictionary<string, TableHeader> Headers { get; }
+
+        public bool CompressedTableData { get; private set; }
+
+        public OutlineTypes OutlineType { get; }
 
         public virtual TTableType GetTable<TTableType>()
             where TTableType : Table
