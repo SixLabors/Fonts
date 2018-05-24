@@ -141,7 +141,8 @@ namespace SixLabors.Fonts
                             layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
                             location.X = 0;
                             location.Y += lineHeight;
-                            lineHeight = 0; // reset line height tracking for next line
+                            unscaledLineHeight = 0;
+                            unscaledLineMaxAscender = 0;
                             previousGlyph = null;
                             firstLine = false;
                             lastWrappableLocation = -1;
@@ -234,11 +235,13 @@ namespace SixLabors.Fonts
                                     lastWrappableLocation = -1;
                                 }
                             }
+
                             float bottom = location.Y + lineHeight;
                             if (bottom > totalHeight)
                             {
                                 totalHeight = bottom;
                             }
+
                             previousGlyph = glyph;
                         }
 
