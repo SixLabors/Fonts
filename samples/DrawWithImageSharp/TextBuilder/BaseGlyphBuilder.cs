@@ -34,7 +34,7 @@ namespace SixLabors.Shapes.Temp
         /// <summary>
         /// Gets the paths that have been rendered by this.
         /// </summary>
-        public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new SixLabors.Shapes.RectangularePolygon(x)));
+        public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new SixLabors.Shapes.RectangularPolygon(x)));
 
         /// <summary>
         /// Gets the paths that have been rendered by this.
@@ -47,7 +47,7 @@ namespace SixLabors.Shapes.Temp
 
         void IGlyphRenderer.BeginText(RectangleF rect)
         {
-            this.TextBox = new SixLabors.Shapes.RectangularePolygon(rect);
+            this.TextBox = new SixLabors.Shapes.RectangularPolygon(rect);
             BeginText(rect);
         }
 

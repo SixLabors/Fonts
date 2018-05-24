@@ -3,6 +3,9 @@ using SixLabors.Fonts;
 using SixLabors.Shapes.Temp;
 using System;
 using System.Numerics;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Drawing;
 
 namespace DrawWithImageSharp
 {
