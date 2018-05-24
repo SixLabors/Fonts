@@ -12,8 +12,6 @@ namespace SixLabors.Fonts.Tables
 {
     internal class TableLoader
     {
-        public static TableLoader Default { get; } = new TableLoader();
-
         public TableLoader()
         {
             // we will hard code mapping registration in here for all the tables
@@ -28,6 +26,8 @@ namespace SixLabors.Fonts.Tables
             this.Register(GlyphTable.Load);
             this.Register(KerningTable.Load);
         }
+
+        public static TableLoader Default { get; } = new TableLoader();
 
         private Dictionary<string, Func<FontReader, Table>> loaders = new Dictionary<string, Func<FontReader, Table>>();
         private Dictionary<Type, string> types = new Dictionary<Type, string>();

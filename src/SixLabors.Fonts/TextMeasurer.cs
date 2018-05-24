@@ -90,14 +90,17 @@ namespace SixLabors.Fonts
                     {
                         left = box.Left;
                     }
+
                     if (top > box.Top)
                     {
                         top = box.Top;
                     }
+
                     if (bottom < box.Bottom)
                     {
                         bottom = box.Bottom;
                     }
+
                     if (right < box.Right)
                     {
                         right = box.Right;
@@ -127,8 +130,9 @@ namespace SixLabors.Fonts
 
             List<GlyphMetric> characterBoundsList = new List<GlyphMetric>();
 
-            for (var i = 0; i < glyphLayouts.Length; i++) {
-                var c = glyphLayouts[i];
+            for (int i = 0; i < glyphLayouts.Length; i++)
+            {
+                GlyphLayout c = glyphLayouts[i];
                 if (c.IsControlCharacter)
                 {
                     characterBoundsList.Add(new GlyphMetric(c.Character, c.BoundingBox(dpi), true));
@@ -146,8 +150,6 @@ namespace SixLabors.Fonts
 
         internal class TextMeasurerInt
         {
-            internal static TextMeasurerInt Default { get; set; } = new TextMeasurerInt();
-
             private TextLayout layoutEngine;
 
             internal TextMeasurerInt(TextLayout layoutEngine)
@@ -162,6 +164,8 @@ namespace SixLabors.Fonts
             : this(TextLayout.Default)
             {
             }
+
+            internal static TextMeasurerInt Default { get; set; } = new TextMeasurerInt();
 
             /// <summary>
             /// Measures the text.

@@ -148,6 +148,7 @@ namespace SixLabors.Fonts
                             lastWrappableLocation = -1;
                             startOfLine = true;
                         }
+
                         break;
                     case '\t':
                         {
@@ -265,6 +266,7 @@ namespace SixLabors.Fonts
                     // no change
                     break;
             }
+
             Vector2 lineOffset = offset;
             for (int i = 0; i < layout.Count; i++)
             {
@@ -272,6 +274,7 @@ namespace SixLabors.Fonts
                 if (glyphLayout.StartOfLine)
                 {
                     lineOffset = offset;
+
                     // scan ahead measuring width
                     float width = glyphLayout.Width;
                     for (int j = i + 1; j < layout.Count; j++)
@@ -280,8 +283,10 @@ namespace SixLabors.Fonts
                         {
                             break;
                         }
+
                         width = layout[j].Location.X + layout[j].Width; // rhs
                     }
+
                     switch (options.HorizontalAlignment)
                     {
                         case HorizontalAlignment.Right:
@@ -310,7 +315,6 @@ namespace SixLabors.Fonts
     /// </summary>
     internal struct GlyphLayout
     {
-
         internal GlyphLayout(char character, Glyph glyph, Vector2 location, float width, float height, float lineHeight, bool startOfLine, bool isWhiteSpace, bool isControlCharacter)
         {
             this.LineHeight = lineHeight;
@@ -324,18 +328,8 @@ namespace SixLabors.Fonts
             this.IsControlCharacter = isControlCharacter;
         }
 
-        internal RectangleF BoundingBox(Vector2 dpi)
-        {
-            var box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
-            if (this.IsWhiteSpace)
-            {
-                box.Width = this.Width * dpi.X;
-            }
-            return box;
-        }
-
         /// <summary>
-        /// Gets the IsWhiteSpace.
+        /// Gets a value indicating whether gets the glyphe represents a whitespace character.
         /// </summary>
         /// <value>
         /// The bounds.
@@ -375,12 +369,27 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets weather this glyph is the first glyph on a new line.
+        /// Gets or sets a value indicating whether this glyph is the first glyph on a new line.
         /// </summary>
         public bool StartOfLine { get; set; }
+
         public char Character { get; private set; }
+
         public float LineHeight { get; private set; }
+
         public bool IsControlCharacter { get; private set; }
+
+        internal RectangleF BoundingBox(Vector2 dpi)
+        {
+            RectangleF box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
+
+            if (this.IsWhiteSpace)
+            {
+                box.Width = this.Width * dpi.X;
+            }
+
+            return box;
+        }
 
         public override string ToString()
         {
@@ -395,6 +404,7 @@ namespace SixLabors.Fonts
             {
                 sb.Append('!');
             }
+
             sb.Append('\'');
             switch (this.Character)
             {
@@ -406,6 +416,7 @@ namespace SixLabors.Fonts
                     sb.Append(this.Character);
                     break;
             }
+
             sb.Append('\'');
             sb.Append(' ');
 

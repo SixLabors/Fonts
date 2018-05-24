@@ -67,12 +67,12 @@ namespace SixLabors.Fonts
         /// </value>
         internal ushort Index { get; }
 
-        private static readonly Vector2 scale = new Vector2(1, -1);
+        private static readonly Vector2 Scale = new Vector2(1, -1);
 
         internal RectangleF BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
             var size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
-            var loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * scale;
+            var loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * Scale;
 
             loc = origin + loc;
 
@@ -180,7 +180,7 @@ namespace SixLabors.Fonts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector2 GetPoint(ref Vector2 scaledPoint, int pointIndex)
         {
-            Vector2 point = scale * ((this.controlPoints[pointIndex] * scaledPoint) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
+            Vector2 point = Scale * ((this.controlPoints[pointIndex] * scaledPoint) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
 
             return point;
         }
@@ -230,6 +230,7 @@ namespace SixLabors.Fonts
                 default:
                     throw new NotSupportedException("Too many control points");
             }
+
             points.Clear();
             return points;
         }
@@ -239,6 +240,7 @@ namespace SixLabors.Fonts
             public Vector2 SecondControlPoint;
             public Vector2 ThirdControlPoint;
             public int Count;
+
             public void Add(Vector2 point)
             {
                 switch (this.Count++)
@@ -253,6 +255,7 @@ namespace SixLabors.Fonts
                         throw new NotSupportedException("Too many control points");
                 }
             }
+
             public void ReplaceLast(Vector2 point)
             {
                 this.Count--;

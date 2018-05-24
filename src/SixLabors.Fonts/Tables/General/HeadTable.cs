@@ -48,6 +48,7 @@ namespace SixLabors.Fonts.Tables.General
                 {
                     return null;
                 }
+
                 return Load(binaryReader);
             }
         }
@@ -121,12 +122,14 @@ namespace SixLabors.Fonts.Tables.General
             {
                 created = startDate.AddSeconds(seconds);
             }
+
             seconds = reader.ReadInt64();
             DateTime modified = startDate;
             if (seconds > 0)
             {
                 modified = startDate.AddSeconds(seconds);
             }
+
             Bounds bounds = Bounds.Load(reader); // xMin, yMin, xMax, yMax
 
             HeadMacStyle macStyle = reader.ReadUInt16<HeadMacStyle>();
