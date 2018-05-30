@@ -29,9 +29,9 @@ namespace SixLabors.Fonts.Tables
 
         public static TableLoader Default { get; } = new TableLoader();
 
-        private Dictionary<string, Func<FontReader, Table>> loaders = new Dictionary<string, Func<FontReader, Table>>();
-        private Dictionary<Type, string> types = new Dictionary<Type, string>();
-        private Dictionary<Type, Func<FontReader, Table>> typesLoaders = new Dictionary<Type, Func<FontReader, Table>>();
+        private readonly Dictionary<string, Func<FontReader, Table>> loaders = new Dictionary<string, Func<FontReader, Table>>();
+        private readonly Dictionary<Type, string> types = new Dictionary<Type, string>();
+        private readonly Dictionary<Type, Func<FontReader, Table>> typesLoaders = new Dictionary<Type, Func<FontReader, Table>>();
 
         public string GetTag(Type type)
         {

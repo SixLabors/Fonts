@@ -54,9 +54,16 @@ namespace SixLabors.Fonts.Tests
 
         private static string GetFullPath(string path)
         {
-            string root = new Uri(typeof(TestFonts).GetTypeInfo().Assembly.CodeBase).LocalPath;
+            string root = Path.GetDirectoryName(new Uri(typeof(TestFonts).GetTypeInfo().Assembly.CodeBase).LocalPath);
 
-            string[] paths = new[] { "Fonts", @"..\..\Fonts", @"..\..\..\..\Fonts", @"..\..\..\..\..\Fonts" };
+            string[] paths = new[] 
+            {
+                "Fonts",
+                @"..\..\Fonts",
+                @"..\..\..\..\Fonts",
+                @"..\..\..\..\..\Fonts"
+            };
+
             IEnumerable<string> fullPaths = paths.Select(x => Path.GetFullPath(Path.Combine(root, x)));
             string rootPath = fullPaths
                                 .Where(x => Directory.Exists(x))

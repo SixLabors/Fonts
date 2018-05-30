@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [InlineData("Helloworld  ", 360, 10)]
         public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height )
         {
-            var font  = CreateFont(text);
+            Font font  = CreateFont(text);
             SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, (72 * font.EmSize))
             {
             }).Size;

@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tests.Fakes
 {
     internal class FakeGlyphTable : GlyphTable
     {
-        private List<FakeGlyphSource> glyphs;
+        private readonly List<FakeGlyphSource> glyphs;
 
         public FakeGlyphTable(List<FakeGlyphSource> glyphs)
             : base(new GlyphLoader[glyphs.Count])

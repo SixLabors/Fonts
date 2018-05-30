@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [Fact]
         public void RenderingTabAtStartOrLineTooShort()
         {
-            var font = CreateFont("\t x");
+            Font font = CreateFont("\t x");
             SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
             SizeF tabWidth = TextMeasurer.MeasureBounds("\t", new RendererOptions(font, (72 * font.EmSize))).Size;
             SizeF doublTabWidth = TextMeasurer.MeasureBounds("\t\t", new RendererOptions(font, (72 * font.EmSize))).Size;
@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [Fact]
         public void Rendering2TabsAtStartOfLineTooShort()
         {
-            var font = CreateFont("\t x");
+            Font font = CreateFont("\t x");
             SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
             SizeF tabWidth = TextMeasurer.MeasureBounds("\t\t", new RendererOptions(font, (72 * font.EmSize))).Size;
             SizeF tabWithXWidth = TextMeasurer.MeasureBounds("\t\tx", new RendererOptions(font, (72 * font.EmSize))).Size;
@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [Fact]
         public void TwoTabsAreDoubleWidthOfOneTab()
         {
-            var font = CreateFont("\t x");
+            Font font = CreateFont("\t x");
             SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
             SizeF tabWidth = TextMeasurer.MeasureBounds("\t", new RendererOptions(font, (72 * font.EmSize))).Size;
             SizeF twoTabWidth = TextMeasurer.MeasureBounds("\t\t", new RendererOptions(font, (72 * font.EmSize))).Size;
@@ -45,7 +45,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [Fact]
         public void TwoTabsAreDoubleWidthOfOneTabMinusXWidth()
         {
-            var font = CreateFont("\t x");
+            Font font = CreateFont("\t x");
             SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
             SizeF tabWidth = TextMeasurer.MeasureBounds("\tx", new RendererOptions(font, (72 * font.EmSize))).Size;
             SizeF twoTabWidth = TextMeasurer.MeasureBounds("\t\tx", new RendererOptions(font, (72 * font.EmSize))).Size;

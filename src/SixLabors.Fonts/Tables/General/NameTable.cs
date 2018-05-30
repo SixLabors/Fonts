@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General
     internal class NameTable : Table
     {
         private const string TableName = "name";
-        private NameRecord[] names;
+        private readonly NameRecord[] names;
 
         public static NameTable Load(FontReader reader)
         {

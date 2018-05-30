@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             GlyphRenderer r = new GlyphRenderer();
 
-            var size = TextMeasurer.MeasureBounds("          ", new RendererOptions(new Font(font, 30), 72)).Size;
+            Primitives.SizeF size = TextMeasurer.MeasureBounds("          ", new RendererOptions(new Font(font, 30), 72)).Size;
 
             Assert.Equal(60, size.Width, 1);
             Assert.Equal(31.6, size.Height, 1);

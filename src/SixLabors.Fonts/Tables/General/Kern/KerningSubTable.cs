@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
 {
     internal abstract class KerningSubTable
     {
-        private KerningCoverage coverage;
+        private readonly KerningCoverage coverage;
 
         public KerningSubTable(KerningCoverage coverage)
         {

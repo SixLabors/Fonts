@@ -7,8 +7,8 @@ namespace SixLabors.Fonts.Tables.General
     internal class HorizontalMetricsTable : Table
     {
         private const string TableName = "hmtx";
-        private short[] leftSideBearings;
-        private ushort[] advancedWidths;
+        private readonly short[] leftSideBearings;
+        private readonly ushort[] advancedWidths;
 
         public HorizontalMetricsTable(ushort[] advancedWidths, short[] leftSideBearings)
         {
