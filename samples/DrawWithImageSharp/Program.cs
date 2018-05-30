@@ -93,11 +93,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             string path = System.IO.Path.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
             string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
 
-            using (var img = new Image<Rgba32>(width, height))
+            using (Image<Rgba32> img = new Image<Rgba32>(width, height))
             {
                 img.Mutate(x=>x.Fill(Rgba32.White));
 
-                var shapes = SixLabors.Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Primitives.PointF(50f, 4f), new RendererOptions(font, 72));
+                IPathCollection shapes = SixLabors.Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Primitives.PointF(50f, 4f), new RendererOptions(font, 72));
                 img.Mutate(x => x.Fill(Rgba32.Black, shapes));
 
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
@@ -113,7 +113,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         {
             GlyphBuilder builder = new GlyphBuilder();
             TextRenderer renderer = new TextRenderer(builder);
-            var size = TextMeasurer.Measure(text, font);
+            Primitives.SizeF size = TextMeasurer.Measure(text, font);
             renderer.RenderText(text, font);
 
             builder.Paths
@@ -157,7 +157,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     .Translate(new Vector2(10)); // move in from top left
 
             StringBuilder sb = new StringBuilder();
-            var converted = shape.Flatten();
+            IEnumerable<ISimplePath> converted = shape.Flatten();
             converted.Aggregate(sb, (s, p) =>
             {
                 foreach (Vector2 point in p.Points)

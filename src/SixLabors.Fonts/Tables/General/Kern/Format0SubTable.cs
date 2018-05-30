@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
 {
     internal class Format0SubTable : KerningSubTable
     {
-        private KearningPair[] pairs;
+        private readonly KearningPair[] pairs;
 
         public Format0SubTable(KearningPair[] pairs, KerningCoverage coverage)
             : base(coverage)

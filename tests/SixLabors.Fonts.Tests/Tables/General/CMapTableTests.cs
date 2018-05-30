@@ -21,10 +21,10 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             CMapTable table = CMapTable.Load(writer.GetReader());
 
-            Assert.Equal(1, table.Tables.Where(x=>x != null).Count());
+            Assert.Single(table.Tables.Where(x=>x != null));
 
             Format0SubTable[] format0Tables = table.Tables.OfType<Format0SubTable>().ToArray();
-            Assert.Equal(1, format0Tables.Length);
+            Assert.Single(format0Tables);
         }       
     }
 }

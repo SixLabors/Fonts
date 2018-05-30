@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Numerics;
 using System.Text;
 using SixLabors.Primitives;
@@ -22,9 +21,9 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
-        public ImmutableArray<GlyphLayout> GenerateLayout(string text, RendererOptions options)
+        public IReadOnlyList<GlyphLayout> GenerateLayout(string text, RendererOptions options)
         {
-            var dpi = new Vector2(options.DpiX, options.DpiY);
+            Vector2 dpi = new Vector2(options.DpiX, options.DpiY);
             Vector2 origin = (Vector2)options.Origin / dpi;
 
             float maxWidth = float.MaxValue;
@@ -306,7 +305,7 @@ namespace SixLabors.Fonts
                 layout[i] = new GlyphLayout(glyphLayout.Character, glyphLayout.Glyph, glyphLayout.Location + lineOffset + origin, glyphLayout.Width, glyphLayout.Height, glyphLayout.LineHeight, glyphLayout.StartOfLine, glyphLayout.IsWhiteSpace, glyphLayout.IsControlCharacter);
             }
 
-            return layout.ToImmutableArray();
+            return layout;
         }
     }
 

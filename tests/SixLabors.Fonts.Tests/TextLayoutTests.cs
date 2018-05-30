@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = CreateFont("hello world");
             Glyph glyph = font.GetGlyph('h');
-            Assert.NotNull(glyph);
+            Assert.NotEqual(default(Glyph), glyph);
         }
 
         [Theory]
@@ -68,7 +68,7 @@ namespace SixLabors.Fonts.Tests
             HorizontalAlignment horizental,
             float top, float left)
         {
-            var text = "hello world\nhello";
+            string text = "hello world\nhello";
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
@@ -78,8 +78,8 @@ namespace SixLabors.Fonts.Tests
                 VerticalAlignment = vertical
             };
 
-            ImmutableArray<GlyphLayout> glyphsToRender = new TextLayout().GenerateLayout(text, span);
-            var fontInst = span.Font.FontInstance;
+            IReadOnlyList<GlyphLayout> glyphsToRender = new TextLayout().GenerateLayout(text, span);
+            IFontInstance fontInst = span.Font.FontInstance;
             float lineHeight = (fontInst.LineHeight * span.Font.Size) / (fontInst.EmSize * 72);
             lineHeight *= scaleFactor;
             RectangleF bound = TextMeasurer.GetBounds(glyphsToRender, new Vector2(span.DpiX, span.DpiY));
@@ -127,14 +127,13 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            IReadOnlyList<GlyphMetric> glyphMetrics;
-            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, new RendererOptions(font, 72 * font.EmSize), out glyphMetrics));
+            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, new RendererOptions(font, 72 * font.EmSize), out IReadOnlyList<GlyphMetric> glyphMetrics));
 
             Assert.Equal(text.Length, glyphMetrics.Count);
-            for (var i = 0; i < glyphMetrics.Count; i++)
+            for (int i = 0; i < glyphMetrics.Count; i++)
             {
-                var expected = expectedGlyphMetrics[i];
-                var actual = glyphMetrics[i];
+                GlyphMetric expected = expectedGlyphMetrics[i];
+                GlyphMetric actual = glyphMetrics[i];
                 Assert.Equal(expected.Character, actual.Character);
                 Assert.Equal(expected.IsControlCharacter, actual.IsControlCharacter);
                 // 4 dp as there is minor offset difference in the float values
@@ -189,8 +188,8 @@ namespace SixLabors.Fonts.Tests
             Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            var glyphRenderer = new GlyphRenderer();
-            var renderer = new TextRenderer(glyphRenderer);
+            GlyphRenderer glyphRenderer = new GlyphRenderer();
+            TextRenderer renderer = new TextRenderer(glyphRenderer);
             renderer.RenderText(text, new RendererOptions(new Font(font, 1), 72 * font.EmSize, new PointF(x, y)));
 
             Assert.Equal(expectedX, glyphRenderer.GlyphRects[0].Location.X, 2);

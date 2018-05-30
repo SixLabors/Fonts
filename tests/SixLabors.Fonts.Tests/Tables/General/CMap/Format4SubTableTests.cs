@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
                 1,2,3,4,5,6,7,8
             }, table.GlyphIds);
 
-            Assert.Equal(1, table.Segments.Length);
+            Assert.Single(table.Segments);
             Format4SubTable.Segment seg = table.Segments[0];
             Assert.Equal(0, seg.Index);
             Assert.Equal(1, seg.End);

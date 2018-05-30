@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using SixLabors.Fonts.Tests.Fakes;
 using Xunit;
@@ -10,11 +11,11 @@ namespace SixLabors.Fonts.Tests.Issues
         [InlineData("hello world hello world hello world hello world")]
         public void LeftAlignedTextNewLineShouldNotStartWithWhiteSpace(string text)
         {
-            var font = CreateFont("\t x");
+            Font font = CreateFont("\t x");
 
             GlyphRenderer r = new GlyphRenderer();
 
-            ImmutableArray<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
             {
                 WrappingWidth = 350,
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -25,7 +26,7 @@ namespace SixLabors.Fonts.Tests.Issues
             {
                 if (lineYPos != glyph.Location.Y)
                 {
-                    Assert.Equal(false, glyph.IsWhiteSpace);
+                    Assert.False(glyph.IsWhiteSpace);
                     lineYPos = glyph.Location.Y;
                 }
             }
@@ -38,24 +39,24 @@ namespace SixLabors.Fonts.Tests.Issues
         [InlineData("hello   world   hello   world   hello   hello   world", HorizontalAlignment.Left)]
         public void NewWrappedLinesShouldNotStartOrEndWithWhiteSpace(string text, HorizontalAlignment horiAlignment)
         {
-            var font = CreateFont("\t x");
+            Font font = CreateFont("\t x");
 
             GlyphRenderer r = new GlyphRenderer();
 
-            ImmutableArray<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
             {
                 WrappingWidth = 350,
                 HorizontalAlignment = horiAlignment
             });
 
             float lineYPos = layout[0].Location.Y;
-            for (int i = 0; i < layout.Length; i++)
+            for (int i = 0; i < layout.Count; i++)
             {
                 GlyphLayout glyph = layout[i];
                 if (lineYPos != glyph.Location.Y)
                 {
-                    Assert.Equal(false, glyph.IsWhiteSpace);
-                    Assert.Equal(false, layout[i - 1].IsWhiteSpace);
+                    Assert.False(glyph.IsWhiteSpace);
+                    Assert.False(layout[i - 1].IsWhiteSpace);
                     lineYPos = glyph.Location.Y;
                 }
             }
@@ -64,37 +65,37 @@ namespace SixLabors.Fonts.Tests.Issues
         [Fact]
         public void WhiteSpaceAtStartOfTextShouldNotBeTrimmed()
         {
-            var font = CreateFont("\t x");
-            var text = "   hello world hello world hello world";
+            Font font = CreateFont("\t x");
+            string text = "   hello world hello world hello world";
 
             GlyphRenderer r = new GlyphRenderer();
 
-            ImmutableArray<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
             {
                 WrappingWidth = 350
             });
 
-            Assert.Equal(true, layout[0].IsWhiteSpace);
-            Assert.Equal(true, layout[1].IsWhiteSpace);
-            Assert.Equal(true, layout[2].IsWhiteSpace);
+            Assert.True(layout[0].IsWhiteSpace);
+            Assert.True(layout[1].IsWhiteSpace);
+            Assert.True(layout[2].IsWhiteSpace);
         }
 
         [Fact]
         public void WhiteSpaceAtTheEndOfTextShouldBeTrimmed()
         {
-            var font = CreateFont("\t x");
-            var text = "hello world hello world hello world   ";
+            Font font = CreateFont("\t x");
+            string text = "hello world hello world hello world   ";
 
             GlyphRenderer r = new GlyphRenderer();
 
-            ImmutableArray<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
             {
                 WrappingWidth = 350
             });
 
-            Assert.Equal(false, layout[layout.Length - 1].IsWhiteSpace);
-            Assert.Equal(false, layout[layout.Length - 2].IsWhiteSpace);
-            Assert.Equal(false, layout[layout.Length - 3].IsWhiteSpace);
+            Assert.False(layout[layout.Count - 1].IsWhiteSpace);
+            Assert.False(layout[layout.Count - 2].IsWhiteSpace);
+            Assert.False(layout[layout.Count - 3].IsWhiteSpace);
         }
 
         public static Font CreateFont(string text)

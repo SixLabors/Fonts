@@ -71,8 +71,8 @@ namespace SixLabors.Fonts
 
         internal RectangleF BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
-            var size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
-            var loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * Scale;
+            Vector2 size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
+            Vector2 loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * Scale;
 
             loc = origin + loc;
 
@@ -94,11 +94,11 @@ namespace SixLabors.Fonts
 
             Vector2 firstPoint = Vector2.Zero;
 
-            var scaledPoint = dpi * pointSize;
+            Vector2 scaledPoint = dpi * pointSize;
 
-            var box = this.BoundingBox(location, scaledPoint);
+            RectangleF box = this.BoundingBox(location, scaledPoint);
 
-            var hash = HashHelpers.Combine(this.GetHashCode(), pointSize.GetHashCode());
+            int hash = HashHelpers.Combine(this.GetHashCode(), pointSize.GetHashCode());
             hash = HashHelpers.Combine(hash, dpi.GetHashCode());
 
             // (lineHeight * dpi.Y)

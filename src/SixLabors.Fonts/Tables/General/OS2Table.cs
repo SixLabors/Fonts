@@ -26,9 +26,9 @@ namespace SixLabors.Fonts.Tables.General
         private ushort defaultChar;
         private ushort firstCharIndex;
         private ushort lastCharIndex;
-        private ushort lowerOpticalPointSize;
+        private readonly ushort lowerOpticalPointSize;
         private ushort maxContext;
-        private ushort upperOpticalPointSize;
+        private readonly ushort upperOpticalPointSize;
         private ushort weightClass;
         private ushort widthClass;
         private ushort winAscent;

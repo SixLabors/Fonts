@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// </summary>
     internal class FileFontInstance : IFontInstance
     {
-        private Lazy<FontInstance> font;
+        private readonly Lazy<FontInstance> font;
 
         public FileFontInstance(string path)
         {

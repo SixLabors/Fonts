@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tables.General
     internal class GlyphTable : Table
     {
         private const string TableName = "glyf";
-        private GlyphLoader[] loaders;
+        private readonly GlyphLoader[] loaders;
 
         public int GlyphCount => this.loaders.Length;
 
