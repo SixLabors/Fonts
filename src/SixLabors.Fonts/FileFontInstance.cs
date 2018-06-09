@@ -32,8 +32,8 @@ namespace SixLabors.Fonts
 
         public int LineHeight => this.font.Value.LineHeight;
 
-        public GlyphInstance GetGlyph(char character)
-            => this.font.Value.GetGlyph(character);
+        public GlyphInstance GetGlyph(int codePoint)
+            => this.font.Value.GetGlyph(codePoint);
 
         public Vector2 GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
             => this.font.Value.GetOffset(glyph, previousGlyph);

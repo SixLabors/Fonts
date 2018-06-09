@@ -134,12 +134,12 @@ namespace SixLabors.Fonts
                 GlyphLayout c = glyphLayouts[i];
                 if (c.IsControlCharacter)
                 {
-                    characterBoundsList.Add(new GlyphMetric(c.Character, c.BoundingBox(dpi), true));
+                    characterBoundsList.Add(new GlyphMetric(c.CodePoint, c.BoundingBox(dpi), true));
                 }
                 else
                 {
                     hasSize = true;
-                    characterBoundsList.Add(new GlyphMetric(c.Character, c.BoundingBox(dpi), false));
+                    characterBoundsList.Add(new GlyphMetric(c.CodePoint, c.BoundingBox(dpi), false));
                 }
             }
 

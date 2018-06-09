@@ -19,7 +19,7 @@ namespace SixLabors.Fonts
 
         short LineGap { get; }
 
-        GlyphInstance GetGlyph(char character);
+        GlyphInstance GetGlyph(int codePoint);
 
         Vector2 GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph);
     }

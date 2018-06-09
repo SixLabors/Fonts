@@ -14,20 +14,26 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphMetric"/> struct.
         /// </summary>
-        /// <param name="character">The character.</param>
+        /// <param name="codePoint">Unicode codepoint of the character.</param>
         /// <param name="bounds">The bounds.</param>
         /// <param name="isControlCharacter">Whether the character is a control character.</param>
-        public GlyphMetric(char character, RectangleF bounds, bool isControlCharacter)
+        public GlyphMetric(int codePoint, RectangleF bounds, bool isControlCharacter)
         {
-            this.Character = character;
+            this.Codepoint = codePoint;
+            this.Character = char.ConvertFromUtf32(codePoint);
             this.Bounds = bounds;
             this.IsControlCharacter = isControlCharacter;
         }
 
         /// <summary>
-        /// Gets the character.
+        /// Gets the Unicode codepoint of the character.
         /// </summary>
-        public char Character { get; }
+        public int Codepoint { get; }
+
+        /// <summary>
+        /// Gets the UTF-16 encoded character.
+        /// </summary>
+        public string Character { get; }
 
         /// <summary>
         /// Gets the character bounds.
@@ -42,7 +48,7 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public override string ToString()
         {
-            return $"Char: {this.Character}, bounds: {this.Bounds}, is control char: {this.IsControlCharacter}";
+            return $"Character: {this.Character}, bounds: {this.Bounds}, is control char: {this.IsControlCharacter}";
         }
     }
 }

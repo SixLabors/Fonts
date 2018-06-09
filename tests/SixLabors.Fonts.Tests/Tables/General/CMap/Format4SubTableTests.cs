@@ -74,7 +74,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
                         new Format4SubTable.Segment(2, 480, 153, -27, 0),
                     },
                 glyphs);
-            ushort id = table.GetGlyphId((char)src);
+            ushort id = table.GetGlyphId(src);
 
             Assert.Equal(expected, id);
         }

@@ -7,8 +7,8 @@ namespace SixLabors.Fonts.Tests.Fakes
     {
         public GlyphVector Vector { get; }
 
-        public FakeGlyphSource(char character, ushort index)
-            : this(character,
+        public FakeGlyphSource(int codePoint, ushort index)
+            : this(codePoint,
                   index,
                   new GlyphVector(new Vector2[] { new Vector2(10, 10), new Vector2(10, 20), new Vector2(20, 20), new Vector2(20, 10) },
                   new bool[] { true, true, true, true },
@@ -17,14 +17,14 @@ namespace SixLabors.Fonts.Tests.Fakes
         {
         }
 
-        public FakeGlyphSource(char character, ushort index, GlyphVector vector)
+        public FakeGlyphSource(int codePoint, ushort index, GlyphVector vector)
         {
-            this.Character = character;
+            this.CodePoint = codePoint;
             this.Vector = vector;
             this.Index = index;
         }
 
-        public char Character { get; private set; }
+        public int CodePoint { get; private set; }
 
         public ushort Index { get; private set; }
     }
