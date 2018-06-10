@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables.General;
@@ -82,19 +83,24 @@ namespace SixLabors.Fonts
 
         public FontDescription Description { get; }
 
-        internal ushort GetGlyphIndex(char character)
+        internal ushort GetGlyphIndex(int codePoint)
         {
-            return this.cmap.GetGlyphId(character);
+            if (codePoint > short.MaxValue)
+            {
+                throw new NotImplementedException("cmap table doesn't support 32-bit characters yet.");
+            }
+
+            return this.cmap.GetGlyphId(codePoint);
         }
 
         /// <summary>
         /// Gets the glyph.
         /// </summary>
-        /// <param name="character">The character.</param>
+        /// <param name="codePoint">The code point of the character.</param>
         /// <returns>the glyph for a known character.</returns>
-        public GlyphInstance GetGlyph(char character)
+        public GlyphInstance GetGlyph(int codePoint)
         {
-            ushort idx = this.GetGlyphIndex(character);
+            ushort idx = this.GetGlyphIndex(codePoint);
             if (this.glyphCache[idx] == null)
             {
                 ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);

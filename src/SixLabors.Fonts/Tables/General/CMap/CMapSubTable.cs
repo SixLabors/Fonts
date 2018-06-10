@@ -24,6 +24,6 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public ushort Encoding { get; }
 
-        public abstract ushort GetGlyphId(char character);
+        public abstract ushort GetGlyphId(int codePoint);
     }
 }

@@ -22,9 +22,9 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public ushort Language { get; }
 
-        public override ushort GetGlyphId(char character)
+        public override ushort GetGlyphId(int codePoint)
         {
-            uint charAsInt = character;
+            uint charAsInt = (uint)codePoint;
 
             foreach (Segment seg in this.Segments)
             {

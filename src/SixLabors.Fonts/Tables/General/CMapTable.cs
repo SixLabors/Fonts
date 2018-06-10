@@ -40,19 +40,19 @@ namespace SixLabors.Fonts.Tables.General
             this.table = table;
         }
 
-        public ushort GetGlyphId(char character)
+        public ushort GetGlyphId(int codePoint)
         {
             // use the best match only
             if (this.table != null)
             {
-                return this.table.GetGlyphId(character);
+                return this.table.GetGlyphId(codePoint);
             }
 
             // didn't have a windows match just use any and hope for the best
             foreach (CMapSubTable t in this.Tables)
             {
                 // keep looking until we have an index thats not the fallback.
-                ushort index = t.GetGlyphId(character);
+                ushort index = t.GetGlyphId(codePoint);
                 if (index > 0)
                 {
                     return index;

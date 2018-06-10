@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tables.General
             return this.advancedWidths[glyphIndex];
         }
 
-        internal short GetLeftSideBearing(ushort glyphIndex)
+        internal short GetLeftSideBearing(int glyphIndex)
         {
             if (glyphIndex >= this.leftSideBearings.Length)
             {
