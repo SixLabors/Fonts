@@ -20,8 +20,9 @@ namespace SixLabors.Fonts
         private readonly short leftSideBearing;
         private readonly float scaleFactor;
 
-        internal GlyphInstance(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index)
+        internal GlyphInstance(FontInstance font, Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index)
         {
+            this.Font = font;
             this.sizeOfEm = sizeOfEm;
             this.controlPoints = controlPoints;
             this.onCurves = onCurves;
@@ -34,6 +35,14 @@ namespace SixLabors.Fonts
             this.leftSideBearing = leftSideBearing;
             this.scaleFactor = (float)(this.sizeOfEm * 72f);
         }
+
+        /// <summary>
+        /// Gets the Font.
+        /// </summary>
+        /// <value>
+        /// The Font.
+        /// </value>
+        internal FontInstance Font { get; }
 
         /// <summary>
         /// Gets the bounds.
@@ -98,11 +107,9 @@ namespace SixLabors.Fonts
 
             RectangleF box = this.BoundingBox(location, scaledPoint);
 
-            int hash = HashHelpers.Combine(this.GetHashCode(), pointSize.GetHashCode());
-            hash = HashHelpers.Combine(hash, dpi.GetHashCode());
+            var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
 
-            // (lineHeight * dpi.Y)
-            if (surface.BeginGlyph(box, hash))
+            if (surface.BeginGlyph(box, paramaters))
             {
                 int startOfContor = 0;
                 int endOfContor = -1;

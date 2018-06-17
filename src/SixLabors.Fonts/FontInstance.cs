@@ -98,7 +98,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="codePoint">The code point of the character.</param>
         /// <returns>the glyph for a known character.</returns>
-        public GlyphInstance GetGlyph(int codePoint)
+        GlyphInstance IFontInstance.GetGlyph(int codePoint)
         {
             ushort idx = this.GetGlyphIndex(codePoint);
             if (this.glyphCache[idx] == null)
@@ -106,7 +106,7 @@ namespace SixLabors.Fonts
                 ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
                 short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
                 Tables.General.Glyphs.GlyphVector vector = this.glyphs.GetGlyph(idx);
-                this.glyphCache[idx] = new GlyphInstance(vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, lsb, this.EmSize, idx);
+                this.glyphCache[idx] = new GlyphInstance(this, vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, lsb, this.EmSize, idx);
             }
 
             return this.glyphCache[idx];
@@ -118,7 +118,7 @@ namespace SixLabors.Fonts
         /// <param name="glyph">The glyph.</param>
         /// <param name="previousGlyph">The previous glyph.</param>
         /// <returns>A <see cref="Vector2"/> represting the offset that should be applied to the <paramref name="glyph"/>. </returns>
-        public Vector2 GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
+        Vector2 IFontInstance.GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
         {
             // we also want to wire int sub/super script offsetting into here too
             if (previousGlyph == null)

@@ -10,13 +10,15 @@ namespace SixLabors.Fonts.Tests
 
     public class GlyphTests
     {
-        readonly GlyphRenderer renderer = new GlyphRenderer();
-        readonly Glyph glyph = new Glyph(new GlyphInstance(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1), 0, 0, 1, 0), 10);
+        GlyphRenderer renderer = new GlyphRenderer();
+       
         [Fact]
         public void RenderToPointAndSingleDPI()
         {
-            PointF locationInFontSpace = new PointF(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
-            this.glyph.RenderTo(this.renderer, locationInFontSpace, 72, 0);
+            Glyph glyph = new Glyph(new GlyphInstance((FontInstance)CreateFont("A").FontInstance, new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1), 0, 0, 1, 0), 10);
+
+            var locationInFontSpace = new PointF(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
+            glyph.RenderTo(renderer, locationInFontSpace, 72, 0);
 
             Assert.Equal(new RectangleF(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
@@ -37,7 +39,7 @@ namespace SixLabors.Fonts.Tests
         public void BeginGLyph_returnsfalse_skiprenderingfigures()
         {
             Mock<IGlyphRenderer> renderer = new Mock<IGlyphRenderer>();
-            renderer.Setup(x => x.BeginGlyph(It.IsAny<RectangleF>(), It.IsAny<int>())).Returns(false);
+            renderer.Setup(x => x.BeginGlyph(It.IsAny<RectangleF>(), It.IsAny<GlyphRendererParameters>())).Returns(false);
             Font fakeFont = CreateFont("A");
             TextRenderer textRenderer = new TextRenderer(renderer.Object);
 
@@ -49,7 +51,7 @@ namespace SixLabors.Fonts.Tests
         public void BeginGLyph_returnstrue_rendersfigures()
         {
             Mock<IGlyphRenderer> renderer = new Mock<IGlyphRenderer>();
-            renderer.Setup(x => x.BeginGlyph(It.IsAny<RectangleF>(), It.IsAny<int>())).Returns(true);
+            renderer.Setup(x => x.BeginGlyph(It.IsAny<RectangleF>(), It.IsAny<GlyphRendererParameters>())).Returns(true);
             Font fakeFont = CreateFont("A");
             TextRenderer textRenderer = new TextRenderer(renderer.Object);
 

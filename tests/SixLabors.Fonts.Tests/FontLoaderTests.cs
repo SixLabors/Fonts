@@ -35,7 +35,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFont()
         {
-            FontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileData());
+            IFontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileData());
 
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontName);
             Assert.Equal("Regular", font.Description.FontSubFamilyName);
@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontWoff()
         {
-            FontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileWoffData());
+            IFontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileWoffData());
 
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontName);
             Assert.Equal("Regular", font.Description.FontSubFamilyName);
