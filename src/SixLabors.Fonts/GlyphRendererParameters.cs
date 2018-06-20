@@ -3,20 +3,18 @@
 
 using System;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
     /// <summary>
     /// The combined set of properties that uniquely identify the glyph that is to be rendered
-    /// at a particular sixe and dpi.
+    /// at a particular size and dpi.
     /// </summary>
     public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParameters>
     {
         internal GlyphRendererParameters(GlyphInstance glyph, float pointSize, Vector2 dpi)
         {
-            this.Font = glyph.Font.Description.FontName;
+            this.Font = glyph.Font.Description.FontName?.ToUpper();
             this.FontStyle = glyph.Font.Description.Style;
             this.GlyphIndex = glyph.Index;
             this.PointSize = pointSize;
@@ -67,7 +65,7 @@ namespace SixLabors.Fonts
         /// True if the current left is equal to the <paramref name="right"/> parameter; otherwise, false.
         /// </returns>
         public static bool operator ==(GlyphRendererParameters left, GlyphRendererParameters right)
-            => !left.Equals(right);
+            => left.Equals(right);
 
         /// <summary>
         /// Compares two <see cref="GlyphRendererParameters"/> objects for inequality.
@@ -85,36 +83,29 @@ namespace SixLabors.Fonts
             => !left.Equals(right);
 
         /// <inheritdoc/>
-        public bool Equals(GlyphRendererParameters p)
+        public bool Equals(GlyphRendererParameters other)
         {
-            return p.PointSize == this.PointSize &&
-                p.FontStyle == this.FontStyle &&
-                p.DpiX == this.DpiX &&
-                p.DpiY == this.DpiY &&
-                p.GlyphIndex == this.GlyphIndex &&
-                ((p.Font == null && this.Font == null) ||
-                (p.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
+            return other.PointSize == this.PointSize
+                && other.FontStyle == this.FontStyle
+                && other.DpiX == this.DpiX
+                && other.DpiY == this.DpiY
+                && other.GlyphIndex == this.GlyphIndex
+                && ((other.Font == null && this.Font == null)
+                || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj)
-        {
-            if (obj is GlyphRendererParameters p)
-            {
-                return this.Equals(p);
-            }
-
-            return false;
-        }
+        public override bool Equals(object obj) => obj is GlyphRendererParameters p && this.Equals(p);
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
             var hash = this.Font?.GetHashCode() ?? 0;
             hash = HashHelpers.Combine(hash, this.PointSize.GetHashCode());
+            hash = HashHelpers.Combine(hash, this.GlyphIndex.GetHashCode());
+            hash = HashHelpers.Combine(hash, this.FontStyle.GetHashCode());
             hash = HashHelpers.Combine(hash, this.DpiX.GetHashCode());
-            hash = HashHelpers.Combine(hash, this.DpiY.GetHashCode());
-            return base.GetHashCode();
+            return HashHelpers.Combine(hash, this.DpiY.GetHashCode());
         }
     }
 }
