@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     {
         internal GlyphRendererParameters(GlyphInstance glyph, float pointSize, Vector2 dpi)
         {
-            this.Font = glyph.Font.Description.FontName;
+            this.Font = glyph.Font.Description.FontName?.ToUpper();
             this.FontStyle = glyph.Font.Description.Style;
             this.GlyphIndex = glyph.Index;
             this.PointSize = pointSize;
@@ -102,6 +102,8 @@ namespace SixLabors.Fonts
         {
             var hash = this.Font?.GetHashCode() ?? 0;
             hash = HashHelpers.Combine(hash, this.PointSize.GetHashCode());
+            hash = HashHelpers.Combine(hash, this.GlyphIndex.GetHashCode());
+            hash = HashHelpers.Combine(hash, this.FontStyle.GetHashCode());
             hash = HashHelpers.Combine(hash, this.DpiX.GetHashCode());
             return HashHelpers.Combine(hash, this.DpiY.GetHashCode());
         }
