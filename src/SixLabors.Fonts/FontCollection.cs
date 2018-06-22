@@ -40,10 +40,8 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(string path)
         {
-            using (FileStream fs = File.OpenRead(path))
-            {
-                return this.Install(fs);
-            }
+            FileFontInstance instance = new FileFontInstance(path);
+            return this.Install(instance);
         }
 #endif
 

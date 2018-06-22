@@ -120,6 +120,9 @@ namespace SixLabors.Fonts.Tables.General
             DateTime created = startDate;
             if (seconds > 0)
             {
+                // Clear upper 32 bits, some fonts seem to have a non-zero upper 32 bits, like "C:\\Windows/Fonts\\cityb___.ttf"
+                // The max date for UInt32.MaxValue seconds is {06/02/2040 06:28:15}, which should be plenty for the time being.
+                seconds = seconds & 0x00000000ffffffff;
                 created = startDate.AddSeconds(seconds);
             }
 
@@ -127,6 +130,9 @@ namespace SixLabors.Fonts.Tables.General
             DateTime modified = startDate;
             if (seconds > 0)
             {
+                // Clear upper 32 bits, some fonts seem to have a non-zero upper 32 bits, like "C:\\Windows/Fonts\\cityb___.ttf"
+                // The max date for UInt32.MaxValue seconds is {06/02/2040 06:28:15}, which should be plenty for the time being.
+                seconds = seconds & 0x00000000ffffffff;
                 modified = startDate.AddSeconds(seconds);
             }
 
