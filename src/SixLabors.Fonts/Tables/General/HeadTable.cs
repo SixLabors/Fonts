@@ -48,6 +48,7 @@ namespace SixLabors.Fonts.Tables.General
                 {
                     return null;
                 }
+
                 return Load(binaryReader);
             }
         }

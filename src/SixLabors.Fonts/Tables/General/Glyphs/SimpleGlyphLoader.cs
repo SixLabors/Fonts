@@ -8,11 +8,11 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 {
     internal class SimpleGlyphLoader : GlyphLoader
     {
-        private short[] xs;
-        private short[] ys;
-        private bool[] onCurves;
-        private ushort[] endPoints;
-        private Bounds bounds;
+        private readonly short[] xs;
+        private readonly short[] ys;
+        private readonly bool[] onCurves;
+        private readonly ushort[] endPoints;
+        private readonly Bounds bounds;
 
         public SimpleGlyphLoader(short[] xs, short[] ys, bool[] onCurves, ushort[] endPoints, Bounds bounds)
         {

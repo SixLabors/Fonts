@@ -113,7 +113,7 @@ namespace SixLabors.Fonts
         public float DpiY { get; set; }
 
         /// <summary>
-        /// Get or sets the width relative to the current DPI at which text will automatically wrap onto a newline
+        /// Gets or sets the width relative to the current DPI at which text will automatically wrap onto a newline
         /// </summary>
         /// <value>
         ///     if value is -1 then wrapping is disabled.
@@ -121,17 +121,17 @@ namespace SixLabors.Fonts
         public float WrappingWidth { get; set; } = -1;
 
         /// <summary>
-        /// Get or sets the Horizontal alignment of the text.
+        /// Gets or sets the Horizontal alignment of the text.
         /// </summary>
         public HorizontalAlignment HorizontalAlignment { get; set; }
 
         /// <summary>
-        /// Get or sets the Vertical alignment of the text.
+        /// Gets or sets the Vertical alignment of the text.
         /// </summary>
         public VerticalAlignment VerticalAlignment { get; set; }
 
         /// <summary>
-        /// Get or sets the rendering origin.
+        /// Gets or sets the rendering origin.
         /// </summary>
         public PointF Origin { get; set; }
 
@@ -155,15 +155,5 @@ namespace SixLabors.Fonts
                 ApplyKerning = this.ApplyKerning
             };
         }
-    }
-
-    internal struct AppliedFontStyle
-    {
-        public IFontInstance Font;
-        public float PointSize;
-        public float TabWidth;
-        public int Start;
-        public int End;
-        public bool ApplyKerning;
     }
 }

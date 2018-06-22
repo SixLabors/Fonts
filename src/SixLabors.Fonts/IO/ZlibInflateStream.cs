@@ -10,6 +10,7 @@ namespace SixLabors.Fonts.IO
     internal sealed class ZlibInflateStream : Stream
     {
         private long position = 0;
+
         /// <summary>
         /// The raw stream containing the uncompressed image data.
         /// </summary>

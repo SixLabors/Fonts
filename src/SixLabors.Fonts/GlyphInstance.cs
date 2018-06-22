@@ -20,8 +20,9 @@ namespace SixLabors.Fonts
         private readonly short leftSideBearing;
         private readonly float scaleFactor;
 
-        internal GlyphInstance(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index)
+        internal GlyphInstance(FontInstance font, Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index)
         {
+            this.Font = font;
             this.sizeOfEm = sizeOfEm;
             this.controlPoints = controlPoints;
             this.onCurves = onCurves;
@@ -34,6 +35,14 @@ namespace SixLabors.Fonts
             this.leftSideBearing = leftSideBearing;
             this.scaleFactor = (float)(this.sizeOfEm * 72f);
         }
+
+        /// <summary>
+        /// Gets the Font.
+        /// </summary>
+        /// <value>
+        /// The Font.
+        /// </value>
+        internal FontInstance Font { get; }
 
         /// <summary>
         /// Gets the bounds.
@@ -67,12 +76,12 @@ namespace SixLabors.Fonts
         /// </value>
         internal ushort Index { get; }
 
-        private static readonly Vector2 scale = new Vector2(1, -1);
+        private static readonly Vector2 Scale = new Vector2(1, -1);
 
         internal RectangleF BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
-            var size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
-            var loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * scale;
+            Vector2 size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
+            Vector2 loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * Scale;
 
             loc = origin + loc;
 
@@ -94,15 +103,13 @@ namespace SixLabors.Fonts
 
             Vector2 firstPoint = Vector2.Zero;
 
-            var scaledPoint = dpi * pointSize;
+            Vector2 scaledPoint = dpi * pointSize;
 
-            var box = this.BoundingBox(location, scaledPoint);
+            RectangleF box = this.BoundingBox(location, scaledPoint);
 
-            var hash = HashHelpers.Combine(this.GetHashCode(), pointSize.GetHashCode());
-            hash = HashHelpers.Combine(hash, dpi.GetHashCode());
+            var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
 
-            // (lineHeight * dpi.Y)
-            if (surface.BeginGlyph(box, hash))
+            if (surface.BeginGlyph(box, paramaters))
             {
                 int startOfContor = 0;
                 int endOfContor = -1;
@@ -180,7 +187,7 @@ namespace SixLabors.Fonts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector2 GetPoint(ref Vector2 scaledPoint, int pointIndex)
         {
-            Vector2 point = scale * ((this.controlPoints[pointIndex] * scaledPoint) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
+            Vector2 point = Scale * ((this.controlPoints[pointIndex] * scaledPoint) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
 
             return point;
         }
@@ -230,6 +237,7 @@ namespace SixLabors.Fonts
                 default:
                     throw new NotSupportedException("Too many control points");
             }
+
             points.Clear();
             return points;
         }
@@ -239,6 +247,7 @@ namespace SixLabors.Fonts
             public Vector2 SecondControlPoint;
             public Vector2 ThirdControlPoint;
             public int Count;
+
             public void Add(Vector2 point)
             {
                 switch (this.Count++)
@@ -253,6 +262,7 @@ namespace SixLabors.Fonts
                         throw new NotSupportedException("Too many control points");
                 }
             }
+
             public void ReplaceLast(Vector2 point)
             {
                 this.Count--;

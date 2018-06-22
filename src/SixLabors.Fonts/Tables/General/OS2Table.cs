@@ -7,7 +7,9 @@ namespace SixLabors.Fonts.Tables.General
     internal class OS2Table : Table
     {
         private const string TableName = "OS/2";
+
         public FontStyleSelection FontStyle { get; }
+
         private ushort styleType;
         private byte[] panose;
         private short capHeight;
@@ -24,9 +26,9 @@ namespace SixLabors.Fonts.Tables.General
         private ushort defaultChar;
         private ushort firstCharIndex;
         private ushort lastCharIndex;
-        private ushort lowerOpticalPointSize;
+        private readonly ushort lowerOpticalPointSize;
         private ushort maxContext;
-        private ushort upperOpticalPointSize;
+        private readonly ushort upperOpticalPointSize;
         private ushort weightClass;
         private ushort widthClass;
         private ushort winAscent;
@@ -141,34 +143,34 @@ namespace SixLabors.Fonts.Tables.General
 
             OS2Table version0Table = new OS2Table(
                     averageCharWidth,
-                weightClass,
-                widthClass,
-                styleType,
-                subscriptXSize,
-                subscriptYSize,
-                subscriptXOffset,
-                subscriptYOffset,
-                superscriptXSize,
-                superscriptYSize,
-                superscriptXOffset,
-                superscriptYOffset,
-                strikeoutSize,
-                strikeoutPosition,
-                familyClass,
-                panose,
-                unicodeRange1,
-                unicodeRange2,
-                unicodeRange3,
-                unicodeRange4,
-                tag,
-                fontStyle,
-                firstCharIndex,
-                lastCharIndex,
-                typoAscender,
-                typoDescender,
-                typoLineGap,
-                winAscent,
-                winDescent);
+                    weightClass,
+                    widthClass,
+                    styleType,
+                    subscriptXSize,
+                    subscriptYSize,
+                    subscriptXOffset,
+                    subscriptYOffset,
+                    superscriptXSize,
+                    superscriptYSize,
+                    superscriptXOffset,
+                    superscriptYOffset,
+                    strikeoutSize,
+                    strikeoutPosition,
+                    familyClass,
+                    panose,
+                    unicodeRange1,
+                    unicodeRange2,
+                    unicodeRange3,
+                    unicodeRange4,
+                    tag,
+                    fontStyle,
+                    firstCharIndex,
+                    lastCharIndex,
+                    typoAscender,
+                    typoDescender,
+                    typoLineGap,
+                    winAscent,
+                    winDescent);
 
             if (version == 0)
             {
@@ -195,13 +197,13 @@ namespace SixLabors.Fonts.Tables.General
 
             OS2Table versionLessthan5Table = new OS2Table(
                     version0Table,
-             codePageRange1,
-             codePageRange2,
-             heightX,
-             capHeight,
-             defaultChar,
-             breakChar,
-             maxContext);
+                    codePageRange1,
+                    codePageRange2,
+                    heightX,
+                    capHeight,
+                    defaultChar,
+                    breakChar,
+                    maxContext);
 
             if (version < 5)
             {
@@ -213,8 +215,8 @@ namespace SixLabors.Fonts.Tables.General
 
             return new OS2Table(
                 versionLessthan5Table,
-             lowerOpticalPointSize,
-             upperOpticalPointSize);
+                lowerOpticalPointSize,
+                upperOpticalPointSize);
         }
 
         public OS2Table(short averageCharWidth, ushort weightClass, ushort widthClass, ushort styleType, short subscriptXSize, short subscriptYSize, short subscriptXOffset, short subscriptYOffset, short superscriptXSize, short superscriptYSize, short superscriptXOffset, short superscriptYOffset, short strikeoutSize, short strikeoutPosition, short familyClass, byte[] panose, uint unicodeRange1, uint unicodeRange2, uint unicodeRange3, uint unicodeRange4, string tag, FontStyleSelection fontStyle, ushort firstCharIndex, ushort lastCharIndex, short typoAscender, short typoDescender, short typoLineGap, ushort winAscent, ushort winDescent)
@@ -251,35 +253,36 @@ namespace SixLabors.Fonts.Tables.General
         }
 
         public OS2Table(OS2Table version0Table, ushort codePageRange1, ushort codePageRange2, short heightX, short capHeight, ushort defaultChar, ushort breakChar, ushort maxContext)
-            : this(version0Table.averageCharWidth,
-                  version0Table.weightClass,
-                  version0Table.widthClass,
-                  version0Table.styleType,
-                  version0Table.subscriptXSize,
-                  version0Table.subscriptYSize,
-                  version0Table.subscriptXOffset,
-                  version0Table.subscriptYOffset,
-                  version0Table.superscriptXSize,
-                  version0Table.superscriptYSize,
-                  version0Table.superscriptXOffset,
-                  version0Table.superscriptYOffset,
-                  version0Table.strikeoutSize,
-                  version0Table.strikeoutPosition,
-                  version0Table.familyClass,
-                  version0Table.panose,
-                  version0Table.unicodeRange1,
-                  version0Table.unicodeRange2,
-                  version0Table.unicodeRange3,
-                  version0Table.unicodeRange4,
-                  version0Table.tag,
-                  version0Table.FontStyle,
-                  version0Table.firstCharIndex,
-                  version0Table.lastCharIndex,
-                  version0Table.TypoAscender,
-                  version0Table.TypoDescender,
-                  version0Table.TypoLineGap,
-                  version0Table.winAscent,
-                  version0Table.winDescent)
+            : this(
+                version0Table.averageCharWidth,
+                version0Table.weightClass,
+                version0Table.widthClass,
+                version0Table.styleType,
+                version0Table.subscriptXSize,
+                version0Table.subscriptYSize,
+                version0Table.subscriptXOffset,
+                version0Table.subscriptYOffset,
+                version0Table.superscriptXSize,
+                version0Table.superscriptYSize,
+                version0Table.superscriptXOffset,
+                version0Table.superscriptYOffset,
+                version0Table.strikeoutSize,
+                version0Table.strikeoutPosition,
+                version0Table.familyClass,
+                version0Table.panose,
+                version0Table.unicodeRange1,
+                version0Table.unicodeRange2,
+                version0Table.unicodeRange3,
+                version0Table.unicodeRange4,
+                version0Table.tag,
+                version0Table.FontStyle,
+                version0Table.firstCharIndex,
+                version0Table.lastCharIndex,
+                version0Table.TypoAscender,
+                version0Table.TypoDescender,
+                version0Table.TypoLineGap,
+                version0Table.winAscent,
+                version0Table.winDescent)
         {
             this.codePageRange1 = codePageRange1;
             this.codePageRange2 = codePageRange2;
@@ -291,14 +294,15 @@ namespace SixLabors.Fonts.Tables.General
         }
 
         public OS2Table(OS2Table versionLessthan5Table, ushort lowerOpticalPointSize, ushort upperOpticalPointSize)
-            : this(versionLessthan5Table,
-                  versionLessthan5Table.codePageRange1,
-                  versionLessthan5Table.codePageRange2,
-                  versionLessthan5Table.heightX,
-                  versionLessthan5Table.capHeight,
-                  versionLessthan5Table.defaultChar,
-                  versionLessthan5Table.breakChar,
-                  versionLessthan5Table.maxContext)
+            : this(
+                versionLessthan5Table,
+                versionLessthan5Table.codePageRange1,
+                versionLessthan5Table.codePageRange2,
+                versionLessthan5Table.heightX,
+                versionLessthan5Table.capHeight,
+                versionLessthan5Table.defaultChar,
+                versionLessthan5Table.breakChar,
+                versionLessthan5Table.maxContext)
         {
             this.lowerOpticalPointSize = lowerOpticalPointSize;
             this.upperOpticalPointSize = upperOpticalPointSize;
@@ -306,27 +310,37 @@ namespace SixLabors.Fonts.Tables.General
 
         internal enum FontStyleSelection : ushort
         {
-            //0	bit 1	ITALIC  Font contains italic or oblique characters, otherwise they are upright.
+            // 0    bit 1   ITALIC  Font contains italic or oblique characters, otherwise they are upright.
             ITALIC = 1,
-            //1	 	UNDERSCORE  Characters are underscored.
+
+            // 1        UNDERSCORE  Characters are underscored.
             UNDERSCORE = 1 << 1,
-            //2	 	NEGATIVE    Characters have their foreground and background reversed.
+
+            // 2        NEGATIVE    Characters have their foreground and background reversed.
             NEGATIVE = 1 << 2,
-            //3	 	OUTLINED    Outline (hollow) characters, otherwise they are solid.
+
+            // 3        OUTLINED    Outline (hollow) characters, otherwise they are solid.
             OUTLINED = 1 << 3,
-            //4	 	STRIKEOUT   Characters are overstruck.
+
+            // 4        STRIKEOUT   Characters are overstruck.
             STRIKEOUT = 1 << 4,
-            //5	bit 0	BOLD    Characters are emboldened.
+
+            // 5    bit 0   BOLD    Characters are emboldened.
             BOLD = 1 << 5,
-            //6	 	REGULAR Characters are in the standard weight/style for the font.
+
+            // 6        REGULAR Characters are in the standard weight/style for the font.
             REGULAR = 1 << 6,
-            //7	 	USE_TYPO_METRICS    If set, it is strongly recommended to use OS/2.typoAscender - OS/2.typoDescender+ OS/2.typoLineGap as a value for default line spacing for this font.
+
+            // 7        USE_TYPO_METRICS    If set, it is strongly recommended to use OS/2.typoAscender - OS/2.typoDescender+ OS/2.typoLineGap as a value for default line spacing for this font.
             USE_TYPO_METRICS = 1 << 7,
-            //8	 	WWS The font has ‘name’ table strings consistent with a weight/width/slope family without requiring use of ‘name’ IDs 21 and 22. (Please see more detailed description below.)
+
+            // 8        WWS The font has ‘name’ table strings consistent with a weight/width/slope family without requiring use of ‘name’ IDs 21 and 22. (Please see more detailed description below.)
             WWS = 1 << 7,
-            //9	 	OBLIQUE Font contains oblique characters.
+
+            // 9        OBLIQUE Font contains oblique characters.
             OBLIQUE = 1 << 7,
-            //10–15	 	<reserved>	Reserved; set to 0.
+
+            // 10–15        <reserved>  Reserved; set to 0.
         }
     }
 }

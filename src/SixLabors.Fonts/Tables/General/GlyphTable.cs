@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tables.General
     internal class GlyphTable : Table
     {
         private const string TableName = "glyf";
-        private GlyphLoader[] loaders;
+        private readonly GlyphLoader[] loaders;
 
         public int GlyphCount => this.loaders.Length;
 
@@ -36,7 +36,6 @@ namespace SixLabors.Fonts.Tables.General
 
         public static GlyphTable Load(BinaryReader reader, uint[] locations, Bounds fallbackEmptyBounds)
         {
-
             EmptyGlyphLoader empty = new Glyphs.EmptyGlyphLoader(fallbackEmptyBounds);
             int entryCount = locations.Length;
             int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table

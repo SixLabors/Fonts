@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using SixLabors.Primitives;
@@ -44,9 +43,9 @@ namespace SixLabors.Fonts
         public static bool TryMeasureCharacterBounds(string text, RendererOptions options, out IReadOnlyList<GlyphMetric> characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
 
-        internal static SizeF GetSize(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
+        internal static SizeF GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
         {
-            if (glyphLayouts.IsEmpty)
+            if (glyphLayouts.Count == 0)
             {
                 return Size.Empty;
             }
@@ -61,13 +60,13 @@ namespace SixLabors.Fonts
             Vector2 topLeft = new Vector2(left, top) * dpi;
             Vector2 bottomRight = new Vector2(right, bottom) * dpi;
 
-            var size = bottomRight - topLeft;
+            Vector2 size = bottomRight - topLeft;
             return new RectangleF(topLeft.X, topLeft.Y, size.X, size.Y).Size;
         }
 
-        internal static RectangleF GetBounds(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi)
+        internal static RectangleF GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
         {
-            if (glyphLayouts.IsEmpty)
+            if (glyphLayouts.Count == 0)
             {
                 return RectangleF.Empty;
             }
@@ -79,25 +78,28 @@ namespace SixLabors.Fonts
             float bottom = int.MinValue;
             float right = int.MinValue;
 
-            for (var i = 0; i < glyphLayouts.Length; i++)
+            for (int i = 0; i < glyphLayouts.Count; i++)
             {
-                var c = glyphLayouts[i];
+                GlyphLayout c = glyphLayouts[i];
                 if (!c.IsControlCharacter)
                 {
                     hasSize = true;
-                    var box = c.BoundingBox(dpi);
+                    RectangleF box = c.BoundingBox(dpi);
                     if (left > box.Left)
                     {
                         left = box.Left;
                     }
+
                     if (top > box.Top)
                     {
                         top = box.Top;
                     }
+
                     if (bottom < box.Bottom)
                     {
                         bottom = box.Bottom;
                     }
+
                     if (right < box.Right)
                     {
                         right = box.Right;
@@ -110,16 +112,16 @@ namespace SixLabors.Fonts
                 return RectangleF.Empty;
             }
 
-            var width = right - left;
-            var height = bottom - top;
+            float width = right - left;
+            float height = bottom - top;
 
             return new RectangleF(left, top, width, height);
         }
 
-        internal static bool TryGetCharacterBounds(ImmutableArray<GlyphLayout> glyphLayouts, Vector2 dpi, out IReadOnlyList<GlyphMetric> characterBounds)
+        internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi, out IReadOnlyList<GlyphMetric> characterBounds)
         {
             bool hasSize = false;
-            if (glyphLayouts.IsEmpty)
+            if (glyphLayouts.Count == 0)
             {
                 characterBounds = EmptyGlyphMetricArray;
                 return hasSize;
@@ -127,16 +129,17 @@ namespace SixLabors.Fonts
 
             List<GlyphMetric> characterBoundsList = new List<GlyphMetric>();
 
-            for (var i = 0; i < glyphLayouts.Length; i++) {
-                var c = glyphLayouts[i];
+            for (int i = 0; i < glyphLayouts.Count; i++)
+            {
+                GlyphLayout c = glyphLayouts[i];
                 if (c.IsControlCharacter)
                 {
-                    characterBoundsList.Add(new GlyphMetric(c.Character, c.BoundingBox(dpi), true));
+                    characterBoundsList.Add(new GlyphMetric(c.CodePoint, c.BoundingBox(dpi), true));
                 }
                 else
                 {
                     hasSize = true;
-                    characterBoundsList.Add(new GlyphMetric(c.Character, c.BoundingBox(dpi), false));
+                    characterBoundsList.Add(new GlyphMetric(c.CodePoint, c.BoundingBox(dpi), false));
                 }
             }
 
@@ -146,9 +149,7 @@ namespace SixLabors.Fonts
 
         internal class TextMeasurerInt
         {
-            internal static TextMeasurerInt Default { get; set; } = new TextMeasurerInt();
-
-            private TextLayout layoutEngine;
+            private readonly TextLayout layoutEngine;
 
             internal TextMeasurerInt(TextLayout layoutEngine)
             {
@@ -163,6 +164,8 @@ namespace SixLabors.Fonts
             {
             }
 
+            internal static TextMeasurerInt Default { get; set; } = new TextMeasurerInt();
+
             /// <summary>
             /// Measures the text.
             /// </summary>
@@ -171,7 +174,7 @@ namespace SixLabors.Fonts
             /// <returns>The size of the text if it was to be rendered.</returns>
             internal RectangleF MeasureBounds(string text, RendererOptions options)
             {
-                ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
+                IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
                 return GetBounds(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
             }
@@ -185,7 +188,7 @@ namespace SixLabors.Fonts
             /// <returns>The size of the text if it was to be rendered.</returns>
             internal bool TryMeasureCharacterBounds(string text, RendererOptions options, out IReadOnlyList<GlyphMetric> characterBounds)
             {
-                ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
+                IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
                 return TryGetCharacterBounds(glyphsToRender, new Vector2(options.DpiX, options.DpiY), out characterBounds);
             }
@@ -198,7 +201,7 @@ namespace SixLabors.Fonts
             /// <returns>The size of the text if it was to be rendered.</returns>
             internal SizeF Measure(string text, RendererOptions options)
             {
-                ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
+                IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
                 return GetSize(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
             }

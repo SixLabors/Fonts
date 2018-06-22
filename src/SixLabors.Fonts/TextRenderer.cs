@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using SixLabors.Primitives;
@@ -13,8 +13,8 @@ namespace SixLabors.Fonts
     /// </summary>
     public class TextRenderer
     {
-        private TextLayout layoutEngine;
-        private IGlyphRenderer renderer;
+        private readonly TextLayout layoutEngine;
+        private readonly IGlyphRenderer renderer;
 
         internal TextRenderer(IGlyphRenderer renderer, TextLayout layoutEngine)
         {
@@ -49,9 +49,9 @@ namespace SixLabors.Fonts
         /// <param name="options">The style.</param>
         public void RenderText(string text, RendererOptions options)
         {
-            ImmutableArray<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
+            IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
-            var dpi = new Vector2(options.DpiX, options.DpiY);
+            Vector2 dpi = new Vector2(options.DpiX, options.DpiY);
 
             RectangleF rect = TextMeasurer.GetBounds(glyphsToRender, dpi);
 

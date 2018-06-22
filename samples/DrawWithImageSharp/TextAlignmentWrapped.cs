@@ -3,6 +3,9 @@ using SixLabors.Fonts;
 using SixLabors.Shapes.Temp;
 using System;
 using System.Numerics;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Drawing;
 
 namespace DrawWithImageSharp
 {
@@ -12,8 +15,8 @@ namespace DrawWithImageSharp
         public static void Generate(Font font)
         {
             int wrappingWidth = 400;
-            var size = (wrappingWidth + wrappingWidth/3) * 3;
-            using (var img = new Image<Rgba32>(size, size))
+            int size = (wrappingWidth + wrappingWidth/3) * 3;
+            using (Image<Rgba32> img = new Image<Rgba32>(size, size))
             {
                 img.Mutate(x => x.Fill(Rgba32.White));
 
@@ -80,7 +83,7 @@ namespace DrawWithImageSharp
             System.Collections.Generic.IEnumerable<SixLabors.Shapes.IPath> shapesToDraw = glyphBuilder.Paths;
             img.Mutate(x => x.Fill(Rgba32.Black, glyphBuilder.Paths));
 
-            var f = Rgba32.Fuchsia;
+            Rgba32 f = Rgba32.Fuchsia;
             f.A = 128;
             img.Mutate(x => x.Fill(Rgba32.Black, glyphBuilder.Paths));
             img.Mutate(x => x.Draw(f, 1, glyphBuilder.Boxes));

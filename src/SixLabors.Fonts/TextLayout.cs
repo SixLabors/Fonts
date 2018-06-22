@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Numerics;
 using System.Text;
 using SixLabors.Primitives;
@@ -22,9 +21,9 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
-        public ImmutableArray<GlyphLayout> GenerateLayout(string text, RendererOptions options)
+        public IReadOnlyList<GlyphLayout> GenerateLayout(string text, RendererOptions options)
         {
-            var dpi = new Vector2(options.DpiX, options.DpiY);
+            Vector2 dpi = new Vector2(options.DpiX, options.DpiY);
             Vector2 origin = (Vector2)options.Origin / dpi;
 
             float maxWidth = float.MaxValue;
@@ -42,7 +41,7 @@ namespace SixLabors.Fonts
                         originX = maxWidth;
                         break;
                     case HorizontalAlignment.Center:
-                        originX = maxWidth / 2f;
+                        originX = 0.5f * maxWidth;
                         break;
                     case HorizontalAlignment.Left:
                     default:
@@ -54,9 +53,17 @@ namespace SixLabors.Fonts
             AppliedFontStyle spanStyle = options.GetStyle(0, text.Length);
             List<GlyphLayout> layout = new List<GlyphLayout>(text.Length);
 
+            float unscaledLineHeight = 0f;
             float lineHeight = 0f;
+            float unscaledLineMaxAscender = 0f;
+            float lineMaxAscender = 0f;
             Vector2 location = Vector2.Zero;
             float lineHeightOfFirstLine = 0;
+
+            // Remember where the top of the layouted text is for accurate vertical alignment.
+            // This is important because there is considerable space between the lineHeight at the glyph's ascender.
+            float top = 0;
+
             bool firstLine = true;
             GlyphInstance previousGlyph = null;
             float scale = 0;
@@ -66,27 +73,44 @@ namespace SixLabors.Fonts
 
             for (int i = 0; i < text.Length; i++)
             {
+                // four-byte characters are processed on the first char
+                if (char.IsLowSurrogate(text[i]))
+                {
+                    continue;
+                }
+
                 if (spanStyle.End < i)
                 {
                     spanStyle = options.GetStyle(i, text.Length);
                     previousGlyph = null;
                 }
 
-                if (spanStyle.Font.LineHeight > lineHeight)
+                if (spanStyle.Font.LineHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
+                    unscaledLineHeight = spanStyle.Font.LineHeight;
                     scale = spanStyle.Font.EmSize * 72;
-                    lineHeight = (spanStyle.Font.LineHeight * spanStyle.PointSize) / scale;
+                    lineHeight = (unscaledLineHeight * spanStyle.PointSize) / scale;
                 }
 
-                if (firstLine && lineHeight > lineHeightOfFirstLine)
+                if (spanStyle.Font.Ascender > unscaledLineMaxAscender)
                 {
-                    lineHeightOfFirstLine = lineHeight;
+                    unscaledLineMaxAscender = spanStyle.Font.Ascender;
+                    scale = spanStyle.Font.EmSize * 72;
+                    lineMaxAscender = (unscaledLineMaxAscender * spanStyle.PointSize) / scale;
                 }
 
-                char c = text[i];
+                if (firstLine)
+                {
+                    if (lineHeight > lineHeightOfFirstLine)
+                    {
+                        lineHeightOfFirstLine = lineHeight;
+                    }
 
-                if (options.WrappingWidth > 0 && char.IsWhiteSpace(c))
+                    top = lineHeightOfFirstLine - lineMaxAscender;
+                }
+
+                if (options.WrappingWidth > 0 && char.IsWhiteSpace(text, i))
                 {
                     // keep a record of where to wrap text and ensure that no line starts with white space
                     for (int j = layout.Count - 1; j >= 0; j--)
@@ -98,138 +122,137 @@ namespace SixLabors.Fonts
                         }
                     }
                 }
+
+                var hasFourBytes = char.IsHighSurrogate(text, i);
+                var c = hasFourBytes ? char.ConvertToUtf32(text, i) : text[i];
+
                 GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
                 float glyphWidth = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                 float glyphHeight = (glyph.Height * spanStyle.PointSize) / scale;
 
-                switch (c)
+                if (hasFourBytes || (text[i] != '\r' && text[i] != '\n' && text[i] != '\t' && text[i] != ' '))
                 {
-                    case '\r':
-                        // carrage return resets the XX coordinate to 0
-                        location.X = 0;
-                        previousGlyph = null;
-                        startOfLine = true;
+                    Vector2 glyphLocation = location;
+                    if (spanStyle.ApplyKerning && previousGlyph != null)
+                    {
+                        // if there is special instructions for this glyph pair use that width
+                        Vector2 scaledOffset = (spanStyle.Font.GetOffset(glyph, previousGlyph) * spanStyle.PointSize) / scale;
 
-                        layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
-                        startOfLine = false;
-                        break;
-                    case '\n':
+                        glyphLocation += scaledOffset;
+
+                        // only fix the 'X' of the current tracked location but use the actual 'X'/'Y' of the offset
+                        location.X = glyphLocation.X;
+                    }
+
+                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), glyphLocation, glyphWidth, glyphHeight, lineHeight, startOfLine, false, false));
+                    startOfLine = false;
+
+                    // move forward the actual width of the glyph, we are retaining the baseline
+                    location.X += glyphWidth;
+
+                    // if the word extended pass the end of the box, wrap it
+                    if (location.X >= maxWidth && lastWrappableLocation > 0)
+                    {
+                        if (lastWrappableLocation < layout.Count)
                         {
-                            // carrage return resets the XX coordinate to 0
-                            layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
-                            location.X = 0;
+                            float wrappingOffset = layout[lastWrappableLocation].Location.X;
+                            startOfLine = true;
+
+                            // move the characters to the next line
+                            for (int j = lastWrappableLocation; j < layout.Count; j++)
+                            {
+                                if (layout[j].IsWhiteSpace)
+                                {
+                                    wrappingOffset += layout[j].Width;
+                                    layout.RemoveAt(j);
+                                    j--;
+                                    continue;
+                                }
+
+                                Vector2 current = layout[j].Location;
+                                layout[j] = new GlyphLayout(layout[j].CodePoint, layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height, layout[j].LineHeight, startOfLine, layout[j].IsWhiteSpace, layout[j].IsControlCharacter);
+                                startOfLine = false;
+
+                                location.X = layout[j].Location.X + layout[j].Width;
+                            }
+
                             location.Y += lineHeight;
-                            lineHeight = 0; // reset line height tracking for next line
-                            previousGlyph = null;
                             firstLine = false;
                             lastWrappableLocation = -1;
-                            startOfLine = true;
                         }
-                        break;
-                    case '\t':
-                        {
-                            float tabStop = glyphWidth * spanStyle.TabWidth;
-                            float finalWidth = 0;
+                    }
 
-                            if (tabStop > 0)
-                            {
-                                finalWidth = tabStop - (location.X % tabStop);
-                            }
+                    float bottom = location.Y + lineHeight;
+                    if (bottom > totalHeight)
+                    {
+                        totalHeight = bottom;
+                    }
 
-                            if (finalWidth < glyphWidth)
-                            {
-                                // if we are not going to tab atleast a glyph width add another tabstop to it ???
-                                // should I be doing this?
-                                finalWidth += tabStop;
-                            }
+                    previousGlyph = glyph;
+                }
+                else if (text[i] == '\r')
+                {
+                    // carriage return resets the XX coordinate to 0
+                    location.X = 0;
+                    previousGlyph = null;
+                    startOfLine = true;
 
-                            layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, finalWidth, glyphHeight, lineHeight, startOfLine, true, false));
-                            startOfLine = false;
+                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
+                    startOfLine = false;
+                }
+                else if (text[i] == '\n')
+                {
+                    // carriage return resets the XX coordinate to 0
+                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
+                    location.X = 0;
+                    location.Y += lineHeight;
+                    unscaledLineHeight = 0;
+                    unscaledLineMaxAscender = 0;
+                    previousGlyph = null;
+                    firstLine = false;
+                    lastWrappableLocation = -1;
+                    startOfLine = true;
+                }
+                else if (text[i] == '\t')
+                {
+                    float tabStop = glyphWidth * spanStyle.TabWidth;
+                    float finalWidth = 0;
 
-                            // advance to a position > width away that
-                            location.X += finalWidth;
-                            previousGlyph = null;
-                        }
+                    if (tabStop > 0)
+                    {
+                        finalWidth = tabStop - (location.X % tabStop);
+                    }
 
-                        break;
-                    case ' ':
-                        {
-                            layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, glyphWidth, glyphHeight, lineHeight, startOfLine, true, false));
-                            startOfLine = false;
-                            location.X += glyphWidth;
-                            previousGlyph = null;
-                        }
+                    if (finalWidth < glyphWidth)
+                    {
+                        // if we are not going to tab atleast a glyph width add another tabstop to it ???
+                        // should I be doing this?
+                        finalWidth += tabStop;
+                    }
 
-                        break;
-                    default:
-                        {
-                            Vector2 glyphLocation = location;
-                            if (spanStyle.ApplyKerning && previousGlyph != null)
-                            {
-                                // if there is special instructions for this glyph pair use that width
-                                Vector2 scaledOffset = (spanStyle.Font.GetOffset(glyph, previousGlyph) * spanStyle.PointSize) / scale;
+                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, finalWidth, glyphHeight, lineHeight, startOfLine, true, false));
+                    startOfLine = false;
 
-                                glyphLocation += scaledOffset;
-
-                                // only fix the 'X' of the current tracked location but use the actual 'X'/'Y' of the offset
-                                location.X = glyphLocation.X;
-                            }
-
-                            layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), glyphLocation, glyphWidth, glyphHeight, lineHeight, startOfLine, false, false));
-                            startOfLine = false;
-
-                            // move forward the actual width of the glyph, we are retaining the baseline
-                            location.X += glyphWidth;
-
-                            // if the word extended pass the end of the box, wrap it
-                            if (location.X >= maxWidth && lastWrappableLocation > 0)
-                            {
-                                if (lastWrappableLocation < layout.Count)
-                                {
-                                    float wrappingOffset = layout[lastWrappableLocation].Location.X;
-                                    startOfLine = true;
-
-                                    // move the characters to the next line
-                                    for (int j = lastWrappableLocation; j < layout.Count; j++)
-                                    {
-                                        if (layout[j].IsWhiteSpace)
-                                        {
-                                            wrappingOffset += layout[j].Width;
-                                            layout.RemoveAt(j);
-                                            j--;
-                                            continue;
-                                        }
-
-                                        Vector2 current = layout[j].Location;
-                                        layout[j] = new GlyphLayout(layout[j].Character, layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height, layout[j].LineHeight, startOfLine, layout[j].IsWhiteSpace, layout[j].IsControlCharacter);
-                                        startOfLine = false;
-
-                                        location.X = layout[j].Location.X + layout[j].Width;
-                                    }
-
-                                    location.Y += lineHeight;
-                                    firstLine = false;
-                                    lastWrappableLocation = -1;
-                                }
-                            }
-                            float bottom = location.Y + lineHeight;
-                            if (bottom > totalHeight)
-                            {
-                                totalHeight = bottom;
-                            }
-                            previousGlyph = glyph;
-                        }
-
-                        break;
+                    // advance to a position > width away that
+                    location.X += finalWidth;
+                    previousGlyph = null;
+                }
+                else if (text[i] == ' ')
+                {
+                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, glyphWidth, glyphHeight, lineHeight, startOfLine, true, false));
+                    startOfLine = false;
+                    location.X += glyphWidth;
+                    previousGlyph = null;
                 }
             }
 
-            Vector2 offset = new Vector2(0, lineHeightOfFirstLine);
+            totalHeight -= top;
+            Vector2 offset = new Vector2(0, lineHeightOfFirstLine - top);
 
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Center:
-                    offset += new Vector2(0, -(totalHeight / 2));
+                    offset += new Vector2(0, -0.5f * totalHeight);
                     break;
                 case VerticalAlignment.Bottom:
                     offset += new Vector2(0, -totalHeight);
@@ -239,6 +262,7 @@ namespace SixLabors.Fonts
                     // no change
                     break;
             }
+
             Vector2 lineOffset = offset;
             for (int i = 0; i < layout.Count; i++)
             {
@@ -246,6 +270,7 @@ namespace SixLabors.Fonts
                 if (glyphLayout.StartOfLine)
                 {
                     lineOffset = offset;
+
                     // scan ahead measuring width
                     float width = glyphLayout.Width;
                     for (int j = i + 1; j < layout.Count; j++)
@@ -254,8 +279,10 @@ namespace SixLabors.Fonts
                         {
                             break;
                         }
+
                         width = layout[j].Location.X + layout[j].Width; // rhs
                     }
+
                     switch (options.HorizontalAlignment)
                     {
                         case HorizontalAlignment.Right:
@@ -272,10 +299,10 @@ namespace SixLabors.Fonts
                 }
 
                 // TODO calculate an offset from the 'origin' based on TextAlignment for each line
-                layout[i] = new GlyphLayout(glyphLayout.Character, glyphLayout.Glyph, glyphLayout.Location + lineOffset + origin, glyphLayout.Width, glyphLayout.Height, glyphLayout.LineHeight, glyphLayout.StartOfLine, glyphLayout.IsWhiteSpace, glyphLayout.IsControlCharacter);
+                layout[i] = new GlyphLayout(glyphLayout.CodePoint, glyphLayout.Glyph, glyphLayout.Location + lineOffset + origin, glyphLayout.Width, glyphLayout.Height, glyphLayout.LineHeight, glyphLayout.StartOfLine, glyphLayout.IsWhiteSpace, glyphLayout.IsControlCharacter);
             }
 
-            return layout.ToImmutableArray();
+            return layout;
         }
     }
 
@@ -284,11 +311,10 @@ namespace SixLabors.Fonts
     /// </summary>
     internal struct GlyphLayout
     {
-
-        internal GlyphLayout(char character, Glyph glyph, Vector2 location, float width, float height, float lineHeight, bool startOfLine, bool isWhiteSpace, bool isControlCharacter)
+        internal GlyphLayout(int codePoint, Glyph glyph, Vector2 location, float width, float height, float lineHeight, bool startOfLine, bool isWhiteSpace, bool isControlCharacter)
         {
             this.LineHeight = lineHeight;
-            this.Character = character;
+            this.CodePoint = codePoint;
             this.Glyph = glyph;
             this.Location = location;
             this.Width = width;
@@ -298,18 +324,8 @@ namespace SixLabors.Fonts
             this.IsControlCharacter = isControlCharacter;
         }
 
-        internal RectangleF BoundingBox(Vector2 dpi)
-        {
-            var box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
-            if (this.IsWhiteSpace)
-            {
-                box.Width = this.Width * dpi.X;
-            }
-            return box;
-        }
-
         /// <summary>
-        /// Gets the IsWhiteSpace.
+        /// Gets a value indicating whether gets the glyphe represents a whitespace character.
         /// </summary>
         /// <value>
         /// The bounds.
@@ -349,12 +365,30 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets weather this glyph is the first glyph on a new line.
+        /// Gets or sets a value indicating whether this glyph is the first glyph on a new line.
         /// </summary>
         public bool StartOfLine { get; set; }
-        public char Character { get; private set; }
+
+        /// <summary>
+        /// Gets the Unicode code point of the character.
+        /// </summary>
+        public int CodePoint { get; private set; }
+
         public float LineHeight { get; private set; }
+
         public bool IsControlCharacter { get; private set; }
+
+        internal RectangleF BoundingBox(Vector2 dpi)
+        {
+            RectangleF box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
+
+            if (this.IsWhiteSpace)
+            {
+                box.Width = this.Width * dpi.X;
+            }
+
+            return box;
+        }
 
         public override string ToString()
         {
@@ -369,17 +403,19 @@ namespace SixLabors.Fonts
             {
                 sb.Append('!');
             }
+
             sb.Append('\'');
-            switch (this.Character)
+            switch (this.CodePoint)
             {
                 case '\t': sb.Append("\\t"); break;
                 case '\n': sb.Append("\\n"); break;
                 case '\r': sb.Append("\\r"); break;
                 case ' ': sb.Append(" "); break;
                 default:
-                    sb.Append(this.Character);
+                    sb.Append(char.ConvertFromUtf32(this.CodePoint));
                     break;
             }
+
             sb.Append('\'');
             sb.Append(' ');
 

@@ -32,7 +32,7 @@ namespace SixLabors.Fonts
         BoldItalic = 3,
 
         // not yet supported
-        //Underline = 4,
-        //Strikeout = 8
+        // Underline = 4,
+        // Strikeout = 8
     }
 }

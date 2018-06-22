@@ -19,9 +19,9 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public ushort Language { get; }
 
-        public override ushort GetGlyphId(char character)
+        public override ushort GetGlyphId(int codePoint)
         {
-            uint b = character;
+            uint b = (uint)codePoint;
             if (b >= this.GlyphIds.Length)
             {
                 return 0;
@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             return this.GlyphIds[b];
         }
 
-        public static IEnumerable< Format0SubTable> Load(IEnumerable< EncodingRecord> encodings, BinaryReader reader)
+        public static IEnumerable<Format0SubTable> Load(IEnumerable<EncodingRecord> encodings, BinaryReader reader)
         {
             // format has already been read by this point skip it
             ushort length = reader.ReadUInt16();

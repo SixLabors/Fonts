@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [Fact]
         public void RenderingEmptyString_DoesNotThrow()
         {
-            var font = CreateFont("\t x");
+            Font font = CreateFont("\t x");
          
             GlyphRenderer r = new GlyphRenderer();
 

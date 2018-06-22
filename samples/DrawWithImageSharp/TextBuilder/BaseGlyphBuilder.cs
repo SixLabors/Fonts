@@ -34,7 +34,7 @@ namespace SixLabors.Shapes.Temp
         /// <summary>
         /// Gets the paths that have been rendered by this.
         /// </summary>
-        public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new SixLabors.Shapes.RectangularePolygon(x)));
+        public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new SixLabors.Shapes.RectangularPolygon(x)));
 
         /// <summary>
         /// Gets the paths that have been rendered by this.
@@ -47,7 +47,7 @@ namespace SixLabors.Shapes.Temp
 
         void IGlyphRenderer.BeginText(RectangleF rect)
         {
-            this.TextBox = new SixLabors.Shapes.RectangularePolygon(rect);
+            this.TextBox = new SixLabors.Shapes.RectangularPolygon(rect);
             BeginText(rect);
         }
 
@@ -60,14 +60,14 @@ namespace SixLabors.Shapes.Temp
         /// </summary>
         /// <param name="location">The offset that the glyph will be rendered at.</param>
         /// <param name="size">The size.</param>
-        bool IGlyphRenderer.BeginGlyph(RectangleF rect, int cachKey)
+        bool IGlyphRenderer.BeginGlyph(RectangleF rect, GlyphRendererParameters cachKey)
         {
             this.builder.Clear();
             this.glyphBounds.Add(rect);
             return BeginGlyph(rect, cachKey);
         }
 
-        protected virtual bool BeginGlyph(RectangleF rect, int cachKey)
+        protected virtual bool BeginGlyph(RectangleF rect, GlyphRendererParameters cachKey)
         {
             BeginGlyph(rect);
             return true;

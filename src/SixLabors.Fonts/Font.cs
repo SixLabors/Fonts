@@ -147,11 +147,11 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the glyph.
         /// </summary>
-        /// <param name="character">The character.</param>
+        /// <param name="codePoint">The code point of the character.</param>
         /// <returns>Returns the glyph</returns>
-        internal Glyph GetGlyph(char character)
+        internal Glyph GetGlyph(int codePoint)
         {
-            return new Glyph(this.instance.Value.GetGlyph(character), this.Size);
+            return new Glyph(this.instance.Value.GetGlyph(codePoint), this.Size);
         }
 
         private IFontInstance LoadInstanceInternal()

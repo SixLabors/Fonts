@@ -36,7 +36,7 @@ namespace SixLabors.Fonts.Tables
         {
             stream.Seek(this.Offset, SeekOrigin.Begin);
 
-           return new BinaryReader(stream, true);
+            return new BinaryReader(stream, true);
         }
     }
 }
