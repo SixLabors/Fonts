@@ -145,13 +145,13 @@ namespace SixLabors.Fonts
         internal IFontInstance FontInstance => this.instance.Value;
 
         /// <summary>
-        /// Gets the glyph.
+        /// Gets the glyph that corresponds to the given character.
         /// </summary>
-        /// <param name="codePoint">The code point of the character.</param>
+        /// <param name="character">The UTF-32 encoded character.</param>
         /// <returns>Returns the glyph</returns>
-        internal Glyph GetGlyph(int codePoint)
+        public Glyph GetGlyph(int character)
         {
-            return new Glyph(this.instance.Value.GetGlyph(codePoint), this.Size);
+            return new Glyph(this.instance.Value.GetGlyph(character), this.Size);
         }
 
         private IFontInstance LoadInstanceInternal()
