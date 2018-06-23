@@ -9,7 +9,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// A glyph from a particular font face.
     /// </summary>
-    internal struct Glyph
+    public struct Glyph
     {
         private readonly GlyphInstance instance;
         private readonly float pointSize;
@@ -20,6 +20,22 @@ namespace SixLabors.Fonts
             this.pointSize = pointSize;
         }
 
+        /// <summary>
+        /// Get the size of the glyph when rendered at the given dpi.
+        /// </summary>
+        /// <param name="dpi">Dots per inch.</param>
+        /// <returns>The size of the glyph.</returns>
+        public SizeF Size(Vector2 dpi)
+        {
+            return this.instance.Size(this.pointSize * dpi);
+        }
+
+        /// <summary>
+        /// Get the bounding box of the glyph when rendered at the given dpi.
+        /// </summary>
+        /// <param name="location">Bottom left position.</param>
+        /// <param name="dpi">Dots per inch.</param>
+        /// <returns>The bounding box of the glyph.</returns>
         public RectangleF BoundingBox(PointF location, Vector2 dpi)
         {
             return this.instance.BoundingBox(location, this.pointSize * dpi);

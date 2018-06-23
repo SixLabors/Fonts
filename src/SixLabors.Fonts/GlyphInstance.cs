@@ -78,14 +78,20 @@ namespace SixLabors.Fonts
 
         private static readonly Vector2 Scale = new Vector2(1, -1);
 
+        internal SizeF Size(Vector2 scaledPointSize)
+        {
+            var size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
+            return new SizeF(size.X, size.Y);
+        }
+
         internal RectangleF BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
-            Vector2 size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
+            SizeF size = this.Size(scaledPointSize);
             Vector2 loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * Scale;
 
             loc = origin + loc;
 
-            return new RectangleF(loc.X, loc.Y, size.X, size.Y);
+            return new RectangleF(loc.X, loc.Y, size.Width, size.Height);
         }
 
         /// <summary>
