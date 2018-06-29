@@ -46,6 +46,18 @@ namespace SixLabors.Fonts
                 return this.Install(fs);
             }
         }
+
+        /// <summary>
+        /// Installs a font from the specified path.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="fontDescription">The font description of the installed font.</param>
+        /// <returns>the description of the font just loaded.</returns>
+        public FontFamily Install(string path, out FontDescription fontDescription) {
+            using (FileStream fs = File.OpenRead(path)) {
+                return this.Install(fs, out fontDescription);
+            }
+        }
 #endif
 
         /// <summary>
@@ -56,6 +68,19 @@ namespace SixLabors.Fonts
         public FontFamily Install(Stream fontStream)
         {
             FontInstance instance = FontInstance.LoadFont(fontStream);
+
+            return this.Install(instance);
+        }
+
+        /// <summary>
+        /// Installs the specified font stream.
+        /// </summary>
+        /// <param name="fontStream">The font stream.</param>
+        /// <param name="fontDescription">The font description of the installed font.</param>
+        /// <returns>the description of the font just loaded.</returns>
+        public FontFamily Install(Stream fontStream, out FontDescription fontDescription) {
+            FontInstance instance = FontInstance.LoadFont(fontStream);
+            fontDescription = instance.Description;
 
             return this.Install(instance);
         }
