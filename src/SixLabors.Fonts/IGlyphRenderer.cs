@@ -56,9 +56,9 @@ namespace SixLabors.Fonts
         /// Begins the glyph.
         /// </summary>
         /// <param name="bounds">The bounds the glyph will be rendered at and at what size.</param>
-        /// <param name="cacheKey">The a key that uniquely represents a version of a glyph in at particular font size, font family, font style and DPI.</param>
+        /// <param name="paramaters">The set of paramaters that uniquely represents a version of a glyph in at particular font size, font family, font style and DPI.</param>
         /// <returns>Returns true if the glyph should be rendered othersie it returns false.</returns>
-        bool BeginGlyph(RectangleF bounds, int cacheKey);
+        bool BeginGlyph(RectangleF bounds, GlyphRendererParameters paramaters);
 
         /// <summary>
         /// Called once all glyphs have completed rendering

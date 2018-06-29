@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Exceptions;
@@ -15,8 +14,8 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection
     {
-        private Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.OrdinalIgnoreCase);
-        private Dictionary<string, FontFamily> families = new Dictionary<string, FontFamily>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, FontFamily> families = new Dictionary<string, FontFamily>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontCollection"/> class.
@@ -31,7 +30,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The families.
         /// </value>
-        public IEnumerable<FontFamily> Families => this.families.Values.ToImmutableArray();
+        public IEnumerable<FontFamily> Families => this.families.Values;
 
 #if FILESYSTEM
         /// <summary>
@@ -41,10 +40,8 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(string path)
         {
-            using (FileStream fs = File.OpenRead(path))
-            {
-                return this.Install(fs);
-            }
+            FileFontInstance instance = new FileFontInstance(path);
+            return this.Install(instance);
         }
 
         /// <summary>
@@ -120,7 +117,7 @@ namespace SixLabors.Fonts
 
         internal IEnumerable<FontStyle> AvailibleStyles(string fontFamily)
         {
-            return this.FindAll(fontFamily).Select(x => x.Description.Style).ToImmutableArray();
+            return this.FindAll(fontFamily).Select(x => x.Description.Style).ToArray();
         }
 
         internal FontFamily Install(IFontInstance instance)

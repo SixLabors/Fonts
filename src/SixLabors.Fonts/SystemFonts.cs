@@ -51,6 +51,7 @@ namespace SixLabors.Fonts
         /// <param name="fontFamily">The family.</param>
         /// <param name="size">The size.</param>
         /// <param name="style">The style.</param>
+        /// <returns>Returns instance of the <see cref="Font"/> from the current collection.</returns>
         public static Font CreateFont(string fontFamily, float size, FontStyle style) => Collection.CreateFont(fontFamily, size, style);
 
         /// <summary>
@@ -58,6 +59,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontFamily">The family.</param>
         /// <param name="size">The size.</param>
+        /// <returns>Returns instance of the <see cref="Font"/> from the current collection.</returns>
         public static Font CreateFont(string fontFamily, float size) => Collection.CreateFont(fontFamily, size);
     }
 #endif

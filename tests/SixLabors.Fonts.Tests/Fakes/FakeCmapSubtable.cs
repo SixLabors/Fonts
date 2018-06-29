@@ -11,11 +11,11 @@ namespace SixLabors.Fonts.Tests.Fakes
         {
             this.glyphs = glyphs;
         }
-        public override ushort GetGlyphId(char character)
+        public override ushort GetGlyphId(int codePoint)
         {
             foreach (FakeGlyphSource c in this.glyphs)
             {
-                if (c.Character == character)
+                if (c.CodePoint == codePoint)
                 {
                     return c.Index;
                 }

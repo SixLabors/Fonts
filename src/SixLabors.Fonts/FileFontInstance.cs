@@ -12,12 +12,12 @@ namespace SixLabors.Fonts
     /// </summary>
     internal class FileFontInstance : IFontInstance
     {
-        private Lazy<FontInstance> font;
+        private readonly Lazy<IFontInstance> font;
 
         public FileFontInstance(string path)
         {
             this.Description = FontDescription.LoadDescription(path);
-            this.font = new Lazy<Fonts.FontInstance>(() => FontInstance.LoadFont(path));
+            this.font = new Lazy<Fonts.IFontInstance>(() => FontInstance.LoadFont(path));
         }
 
         public FontDescription Description { get; }
@@ -32,10 +32,10 @@ namespace SixLabors.Fonts
 
         public int LineHeight => this.font.Value.LineHeight;
 
-        public GlyphInstance GetGlyph(char character)
-            => this.font.Value.GetGlyph(character);
+        GlyphInstance IFontInstance.GetGlyph(int codePoint)
+            => this.font.Value.GetGlyph(codePoint);
 
-        public Vector2 GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
+        Vector2 IFontInstance.GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
             => this.font.Value.GetOffset(glyph, previousGlyph);
     }
 #endif

@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontFamily
     {
-        private FontCollection collection;
+        private readonly FontCollection collection;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontFamily"/> class.
