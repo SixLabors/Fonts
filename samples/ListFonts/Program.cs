@@ -17,7 +17,7 @@ namespace ListFonts
             {
                 Console.Write(f.Name.PadRight(len));
                 Console.Write('\t');
-                Console.Write(string.Join(",", f.AvailibleStyles.OrderBy(x=>x).Select(x => x.ToString())));
+                Console.Write(string.Join(",", f.AvailableStyles.OrderBy(x=>x).Select(x => x.ToString())));
                 Console.WriteLine();
             }
 

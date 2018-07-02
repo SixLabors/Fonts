@@ -11,15 +11,6 @@ namespace SixLabors.Fonts
     /// <seealso cref="SixLabors.Fonts.IReadOnlyFontCollection" />
     public interface IFontCollection : IReadOnlyFontCollection
     {
-#if FILESYSTEM
-        /// <summary>
-        /// Installs a font from the specified path.
-        /// </summary>
-        /// <param name="path">The path.</param>
-        /// <returns>the description of the font just loaded.</returns>
-        FontFamily Install(string path);
-#endif
-
         /// <summary>
         /// Installs the specified font stream.
         /// </summary>
