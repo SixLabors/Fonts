@@ -34,23 +34,23 @@ namespace SixLabors.Fonts
         public string Name { get; }
 
         /// <summary>
-        /// Gets the availible <see cref="FontStyle"/> that are currently availible.
+        /// Gets the available <see cref="FontStyle"/> that are currently available.
         /// </summary>
         /// <value>
-        /// The availible styles.
+        /// The available styles.
         /// </value>
-        public IEnumerable<FontStyle> AvailibleStyles => this.collection.AvailibleStyles(this.Name);
+        public IEnumerable<FontStyle> AvailableStyles => this.collection.AvailableStyles(this.Name);
 
         /// <summary>
-        /// Determines whether the specified <see cref="FontStyle"/> is availible.
+        /// Determines whether the specified <see cref="FontStyle"/> is available.
         /// </summary>
         /// <param name="style">The style.</param>
         /// <returns>
-        ///   <c>true</c> if the specified <see cref="FontStyle"/> is availible; otherwise, <c>false</c>.
+        ///   <c>true</c> if the specified <see cref="FontStyle"/> is available; otherwise, <c>false</c>.
         /// </returns>
-        public bool IsStyleAvailible(FontStyle style) => this.AvailibleStyles.Contains(style);
+        public bool IsStyleAvailable(FontStyle style) => this.AvailableStyles.Contains(style);
 
-        internal FontStyle DefaultStyle => this.IsStyleAvailible(FontStyle.Regular) ? FontStyle.Regular : this.AvailibleStyles.First();
+        internal FontStyle DefaultStyle => this.IsStyleAvailable(FontStyle.Regular) ? FontStyle.Regular : this.AvailableStyles.First();
 
         internal IFontInstance Find(FontStyle style)
         {

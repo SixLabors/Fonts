@@ -50,7 +50,8 @@ namespace SixLabors.Fonts
         /// <param name="path">The path.</param>
         /// <param name="fontDescription">The font description of the installed font.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(string path, out FontDescription fontDescription) {
+        public FontFamily Install(string path, out FontDescription fontDescription)
+        {
             using (FileStream fs = File.OpenRead(path)) {
                 return this.Install(fs, out fontDescription);
             }
@@ -75,7 +76,8 @@ namespace SixLabors.Fonts
         /// <param name="fontStream">The font stream.</param>
         /// <param name="fontDescription">The font description of the installed font.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(Stream fontStream, out FontDescription fontDescription) {
+        public FontFamily Install(Stream fontStream, out FontDescription fontDescription)
+        {
             FontInstance instance = FontInstance.LoadFont(fontStream);
             fontDescription = instance.Description;
 
@@ -115,7 +117,7 @@ namespace SixLabors.Fonts
             return false;
         }
 
-        internal IEnumerable<FontStyle> AvailibleStyles(string fontFamily)
+        internal IEnumerable<FontStyle> AvailableStyles(string fontFamily)
         {
             return this.FindAll(fontFamily).Select(x => x.Description.Style).ToArray();
         }
