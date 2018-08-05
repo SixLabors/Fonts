@@ -121,8 +121,8 @@ namespace SixLabors.Fonts
 
         internal FontFamily Install(IFontInstance instance)
         {
-            Guard.NotNull(instance, nameof(instance));
-            Guard.NotNull(instance.Description, nameof(instance.Description));
+            Utilities.Guard.NotNull(instance, nameof(instance));
+            Utilities.Guard.NotNull(instance.Description, nameof(instance.Description));
 
             lock (this.instances)
             {
