@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Buffer used for temporary storage before conversion into primitives
         /// </summary>
-        private readonly byte[] storageBuffer = new byte[16];
+        private readonly byte[] buffer = new byte[16];
 
         private readonly bool leaveOpen;
 
@@ -80,8 +80,8 @@ namespace SixLabors.Fonts
         /// <returns>The byte read</returns>
         public byte ReadByte()
         {
-            this.ReadInternal(this.storageBuffer, 1);
-            return this.storageBuffer[0];
+            this.ReadInternal(this.buffer, 1);
+            return this.buffer[0];
         }
 
         /// <summary>
@@ -90,8 +90,8 @@ namespace SixLabors.Fonts
         /// <returns>The byte read</returns>
         public sbyte ReadSByte()
         {
-            this.ReadInternal(this.storageBuffer, 1);
-            return unchecked((sbyte)this.storageBuffer[0]);
+            this.ReadInternal(this.buffer, 1);
+            return unchecked((sbyte)this.buffer[0]);
         }
 
         /// <summary>
@@ -100,9 +100,9 @@ namespace SixLabors.Fonts
         /// <returns>The boolean read</returns>
         public bool ReadBoolean()
         {
-            this.ReadInternal(this.storageBuffer, 1);
+            this.ReadInternal(this.buffer, 1);
 
-            return BitConverter.ToBoolean(this.storageBuffer, 0);
+            return BitConverter.ToBoolean(this.buffer, 0);
         }
 
         public float ReadF2dot14()
@@ -119,9 +119,9 @@ namespace SixLabors.Fonts
         /// <returns>The 16-bit integer read</returns>
         public short ReadInt16()
         {
-            this.ReadInternal(this.storageBuffer, 2);
+            this.ReadInternal(this.buffer, 2);
 
-            return BinaryPrimitives.ReadInt16BigEndian(this.storageBuffer);
+            return BinaryPrimitives.ReadInt16BigEndian(this.buffer);
         }
 
         public TEnum ReadInt16<TEnum>()
@@ -146,9 +146,9 @@ namespace SixLabors.Fonts
         /// <returns>The 32-bit integer read</returns>
         public float ReadFixed()
         {
-            this.ReadInternal(this.storageBuffer, 4);
+            this.ReadInternal(this.buffer, 4);
 
-            int value = BinaryPrimitives.ReadInt32BigEndian(this.storageBuffer);
+            int value = BinaryPrimitives.ReadInt32BigEndian(this.buffer);
 
             return Unsafe.As<int, float>(ref value);
         }
@@ -160,9 +160,9 @@ namespace SixLabors.Fonts
         /// <returns>The 64-bit integer read</returns>
         public long ReadInt64()
         {
-            this.ReadInternal(this.storageBuffer, 8);
+            this.ReadInternal(this.buffer, 8);
 
-            return BinaryPrimitives.ReadInt64BigEndian(this.storageBuffer);
+            return BinaryPrimitives.ReadInt64BigEndian(this.buffer);
         }
 
         /// <summary>
@@ -172,9 +172,9 @@ namespace SixLabors.Fonts
         /// <returns>The 16-bit unsigned integer read</returns>
         public ushort ReadUInt16()
         {
-            this.ReadInternal(this.storageBuffer, 2);
+            this.ReadInternal(this.buffer, 2);
 
-            return BinaryPrimitives.ReadUInt16BigEndian(this.storageBuffer);
+            return BinaryPrimitives.ReadUInt16BigEndian(this.buffer);
         }
 
         public TEnum ReadUInt16<TEnum>()
@@ -293,8 +293,8 @@ namespace SixLabors.Fonts
         /// <returns>The 8-bit unsigned integer read</returns>
         public byte ReadUInt8()
         {
-            this.ReadInternal(this.storageBuffer, 1);
-            return this.storageBuffer[0];
+            this.ReadInternal(this.buffer, 1);
+            return this.buffer[0];
         }
 
         /// <summary>
@@ -304,9 +304,9 @@ namespace SixLabors.Fonts
         /// <returns>The 32-bit unsigned integer read</returns>
         public uint ReadUInt32()
         {
-            this.ReadInternal(this.storageBuffer, 4);
+            this.ReadInternal(this.buffer, 4);
 
-            return BinaryPrimitives.ReadUInt32BigEndian(this.storageBuffer);
+            return BinaryPrimitives.ReadUInt32BigEndian(this.buffer);
         }
 
         public uint ReadOffset32()
@@ -321,8 +321,8 @@ namespace SixLabors.Fonts
         /// <returns>The 64-bit unsigned integer read</returns>
         public ulong ReadUInt64()
         {
-            this.ReadInternal(this.storageBuffer, 8);
-            return BinaryPrimitives.ReadUInt64BigEndian(this.storageBuffer);
+            this.ReadInternal(this.buffer, 8);
+            return BinaryPrimitives.ReadUInt64BigEndian(this.buffer);
         }
 
         /// <summary>
@@ -432,9 +432,9 @@ namespace SixLabors.Fonts
         /// <returns>a 4 character long UTF8 encoded string</returns>
         public string ReadTag()
         {
-            this.ReadInternal(this.storageBuffer, 4);
+            this.ReadInternal(this.buffer, 4);
 
-            return Encoding.UTF8.GetString(this.storageBuffer, 0, 4);
+            return Encoding.UTF8.GetString(this.buffer, 0, 4);
         }
 
         /// <summary>
