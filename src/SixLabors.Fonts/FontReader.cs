@@ -104,21 +104,25 @@ namespace SixLabors.Fonts
         public virtual TTableType GetTable<TTableType>()
             where TTableType : Table
         {
-            if (!this.loadedTables.ContainsKey(typeof(TTableType)))
+            if (this.loadedTables.TryGetValue(typeof(TTableType), out Table table))
             {
-                TTableType table = this.loader.Load<TTableType>(this);
+                return (TTableType)table;
+            }
+            else
+            {
+                table = this.loader.Load<TTableType>(this);
 
                 this.loadedTables.Add(typeof(TTableType), table);
             }
 
-            return (TTableType)this.loadedTables[typeof(TTableType)];
+            return (TTableType)table;
         }
 
         public virtual TableHeader GetHeader(string tag)
         {
-            if (this.Headers.ContainsKey(tag))
+            if (this.Headers.TryGetValue(tag, out TableHeader header))
             {
-                return this.Headers[tag];
+                return header;
             }
 
             return null;
