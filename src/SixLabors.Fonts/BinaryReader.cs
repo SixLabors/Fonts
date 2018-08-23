@@ -125,6 +125,7 @@ namespace SixLabors.Fonts
         }
 
         public TEnum ReadInt16<TEnum>()
+            where TEnum : Enum
         {
             return CastTo<TEnum>.From(this.ReadInt16());
         }
@@ -256,7 +257,7 @@ namespace SixLabors.Fonts
         }
 
         public TEnum[] ReadUInt8Array<TEnum>(int length)
-             where TEnum : struct
+             where TEnum : Enum
         {
             TEnum[] data = new TEnum[length];
             for (int i = 0; i < length; i++)
@@ -392,20 +393,6 @@ namespace SixLabors.Fonts
                 index += read;
             }
 
-            return ret;
-        }
-
-        /// <summary>
-        /// Reads the specified number of bytes, returning them in a new byte array.
-        /// If not enough bytes are available before the end of the stream, this
-        /// method will throw an IOException.
-        /// </summary>
-        /// <param name="count">The number of bytes to read</param>
-        /// <returns>The bytes read</returns>
-        public byte[] ReadBytesOrThrow(int count)
-        {
-            byte[] ret = new byte[count];
-            this.ReadInternal(ret, count);
             return ret;
         }
 
