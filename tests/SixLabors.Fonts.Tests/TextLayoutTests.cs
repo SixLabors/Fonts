@@ -117,7 +117,7 @@ namespace SixLabors.Fonts.Tests
         public void TryMeasureCharacterBounds()
         {
             string text = "a b\nc";
-            GlyphMetric[] expectedGlyphMetrics = new GlyphMetric[] {
+            var expectedGlyphMetrics = new GlyphMetric[] {
                 new GlyphMetric('a', new RectangleF(10, 0, 10, 10), false),
                 new GlyphMetric(' ', new RectangleF(40, 0, 30, 10), false),
                 new GlyphMetric('b', new RectangleF(70, 0, 10, 10), false),
@@ -127,10 +127,10 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, new RendererOptions(font, 72 * font.EmSize), out IReadOnlyList<GlyphMetric> glyphMetrics));
+            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, new RendererOptions(font, 72 * font.EmSize), out GlyphMetric[] glyphMetrics));
 
-            Assert.Equal(text.Length, glyphMetrics.Count);
-            for (int i = 0; i < glyphMetrics.Count; i++)
+            Assert.Equal(text.Length, glyphMetrics.Length);
+            for (int i = 0; i < glyphMetrics.Length; i++)
             {
                 GlyphMetric expected = expectedGlyphMetrics[i];
                 GlyphMetric actual = glyphMetrics[i];
