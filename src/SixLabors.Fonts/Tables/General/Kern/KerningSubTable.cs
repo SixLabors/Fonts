@@ -42,8 +42,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
 
         public void ApplyOffset(ushort index1, ushort index2, ref Vector2 result)
         {
-            short offset = 0;
-            if (this.TryGetOffset(index1, index2, out offset))
+            if (this.TryGetOffset(index1, index2, out short offset))
             {
                 if (this.coverage.Horizontal)
                 {
