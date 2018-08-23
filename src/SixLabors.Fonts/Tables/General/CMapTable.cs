@@ -9,7 +9,7 @@ using SixLabors.Fonts.WellKnownIds;
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
-    internal class CMapTable : Table
+    internal sealed class CMapTable : Table
     {
         private const string TableName = "cmap";
         private readonly CMapSubTable table;
@@ -75,7 +75,7 @@ namespace SixLabors.Fonts.Tables.General
             ushort version = reader.ReadUInt16();
             ushort numTables = reader.ReadUInt16();
 
-            EncodingRecord[] encodings = new EncodingRecord[numTables];
+            var encodings = new EncodingRecord[numTables];
             for (int i = 0; i < numTables; i++)
             {
                 encodings[i] = EncodingRecord.Read(reader);

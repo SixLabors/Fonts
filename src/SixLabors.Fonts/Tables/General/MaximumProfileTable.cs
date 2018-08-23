@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
-    internal class MaximumProfileTable : Table
+    internal sealed class MaximumProfileTable : Table
     {
         private const string TableName = "maxp";
 

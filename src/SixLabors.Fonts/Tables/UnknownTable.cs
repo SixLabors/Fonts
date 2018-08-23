@@ -3,7 +3,7 @@
 
 namespace SixLabors.Fonts.Tables
 {
-    internal class UnknownTable : Table
+    internal sealed class UnknownTable : Table
     {
         internal UnknownTable(string name)
         {

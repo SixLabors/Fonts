@@ -5,7 +5,7 @@ using System;
 
 namespace SixLabors.Fonts.Tables
 {
-    internal class TableNameAttribute : Attribute
+    internal sealed class TableNameAttribute : Attribute
     {
         public TableNameAttribute(string name)
         {

@@ -9,7 +9,7 @@ using SixLabors.Fonts.Tables.General.Kern;
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
-    internal class KerningTable : Table
+    internal sealed class KerningTable : Table
     {
         private const string TableName = "kern";
         private readonly KerningSubTable[] kerningSubTable;
@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Tables.General
         {
             using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
-                if (binaryReader == null)
+                if (binaryReader is null)
                 {
                     // this table is optional.
                     return new KerningTable(new KerningSubTable[0]);
@@ -43,7 +43,7 @@ namespace SixLabors.Fonts.Tables.General
             ushort version = reader.ReadUInt16();
             ushort subtableCount = reader.ReadUInt16();
 
-            List<Kern.KerningSubTable> tables = new List<Kern.KerningSubTable>(subtableCount);
+            var tables = new List<KerningSubTable>(subtableCount);
             for (int i = 0; i < subtableCount; i++)
             {
                 KerningSubTable t = KerningSubTable.Load(reader); // returns null for unknown/supported table format

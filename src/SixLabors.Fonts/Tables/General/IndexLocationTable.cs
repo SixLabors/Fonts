@@ -6,7 +6,7 @@ using SixLabors.Fonts.Exceptions;
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
-    internal class IndexLocationTable : Table
+    internal sealed class IndexLocationTable : Table
     {
         private const string TableName = "loca";
 
