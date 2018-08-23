@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tables.General.Name
 
         public NameIds NameID { get; }
 
-        internal StringLoader StringReader { get; }
+        internal StringLoader StringReader { get; private set; }
 
         public string Value => this.StringReader?.Value ?? this.value;
 
