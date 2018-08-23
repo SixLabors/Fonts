@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <VersionPrefix>0.0.0</VersionPrefix>
-    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <LangVersion>7.3</LangVersion>
     <AssemblyName>SixLabors.Fonts.Tests</AssemblyName>
     <PackageId>SixLabors.Fonts.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -25,10 +26,6 @@
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="Moq" Version="4.8.2" />
     <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
   <ItemGroup>
