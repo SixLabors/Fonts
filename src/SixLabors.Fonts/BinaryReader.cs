@@ -410,35 +410,6 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads a 7-bit encoded integer from the stream. This is stored with the least significant
-        /// information first, with 7 bits of information per byte of value, and the top
-        /// bit as a continuation flag. This method is not affected by the endianness
-        /// of the bit converter.
-        /// </summary>
-        /// <returns>The 7-bit encoded integer read from the stream.</returns>
-        public int Read7BitEncodedInt()
-        {
-            int ret = 0;
-            for (int shift = 0; shift < 35; shift += 7)
-            {
-                int b = this.BaseStream.ReadByte();
-                if (b == -1)
-                {
-                    throw new EndOfStreamException();
-                }
-
-                ret = ret | ((b & 0x7f) << shift);
-                if ((b & 0x80) == 0)
-                {
-                    return ret;
-                }
-            }
-
-            // Still haven't seen a byte with the high bit unset? Dodgy data.
-            throw new IOException("Invalid 7-bit encoded integer in stream.");
-        }
-
-        /// <summary>
         /// Reads a string of a specific length, which specifies the number of bytes
         /// to read from the stream. These bytes are then converted into a string with
         /// the encoding for this reader.
@@ -461,7 +432,9 @@ namespace SixLabors.Fonts
         /// <returns>a 4 character long UTF8 encoded string</returns>
         public string ReadTag()
         {
-            return this.ReadString(4, Encoding.UTF8);
+            this.ReadInternal(this.storageBuffer, 4);
+
+            return Encoding.UTF8.GetString(this.storageBuffer, 0, 4);
         }
 
         /// <summary>
