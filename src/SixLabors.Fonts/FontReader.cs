@@ -80,7 +80,7 @@ namespace SixLabors.Fonts
                 throw new Exceptions.InvalidFontFileException("Invalid glyph format, only TTF glyph outlines supported.");
             }
 
-            Dictionary<string, TableHeader> headers = new Dictionary<string, Tables.TableHeader>(tableCount);
+            var headers = new Dictionary<string, TableHeader>(tableCount);
             for (int i = 0; i < tableCount; i++)
             {
                 TableHeader tbl = loadHeader(reader);
@@ -97,7 +97,7 @@ namespace SixLabors.Fonts
 
         public IReadOnlyDictionary<string, TableHeader> Headers { get; }
 
-        public bool CompressedTableData { get; private set; }
+        public bool CompressedTableData { get; }
 
         public OutlineTypes OutlineType { get; }
 

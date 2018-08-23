@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Utilities
 
         public string Value { get; private set; }
 
-        public Encoding Encoding { get; private set; }
+        public Encoding Encoding { get; }
 
         public static StringLoader Create(BinaryReader reader)
         {
