@@ -5,7 +5,7 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General.CMap
 {
-    internal struct EncodingRecord
+    internal readonly struct EncodingRecord
     {
         public PlatformIDs PlatformID { get; }
 
