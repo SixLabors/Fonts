@@ -6,7 +6,7 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General.CMap
 {
-    internal class Format0SubTable : CMapSubTable
+    internal sealed class Format0SubTable : CMapSubTable
     {
         internal byte[] GlyphIds { get; }
 

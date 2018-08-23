@@ -8,7 +8,7 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {
-    internal class CompositeGlyphLoader : GlyphLoader
+    internal sealed class CompositeGlyphLoader : GlyphLoader
     {
         private readonly Bounds bounds;
         private readonly Composite[] result;
