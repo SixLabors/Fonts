@@ -44,7 +44,7 @@ namespace SixLabors.Fonts.Tables.General
         {
             using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
-                if (binaryReader == null)
+                if (binaryReader is null)
                 {
                     return null;
                 }
