@@ -309,7 +309,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// A glyphs layout and location
     /// </summary>
-    internal struct GlyphLayout
+    internal readonly struct GlyphLayout
     {
         internal GlyphLayout(int codePoint, Glyph glyph, Vector2 location, float width, float height, float lineHeight, bool startOfLine, bool isWhiteSpace, bool isControlCharacter)
         {
@@ -330,7 +330,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The bounds.
         /// </value>
-        public bool IsWhiteSpace { get; private set; }
+        public bool IsWhiteSpace { get; }
 
         /// <summary>
         /// Gets the glyph.
@@ -338,7 +338,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The glyph.
         /// </value>
-        public Glyph Glyph { get; private set; }
+        public Glyph Glyph { get; }
 
         /// <summary>
         /// Gets the location.
@@ -365,18 +365,18 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this glyph is the first glyph on a new line.
+        /// Gets a value indicating whether this glyph is the first glyph on a new line.
         /// </summary>
-        public bool StartOfLine { get; set; }
+        public bool StartOfLine { get; }
 
         /// <summary>
         /// Gets the Unicode code point of the character.
         /// </summary>
-        public int CodePoint { get; private set; }
+        public int CodePoint { get; }
 
-        public float LineHeight { get; private set; }
+        public float LineHeight { get; }
 
-        public bool IsControlCharacter { get; private set; }
+        public bool IsControlCharacter { get; }
 
         internal RectangleF BoundingBox(Vector2 dpi)
         {
@@ -392,7 +392,7 @@ namespace SixLabors.Fonts
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             if (this.StartOfLine)
             {
                 sb.Append('@');
