@@ -12,22 +12,6 @@ namespace SixLabors.Fonts.Tables.General
     {
         private const string TableName = "head";
 
-        internal DateTime Created { get; }
-
-        internal HeadFlags Flags { get; }
-
-        internal IndexLocationFormats IndexLocationFormat { get; }
-
-        internal ushort LowestRecPPEM { get; }
-
-        internal HeadMacStyle MacStyle { get; }
-
-        internal DateTime Modified { get; }
-
-        internal Bounds Bounds { get; }
-
-        internal ushort UnitsPerEm { get; }
-
         public HeadTable(HeadFlags flags, HeadMacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Bounds bounds, ushort lowestRecPPEM, IndexLocationFormats indexToLocFormat)
         {
             this.Flags = flags;
@@ -39,6 +23,22 @@ namespace SixLabors.Fonts.Tables.General
             this.LowestRecPPEM = lowestRecPPEM;
             this.IndexLocationFormat = indexToLocFormat;
         }
+
+        public DateTime Created { get; }
+
+        public HeadFlags Flags { get; }
+
+        public IndexLocationFormats IndexLocationFormat { get; }
+
+        public ushort LowestRecPPEM { get; }
+
+        public HeadMacStyle MacStyle { get; }
+
+        public DateTime Modified { get; }
+
+        public Bounds Bounds { get; }
+
+        public ushort UnitsPerEm { get; }
 
         public static HeadTable Load(FontReader reader)
         {

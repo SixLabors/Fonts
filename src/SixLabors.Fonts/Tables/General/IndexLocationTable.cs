@@ -10,12 +10,12 @@ namespace SixLabors.Fonts.Tables.General
     {
         private const string TableName = "loca";
 
-        public uint[] GlyphOffsets { get; }
-
         public IndexLocationTable(uint[] convertedData)
         {
             this.GlyphOffsets = convertedData;
         }
+
+        public uint[] GlyphOffsets { get; }
 
         public static IndexLocationTable Load(FontReader reader)
         {
