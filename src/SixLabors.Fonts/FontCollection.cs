@@ -121,8 +121,15 @@ namespace SixLabors.Fonts
 
         internal FontFamily Install(IFontInstance instance)
         {
-            Utilities.Guard.NotNull(instance, nameof(instance));
-            Utilities.Guard.NotNull(instance.Description, nameof(instance.Description));
+            if (instance == null)
+            {
+                throw new ArgumentNullException(nameof(instance));
+            }
+
+            if (instance.Description == null)
+            {
+                throw new ArgumentException("IFontInstance must have a Description.", nameof(instance));
+            }
 
             lock (this.instances)
             {
