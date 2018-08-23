@@ -3,8 +3,17 @@
 
 namespace SixLabors.Fonts.Tables.General.Kern
 {
-    internal struct KerningCoverage
+    internal readonly struct KerningCoverage
     {
+        private KerningCoverage(bool horizontal, bool hasMinimum, bool crossStream, bool overrideAccumulator, byte format)
+        {
+            this.Horizontal = horizontal;
+            this.HasMinimum = hasMinimum;
+            this.CrossStream = crossStream;
+            this.OverrideAccumulator = overrideAccumulator;
+            this.Format = format;
+        }
+
         public bool Horizontal { get; }
 
         public bool HasMinimum { get; }
@@ -14,15 +23,6 @@ namespace SixLabors.Fonts.Tables.General.Kern
         public bool OverrideAccumulator { get; }
 
         public byte Format { get; }
-
-        private KerningCoverage(bool horizontal, bool hasMinimum, bool crossStream, bool overrideAccumulator, byte format)
-        {
-            this.Horizontal = horizontal;
-            this.HasMinimum = hasMinimum;
-            this.CrossStream = crossStream;
-            this.OverrideAccumulator = overrideAccumulator;
-            this.Format = format;
-        }
 
         public static KerningCoverage Read(BinaryReader reader)
         {
