@@ -31,15 +31,15 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             this.bounds = bounds;
         }
 
-        public override Glyphs.GlyphVector CreateGlyph(GlyphTable table)
+        public override GlyphVector CreateGlyph(GlyphTable table)
         {
             // lets build some shapes ??? here from
-            return new Glyphs.GlyphVector(Convert(this.xs, this.ys), this.onCurves, this.endPoints, this.bounds);
+            return new GlyphVector(Convert(this.xs, this.ys), this.onCurves, this.endPoints, this.bounds);
         }
 
         private static Vector2[] Convert(short[] xs, short[] ys)
         {
-            Vector2[] vectors = new Vector2[xs.Length];
+            var vectors = new Vector2[xs.Length];
             Vector2 current = Vector2.Zero;
             for (int i = 0; i < xs.Length; i++)
             {
@@ -49,7 +49,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             return vectors;
         }
 
-        public static GlyphLoader LoadSimpleGlyph(BinaryReader reader, short count, Bounds bounds)
+        public static GlyphLoader LoadSimpleGlyph(BinaryReader reader, short count, in Bounds bounds)
         {
             if (count == 0)
             {
@@ -89,10 +89,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         private static Flags[] ReadFlags(BinaryReader reader, int flagCount)
         {
-            Flags[] result = new Flags[flagCount];
+            var result = new Flags[flagCount];
             int c = 0;
             int repeatCount = 0;
-            Flags flag = (Flags)0;
+            Flags flag = default;
             while (c < flagCount)
             {
                 if (repeatCount > 0)

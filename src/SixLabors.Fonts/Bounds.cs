@@ -6,7 +6,7 @@ using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
-    internal class Bounds
+    internal readonly struct Bounds
     {
         public Bounds(Vector2 min, Vector2 max)
         {
