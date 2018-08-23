@@ -450,7 +450,7 @@ namespace SixLabors.Fonts
         /// </returns>
         public string ReadString(int bytesToRead, Encoding encoding)
         {
-            byte[] data = new byte[bytesToRead];
+            var data = new byte[bytesToRead];
             this.ReadInternal(data, bytesToRead);
             return encoding.GetString(data, 0, data.Length);
         }

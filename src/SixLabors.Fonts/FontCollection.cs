@@ -51,7 +51,7 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(string path, out FontDescription fontDescription)
         {
-            FileFontInstance instance = new FileFontInstance(path);
+            var instance = new FileFontInstance(path);
             fontDescription = instance.Description;
             return this.Install(instance);
         }

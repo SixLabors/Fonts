@@ -23,7 +23,7 @@ namespace SixLabors.Fonts
         /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
         public IReadOnlyList<GlyphLayout> GenerateLayout(string text, RendererOptions options)
         {
-            Vector2 dpi = new Vector2(options.DpiX, options.DpiY);
+            var dpi = new Vector2(options.DpiX, options.DpiY);
             Vector2 origin = (Vector2)options.Origin / dpi;
 
             float maxWidth = float.MaxValue;
@@ -51,7 +51,7 @@ namespace SixLabors.Fonts
             }
 
             AppliedFontStyle spanStyle = options.GetStyle(0, text.Length);
-            List<GlyphLayout> layout = new List<GlyphLayout>(text.Length);
+            var layout = new List<GlyphLayout>(text.Length);
 
             float unscaledLineHeight = 0f;
             float lineHeight = 0f;
@@ -247,7 +247,7 @@ namespace SixLabors.Fonts
             }
 
             totalHeight -= top;
-            Vector2 offset = new Vector2(0, lineHeightOfFirstLine - top);
+            var offset = new Vector2(0, lineHeightOfFirstLine - top);
 
             switch (options.VerticalAlignment)
             {

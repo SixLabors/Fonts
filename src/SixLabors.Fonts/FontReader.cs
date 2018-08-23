@@ -26,7 +26,7 @@ namespace SixLabors.Fonts
             long startOfFilePosition = stream.Position;
 
             this.stream = stream;
-            BinaryReader reader = new BinaryReader(stream, true);
+            var reader = new BinaryReader(stream, true);
 
             // we should immediately read the table header to learn which tables we have and what order they are in
             uint version = reader.ReadUInt32();

@@ -115,7 +115,7 @@ namespace SixLabors.Fonts.Tables.General
                 throw new InvalidFontFileException($"invalid units per em expected value between 16 and 16384 but found {unitsPerEm} in 'head'");
             }
 
-            DateTime startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
+            var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             long seconds = reader.ReadInt64();
             DateTime created = startDate;
             if (seconds > 0)

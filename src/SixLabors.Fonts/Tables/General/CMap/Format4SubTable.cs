@@ -115,7 +115,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             public static Segment[] Create(ushort[] endCounts, ushort[] startCode, short[] idDelta, ushort[] idRangeOffset)
             {
                 int count = endCounts.Length;
-                Segment[] segments = new Segment[count];
+                var segments = new Segment[count];
                 for (ushort i = 0; i < count; i++)
                 {
                     ushort start = startCode[i];
