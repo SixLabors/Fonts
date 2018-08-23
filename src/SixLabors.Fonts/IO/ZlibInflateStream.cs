@@ -145,7 +145,7 @@ namespace SixLabors.Fonts.IO
         {
             // We dont't check CRC on reading
             int read = this.deflateStream.Read(buffer, offset, count);
-            if (read < 1 && this.crcread == null)
+            if (read < 1 && this.crcread is null)
             {
                 // The deflater has ended. We try to read the next 4 bytes from raw stream (crc)
                 this.crcread = new byte[4];
@@ -211,7 +211,7 @@ namespace SixLabors.Fonts.IO
                     this.deflateStream.Dispose();
                     this.deflateStream = null;
 
-                    if (this.crcread == null)
+                    if (this.crcread is null)
                     {
                         // Consume the trailing 4 bytes
                         this.crcread = new byte[4];
