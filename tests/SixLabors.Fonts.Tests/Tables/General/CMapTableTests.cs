@@ -13,10 +13,10 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadFormat0()
         {
-            BinaryWriter writer = new BinaryWriter();
+            var writer = new BinaryWriter();
 
             writer.WriteCMapTable(new []{
-                new SixLabors.Fonts.Tables.General.CMap.Format0SubTable(0, PlatformIDs.Windows, 9, new byte[] { 0, 1, 2 })
+                new Format0SubTable(0, PlatformIDs.Windows, 9, new byte[] { 0, 1, 2 })
             });
 
             CMapTable table = CMapTable.Load(writer.GetReader());

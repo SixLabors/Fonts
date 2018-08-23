@@ -11,10 +11,10 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         [Fact]
         public void LoadFormat4()
         {
-            BinaryWriter writer = new BinaryWriter();
+            var writer = new BinaryWriter();
 
             //int subtableCount = 1;
-            writer.WriteCMapSubTable(new SixLabors.Fonts.Tables.General.CMap.Format4SubTable(0, PlatformIDs.Windows, 2,
+            writer.WriteCMapSubTable(new Format4SubTable(0, PlatformIDs.Windows, 2,
                 new[]
                     {
                         new Format4SubTable.Segment(0,1,2,3,4)
@@ -25,7 +25,10 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
             BinaryReader reader = writer.GetReader();
             ushort format = reader.ReadUInt16(); // read format before we pass along as thats whet the cmap table does
             Assert.Equal(4, format);
-            Format4SubTable table = Format4SubTable.Load(new[] { new EncodingRecord(PlatformIDs.Windows, 2, 0) }, reader).Single();
+
+            Format4SubTable table = Format4SubTable.Load(new[] {
+                new EncodingRecord(PlatformIDs.Windows, 2, 0)
+            }, reader).Single();
 
             Assert.Equal(0, table.Language);
             Assert.Equal(PlatformIDs.Windows, table.Platform);

@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadHead()
         {
-            BinaryWriter writer = new BinaryWriter();
+            var writer = new BinaryWriter();
 
             writer.WriteHeadTable(new HeadTable(HeadTable.HeadFlags.None, 
                 HeadTable.HeadMacStyle.Italic | HeadTable.HeadMacStyle.Bold, 

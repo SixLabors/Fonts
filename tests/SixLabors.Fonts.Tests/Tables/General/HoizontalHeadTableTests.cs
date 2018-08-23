@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadHoizontalHeadTable()
         {
-            BinaryWriter writer = new BinaryWriter();
+            var writer = new BinaryWriter();
 
             writer.WriteHoizontalHeadTable(new HoizontalHeadTable(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
 

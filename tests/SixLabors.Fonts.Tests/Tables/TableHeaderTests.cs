@@ -17,7 +17,7 @@ namespace SixLabors.Fonts.Tests.Tables
         [MemberData(nameof(ReadAllValuesData))]
         public void ReadAllValues(string tag, uint checksum, uint offset, uint length)
         {
-            BinaryWriter writer = new BinaryWriter();
+            var writer = new BinaryWriter();
             writer.WriteTableHeader(tag, checksum, offset, length);
 
             TableHeader header = TableHeader.Read(writer.GetReader());

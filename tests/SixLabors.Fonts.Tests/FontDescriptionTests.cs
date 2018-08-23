@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontDescription()
         {
-            BinaryWriter writer = new BinaryWriter();
+            var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(

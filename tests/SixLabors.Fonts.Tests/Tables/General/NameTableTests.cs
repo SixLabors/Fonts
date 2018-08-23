@@ -12,9 +12,9 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadFormat0()
         {
-            BinaryWriter writer = new BinaryWriter();
+            var writer = new BinaryWriter();
 
-            writer.WriteNameTable(new Dictionary<WellKnownIds.NameIds, string>
+            writer.WriteNameTable(new Dictionary<NameIds, string>
                                       {
                 { NameIds.CopyrightNotice, "copyright"},
                 { NameIds.FullFontName, "fullname" },
@@ -38,9 +38,9 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadFormat1()
         {
-            BinaryWriter writer = new BinaryWriter();
+            var writer = new BinaryWriter();
 
-            writer.WriteNameTable(new Dictionary<WellKnownIds.NameIds, string>
+            writer.WriteNameTable(new Dictionary<NameIds, string>
                                       {
                 { NameIds.CopyrightNotice, "copyright"},
                 { NameIds.FullFontName, "fullname" },
