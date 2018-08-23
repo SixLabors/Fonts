@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using SixLabors.Primitives;
 
@@ -57,8 +56,13 @@ namespace SixLabors.Fonts
 
             this.renderer.BeginText(rect);
 
-            foreach (GlyphLayout g in glyphsToRender.Where(x => !x.IsWhiteSpace))
+            foreach (GlyphLayout g in glyphsToRender)
             {
+                if (g.IsWhiteSpace)
+                {
+                    continue;
+                }
+
                 g.Glyph.RenderTo(this.renderer, g.Location, options.DpiX, options.DpiY, g.LineHeight);
             }
 
