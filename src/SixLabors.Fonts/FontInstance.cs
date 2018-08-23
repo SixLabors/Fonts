@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.General.Glyphs;
 
 namespace SixLabors.Fonts
 {
@@ -105,7 +106,7 @@ namespace SixLabors.Fonts
             {
                 ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
                 short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
-                Tables.General.Glyphs.GlyphVector vector = this.glyphs.GetGlyph(idx);
+                GlyphVector vector = this.glyphs.GetGlyph(idx);
                 this.glyphCache[idx] = new GlyphInstance(this, vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, lsb, this.EmSize, idx);
             }
 
