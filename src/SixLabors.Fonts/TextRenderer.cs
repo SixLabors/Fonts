@@ -47,6 +47,16 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
+        public void RenderText(string text, RendererOptions options)
+        {
+            this.RenderText(text.AsSpan(), options);
+        }
+
+        /// <summary>
+        /// Renders the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The style.</param>
         public void RenderText(ReadOnlySpan<char> text, RendererOptions options)
         {
             IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);

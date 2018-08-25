@@ -22,8 +22,26 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
+        public static SizeF Measure(string text, RendererOptions options)
+            => TextMeasurerInt.Default.Measure(text.AsSpan(), options);
+
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The style.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
         public static SizeF Measure(ReadOnlySpan<char> text, RendererOptions options)
             => TextMeasurerInt.Default.Measure(text, options);
+
+        /// <summary>
+        /// Measures the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The style.</param>
+        /// <returns>The size of the text if it was to be rendered.</returns>
+        public static RectangleF MeasureBounds(string text, RendererOptions options)
+            => TextMeasurerInt.Default.MeasureBounds(text.AsSpan(), options);
 
         /// <summary>
         /// Measures the text.
