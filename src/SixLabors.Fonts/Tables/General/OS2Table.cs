@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
-    internal class OS2Table : Table
+    internal sealed class OS2Table : Table
     {
         private const string TableName = "OS/2";
 
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tables.General
         {
             using (BinaryReader r = reader.GetReaderAtTablePosition(TableName))
             {
-                if (r == null)
+                if (r is null)
                 {
                     return null;
                 }

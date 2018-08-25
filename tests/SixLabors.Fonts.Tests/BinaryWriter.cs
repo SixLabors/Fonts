@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Text;
 
 namespace SixLabors.Fonts.Tests
 {
-
     internal class BinaryWriter
     {
         /// <summary>
@@ -30,14 +30,6 @@ namespace SixLabors.Fonts.Tests
 
         public BinaryWriter(Stream stream)
         {
-            BigEndianBitConverter bitConverter = new BigEndianBitConverter();
-
-            // TODO: Use Guard
-            if (bitConverter == null)
-            {
-                throw new ArgumentNullException("bitConverter");
-            }
-
             if (stream == null)
             {
                 throw new ArgumentNullException("stream");
@@ -49,18 +41,12 @@ namespace SixLabors.Fonts.Tests
             }
 
             this.BaseStream = stream;
-            this.BitConverter = bitConverter;
         }
 
         /// <summary>
         /// Gets the underlying stream of the EndianBinaryWriter.
         /// </summary>
         public Stream BaseStream { get; }
-
-        /// <summary>
-        /// Gets the bit converter used to write values to the stream
-        /// </summary>
-        internal BigEndianBitConverter BitConverter { get; }
 
         /// <summary>
         /// Closes the writer, including the underlying stream.
@@ -116,7 +102,8 @@ namespace SixLabors.Fonts.Tests
         /// <param name="value">The value to write</param>
         public void Write(bool value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            this.buffer[0] = value ? (byte)1 : (byte)0;
+
             this.WriteInternal(this.buffer, 1);
         }
 
@@ -127,7 +114,8 @@ namespace SixLabors.Fonts.Tests
         /// <param name="value">The value to write</param>
         public void Write(short value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteInt16BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 2);
         }
 
@@ -138,36 +126,41 @@ namespace SixLabors.Fonts.Tests
         /// <param name="value">The value to write</param>
         public void Write(int value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteInt32BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 4);
         }
 
         /// <summary>
-        /// Writes a 64-bit signed integer to the stream, using the bit converter
-        /// for this writer. 8 bytes are written.
+        /// Writes a 64-bit signed integer to the stream.
+        /// 8 bytes are written.
         /// </summary>
         /// <param name="value">The value to write</param>
         public void Write(long value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteInt64BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 8);
         }
 
         public void WriteUInt32(uint value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteUInt32BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 4);
         }
 
         public void WriteUInt64(ulong value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteUInt64BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 8);
         }
 
         public void WriteInt64(long value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteInt64BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 8);
         }
 
@@ -183,13 +176,14 @@ namespace SixLabors.Fonts.Tests
         }
 
         /// <summary>
-        /// Writes a 32-bit unsigned integer to the stream, using the bit converter
-        /// for this writer. 4 bytes are written.
+        /// Writes a 32-bit unsigned integer to the stream.
+        /// 4 bytes are written.
         /// </summary>
         /// <param name="value">The value to write</param>
         public void Write(uint value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteUInt32BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 4);
         }
 
@@ -200,41 +194,9 @@ namespace SixLabors.Fonts.Tests
         /// <param name="value">The value to write</param>
         public void Write(ulong value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteUInt64BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 8);
-        }
-
-        /// <summary>
-        /// Writes a single-precision floating-point value to the stream, using the bit converter
-        /// for this writer. 4 bytes are written.
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        public void Write(float value)
-        {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
-            this.WriteInternal(this.buffer, 4);
-        }
-
-        /// <summary>
-        /// Writes a double-precision floating-point value to the stream, using the bit converter
-        /// for this writer. 8 bytes are written.
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        public void Write(double value)
-        {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
-            this.WriteInternal(this.buffer, 8);
-        }
-
-        /// <summary>
-        /// Writes a decimal value to the stream, using the bit converter for this writer.
-        /// 16 bytes are written.
-        /// </summary>
-        /// <param name="value">The value to write</param>
-        public void Write(decimal value)
-        {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
-            this.WriteInternal(this.buffer, 16);
         }
 
         /// <summary>
@@ -323,7 +285,7 @@ namespace SixLabors.Fonts.Tests
         /// Writes a string to the stream, using the encoding for this writer.
         /// </summary>
         /// <param name="value">The value to write. Must not be null.</param>
-        /// <exception cref="System.ArgumentNullException">value is null</exception>
+        /// <exception cref="ArgumentNullException">value is null</exception>
         public void WriteNoLength(string value, Encoding encoding)
         {
             if (value == null)
@@ -384,7 +346,7 @@ namespace SixLabors.Fonts.Tests
         {
             if (this.disposed)
             {
-                throw new ObjectDisposedException("EndianBinaryWriter");
+                throw new ObjectDisposedException(nameof(BinaryWriter));
             }
         }
 
@@ -402,17 +364,22 @@ namespace SixLabors.Fonts.Tests
 
         public void WriteUInt16(ushort value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteUInt16BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 2);
         }
+
         public void WriteInt16(short value)
         {
-            this.BitConverter.CopyBytes(value, this.buffer, 0);
+            BinaryPrimitives.WriteInt16BigEndian(this.buffer, value);
+
             this.WriteInternal(this.buffer, 2);
         }
+
         public void WriteUInt8(byte value)
         {
             this.buffer[0] = value;
+
             this.WriteInternal(this.buffer, 1);
         }
 

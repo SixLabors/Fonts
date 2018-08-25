@@ -8,7 +8,7 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {
-    internal class CompositeGlyphLoader : GlyphLoader
+    internal sealed class CompositeGlyphLoader : GlyphLoader
     {
         private readonly Bounds bounds;
         private readonly Composite[] result;
@@ -19,17 +19,19 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             this.bounds = bounds;
         }
 
-        public override Glyphs.GlyphVector CreateGlyph(GlyphTable table)
+        public override GlyphVector CreateGlyph(GlyphTable table)
         {
-            List<Vector2> controlPoints = new List<Vector2>();
-            List<bool> onCurves = new List<bool>();
-            List<ushort> endPoints = new List<ushort>();
-            List<Vector2> minBounds = new List<Vector2>();
-            List<Vector2> maxBounds = new List<Vector2>();
-            List<GlyphInstance> parts = new List<GlyphInstance>();
+            var controlPoints = new List<Vector2>();
+            var onCurves = new List<bool>();
+            var endPoints = new List<ushort>();
+            var minBounds = new List<Vector2>();
+            var maxBounds = new List<Vector2>();
+            var parts = new List<GlyphInstance>();
 
-            foreach (Composite composite in this.result)
+            for (int resultIndex = 0; resultIndex < this.result.Length; resultIndex++)
             {
+                ref Composite composite = ref this.result[resultIndex];
+
                 GlyphVector glyph = table.GetGlyph(composite.GlyphIndex);
                 int pointcount = glyph.PointCount;
                 ushort endPointOffset = (ushort)controlPoints.Count;
@@ -45,12 +47,12 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 }
             }
 
-            return new Glyphs.GlyphVector(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds);
+            return new GlyphVector(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds);
         }
 
-        public static CompositeGlyphLoader LoadCompositeGlyph(BinaryReader reader, Bounds bounds)
+        public static CompositeGlyphLoader LoadCompositeGlyph(BinaryReader reader, in Bounds bounds)
         {
-            List<Composite> result = new List<Composite>();
+            var result = new List<Composite>();
             CompositeFlags flags;
             ushort glyphIndex;
             do
@@ -137,7 +139,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             UnscaledComponentOffset = 4096 // The composite is designed not to have the component offset scaled.
         }
 
-        public class Composite
+        public readonly struct Composite
         {
             public Composite(ushort glyphIndex, Matrix3x2 transformation)
             {

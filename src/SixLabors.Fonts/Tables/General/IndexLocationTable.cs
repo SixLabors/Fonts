@@ -6,16 +6,16 @@ using SixLabors.Fonts.Exceptions;
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
-    internal class IndexLocationTable : Table
+    internal sealed class IndexLocationTable : Table
     {
         private const string TableName = "loca";
-
-        public uint[] GlyphOffsets { get; }
 
         public IndexLocationTable(uint[] convertedData)
         {
             this.GlyphOffsets = convertedData;
         }
+
+        public uint[] GlyphOffsets { get; }
 
         public static IndexLocationTable Load(FontReader reader)
         {
@@ -39,7 +39,7 @@ namespace SixLabors.Fonts.Tables.General
                 // ---------|-------------|---------------------------------------
                 // Offset16 | offsets[n]  | The actual local offset divided by 2 is stored. The value of n is numGlyphs + 1. The value for numGlyphs is found in the 'maxp' table.
                 ushort[] data = reader.ReadUInt16Array(entrycount);
-                uint[] convertedData = new uint[entrycount];
+                var convertedData = new uint[entrycount];
                 for (int i = 0; i < entrycount; i++)
                 {
                     convertedData[i] = (uint)(data[i] * 2);

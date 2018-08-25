@@ -27,7 +27,7 @@
         <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
         <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
         <DebugType Condition="$(codecov) != ''">full</DebugType>
-        <LangVersion>7.2</LangVersion>
+        <LangVersion>7.3</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

@@ -5,7 +5,7 @@ using System;
 
 namespace SixLabors.Fonts.Tables.General.Kern
 {
-    internal struct KearningPair : IComparable<KearningPair>
+    internal readonly struct KearningPair : IComparable<KearningPair>
     {
         internal KearningPair(ushort left, ushort right, short offset)
         {

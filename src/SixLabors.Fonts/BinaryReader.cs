@@ -2,7 +2,9 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Buffers.Binary;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace SixLabors.Fonts
@@ -15,7 +17,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Buffer used for temporary storage before conversion into primitives
         /// </summary>
-        private readonly byte[] storageBuffer = new byte[16];
+        private readonly byte[] buffer = new byte[16];
 
         private readonly bool leaveOpen;
 
@@ -31,7 +33,6 @@ namespace SixLabors.Fonts
             this.BaseStream = stream;
             this.StartOfStream = stream.Position;
             this.leaveOpen = leaveOpen;
-            this.BitConverter = new BigEndianBitConverter();
         }
 
         private long StartOfStream { get; }
@@ -40,11 +41,6 @@ namespace SixLabors.Fonts
         /// Gets the underlying stream of the EndianBinaryReader.
         /// </summary>
         private Stream BaseStream { get; }
-
-        /// <summary>
-        /// Gets the bit converter used to read values from the stream.
-        /// </summary>
-        internal BigEndianBitConverter BitConverter { get; }
 
         /// <summary>
         /// Closes the reader, including the underlying stream.
@@ -84,8 +80,8 @@ namespace SixLabors.Fonts
         /// <returns>The byte read</returns>
         public byte ReadByte()
         {
-            this.ReadInternal(this.storageBuffer, 1);
-            return this.storageBuffer[0];
+            this.ReadInternal(this.buffer, 1);
+            return this.buffer[0];
         }
 
         /// <summary>
@@ -94,8 +90,8 @@ namespace SixLabors.Fonts
         /// <returns>The byte read</returns>
         public sbyte ReadSByte()
         {
-            this.ReadInternal(this.storageBuffer, 1);
-            return unchecked((sbyte)this.storageBuffer[0]);
+            this.ReadInternal(this.buffer, 1);
+            return unchecked((sbyte)this.buffer[0]);
         }
 
         /// <summary>
@@ -104,16 +100,16 @@ namespace SixLabors.Fonts
         /// <returns>The boolean read</returns>
         public bool ReadBoolean()
         {
-            this.ReadInternal(this.storageBuffer, 1);
-            return this.BitConverter.ToBoolean(this.storageBuffer, 0);
+            this.ReadInternal(this.buffer, 1);
+
+            return BitConverter.ToBoolean(this.buffer, 0);
         }
 
         public float ReadF2dot14()
         {
             const float F2Dot14ToFloat = 16384.0f;
 
-            this.ReadInternal(this.storageBuffer, 2);
-            return this.BitConverter.ToInt16(this.storageBuffer, 0) / F2Dot14ToFloat;
+            return this.ReadInt16() / F2Dot14ToFloat;
         }
 
         /// <summary>
@@ -123,11 +119,13 @@ namespace SixLabors.Fonts
         /// <returns>The 16-bit integer read</returns>
         public short ReadInt16()
         {
-            this.ReadInternal(this.storageBuffer, 2);
-            return this.BitConverter.ToInt16(this.storageBuffer, 0);
+            this.ReadInternal(this.buffer, 2);
+
+            return BinaryPrimitives.ReadInt16BigEndian(this.buffer);
         }
 
         public TEnum ReadInt16<TEnum>()
+            where TEnum : Enum
         {
             return CastTo<TEnum>.From(this.ReadInt16());
         }
@@ -143,37 +141,41 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads a 32-bit signed integer from the stream, using the bit converter
-        /// for this reader. 4 bytes are read.
+        /// Reads a 32-bit signed integer from the stream
+        /// 4 bytes are read.
         /// </summary>
         /// <returns>The 32-bit integer read</returns>
         public float ReadFixed()
         {
-            this.ReadInternal(this.storageBuffer, 4);
-            int int32 = this.BitConverter.ToInt32(this.storageBuffer, 0);
-            return this.BitConverter.Int32BitsToSingle(int32);
+            this.ReadInternal(this.buffer, 4);
+
+            int value = BinaryPrimitives.ReadInt32BigEndian(this.buffer);
+
+            return Unsafe.As<int, float>(ref value);
         }
 
         /// <summary>
-        /// Reads a 64-bit signed integer from the stream, using the bit converter
-        /// for this reader. 8 bytes are read.
+        /// Reads a 64-bit signed integer from the stream.
+        /// 8 bytes are read.
         /// </summary>
         /// <returns>The 64-bit integer read</returns>
         public long ReadInt64()
         {
-            this.ReadInternal(this.storageBuffer, 8);
-            return this.BitConverter.ToInt64(this.storageBuffer, 0);
+            this.ReadInternal(this.buffer, 8);
+
+            return BinaryPrimitives.ReadInt64BigEndian(this.buffer);
         }
 
         /// <summary>
-        /// Reads a 16-bit unsigned integer from the stream, using the bit converter
-        /// for this reader. 2 bytes are read.
+        /// Reads a 16-bit unsigned integer from the stream.
+        /// 2 bytes are read.
         /// </summary>
         /// <returns>The 16-bit unsigned integer read</returns>
         public ushort ReadUInt16()
         {
-            this.ReadInternal(this.storageBuffer, 2);
-            return this.BitConverter.ToUInt16(this.storageBuffer, 0);
+            this.ReadInternal(this.buffer, 2);
+
+            return BinaryPrimitives.ReadUInt16BigEndian(this.buffer);
         }
 
         public TEnum ReadUInt16<TEnum>()
@@ -182,8 +184,8 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads array or 16-bit unsigned integers from the stream, using the bit converter
-        /// for this reader. 2 bytes are read.
+        /// Reads array or 16-bit unsigned integers from the stream.
+        /// 2 bytes are read.
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
@@ -201,8 +203,8 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads array or 16-bit unsigned integers from the stream, using the bit converter
-        /// for this reader. 2 bytes are read.
+        /// Reads array or 16-bit unsigned integers from the stream.
+        /// 2 bytes are read.
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
@@ -220,8 +222,8 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads array or 16-bit unsigned integers from the stream, using the bit converter
-        /// for this reader. 2 bytes are read.
+        /// Reads array or 16-bit unsigned integers from the stream.
+        /// 2 bytes are read.
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
@@ -233,8 +235,8 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads array or 16-bit unsigned integers from the stream, using the bit converter
-        /// for this reader. 2 bytes are read.
+        /// Reads array or 16-bit unsigned integers from the stream.
+        /// 2 bytes are read.
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
@@ -255,7 +257,7 @@ namespace SixLabors.Fonts
         }
 
         public TEnum[] ReadUInt8Array<TEnum>(int length)
-             where TEnum : struct
+             where TEnum : Enum
         {
             TEnum[] data = new TEnum[length];
             for (int i = 0; i < length; i++)
@@ -292,8 +294,8 @@ namespace SixLabors.Fonts
         /// <returns>The 8-bit unsigned integer read</returns>
         public byte ReadUInt8()
         {
-            this.ReadInternal(this.storageBuffer, 1);
-            return this.storageBuffer[0];
+            this.ReadInternal(this.buffer, 1);
+            return this.buffer[0];
         }
 
         /// <summary>
@@ -303,8 +305,9 @@ namespace SixLabors.Fonts
         /// <returns>The 32-bit unsigned integer read</returns>
         public uint ReadUInt32()
         {
-            this.ReadInternal(this.storageBuffer, 4);
-            return this.BitConverter.ToUInt32(this.storageBuffer, 0);
+            this.ReadInternal(this.buffer, 4);
+
+            return BinaryPrimitives.ReadUInt32BigEndian(this.buffer);
         }
 
         public uint ReadOffset32()
@@ -313,47 +316,26 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads a 64-bit unsigned integer from the stream, using the bit converter
-        /// for this reader. 8 bytes are read.
+        /// Reads a 64-bit unsigned integer from the stream.
+        /// 8 bytes are read.
         /// </summary>
         /// <returns>The 64-bit unsigned integer read</returns>
         public ulong ReadUInt64()
         {
-            this.ReadInternal(this.storageBuffer, 8);
-            return this.BitConverter.ToUInt64(this.storageBuffer, 0);
+            this.ReadInternal(this.buffer, 8);
+            return BinaryPrimitives.ReadUInt64BigEndian(this.buffer);
         }
 
         /// <summary>
-        /// Reads a single-precision floating-point value from the stream, using the bit converter
-        /// for this reader. 4 bytes are read.
+        /// Reads a single-precision floating-point value from the stream.
+        /// 4 bytes are read.
         /// </summary>
         /// <returns>The floating point value read</returns>
         public float ReadSingle()
         {
-            this.ReadInternal(this.storageBuffer, 4);
-            return this.BitConverter.ToSingle(this.storageBuffer, 0);
-        }
+            uint value = this.ReadUInt32();
 
-        /// <summary>
-        /// Reads a double-precision floating-point value from the stream, using the bit converter
-        /// for this reader. 8 bytes are read.
-        /// </summary>
-        /// <returns>The floating point value read</returns>
-        public double ReadDouble()
-        {
-            this.ReadInternal(this.storageBuffer, 8);
-            return this.BitConverter.ToDouble(this.storageBuffer, 0);
-        }
-
-        /// <summary>
-        /// Reads a decimal value from the stream, using the bit converter
-        /// for this reader. 16 bytes are read.
-        /// </summary>
-        /// <returns>The decimal value read</returns>
-        public decimal ReadDecimal()
-        {
-            this.ReadInternal(this.storageBuffer, 16);
-            return this.BitConverter.ToDecimal(this.storageBuffer, 0);
+            return Unsafe.As<uint, float>(ref value);
         }
 
         /// <summary>
@@ -415,49 +397,6 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads the specified number of bytes, returning them in a new byte array.
-        /// If not enough bytes are available before the end of the stream, this
-        /// method will throw an IOException.
-        /// </summary>
-        /// <param name="count">The number of bytes to read</param>
-        /// <returns>The bytes read</returns>
-        public byte[] ReadBytesOrThrow(int count)
-        {
-            byte[] ret = new byte[count];
-            this.ReadInternal(ret, count);
-            return ret;
-        }
-
-        /// <summary>
-        /// Reads a 7-bit encoded integer from the stream. This is stored with the least significant
-        /// information first, with 7 bits of information per byte of value, and the top
-        /// bit as a continuation flag. This method is not affected by the endianness
-        /// of the bit converter.
-        /// </summary>
-        /// <returns>The 7-bit encoded integer read from the stream.</returns>
-        public int Read7BitEncodedInt()
-        {
-            int ret = 0;
-            for (int shift = 0; shift < 35; shift += 7)
-            {
-                int b = this.BaseStream.ReadByte();
-                if (b == -1)
-                {
-                    throw new EndOfStreamException();
-                }
-
-                ret = ret | ((b & 0x7f) << shift);
-                if ((b & 0x80) == 0)
-                {
-                    return ret;
-                }
-            }
-
-            // Still haven't seen a byte with the high bit unset? Dodgy data.
-            throw new IOException("Invalid 7-bit encoded integer in stream.");
-        }
-
-        /// <summary>
         /// Reads a string of a specific length, which specifies the number of bytes
         /// to read from the stream. These bytes are then converted into a string with
         /// the encoding for this reader.
@@ -469,7 +408,7 @@ namespace SixLabors.Fonts
         /// </returns>
         public string ReadString(int bytesToRead, Encoding encoding)
         {
-            byte[] data = new byte[bytesToRead];
+            var data = new byte[bytesToRead];
             this.ReadInternal(data, bytesToRead);
             return encoding.GetString(data, 0, data.Length);
         }
@@ -480,7 +419,9 @@ namespace SixLabors.Fonts
         /// <returns>a 4 character long UTF8 encoded string</returns>
         public string ReadTag()
         {
-            return this.ReadString(4, Encoding.UTF8);
+            this.ReadInternal(this.buffer, 4);
+
+            return Encoding.UTF8.GetString(this.buffer, 0, 4);
         }
 
         /// <summary>
@@ -492,6 +433,7 @@ namespace SixLabors.Fonts
         private void ReadInternal(byte[] data, int size)
         {
             int index = 0;
+
             while (index < size)
             {
                 int read = this.BaseStream.Read(data, index, size - index);

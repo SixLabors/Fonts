@@ -51,7 +51,7 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(string path, out FontDescription fontDescription)
         {
-            FileFontInstance instance = new FileFontInstance(path);
+            var instance = new FileFontInstance(path);
             fontDescription = instance.Description;
             return this.Install(instance);
         }
@@ -104,14 +104,7 @@ namespace SixLabors.Fonts
         /// <returns>true if a font of that family has been installed into the font collection.</returns>
         public bool TryFind(string fontFamily, out FontFamily family)
         {
-            if (this.families.ContainsKey(fontFamily))
-            {
-                family = this.families[fontFamily];
-                return true;
-            }
-
-            family = null;
-            return false;
+            return this.families.TryGetValue(fontFamily, out family);
         }
 
         internal IEnumerable<FontStyle> AvailableStyles(string fontFamily)
@@ -121,8 +114,15 @@ namespace SixLabors.Fonts
 
         internal FontFamily Install(IFontInstance instance)
         {
-            Utilities.Guard.NotNull(instance, nameof(instance));
-            Utilities.Guard.NotNull(instance.Description, nameof(instance.Description));
+            if (instance == null)
+            {
+                throw new ArgumentNullException(nameof(instance));
+            }
+
+            if (instance.Description == null)
+            {
+                throw new ArgumentException("IFontInstance must have a Description.", nameof(instance));
+            }
 
             lock (this.instances)
             {
@@ -144,26 +144,18 @@ namespace SixLabors.Fonts
 
         internal IFontInstance Find(string fontFamily, FontStyle style)
         {
-            if (!this.instances.ContainsKey(fontFamily))
-            {
-                return null;
-            }
-
-            // once we have to support verient fonts then we
-            List<IFontInstance> inFamily = this.instances[fontFamily];
-
-            return inFamily.FirstOrDefault(x => x.Description.Style == style);
+            return this.instances.TryGetValue(fontFamily, out List<IFontInstance> inFamily)
+                ? inFamily.FirstOrDefault(x => x.Description.Style == style)
+                : null;
         }
 
         internal IEnumerable<IFontInstance> FindAll(string name)
         {
-            if (!this.instances.ContainsKey(name))
-            {
-                return Enumerable.Empty<IFontInstance>();
-            }
-
             // once we have to support verient fonts then we
-            return this.instances[name];
+
+            return this.instances.TryGetValue(name, out List<IFontInstance> value)
+                ? value
+                : Enumerable.Empty<IFontInstance>();
         }
     }
 }

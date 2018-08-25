@@ -7,20 +7,20 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 {
     internal class EmptyGlyphLoader : GlyphLoader
     {
+        private bool loop = false;
+        private readonly Bounds fallbackEmptyBounds;
+        private GlyphVector? glyph;
+
         public EmptyGlyphLoader(Bounds fallbackEmptyBounds)
         {
             this.fallbackEmptyBounds = fallbackEmptyBounds;
         }
 
-        private bool loop = false;
-        private readonly Bounds fallbackEmptyBounds;
-        private GlyphVector? glyph;
-
-        public override Glyphs.GlyphVector CreateGlyph(GlyphTable table)
+        public override GlyphVector CreateGlyph(GlyphTable table)
         {
             if (this.loop)
             {
-                if (this.glyph == null)
+                if (this.glyph is null)
                 {
                     this.glyph = new GlyphVector(new Vector2[0], new bool[0], new ushort[0], this.fallbackEmptyBounds);
                 }

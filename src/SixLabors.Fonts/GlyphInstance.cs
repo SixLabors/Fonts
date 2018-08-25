@@ -194,7 +194,7 @@ namespace SixLabors.Fonts
 
         private static void AlignToGrid(ref Vector2 point)
         {
-            Vector2 floorPoint = new Vector2(MathF.Floor(point.X), MathF.Floor(point.Y));
+            var floorPoint = new Vector2(MathF.Floor(point.X), MathF.Floor(point.Y));
             Vector2 decimalPart = point - floorPoint;
 
             if (decimalPart.X < 0.5)

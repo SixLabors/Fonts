@@ -90,7 +90,7 @@ namespace SixLabors.Fonts
                 && other.DpiX == this.DpiX
                 && other.DpiY == this.DpiY
                 && other.GlyphIndex == this.GlyphIndex
-                && ((other.Font == null && this.Font == null)
+                && ((other.Font is null && this.Font is null)
                 || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
         }
 

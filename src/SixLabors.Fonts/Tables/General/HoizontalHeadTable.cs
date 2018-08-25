@@ -10,28 +10,6 @@ namespace SixLabors.Fonts.Tables.General
     {
         private const string TableName = "hhea";
 
-        internal ushort AdvanceWidthMax { get; }
-
-        internal short Ascender { get; }
-
-        internal short CaretOffset { get; }
-
-        internal short CaretSlopeRise { get; }
-
-        internal short CaretSlopeRun { get; }
-
-        internal short Descender { get; }
-
-        internal short LineGap { get; }
-
-        internal short MinLeftSideBearing { get; }
-
-        internal short MinRightSideBearing { get; }
-
-        internal ushort NumberOfHMetrics { get; }
-
-        internal short XMaxExtent { get; }
-
         public HoizontalHeadTable(short ascender, short descender, short lineGap, ushort advanceWidthMax, short minLeftSideBearing, short minRightSideBearing, short xMaxExtent, short caretSlopeRise, short caretSlopeRun, short caretOffset, ushort numberOfHMetrics)
         {
             this.Ascender = ascender;
@@ -46,6 +24,28 @@ namespace SixLabors.Fonts.Tables.General
             this.CaretOffset = caretOffset;
             this.NumberOfHMetrics = numberOfHMetrics;
         }
+
+        public ushort AdvanceWidthMax { get; }
+
+        public short Ascender { get; }
+
+        public short CaretOffset { get; }
+
+        public short CaretSlopeRise { get; }
+
+        public short CaretSlopeRun { get; }
+
+        public short Descender { get; }
+
+        public short LineGap { get; }
+
+        public short MinLeftSideBearing { get; }
+
+        public short MinRightSideBearing { get; }
+
+        public ushort NumberOfHMetrics { get; }
+
+        public short XMaxExtent { get; }
 
         public static HoizontalHeadTable Load(FontReader reader)
         {

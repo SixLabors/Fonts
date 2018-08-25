@@ -5,7 +5,7 @@ using System.IO;
 
 namespace SixLabors.Fonts.Tables
 {
-    internal class WoffTableHeader : TableHeader
+    internal sealed class WoffTableHeader : TableHeader
     {
         public WoffTableHeader(string tag, uint offset, uint compressedLength, uint origLength, uint checkSum)
             : base(tag, checkSum, offset, origLength)
@@ -25,7 +25,7 @@ namespace SixLabors.Fonts.Tables
             else
             {
                 stream.Seek(this.Offset, SeekOrigin.Begin);
-                IO.ZlibInflateStream compressedStream = new IO.ZlibInflateStream(stream);
+                var compressedStream = new IO.ZlibInflateStream(stream);
                 return new BinaryReader(compressedStream, false);
             }
         }

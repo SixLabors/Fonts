@@ -4,37 +4,9 @@
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
-    internal class MaximumProfileTable : Table
+    internal sealed class MaximumProfileTable : Table
     {
         private const string TableName = "maxp";
-
-        internal ushort MaxPoints { get; }
-
-        internal ushort MaxContours { get; }
-
-        internal ushort MaxCompositePoints { get; }
-
-        internal ushort MaxCompositeContours { get; }
-
-        internal ushort MaxZones { get; }
-
-        internal ushort MaxTwilightPoints { get; }
-
-        internal ushort MaxStorage { get; }
-
-        internal ushort MaxFunctionDefs { get; }
-
-        internal ushort MaxInstructionDefs { get; }
-
-        internal ushort MaxStackElements { get; }
-
-        internal ushort MaxSizeOfInstructions { get; }
-
-        internal ushort MaxComponentElements { get; }
-
-        internal ushort MaxComponentDepth { get; }
-
-        public ushort GlyphCount { get; }
 
         public MaximumProfileTable(ushort numGlyphs)
         {
@@ -58,6 +30,34 @@ namespace SixLabors.Fonts.Tables.General
             this.MaxComponentElements = maxComponentElements;
             this.MaxComponentDepth = maxComponentDepth;
         }
+
+        public ushort MaxPoints { get; }
+
+        public ushort MaxContours { get; }
+
+        public ushort MaxCompositePoints { get; }
+
+        public ushort MaxCompositeContours { get; }
+
+        public ushort MaxZones { get; }
+
+        public ushort MaxTwilightPoints { get; }
+
+        public ushort MaxStorage { get; }
+
+        public ushort MaxFunctionDefs { get; }
+
+        public ushort MaxInstructionDefs { get; }
+
+        public ushort MaxStackElements { get; }
+
+        public ushort MaxSizeOfInstructions { get; }
+
+        public ushort MaxComponentElements { get; }
+
+        public ushort MaxComponentDepth { get; }
+
+        public ushort GlyphCount { get; }
 
         public static MaximumProfileTable Load(FontReader reader)
         {

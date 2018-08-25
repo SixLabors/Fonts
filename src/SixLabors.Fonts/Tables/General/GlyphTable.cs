@@ -18,7 +18,7 @@ namespace SixLabors.Fonts.Tables.General
             this.loaders = glyphLoaders;
         }
 
-        internal virtual Glyphs.GlyphVector GetGlyph(int index)
+        internal virtual GlyphVector GetGlyph(int index)
         {
             return this.loaders[index].CreateGlyph(this);
         }
@@ -34,12 +34,13 @@ namespace SixLabors.Fonts.Tables.General
             }
         }
 
-        public static GlyphTable Load(BinaryReader reader, uint[] locations, Bounds fallbackEmptyBounds)
+        public static GlyphTable Load(BinaryReader reader, uint[] locations, in Bounds fallbackEmptyBounds)
         {
-            EmptyGlyphLoader empty = new Glyphs.EmptyGlyphLoader(fallbackEmptyBounds);
+            var empty = new EmptyGlyphLoader(fallbackEmptyBounds);
             int entryCount = locations.Length;
             int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
-            Glyphs.GlyphLoader[] glyphs = new Glyphs.GlyphLoader[glyphCount];
+            var glyphs = new GlyphLoader[glyphCount];
+
             for (int i = 0; i < glyphCount; i++)
             {
                 if (locations[i] == locations[i + 1])

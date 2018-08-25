@@ -12,22 +12,6 @@ namespace SixLabors.Fonts.Tables.General
     {
         private const string TableName = "head";
 
-        internal DateTime Created { get; }
-
-        internal HeadFlags Flags { get; }
-
-        internal IndexLocationFormats IndexLocationFormat { get; }
-
-        internal ushort LowestRecPPEM { get; }
-
-        internal HeadMacStyle MacStyle { get; }
-
-        internal DateTime Modified { get; }
-
-        internal Bounds Bounds { get; }
-
-        internal ushort UnitsPerEm { get; }
-
         public HeadTable(HeadFlags flags, HeadMacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Bounds bounds, ushort lowestRecPPEM, IndexLocationFormats indexToLocFormat)
         {
             this.Flags = flags;
@@ -40,11 +24,27 @@ namespace SixLabors.Fonts.Tables.General
             this.IndexLocationFormat = indexToLocFormat;
         }
 
+        public DateTime Created { get; }
+
+        public HeadFlags Flags { get; }
+
+        public IndexLocationFormats IndexLocationFormat { get; }
+
+        public ushort LowestRecPPEM { get; }
+
+        public HeadMacStyle MacStyle { get; }
+
+        public DateTime Modified { get; }
+
+        public Bounds Bounds { get; }
+
+        public ushort UnitsPerEm { get; }
+
         public static HeadTable Load(FontReader reader)
         {
             using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
-                if (binaryReader == null)
+                if (binaryReader is null)
                 {
                     return null;
                 }
@@ -115,7 +115,7 @@ namespace SixLabors.Fonts.Tables.General
                 throw new InvalidFontFileException($"invalid units per em expected value between 16 and 16384 but found {unitsPerEm} in 'head'");
             }
 
-            DateTime startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
+            var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             long seconds = reader.ReadInt64();
             DateTime created = startDate;
             if (seconds > 0)

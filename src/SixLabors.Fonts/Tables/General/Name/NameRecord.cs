@@ -12,6 +12,14 @@ namespace SixLabors.Fonts.Tables.General.Name
     {
         private readonly string value;
 
+        public NameRecord(PlatformIDs platform, ushort languageId, NameIds nameId, string value)
+        {
+            this.Platform = platform;
+            this.LanguageID = languageId;
+            this.NameID = nameId;
+            this.value = value;
+        }
+
         public PlatformIDs Platform { get; }
 
         public ushort LanguageID { get; }
@@ -21,14 +29,6 @@ namespace SixLabors.Fonts.Tables.General.Name
         internal StringLoader StringReader { get; private set; }
 
         public string Value => this.StringReader?.Value ?? this.value;
-
-        public NameRecord(PlatformIDs platform, ushort languageId, NameIds nameId, string value)
-        {
-            this.Platform = platform;
-            this.LanguageID = languageId;
-            this.NameID = nameId;
-            this.value = value;
-        }
 
         public static NameRecord Read(BinaryReader reader)
         {

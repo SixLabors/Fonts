@@ -6,12 +6,8 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General.CMap
 {
-    internal class Format4SubTable : CMapSubTable
+    internal sealed class Format4SubTable : CMapSubTable
     {
-        internal Segment[] Segments { get; }
-
-        internal ushort[] GlyphIds { get; }
-
         public Format4SubTable(ushort language, PlatformIDs platform, ushort encoding, Segment[] segments, ushort[] glyphIds)
             : base(platform, encoding, 4)
         {
@@ -19,6 +15,10 @@ namespace SixLabors.Fonts.Tables.General.CMap
             this.Segments = segments;
             this.GlyphIds = glyphIds;
         }
+
+        public Segment[] Segments { get; }
+
+        public ushort[] GlyphIds { get; }
 
         public ushort Language { get; }
 
@@ -115,7 +115,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             public static Segment[] Create(ushort[] endCounts, ushort[] startCode, short[] idDelta, ushort[] idRangeOffset)
             {
                 int count = endCounts.Length;
-                Segment[] segments = new Segment[count];
+                var segments = new Segment[count];
                 for (ushort i = 0; i < count; i++)
                 {
                     ushort start = startCode[i];

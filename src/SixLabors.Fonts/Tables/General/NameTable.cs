@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Tables.General
             ushort nameCount = reader.ReadUInt16();
             ushort stringOffset = reader.ReadUInt16();
 
-            NameRecord[] names = new NameRecord[nameCount];
+            var names = new NameRecord[nameCount];
 
             for (int i = 0; i < nameCount; i++)
             {
@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Tables.General
         /// <value>
         /// The identifier.
         /// </value>
-        public string Id { get; private set; }
+        public string Id { get; }
 
         /// <summary>
         /// Gets the name of the font.
@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Tables.General
         /// <value>
         /// The name of the font.
         /// </value>
-        public string FontName { get; private set; }
+        public string FontName { get; }
 
         /// <summary>
         /// Gets the name of the font family.
@@ -100,7 +100,7 @@ namespace SixLabors.Fonts.Tables.General
         /// <value>
         /// The name of the font family.
         /// </value>
-        public string FontFamilyName { get; private set; }
+        public string FontFamilyName { get; }
 
         /// <summary>
         /// Gets the name of the font sub family.
@@ -108,7 +108,7 @@ namespace SixLabors.Fonts.Tables.General
         /// <value>
         /// The name of the font sub family.
         /// </value>
-        public string FontSubFamilyName { get; private set; }
+        public string FontSubFamilyName { get; }
 
         public string GetNameById(NameIds nameId)
         {
