@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -21,7 +22,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
-        public IReadOnlyList<GlyphLayout> GenerateLayout(string text, RendererOptions options)
+        public IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, RendererOptions options)
         {
             var dpi = new Vector2(options.DpiX, options.DpiY);
             Vector2 origin = (Vector2)options.Origin / dpi;
@@ -110,7 +111,7 @@ namespace SixLabors.Fonts
                     top = lineHeightOfFirstLine - lineMaxAscender;
                 }
 
-                if (options.WrappingWidth > 0 && char.IsWhiteSpace(text, i))
+                if (options.WrappingWidth > 0 && char.IsWhiteSpace(text[i]))
                 {
                     // keep a record of where to wrap text and ensure that no line starts with white space
                     for (int j = layout.Count - 1; j >= 0; j--)
@@ -123,10 +124,10 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                var hasFourBytes = char.IsHighSurrogate(text, i);
-                var c = hasFourBytes ? char.ConvertToUtf32(text, i) : text[i];
+                bool hasFourBytes = char.IsHighSurrogate(text[i]);
+                int codePoint = hasFourBytes ? char.ConvertToUtf32(text[i], text[i + 1]) : text[i];
 
-                GlyphInstance glyph = spanStyle.Font.GetGlyph(c);
+                GlyphInstance glyph = spanStyle.Font.GetGlyph(codePoint);
                 float glyphWidth = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                 float glyphHeight = (glyph.Height * spanStyle.PointSize) / scale;
 
@@ -144,7 +145,7 @@ namespace SixLabors.Fonts
                         location.X = glyphLocation.X;
                     }
 
-                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), glyphLocation, glyphWidth, glyphHeight, lineHeight, startOfLine, false, false));
+                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), glyphLocation, glyphWidth, glyphHeight, lineHeight, startOfLine, false, false));
                     startOfLine = false;
 
                     // move forward the actual width of the glyph, we are retaining the baseline
@@ -197,13 +198,13 @@ namespace SixLabors.Fonts
                     previousGlyph = null;
                     startOfLine = true;
 
-                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
+                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
                     startOfLine = false;
                 }
                 else if (text[i] == '\n')
                 {
                     // carriage return resets the XX coordinate to 0
-                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
+                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
                     location.X = 0;
                     location.Y += lineHeight;
                     unscaledLineHeight = 0;
@@ -230,7 +231,7 @@ namespace SixLabors.Fonts
                         finalWidth += tabStop;
                     }
 
-                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, finalWidth, glyphHeight, lineHeight, startOfLine, true, false));
+                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, finalWidth, glyphHeight, lineHeight, startOfLine, true, false));
                     startOfLine = false;
 
                     // advance to a position > width away that
@@ -239,7 +240,7 @@ namespace SixLabors.Fonts
                 }
                 else if (text[i] == ' ')
                 {
-                    layout.Add(new GlyphLayout(c, new Glyph(glyph, spanStyle.PointSize), location, glyphWidth, glyphHeight, lineHeight, startOfLine, true, false));
+                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, glyphWidth, glyphHeight, lineHeight, startOfLine, true, false));
                     startOfLine = false;
                     location.X += glyphWidth;
                     previousGlyph = null;

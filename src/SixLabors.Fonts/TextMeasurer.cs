@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -21,7 +22,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static SizeF Measure(string text, RendererOptions options)
+        public static SizeF Measure(ReadOnlySpan<char> text, RendererOptions options)
             => TextMeasurerInt.Default.Measure(text, options);
 
         /// <summary>
@@ -30,7 +31,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static RectangleF MeasureBounds(string text, RendererOptions options)
+        public static RectangleF MeasureBounds(ReadOnlySpan<char> text, RendererOptions options)
             => TextMeasurerInt.Default.MeasureBounds(text, options);
 
         /// <summary>
@@ -40,7 +41,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The style.</param>
         /// <param name="characterBounds">The list of character bounds of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty bounds.</returns>
-        public static bool TryMeasureCharacterBounds(string text, RendererOptions options, out GlyphMetric[] characterBounds)
+        public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphMetric[] characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
 
         internal static SizeF GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
@@ -171,7 +172,7 @@ namespace SixLabors.Fonts
             /// <param name="text">The text.</param>
             /// <param name="options">The style.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal RectangleF MeasureBounds(string text, RendererOptions options)
+            internal RectangleF MeasureBounds(ReadOnlySpan<char> text, RendererOptions options)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
@@ -185,7 +186,7 @@ namespace SixLabors.Fonts
             /// <param name="options">The style.</param>
             /// <param name="characterBounds">The character bounds list.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal bool TryMeasureCharacterBounds(string text, RendererOptions options, out GlyphMetric[] characterBounds)
+            internal bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphMetric[] characterBounds)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
@@ -198,7 +199,7 @@ namespace SixLabors.Fonts
             /// <param name="text">The text.</param>
             /// <param name="options">The style.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal SizeF Measure(string text, RendererOptions options)
+            internal SizeF Measure(ReadOnlySpan<char> text, RendererOptions options)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 

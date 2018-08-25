@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
+
 namespace SixLabors.Fonts
 {
     /// <summary>
@@ -15,7 +17,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The options.</param>
         /// <returns>Returns the orginonal <paramref name="renderer"/></returns>
-        public static IGlyphRenderer Render(this IGlyphRenderer renderer, string text, RendererOptions options)
+        public static IGlyphRenderer Render(this IGlyphRenderer renderer, ReadOnlySpan<char> text, RendererOptions options)
         {
             new TextRenderer(renderer).RenderText(text, options);
             return renderer;
