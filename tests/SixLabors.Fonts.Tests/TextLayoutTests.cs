@@ -1,9 +1,9 @@
-﻿using System.Numerics;
-using Xunit;
-using SixLabors.Fonts.Tests.Fakes;
-using System.Collections.Immutable;
-using SixLabors.Primitives;
+﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
+using SixLabors.Fonts.Tests.Fakes;
+using SixLabors.Primitives;
+using Xunit;
 
 namespace SixLabors.Fonts.Tests
 {
@@ -91,6 +91,21 @@ namespace SixLabors.Fonts.Tests
         }
 
 
+        [Fact]
+        public unsafe void MeasureTextWithSpan()
+        {
+            var font = CreateFont("hello");
+
+            Span<char> text = stackalloc char[] { 'h', 'e', 'l', 'l', 'o' };
+
+            int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
+
+            SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, 72 * font.EmSize)).Size;
+
+            Assert.Equal(10, size.Height, 4);
+            Assert.Equal(130, size.Width, 4);
+        }
+
         [Theory]
         [InlineData("h", 10, 10)]
         [InlineData("he", 10, 40)]
@@ -104,10 +119,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, 72 * font.EmSize)
-            {
-
-            }).Size;
+            SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, 72 * font.EmSize)).Size;
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
