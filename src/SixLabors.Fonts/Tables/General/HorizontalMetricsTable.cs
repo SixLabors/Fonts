@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
-    internal class HorizontalMetricsTable : Table
+    internal sealed class HorizontalMetricsTable : Table
     {
         private const string TableName = "hmtx";
         private readonly short[] leftSideBearings;
@@ -55,8 +55,8 @@ namespace SixLabors.Fonts.Tables.General
             // longHorMetric  | hMetrics[numberOfHMetrics]                    | Paired advance width and left side bearing values for each glyph. Records are indexed by glyph ID.
             // int16          | leftSideBearing[numGlyphs - numberOfHMetrics] | Left side bearings for glyph IDs greater than or equal to numberOfHMetrics.
             int bearingCount = glyphCount - metricCount;
-            ushort[] advancedWidth = new ushort[metricCount];
-            short[] leftSideBearings = new short[glyphCount];
+            var advancedWidth = new ushort[metricCount];
+            var leftSideBearings = new short[glyphCount];
 
             for (int i = 0; i < metricCount; i++)
             {
