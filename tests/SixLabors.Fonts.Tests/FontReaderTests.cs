@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Throws<Exceptions.InvalidFontFileException>(
                 () =>
                     {
-                        FontReader reader = new FontReader(writer.GetStream());
+                        var reader = new FontReader(writer.GetStream());
                     });
         }
 
@@ -38,7 +38,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteTableHeader("name", 0, 10, 0);
             writer.WriteTableHeader("cmap", 0, 1, 0);
 
-            FontReader reader = new FontReader(writer.GetStream());
+            var reader = new FontReader(writer.GetStream());
 
             Assert.Equal(2, reader.Headers.Count);
         }
@@ -54,7 +54,7 @@ namespace SixLabors.Fonts.Tests
                 new Fonts.Tables.General.CMap.Format0SubTable(0, WellKnownIds.PlatformIDs.Macintosh, 1, new byte[] {2,9})
             });
 
-            FontReader reader = new FontReader(writer.GetStream());
+            var reader = new FontReader(writer.GetStream());
             CMapTable cmap = reader.GetTable<CMapTable>();
             Assert.NotNull(cmap);
         }

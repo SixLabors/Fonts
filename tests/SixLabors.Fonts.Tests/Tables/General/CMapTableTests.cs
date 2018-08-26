@@ -15,16 +15,16 @@ namespace SixLabors.Fonts.Tests.Tables.General
         {
             var writer = new BinaryWriter();
 
-            writer.WriteCMapTable(new []{
+            writer.WriteCMapTable(new[] {
                 new Format0SubTable(0, PlatformIDs.Windows, 9, new byte[] { 0, 1, 2 })
             });
 
             CMapTable table = CMapTable.Load(writer.GetReader());
 
-            Assert.Single(table.Tables.Where(x=>x != null));
+            Assert.Single(table.Tables.Where(x => x != null));
 
             Format0SubTable[] format0Tables = table.Tables.OfType<Format0SubTable>().ToArray();
             Assert.Single(format0Tables);
-        }       
+        }
     }
 }

@@ -13,12 +13,12 @@ namespace SixLabors.Fonts.Tests.Tables.General
         {
             var writer = new BinaryWriter();
 
-            writer.WriteHeadTable(new HeadTable(HeadTable.HeadFlags.None, 
-                HeadTable.HeadMacStyle.Italic | HeadTable.HeadMacStyle.Bold, 
-                1024, 
-                new DateTime(2017, 02, 06, 07, 47, 00), 
-                new DateTime(2017, 02, 07, 07, 47, 00), 
-                new Bounds(0,0, 1024, 1022), 0, HeadTable.IndexLocationFormats.Offset16));
+            writer.WriteHeadTable(new HeadTable(HeadTable.HeadFlags.None,
+                HeadTable.HeadMacStyle.Italic | HeadTable.HeadMacStyle.Bold,
+                1024,
+                new DateTime(2017, 02, 06, 07, 47, 00),
+                new DateTime(2017, 02, 07, 07, 47, 00),
+                new Bounds(0, 0, 1024, 1022), 0, HeadTable.IndexLocationFormats.Offset16));
 
             HeadTable head = HeadTable.Load(writer.GetReader());
 

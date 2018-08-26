@@ -13,9 +13,9 @@ namespace SixLabors.Fonts.Tests.Issues
         [InlineData("  Helloworld", 340, 10)]
         [InlineData("Hell owor ld\t", 480, 10)]
         [InlineData("Helloworld  ", 360, 10)]
-        public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height )
+        public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height)
         {
-            Font font  = CreateFont(text);
+            Font font = CreateFont(text);
             SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, (72 * font.EmSize))
             {
             }).Size;
@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
         public static Font CreateFont(string text)
         {
-            FontCollection fc = new FontCollection();
+            var fc = new FontCollection();
             Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
             return new Font(d, 1);
         }

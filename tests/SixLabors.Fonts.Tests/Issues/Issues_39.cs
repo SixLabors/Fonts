@@ -9,15 +9,15 @@ namespace SixLabors.Fonts.Tests.Issues
         public void RenderingEmptyString_DoesNotThrow()
         {
             Font font = CreateFont("\t x");
-         
-            GlyphRenderer r = new GlyphRenderer();
+
+            var r = new GlyphRenderer();
 
             new TextRenderer(r).RenderText("", new RendererOptions(new Font(font, 30), 72));
         }
 
         public static Font CreateFont(string text)
         {
-            FontCollection fc = new FontCollection();
+            var fc = new FontCollection();
             Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
             return new Font(d, 1);
         }
