@@ -14,9 +14,8 @@ namespace SixLabors.Fonts
     {
         private readonly Dictionary<Type, Table> loadedTables = new Dictionary<Type, Table>();
 
-        private readonly TableLoader loader;
-
         private readonly Stream stream;
+        private readonly TableLoader loader;
 
         internal FontReader(Stream stream, TableLoader loader)
         {
@@ -120,12 +119,9 @@ namespace SixLabors.Fonts
 
         public virtual TableHeader GetHeader(string tag)
         {
-            if (this.Headers.TryGetValue(tag, out TableHeader header))
-            {
-                return header;
-            }
-
-            return null;
+            return this.Headers.TryGetValue(tag, out TableHeader header)
+                ? header
+                : null;
         }
 
         public virtual BinaryReader GetReaderAtTablePosition(string tableName)
