@@ -107,13 +107,7 @@ namespace SixLabors.Fonts.IO
         public override bool CanWrite => false;
 
         /// <inheritdoc/>
-        public override long Length
-        {
-            get
-            {
-                throw new NotSupportedException();
-            }
-        }
+        public override long Length => throw new NotSupportedException();
 
         /// <inheritdoc/>
         public override long Position
