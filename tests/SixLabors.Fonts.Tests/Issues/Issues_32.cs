@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tests.Issues
         public void TabWidth0CausesBadTabRendering()
         {
             string text = "Hello\tworld";
-            Font font  = CreateFont(text);
+            Font font = CreateFont(text);
             SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, (72 * font.EmSize))
             {
                 TabWidth = 0
@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
         public static Font CreateFont(string text)
         {
-            FontCollection fc = new FontCollection();
+            var fc = new FontCollection();
             Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
             return new Font(d, 1);
         }

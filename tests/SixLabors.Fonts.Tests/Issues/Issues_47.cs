@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using SixLabors.Fonts.Tests.Fakes;
 using Xunit;
 
@@ -13,7 +12,7 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             Font font = CreateFont("\t x");
 
-            GlyphRenderer r = new GlyphRenderer();
+            var r = new GlyphRenderer();
 
             IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
             {
@@ -41,7 +40,7 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             Font font = CreateFont("\t x");
 
-            GlyphRenderer r = new GlyphRenderer();
+            var r = new GlyphRenderer();
 
             IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
             {
@@ -68,7 +67,7 @@ namespace SixLabors.Fonts.Tests.Issues
             Font font = CreateFont("\t x");
             string text = "   hello world hello world hello world";
 
-            GlyphRenderer r = new GlyphRenderer();
+            var r = new GlyphRenderer();
 
             IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
             {
@@ -86,7 +85,7 @@ namespace SixLabors.Fonts.Tests.Issues
             Font font = CreateFont("\t x");
             string text = "hello world hello world hello world   ";
 
-            GlyphRenderer r = new GlyphRenderer();
+            var r = new GlyphRenderer();
 
             IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
             {
@@ -100,7 +99,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
         public static Font CreateFont(string text)
         {
-            FontCollection fc = new FontCollection();
+            var fc = new FontCollection();
             Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
             return new Font(d, 1);
         }

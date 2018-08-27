@@ -7,18 +7,18 @@ namespace SixLabors.Fonts.Tables.General.CMap
 {
     internal readonly struct EncodingRecord
     {
-        public PlatformIDs PlatformID { get; }
-
-        public ushort EncodingID { get; }
-
-        public uint Offset { get; }
-
         public EncodingRecord(PlatformIDs platformID, ushort encodingID, uint offset)
         {
             this.PlatformID = platformID;
             this.EncodingID = encodingID;
             this.Offset = offset;
         }
+
+        public PlatformIDs PlatformID { get; }
+
+        public ushort EncodingID { get; }
+
+        public uint Offset { get; }
 
         public static EncodingRecord Read(BinaryReader reader)
         {

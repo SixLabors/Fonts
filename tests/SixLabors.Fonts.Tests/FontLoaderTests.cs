@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("Regular", font.Description.FontSubFamilyName);
 
             GlyphInstance glyph = font.GetGlyph('a');
-            GlyphRenderer r = new GlyphRenderer();
+            var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());
@@ -56,7 +56,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("Regular", font.Description.FontSubFamilyName);
 
             GlyphInstance glyph = font.GetGlyph('a');
-            GlyphRenderer r = new GlyphRenderer();
+            var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());

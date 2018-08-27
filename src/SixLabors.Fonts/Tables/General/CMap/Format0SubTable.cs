@@ -8,8 +8,6 @@ namespace SixLabors.Fonts.Tables.General.CMap
 {
     internal sealed class Format0SubTable : CMapSubTable
     {
-        internal byte[] GlyphIds { get; }
-
         public Format0SubTable(ushort language, PlatformIDs platform, ushort encoding, byte[] glyphIds)
             : base(platform, encoding, 0)
         {
@@ -18,6 +16,8 @@ namespace SixLabors.Fonts.Tables.General.CMap
         }
 
         public ushort Language { get; }
+
+        public byte[] GlyphIds { get; }
 
         public override ushort GetGlyphId(int codePoint)
         {

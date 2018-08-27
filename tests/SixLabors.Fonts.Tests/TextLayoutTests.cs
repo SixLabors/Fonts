@@ -72,7 +72,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            RendererOptions span = new RendererOptions(font, scaleFactor)
+            var span = new RendererOptions(font, scaleFactor)
             {
                 HorizontalAlignment = horizental,
                 VerticalAlignment = vertical
@@ -200,8 +200,8 @@ namespace SixLabors.Fonts.Tests
             Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px 
-            GlyphRenderer glyphRenderer = new GlyphRenderer();
-            TextRenderer renderer = new TextRenderer(glyphRenderer);
+            var glyphRenderer = new GlyphRenderer();
+            var renderer = new TextRenderer(glyphRenderer);
             renderer.RenderText(text, new RendererOptions(new Font(font, 1), 72 * font.EmSize, new PointF(x, y)));
 
             Assert.Equal(expectedX, glyphRenderer.GlyphRects[0].Location.X, 2);
@@ -210,7 +210,7 @@ namespace SixLabors.Fonts.Tests
 
         public static Font CreateFont(string text)
         {
-            FontCollection fc = new FontCollection();
+            var fc = new FontCollection();
             Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
             return new Font(d, 1);
         }

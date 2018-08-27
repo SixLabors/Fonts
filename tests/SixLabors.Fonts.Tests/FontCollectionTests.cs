@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
+﻿using Xunit;
 
 namespace SixLabors.Fonts.Tests
 {
@@ -10,7 +7,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void InstallViaPathReturnsDecription()
         {
-            FontCollection sut = new FontCollection();
+            var sut = new FontCollection();
 
             FontFamily family = sut.Install(TestFonts.CarterOneFile, out FontDescription description);
             Assert.NotNull(description);

@@ -320,7 +320,7 @@ namespace SixLabors.Fonts.Tests
 
             return 0;
         }
-        
+
         public static void WriteHoizontalHeadTable(this BinaryWriter writer, HoizontalHeadTable table)
         {
             // Type      | Name                 | Description
@@ -361,7 +361,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteInt16(0); // reserved
             writer.WriteInt16(0); // reserved
             writer.WriteInt16(0); // metricDataFormat should be 0
-            writer.WriteUInt16(table.NumberOfHMetrics);            
+            writer.WriteUInt16(table.NumberOfHMetrics);
         }
 
         public static void WriteHeadTable(this BinaryWriter writer, HeadTable table)

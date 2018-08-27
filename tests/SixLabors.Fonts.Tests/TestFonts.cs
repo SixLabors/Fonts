@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tests
 
     public static class TestFonts
     {
-        private static Dictionary<string, Stream> cache=  new Dictionary<string, Stream>();
+        private static Dictionary<string, Stream> cache = new Dictionary<string, Stream>();
         public static string CarterOneFile => GetFullPath("Carter_One/CarterOne.ttf");
         public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");
         public static string SimpleFontFile => GetFullPath("SixLaborsSampleAB.ttf");
@@ -56,7 +56,7 @@ namespace SixLabors.Fonts.Tests
         {
             string root = Path.GetDirectoryName(new Uri(typeof(TestFonts).GetTypeInfo().Assembly.CodeBase).LocalPath);
 
-            string[] paths = new[] 
+            string[] paths = new[]
             {
                 "Fonts",
                 @"..\..\Fonts",

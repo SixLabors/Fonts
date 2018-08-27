@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tests.Issues
             // wendy one returns wrong points for 'o'
             Font font = new FontCollection().Install(TestFonts.WendyOneFile).CreateFont(12);
 
-            GlyphRenderer r = new GlyphRenderer();
+            var r = new GlyphRenderer();
 
             Primitives.SizeF size = TextMeasurer.MeasureBounds("          ", new RendererOptions(new Font(font, 30), 72)).Size;
 

@@ -26,8 +26,10 @@ namespace SixLabors.Fonts.Tables.General.CMap
         {
             uint charAsInt = (uint)codePoint;
 
-            foreach (Segment seg in this.Segments)
+            for (int i = 0; i < this.Segments.Length; i++)
             {
+                ref Segment seg = ref this.Segments[i];
+
                 if (seg.End >= charAsInt && seg.Start <= charAsInt)
                 {
                     if (seg.Offset == 0)
@@ -91,16 +93,8 @@ namespace SixLabors.Fonts.Tables.General.CMap
             }
         }
 
-        internal class Segment
+        internal readonly struct Segment
         {
-            public short Delta { get; }
-
-            public ushort End { get; }
-
-            public ushort Offset { get; }
-
-            public ushort Start { get; }
-
             public Segment(ushort index, ushort end, ushort start, short delta, ushort offset)
             {
                 this.Index = index;
@@ -111,6 +105,14 @@ namespace SixLabors.Fonts.Tables.General.CMap
             }
 
             public ushort Index { get; }
+
+            public short Delta { get; }
+
+            public ushort End { get; }
+
+            public ushort Offset { get; }
+
+            public ushort Start { get; }
 
             public static Segment[] Create(ushort[] endCounts, ushort[] startCode, short[] idDelta, ushort[] idRangeOffset)
             {

@@ -24,7 +24,6 @@ namespace SixLabors.Fonts.Tests.Issues
             Assert.Equal(tabWidth.Width * tabCount, tabCountWidth.Width, 2);
         }
 
-
         [Theory]
         [InlineData(1)]
         [InlineData(2)]
@@ -37,7 +36,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
             SizeF tabWidth = TextMeasurer.MeasureBounds("\tx", new RendererOptions(font, (72 * font.EmSize))).Size;
-            string tabString = "x".PadLeft(tabCount+1, '\t');
+            string tabString = "x".PadLeft(tabCount + 1, '\t');
             SizeF tabCountWidth = TextMeasurer.MeasureBounds(tabString, new RendererOptions(font, (72 * font.EmSize))).Size;
 
             float singleTabWidth = tabWidth.Width - xWidth.Width;
@@ -47,7 +46,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
         public static Font CreateFont(string text)
         {
-            FontCollection fc = new FontCollection();
+            var fc = new FontCollection();
             Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
             return new Font(d, 1);
         }
