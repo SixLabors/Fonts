@@ -63,7 +63,7 @@ namespace SixLabors.Fonts
         {
             using (FileStream fs = File.OpenRead(path))
             {
-                var reader = new FontReader(fs);
+                FontReader reader = new FontReader(fs);
                 return LoadDescription(reader);
             }
         }
@@ -77,7 +77,7 @@ namespace SixLabors.Fonts
         public static FontDescription LoadDescription(Stream stream)
         {
             // only read the name table
-            var reader = new FontReader(stream);
+            FontReader reader = new FontReader(stream);
             return LoadDescription(reader);
         }
 
@@ -90,16 +90,16 @@ namespace SixLabors.Fonts
         /// </returns>
         internal static FontDescription LoadDescription(FontReader reader)
         {
-            return new FontDescription(
-                nameTable: reader.GetTable<NameTable>(),
-                os2: reader.GetTable<OS2Table>(),
-                head: reader.GetTable<HeadTable>());
+            HeadTable head = reader.GetTable<HeadTable>();
+            OS2Table os2 = reader.GetTable<OS2Table>();
+            NameTable nameTable = reader.GetTable<NameTable>();
+
+            return new FontDescription(nameTable, os2, head);
         }
 
         private static FontStyle ConvertStyle(OS2Table os2, HeadTable head)
         {
-            var style = FontStyle.Regular;
-
+            FontStyle style = FontStyle.Regular;
             if (os2 != null)
             {
                 if (os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.BOLD))
