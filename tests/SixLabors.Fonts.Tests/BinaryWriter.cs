@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tests
 
         public BinaryWriter(Stream stream)
         {
-            if (stream == null)
+            if (stream is null)
             {
                 throw new ArgumentNullException("stream");
             }
@@ -225,7 +225,7 @@ namespace SixLabors.Fonts.Tests
         /// <param name="value">The values to write</param>
         public void Write(byte[] value)
         {
-            if (value == null)
+            if (value is null)
             {
                 throw new ArgumentNullException(nameof(value));
             }
@@ -261,7 +261,7 @@ namespace SixLabors.Fonts.Tests
         /// <param name="value">An array containing the characters to write</param>
         public void Write(char[] value, Encoding encoding)
         {
-            if (value == null)
+            if (value is null)
             {
                 throw new ArgumentNullException(nameof(value));
             }
@@ -278,7 +278,7 @@ namespace SixLabors.Fonts.Tests
                 throw new Exception("text must be exactly 4 characters long");
             }
 
-            this.WriteNoLength(text, Encoding.UTF8);
+            this.WriteNoLength(text, Encoding.ASCII);
         }
 
         /// <summary>
@@ -288,7 +288,7 @@ namespace SixLabors.Fonts.Tests
         /// <exception cref="ArgumentNullException">value is null</exception>
         public void WriteNoLength(string value, Encoding encoding)
         {
-            if (value == null)
+            if (value is null)
             {
                 throw new ArgumentNullException(nameof(value));
             }
