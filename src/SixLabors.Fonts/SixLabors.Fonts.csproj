@@ -6,7 +6,7 @@
         <VersionPrefix Condition="$(packageversion) != ''">$(packageversion)</VersionPrefix>
         <VersionPrefix Condition="$(packageversion) == ''">0.1.0-alpha1</VersionPrefix>
         <Authors>Six Labors and contributors</Authors>
-        <TargetFrameworks>netstandard2.0;netstandard1.3;netstandard1.1</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0;netstandard1.3</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <AssemblyName>SixLabors.Fonts</AssemblyName>
@@ -46,7 +46,5 @@
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta004" PrivateAssets="All" />
         <PackageReference Include="SixLabors.Core" Version="1.0.0-beta0006" />
     </ItemGroup>
-    <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' OR '$(TargetFramework)' == 'netstandard2.0'">
-        <DefineConstants>$(DefineConstants);FILESYSTEM</DefineConstants>
-    </PropertyGroup>
+
 </Project>

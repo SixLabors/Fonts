@@ -53,7 +53,6 @@ namespace SixLabors.Fonts
         /// </summary>
         public string FontSubFamilyName { get; }
 
-#if FILESYSTEM
         /// <summary>
         /// Reads a <see cref="FontDescription"/> from the specified stream.
         /// </summary>
@@ -63,11 +62,10 @@ namespace SixLabors.Fonts
         {
             using (FileStream fs = File.OpenRead(path))
             {
-                FontReader reader = new FontReader(fs);
+                var reader = new FontReader(fs);
                 return LoadDescription(reader);
             }
         }
-#endif
 
         /// <summary>
         /// Reads a <see cref="FontDescription"/> from the specified stream.

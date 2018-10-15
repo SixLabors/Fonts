@@ -8,7 +8,6 @@ using System.Linq;
 
 namespace SixLabors.Fonts
 {
-#if FILESYSTEM
     /// <summary>
     /// Provides a collection of fonts.
     /// </summary>
@@ -71,5 +70,4 @@ namespace SixLabors.Fonts
         /// <inheritdocs />
         public bool TryFind(string fontFamily, out FontFamily family) => this.collection.TryFind(fontFamily, out family);
     }
-#endif
 }

@@ -6,7 +6,6 @@ using System.Collections.Generic;
 
 namespace SixLabors.Fonts
 {
-#if FILESYSTEM
     /// <summary>
     /// Provides a collection of fonts.
     /// </summary>
@@ -62,5 +61,4 @@ namespace SixLabors.Fonts
         /// <returns>Returns instance of the <see cref="Font"/> from the current collection.</returns>
         public static Font CreateFont(string fontFamily, float size) => Collection.CreateFont(fontFamily, size);
     }
-#endif
 }

@@ -32,7 +32,6 @@ namespace SixLabors.Fonts
         /// </value>
         public IEnumerable<FontFamily> Families => this.families.Values;
 
-#if FILESYSTEM
         /// <summary>
         /// Installs a font from the specified path.
         /// </summary>
@@ -55,7 +54,6 @@ namespace SixLabors.Fonts
             fontDescription = instance.Description;
             return this.Install(instance);
         }
-#endif
 
         /// <summary>
         /// Installs the specified font stream.
