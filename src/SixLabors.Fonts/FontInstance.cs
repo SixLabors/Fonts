@@ -131,7 +131,6 @@ namespace SixLabors.Fonts
             return this.kerning.GetOffset(previousGlyph.Index, glyph.Index);
         }
 
-#if FILESYSTEM
         /// <summary>
         /// Reads a <see cref="FontInstance"/> from the specified stream.
         /// </summary>
@@ -145,7 +144,6 @@ namespace SixLabors.Fonts
                 return LoadFont(reader);
             }
         }
-#endif
 
         /// <summary>
         /// Reads a <see cref="FontInstance"/> from the specified stream.

@@ -6,7 +6,6 @@ using System.Numerics;
 
 namespace SixLabors.Fonts
 {
-#if FILESYSTEM
     /// <summary>
     /// provide metadata about a font.
     /// </summary>
@@ -38,5 +37,4 @@ namespace SixLabors.Fonts
         Vector2 IFontInstance.GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
             => this.font.Value.GetOffset(glyph, previousGlyph);
     }
-#endif
 }
