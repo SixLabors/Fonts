@@ -43,6 +43,17 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Renders the text to the <paramref name="renderer"/>.
+        /// </summary>
+        /// <param name="renderer">The target renderer.</param>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The style.</param>
+        public static void RenderTextTo(IGlyphRenderer renderer, string text, RendererOptions options)
+        {
+            new TextRenderer(renderer).RenderText(text, options);
+        }
+
+        /// <summary>
         /// Renders the text.
         /// </summary>
         /// <param name="text">The text.</param>
