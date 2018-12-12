@@ -44,7 +44,7 @@
 
     <ItemGroup>
         <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta004" PrivateAssets="All" />
-        <PackageReference Include="SixLabors.Core" Version="1.0.0-dev000089" />
+        <PackageReference Include="SixLabors.Core" Version="1.0.0-dev000094" />
     </ItemGroup>
 
 </Project>

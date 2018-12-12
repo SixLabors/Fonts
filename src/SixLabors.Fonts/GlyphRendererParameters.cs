@@ -100,12 +100,13 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            var hash = this.Font?.GetHashCode() ?? 0;
-            hash = HashHelpers.Combine(hash, this.PointSize.GetHashCode());
-            hash = HashHelpers.Combine(hash, this.GlyphIndex.GetHashCode());
-            hash = HashHelpers.Combine(hash, this.FontStyle.GetHashCode());
-            hash = HashHelpers.Combine(hash, this.DpiX.GetHashCode());
-            return HashHelpers.Combine(hash, this.DpiY.GetHashCode());
+            return HashCode.Combine(
+                this.Font,
+                this.PointSize,
+                this.GlyphIndex,
+                this.FontStyle,
+                this.DpiX,
+                this.DpiY);
         }
     }
 }
