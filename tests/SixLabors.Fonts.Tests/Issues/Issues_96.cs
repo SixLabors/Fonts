@@ -1,3 +1,4 @@
+using System.IO;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
@@ -5,9 +6,9 @@ namespace SixLabors.Fonts.Tests.Issues
     public class Issues_96
     {
         [Fact]
-        public void ShouldNotThrowExceptionWhenFontContainsDuplicateTables()
+        public void ShouldNotThrowArgumentExceptionWhenFontContainsDuplicateTables()
         {
-            FontDescription.LoadDescription(TestFonts.Issues.Issue96File);
+            Assert.Throws<EndOfStreamException>(() => FontDescription.LoadDescription(TestFonts.Issues.Issue96File));
         }
     }
 }

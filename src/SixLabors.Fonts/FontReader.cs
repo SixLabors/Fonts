@@ -83,7 +83,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < tableCount; i++)
             {
                 TableHeader tbl = loadHeader(reader);
-                headers.Add(tbl.Tag, tbl);
+                headers[tbl.Tag] = tbl;
             }
 
             this.Headers = new ReadOnlyDictionary<string, TableHeader>(headers);
