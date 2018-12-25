@@ -10,7 +10,7 @@ using SixLabors.Fonts.Tables;
 
 namespace SixLabors.Fonts
 {
-    internal class FontReader
+    internal sealed class FontReader
     {
         private readonly Dictionary<Type, Table> loadedTables = new Dictionary<Type, Table>();
 
@@ -100,7 +100,7 @@ namespace SixLabors.Fonts
 
         public OutlineTypes OutlineType { get; }
 
-        public virtual TTableType GetTable<TTableType>()
+        public TTableType GetTable<TTableType>()
             where TTableType : Table
         {
             if (this.loadedTables.TryGetValue(typeof(TTableType), out Table table))
@@ -117,14 +117,20 @@ namespace SixLabors.Fonts
             return (TTableType)table;
         }
 
-        public virtual TableHeader GetHeader(string tag)
+        public TableHeader GetHeader(string tag)
         {
             return this.Headers.TryGetValue(tag, out TableHeader header)
                 ? header
                 : null;
         }
 
-        public virtual BinaryReader GetReaderAtTablePosition(string tableName)
+        public BinaryReader TryGetReaderAtTablePosition(string tableName)
+        {
+            TableHeader header = this.GetHeader(tableName);
+            return header?.CreateReader(this.stream);
+        }
+
+        public BinaryReader GetReaderAtTablePosition(string tableName)
         {
             TableHeader header = this.GetHeader(tableName);
             return header?.CreateReader(this.stream);
