@@ -24,6 +24,7 @@ namespace SixLabors.Fonts.Tests
         public static class Issues
         {
             public static string Issue96File => GetFullPath("Issues/Issue96.fuzz");
+            public static string Issue97File => GetFullPath("Issues/Issue97.fuzz");
         }
 
         private static Stream OpenStream(string path)
