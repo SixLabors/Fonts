@@ -1,4 +1,4 @@
-using System.IO;
+using SixLabors.Fonts.Exceptions;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [Fact]
         public void ShouldNotThrowNullReferenceExceptionWhenReaderCannotBeCreatedForTable()
         {
-            FontDescription.LoadDescription(TestFonts.Issues.Issue97File);
+            Assert.Throws<InvalidFontTableException>(() => FontDescription.LoadDescription(TestFonts.Issues.Issue97File));
         }
     }
 }

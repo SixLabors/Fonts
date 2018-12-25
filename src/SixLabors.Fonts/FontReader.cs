@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-
+using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables;
 
 namespace SixLabors.Fonts
@@ -126,8 +126,13 @@ namespace SixLabors.Fonts
 
         public BinaryReader GetReaderAtTablePosition(string tableName)
         {
-            TableHeader header = this.GetHeader(tableName);
-            return header?.CreateReader(this.stream);
+            var reader = this.TryGetReaderAtTablePosition(tableName);
+            if (reader == null)
+            {
+                throw new InvalidFontTableException("Unable to find table", tableName);
+            }
+
+            return reader;
         }
 
         public BinaryReader TryGetReaderAtTablePosition(string tableName)
