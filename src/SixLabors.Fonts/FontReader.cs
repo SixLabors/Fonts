@@ -124,13 +124,13 @@ namespace SixLabors.Fonts
                 : null;
         }
 
-        public BinaryReader TryGetReaderAtTablePosition(string tableName)
+        public BinaryReader GetReaderAtTablePosition(string tableName)
         {
             TableHeader header = this.GetHeader(tableName);
             return header?.CreateReader(this.stream);
         }
 
-        public BinaryReader GetReaderAtTablePosition(string tableName)
+        public BinaryReader TryGetReaderAtTablePosition(string tableName)
         {
             TableHeader header = this.GetHeader(tableName);
             return header?.CreateReader(this.stream);

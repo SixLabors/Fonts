@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static KerningTable Load(FontReader reader)
         {
-            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader is null)
                 {

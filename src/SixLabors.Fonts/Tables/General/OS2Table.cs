@@ -53,7 +53,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static OS2Table Load(FontReader reader)
         {
-            using (BinaryReader r = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader r = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (r is null)
                 {
