@@ -150,7 +150,6 @@ namespace SixLabors.Fonts
         internal IEnumerable<IFontInstance> FindAll(string name)
         {
             // once we have to support verient fonts then we
-
             return this.instances.TryGetValue(name, out List<IFontInstance> value)
                 ? value
                 : Enumerable.Empty<IFontInstance>();
