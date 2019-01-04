@@ -383,9 +383,9 @@ namespace SixLabors.Fonts.Tests
             this.WriteInternal(this.buffer, 1);
         }
 
-        public void WriteFWORD(short val)
+        public void WriteFWORD(short value)
         {
-            this.WriteInt16(val);
+            this.WriteInt16(value);
         }
 
         public void WriteUFWORD(ushort value)
