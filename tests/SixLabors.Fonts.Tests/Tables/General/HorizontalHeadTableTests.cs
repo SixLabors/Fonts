@@ -1,20 +1,19 @@
-﻿
-using SixLabors.Fonts.Tables.General;
+﻿using SixLabors.Fonts.Tables.General;
 
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Tables.General
 {
-    public class HoizontalHeadTableTests
+    public class HorizontalHeadTableTests
     {
         [Fact]
-        public void LoadHoizontalHeadTable()
+        public void LoadHorizontalHeadTable()
         {
             var writer = new BinaryWriter();
 
-            writer.WriteHoizontalHeadTable(new HoizontalHeadTable(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
+            writer.WriteHorizontalHeadTable(new HorizontalHeadTable(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
 
-            HoizontalHeadTable tbl = HoizontalHeadTable.Load(writer.GetReader());
+            HorizontalHeadTable tbl = HorizontalHeadTable.Load(writer.GetReader());
 
             Assert.Equal(1, tbl.Ascender);
             Assert.Equal(2, tbl.Descender);

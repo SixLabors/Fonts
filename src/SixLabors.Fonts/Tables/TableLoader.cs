@@ -18,7 +18,7 @@ namespace SixLabors.Fonts.Tables
             this.Register(NameTable.Load);
             this.Register(CMapTable.Load);
             this.Register(HeadTable.Load);
-            this.Register(HoizontalHeadTable.Load);
+            this.Register(HorizontalHeadTable.Load);
             this.Register(HorizontalMetricsTable.Load);
             this.Register(MaximumProfileTable.Load);
             this.Register(OS2Table.Load);
