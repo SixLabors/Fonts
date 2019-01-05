@@ -11,7 +11,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// A glyph from a particular font face.
     /// </summary>
-    internal partial class GlyphInstance
+    public partial class GlyphInstance
     {
         private readonly ushort sizeOfEm;
         private readonly Vector2[] controlPoints;
@@ -259,5 +259,32 @@ namespace SixLabors.Fonts
                 this.Count = 0;
             }
         }
+
+        public ushort SizeOfEm => this.sizeOfEm;
+
+        /// <summary>
+        /// The points defining the shape of this glyph
+        /// </summary>
+        public Vector2[] ControlPoints => this.controlPoints;
+
+        /// <summary>
+        /// Wether or not the corresponding control point is on a curve
+        /// </summary>
+        public bool[] OnCurves => this.onCurves;
+
+        /// <summary>
+        /// The end points
+        /// </summary>
+        public ushort[] EndPoints => this.endPoints;
+
+        /// <summary>
+        /// The distance from the bounding box start
+        /// </summary>
+        public short LeftSideBearing => this.leftSideBearing;
+
+        /// <summary>
+        /// The scale factor that is applied to the glyph
+        /// </summary>
+        public float ScaleFactor => this.scaleFactor;
     }
 }

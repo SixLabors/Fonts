@@ -64,5 +64,18 @@ namespace SixLabors.Fonts.Tests
             Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
             return new Font(d, 1);
         }
+
+        [Fact]
+        public void LoadGlyph()
+        {
+            Font font = new FontCollection().Install(TestFonts.SimpleFontFileData()).CreateFont(12);
+
+            // Get letter A
+            Glyph g = font.GetGlyph(41);
+            var instance = g.GlyphInstance;
+
+            Assert.Equal(20, instance.ControlPoints.Length);
+            Assert.Equal(20, instance.OnCurves.Length);
+        }
     }
 }
