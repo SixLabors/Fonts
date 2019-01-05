@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// provide metadata about a font.
     /// </summary>
-    internal class FontInstance : IFontInstance
+    public class FontInstance : IFontInstance
     {
         private readonly CMapTable cmap;
         private readonly GlyphTable glyphs;

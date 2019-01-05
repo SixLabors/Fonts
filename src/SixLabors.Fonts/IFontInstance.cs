@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace SixLabors.Fonts
 {
-    internal interface IFontInstance
+    public interface IFontInstance
     {
         FontDescription Description { get; }
 
