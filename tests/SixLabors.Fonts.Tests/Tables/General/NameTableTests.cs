@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-
+using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.WellKnownIds;
 
@@ -35,6 +35,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
             Assert.Equal("other1", table.GetNameById(90));
             Assert.Equal("other2", table.GetNameById(91));
         }
+
         [Fact]
         public void LoadFormat1()
         {
@@ -64,6 +65,20 @@ namespace SixLabors.Fonts.Tests.Tables.General
             Assert.Equal("copyright", table.GetNameById(NameIds.CopyrightNotice));
             Assert.Equal("other1", table.GetNameById(90));
             Assert.Equal("other2", table.GetNameById(91));
+        }
+
+        [Fact]
+        public void ShouldThrowExceptionWhenTableCouldNotBeFound()
+        {
+            var writer = new BinaryWriter();
+            writer.WriteTrueTypeFileHeader();
+
+            using (var stream = writer.GetStream())
+            {
+                var exception = Assert.Throws<InvalidFontTableException>(() => NameTable.Load(new FontReader(stream)));
+
+                Assert.Equal("name", exception.Table);
+            }
         }
     }
 }

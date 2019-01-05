@@ -49,8 +49,13 @@ namespace SixLabors.Fonts.Tables.General
 
         public static HorizontalHeadTable Load(FontReader reader)
         {
-            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
+                if (binaryReader == null)
+                {
+                    return null;
+                }
+
                 return Load(binaryReader);
             }
         }
