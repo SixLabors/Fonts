@@ -39,7 +39,7 @@ namespace SixLabors.Fonts.Tables.General
         public static HorizontalMetricsTable Load(FontReader reader)
         {
             // you should load all dependent tables prior to manipulating the reader
-            HoizontalHeadTable headTable = reader.GetTable<HoizontalHeadTable>();
+            HorizontalHeadTable headTable = reader.GetTable<HorizontalHeadTable>();
             MaximumProfileTable profileTable = reader.GetTable<MaximumProfileTable>();
 
             // move to start of table

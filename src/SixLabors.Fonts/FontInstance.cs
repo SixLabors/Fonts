@@ -161,7 +161,7 @@ namespace SixLabors.Fonts
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // recomended order
             HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
-            reader.GetTable<HoizontalHeadTable>(); // hhea
+            reader.GetTable<HorizontalHeadTable>(); // hhea
             reader.GetTable<MaximumProfileTable>(); // maxp
             OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
             HorizontalMetricsTable horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx

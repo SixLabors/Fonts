@@ -321,7 +321,7 @@ namespace SixLabors.Fonts.Tests
             return 0;
         }
 
-        public static void WriteHoizontalHeadTable(this BinaryWriter writer, HoizontalHeadTable table)
+        public static void WriteHorizontalHeadTable(this BinaryWriter writer, HorizontalHeadTable table)
         {
             // Type      | Name                 | Description
             // ----------|----------------------|----------------------------------------------------------------------------------------------------
