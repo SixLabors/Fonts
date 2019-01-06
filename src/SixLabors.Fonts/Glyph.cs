@@ -20,7 +20,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The glyph instance.
         /// </value>
-        public GlyphInstance GlyphInstance => this.instance;
+        public GlyphInstance Instance => this.instance;
 
         internal Glyph(GlyphInstance instance, float pointSize)
         {

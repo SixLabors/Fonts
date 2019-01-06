@@ -72,7 +72,7 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter A
             Glyph g = font.GetGlyph(41);
-            var instance = g.GlyphInstance;
+            var instance = g.Instance;
 
             Assert.Equal(20, instance.ControlPoints.Length);
             Assert.Equal(20, instance.OnCurves.Length);
