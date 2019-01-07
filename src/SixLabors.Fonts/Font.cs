@@ -142,7 +142,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The font instance.
         /// </value>
-        public IFontInstance FontInstance => this.instance.Value;
+        public IFontInstance Instance => this.instance.Value;
 
         /// <summary>
         /// Gets the glyph.

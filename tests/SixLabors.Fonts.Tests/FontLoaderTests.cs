@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = new FontCollection().Install(TestFonts.CarterOneFileData()).CreateFont(12);
 
-            GlyphInstance g = font.FontInstance.GetGlyph('\0');
+            GlyphInstance g = font.Instance.GetGlyph('\0');
         }
 
         [Fact]

@@ -150,7 +150,7 @@ namespace SixLabors.Fonts
                 Start = 0,
                 End = length - 1,
                 PointSize = this.Font.Size,
-                Font = this.Font.FontInstance,
+                Font = this.Font.Instance,
                 TabWidth = this.TabWidth,
                 ApplyKerning = this.ApplyKerning
             };

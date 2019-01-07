@@ -79,7 +79,7 @@ namespace SixLabors.Fonts.Tests
             };
 
             IReadOnlyList<GlyphLayout> glyphsToRender = new TextLayout().GenerateLayout(text, span);
-            IFontInstance fontInst = span.Font.FontInstance;
+            IFontInstance fontInst = span.Font.Instance;
             float lineHeight = (fontInst.LineHeight * span.Font.Size) / (fontInst.EmSize * 72);
             lineHeight *= scaleFactor;
             RectangleF bound = TextMeasurer.GetBounds(glyphsToRender, new Vector2(span.DpiX, span.DpiY));

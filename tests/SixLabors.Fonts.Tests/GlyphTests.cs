@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void RenderToPointAndSingleDPI()
         {
-            var glyph = new Glyph(new GlyphInstance((FontInstance)CreateFont("A").FontInstance, new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1), 0, 0, 1, 0), 10);
+            var glyph = new Glyph(new GlyphInstance((FontInstance)CreateFont("A").Instance, new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1), 0, 0, 1, 0), 10);
 
             var locationInFontSpace = new PointF(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
             glyph.RenderTo(renderer, locationInFontSpace, 72, 0);
