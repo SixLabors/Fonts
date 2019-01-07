@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-
+using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.WellKnownIds;
@@ -25,6 +25,20 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             Format0SubTable[] format0Tables = table.Tables.OfType<Format0SubTable>().ToArray();
             Assert.Single(format0Tables);
+        }
+
+        [Fact]
+        public void ShouldThrowExceptionWhenTableCouldNotBeFound()
+        {
+            var writer = new BinaryWriter();
+            writer.WriteTrueTypeFileHeader();
+
+            using (var stream = writer.GetStream())
+            {
+                var exception = Assert.Throws<InvalidFontTableException>(() => CMapTable.Load(new FontReader(stream)));
+
+                Assert.Equal("cmap", exception.Table);
+            }
         }
     }
 }

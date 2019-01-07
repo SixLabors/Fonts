@@ -25,22 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Fonts\Carter_One\CarterOne.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Fonts\OpenSans-Regular.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Fonts\SixLaborsSampleAB.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Fonts\SixLaborsSampleAB.woff">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Fonts\Wendy_One\WendyOne-Regular.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Fonts\Issues\Issue96.fuzz">
+    <None Update="Fonts\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

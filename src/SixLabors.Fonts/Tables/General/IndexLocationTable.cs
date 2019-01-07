@@ -20,11 +20,21 @@ namespace SixLabors.Fonts.Tables.General
         public static IndexLocationTable Load(FontReader reader)
         {
             HeadTable head = reader.GetTable<HeadTable>();
+            if (head == null)
+            {
+                throw new InvalidFontTableException("Unable to find table", "head");
+            }
+
             MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>();
 
             // must not get a binary reader untill all depended data is retrieved in case they need to use the stream
-            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BinaryReader binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
+                if (binaryReader == null)
+                {
+                    return null;
+                }
+
                 return Load(binaryReader, maxp.GlyphCount, head.IndexLocationFormat);
             }
         }

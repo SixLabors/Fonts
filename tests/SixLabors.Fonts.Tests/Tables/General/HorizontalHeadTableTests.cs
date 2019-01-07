@@ -27,5 +27,17 @@ namespace SixLabors.Fonts.Tests.Tables.General
             Assert.Equal(10, tbl.CaretOffset);
             Assert.Equal(11, tbl.NumberOfHMetrics);
         }
+
+        [Fact]
+        public void ShouldReturnNullWhenTableCouldNotBeFound()
+        {
+            var writer = new BinaryWriter();
+            writer.WriteTrueTypeFileHeader();
+
+            using (var stream = writer.GetStream())
+            {
+                Assert.Null(HorizontalHeadTable.Load(new FontReader(stream)));
+            }
+        }
     }
 }
