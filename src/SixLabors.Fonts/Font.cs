@@ -142,14 +142,14 @@ namespace SixLabors.Fonts
         /// <value>
         /// The font instance.
         /// </value>
-        internal IFontInstance FontInstance => this.instance.Value;
+        public IFontInstance Instance => this.instance.Value;
 
         /// <summary>
         /// Gets the glyph.
         /// </summary>
         /// <param name="codePoint">The code point of the character.</param>
         /// <returns>Returns the glyph</returns>
-        internal Glyph GetGlyph(int codePoint)
+        public Glyph GetGlyph(int codePoint)
         {
             return new Glyph(this.instance.Value.GetGlyph(codePoint), this.Size);
         }

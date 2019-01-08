@@ -9,10 +9,18 @@ namespace SixLabors.Fonts
     /// <summary>
     /// A glyph from a particular font face.
     /// </summary>
-    internal readonly struct Glyph
+    public readonly struct Glyph
     {
         private readonly GlyphInstance instance;
         private readonly float pointSize;
+
+        /// <summary>
+        /// Gets the glyph instance.
+        /// </summary>
+        /// <value>
+        /// The glyph instance.
+        /// </value>
+        public GlyphInstance Instance => this.instance;
 
         internal Glyph(GlyphInstance instance, float pointSize)
         {
