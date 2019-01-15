@@ -26,7 +26,7 @@ SixLabors.Fonts
 
 At present the code is pre-release we have initial pre-releases availible on [nuget](https://www.nuget.org/packages/SixLabors.Fonts/).
 
-We also have a [MyGet package repository](https://www.myget.org/gallery/SixLabors) - for bleeding-edge / development NuGet releases.
+We also have a [MyGet package repository](https://www.myget.org/gallery/sixlabors) - for bleeding-edge / development NuGet releases.
 
 ### Manual build
 
