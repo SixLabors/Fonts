@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>A cross-platform library for loading and laying out for processing and measuring; written in C#</Description>
+    <Description>A cross-platform library for loading and laying out fonts for processing and measuring; written in C#</Description>
     <AssemblyTitle>SixLabors.Fonts</AssemblyTitle>
     <VersionPrefix Condition="$(packageversion) != ''">$(packageversion)</VersionPrefix>
     <VersionPrefix Condition="$(packageversion) == ''">0.1.0-alpha1</VersionPrefix>
