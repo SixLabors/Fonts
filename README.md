@@ -45,7 +45,7 @@ git clone https://github.com/SixLabors/Fonts.git
 - Reading font description (name, family, subname etc plus other string metadata)
 - Loading True type fonts
 - Loading WOFF fonts
-- Load all compatable fornts from local machine store (windows only at the moment)
+- Load all compatible fonts from local machine store (windows only at the moment)
 
 #### Limitations
 we currently only support otf and woff fonts with True Type outlines.
