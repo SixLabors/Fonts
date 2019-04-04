@@ -114,7 +114,7 @@ namespace SixLabors.Fonts.Tables.General
         {
             foreach (NameRecord name in this.names)
             {
-                if (name.Platform == PlatformIDs.Windows && name.LanguageID == 0409)
+                if (name.Platform == PlatformIDs.Windows && name.LanguageID == 0x0409)
                 {
                     if (name.NameID == nameId)
                     {
