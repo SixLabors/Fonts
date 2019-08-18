@@ -17,6 +17,8 @@ namespace SixLabors.Fonts
         /// <returns>Returns instance of the <see cref="Font"/> from the current collection.</returns>
         public static Font CreateFont(this FontFamily fontFamily, float size, FontStyle style)
         {
+            Guard.NotNull(fontFamily, nameof(fontFamily));
+
             return new Font(fontFamily, size, style);
         }
 
@@ -28,6 +30,8 @@ namespace SixLabors.Fonts
         /// <returns>Returns instance of the <see cref="Font"/> from the current collection.</returns>
         public static Font CreateFont(this FontFamily fontFamily, float size)
         {
+            Guard.NotNull(fontFamily, nameof(fontFamily));
+
             return new Font(fontFamily, size);
         }
     }
