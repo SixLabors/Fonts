@@ -60,6 +60,8 @@ namespace SixLabors.Fonts
         /// <returns>a <see cref="FontDescription"/>.</returns>
         public static FontDescription LoadDescription(string path)
         {
+            Guard.NotNullOrWhiteSpace(path, nameof(path));
+
             using (FileStream fs = File.OpenRead(path))
             {
                 var reader = new FontReader(fs);
@@ -74,6 +76,8 @@ namespace SixLabors.Fonts
         /// <returns>a <see cref="FontDescription"/>.</returns>
         public static FontDescription LoadDescription(Stream stream)
         {
+            Guard.NotNull(stream, nameof(stream));
+
             // only read the name table
             var reader = new FontReader(stream);
             return LoadDescription(reader);
@@ -88,6 +92,8 @@ namespace SixLabors.Fonts
         /// </returns>
         internal static FontDescription LoadDescription(FontReader reader)
         {
+            DebugGuard.NotNull(reader, nameof(reader));
+
             // NOTE: These fields are read in their optimized order
             // https://docs.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
             HeadTable head = reader.GetTable<HeadTable>();
