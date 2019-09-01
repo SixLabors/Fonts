@@ -30,25 +30,34 @@
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
+  <!-- TODO: Include .NETSTANDARD2.1 when released-->
+  <PropertyGroup Condition=" $(TargetFramework.StartsWith('netcoreapp2')) ">
+    <DefineConstants>$(DefineConstants);SUPPORTS_MATHF</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" $(TargetFramework.StartsWith('netcoreapp2.1')) ">
+    <DefineConstants>$(DefineConstants);SUPPORTS_HASHCODE</DefineConstants>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Compile Include="..\Shared\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\standards\**\*.cs" />
+    <Compile Include="..\..\shared-infrastructure\**\*.cs" />
   </ItemGroup>
 
   <PropertyGroup>
-    <CodeAnalysisRuleSet>..\..\standards\SixLabors.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>..\..\shared-infrastructure\SixLabors.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="..\..\standards\stylecop.json" />
+    <AdditionalFiles Include="..\..\shared-infrastructure\stylecop.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.1-beta.61" PrivateAssets="All" />
-    <PackageReference Include="SixLabors.Core" Version="1.0.0-beta0007" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="All" />
+    <PackageReference Include="SixLabors.Core" Version="1.0.0-dev000141" />
   </ItemGroup>
 
 </Project>
