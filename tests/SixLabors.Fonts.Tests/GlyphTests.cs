@@ -1,8 +1,7 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Numerics;
 using Moq;
 using SixLabors.Fonts.Tests.Fakes;
-using SixLabors.Primitives;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -16,10 +15,10 @@ namespace SixLabors.Fonts.Tests
         {
             var glyph = new Glyph(new GlyphInstance((FontInstance)CreateFont("A").Instance, new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1), 0, 0, 1, 0), 10);
 
-            var locationInFontSpace = new PointF(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
+            var locationInFontSpace = new Vector2(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
             glyph.RenderTo(renderer, locationInFontSpace, 72, 0);
 
-            Assert.Equal(new RectangleF(99, 89, 0, 0), this.renderer.GlyphRects.Single());
+            Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
 
         [Fact]
@@ -38,7 +37,7 @@ namespace SixLabors.Fonts.Tests
         public void BeginGLyph_returnsfalse_skiprenderingfigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
-            renderer.Setup(x => x.BeginGlyph(It.IsAny<RectangleF>(), It.IsAny<GlyphRendererParameters>())).Returns(false);
+            renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(false);
             Font fakeFont = CreateFont("A");
             var textRenderer = new TextRenderer(renderer.Object);
 
@@ -50,7 +49,7 @@ namespace SixLabors.Fonts.Tests
         public void BeginGLyph_returnstrue_rendersfigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
-            renderer.Setup(x => x.BeginGlyph(It.IsAny<RectangleF>(), It.IsAny<GlyphRendererParameters>())).Returns(true);
+            renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(true);
             Font fakeFont = CreateFont("A");
             var textRenderer = new TextRenderer(renderer.Object);
 

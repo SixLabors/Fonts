@@ -1,8 +1,7 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Numerics;
-using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
@@ -23,9 +22,9 @@ namespace SixLabors.Fonts
 
         public Vector2 Max { get; }
 
-        public SizeF Size()
+        public Vector2 Size()
         {
-            return new SizeF(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
+            return new Vector2(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
         }
 
         internal static Bounds Load(BinaryReader reader)

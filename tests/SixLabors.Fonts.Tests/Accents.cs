@@ -1,4 +1,3 @@
-﻿using SixLabors.Primitives;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -19,7 +18,7 @@ namespace SixLabors.Fonts.Tests
             FontFamily arial = SystemFonts.Find("Arial");
             Font font = new Font(arial, 1f, FontStyle.Regular);
 
-            SizeF size = TextMeasurer.Measure(c.ToString(), new RendererOptions(font, 72));
+            var size = TextMeasurer.Measure(c.ToString(), new RendererOptions(font, 72));
         }
 
         [Theory]
@@ -36,7 +35,7 @@ namespace SixLabors.Fonts.Tests
             FontFamily arial = SystemFonts.Find("Arial");
             Font font = new Font(arial, 1f, FontStyle.Regular);
 
-            SizeF size = TextMeasurer.Measure($"abc{c}def", new RendererOptions(font, 72));
+            var size = TextMeasurer.Measure($"abc{c}def", new RendererOptions(font, 72));
         }
     }
 }

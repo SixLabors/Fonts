@@ -1,8 +1,7 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
@@ -17,7 +16,7 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">Unicode codepoint of the character.</param>
         /// <param name="bounds">The bounds.</param>
         /// <param name="isControlCharacter">Whether the character is a control character.</param>
-        public GlyphMetric(int codePoint, RectangleF bounds, bool isControlCharacter)
+        public GlyphMetric(int codePoint, FontRectangle bounds, bool isControlCharacter)
         {
             this.Codepoint = codePoint;
             this.Character = char.ConvertFromUtf32(codePoint);
@@ -38,7 +37,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the character bounds.
         /// </summary>
-        public RectangleF Bounds { get; }
+        public FontRectangle Bounds { get; }
 
         /// <summary>
         /// Gets a value indicating whether the character is a control character.

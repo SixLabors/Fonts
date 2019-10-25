@@ -1,4 +1,4 @@
-﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp;
 using System.IO;
 
 namespace SixLabors.Fonts.DrawWithImageSharp
@@ -97,7 +97,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 img.Mutate(x=>x.Fill(Rgba32.White));
 
-                IPathCollection shapes = SixLabors.Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Primitives.PointF(50f, 4f), new RendererOptions(font, 72));
+                IPathCollection shapes = SixLabors.Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new RendererOptions(font, 72));
                 img.Mutate(x => x.Fill(Rgba32.Black, shapes));
 
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
@@ -113,7 +113,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         {
             GlyphBuilder builder = new GlyphBuilder();
             TextRenderer renderer = new TextRenderer(builder);
-            Primitives.SizeF size = TextMeasurer.Measure(text, font);
+            var size = TextMeasurer.Measure(text, font);
             renderer.RenderText(text, font);
 
             builder.Paths

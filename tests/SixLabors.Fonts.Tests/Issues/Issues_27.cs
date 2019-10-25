@@ -1,4 +1,4 @@
-﻿using Xunit;
+using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
 {
@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            Primitives.SizeF size = TextMeasurer.MeasureBounds("          ", new RendererOptions(new Font(font, 30), 72)).Size;
+            var size = TextMeasurer.MeasureBounds("          ", new RendererOptions(new Font(font, 30), 72));
 
             Assert.Equal(60, size.Width, 1);
             Assert.Equal(31.6, size.Height, 1);

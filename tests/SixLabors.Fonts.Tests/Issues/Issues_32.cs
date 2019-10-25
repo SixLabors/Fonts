@@ -1,5 +1,4 @@
-﻿using SixLabors.Fonts.Tests.Fakes;
-using SixLabors.Primitives;
+using SixLabors.Fonts.Tests.Fakes;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
@@ -11,10 +10,10 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             string text = "Hello\tworld";
             Font font = CreateFont(text);
-            SizeF size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, (72 * font.EmSize))
+            var size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, 72 * font.EmSize)
             {
                 TabWidth = 0
-            }).Size;
+            });
 
             // tab width of 0 should make tabs not render at all
             Assert.Equal(10, size.Height, 4);
