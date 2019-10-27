@@ -40,26 +40,23 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="FontRectangle"/> struct.
         /// </summary>
         /// <param name="point">
-        /// The <see cref="Point"/> which specifies the rectangles point in a two-dimensional plane.
+        /// The <see cref="Vector2"/> which specifies the rectangles point in a two-dimensional plane.
         /// </param>
         /// <param name="size">
-        /// The <see cref="Size"/> which specifies the rectangles height and width.
+        /// The <see cref="Vector2"/> which specifies the rectangles height and width.
         /// </param>
-        internal FontRectangle(Vector2 point, Vector2 size)
+        private FontRectangle(Vector2 point, Vector2 size)
+            : this(point.X, point.Y, size.X, size.Y)
         {
-            this.X = point.X;
-            this.Y = point.Y;
-            this.Width = size.X;
-            this.Height = size.Y;
         }
 
         /// <summary>
-        /// Gets or sets the x-coordinate of this <see cref="FontRectangle"/>.
+        /// Gets the x-coordinate of this <see cref="FontRectangle"/>.
         /// </summary>
         public float X { get; }
 
         /// <summary>
-        /// Gets or sets the y-coordinate of this <see cref="FontRectangle"/>.
+        /// Gets the y-coordinate of this <see cref="FontRectangle"/>.
         /// </summary>
         public float Y { get; }
 
@@ -74,7 +71,7 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets or sets the coordinates of the upper-left corner of the rectangular region represented by this <see cref="FontRectangle"/>.
+        /// Gets the coordinates of the upper-left corner of the rectangular region represented by this <see cref="FontRectangle"/>.
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public readonly Vector2 Location
@@ -165,7 +162,7 @@ namespace SixLabors.Fonts
         /// Returns the center point of the given <see cref="FontRectangle"/>.
         /// </summary>
         /// <param name="rectangle">The rectangle.</param>
-        /// <returns>The <see cref="Point"/>.</returns>
+        /// <returns>The <see cref="Vector2"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 Center(FontRectangle rectangle) => new Vector2(rectangle.Left + (rectangle.Width / 2), rectangle.Top + (rectangle.Height / 2));
 
@@ -217,7 +214,7 @@ namespace SixLabors.Fonts
         {
             var bottomRight = Vector2.Transform(new Vector2(rectangle.Right, rectangle.Bottom), matrix);
             var topLeft = Vector2.Transform(rectangle.Location, matrix);
-            var size = bottomRight - topLeft;
+            Vector2 size = bottomRight - topLeft;
 
             return new FontRectangle(topLeft, size);
         }
@@ -258,6 +255,7 @@ namespace SixLabors.Fonts
         /// Creates a FontRectangle that represents the intersection between this FontRectangle and the <paramref name="rectangle"/>.
         /// </summary>
         /// <param name="rectangle">The rectangle.</param>
+        /// <returns>New <see cref="FontRectangle"/> representing the intersections between the two rectrangles.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Intersect(FontRectangle rectangle)
         {
