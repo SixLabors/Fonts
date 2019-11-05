@@ -1,11 +1,10 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
@@ -22,7 +21,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static SizeF Measure(string text, RendererOptions options)
+        public static FontRectangle Measure(string text, RendererOptions options)
             => TextMeasurerInt.Default.Measure(text.AsSpan(), options);
 
         /// <summary>
@@ -31,7 +30,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static SizeF Measure(ReadOnlySpan<char> text, RendererOptions options)
+        public static FontRectangle Measure(ReadOnlySpan<char> text, RendererOptions options)
             => TextMeasurerInt.Default.Measure(text, options);
 
         /// <summary>
@@ -40,7 +39,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static RectangleF MeasureBounds(string text, RendererOptions options)
+        public static FontRectangle MeasureBounds(string text, RendererOptions options)
             => TextMeasurerInt.Default.MeasureBounds(text.AsSpan(), options);
 
         /// <summary>
@@ -49,7 +48,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static RectangleF MeasureBounds(ReadOnlySpan<char> text, RendererOptions options)
+        public static FontRectangle MeasureBounds(ReadOnlySpan<char> text, RendererOptions options)
             => TextMeasurerInt.Default.MeasureBounds(text, options);
 
         /// <summary>
@@ -62,11 +61,11 @@ namespace SixLabors.Fonts
         public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphMetric[] characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
 
-        internal static SizeF GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
+        internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
         {
             if (glyphLayouts.Count == 0)
             {
-                return Size.Empty;
+                return FontRectangle.Empty;
             }
 
             float left = glyphLayouts.Min(x => x.Location.X);
@@ -80,14 +79,14 @@ namespace SixLabors.Fonts
             var bottomRight = new Vector2(right, bottom) * dpi;
 
             Vector2 size = bottomRight - topLeft;
-            return new RectangleF(topLeft.X, topLeft.Y, size.X, size.Y).Size;
+            return new FontRectangle(topLeft.X, topLeft.Y, size.X, size.Y);
         }
 
-        internal static RectangleF GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
+        internal static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
         {
             if (glyphLayouts.Count == 0)
             {
-                return RectangleF.Empty;
+                return FontRectangle.Empty;
             }
 
             bool hasSize = false;
@@ -103,7 +102,7 @@ namespace SixLabors.Fonts
                 if (!c.IsControlCharacter)
                 {
                     hasSize = true;
-                    RectangleF box = c.BoundingBox(dpi);
+                    FontRectangle box = c.BoundingBox(dpi);
                     if (left > box.Left)
                     {
                         left = box.Left;
@@ -128,13 +127,13 @@ namespace SixLabors.Fonts
 
             if (!hasSize)
             {
-                return RectangleF.Empty;
+                return FontRectangle.Empty;
             }
 
             float width = right - left;
             float height = bottom - top;
 
-            return new RectangleF(left, top, width, height);
+            return new FontRectangle(left, top, width, height);
         }
 
         internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi, out GlyphMetric[] characterBounds)
@@ -190,7 +189,7 @@ namespace SixLabors.Fonts
             /// <param name="text">The text.</param>
             /// <param name="options">The style.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal RectangleF MeasureBounds(ReadOnlySpan<char> text, RendererOptions options)
+            internal FontRectangle MeasureBounds(ReadOnlySpan<char> text, RendererOptions options)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
@@ -217,7 +216,7 @@ namespace SixLabors.Fonts
             /// <param name="text">The text.</param>
             /// <param name="options">The style.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal SizeF Measure(ReadOnlySpan<char> text, RendererOptions options)
+            internal FontRectangle Measure(ReadOnlySpan<char> text, RendererOptions options)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 

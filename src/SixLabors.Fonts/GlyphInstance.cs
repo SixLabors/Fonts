@@ -1,10 +1,9 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
@@ -78,14 +77,14 @@ namespace SixLabors.Fonts
 
         private static readonly Vector2 Scale = new Vector2(1, -1);
 
-        internal RectangleF BoundingBox(Vector2 origin, Vector2 scaledPointSize)
+        internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
             Vector2 size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
             Vector2 loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * Scale;
 
             loc = origin + loc;
 
-            return new RectangleF(loc.X, loc.Y, size.X, size.Y);
+            return new FontRectangle(loc.X, loc.Y, size.X, size.Y);
         }
 
         /// <summary>
@@ -105,7 +104,7 @@ namespace SixLabors.Fonts
 
             Vector2 scaledPoint = dpi * pointSize;
 
-            RectangleF box = this.BoundingBox(location, scaledPoint);
+            FontRectangle box = this.BoundingBox(location, scaledPoint);
 
             var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
 

@@ -1,11 +1,10 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
-using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
@@ -379,13 +378,13 @@ namespace SixLabors.Fonts
 
         public bool IsControlCharacter { get; }
 
-        internal RectangleF BoundingBox(Vector2 dpi)
+        internal FontRectangle BoundingBox(Vector2 dpi)
         {
-            RectangleF box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
+            FontRectangle box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
 
             if (this.IsWhiteSpace)
             {
-                box.Width = this.Width * dpi.X;
+                box = new FontRectangle(box.X, box.Y, this.Width * dpi.X, box.Height);
             }
 
             return box;

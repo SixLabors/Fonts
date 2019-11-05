@@ -1,5 +1,4 @@
-﻿using SixLabors.Fonts.Tests.Fakes;
-using SixLabors.Primitives;
+using SixLabors.Fonts.Tests.Fakes;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
@@ -17,9 +16,9 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             Font font = CreateFont("\t x");
 
-            SizeF tabWidth = TextMeasurer.MeasureBounds("\t", new RendererOptions(font, (72 * font.EmSize))).Size;
+            var tabWidth = TextMeasurer.MeasureBounds("\t", new RendererOptions(font, (72 * font.EmSize)));
             string tabString = "".PadRight(tabCount, '\t');
-            SizeF tabCountWidth = TextMeasurer.MeasureBounds(tabString, new RendererOptions(font, (72 * font.EmSize))).Size;
+            var tabCountWidth = TextMeasurer.MeasureBounds(tabString, new RendererOptions(font, (72 * font.EmSize)));
 
             Assert.Equal(tabWidth.Width * tabCount, tabCountWidth.Width, 2);
         }
@@ -34,10 +33,10 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             Font font = CreateFont("\t x");
 
-            SizeF xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize))).Size;
-            SizeF tabWidth = TextMeasurer.MeasureBounds("\tx", new RendererOptions(font, (72 * font.EmSize))).Size;
+            var xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, (72 * font.EmSize)));
+            var tabWidth = TextMeasurer.MeasureBounds("\tx", new RendererOptions(font, (72 * font.EmSize)));
             string tabString = "x".PadLeft(tabCount + 1, '\t');
-            SizeF tabCountWidth = TextMeasurer.MeasureBounds(tabString, new RendererOptions(font, (72 * font.EmSize))).Size;
+            var tabCountWidth = TextMeasurer.MeasureBounds(tabString, new RendererOptions(font, (72 * font.EmSize)));
 
             float singleTabWidth = tabWidth.Width - xWidth.Width;
             float finalTabWidth = tabCountWidth.Width - xWidth.Width;

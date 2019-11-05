@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Numerics;
+using SixLabors.Fonts;
 using SixLabors.Primitives;
 
 namespace SixLabors.Shapes.Temp
@@ -26,16 +27,16 @@ namespace SixLabors.Shapes.Temp
             this.path = path;
         }
 
-        protected override void BeginText(RectangleF rect)
+        protected override void BeginText(FontRectangle rect)
         {
             this.offsetY = rect.Height;
         }
 
-        protected override void BeginGlyph(RectangleF rect)
+        protected override void BeginGlyph(FontRectangle rect)
         {
             SegmentInfo point = this.path.PointAlongPath(rect.X);
 
-            PointF targetPoint = point.Point + new PointF(0, rect.Y - this.offsetY);
+            Vector2 targetPoint = (Vector2)point.Point + new Vector2(0, rect.Y - this.offsetY);
 
             // due to how matrix combining works you have to combine thins in the revers order of operation
             // this one rotates the glype then moves it.

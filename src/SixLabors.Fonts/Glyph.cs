@@ -1,8 +1,7 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Numerics;
-using SixLabors.Primitives;
 
 namespace SixLabors.Fonts
 {
@@ -28,7 +27,7 @@ namespace SixLabors.Fonts
             this.pointSize = pointSize;
         }
 
-        public RectangleF BoundingBox(PointF location, Vector2 dpi)
+        public FontRectangle BoundingBox(Vector2 location, Vector2 dpi)
         {
             return this.instance.BoundingBox(location, this.pointSize * dpi);
         }
@@ -40,7 +39,7 @@ namespace SixLabors.Fonts
         /// <param name="location">The location.</param>
         /// <param name="dpi">The dpi.</param>
         /// <param name="lineHeight">The line height.</param>
-        internal void RenderTo(IGlyphRenderer surface, PointF location, float dpi, float lineHeight)
+        internal void RenderTo(IGlyphRenderer surface, Vector2 location, float dpi, float lineHeight)
         {
             this.RenderTo(surface, location, dpi, dpi, lineHeight);
         }
@@ -54,7 +53,7 @@ namespace SixLabors.Fonts
         /// <param name="dpiY">The dpi along the Y axis.</param>
         /// <param name="lineHeight">The line height.</param>
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
-        internal void RenderTo(IGlyphRenderer surface, PointF location, float dpiX, float dpiY, float lineHeight)
+        internal void RenderTo(IGlyphRenderer surface, Vector2 location, float dpiX, float dpiY, float lineHeight)
         {
             this.instance.RenderTo(surface, this.pointSize, location, new Vector2(dpiX, dpiY), lineHeight);
         }

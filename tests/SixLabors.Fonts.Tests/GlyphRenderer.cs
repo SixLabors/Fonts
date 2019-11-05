@@ -1,22 +1,22 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Numerics;
 
 namespace SixLabors.Fonts.Tests
 {
-    using SixLabors.Primitives;
 
     public class GlyphRenderer : IGlyphRenderer
     {
         public int FiguresCount = 0;
 
-        public List<PointF> ControlPoints { get; } = new List<PointF>();
+        public List<Vector2> ControlPoints { get; } = new List<Vector2>();
 
-        public List<PointF> ControlPointsOnCurve { get; } = new List<PointF>();
+        public List<Vector2> ControlPointsOnCurve { get; } = new List<Vector2>();
 
-        public List<RectangleF> GlyphRects { get; } = new List<RectangleF>();
+        public List<FontRectangle> GlyphRects { get; } = new List<FontRectangle>();
 
         public List<GlyphRendererParameters> GlyphKeys { get; } = new List<GlyphRendererParameters>();
 
-        public bool BeginGlyph(RectangleF rect, GlyphRendererParameters cacheKey)
+        public bool BeginGlyph(FontRectangle rect, GlyphRendererParameters cacheKey)
         {
             this.GlyphRects.Add(rect);
             this.GlyphKeys.Add(cacheKey);
@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tests
             this.FiguresCount++;
         }
 
-        public void CubicBezierTo(PointF secondControlPoint, PointF thirdControlPoint, PointF point)
+        public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
         {
             this.ControlPoints.Add(secondControlPoint);
             this.ControlPoints.Add(thirdControlPoint);
@@ -46,19 +46,19 @@ namespace SixLabors.Fonts.Tests
 
         }
 
-        public void LineTo(PointF point)
+        public void LineTo(Vector2 point)
         {
             this.ControlPoints.Add(point);
             this.ControlPointsOnCurve.Add(point);
         }
 
-        public void MoveTo(PointF point)
+        public void MoveTo(Vector2 point)
         {
             this.ControlPoints.Add(point);
             this.ControlPointsOnCurve.Add(point);
         }
 
-        public void QuadraticBezierTo(PointF secondControlPoint, PointF point)
+        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
         {
             this.ControlPoints.Add(secondControlPoint);
             this.ControlPoints.Add(point);
@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tests
         {
         }
 
-        public void BeginText(RectangleF rect)
+        public void BeginText(FontRectangle rect)
         {
         }
     }

@@ -1,7 +1,7 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
-using SixLabors.Primitives;
+using System.Numerics;
 
 namespace SixLabors.Fonts
 {
@@ -38,7 +38,7 @@ namespace SixLabors.Fonts
         /// <param name="dpiX">The X dpi.</param>
         /// <param name="dpiY">The Y dpi.</param>
         public RendererOptions(Font font, float dpiX, float dpiY)
-            : this(font, dpiX, dpiY, PointF.Empty)
+            : this(font, dpiX, dpiY, Vector2.Zero)
         {
         }
 
@@ -47,7 +47,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="font">The font.</param>
         /// <param name="origin">The origin location.</param>
-        public RendererOptions(Font font, PointF origin)
+        public RendererOptions(Font font, Vector2 origin)
             : this(font, 72, 72, origin)
         {
         }
@@ -58,7 +58,7 @@ namespace SixLabors.Fonts
         /// <param name="font">The font.</param>
         /// <param name="dpi">The dpi.</param>
         /// <param name="origin">The origin location.</param>
-        public RendererOptions(Font font, float dpi, PointF origin)
+        public RendererOptions(Font font, float dpi, Vector2 origin)
             : this(font, dpi, dpi, origin)
         {
         }
@@ -70,7 +70,7 @@ namespace SixLabors.Fonts
         /// <param name="dpiX">The X dpi.</param>
         /// <param name="dpiY">The Y dpi.</param>
         /// <param name="origin">The origin location.</param>
-        public RendererOptions(Font font, float dpiX, float dpiY, PointF origin)
+        public RendererOptions(Font font, float dpiX, float dpiY, Vector2 origin)
         {
             this.Origin = origin;
             this.Font = font;
@@ -133,7 +133,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the rendering origin.
         /// </summary>
-        public PointF Origin { get; set; }
+        public Vector2 Origin { get; set; }
 
         /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream
