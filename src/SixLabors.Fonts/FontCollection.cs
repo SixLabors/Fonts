@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Exceptions;
+using SixLabors.Fonts.Tables;
 
 namespace SixLabors.Fonts
 {
@@ -77,6 +78,42 @@ namespace SixLabors.Fonts
             fontDescription = instance.Description;
 
             return this.Install(instance);
+        }
+
+        /// <summary>
+        /// Installs a true type font collection (.ttc) from the specified font collection stream.
+        /// </summary>
+        /// <param name="fontCollectionPath">The font collection path (should be typically a .ttc file like simsun.ttc).</param>
+        /// <returns>The font descriptions of the installed fonts.</returns>
+        public IList<FontDescription> InstallTrueTypeFontCollection(string fontCollectionPath)
+        {
+            using (Stream stream = File.OpenRead(fontCollectionPath))
+            {
+                return this.InstallTrueTypeFontCollection(stream);
+            }
+        }
+
+        /// <summary>
+        /// Installs a true type font collection (.ttc) from the specified font collection stream.
+        /// </summary>
+        /// <param name="fontCollectionStream">The font stream.</param>
+        /// <returns>The font descriptions of the installed fonts.</returns>
+        public IList<FontDescription> InstallTrueTypeFontCollection(Stream fontCollectionStream)
+        {
+            long startPos = fontCollectionStream.Position;
+            var reader = new BinaryReader(fontCollectionStream, true);
+            var ttcHeader = TtcHeader.Read(reader);
+            var result = new List<FontDescription>((int)ttcHeader.NumFonts);
+            for (int i = 0; i < ttcHeader.NumFonts; ++i)
+            {
+                fontCollectionStream.Position = startPos + ttcHeader.OffsetTable[i];
+                var instance = FontInstance.LoadFont(fontCollectionStream);
+                this.Install(instance);
+                FontDescription fontDescription = instance.Description;
+                result.Add(fontDescription);
+            }
+
+            return result;
         }
 
         /// <summary>

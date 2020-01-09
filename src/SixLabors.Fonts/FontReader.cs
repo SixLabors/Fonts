@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -65,7 +65,7 @@ namespace SixLabors.Fonts
             }
             else
             {
-                // this is a standard *.otf file
+                // this is a standard *.otf file (this is named the Offset Table).
                 this.OutlineType = (OutlineTypes)version;
                 tableCount = reader.ReadUInt16();
                 ushort searchRange = reader.ReadUInt16();
