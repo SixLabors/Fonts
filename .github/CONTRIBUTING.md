@@ -1,4 +1,4 @@
-# How to contribute to ImageSharp
+# How to contribute to SixLabors.Fonts
 
 #### **Did you find a bug?**
 
