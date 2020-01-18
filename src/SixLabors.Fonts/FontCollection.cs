@@ -74,7 +74,7 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(Stream fontStream, out FontDescription fontDescription)
         {
-            FontInstance instance = FontInstance.LoadFont(fontStream);
+            var instance = FontInstance.LoadFont(fontStream);
             fontDescription = instance.Description;
 
             return this.Install(instance);
@@ -85,35 +85,58 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontCollectionPath">The font collection path (should be typically a .ttc file like simsun.ttc).</param>
         /// <returns>The font descriptions of the installed fonts.</returns>
-        public IList<FontDescription> InstallTrueTypeFontCollection(string fontCollectionPath)
+        public IEnumerable<FontFamily> InstallCollection(string fontCollectionPath)
         {
-            using (Stream stream = File.OpenRead(fontCollectionPath))
+            return this.InstallCollection(fontCollectionPath, out _);
+        }
+
+        /// <summary>
+        /// Installs a true type font collection (.ttc) from the specified font collection stream.
+        /// </summary>
+        /// <param name="fontCollectionPath">The font collection path (should be typically a .ttc file like simsun.ttc).</param>
+        /// <param name="fontDescriptions">The descriptions of fonts installed from the collection.</param>
+        /// <returns>The font descriptions of the installed fonts.</returns>
+        public IEnumerable<FontFamily> InstallCollection(string fontCollectionPath, out IEnumerable<FontDescription> fontDescriptions)
+        {
+            FileFontInstance[] fonts = FileFontInstance.LoadFontCollection(fontCollectionPath);
+
+            var description = new FontDescription[fonts.Length];
+            var families = new HashSet<FontFamily>();
+            for (int i = 0; i < fonts.Length; i++)
             {
-                return this.InstallTrueTypeFontCollection(stream);
+                description[i] = fonts[i].Description;
+                FontFamily family = this.Install(fonts[i]);
+                families.Add(family);
             }
+
+            fontDescriptions = description;
+            return families;
         }
 
         /// <summary>
         /// Installs a true type font collection (.ttc) from the specified font collection stream.
         /// </summary>
         /// <param name="fontCollectionStream">The font stream.</param>
+        /// <param name="fontDescriptions">The descriptions of fonts installed from the collection.</param>
         /// <returns>The font descriptions of the installed fonts.</returns>
-        public IList<FontDescription> InstallTrueTypeFontCollection(Stream fontCollectionStream)
+        public IEnumerable<FontFamily> InstallCollection(Stream fontCollectionStream, out IEnumerable<FontDescription> fontDescriptions)
         {
             long startPos = fontCollectionStream.Position;
             var reader = new BinaryReader(fontCollectionStream, true);
             var ttcHeader = TtcHeader.Read(reader);
             var result = new List<FontDescription>((int)ttcHeader.NumFonts);
+            var installedFamilies = new HashSet<FontFamily>();
             for (int i = 0; i < ttcHeader.NumFonts; ++i)
             {
                 fontCollectionStream.Position = startPos + ttcHeader.OffsetTable[i];
                 var instance = FontInstance.LoadFont(fontCollectionStream);
-                this.Install(instance);
+                installedFamilies.Add(this.Install(instance));
                 FontDescription fontDescription = instance.Description;
                 result.Add(fontDescription);
             }
 
-            return result;
+            fontDescriptions = result;
+            return installedFamilies;
         }
 
         /// <summary>

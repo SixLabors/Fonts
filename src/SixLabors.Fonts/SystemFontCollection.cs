@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -41,13 +41,20 @@ namespace SixLabors.Fonts
             // we do this to provide a consistent experience with case sensitive file systems.
             IEnumerable<string> files = found
                                 .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
-                                .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase));
+                                .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase) || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase));
 
             foreach (string path in files)
             {
                 try
                 {
-                    this.collection.Install(new FileFontInstance(path));
+                    if (path.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase))
+                    {
+                        this.collection.InstallCollection(path);
+                    }
+                    else
+                    {
+                        this.collection.Install(path);
+                    }
                 }
                 catch
                 {

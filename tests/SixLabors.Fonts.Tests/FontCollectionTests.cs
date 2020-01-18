@@ -1,4 +1,4 @@
-﻿using Xunit;
+using Xunit;
 
 namespace SixLabors.Fonts.Tests
 {
@@ -14,6 +14,20 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("Carter One", description.FontFamily);
             Assert.Equal("Regular", description.FontSubFamilyName);
             Assert.Equal(FontStyle.Regular, description.Style);
+        }
+
+        [Fact]
+        public void InstallViaPathInstallFontFileInstances()
+        {
+            var sut = new FontCollection();
+            var family = sut.Install(TestFonts.CarterOneFile, out var descriptions);
+
+            var allInstances = sut.FindAll(family.Name);
+
+            Assert.All(allInstances, i =>
+            {
+                var font = Assert.IsType<FileFontInstance>(i);
+            });
         }
 
         [Fact]

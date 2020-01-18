@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,10 +16,14 @@ namespace SixLabors.Fonts.Tests
         public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");
         public static string SimpleFontFile => GetFullPath("SixLaborsSampleAB.ttf");
         public static string SimpleFontFileWoff => GetFullPath("SixLaborsSampleAB.woff");
+
+        public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
+
         public static Stream WendyOneFileData() => OpenStream(WendyOneFile);
         public static Stream CarterOneFileData() => OpenStream(CarterOneFile);
         public static Stream SimpleFontFileData() => OpenStream(SimpleFontFile);
         public static Stream SimpleFontFileWoffData() => OpenStream(SimpleFontFileWoff);
+        public static Stream SSimpleTrueTypeCollectionData() => OpenStream(SimpleTrueTypeCollection);
 
         public static class Issues
         {

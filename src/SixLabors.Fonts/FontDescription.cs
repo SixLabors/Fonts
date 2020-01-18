@@ -110,13 +110,13 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="path">The file path.</param>
         /// <returns>a <see cref="FontDescription"/>.</returns>
-        public static IList<FontDescription> LoadTrueTypeFontCollectionDescriptions(string path)
+        public static FontDescription[] LoadFontCollectionDescriptions(string path)
         {
             Guard.NotNullOrWhiteSpace(path, nameof(path));
 
             using (FileStream fs = File.OpenRead(path))
             {
-                return LoadTrueTypeFontCollectionDescriptions(fs);
+                return LoadFontCollectionDescriptions(fs);
             }
         }
 
@@ -125,18 +125,18 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="stream">The stream to read the font collection from.</param>
         /// <returns>a <see cref="FontDescription"/>.</returns>
-        public static IList<FontDescription> LoadTrueTypeFontCollectionDescriptions(Stream stream)
+        public static FontDescription[] LoadFontCollectionDescriptions(Stream stream)
         {
             long startPos = stream.Position;
             var reader = new BinaryReader(stream, true);
             var ttcHeader = TtcHeader.Read(reader);
 
-            IList<FontDescription> result = new List<FontDescription>((int)ttcHeader.NumFonts);
+            FontDescription[] result = new FontDescription[(int)ttcHeader.NumFonts];
             for (int i = 0; i < ttcHeader.NumFonts; ++i)
             {
                 stream.Position = startPos + ttcHeader.OffsetTable[i];
                 var fontReader = new FontReader(stream);
-                result.Add(LoadDescription(fontReader));
+                result[i] = LoadDescription(fontReader);
             }
 
             return result;
