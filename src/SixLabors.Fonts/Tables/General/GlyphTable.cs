@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using SixLabors.Fonts.Tables.General.Glyphs;
@@ -11,12 +11,12 @@ namespace SixLabors.Fonts.Tables.General
         private const string TableName = "glyf";
         private readonly GlyphLoader[] loaders;
 
-        public int GlyphCount => this.loaders.Length;
-
         public GlyphTable(GlyphLoader[] glyphLoaders)
         {
             this.loaders = glyphLoaders;
         }
+
+        public int GlyphCount => this.loaders.Length;
 
         internal virtual GlyphVector GetGlyph(int index)
         {

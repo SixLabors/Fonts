@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -73,7 +73,7 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(Stream fontStream, out FontDescription fontDescription)
         {
-            FontInstance instance = FontInstance.LoadFont(fontStream);
+            var instance = FontInstance.LoadFont(fontStream);
             fontDescription = instance.Description;
 
             return this.Install(instance);
@@ -140,7 +140,7 @@ namespace SixLabors.Fonts
             return this.families[instance.Description.FontFamily];
         }
 
-        internal IFontInstance Find(string fontFamily, FontStyle style)
+        internal IFontInstance? Find(string fontFamily, FontStyle style)
         {
             return this.instances.TryGetValue(fontFamily, out List<IFontInstance> inFamily)
                 ? inFamily.FirstOrDefault(x => x.Description.Style == style)

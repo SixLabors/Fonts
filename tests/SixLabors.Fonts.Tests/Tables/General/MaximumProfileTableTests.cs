@@ -12,9 +12,9 @@ namespace SixLabors.Fonts.Tests.Tables.General
             var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
-            using (var stream = writer.GetStream())
+            using (System.IO.MemoryStream stream = writer.GetStream())
             {
-                var exception = Assert.Throws<InvalidFontTableException>(() => MaximumProfileTable.Load(new FontReader(stream)));
+                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() => MaximumProfileTable.Load(new FontReader(stream)));
 
                 Assert.Equal("maxp", exception.Table);
             }

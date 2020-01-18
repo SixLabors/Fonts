@@ -11,7 +11,7 @@ namespace DrawWithImageSharp
     {
         public static void Generate(string text, Font font)
         {
-            using (Image<Rgba32> img = new Image<Rgba32>(1000, 1000))
+            using (var img = new Image<Rgba32>(1000, 1000))
             {
                 img.Mutate(x=>x.Fill(Rgba32.White));
 

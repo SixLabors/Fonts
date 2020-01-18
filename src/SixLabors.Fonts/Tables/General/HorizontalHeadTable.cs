@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using SixLabors.Fonts.Exceptions;
@@ -47,9 +47,9 @@ namespace SixLabors.Fonts.Tables.General
 
         public short XMaxExtent { get; }
 
-        public static HorizontalHeadTable Load(FontReader reader)
+        public static HorizontalHeadTable? Load(FontReader reader)
         {
-            using (BinaryReader binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            using (BinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader == null)
                 {

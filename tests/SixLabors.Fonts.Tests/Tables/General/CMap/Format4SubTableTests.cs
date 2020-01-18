@@ -66,7 +66,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
             // idRangeOffset: 0   0   0    0
             ushort[] glyphs = Enumerable.Range(0, expected).Select(x => (ushort)x).ToArray();
 
-            Format4SubTable table = new Format4SubTable(
+            var table = new Format4SubTable(
                 0,
                 PlatformIDs.Windows,
                 0,

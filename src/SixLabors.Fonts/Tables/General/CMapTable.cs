@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
@@ -12,16 +12,14 @@ namespace SixLabors.Fonts.Tables.General
     internal sealed class CMapTable : Table
     {
         private const string TableName = "cmap";
-        private readonly CMapSubTable table;
-
-        internal CMapSubTable[] Tables { get; }
+        private readonly CMapSubTable? table;
 
         public CMapTable(CMapSubTable[] tables)
         {
             this.Tables = tables;
 
             // lets just pick the best table for us.. lets jsut treat everything as windows and get the format 4 if possible
-            CMapSubTable table = null;
+            CMapSubTable? table = null;
             foreach (CMapSubTable t in this.Tables)
             {
                 if (t != null)
@@ -40,10 +38,12 @@ namespace SixLabors.Fonts.Tables.General
             this.table = table;
         }
 
+        internal CMapSubTable[] Tables { get; }
+
         public ushort GetGlyphId(int codePoint)
         {
             // use the best match only
-            if (this.table != null)
+            if (this.table is object)
             {
                 return this.table.GetGlyphId(codePoint);
             }

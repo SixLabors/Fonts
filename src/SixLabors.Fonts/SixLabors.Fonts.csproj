@@ -1,68 +1,32 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>A cross-platform library for loading and laying out fonts for processing and measuring; written in C#</Description>
-    <AssemblyTitle>SixLabors.Fonts</AssemblyTitle>
-    <VersionPrefix Condition="$(packageversion) != ''">$(packageversion)</VersionPrefix>
-    <VersionPrefix Condition="$(packageversion) == ''">0.1.0-alpha1</VersionPrefix>
-    <Authors>Six Labors and contributors</Authors>
-    <TargetFrameworks>netstandard2.0;netstandard1.3</TargetFrameworks>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>SixLabors.Fonts</AssemblyName>
+    <AssemblyTitle>SixLabors.Fonts</AssemblyTitle>
+    <Description>A cross-platform library for loading and laying out fonts for processing and measuring; written in C#</Description>
+    <NeutralLanguage>en</NeutralLanguage>
+
+    <TargetFrameworks>netstandard2.1;netstandard2.0;netstandard1.3;</TargetFrameworks>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>SixLabors.Fonts</PackageId>
     <PackageTags>font;truetype;opentype;woff</PackageTags>
-    <PackageIconUrl>https://raw.githubusercontent.com/SixLabors/Branding/master/icons/fonts/sixlabors.fonts.128.png</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/SixLabors/Fonts</PackageProjectUrl>
-    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/SixLabors/Fonts</RepositoryUrl>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <DebugType Condition="$(codecov) != ''">full</DebugType>
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <!-- TODO: Include .NETSTANDARD2.1 when released-->
-  <PropertyGroup Condition=" $(TargetFramework.StartsWith('netcoreapp2')) ">
-    <DefineConstants>$(DefineConstants);SUPPORTS_MATHF</DefineConstants>
-  </PropertyGroup>
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('netstandard')) ">
+    <PackageReference Include="System.Numerics.Vectors" />
+  </ItemGroup>
 
-  <PropertyGroup Condition=" $(TargetFramework.StartsWith('netcoreapp2.1')) ">
-    <DefineConstants>$(DefineConstants);SUPPORTS_HASHCODE</DefineConstants>
-  </PropertyGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
+    <PackageReference Include="System.Buffers" />
+    <PackageReference Include="System.Memory" />
+  </ItemGroup>
   
   <ItemGroup>
-    <Compile Include="..\Shared\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe"/>    
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\..\shared-infrastructure\**\*.cs" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <CodeAnalysisRuleSet>..\..\shared-infrastructure\SixLabors.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="..\..\shared-infrastructure\stylecop.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="All" />
-    <PackageReference Include="System.Memory" Version="4.5.1" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.1" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" $(TargetFramework.StartsWith('netstandard')) ">
-    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
-  </ItemGroup>
+  <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />
 </Project>

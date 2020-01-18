@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
             var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
-            using (var stream = writer.GetStream())
+            using (System.IO.MemoryStream stream = writer.GetStream())
             {
                 var table = KerningTable.Load(new FontReader(stream));
                 Assert.NotNull(table);

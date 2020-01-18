@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Text;
@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tables.General.Name
 
         public NameIds NameID { get; }
 
-        internal StringLoader StringReader { get; private set; }
+        internal StringLoader? StringReader { get; private set; }
 
         public string Value => this.StringReader?.Value ?? this.value;
 
@@ -38,9 +38,9 @@ namespace SixLabors.Fonts.Tables.General.Name
             ushort languageID = reader.ReadUInt16();
             NameIds nameID = reader.ReadUInt16<NameIds>();
 
-            StringLoader stringReader = StringLoader.Create(reader, encoding);
+            var stringReader = StringLoader.Create(reader, encoding);
 
-            return new NameRecord(platform, languageID, nameID, null)
+            return new NameRecord(platform, languageID, nameID, string.Empty)
             {
                 StringReader = stringReader
             };

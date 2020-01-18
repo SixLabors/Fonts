@@ -16,7 +16,7 @@ namespace DrawWithImageSharp
         {
             int wrappingWidth = 400;
             int size = (wrappingWidth + wrappingWidth/3) * 3;
-            using (Image<Rgba32> img = new Image<Rgba32>(size, size))
+            using (var img = new Image<Rgba32>(size, size))
             {
                 img.Mutate(x => x.Fill(Rgba32.White));
 
@@ -64,11 +64,11 @@ namespace DrawWithImageSharp
                     break;
             }
 
-            GlyphBuilder glyphBuilder = new GlyphBuilder();
+            var glyphBuilder = new GlyphBuilder();
 
-            TextRenderer renderer = new TextRenderer(glyphBuilder);
+            var renderer = new TextRenderer(glyphBuilder);
 
-            RendererOptions style = new RendererOptions(font, 72, location)
+            var style = new RendererOptions(font, 72, location)
             {
                 ApplyKerning = true,
                 TabWidth = 4,

@@ -1,38 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <VersionPrefix>0.0.0</VersionPrefix>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-    <LangVersion>7.3</LangVersion>
-    <AssemblyName>SixLabors.Fonts.Tests</AssemblyName>
-    <PackageId>SixLabors.Fonts.Tests</PackageId>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Description>A cross-platform library for processing of image files written in C#</Description>
-    <Copyright>Copyright © Scott Williams and contributors.</Copyright>
-    <DebugType Condition="$(codecov) != ''">full</DebugType>
+    <TargetFrameworks>netcoreapp3.1;netcoreapp2.1;net472</TargetFrameworks>
+    <DebugSymbols>True</DebugSymbols>
+    <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
+
+  <ItemGroup>
+    <DotNetCliToolReference Include="dotnet-xunit" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SixLabors.Fonts\SixLabors.Fonts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
-    <PackageReference Include="xunit" Version="2.4.0" />
-    <PackageReference Include="Moq" Version="4.9.0" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="All" />
-    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+     <PackageReference Include="Moq" />
+    <PackageReference Include="System.Numerics.Vectors" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <CodeAnalysisRuleSet>..\..\shared-infrastructure\SixLabors.Tests.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="..\..\shared-infrastructure\stylecop.json" />
-  </ItemGroup>
-  
   <ItemGroup>
     <None Update="Fonts\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

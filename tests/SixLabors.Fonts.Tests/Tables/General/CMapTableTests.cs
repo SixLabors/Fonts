@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 new Format0SubTable(0, PlatformIDs.Windows, 9, new byte[] { 0, 1, 2 })
             });
 
-            CMapTable table = CMapTable.Load(writer.GetReader());
+            var table = CMapTable.Load(writer.GetReader());
 
             Assert.Single(table.Tables.Where(x => x != null));
 
@@ -33,9 +33,9 @@ namespace SixLabors.Fonts.Tests.Tables.General
             var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
-            using (var stream = writer.GetStream())
+            using (System.IO.MemoryStream stream = writer.GetStream())
             {
-                var exception = Assert.Throws<InvalidFontTableException>(() => CMapTable.Load(new FontReader(stream)));
+                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() => CMapTable.Load(new FontReader(stream)));
 
                 Assert.Equal("cmap", exception.Table);
             }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -17,6 +17,24 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         {
             this.result = result.ToArray();
             this.bounds = bounds;
+        }
+
+        [Flags]
+        private enum CompositeFlags : ushort
+        {
+            ArgsAreWords = 1,    // If this is set, the arguments are words; otherwise, they are bytes.
+            ArgsAreXYValues = 2, // If this is set, the arguments are xy values; otherwise, they are points.
+            RoundXYToGrid = 4,   // For the xy values if the preceding is true.
+            WeHaveAScale = 8,    // This indicates that there is a simple scale for the component. Otherwise, scale = 1.0.
+            Reserved = 16,       // This bit is reserved. Set it to 0.
+            MoreComponents = 32, // Indicates at least one more glyph after this one.
+            WeHaveXAndYScale = 64, // The x direction will use a different scale from the y direction.
+            WeHaveATwoByTwo = 128, // There is a 2 by 2 transformation that will be used to scale the component.
+            WeHaveInstructions = 256, // Following the last component are instructions for the composite character.
+            UseMyMetrics = 512,  // If set, this forces the aw and lsb (and rsb) for the composite to be equal to those from this original glyph. This works for hinted and unhinted characters.
+            OverlapCompound = 1024,  // If set, the components of the compound glyph overlap. Use of this flag is not required in OpenType — that is, it is valid to have components overlap without having this flag set. It may affect behaviors in some platforms, however. (See Apple’s specification for details regarding behavior in Apple platforms.)
+            ScaledComponentOffset = 2048, // The composite is designed to have the component offset scaled.
+            UnscaledComponentOffset = 4096 // The composite is designed not to have the component offset scaled.
         }
 
         public override GlyphVector CreateGlyph(GlyphTable table)
@@ -119,24 +137,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             }
 
             return new CompositeGlyphLoader(result, bounds);
-        }
-
-        [Flags]
-        private enum CompositeFlags : ushort
-        {
-            ArgsAreWords = 1,    // If this is set, the arguments are words; otherwise, they are bytes.
-            ArgsAreXYValues = 2, // If this is set, the arguments are xy values; otherwise, they are points.
-            RoundXYToGrid = 4,   // For the xy values if the preceding is true.
-            WeHaveAScale = 8,    // This indicates that there is a simple scale for the component. Otherwise, scale = 1.0.
-            Reserved = 16,       // This bit is reserved. Set it to 0.
-            MoreComponents = 32, // Indicates at least one more glyph after this one.
-            WeHaveXAndYScale = 64, // The x direction will use a different scale from the y direction.
-            WeHaveATwoByTwo = 128, // There is a 2 by 2 transformation that will be used to scale the component.
-            WeHaveInstructions = 256, // Following the last component are instructions for the composite character.
-            UseMyMetrics = 512,  // If set, this forces the aw and lsb (and rsb) for the composite to be equal to those from this original glyph. This works for hinted and unhinted characters.
-            OverlapCompound = 1024,  // If set, the components of the compound glyph overlap. Use of this flag is not required in OpenType — that is, it is valid to have components overlap without having this flag set. It may affect behaviors in some platforms, however. (See Apple’s specification for details regarding behavior in Apple platforms.)
-            ScaledComponentOffset = 2048, // The composite is designed to have the component offset scaled.
-            UnscaledComponentOffset = 4096 // The composite is designed not to have the component offset scaled.
         }
 
         public readonly struct Composite

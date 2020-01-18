@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -29,6 +29,18 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             this.onCurves = new bool[0];
             this.endPoints = new ushort[0];
             this.bounds = bounds;
+        }
+
+        [Flags]
+        private enum Flags : byte
+        {
+            ControlPoint = 0,
+            OnCurve = 1,
+            XByte = 2,
+            YByte = 4,
+            Repeat = 8,
+            XSignOrSame = 16,
+            YSignOrSame = 32
         }
 
         public override GlyphVector CreateGlyph(GlyphTable table)
@@ -143,18 +155,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             }
 
             return xs;
-        }
-
-        [Flags]
-        private enum Flags : byte
-        {
-            ControlPoint = 0,
-            OnCurve = 1,
-            XByte = 2,
-            YByte = 4,
-            Repeat = 8,
-            XSignOrSame = 16,
-            YSignOrSame = 32
         }
     }
 }
