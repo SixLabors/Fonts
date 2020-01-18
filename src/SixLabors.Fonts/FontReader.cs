@@ -105,7 +105,7 @@ namespace SixLabors.Fonts
 
         public OutlineTypes OutlineType { get; }
 
-        public TTableType GetTable<TTableType>()
+        public TTableType? TryGetTable<TTableType>()
             where TTableType : Table
         {
             if (this.loadedTables.TryGetValue(typeof(TTableType), out Table table))
@@ -117,8 +117,7 @@ namespace SixLabors.Fonts
                 TTableType? loadedTable = this.loader.Load<TTableType>(this);
                 if (loadedTable is null)
                 {
-                    string tag = this.loader.GetTag<TTableType>();
-                    throw new MissingFontTableException($"Table '{tag}' is missing", tag);
+                    return null;
                 }
 
                 table = loadedTable;
@@ -126,6 +125,20 @@ namespace SixLabors.Fonts
             }
 
             return (TTableType)table;
+        }
+
+        public TTableType GetTable<TTableType>()
+          where TTableType : Table
+        {
+            TTableType? tbl = this.TryGetTable<TTableType>();
+
+            if (tbl is null)
+            {
+                string tag = this.loader.GetTag<TTableType>();
+                throw new MissingFontTableException($"Table '{tag}' is missing", tag);
+            }
+
+            return tbl;
         }
 
         public TableHeader? GetHeader(string tag)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
@@ -16,7 +16,10 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             using (System.IO.MemoryStream stream = writer.GetStream())
             {
-                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() => IndexLocationTable.Load(new FontReader(stream)));
+                MissingFontTableException exception = Assert.Throws<MissingFontTableException>(() =>
+                {
+                    IndexLocationTable.Load(new FontReader(stream));
+                });
 
                 Assert.Equal("head", exception.Table);
             }
@@ -37,7 +40,10 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             using (System.IO.MemoryStream stream = writer.GetStream())
             {
-                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() => IndexLocationTable.Load(new FontReader(stream)));
+                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() =>
+                {
+                    IndexLocationTable.Load(new FontReader(stream));
+                });
 
                 Assert.Equal("maxp", exception.Table);
             }

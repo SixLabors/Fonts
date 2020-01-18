@@ -20,10 +20,6 @@ namespace SixLabors.Fonts.Tables.General
         public static IndexLocationTable? Load(FontReader reader)
         {
             HeadTable head = reader.GetTable<HeadTable>();
-            if (head == null)
-            {
-                throw new InvalidFontTableException("Unable to find table", "head");
-            }
 
             MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>();
 
