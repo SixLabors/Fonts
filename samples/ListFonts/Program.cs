@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -19,6 +19,8 @@ namespace ListFonts
                 Console.Write('\t');
                 Console.Write(string.Join(",", f.AvailableStyles.OrderBy(x=>x).Select(x => x.ToString())));
                 Console.WriteLine();
+
+                var g = f.CreateFont(10).Instance.GetGlyph(1);
             }
 
             if (Debugger.IsAttached)
