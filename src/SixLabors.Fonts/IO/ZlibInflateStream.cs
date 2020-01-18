@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -32,12 +32,12 @@ namespace SixLabors.Fonts.IO
         /// <summary>
         /// The read crc data.
         /// </summary>
-        private byte[] crcread;
+        private byte[]? crcread;
 
         /// <summary>
         /// The stream responsible for decompressing the input stream.
         /// </summary>
-        private DeflateStream deflateStream;
+        private DeflateStream? deflateStream;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ZlibInflateStream"/> class.
@@ -137,6 +137,11 @@ namespace SixLabors.Fonts.IO
         /// <inheritdoc/>
         public override int Read(byte[] buffer, int offset, int count)
         {
+            if (this.deflateStream is null)
+            {
+                throw new ObjectDisposedException("inner stream");
+            }
+
             // We dont't check CRC on reading
             int read = this.deflateStream.Read(buffer, offset, count);
             if (read < 1 && this.crcread is null)

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using SixLabors.Fonts.Tests.Fakes;
 using Xunit;
@@ -14,7 +15,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new RendererOptions(new Font(font, 30), 72)
             {
                 WrappingWidth = 350,
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -42,7 +43,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new RendererOptions(new Font(font, 30), 72)
             {
                 WrappingWidth = 350,
                 HorizontalAlignment = horiAlignment
@@ -69,7 +70,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new RendererOptions(new Font(font, 30), 72)
             {
                 WrappingWidth = 350
             });
@@ -87,7 +88,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text, new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new RendererOptions(new Font(font, 30), 72)
             {
                 WrappingWidth = 350
             });

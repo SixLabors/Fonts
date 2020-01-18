@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             writer.WriteHorizontalHeadTable(new HorizontalHeadTable(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
 
-            HorizontalHeadTable tbl = HorizontalHeadTable.Load(writer.GetReader());
+            var tbl = HorizontalHeadTable.Load(writer.GetReader());
 
             Assert.Equal(1, tbl.Ascender);
             Assert.Equal(2, tbl.Descender);
@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
             var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
-            using (var stream = writer.GetStream())
+            using (System.IO.MemoryStream stream = writer.GetStream())
             {
                 Assert.Null(HorizontalHeadTable.Load(new FontReader(stream)));
             }

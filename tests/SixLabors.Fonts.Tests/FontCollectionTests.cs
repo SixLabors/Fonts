@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void InstallViaStreamReturnsDecription()
         {
-            FontCollection sut = new FontCollection();
+            var sut = new FontCollection();
             using (System.IO.Stream s = TestFonts.CarterOneFileData())
             {
                 FontFamily family = sut.Install(s, out FontDescription description);

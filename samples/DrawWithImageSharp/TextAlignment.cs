@@ -14,7 +14,7 @@ namespace DrawWithImageSharp
 
         public static void Generate(Font font)
         {
-            using (Image<Rgba32> img = new Image<Rgba32>(1000, 1000))
+            using (var img = new Image<Rgba32>(1000, 1000))
             {
                 img.Mutate(x => x.Fill(Rgba32.White));
 
@@ -63,11 +63,11 @@ namespace DrawWithImageSharp
                     break;
             }
 
-            GlyphBuilder glyphBuilder = new GlyphBuilder();
+            var glyphBuilder = new GlyphBuilder();
 
-            TextRenderer renderer = new TextRenderer(glyphBuilder);
+            var renderer = new TextRenderer(glyphBuilder);
 
-            RendererOptions style = new RendererOptions(font, 72, location)
+            var style = new RendererOptions(font, 72, location)
             {
                 ApplyKerning = true,
                 TabWidth = 4,

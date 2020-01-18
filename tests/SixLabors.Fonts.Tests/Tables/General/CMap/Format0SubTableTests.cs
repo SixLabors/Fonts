@@ -37,7 +37,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         [Fact]
         public void GetCharacter()
         {
-            Format0SubTable format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+            var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
             ushort id = format.GetGlyphId(4);
 
@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         [Fact]
         public void GetCharacter_missing()
         {
-            Format0SubTable format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+            var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
             ushort id = format.GetGlyphId(99);
 

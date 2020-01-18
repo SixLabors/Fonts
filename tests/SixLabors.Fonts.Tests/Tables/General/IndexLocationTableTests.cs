@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
@@ -14,9 +14,12 @@ namespace SixLabors.Fonts.Tests.Tables.General
             var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
-            using (var stream = writer.GetStream())
+            using (System.IO.MemoryStream stream = writer.GetStream())
             {
-                var exception = Assert.Throws<InvalidFontTableException>(() => IndexLocationTable.Load(new FontReader(stream)));
+                MissingFontTableException exception = Assert.Throws<MissingFontTableException>(() =>
+                {
+                    IndexLocationTable.Load(new FontReader(stream));
+                });
 
                 Assert.Equal("head", exception.Table);
             }
@@ -35,9 +38,12 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 new DateTime(2017, 02, 07, 07, 47, 00),
                 new Bounds(0, 0, 1024, 1022), 0, HeadTable.IndexLocationFormats.Offset16));
 
-            using (var stream = writer.GetStream())
+            using (System.IO.MemoryStream stream = writer.GetStream())
             {
-                var exception = Assert.Throws<InvalidFontTableException>(() => IndexLocationTable.Load(new FontReader(stream)));
+                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() =>
+                {
+                    IndexLocationTable.Load(new FontReader(stream));
+                });
 
                 Assert.Equal("maxp", exception.Table);
             }
@@ -56,7 +62,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 new DateTime(2017, 02, 07, 07, 47, 00),
                 new Bounds(0, 0, 1024, 1022), 0, HeadTable.IndexLocationFormats.Offset16));
 
-            using (var stream = writer.GetStream())
+            using (System.IO.MemoryStream stream = writer.GetStream())
             {
                 Assert.Null(IndexLocationTable.Load(new FontReader(stream)));
             }

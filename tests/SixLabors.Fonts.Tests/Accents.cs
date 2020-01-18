@@ -16,9 +16,9 @@ namespace SixLabors.Fonts.Tests
         public void MeasuringAccentedCharacterDoesNotThrow(char c)
         {
             FontFamily arial = SystemFonts.Find("Arial");
-            Font font = new Font(arial, 1f, FontStyle.Regular);
+            var font = new Font(arial, 1f, FontStyle.Regular);
 
-            var size = TextMeasurer.Measure(c.ToString(), new RendererOptions(font, 72));
+            FontRectangle size = TextMeasurer.Measure(c.ToString(), new RendererOptions(font, 72));
         }
 
         [Theory]
@@ -33,9 +33,9 @@ namespace SixLabors.Fonts.Tests
         public void MeasuringWordWithAccentedCharacterDoesNotThrow(char c)
         {
             FontFamily arial = SystemFonts.Find("Arial");
-            Font font = new Font(arial, 1f, FontStyle.Regular);
+            var font = new Font(arial, 1f, FontStyle.Regular);
 
-            var size = TextMeasurer.Measure($"abc{c}def", new RendererOptions(font, 72));
+            FontRectangle size = TextMeasurer.Measure($"abc{c}def", new RendererOptions(font, 72));
         }
     }
 }

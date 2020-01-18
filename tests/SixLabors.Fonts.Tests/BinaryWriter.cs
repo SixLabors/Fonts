@@ -77,7 +77,7 @@ namespace SixLabors.Fonts.Tests
             long p = this.BaseStream.Position;
             this.BaseStream.Position = 0;
 
-            MemoryStream ms = new MemoryStream();
+            var ms = new MemoryStream();
             this.BaseStream.CopyTo(ms);
             ms.Position = 0;
             this.BaseStream.Position = 0;

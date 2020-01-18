@@ -18,7 +18,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
     {
         public static void Main(string[] args)
         {
-            FontCollection fonts = new FontCollection();
+            var fonts = new FontCollection();
             FontFamily font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
             FontFamily fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
             FontFamily font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
@@ -66,7 +66,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             TextAlignment.Generate(SystemFonts.CreateFont("arial", 50f));
             TextAlignmentWrapped.Generate(SystemFonts.CreateFont("arial", 50f));
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             for (char c = 'a'; c <= 'z'; c++)
             {
                 sb.Append(c);
@@ -93,7 +93,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             string path = System.IO.Path.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
             string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
 
-            using (Image<Rgba32> img = new Image<Rgba32>(width, height))
+            using (var img = new Image<Rgba32>(width, height))
             {
                 img.Mutate(x=>x.Fill(Rgba32.White));
 
@@ -111,9 +111,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderText(RendererOptions font, string text)
         {
-            GlyphBuilder builder = new GlyphBuilder();
-            TextRenderer renderer = new TextRenderer(builder);
-            var size = TextMeasurer.Measure(text, font);
+            var builder = new GlyphBuilder();
+            var renderer = new TextRenderer(builder);
+            FontRectangle size = TextMeasurer.Measure(text, font);
             renderer.RenderText(text, font);
 
             builder.Paths
@@ -129,7 +129,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
             string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
 
-            using (Image<Rgba32> img = new Image<Rgba32>(width, height))
+            using (var img = new Image<Rgba32>(width, height))
             {
                 img.Mutate(x => x.Fill(Rgba32.DarkBlue));
 
@@ -156,7 +156,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             shape = shape.Translate(shape.Bounds.Location * -1) // touch top left
                     .Translate(new Vector2(10)); // move in from top left
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             IEnumerable<ISimplePath> converted = shape.Flatten();
             converted.Aggregate(sb, (s, p) =>
             {
@@ -186,7 +186,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 height = 1;
             }
-            using (Image<Rgba32> img = new Image<Rgba32>(width, height))
+            using (var img = new Image<Rgba32>(width, height))
             {
                 img.Mutate(x => x.Fill(Rgba32.DarkBlue));
 

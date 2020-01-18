@@ -25,29 +25,6 @@ namespace SixLabors.Fonts
         private readonly KerningTable kerning;
 
         /// <summary>
-        /// Gets the height of the line.
-        /// </summary>
-        /// <value>
-        /// The height of the line.
-        /// </value>
-        public int LineHeight { get; }
-
-        /// <summary>
-        /// Gets the ascender.
-        /// </summary>
-        public short Ascender { get; }
-
-        /// <summary>
-        /// Gets the descender.
-        /// </summary>
-        public short Descender { get; }
-
-        /// <summary>
-        /// Gets the line gap.
-        /// </summary>
-        public short LineGap { get; }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="FontInstance"/> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
@@ -77,6 +54,29 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Gets the height of the line.
+        /// </summary>
+        /// <value>
+        /// The height of the line.
+        /// </value>
+        public int LineHeight { get; }
+
+        /// <summary>
+        /// Gets the ascender.
+        /// </summary>
+        public short Ascender { get; }
+
+        /// <summary>
+        /// Gets the descender.
+        /// </summary>
+        public short Descender { get; }
+
+        /// <summary>
+        /// Gets the line gap.
+        /// </summary>
+        public short LineGap { get; }
+
+        /// <summary>
         /// Gets the size of the em.
         /// </summary>
         /// <value>
@@ -84,6 +84,7 @@ namespace SixLabors.Fonts
         /// </value>
         public ushort EmSize { get; }
 
+        /// <inheritdoc/>
         public FontDescription Description { get; }
 
         internal ushort GetGlyphIndex(int codePoint)

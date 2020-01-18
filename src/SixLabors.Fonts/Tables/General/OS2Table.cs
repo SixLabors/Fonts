@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 namespace SixLabors.Fonts.Tables.General
@@ -7,8 +7,6 @@ namespace SixLabors.Fonts.Tables.General
     internal sealed class OS2Table : Table
     {
         private const string TableName = "OS/2";
-
-        public FontStyleSelection FontStyle { get; }
 
         private ushort styleType;
         private byte[] panose;
@@ -44,180 +42,6 @@ namespace SixLabors.Fonts.Tables.General
         private short superscriptXSize;
         private short superscriptYOffset;
         private short superscriptYSize;
-
-        public short TypoAscender { get; }
-
-        public short TypoDescender { get; }
-
-        public short TypoLineGap { get; }
-
-        public static OS2Table Load(FontReader reader)
-        {
-            using (BinaryReader r = reader.TryGetReaderAtTablePosition(TableName))
-            {
-                if (r is null)
-                {
-                    return null;
-                }
-
-                return Load(r);
-            }
-        }
-
-        public static OS2Table Load(BinaryReader reader)
-        {
-            // Version 1.0
-            // Type   | Name                   | Comments
-            // -------|------------------------|-----------------------
-            // uint16 |version                 | 0x0005
-            // int16  |xAvgCharWidth           |
-            // uint16 |usWeightClass           |
-            // uint16 |usWidthClass            |
-            // uint16 |fsType                  |
-            // int16  |ySubscriptXSize         |
-            // int16  |ySubscriptYSize         |
-            // int16  |ySubscriptXOffset       |
-            // int16  |ySubscriptYOffset       |
-            // int16  |ySuperscriptXSize       |
-            // int16  |ySuperscriptYSize       |
-            // int16  |ySuperscriptXOffset     |
-            // int16  |ySuperscriptYOffset     |
-            // int16  |yStrikeoutSize          |
-            // int16  |yStrikeoutPosition      |
-            // int16  |sFamilyClass            |
-            // uint8  |panose[10]              |
-            // uint32 |ulUnicodeRange1         | Bits 0–31
-            // uint32 |ulUnicodeRange2         | Bits 32–63
-            // uint32 |ulUnicodeRange3         | Bits 64–95
-            // uint32 |ulUnicodeRange4         | Bits 96–127
-            // Tag    |achVendID               |
-            // uint16 |fsSelection             |
-            // uint16 |usFirstCharIndex        |
-            // uint16 |usLastCharIndex         |
-            // int16  |sTypoAscender           |
-            // int16  |sTypoDescender          |
-            // int16  |sTypoLineGap            |
-            // uint16 |usWinAscent             |
-            // uint16 |usWinDescent            |
-            // uint32 |ulCodePageRange1        | Bits 0–31
-            // uint32 |ulCodePageRange2        | Bits 32–63
-            // int16  |sxHeight                |
-            // int16  |sCapHeight              |
-            // uint16 |usDefaultChar           |
-            // uint16 |usBreakChar             |
-            // uint16 |usMaxContext            |
-            // uint16 |usLowerOpticalPointSize |
-            // uint16 |usUpperOpticalPointSize |
-            ushort version = reader.ReadUInt16(); // assert 0x0005
-            short averageCharWidth = reader.ReadInt16();
-            ushort weightClass = reader.ReadUInt16();
-            ushort widthClass = reader.ReadUInt16();
-            ushort styleType = reader.ReadUInt16();
-            short subscriptXSize = reader.ReadInt16();
-            short subscriptYSize = reader.ReadInt16();
-            short subscriptXOffset = reader.ReadInt16();
-            short subscriptYOffset = reader.ReadInt16();
-
-            short superscriptXSize = reader.ReadInt16();
-            short superscriptYSize = reader.ReadInt16();
-            short superscriptXOffset = reader.ReadInt16();
-            short superscriptYOffset = reader.ReadInt16();
-
-            short strikeoutSize = reader.ReadInt16();
-            short strikeoutPosition = reader.ReadInt16();
-            short familyClass = reader.ReadInt16();
-            byte[] panose = reader.ReadUInt8Array(10);
-            uint unicodeRange1 = reader.ReadUInt32(); // Bits 0–31
-            uint unicodeRange2 = reader.ReadUInt32(); // Bits 32–63
-            uint unicodeRange3 = reader.ReadUInt32(); // Bits 64–95
-            uint unicodeRange4 = reader.ReadUInt32(); // Bits 96–127
-            string tag = reader.ReadTag();
-            FontStyleSelection fontStyle = reader.ReadUInt16<FontStyleSelection>();
-            ushort firstCharIndex = reader.ReadUInt16();
-            ushort lastCharIndex = reader.ReadUInt16();
-            short typoAscender = reader.ReadInt16();
-            short typoDescender = reader.ReadInt16();
-            short typoLineGap = reader.ReadInt16();
-            ushort winAscent = reader.ReadUInt16();
-            ushort winDescent = reader.ReadUInt16();
-
-            OS2Table version0Table = new OS2Table(
-                    averageCharWidth,
-                    weightClass,
-                    widthClass,
-                    styleType,
-                    subscriptXSize,
-                    subscriptYSize,
-                    subscriptXOffset,
-                    subscriptYOffset,
-                    superscriptXSize,
-                    superscriptYSize,
-                    superscriptXOffset,
-                    superscriptYOffset,
-                    strikeoutSize,
-                    strikeoutPosition,
-                    familyClass,
-                    panose,
-                    unicodeRange1,
-                    unicodeRange2,
-                    unicodeRange3,
-                    unicodeRange4,
-                    tag,
-                    fontStyle,
-                    firstCharIndex,
-                    lastCharIndex,
-                    typoAscender,
-                    typoDescender,
-                    typoLineGap,
-                    winAscent,
-                    winDescent);
-
-            if (version == 0)
-            {
-                return version0Table;
-            }
-
-            ushort codePageRange1 = 0;
-            ushort codePageRange2 = 0;
-            short heightX = 0;
-            short capHeight = 0;
-
-            ushort defaultChar = 0;
-            ushort breakChar = 0;
-            ushort maxContext = 0;
-
-            codePageRange1 = reader.ReadUInt16(); // Bits 0–31
-            codePageRange2 = reader.ReadUInt16(); // Bits 32–63
-            heightX = reader.ReadInt16();
-            capHeight = reader.ReadInt16();
-
-            defaultChar = reader.ReadUInt16();
-            breakChar = reader.ReadUInt16();
-            maxContext = reader.ReadUInt16();
-
-            OS2Table versionLessthan5Table = new OS2Table(
-                    version0Table,
-                    codePageRange1,
-                    codePageRange2,
-                    heightX,
-                    capHeight,
-                    defaultChar,
-                    breakChar,
-                    maxContext);
-
-            if (version < 5)
-            {
-                return versionLessthan5Table;
-            }
-
-            ushort lowerOpticalPointSize = reader.ReadUInt16();
-            ushort upperOpticalPointSize = reader.ReadUInt16();
-
-            return new OS2Table(
-                versionLessthan5Table,
-                lowerOpticalPointSize,
-                upperOpticalPointSize);
-        }
 
         public OS2Table(short averageCharWidth, ushort weightClass, ushort widthClass, ushort styleType, short subscriptXSize, short subscriptYSize, short subscriptXOffset, short subscriptYOffset, short superscriptXSize, short superscriptYSize, short superscriptXOffset, short superscriptYOffset, short strikeoutSize, short strikeoutPosition, short familyClass, byte[] panose, uint unicodeRange1, uint unicodeRange2, uint unicodeRange3, uint unicodeRange4, string tag, FontStyleSelection fontStyle, ushort firstCharIndex, ushort lastCharIndex, short typoAscender, short typoDescender, short typoLineGap, ushort winAscent, ushort winDescent)
         {
@@ -341,6 +165,182 @@ namespace SixLabors.Fonts.Tables.General
             OBLIQUE = 1 << 7,
 
             // 10–15        <reserved>  Reserved; set to 0.
+        }
+
+        public FontStyleSelection FontStyle { get; }
+
+        public short TypoAscender { get; }
+
+        public short TypoDescender { get; }
+
+        public short TypoLineGap { get; }
+
+        public static OS2Table? Load(FontReader reader)
+        {
+            using (BinaryReader? r = reader.TryGetReaderAtTablePosition(TableName))
+            {
+                if (r is null)
+                {
+                    return null;
+                }
+
+                return Load(r);
+            }
+        }
+
+        public static OS2Table Load(BinaryReader reader)
+        {
+            // Version 1.0
+            // Type   | Name                   | Comments
+            // -------|------------------------|-----------------------
+            // uint16 |version                 | 0x0005
+            // int16  |xAvgCharWidth           |
+            // uint16 |usWeightClass           |
+            // uint16 |usWidthClass            |
+            // uint16 |fsType                  |
+            // int16  |ySubscriptXSize         |
+            // int16  |ySubscriptYSize         |
+            // int16  |ySubscriptXOffset       |
+            // int16  |ySubscriptYOffset       |
+            // int16  |ySuperscriptXSize       |
+            // int16  |ySuperscriptYSize       |
+            // int16  |ySuperscriptXOffset     |
+            // int16  |ySuperscriptYOffset     |
+            // int16  |yStrikeoutSize          |
+            // int16  |yStrikeoutPosition      |
+            // int16  |sFamilyClass            |
+            // uint8  |panose[10]              |
+            // uint32 |ulUnicodeRange1         | Bits 0–31
+            // uint32 |ulUnicodeRange2         | Bits 32–63
+            // uint32 |ulUnicodeRange3         | Bits 64–95
+            // uint32 |ulUnicodeRange4         | Bits 96–127
+            // Tag    |achVendID               |
+            // uint16 |fsSelection             |
+            // uint16 |usFirstCharIndex        |
+            // uint16 |usLastCharIndex         |
+            // int16  |sTypoAscender           |
+            // int16  |sTypoDescender          |
+            // int16  |sTypoLineGap            |
+            // uint16 |usWinAscent             |
+            // uint16 |usWinDescent            |
+            // uint32 |ulCodePageRange1        | Bits 0–31
+            // uint32 |ulCodePageRange2        | Bits 32–63
+            // int16  |sxHeight                |
+            // int16  |sCapHeight              |
+            // uint16 |usDefaultChar           |
+            // uint16 |usBreakChar             |
+            // uint16 |usMaxContext            |
+            // uint16 |usLowerOpticalPointSize |
+            // uint16 |usUpperOpticalPointSize |
+            ushort version = reader.ReadUInt16(); // assert 0x0005
+            short averageCharWidth = reader.ReadInt16();
+            ushort weightClass = reader.ReadUInt16();
+            ushort widthClass = reader.ReadUInt16();
+            ushort styleType = reader.ReadUInt16();
+            short subscriptXSize = reader.ReadInt16();
+            short subscriptYSize = reader.ReadInt16();
+            short subscriptXOffset = reader.ReadInt16();
+            short subscriptYOffset = reader.ReadInt16();
+
+            short superscriptXSize = reader.ReadInt16();
+            short superscriptYSize = reader.ReadInt16();
+            short superscriptXOffset = reader.ReadInt16();
+            short superscriptYOffset = reader.ReadInt16();
+
+            short strikeoutSize = reader.ReadInt16();
+            short strikeoutPosition = reader.ReadInt16();
+            short familyClass = reader.ReadInt16();
+            byte[] panose = reader.ReadUInt8Array(10);
+            uint unicodeRange1 = reader.ReadUInt32(); // Bits 0–31
+            uint unicodeRange2 = reader.ReadUInt32(); // Bits 32–63
+            uint unicodeRange3 = reader.ReadUInt32(); // Bits 64–95
+            uint unicodeRange4 = reader.ReadUInt32(); // Bits 96–127
+            string tag = reader.ReadTag();
+            FontStyleSelection fontStyle = reader.ReadUInt16<FontStyleSelection>();
+            ushort firstCharIndex = reader.ReadUInt16();
+            ushort lastCharIndex = reader.ReadUInt16();
+            short typoAscender = reader.ReadInt16();
+            short typoDescender = reader.ReadInt16();
+            short typoLineGap = reader.ReadInt16();
+            ushort winAscent = reader.ReadUInt16();
+            ushort winDescent = reader.ReadUInt16();
+
+            var version0Table = new OS2Table(
+                    averageCharWidth,
+                    weightClass,
+                    widthClass,
+                    styleType,
+                    subscriptXSize,
+                    subscriptYSize,
+                    subscriptXOffset,
+                    subscriptYOffset,
+                    superscriptXSize,
+                    superscriptYSize,
+                    superscriptXOffset,
+                    superscriptYOffset,
+                    strikeoutSize,
+                    strikeoutPosition,
+                    familyClass,
+                    panose,
+                    unicodeRange1,
+                    unicodeRange2,
+                    unicodeRange3,
+                    unicodeRange4,
+                    tag,
+                    fontStyle,
+                    firstCharIndex,
+                    lastCharIndex,
+                    typoAscender,
+                    typoDescender,
+                    typoLineGap,
+                    winAscent,
+                    winDescent);
+
+            if (version == 0)
+            {
+                return version0Table;
+            }
+
+            ushort codePageRange1 = 0;
+            ushort codePageRange2 = 0;
+            short heightX = 0;
+            short capHeight = 0;
+
+            ushort defaultChar = 0;
+            ushort breakChar = 0;
+            ushort maxContext = 0;
+
+            codePageRange1 = reader.ReadUInt16(); // Bits 0–31
+            codePageRange2 = reader.ReadUInt16(); // Bits 32–63
+            heightX = reader.ReadInt16();
+            capHeight = reader.ReadInt16();
+
+            defaultChar = reader.ReadUInt16();
+            breakChar = reader.ReadUInt16();
+            maxContext = reader.ReadUInt16();
+
+            var versionLessthan5Table = new OS2Table(
+                    version0Table,
+                    codePageRange1,
+                    codePageRange2,
+                    heightX,
+                    capHeight,
+                    defaultChar,
+                    breakChar,
+                    maxContext);
+
+            if (version < 5)
+            {
+                return versionLessthan5Table;
+            }
+
+            ushort lowerOpticalPointSize = reader.ReadUInt16();
+            ushort upperOpticalPointSize = reader.ReadUInt16();
+
+            return new OS2Table(
+                versionLessthan5Table,
+                lowerOpticalPointSize,
+                upperOpticalPointSize);
         }
     }
 }

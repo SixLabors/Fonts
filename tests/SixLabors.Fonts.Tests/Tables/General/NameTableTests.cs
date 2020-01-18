@@ -25,7 +25,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 { (NameIds)91, "other2" }
                                       });
 
-            NameTable table = NameTable.Load(writer.GetReader());
+            var table = NameTable.Load(writer.GetReader());
 
             Assert.Equal("fullname", table.FontName);
             Assert.Equal("family", table.FontFamilyName);
@@ -56,7 +56,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                                                  "lang2"
                                              });
 
-            NameTable table = NameTable.Load(writer.GetReader());
+            var table = NameTable.Load(writer.GetReader());
 
             Assert.Equal("fullname", table.FontName);
             Assert.Equal("family", table.FontFamilyName);
@@ -73,9 +73,9 @@ namespace SixLabors.Fonts.Tests.Tables.General
             var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
-            using (var stream = writer.GetStream())
+            using (System.IO.MemoryStream stream = writer.GetStream())
             {
-                var exception = Assert.Throws<InvalidFontTableException>(() => NameTable.Load(new FontReader(stream)));
+                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() => NameTable.Load(new FontReader(stream)));
 
                 Assert.Equal("name", exception.Table);
             }

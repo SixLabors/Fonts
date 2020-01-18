@@ -1,7 +1,8 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts
 {
@@ -11,7 +12,7 @@ namespace SixLabors.Fonts
     public sealed class Font
     {
         private readonly FontStyle requestedStyle;
-        private readonly Lazy<IFontInstance> instance;
+        private readonly Lazy<IFontInstance?> instance;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Font"/> class.
@@ -24,7 +25,7 @@ namespace SixLabors.Fonts
             this.Family = family ?? throw new ArgumentNullException(nameof(family));
             this.requestedStyle = style;
             this.Size = size;
-            this.instance = new Lazy<IFontInstance>(this.LoadInstanceInternal);
+            this.instance = new Lazy<IFontInstance?>(this.LoadInstanceInternal);
         }
 
         /// <summary>
@@ -82,7 +83,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The name.
         /// </value>
-        public string Name => this.instance.Value.Description.FontName;
+        public string Name => this.Instance.Description.FontName;
 
         /// <summary>
         /// Gets the size.
@@ -98,7 +99,7 @@ namespace SixLabors.Fonts
         /// <value>
         ///   <c>true</c> if bold; otherwise, <c>false</c>.
         /// </value>
-        public bool Bold => (this.instance.Value.Description.Style & FontStyle.Bold) == FontStyle.Bold;
+        public bool Bold => (this.Instance.Description.Style & FontStyle.Bold) == FontStyle.Bold;
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="Font"/> is italic.
@@ -106,7 +107,7 @@ namespace SixLabors.Fonts
         /// <value>
         ///   <c>true</c> if italic; otherwise, <c>false</c>.
         /// </value>
-        public bool Italic => (this.instance.Value.Description.Style & FontStyle.Italic) == FontStyle.Italic;
+        public bool Italic => (this.Instance.Description.Style & FontStyle.Italic) == FontStyle.Italic;
 
         /// <summary>
         /// Gets the size of the em.
@@ -114,27 +115,27 @@ namespace SixLabors.Fonts
         /// <value>
         /// The size of the em.
         /// </value>
-        public ushort EmSize => this.instance.Value.EmSize;
+        public ushort EmSize => this.Instance.EmSize;
 
         /// <summary>
         /// Gets the ascender (from the OS/2 table field <c>TypoAscender</c>).
         /// </summary>
-        public short Ascender => this.instance.Value.Ascender;
+        public short Ascender => this.Instance.Ascender;
 
         /// <summary>
         /// Gets the descender (from the OS/2 table field <c>TypoDescender</c>).
         /// </summary>
-        public short Descender => this.instance.Value.Descender;
+        public short Descender => this.Instance.Descender;
 
         /// <summary>
         /// Gets the line gap (from the OS/2 table field <c>TypoLineGap</c>).
         /// </summary>
-        public short LineGap => this.instance.Value.LineGap;
+        public short LineGap => this.Instance.LineGap;
 
         /// <summary>
         /// Gets the line height.
         /// </summary>
-        public int LineHeight => this.instance.Value.LineHeight;
+        public int LineHeight => this.Instance.LineHeight;
 
         /// <summary>
         /// Gets the font instance.
@@ -142,7 +143,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The font instance.
         /// </value>
-        public IFontInstance Instance => this.instance.Value;
+        public IFontInstance Instance => this.instance.Value ?? throw new FontException("Font instance not found");
 
         /// <summary>
         /// Gets the glyph.
@@ -151,12 +152,12 @@ namespace SixLabors.Fonts
         /// <returns>Returns the glyph</returns>
         public Glyph GetGlyph(int codePoint)
         {
-            return new Glyph(this.instance.Value.GetGlyph(codePoint), this.Size);
+            return new Glyph(this.Instance.GetGlyph(codePoint), this.Size);
         }
 
-        private IFontInstance LoadInstanceInternal()
+        private IFontInstance? LoadInstanceInternal()
         {
-            IFontInstance instance = this.Family.Find(this.requestedStyle);
+            IFontInstance? instance = this.Family.Find(this.requestedStyle);
 
             if (instance is null && this.requestedStyle.HasFlag(FontStyle.Italic))
             {

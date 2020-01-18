@@ -370,3 +370,6 @@ csharp_style_unused_value_assignment_preference = discard_variable:suggestion
 csharp_style_var_for_built_in_types = false:warning
 csharp_style_var_elsewhere = false:warning
 csharp_style_var_when_type_is_apparent = true:warning
+
+# SA1011: Closing square brackets should be spaced correctly
+dotnet_diagnostic.SA1011.severity = none

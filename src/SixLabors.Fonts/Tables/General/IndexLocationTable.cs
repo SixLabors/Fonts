@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using SixLabors.Fonts.Exceptions;
@@ -17,18 +17,14 @@ namespace SixLabors.Fonts.Tables.General
 
         public uint[] GlyphOffsets { get; }
 
-        public static IndexLocationTable Load(FontReader reader)
+        public static IndexLocationTable? Load(FontReader reader)
         {
             HeadTable head = reader.GetTable<HeadTable>();
-            if (head == null)
-            {
-                throw new InvalidFontTableException("Unable to find table", "head");
-            }
 
             MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>();
 
             // must not get a binary reader untill all depended data is retrieved in case they need to use the stream
-            using (BinaryReader binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            using (BinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader == null)
                 {
@@ -49,7 +45,7 @@ namespace SixLabors.Fonts.Tables.General
                 // ---------|-------------|---------------------------------------
                 // Offset16 | offsets[n]  | The actual local offset divided by 2 is stored. The value of n is numGlyphs + 1. The value for numGlyphs is found in the 'maxp' table.
                 ushort[] data = reader.ReadUInt16Array(entrycount);
-                var convertedData = new uint[entrycount];
+                uint[] convertedData = new uint[entrycount];
                 for (int i = 0; i < entrycount; i++)
                 {
                     convertedData[i] = (uint)(data[i] * 2);

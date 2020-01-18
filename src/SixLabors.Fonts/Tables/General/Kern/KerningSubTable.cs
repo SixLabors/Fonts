@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Numerics;
@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
             this.coverage = coverage;
         }
 
-        public static KerningSubTable Load(BinaryReader reader)
+        public static KerningSubTable? Load(BinaryReader reader)
         {
             // Kerning subtables will share the same header format. This header is used to identify the format of the subtable and the kind of information it contains:
             // Type   | Field    | Description
@@ -25,7 +25,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
             ushort subVersion = reader.ReadUInt16();
             ushort length = reader.ReadUInt16();
 
-            KerningCoverage coverage = KerningCoverage.Read(reader);
+            var coverage = KerningCoverage.Read(reader);
 
             if (coverage.Format == 0)
             {

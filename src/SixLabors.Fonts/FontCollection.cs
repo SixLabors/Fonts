@@ -200,7 +200,7 @@ namespace SixLabors.Fonts
             return this.families[instance.Description.FontFamily];
         }
 
-        internal IFontInstance Find(string fontFamily, FontStyle style)
+        internal IFontInstance? Find(string fontFamily, FontStyle style)
         {
             return this.instances.TryGetValue(fontFamily, out List<IFontInstance> inFamily)
                 ? inFamily.FirstOrDefault(x => x.Description.Style == style)

@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests
         {
             var glyph = new Glyph(new GlyphInstance((FontInstance)CreateFont("A").Instance, new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1), 0, 0, 1, 0), 10);
 
-            var locationInFontSpace = new Vector2(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
+            Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
             glyph.RenderTo(renderer, locationInFontSpace, 72, 0);
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
@@ -71,7 +71,7 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter A
             Glyph g = font.GetGlyph(41);
-            var instance = g.Instance;
+            GlyphInstance instance = g.Instance;
 
             Assert.Equal(20, instance.ControlPoints.Length);
             Assert.Equal(20, instance.OnCurves.Length);
