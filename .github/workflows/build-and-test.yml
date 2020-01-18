@@ -142,5 +142,4 @@ jobs:
               if: matrix.options.codecov == true
               with:
                   token: ${{secrets.CODECOV_TOKEN}}
-                  file: "coverage.${{matrix.options.framework}}.xml"
                   flags: unittests
