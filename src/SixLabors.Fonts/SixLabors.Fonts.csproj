@@ -6,8 +6,7 @@
     <Description>A cross-platform library for loading and laying out fonts for processing and measuring; written in C#</Description>
     <NeutralLanguage>en</NeutralLanguage>
 
-    <TargetFrameworks>netstandard2.1;netstandard2.0;netstandard1.3;</TargetFrameworks>
-
+    <TargetFrameworks>netcoreapp3.1;netcoreapp2.1;netstandard2.1;netstandard2.0;netstandard1.3;net472</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>SixLabors.Fonts</PackageId>
     <PackageTags>font;truetype;opentype;woff</PackageTags>
