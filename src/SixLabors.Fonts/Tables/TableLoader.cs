@@ -12,6 +12,10 @@ namespace SixLabors.Fonts.Tables
 {
     internal class TableLoader
     {
+        private readonly Dictionary<string, Func<FontReader, Table?>> loaders = new Dictionary<string, Func<FontReader, Table?>>();
+        private readonly Dictionary<Type, string> types = new Dictionary<Type, string>();
+        private readonly Dictionary<Type, Func<FontReader, Table?>> typesLoaders = new Dictionary<Type, Func<FontReader, Table?>>();
+
         public TableLoader()
         {
             // we will hard code mapping registration in here for all the tables
@@ -29,13 +33,16 @@ namespace SixLabors.Fonts.Tables
 
         public static TableLoader Default { get; } = new TableLoader();
 
-        private readonly Dictionary<string, Func<FontReader, Table>> loaders = new Dictionary<string, Func<FontReader, Table>>();
-        private readonly Dictionary<Type, string> types = new Dictionary<Type, string>();
-        private readonly Dictionary<Type, Func<FontReader, Table>> typesLoaders = new Dictionary<Type, Func<FontReader, Table>>();
-
         public string GetTag(Type type)
         {
             this.types.TryGetValue(type, out string value);
+
+            return value;
+        }
+
+        public string GetTag<TType>()
+        {
+            this.types.TryGetValue(typeof(TType), out string value);
 
             return value;
         }
@@ -44,7 +51,7 @@ namespace SixLabors.Fonts.Tables
 
         internal IEnumerable<string> RegisterdTags() => this.types.Values;
 
-        private void Register<T>(string tag, Func<FontReader, T> createFunc)
+        private void Register<T>(string tag, Func<FontReader, T?> createFunc)
             where T : Table
         {
             lock (this.loaders)
@@ -58,7 +65,7 @@ namespace SixLabors.Fonts.Tables
             }
         }
 
-        private void Register<T>(Func<FontReader, T> createFunc)
+        private void Register<T>(Func<FontReader, T?> createFunc)
             where T : Table
         {
             string name =
@@ -70,21 +77,21 @@ namespace SixLabors.Fonts.Tables
             this.Register(name, createFunc);
         }
 
-        internal Table Load(string tag, FontReader reader)
+        internal Table? Load(string tag, FontReader reader)
         {
             // loader missing register an unknow type loader and carry on
-            return this.loaders.TryGetValue(tag, out var func)
+            return this.loaders.TryGetValue(tag, out Func<FontReader, Table?> func)
                 ? func.Invoke(reader)
                 : new UnknownTable(tag);
         }
 
-        internal TTable Load<TTable>(FontReader reader)
+        internal TTable? Load<TTable>(FontReader reader)
             where TTable : Table
         {
             // loader missing register an unknow type loader and carry on
-            if (this.typesLoaders.TryGetValue(typeof(TTable), out var func))
+            if (this.typesLoaders.TryGetValue(typeof(TTable), out Func<FontReader, Table?> func))
             {
-                return (TTable)func.Invoke(reader);
+                return (TTable?)func.Invoke(reader);
             }
 
             throw new Exception("font table not registered");

@@ -259,7 +259,7 @@ namespace SixLabors.Fonts
         public TEnum[] ReadUInt8Array<TEnum>(int length)
              where TEnum : Enum
         {
-            TEnum[] data = new TEnum[length];
+            var data = new TEnum[length];
             for (int i = 0; i < length; i++)
             {
                 data[i] = CastTo<TEnum>.From(this.ReadUInt8());
@@ -408,7 +408,7 @@ namespace SixLabors.Fonts
         /// </returns>
         public string ReadString(int bytesToRead, Encoding encoding)
         {
-            var data = new byte[bytesToRead];
+            byte[] data = new byte[bytesToRead];
             this.ReadInternal(data, bytesToRead);
             return encoding.GetString(data, 0, data.Length);
         }

@@ -71,7 +71,7 @@ namespace SixLabors.Fonts
         {
             IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
-            Vector2 dpi = new Vector2(options.DpiX, options.DpiY);
+            var dpi = new Vector2(options.DpiX, options.DpiY);
 
             FontRectangle rect = TextMeasurer.GetBounds(glyphsToRender, dpi);
 

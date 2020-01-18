@@ -125,7 +125,7 @@ namespace SixLabors.Fonts.Tests
             // Offset16 | offset     | String offset from start of storage area(in bytes).
             Encoding encoding = Encoding.BigEndianUnicode; // this is Unicode2
             int stringOffset = 0;
-            List<int> offsets = new List<int>();
+            var offsets = new List<int>();
             foreach (KeyValuePair<NameIds, string> n in names)
             {
                 writer.WriteUInt16(0); // hard code platform
@@ -421,7 +421,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16((ushort)table.Flags);
             writer.WriteUInt16(table.UnitsPerEm);
 
-            DateTime startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
+            var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
             writer.WriteInt64((long)table.Created.Subtract(startDate).TotalSeconds);
             writer.WriteInt64((long)table.Modified.Subtract(startDate).TotalSeconds);
             writer.WriteInt16((short)table.Bounds.Min.X);

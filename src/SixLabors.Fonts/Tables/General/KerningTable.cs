@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static KerningTable Load(FontReader reader)
         {
-            using (BinaryReader binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            using (BinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader is null)
                 {
@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tables.General
             var tables = new List<KerningSubTable>(subtableCount);
             for (int i = 0; i < subtableCount; i++)
             {
-                KerningSubTable t = KerningSubTable.Load(reader); // returns null for unknown/supported table format
+                var t = KerningSubTable.Load(reader); // returns null for unknown/supported table format
                 if (t != null)
                 {
                     tables.Add(t);

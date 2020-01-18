@@ -13,6 +13,12 @@ namespace SixLabors.Fonts
         private readonly GlyphInstance instance;
         private readonly float pointSize;
 
+        internal Glyph(GlyphInstance instance, float pointSize)
+        {
+            this.instance = instance;
+            this.pointSize = pointSize;
+        }
+
         /// <summary>
         /// Gets the glyph instance.
         /// </summary>
@@ -21,12 +27,12 @@ namespace SixLabors.Fonts
         /// </value>
         public GlyphInstance Instance => this.instance;
 
-        internal Glyph(GlyphInstance instance, float pointSize)
-        {
-            this.instance = instance;
-            this.pointSize = pointSize;
-        }
-
+        /// <summary>
+        /// Calculates the bounding box
+        /// </summary>
+        /// <param name="location">location to calualte from.</param>
+        /// <param name="dpi">dpi to calualtes in relation to</param>
+        /// <returns>The bounding box</returns>
         public FontRectangle BoundingBox(Vector2 location, Vector2 dpi)
         {
             return this.instance.BoundingBox(location, this.pointSize * dpi);

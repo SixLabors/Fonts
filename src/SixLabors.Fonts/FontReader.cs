@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -13,7 +13,6 @@ namespace SixLabors.Fonts
     internal sealed class FontReader
     {
         private readonly Dictionary<Type, Table> loadedTables = new Dictionary<Type, Table>();
-
         private readonly Stream stream;
         private readonly TableLoader loader;
 
@@ -94,13 +93,19 @@ namespace SixLabors.Fonts
         {
         }
 
+        internal enum OutlineTypes : uint
+        {
+            TrueType = 0x00010000,
+            CFF = 0x4F54544F
+        }
+
         public IReadOnlyDictionary<string, TableHeader> Headers { get; }
 
         public bool CompressedTableData { get; }
 
         public OutlineTypes OutlineType { get; }
 
-        public TTableType GetTable<TTableType>()
+        public TTableType? TryGetTable<TTableType>()
             where TTableType : Table
         {
             if (this.loadedTables.TryGetValue(typeof(TTableType), out Table table))
@@ -109,15 +114,34 @@ namespace SixLabors.Fonts
             }
             else
             {
-                table = this.loader.Load<TTableType>(this);
+                TTableType? loadedTable = this.loader.Load<TTableType>(this);
+                if (loadedTable is null)
+                {
+                    return null;
+                }
 
-                this.loadedTables.Add(typeof(TTableType), table);
+                table = loadedTable;
+                this.loadedTables.Add(typeof(TTableType), loadedTable);
             }
 
             return (TTableType)table;
         }
 
-        public TableHeader GetHeader(string tag)
+        public TTableType GetTable<TTableType>()
+          where TTableType : Table
+        {
+            TTableType? tbl = this.TryGetTable<TTableType>();
+
+            if (tbl is null)
+            {
+                string tag = this.loader.GetTag<TTableType>();
+                throw new MissingFontTableException($"Table '{tag}' is missing", tag);
+            }
+
+            return tbl;
+        }
+
+        public TableHeader? GetHeader(string tag)
         {
             return this.Headers.TryGetValue(tag, out TableHeader header)
                 ? header
@@ -126,7 +150,7 @@ namespace SixLabors.Fonts
 
         public BinaryReader GetReaderAtTablePosition(string tableName)
         {
-            var reader = this.TryGetReaderAtTablePosition(tableName);
+            BinaryReader? reader = this.TryGetReaderAtTablePosition(tableName);
             if (reader == null)
             {
                 throw new InvalidFontTableException("Unable to find table", tableName);
@@ -135,16 +159,10 @@ namespace SixLabors.Fonts
             return reader;
         }
 
-        public BinaryReader TryGetReaderAtTablePosition(string tableName)
+        public BinaryReader? TryGetReaderAtTablePosition(string tableName)
         {
-            TableHeader header = this.GetHeader(tableName);
+            TableHeader? header = this.GetHeader(tableName);
             return header?.CreateReader(this.stream);
-        }
-
-        internal enum OutlineTypes : uint
-        {
-            TrueType = 0x00010000,
-            CFF = 0x4F54544F
         }
     }
 }

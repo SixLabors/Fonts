@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     {
         internal GlyphRendererParameters(GlyphInstance glyph, float pointSize, Vector2 dpi)
         {
-            this.Font = glyph.Font.Description.FontName?.ToUpper();
+            this.Font = glyph.Font.Description.FontName?.ToUpper() ?? string.Empty;
             this.FontStyle = glyph.Font.Description.Style;
             this.GlyphIndex = glyph.Index;
             this.PointSize = pointSize;

@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public static EncodingRecord Read(BinaryReader reader)
         {
-            PlatformIDs platform = (PlatformIDs)reader.ReadUInt16();
+            var platform = (PlatformIDs)reader.ReadUInt16();
             ushort encoding = reader.ReadUInt16();
             uint offset = reader.ReadOffset32();
 

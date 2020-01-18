@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Tests.Tables
             var writer = new BinaryWriter();
             writer.WriteTableHeader(tag, checksum, offset, length);
 
-            TableHeader header = TableHeader.Read(writer.GetReader());
+            var header = TableHeader.Read(writer.GetReader());
 
             Assert.Equal(checksum, header.CheckSum);
             Assert.Equal(length, header.Length);

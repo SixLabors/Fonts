@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
@@ -15,59 +15,6 @@ namespace SixLabors.Fonts.Tables.General
     {
         private const string TableName = "name";
         private readonly NameRecord[] names;
-
-        public static NameTable Load(FontReader reader)
-        {
-            using (BinaryReader r = reader.GetReaderAtTablePosition(TableName))
-            {
-                // move to start of table
-                return Load(r);
-            }
-        }
-
-        public static NameTable Load(BinaryReader reader)
-        {
-            List<StringLoader> strings = new List<StringLoader>();
-            ushort format = reader.ReadUInt16();
-            ushort nameCount = reader.ReadUInt16();
-            ushort stringOffset = reader.ReadUInt16();
-
-            var names = new NameRecord[nameCount];
-
-            for (int i = 0; i < nameCount; i++)
-            {
-                names[i] = NameRecord.Read(reader);
-                strings.Add(names[i].StringReader);
-            }
-
-            StringLoader[] langs = null;
-            if (format == 1)
-            {
-                // format 1 adds language data
-                ushort langCount = reader.ReadUInt16();
-                langs = new StringLoader[langCount];
-
-                for (int i = 0; i < langCount; i++)
-                {
-                    langs[i] = StringLoader.Create(reader);
-                    strings.Add(langs[i]);
-                }
-            }
-
-            foreach (StringLoader readable in strings.OrderBy(x => x.Offset))
-            {
-                int diff = stringOffset + readable.Offset;
-
-                // only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
-                reader.Seek(diff, SeekOrigin.Begin);
-
-                readable.LoadValue(reader);
-            }
-
-            string[] langNames = langs?.Select(x => x.Value).ToArray() ?? new string[0];
-
-            return new NameTable(names, langNames);
-        }
 
         internal NameTable(NameRecord[] names, string[] languages)
         {
@@ -142,12 +89,69 @@ namespace SixLabors.Fonts.Tables.General
                 }
             }
 
-            return null;
+            return string.Empty;
         }
 
         public string GetNameById(ushort nameId)
         {
             return this.GetNameById((NameIds)nameId);
+        }
+
+        public static NameTable Load(FontReader reader)
+        {
+            using (BinaryReader r = reader.GetReaderAtTablePosition(TableName))
+            {
+                // move to start of table
+                return Load(r);
+            }
+        }
+
+        public static NameTable Load(BinaryReader reader)
+        {
+            var strings = new List<StringLoader>();
+            ushort format = reader.ReadUInt16();
+            ushort nameCount = reader.ReadUInt16();
+            ushort stringOffset = reader.ReadUInt16();
+
+            var names = new NameRecord[nameCount];
+
+            for (int i = 0; i < nameCount; i++)
+            {
+                names[i] = NameRecord.Read(reader);
+                StringLoader? sr = names[i].StringReader;
+                if (sr is object)
+                {
+                    strings.Add(sr);
+                }
+            }
+
+            var langs = new StringLoader[0];
+            if (format == 1)
+            {
+                // format 1 adds language data
+                ushort langCount = reader.ReadUInt16();
+                langs = new StringLoader[langCount];
+
+                for (int i = 0; i < langCount; i++)
+                {
+                    langs[i] = StringLoader.Create(reader);
+                    strings.Add(langs[i]);
+                }
+            }
+
+            foreach (StringLoader readable in strings.OrderBy(x => x.Offset))
+            {
+                int diff = stringOffset + readable.Offset;
+
+                // only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
+                reader.Seek(diff, SeekOrigin.Begin);
+
+                readable.LoadValue(reader);
+            }
+
+            string[] langNames = langs?.Select(x => x.Value).ToArray() ?? new string[0];
+
+            return new NameTable(names, langNames);
         }
     }
 }

@@ -51,7 +51,7 @@ namespace SixLabors.Fonts.Tests
 
         private static Stream Clone(this Stream src)
         {
-            MemoryStream ms = new MemoryStream();
+            var ms = new MemoryStream();
             src.Position = 0;
             src.CopyTo(ms);
             ms.Position = 0;

@@ -17,7 +17,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontMetadata()
         {
-            FontDescription description = FontDescription.LoadDescription(TestFonts.SimpleFontFileData());
+            var description = FontDescription.LoadDescription(TestFonts.SimpleFontFileData());
 
             Assert.Equal("SixLaborsSampleAB regular", description.FontName);
             Assert.Equal("Regular", description.FontSubFamilyName);
@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontMetadataWoff()
         {
-            FontDescription description = FontDescription.LoadDescription(TestFonts.SimpleFontFileWoffData());
+            var description = FontDescription.LoadDescription(TestFonts.SimpleFontFileWoffData());
 
             Assert.Equal("SixLaborsSampleAB regular", description.FontName);
             Assert.Equal("Regular", description.FontSubFamilyName);

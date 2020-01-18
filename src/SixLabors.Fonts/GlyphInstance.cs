@@ -12,6 +12,8 @@ namespace SixLabors.Fonts
     /// </summary>
     public partial class GlyphInstance
     {
+        private static readonly Vector2 Scale = new Vector2(1, -1);
+
         private readonly ushort sizeOfEm;
         private readonly Vector2[] controlPoints;
         private readonly bool[] onCurves;
@@ -75,7 +77,35 @@ namespace SixLabors.Fonts
         /// </value>
         internal ushort Index { get; }
 
-        private static readonly Vector2 Scale = new Vector2(1, -1);
+        /// <summary>
+        /// Gets the size of the EM
+        /// </summary>
+        public ushort SizeOfEm => this.sizeOfEm;
+
+        /// <summary>
+        /// Gets the points defining the shape of this glyph
+        /// </summary>
+        public Vector2[] ControlPoints => this.controlPoints;
+
+        /// <summary>
+        /// Gets wether or not the corresponding control point is on a curve
+        /// </summary>
+        public bool[] OnCurves => this.onCurves;
+
+        /// <summary>
+        /// Gets the end points
+        /// </summary>
+        public ushort[] EndPoints => this.endPoints;
+
+        /// <summary>
+        /// Gets the distance from the bounding box start
+        /// </summary>
+        public short LeftSideBearing => this.leftSideBearing;
+
+        /// <summary>
+        /// Gets the scale factor that is applied to the glyph
+        /// </summary>
+        public float ScaleFactor => this.scaleFactor;
 
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
@@ -258,32 +288,5 @@ namespace SixLabors.Fonts
                 this.Count = 0;
             }
         }
-
-        public ushort SizeOfEm => this.sizeOfEm;
-
-        /// <summary>
-        /// The points defining the shape of this glyph
-        /// </summary>
-        public Vector2[] ControlPoints => this.controlPoints;
-
-        /// <summary>
-        /// Wether or not the corresponding control point is on a curve
-        /// </summary>
-        public bool[] OnCurves => this.onCurves;
-
-        /// <summary>
-        /// The end points
-        /// </summary>
-        public ushort[] EndPoints => this.endPoints;
-
-        /// <summary>
-        /// The distance from the bounding box start
-        /// </summary>
-        public short LeftSideBearing => this.leftSideBearing;
-
-        /// <summary>
-        /// The scale factor that is applied to the glyph
-        /// </summary>
-        public float ScaleFactor => this.scaleFactor;
     }
 }

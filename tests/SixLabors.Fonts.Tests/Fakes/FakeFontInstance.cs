@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tests.Fakes
         /// </summary>
         public static FakeFontInstance CreateFontWithVaryingVerticalFontMetrics(string text) {
             List<FakeGlyphSource> glyphs = GetGlyphs(text);
-            FakeFontInstance result = new FakeFontInstance(
+            var result = new FakeFontInstance(
                 GenerateNameTable(),
                 GenerateCMapTable(glyphs),
                 new FakeGlyphTable(glyphs),
@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tests.Fakes
         }
 
         private static List<FakeGlyphSource> GetGlyphs(string text) {
-            List<FakeGlyphSource> glyphs = text.Distinct().Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
+            var glyphs = text.Distinct().Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
             return glyphs;
         }
 

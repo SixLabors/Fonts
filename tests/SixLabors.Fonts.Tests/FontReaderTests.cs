@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests
             var writer = new BinaryWriter();
             writer.WriteTrueTypeFileHeader(0, 0, 0, 0);
 
-            FontReader reader = new FontReader(writer.GetStream());
+            var reader = new FontReader(writer.GetStream());
             Assert.Equal(FontReader.OutlineTypes.TrueType, reader.OutlineType);
         }
 

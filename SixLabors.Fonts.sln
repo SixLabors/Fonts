@@ -1,24 +1,27 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.15
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29512.175
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{C317F1B1-D75E-4C6D-83EB-80367343E0D7}"
 	ProjectSection(SolutionItems) = preProject
 		standards\.editorconfig = standards\.editorconfig
+		.github\workflows\build-and-test.yml = .github\workflows\build-and-test.yml
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
 		NuGet.config = NuGet.config
 		README.md = README.md
-		standards\SixLabors.ruleset = standards\SixLabors.ruleset
-		standards\stylecop.json = standards\stylecop.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{815C0625-CD3D-440F-9F80-2D83856AB7AE}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+		src\Directory.Build.targets = src\Directory.Build.targets
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{56801022-D71A-4FBE-BC5B-CBA08E2284EC}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{9E574A07-F879-4811-9C41-5CBDC6BAFDB7}"
 	ProjectSection(SolutionItems) = preProject
-		src\Shared\AssemblyInfo.Common.cs = src\Shared\AssemblyInfo.Common.cs
-		stylecop.json = stylecop.json
+		tests\Directory.Build.props = tests\Directory.Build.props
+		tests\Directory.Build.targets = tests\Directory.Build.targets
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SixLabors.Fonts", "src\SixLabors.Fonts\SixLabors.Fonts.csproj", "{09E744EC-4852-4FC7-BE78-C1B399F17967}"

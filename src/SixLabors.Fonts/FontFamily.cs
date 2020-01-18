@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -41,6 +41,13 @@ namespace SixLabors.Fonts
         /// </value>
         public IEnumerable<FontStyle> AvailableStyles => this.collection.AvailableStyles(this.Name);
 
+        internal FontStyle DefaultStyle => this.IsStyleAvailable(FontStyle.Regular) ? FontStyle.Regular : this.AvailableStyles.First();
+
+        internal IFontInstance? Find(FontStyle style)
+        {
+            return this.collection.Find(this.Name, style);
+        }
+
         /// <summary>
         /// Determines whether the specified <see cref="FontStyle"/> is available.
         /// </summary>
@@ -49,13 +56,6 @@ namespace SixLabors.Fonts
         ///   <c>true</c> if the specified <see cref="FontStyle"/> is available; otherwise, <c>false</c>.
         /// </returns>
         public bool IsStyleAvailable(FontStyle style) => this.AvailableStyles.Contains(style);
-
-        internal FontStyle DefaultStyle => this.IsStyleAvailable(FontStyle.Regular) ? FontStyle.Regular : this.AvailableStyles.First();
-
-        internal IFontInstance Find(FontStyle style)
-        {
-            return this.collection.Find(this.Name, style);
-        }
 
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
@@ -25,7 +25,7 @@ namespace SixLabors.Fonts
         /// <param name="nameTable">The name table.</param>
         /// <param name="os2">The os2.</param>
         /// <param name="head">The head.</param>
-        internal FontDescription(NameTable nameTable, OS2Table os2, HeadTable head)
+        internal FontDescription(NameTable nameTable, OS2Table? os2, HeadTable? head)
             : this(nameTable.FontName, nameTable.FontFamilyName, nameTable.FontSubFamilyName, ConvertStyle(os2, head))
         {
         }
@@ -96,14 +96,14 @@ namespace SixLabors.Fonts
 
             // NOTE: These fields are read in their optimized order
             // https://docs.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
-            HeadTable head = reader.GetTable<HeadTable>();
-            OS2Table os2 = reader.GetTable<OS2Table>();
+            HeadTable? head = reader.TryGetTable<HeadTable>();
+            OS2Table? os2 = reader.TryGetTable<OS2Table>();
             NameTable nameTable = reader.GetTable<NameTable>();
 
             return new FontDescription(nameTable, os2, head);
         }
 
-        private static FontStyle ConvertStyle(OS2Table os2, HeadTable head)
+        private static FontStyle ConvertStyle(OS2Table? os2, HeadTable? head)
         {
             FontStyle style = FontStyle.Regular;
 

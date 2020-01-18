@@ -55,8 +55,8 @@ namespace SixLabors.Fonts.Tables.General
             // longHorMetric  | hMetrics[numberOfHMetrics]                    | Paired advance width and left side bearing values for each glyph. Records are indexed by glyph ID.
             // int16          | leftSideBearing[numGlyphs - numberOfHMetrics] | Left side bearings for glyph IDs greater than or equal to numberOfHMetrics.
             int bearingCount = glyphCount - metricCount;
-            var advancedWidth = new ushort[metricCount];
-            var leftSideBearings = new short[glyphCount];
+            ushort[] advancedWidth = new ushort[metricCount];
+            short[] leftSideBearings = new short[glyphCount];
 
             for (int i = 0; i < metricCount; i++)
             {
