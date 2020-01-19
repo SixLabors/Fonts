@@ -7,7 +7,7 @@ SixLabors.Fonts
 
 <div align="center">
 
-[![Build status](https://ci.appveyor.com/api/projects/status/26dab7lf874b5ib3/branch/master?svg=true)](https://ci.appveyor.com/project/six-labors/fonts/branch/master)
+[![Build Status](https://img.shields.io/github/workflow/status/SixLabors/Fonts/Build/master)](https://github.com/SixLabors/Fonts/actions)
 [![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/master/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/SixLabors/Fonts/master/LICENSE)
 
@@ -75,7 +75,7 @@ FontFamily font2 = fonts.Install("./path/to/font2.woff");
 
 ### How can you help?
 
-Please... Spread the word, contribute algorithms, submit performance improvements, unit tests. 
+Please... Spread the word, contribute algorithms, submit performance improvements, unit tests.
 
 ### Projects using SixLabors.Fonts
 
