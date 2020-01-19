@@ -95,6 +95,9 @@
 *.png               binary
 *.ttf               binary
 *.snk               binary
+*.ttc               binary
+*.ttf               binary
+*.woff              binary
 
 ###############################################################################
 # Set explicit file behavior to:
