@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Exceptions;
@@ -15,13 +16,24 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection
     {
-        private readonly Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, FontFamily> families = new Dictionary<string, FontFamily>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.CurrentCultureIgnoreCase);
+        private readonly Dictionary<string, FontFamily> families = new Dictionary<string, FontFamily>(StringComparer.CurrentCultureIgnoreCase);
+        private readonly CultureInfo culture;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontCollection"/> class.
+        /// </summary>
+        /// <param name="culture">The culture to use for font metadata.</param>
+        public FontCollection(CultureInfo culture)
+        {
+            this.culture = culture;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontCollection"/> class.
         /// </summary>
         public FontCollection()
+            : this(CultureInfo.InvariantCulture)
         {
         }
 
@@ -51,7 +63,7 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(string path, out FontDescription fontDescription)
         {
-            var instance = new FileFontInstance(path);
+            var instance = new FileFontInstance(path, this.culture);
             fontDescription = instance.Description;
             return this.Install(instance);
         }
@@ -74,7 +86,7 @@ namespace SixLabors.Fonts
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(Stream fontStream, out FontDescription fontDescription)
         {
-            var instance = FontInstance.LoadFont(fontStream);
+            var instance = FontInstance.LoadFont(fontStream, this.culture);
             fontDescription = instance.Description;
 
             return this.Install(instance);
@@ -98,7 +110,7 @@ namespace SixLabors.Fonts
         /// <returns>The font descriptions of the installed fonts.</returns>
         public IEnumerable<FontFamily> InstallCollection(string fontCollectionPath, out IEnumerable<FontDescription> fontDescriptions)
         {
-            FileFontInstance[] fonts = FileFontInstance.LoadFontCollection(fontCollectionPath);
+            FileFontInstance[] fonts = FileFontInstance.LoadFontCollection(fontCollectionPath, this.culture);
 
             var description = new FontDescription[fonts.Length];
             var families = new HashSet<FontFamily>();
@@ -129,7 +141,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < ttcHeader.NumFonts; ++i)
             {
                 fontCollectionStream.Position = startPos + ttcHeader.OffsetTable[i];
-                var instance = FontInstance.LoadFont(fontCollectionStream);
+                var instance = FontInstance.LoadFont(fontCollectionStream, this.culture);
                 installedFamilies.Add(this.Install(instance));
                 FontDescription fontDescription = instance.Description;
                 result.Add(fontDescription);

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Tables.General.Name;
@@ -19,19 +20,7 @@ namespace SixLabors.Fonts.Tables.General
         internal NameTable(NameRecord[] names, string[] languages)
         {
             this.names = names;
-            this.FontFamilyName = this.GetNameById(NameIds.FontFamilyName);
-            this.FontSubFamilyName = this.GetNameById(NameIds.FontSubfamilyName);
-            this.Id = this.GetNameById(NameIds.UniqueFontID);
-            this.FontName = this.GetNameById(NameIds.FullFontName);
         }
-
-        /// <summary>
-        /// Gets the identifier.
-        /// </summary>
-        /// <value>
-        /// The identifier.
-        /// </value>
-        public string Id { get; }
 
         /// <summary>
         /// Gets the name of the font.
@@ -39,62 +28,80 @@ namespace SixLabors.Fonts.Tables.General
         /// <value>
         /// The name of the font.
         /// </value>
-        public string FontName { get; }
+        public string Id(CultureInfo culture)
+            => this.GetNameById(culture, NameIds.UniqueFontID);
 
         /// <summary>
-        /// Gets the name of the font family.
+        /// Gets the name of the font.
         /// </summary>
         /// <value>
-        /// The name of the font family.
+        /// The name of the font.
         /// </value>
-        public string FontFamilyName { get; }
+        public string FontName(CultureInfo culture)
+            => this.GetNameById(culture, NameIds.FullFontName);
 
         /// <summary>
-        /// Gets the name of the font sub family.
+        /// Gets the name of the font.
         /// </summary>
         /// <value>
-        /// The name of the font sub family.
+        /// The name of the font.
         /// </value>
-        public string FontSubFamilyName { get; }
+        public string FontFamilyName(CultureInfo culture)
+            => this.GetNameById(culture, NameIds.FontFamilyName);
 
-        public string GetNameById(NameIds nameId)
+        /// <summary>
+        /// Gets the name of the font.
+        /// </summary>
+        /// <value>
+        /// The name of the font.
+        /// </value>
+        public string FontSubFamilyName(CultureInfo culture)
+            => this.GetNameById(culture, NameIds.FontSubfamilyName);
+
+        public string GetNameById(CultureInfo culture, NameIds nameId)
         {
-            foreach (NameRecord name in this.names)
-            {
-                if (name.Platform == PlatformIDs.Windows && name.LanguageID == 0x0409)
-                {
-                    if (name.NameID == nameId)
-                    {
-                        return name.Value;
-                    }
-                }
-            }
-
-            foreach (NameRecord name in this.names)
-            {
-                if (name.Platform == PlatformIDs.Windows)
-                {
-                    if (name.NameID == nameId)
-                    {
-                        return name.Value;
-                    }
-                }
-            }
-
+#if SUPPORTS_CULTUREINFO_LCID
+            var languageId = culture.LCID;
+#else
+            var languageId = 0x0409;
+#endif
+            NameRecord? usaVersion = null;
+            NameRecord? firstWindows = null;
+            NameRecord? first = null;
             foreach (NameRecord name in this.names)
             {
                 if (name.NameID == nameId)
                 {
-                    return name.Value;
+                    // get just the first one, just incase.
+                    first ??= name;
+                    if (name.Platform == PlatformIDs.Windows)
+                    {
+                        // if us not found return the first windows one
+                        firstWindows ??= name;
+                        if (name.LanguageID == 0x0409)
+                        {
+                            // grab the us version as its on next best match
+                            usaVersion ??= name;
+                        }
+
+                        if (name.LanguageID == languageId)
+                        {
+                            // return the most exact first
+                            return name.Value;
+                        }
+                    }
                 }
             }
 
-            return string.Empty;
+            return usaVersion?.Value ??
+                   firstWindows?.Value ??
+                   first?.Value ??
+                   string.Empty;
         }
 
-        public string GetNameById(ushort nameId)
+        public string GetNameById(CultureInfo culture, ushort nameId)
         {
-            return this.GetNameById((NameIds)nameId);
+            return this.GetNameById(culture, (NameIds)nameId);
         }
 
         public static NameTable Load(FontReader reader)
