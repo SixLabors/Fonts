@@ -1,8 +1,9 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace SixLabors.Fonts
 {
@@ -11,10 +12,10 @@ namespace SixLabors.Fonts
     /// </summary>
     public static class SystemFonts
     {
-        private static Lazy<SystemFontCollection> lazySystemFonts = new Lazy<SystemFontCollection>(() => new SystemFontCollection());
+        private static Lazy<IReadOnlyFontCollection> lazySystemFonts = new Lazy<IReadOnlyFontCollection>(() => LoadCollection(CultureInfo.InvariantCulture));
 
         /// <summary>
-        /// Gets the collection hosting the globably installled system fonts.
+        /// Gets the collection containing the globaly installled system fonts.
         /// </summary>
         /// <value>
         /// The system fonts.
@@ -60,5 +61,12 @@ namespace SixLabors.Fonts
         /// <param name="size">The size.</param>
         /// <returns>Returns instance of the <see cref="Font"/> from the current collection.</returns>
         public static Font CreateFont(string fontFamily, float size) => Collection.CreateFont(fontFamily, size);
+
+        /// <summary>
+        /// Creates the collection of system fonts hosted the globably installed system fonts with metadata stored in a particular culture.
+        /// </summary>
+        /// <param name="culture">The culture to load the fonts metadata in.</param>
+        /// <returns>the newly created collection containg the loaded system fonts with metadata in the desired culture (where availible).</returns>
+        public static IReadOnlyFontCollection LoadCollection(CultureInfo culture) => new SystemFontCollection(culture);
     }
 }

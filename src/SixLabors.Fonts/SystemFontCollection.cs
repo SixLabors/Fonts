@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -15,19 +16,20 @@ namespace SixLabors.Fonts
     {
         private readonly FontCollection collection = new FontCollection();
 
-        internal SystemFontCollection()
-        {
-            string[] paths = new[]
+        /// <summary>
+        /// Gets the default set of locations we probe for System Fonts.
+        /// </summary>
+        private static IReadOnlyCollection<string> standardFontLocations = new[]
             {
                 // windows directories
                 "%SYSTEMROOT%\\Fonts",
 
-                // linux directlty list
+                // linux directories
                 "~/.fonts/",
                 "/usr/local/share/fonts/",
                 "/usr/share/fonts/",
 
-                // mac fonts
+                // mac directories
                 "~/Library/Fonts/",
                 "/Library/Fonts/",
                 "/Network/Library/Fonts/",
@@ -35,11 +37,23 @@ namespace SixLabors.Fonts
                 "/System Folder/Fonts/",
             };
 
-            string[] expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
-            string[] found = expanded.Where(x => Directory.Exists(x)).ToArray();
+        public SystemFontCollection()
+            : this(standardFontLocations, CultureInfo.InvariantCulture)
+        {
+        }
+
+        public SystemFontCollection(CultureInfo culture)
+           : this(standardFontLocations, culture)
+        {
+        }
+
+        public SystemFontCollection(IEnumerable<string> probPaths, CultureInfo culture)
+        {
+            string[] expanded = probPaths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
+            string[] foundDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
 
             // we do this to provide a consistent experience with case sensitive file systems.
-            IEnumerable<string> files = found
+            IEnumerable<string> files = foundDirectories
                                 .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
                                 .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase) || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase));
 

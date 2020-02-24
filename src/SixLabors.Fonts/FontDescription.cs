@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
@@ -27,8 +28,9 @@ namespace SixLabors.Fonts
         /// <param name="nameTable">The name table.</param>
         /// <param name="os2">The os2.</param>
         /// <param name="head">The head.</param>
-        internal FontDescription(NameTable nameTable, OS2Table? os2, HeadTable? head)
-            : this(nameTable.FontName, nameTable.FontFamilyName, nameTable.FontSubFamilyName, ConvertStyle(os2, head))
+        /// <param name="culture">The culture to load metadata in.</param>
+        internal FontDescription(NameTable nameTable, OS2Table? os2, HeadTable? head, CultureInfo culture)
+            : this(nameTable.FontName(culture), nameTable.FontFamilyName(culture), nameTable.FontSubFamilyName(culture), ConvertStyle(os2, head))
         {
         }
 
@@ -59,16 +61,40 @@ namespace SixLabors.Fonts
         /// Reads a <see cref="FontDescription"/> from the specified stream.
         /// </summary>
         /// <param name="path">The file path.</param>
+        /// <param name="culture">Culture to load metadate in.</param>
         /// <returns>a <see cref="FontDescription"/>.</returns>
-        public static FontDescription LoadDescription(string path)
+        public static FontDescription LoadDescription(string path, CultureInfo culture)
         {
             Guard.NotNullOrWhiteSpace(path, nameof(path));
 
             using (FileStream fs = File.OpenRead(path))
             {
                 var reader = new FontReader(fs);
-                return LoadDescription(reader);
+                return LoadDescription(reader, culture);
             }
+        }
+
+        /// <summary>
+        /// Reads a <see cref="FontDescription"/> from the specified stream.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <returns>a <see cref="FontDescription"/>.</returns>
+        public static FontDescription LoadDescription(string path)
+            => LoadDescription(path, CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Reads a <see cref="FontDescription"/> from the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <param name="culture">Culture to load metadate in.</param>
+        /// <returns>a <see cref="FontDescription"/>.</returns>
+        public static FontDescription LoadDescription(Stream stream, CultureInfo culture)
+        {
+            Guard.NotNull(stream, nameof(stream));
+
+            // only read the name table
+            var reader = new FontReader(stream);
+            return LoadDescription(reader, culture);
         }
 
         /// <summary>
@@ -77,12 +103,27 @@ namespace SixLabors.Fonts
         /// <param name="stream">The stream.</param>
         /// <returns>a <see cref="FontDescription"/>.</returns>
         public static FontDescription LoadDescription(Stream stream)
-        {
-            Guard.NotNull(stream, nameof(stream));
+            => LoadDescription(stream, CultureInfo.InvariantCulture);
 
-            // only read the name table
-            var reader = new FontReader(stream);
-            return LoadDescription(reader);
+        /// <summary>
+        /// Reads a <see cref="FontDescription" /> from the specified stream.
+        /// </summary>
+        /// <param name="reader">The reader.</param>
+        /// <param name="culture">Culture to load metadate in.</param>
+        /// <returns>
+        /// a <see cref="FontDescription" />.
+        /// </returns>
+        internal static FontDescription LoadDescription(FontReader reader, CultureInfo culture)
+        {
+            DebugGuard.NotNull(reader, nameof(reader));
+
+            // NOTE: These fields are read in their optimized order
+            // https://docs.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
+            HeadTable? head = reader.TryGetTable<HeadTable>();
+            OS2Table? os2 = reader.TryGetTable<OS2Table>();
+            NameTable nameTable = reader.GetTable<NameTable>();
+
+            return new FontDescription(nameTable, os2, head, culture);
         }
 
         /// <summary>
@@ -93,16 +134,22 @@ namespace SixLabors.Fonts
         /// a <see cref="FontDescription" />.
         /// </returns>
         internal static FontDescription LoadDescription(FontReader reader)
+            => LoadDescription(reader, CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Reads all the <see cref="FontDescription"/>s from the file at the specified path (typically a .ttc file like simsun.ttc).
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <param name="culture">The culture to load metadata in.</param>
+        /// <returns>a <see cref="FontDescription"/>.</returns>
+        public static FontDescription[] LoadFontCollectionDescriptions(string path, CultureInfo culture)
         {
-            DebugGuard.NotNull(reader, nameof(reader));
+            Guard.NotNullOrWhiteSpace(path, nameof(path));
 
-            // NOTE: These fields are read in their optimized order
-            // https://docs.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
-            HeadTable? head = reader.TryGetTable<HeadTable>();
-            OS2Table? os2 = reader.TryGetTable<OS2Table>();
-            NameTable nameTable = reader.GetTable<NameTable>();
-
-            return new FontDescription(nameTable, os2, head);
+            using (FileStream fs = File.OpenRead(path))
+            {
+                return LoadFontCollectionDescriptions(fs, culture);
+            }
         }
 
         /// <summary>
@@ -111,21 +158,15 @@ namespace SixLabors.Fonts
         /// <param name="path">The file path.</param>
         /// <returns>a <see cref="FontDescription"/>.</returns>
         public static FontDescription[] LoadFontCollectionDescriptions(string path)
-        {
-            Guard.NotNullOrWhiteSpace(path, nameof(path));
-
-            using (FileStream fs = File.OpenRead(path))
-            {
-                return LoadFontCollectionDescriptions(fs);
-            }
-        }
+            => LoadFontCollectionDescriptions(path, CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Reads all the <see cref="FontDescription"/>s from the specified stream (typically a .ttc file like simsun.ttc).
         /// </summary>
-        /// <param name="stream">The stream to read the font collection from.</param>
+        /// <param name="stream">The stream to read the font collection from.</param>             
+        /// <param name="culture">The culture to load metadata in.</param>
         /// <returns>a <see cref="FontDescription"/>.</returns>
-        public static FontDescription[] LoadFontCollectionDescriptions(Stream stream)
+        public static FontDescription[] LoadFontCollectionDescriptions(Stream stream, CultureInfo culture)
         {
             long startPos = stream.Position;
             var reader = new BinaryReader(stream, true);
@@ -136,11 +177,19 @@ namespace SixLabors.Fonts
             {
                 stream.Position = startPos + ttcHeader.OffsetTable[i];
                 var fontReader = new FontReader(stream);
-                result[i] = LoadDescription(fontReader);
+                result[i] = LoadDescription(fontReader, culture);
             }
 
             return result;
         }
+
+        /// <summary>
+        /// Reads all the <see cref="FontDescription"/>s from the specified stream (typically a .ttc file like simsun.ttc).
+        /// </summary>
+        /// <param name="stream">The stream to read the font collection from.</param>
+        /// <returns>a <see cref="FontDescription"/>.</returns>
+        public static FontDescription[] LoadFontCollectionDescriptions(Stream stream)
+            => LoadFontCollectionDescriptions(stream, CultureInfo.InvariantCulture);
 
         private static FontStyle ConvertStyle(OS2Table? os2, HeadTable? head)
         {
