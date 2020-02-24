@@ -163,7 +163,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Reads all the <see cref="FontDescription"/>s from the specified stream (typically a .ttc file like simsun.ttc).
         /// </summary>
-        /// <param name="stream">The stream to read the font collection from.</param>             
+        /// <param name="stream">The stream to read the font collection from.</param>
         /// <param name="culture">The culture to load metadata in.</param>
         /// <returns>a <see cref="FontDescription"/>.</returns>
         public static FontDescription[] LoadFontCollectionDescriptions(Stream stream, CultureInfo culture)
