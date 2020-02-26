@@ -6,6 +6,8 @@ using System.Globalization;
 using System.IO;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.General.Name;
+using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts
 {
@@ -14,14 +16,6 @@ namespace SixLabors.Fonts
     /// </summary>
     public class FontDescription
     {
-        internal FontDescription(string fontName, string fontFamily, string fontSubFamilyName, FontStyle style)
-        {
-            this.FontName = fontName;
-            this.FontFamily = fontFamily;
-            this.FontSubFamilyName = fontSubFamilyName;
-            this.Style = style;
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="FontDescription" /> class.
         /// </summary>
@@ -30,8 +24,14 @@ namespace SixLabors.Fonts
         /// <param name="head">The head.</param>
         /// <param name="culture">The culture to load metadata in.</param>
         internal FontDescription(NameTable nameTable, OS2Table? os2, HeadTable? head, CultureInfo culture)
-            : this(nameTable.FontName(culture), nameTable.FontFamilyName(culture), nameTable.FontSubFamilyName(culture), ConvertStyle(os2, head))
         {
+            this.FontName = nameTable.FontName(culture);
+            this.FontFamily = nameTable.FontFamilyName(culture);
+            this.FontSubFamilyName = nameTable.FontSubFamilyName(culture);
+            this.Style = ConvertStyle(os2, head);
+            this.FontNames = nameTable.GetNameRecordsById(NameIds.FullFontName);
+            this.FontFamilyNames = nameTable.GetNameRecordsById(NameIds.FontFamilyName);
+            this.FontSubFamilyNames = nameTable.GetNameRecordsById(NameIds.FontSubfamilyName);
         }
 
         /// <summary>
@@ -56,6 +56,21 @@ namespace SixLabors.Fonts
         /// Gets the font sub family.
         /// </summary>
         public string FontSubFamilyName { get; }
+
+        /// <summary>
+        /// Gets the font names in every platform and language.
+        /// </summary>
+        internal IEnumerable<NameRecord> FontNames { get; }
+
+        /// <summary>
+        /// Gets the font family names in every platform and language.
+        /// </summary>
+        internal IEnumerable<NameRecord> FontFamilyNames { get; }
+
+        /// <summary>
+        /// Gets the font sub family names in every platform and language.
+        /// </summary>
+        internal IEnumerable<NameRecord> FontSubFamilyNames { get; }
 
         /// <summary>
         /// Reads a <see cref="FontDescription"/> from the specified stream.

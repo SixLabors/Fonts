@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts
 {
@@ -44,6 +45,23 @@ namespace SixLabors.Fonts
         /// <param name="family">The found family.</param>
         /// <returns>true if a font of that family has been installed into the font collection.</returns>
         public static bool TryFind(string fontFamily, out FontFamily family) => Collection.TryFind(fontFamily, out family);
+
+        /// <summary>
+        /// Finds the specified font family from the system font store, also by looking into locale specific names.
+        /// </summary>
+        /// <param name="fontFamily">The font family.</param>
+        /// <param name="preferredCulture">Preferred culture, can be null.</param>
+        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFoundException"/></returns>
+        public static FontFamily Find(string fontFamily, CultureInfo? preferredCulture) => Collection.Find(fontFamily, preferredCulture);
+
+        /// <summary>
+        /// Finds the specified font family from the system font store, also by looking into locale specific names.
+        /// </summary>
+        /// <param name="fontFamily">The font family to find.</param>
+        /// <param name="preferredCulture">Preferred culture, can be null.</param>
+        /// <param name="family">The found family.</param>
+        /// <returns>true if a font of that family has been installed into the font collection.</returns>
+        public static bool TryFind(string fontFamily, CultureInfo? preferredCulture, out FontFamily family) => Collection.TryFind(fontFamily, preferredCulture, out family);
 
         /// <summary>
         /// Create a new instance of the <see cref="Font"/> for the named font family.

@@ -90,5 +90,11 @@ namespace SixLabors.Fonts
 
         /// <inheritdocs />
         public bool TryFind(string fontFamily, out FontFamily family) => this.collection.TryFind(fontFamily, out family);
+
+        /// <inheritdocs />
+        public FontFamily Find(string fontFamily, CultureInfo? preferredCulture) => this.collection.Find(fontFamily, preferredCulture);
+
+        /// <inheritdocs />
+        public bool TryFind(string fontFamily, CultureInfo? preferredCulture, out FontFamily family) => this.collection.TryFind(fontFamily, preferredCulture, out family);
     }
 }

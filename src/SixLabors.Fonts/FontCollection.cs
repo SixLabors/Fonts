@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Tables.General.Name;
 
 namespace SixLabors.Fonts
 {
@@ -18,6 +19,11 @@ namespace SixLabors.Fonts
     {
         private readonly Dictionary<string, List<IFontInstance>> instances = new Dictionary<string, List<IFontInstance>>(StringComparer.CurrentCultureIgnoreCase);
         private readonly Dictionary<string, FontFamily> families = new Dictionary<string, FontFamily>(StringComparer.CurrentCultureIgnoreCase);
+#if SUPPORTS_CULTUREINFO_LCID
+        // If LCID is supported, we will also be able to provide font families in all languages
+        // And we can create StringComparer for any valid LCID.
+        private readonly Dictionary<int, Dictionary<string, FontFamily>> familiesByLcid = new Dictionary<int, Dictionary<string, FontFamily>>();
+#endif
         private readonly CultureInfo culture;
 
         /// <summary>
@@ -177,6 +183,56 @@ namespace SixLabors.Fonts
             return this.families.TryGetValue(fontFamily, out family);
         }
 
+        /// <summary>
+        /// Finds the specified font family, also by looking into locale specific names.<br/>
+        /// <b>Note</b>: On targets where <see cref="CultureInfo"/>.LCID is not supported,
+        /// such as .NET Standard 1.0,  it's same as <see cref="Find(string)"/>
+        /// </summary>
+        /// <param name="fontFamily">The font family.</param>
+        /// <param name="preferredCulture">Preferred culture, can be null.</param>
+        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFoundException"/></returns>
+        public FontFamily Find(string fontFamily, CultureInfo? preferredCulture)
+        {
+            if (this.TryFind(fontFamily, preferredCulture, out FontFamily result))
+            {
+                return result;
+            }
+
+            throw new FontFamilyNotFoundException(fontFamily);
+        }
+
+        /// <summary>
+        /// Finds the specified font family, also by looking into locale specific names.
+        /// <b>Note</b>: On targets where <see cref="CultureInfo"/>.LCID is not supported,
+        /// such as .NET Standard 1.0,  it's same as <see cref="TryFind(string, out FontFamily)"/>
+        /// </summary>
+        /// <param name="fontFamily">The font family to find.</param>
+        /// <param name="preferredCulture">Preferred culture, can be null.</param>
+        /// <param name="family">The found family.</param>
+        /// <returns>true if a font of that family has been installed into the font collection.</returns>
+        public bool TryFind(string fontFamily, CultureInfo? preferredCulture, out FontFamily family)
+        {
+#if SUPPORTS_CULTUREINFO_LCID
+            IEnumerable<Dictionary<string, FontFamily>> collections = this.familiesByLcid.Values;
+            if (preferredCulture != null)
+            {
+                if (this.familiesByLcid.TryGetValue(preferredCulture.LCID, out Dictionary<string, FontFamily> families))
+                {
+                    collections = Enumerable.Repeat(families, 1).Concat(collections);
+                }
+            }
+
+            foreach (Dictionary<string, FontFamily> families in collections)
+            {
+                if (families.TryGetValue(fontFamily, out family))
+                {
+                    return true;
+                }
+            }
+#endif
+            return this.TryFind(fontFamily, out family);
+        }
+
         internal IEnumerable<FontStyle> AvailableStyles(string fontFamily)
         {
             return this.FindAll(fontFamily).Select(x => x.Description.Style).ToArray();
@@ -201,10 +257,27 @@ namespace SixLabors.Fonts
                     this.instances.Add(instance.Description.FontFamily, new List<IFontInstance>(4));
                 }
 
-                if (!this.families.ContainsKey(instance.Description.FontFamily))
+                if (!this.families.TryGetValue(instance.Description.FontFamily, out FontFamily fontFamily))
                 {
-                    this.families.Add(instance.Description.FontFamily, new FontFamily(instance.Description.FontFamily, this));
+                    fontFamily = new FontFamily(instance.Description.FontFamily, this);
+                    this.families.Add(fontFamily.Name, fontFamily);
                 }
+
+#if SUPPORTS_CULTUREINFO_LCID
+                // If LCID is supported, we will also be able to provide font families in all languages
+                foreach (NameRecord record in instance.Description.FontFamilyNames)
+                {
+                    // Create the families' Dictionary of current language if it does not exist
+                    if (!this.familiesByLcid.TryGetValue(record.LanguageID, out Dictionary<string, FontFamily> familiesOfCurrentLanguage))
+                    {
+                        var currentCulture = CultureInfo.GetCultureInfo(record.LanguageID);
+                        familiesOfCurrentLanguage = new Dictionary<string, FontFamily>(StringComparer.Create(currentCulture, true));
+                        this.familiesByLcid.Add(record.LanguageID, familiesOfCurrentLanguage);
+                    }
+
+                    familiesOfCurrentLanguage.Add(record.Value, fontFamily);
+                }
+#endif
 
                 this.instances[instance.Description.FontFamily].Add(instance);
             }

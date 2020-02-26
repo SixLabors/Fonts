@@ -58,45 +58,41 @@ namespace SixLabors.Fonts.Tables.General
         public string FontSubFamilyName(CultureInfo culture)
             => this.GetNameById(culture, NameIds.FontSubfamilyName);
 
+        public IEnumerable<NameRecord> GetNameRecordsById(NameIds nameId)
+        {
+            return this.names.Where(record => record.NameID == nameId);
+        }
+
+        /// <summary>
+        /// Get windows names from <paramref name="records"/>,
+        /// in language specified by <paramref name="culture"/>, whenever possible.
+        /// Returns a <see cref="string.Empty"/> if nothing can be found.
+        /// </summary>
+        public string GetName(IEnumerable<NameRecord> records, CultureInfo culture)
+        {
+            // get windows names whenever possible
+            IEnumerable<NameRecord> windowsNames = records.Where(record => record.Platform == PlatformIDs.Windows);
+            records = windowsNames.Count() > 0 ? windowsNames : records;
+
+            // LCID of English (US) is 0x0409
+            int usaLCID = 0x0409;
+#if SUPPORTS_CULTUREINFO_LCID
+            int languageId = culture.LCID;
+#else
+            int languageId = usaLCID;
+#endif
+
+            // get current culture names whenever possible, and then fallback to getting English (US) names
+            IEnumerable<NameRecord> namesByLanguage = records.Where(record => record.LanguageID == languageId);
+            records = namesByLanguage.Count() > 0 ? namesByLanguage : records.Where(record => record.LanguageID == usaLCID);
+
+            // return the first value
+            return records.Select(record => record.Value).DefaultIfEmpty(string.Empty).First();
+        }
+
         public string GetNameById(CultureInfo culture, NameIds nameId)
         {
-#if SUPPORTS_CULTUREINFO_LCID
-            var languageId = culture.LCID;
-#else
-            var languageId = 0x0409;
-#endif
-            NameRecord? usaVersion = null;
-            NameRecord? firstWindows = null;
-            NameRecord? first = null;
-            foreach (NameRecord name in this.names)
-            {
-                if (name.NameID == nameId)
-                {
-                    // get just the first one, just incase.
-                    first ??= name;
-                    if (name.Platform == PlatformIDs.Windows)
-                    {
-                        // if us not found return the first windows one
-                        firstWindows ??= name;
-                        if (name.LanguageID == 0x0409)
-                        {
-                            // grab the us version as its on next best match
-                            usaVersion ??= name;
-                        }
-
-                        if (name.LanguageID == languageId)
-                        {
-                            // return the most exact first
-                            return name.Value;
-                        }
-                    }
-                }
-            }
-
-            return usaVersion?.Value ??
-                   firstWindows?.Value ??
-                   first?.Value ??
-                   string.Empty;
+            return this.GetName(this.GetNameRecordsById(nameId), culture);
         }
 
         public string GetNameById(CultureInfo culture, ushort nameId)
