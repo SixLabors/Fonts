@@ -35,7 +35,7 @@ namespace SixLabors.Fonts
         /// Finds the specified font family from the system font store.
         /// </summary>
         /// <param name="fontFamily">The font family.</param>
-        /// <returns>The family if installed otherwise null</returns>
+        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFoundException"/></returns>
         public static FontFamily Find(string fontFamily) => Collection.Find(fontFamily);
 
         /// <summary>
