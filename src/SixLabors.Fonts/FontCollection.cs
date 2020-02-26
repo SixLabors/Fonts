@@ -267,15 +267,31 @@ namespace SixLabors.Fonts
                 // If LCID is supported, we will also be able to provide font families in all languages
                 foreach (NameRecord record in instance.Description.FontFamilyNames)
                 {
-                    // Create the families' Dictionary of current language if it does not exist
-                    if (!this.familiesByLcid.TryGetValue(record.LanguageID, out Dictionary<string, FontFamily> familiesOfCurrentLanguage))
+                    // Sometimes fonts might have records without a valid LCID, skip them
+                    // Even if all records don't have any valid LCID, it's not a problem to skip them there
+                    // Because their instance.Description.FontFamily should already be saved into this.families
+                    // And this.families will be searched too.
+                    if (record.LanguageID <= 0)
                     {
-                        var currentCulture = CultureInfo.GetCultureInfo(record.LanguageID);
-                        familiesOfCurrentLanguage = new Dictionary<string, FontFamily>(StringComparer.Create(currentCulture, true));
-                        this.familiesByLcid.Add(record.LanguageID, familiesOfCurrentLanguage);
+                        continue;
                     }
 
-                    familiesOfCurrentLanguage.Add(record.Value, fontFamily);
+                    try
+                    {
+                        // Create the families' Dictionary of current language if it does not exist
+                        if (!this.familiesByLcid.TryGetValue(record.LanguageID, out Dictionary<string, FontFamily> familiesOfCurrentLanguage))
+                        {
+                            var currentCulture = CultureInfo.GetCultureInfo(record.LanguageID);
+                            familiesOfCurrentLanguage = new Dictionary<string, FontFamily>(StringComparer.Create(currentCulture, true));
+                            this.familiesByLcid.Add(record.LanguageID, familiesOfCurrentLanguage);
+                        }
+
+                        familiesOfCurrentLanguage.Add(record.Value, fontFamily);
+                    }
+                    catch (CultureNotFoundException)
+                    {
+                        // As said above, ignore invalid LCID.
+                    }
                 }
 #endif
 
