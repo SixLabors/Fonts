@@ -90,3 +90,4 @@ Core Team
 - [Dirk Lemstra](https://github.com/dlemstra)
 - [Anton Firsov](https://github.com/antonfirsov)
 - [James Jackson-South](https://github.com/jimbobsquarepants)
+- [Brian Popow](https://github.com/brianpopow)
