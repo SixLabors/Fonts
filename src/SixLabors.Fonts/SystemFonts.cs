@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -33,7 +33,8 @@ namespace SixLabors.Fonts
         /// Finds the specified font family from the system font store.
         /// </summary>
         /// <param name="fontFamily">The font family.</param>
-        /// <returns>The family if installed otherwise null</returns>
+        /// <returns>The found family.</returns>
+        /// <exception cref="Exceptions.FontFamilyNotFoundException">Thrown when the font family is not found.</exception>
         public static FontFamily Find(string fontFamily) => Collection.Find(fontFamily);
 
         /// <summary>
@@ -41,7 +42,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontFamily">The font family to find.</param>
         /// <param name="family">The found family.</param>
-        /// <returns>true if a font of that family has been installed into the font collection.</returns>
+        /// <returns>True if a font of that family has been installed into the font collection.</returns>
         public static bool TryFind(string fontFamily, out FontFamily family) => Collection.TryFind(fontFamily, out family);
 
         /// <summary>
