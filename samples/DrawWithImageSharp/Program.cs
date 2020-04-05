@@ -24,6 +24,12 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily carter = fonts.Install(@"Fonts\CarterOne.ttf");
             FontFamily Wendy_One = fonts.Install(@"Fonts\WendyOne-Regular.ttf");
 
+            // fallback font tests
+
+            RenderText(font, "abcdefg", pointSize: 72, fallbackFonts: new[] { font2 });
+
+            // general
+
             RenderText(font, "abc", 72);
             RenderText(font, "ABd", 72);
             RenderText(fontWoff, "abe", 72);

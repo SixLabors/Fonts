@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using SixLabors.Fonts.Tables.General.CMap;
 
 namespace SixLabors.Fonts.Tests.Fakes
@@ -12,16 +12,18 @@ namespace SixLabors.Fonts.Tests.Fakes
             this.glyphs = glyphs;
         }
 
-        public override ushort GetGlyphId(int codePoint)
+        public override bool TryGetGlyphId(int codePoint, out ushort glyphId)
         {
             foreach (FakeGlyphSource c in this.glyphs)
             {
                 if (c.CodePoint == codePoint)
                 {
-                    return c.Index;
+                    glyphId = c.Index;
+                    return true;
                 }
             }
-            return 0;
+            glyphId = 0;
+            return false;
         }
     }
 }

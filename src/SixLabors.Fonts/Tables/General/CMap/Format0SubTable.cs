@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
@@ -19,15 +19,17 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public byte[] GlyphIds { get; }
 
-        public override ushort GetGlyphId(int codePoint)
+        public override bool TryGetGlyphId(int codePoint, out ushort glyphId)
         {
             uint b = (uint)codePoint;
             if (b >= this.GlyphIds.Length)
             {
-                return 0;
+                glyphId = 0;
+                return false;
             }
 
-            return this.GlyphIds[b];
+            glyphId = this.GlyphIds[b];
+            return true;
         }
 
         public static IEnumerable<Format0SubTable> Load(IEnumerable<EncodingRecord> encodings, BinaryReader reader)

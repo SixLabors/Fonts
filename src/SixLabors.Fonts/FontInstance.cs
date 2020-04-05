@@ -87,14 +87,14 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public FontDescription Description { get; }
 
-        internal ushort GetGlyphIndex(int codePoint)
+        internal bool TryGetGlyphIndex(int codePoint, out ushort glyphId)
         {
             if (codePoint > ushort.MaxValue)
             {
                 throw new NotImplementedException("cmap table doesn't support 32-bit characters yet.");
             }
 
-            return this.cmap.GetGlyphId(codePoint);
+            return this.cmap.TryGetGlyphId(codePoint, out glyphId);
         }
 
         /// <summary>
@@ -104,13 +104,18 @@ namespace SixLabors.Fonts
         /// <returns>the glyph for a known character.</returns>
         GlyphInstance IFontInstance.GetGlyph(int codePoint)
         {
-            ushort idx = this.GetGlyphIndex(codePoint);
+            var foundGlyph = this.TryGetGlyphIndex(codePoint, out var idx);
+            if (!foundGlyph)
+            {
+                idx = 0;
+            }
+
             if (this.glyphCache[idx] is null)
             {
                 ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
                 short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
                 GlyphVector vector = this.glyphs.GetGlyph(idx);
-                this.glyphCache[idx] = new GlyphInstance(this, vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, lsb, this.EmSize, idx);
+                this.glyphCache[idx] = new GlyphInstance(this, vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, lsb, this.EmSize, idx, !foundGlyph);
             }
 
             return this.glyphCache[idx];

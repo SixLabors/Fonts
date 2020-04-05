@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.WellKnownIds;
 
@@ -48,12 +48,12 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         }
 
         [Theory]
-        [InlineData(10, 1)]
-        [InlineData(20, 11)]
-        [InlineData(30, 12)]
-        [InlineData(90, 72)]
-        [InlineData(500, 0)] //not in range
-        public void GetCharcter(int src, int expected)
+        [InlineData(10, 1, true)]
+        [InlineData(20, 11, true)]
+        [InlineData(30, 12, true)]
+        [InlineData(90, 72, true)]
+        [InlineData(500, 0, false)] //not in range
+        public void GetCharcter(int src, int expected, bool expectedFound)
         {
             // segCountX2:    8
             // searchRange:   8
@@ -77,9 +77,11 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
                         new Format4SubTable.Segment(2, 480, 153, -27, 0),
                     },
                 glyphs);
-            ushort id = table.GetGlyphId(src);
+            //ushort id = table.GetGlyphId(src);
+            var found = table.TryGetGlyphId(src, out var id);
 
             Assert.Equal(expected, id);
+            Assert.Equal(expectedFound, found);
         }
     }
 }
