@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "DrawWithImageSharp": {
-      "commandName": "Project",
-      "workingDirectory": "C:\\Source\\SixLabors.Fonts\\samples\\DrawWithImageSharp"
-    }
-  }
-}

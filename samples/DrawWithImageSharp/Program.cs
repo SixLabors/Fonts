@@ -7,7 +7,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
     using Shapes;
     using SixLabors.ImageSharp.PixelFormats;
     using SixLabors.ImageSharp.Processing;
-    using SixLabors.ImageSharp.Processing.Drawing;
     using SixLabors.Shapes.Temp;
     using System.Collections.Generic;
     using System.Linq;
@@ -19,11 +18,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         public static void Main(string[] args)
         {
             var fonts = new FontCollection();
-            FontFamily font = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.ttf");
-            FontFamily fontWoff = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\SixLaborsSampleAB.woff");
-            FontFamily font2 = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\OpenSans-Regular.ttf");
-            FontFamily carter = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Carter_One\CarterOne.ttf");
-            FontFamily Wendy_One = fonts.Install(@"..\..\tests\SixLabors.Fonts.Tests\Fonts\Wendy_One\WendyOne-Regular.ttf");
+            FontFamily font = fonts.Install(@"Fonts\SixLaborsSampleAB.ttf");
+            FontFamily fontWoff = fonts.Install(@"Fonts\SixLaborsSampleAB.woff");
+            FontFamily font2 = fonts.Install(@"Fonts\OpenSans-Regular.ttf");
+            FontFamily carter = fonts.Install(@"Fonts\CarterOne.ttf");
+            FontFamily Wendy_One = fonts.Install(@"Fonts\WendyOne-Regular.ttf");
 
             RenderText(font, "abc", 72);
             RenderText(font, "ABd", 72);
@@ -95,7 +94,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             using (var img = new Image<Rgba32>(width, height))
             {
-                img.Mutate(x=>x.Fill(Rgba32.White));
+                img.Mutate(x => x.Fill(Rgba32.White));
 
                 IPathCollection shapes = SixLabors.Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new RendererOptions(font, 72));
                 img.Mutate(x => x.Fill(Rgba32.Black, shapes));
@@ -119,9 +118,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             builder.Paths
                 .SaveImage((int)size.Width + 20, (int)size.Height + 20, font.Font.Name, text + ".png");
         }
-        public static void RenderText(FontFamily font, string text, float pointSize = 12)
+        public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
         {
-            RenderText(new RendererOptions(new Font(font, pointSize), 96) { ApplyKerning = true, WrappingWidth = 340 }, text);
+            RenderText(new RendererOptions(new Font(font, pointSize), 96, fallbackFonts?.ToArray()) { ApplyKerning = true, WrappingWidth = 340 }, text);
         }
 
         public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)
@@ -171,7 +170,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 return s;
             });
             string str = sb.ToString();
-            shape = new ComplexPolygon(converted.Select(x => new Polygon(new LinearLineSegment(x.Points))).ToArray());
+            shape = new ComplexPolygon(converted.Select(x => new Polygon(new LinearLineSegment(x.Points.ToArray()))).ToArray());
 
             path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
             string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
