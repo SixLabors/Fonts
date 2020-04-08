@@ -8,7 +8,7 @@ namespace SixLabors.Fonts
 {
     internal struct AppliedFontStyle
     {
-        public IEnumerable<IFontInstance> FallbackFonts;
+        public IFontInstance[] FallbackFonts;
         public IFontInstance MainFont;
         public float PointSize;
         public float TabWidth;
