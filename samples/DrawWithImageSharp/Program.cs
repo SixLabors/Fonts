@@ -126,7 +126,12 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         }
         public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
         {
-            RenderText(new RendererOptions(new Font(font, pointSize), 96, fallbackFonts?.ToArray()) { ApplyKerning = true, WrappingWidth = 340 }, text);
+            RenderText(new RendererOptions(new Font(font, pointSize), 96)
+            {
+                ApplyKerning = true,
+                WrappingWidth = 340,
+                FallbackFontFamilies = fallbackFonts?.ToArray()
+            }, text);
         }
 
         public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)

@@ -122,7 +122,9 @@ namespace SixLabors.Fonts.Tests
                     FakeFont.CreateFont("GHI").Family
                     };
 
-            var options = new RendererOptions(font, fontFamilys);
+            var options = new RendererOptions(font) {
+                FallbackFontFamilies = fontFamilys
+            };
 
             Assert.Equal(72, options.DpiX);
             Assert.Equal(72, options.DpiY);
@@ -141,7 +143,10 @@ namespace SixLabors.Fonts.Tests
                     FakeFont.CreateFont("GHI").Family
                     };
             float dpi = 123;
-            var options = new RendererOptions(font, dpi, fontFamilys);
+            var options = new RendererOptions(font, dpi)
+            {
+                FallbackFontFamilies = fontFamilys
+            };
 
             Assert.Equal(dpi, options.DpiX);
             Assert.Equal(dpi, options.DpiY);
@@ -161,7 +166,10 @@ namespace SixLabors.Fonts.Tests
                     };
             float dpix = 123;
             float dpiy = 456;
-            var options = new RendererOptions(font, dpix, dpiy, fontFamilys);
+            var options = new RendererOptions(font, dpix, dpiy)
+            {
+                FallbackFontFamilies = fontFamilys
+            };
 
             Assert.Equal(dpix, options.DpiX);
             Assert.Equal(dpiy, options.DpiY);
@@ -182,7 +190,10 @@ namespace SixLabors.Fonts.Tests
                     FakeFont.CreateFont("GHI").Family
                     };
             var origin = new Vector2(123, 345);
-            var options = new RendererOptions(font, origin, fontFamilys);
+            var options = new RendererOptions(font, origin)
+            {
+                FallbackFontFamilies = fontFamilys
+            };
 
             Assert.Equal(72, options.DpiX);
             Assert.Equal(72, options.DpiY);
@@ -202,7 +213,10 @@ namespace SixLabors.Fonts.Tests
                     };
             var origin = new Vector2(123, 345);
             float dpi = 123;
-            var options = new RendererOptions(font, dpi, origin, fontFamilys);
+            var options = new RendererOptions(font, dpi, origin)
+            {
+                FallbackFontFamilies = fontFamilys
+            };
 
             Assert.Equal(dpi, options.DpiX);
             Assert.Equal(dpi, options.DpiY);
@@ -223,7 +237,10 @@ namespace SixLabors.Fonts.Tests
             var origin = new Vector2(123, 345);
             float dpix = 123;
             float dpiy = 456;
-            var options = new RendererOptions(font, dpix, dpiy, origin, fontFamilys);
+            var options = new RendererOptions(font, dpix, dpiy, origin)
+            {
+                FallbackFontFamilies = fontFamilys
+            };
 
             Assert.Equal(dpix, options.DpiX);
             Assert.Equal(dpiy, options.DpiY);
@@ -241,7 +258,10 @@ namespace SixLabors.Fonts.Tests
                     FakeFont.CreateFontWithInstance("DEF", out var defFontInstance).Family,
                     FakeFont.CreateFontWithInstance("GHI", out var ghiFontInstance).Family
                     };
-            var options = new RendererOptions(font, fontFamilys);
+            var options = new RendererOptions(font)
+            {
+                FallbackFontFamilies = fontFamilys
+            };
 
             var style = options.GetStyle(4, 10);
 
@@ -266,7 +286,10 @@ namespace SixLabors.Fonts.Tests
                     FakeFont.CreateFontWithInstance("GHI", out var ghiFontInstance).Family
              };
 
-            var options = new RendererOptions(font, fontFamilys);
+            var options = new RendererOptions(font)
+            {
+                FallbackFontFamilies = fontFamilys
+            };
 
             var style = options.GetStyle(4, 10);
 
@@ -287,7 +310,10 @@ namespace SixLabors.Fonts.Tests
                     FakeFont.CreateFontWithInstance("EFGHI", out var efghiFontInstance).Family
              };
 
-            var options = new RendererOptions(font, fontFamilys);
+            var options = new RendererOptions(font)
+            {
+                FallbackFontFamilies = fontFamilys
+            };
 
             var style = options.GetStyle(4, 10);
 
