@@ -21,7 +21,7 @@ namespace SixLabors.Fonts
         private readonly short leftSideBearing;
         private readonly float scaleFactor;
 
-        internal GlyphInstance(FontInstance font, Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index)
+        internal GlyphInstance(FontInstance font, Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index, bool fallback = false)
         {
             this.Font = font;
             this.sizeOfEm = sizeOfEm;
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts
             this.AdvanceWidth = advanceWidth;
             this.Index = index;
             this.Height = sizeOfEm - this.Bounds.Min.Y;
-
+            this.Fallback = fallback;
             this.leftSideBearing = leftSideBearing;
             this.scaleFactor = (float)(this.sizeOfEm * 72f);
         }
@@ -68,6 +68,14 @@ namespace SixLabors.Fonts
         /// The height.
         /// </value>
         public float Height { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether this is a fallback glyph vs a real existing glyph
+        /// </summary>
+        /// <value>
+        /// The Fallback status of this glyph
+        /// </value>
+        public bool Fallback { get; }
 
         /// <summary>
         /// Gets the index.

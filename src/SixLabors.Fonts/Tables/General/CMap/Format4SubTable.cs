@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public ushort Language { get; }
 
-        public override ushort GetGlyphId(int codePoint)
+        public override bool TryGetGlyphId(int codePoint, out ushort glyphId)
         {
             uint charAsInt = (uint)codePoint;
 
@@ -34,17 +34,20 @@ namespace SixLabors.Fonts.Tables.General.CMap
                 {
                     if (seg.Offset == 0)
                     {
-                        return (ushort)((charAsInt + seg.Delta) % ushort.MaxValue); // TODO: bitmask instead?
+                        glyphId = (ushort)((charAsInt + seg.Delta) % ushort.MaxValue); // TODO: bitmask instead?
+                        return true;
                     }
                     else
                     {
                         long offset = (seg.Offset / 2) + (charAsInt - seg.Start);
-                        return this.GlyphIds[offset - this.Segments.Length + seg.Index];
+                        glyphId = this.GlyphIds[offset - this.Segments.Length + seg.Index];
+                        return true;
                     }
                 }
             }
 
-            return 0;
+            glyphId = 0;
+            return false;
         }
 
         public static IEnumerable<Format4SubTable> Load(IEnumerable<EncodingRecord> encodings, BinaryReader reader)

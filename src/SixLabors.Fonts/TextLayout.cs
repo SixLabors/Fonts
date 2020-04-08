@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts
 {
@@ -85,18 +86,27 @@ namespace SixLabors.Fonts
                     previousGlyph = null;
                 }
 
-                if (spanStyle.Font.LineHeight > unscaledLineHeight)
+                bool hasFourBytes = char.IsHighSurrogate(text[i]);
+                int codePoint = hasFourBytes ? char.ConvertToUtf32(text[i], text[i + 1]) : text[i];
+
+                GlyphInstance glyph = spanStyle.GetGlyph(codePoint);
+                if (glyph == null)
+                {
+                    return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint);
+                }
+
+                if (glyph.Font.LineHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
-                    unscaledLineHeight = spanStyle.Font.LineHeight;
-                    scale = spanStyle.Font.EmSize * 72;
+                    unscaledLineHeight = glyph.Font.LineHeight;
+                    scale = glyph.Font.EmSize * 72;
                     lineHeight = (unscaledLineHeight * spanStyle.PointSize) / scale;
                 }
 
-                if (spanStyle.Font.Ascender > unscaledLineMaxAscender)
+                if (glyph.Font.Ascender > unscaledLineMaxAscender)
                 {
-                    unscaledLineMaxAscender = spanStyle.Font.Ascender;
-                    scale = spanStyle.Font.EmSize * 72;
+                    unscaledLineMaxAscender = glyph.Font.Ascender;
+                    scale = glyph.Font.EmSize * 72;
                     lineMaxAscender = (unscaledLineMaxAscender * spanStyle.PointSize) / scale;
                 }
 
@@ -123,10 +133,6 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                bool hasFourBytes = char.IsHighSurrogate(text[i]);
-                int codePoint = hasFourBytes ? char.ConvertToUtf32(text[i], text[i + 1]) : text[i];
-
-                GlyphInstance glyph = spanStyle.Font.GetGlyph(codePoint);
                 float glyphWidth = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
                 float glyphHeight = (glyph.Height * spanStyle.PointSize) / scale;
 
@@ -136,7 +142,7 @@ namespace SixLabors.Fonts
                     if (spanStyle.ApplyKerning && previousGlyph != null)
                     {
                         // if there is special instructions for this glyph pair use that width
-                        Vector2 scaledOffset = (spanStyle.Font.GetOffset(glyph, previousGlyph) * spanStyle.PointSize) / scale;
+                        Vector2 scaledOffset = (spanStyle.GetOffset(glyph, previousGlyph) * spanStyle.PointSize) / scale;
 
                         glyphLocation += scaledOffset;
 

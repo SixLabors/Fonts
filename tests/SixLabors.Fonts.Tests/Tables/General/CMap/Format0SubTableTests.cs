@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.WellKnownIds;
 
@@ -39,8 +39,9 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         {
             var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
-            ushort id = format.GetGlyphId(4);
+            var found = format.TryGetGlyphId(4, out ushort id);
 
+            Assert.True(found);
             Assert.Equal(5, id);
         }
 
@@ -49,8 +50,9 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         {
             var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
-            ushort id = format.GetGlyphId(99);
+            var found = format.TryGetGlyphId(99, out ushort id);
 
+            Assert.False(found);
             Assert.Equal(0, id);
         }
     }

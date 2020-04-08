@@ -40,26 +40,26 @@ namespace SixLabors.Fonts.Tables.General
 
         internal CMapSubTable[] Tables { get; }
 
-        public ushort GetGlyphId(int codePoint)
+        public bool TryGetGlyphId(int codePoint, out ushort glyphId)
         {
             // use the best match only
             if (this.table is object)
             {
-                return this.table.GetGlyphId(codePoint);
+                return this.table.TryGetGlyphId(codePoint, out glyphId);
             }
 
             // didn't have a windows match just use any and hope for the best
             foreach (CMapSubTable t in this.Tables)
             {
                 // keep looking until we have an index thats not the fallback.
-                ushort index = t.GetGlyphId(codePoint);
-                if (index > 0)
+                if (t.TryGetGlyphId(codePoint, out glyphId))
                 {
-                    return index;
+                    return true;
                 }
             }
 
-            return 0;
+            glyphId = 0;
+            return false;
         }
 
         public static CMapTable Load(FontReader reader)

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using SixLabors.Fonts.WellKnownIds;
@@ -24,6 +24,6 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public ushort Encoding { get; }
 
-        public abstract ushort GetGlyphId(int codePoint);
+        public abstract bool TryGetGlyphId(int codePoint, out ushort glyphId);
     }
 }

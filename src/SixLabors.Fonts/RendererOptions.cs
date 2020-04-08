@@ -1,6 +1,9 @@
 // Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace SixLabors.Fonts
@@ -17,7 +20,6 @@ namespace SixLabors.Fonts
         public RendererOptions(Font font)
             : this(font, 72, 72)
         {
-            this.Font = font;
         }
 
         /// <summary>
@@ -28,7 +30,6 @@ namespace SixLabors.Fonts
         public RendererOptions(Font font, float dpi)
             : this(font, dpi, dpi)
         {
-            this.Font = font;
         }
 
         /// <summary>
@@ -113,6 +114,11 @@ namespace SixLabors.Fonts
         public float DpiY { get; set; }
 
         /// <summary>
+        /// Gets or sets the collection of Fallback fontfamiles to try and use when enspecific glyph is missing.
+        /// </summary>
+        public IEnumerable<FontFamily> FallbackFontFamilies { get; set; } = Array.Empty<FontFamily>();
+
+        /// <summary>
         /// Gets or sets the width relative to the current DPI at which text will automatically wrap onto a newline
         /// </summary>
         /// <value>
@@ -133,7 +139,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the rendering origin.
         /// </summary>
-        public Vector2 Origin { get; set; }
+        public Vector2 Origin { get; set; } = Vector2.Zero;
 
         /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream
@@ -145,12 +151,23 @@ namespace SixLabors.Fonts
         /// </returns>
         internal AppliedFontStyle GetStyle(int index, int length)
         {
+            IFontInstance[] fallbackFontInstances;
+            if (this.FallbackFontFamilies == null)
+            {
+                fallbackFontInstances = Array.Empty<IFontInstance>();
+            }
+            else
+            {
+                fallbackFontInstances = this.FallbackFontFamilies.Select(x => new Font(x, this.Font.Size, this.Font.RequestedStyle).Instance).ToArray();
+            }
+
             return new AppliedFontStyle
             {
                 Start = 0,
                 End = length - 1,
                 PointSize = this.Font.Size,
-                Font = this.Font.Instance,
+                MainFont = this.Font.Instance,
+                FallbackFonts = fallbackFontInstances,
                 TabWidth = this.TabWidth,
                 ApplyKerning = this.ApplyKerning
             };
