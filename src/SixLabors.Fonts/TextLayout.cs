@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts
 {
@@ -91,7 +92,7 @@ namespace SixLabors.Fonts
                 GlyphInstance glyph = spanStyle.GetGlyph(codePoint);
                 if (glyph == null)
                 {
-                    throw new Exceptions.FontException($"Cannot find a glyph for code point {codePoint}");
+                    return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint);
                 }
 
                 if (glyph.Font.LineHeight > unscaledLineHeight)
