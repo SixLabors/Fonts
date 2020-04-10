@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -38,16 +39,11 @@ namespace SixLabors.Fonts
             };
 
         public SystemFontCollection()
-            : this(standardFontLocations, CultureInfo.InvariantCulture)
+            : this(standardFontLocations)
         {
         }
 
-        public SystemFontCollection(CultureInfo culture)
-           : this(standardFontLocations, culture)
-        {
-        }
-
-        public SystemFontCollection(IEnumerable<string> probPaths, CultureInfo culture)
+        public SystemFontCollection(IEnumerable<string> probPaths)
         {
             string[] expanded = probPaths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
             string[] foundDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
@@ -89,6 +85,17 @@ namespace SixLabors.Fonts
         public FontFamily Find(string fontFamily) => this.collection.Find(fontFamily);
 
         /// <inheritdocs />
-        public bool TryFind(string fontFamily, out FontFamily family) => this.collection.TryFind(fontFamily, out family);
+        public bool TryFind(string fontFamily, [NotNullWhen(true)] out FontFamily? family) => this.collection.TryFind(fontFamily, out family);
+
+#if SUPPORTS_CULTUREINFO_LCID
+        public IEnumerable<FontFamily> FamiliesByCulture(CultureInfo culture)
+            => this.collection.FamiliesByCulture(culture);
+
+        public FontFamily Find(string fontFamily, CultureInfo culture)
+            => this.collection.Find(fontFamily, culture);
+
+        public bool TryFind(string fontFamily, CultureInfo culture, [NotNullWhen(true)] out FontFamily? family)
+            => this.collection.TryFind(fontFamily, culture, out family);
+#endif
     }
 }

@@ -20,13 +20,12 @@ namespace SixLabors.Fonts.Tests.Fakes
                   GenerateOS2Table(), 
                   GenerateHorizontalMetricsTable(glyphs), 
                   GenerateHeadTable(glyphs), 
-                  new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]),
-                  CultureInfo.InvariantCulture)
+                  new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]))
         {
         }
 
         internal FakeFontInstance(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern) 
-            : base(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern, CultureInfo.InvariantCulture) 
+            : base(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern) 
         {
         }
 

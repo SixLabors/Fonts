@@ -35,8 +35,7 @@ namespace SixLabors.Fonts
         /// <param name="horizontalMetrics">The horizontal metrics.</param>
         /// <param name="head">The head.</param>
         /// <param name="kern">The kern.</param>
-        /// <param name="culture">The culture to load metadata in.</param>
-        internal FontInstance(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern, CultureInfo culture)
+        internal FontInstance(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern)
         {
             this.cmap = cmap;
             this.os2 = os2;
@@ -52,7 +51,7 @@ namespace SixLabors.Fonts
             this.LineGap = os2.TypoLineGap;
             this.EmSize = this.head.UnitsPerEm;
             this.kerning = kern;
-            this.Description = new FontDescription(nameTable, os2, head, culture);
+            this.Description = new FontDescription(nameTable, os2, head);
         }
 
         /// <summary>
@@ -147,36 +146,11 @@ namespace SixLabors.Fonts
         /// <param name="path">The file path.</param>
         /// <returns>a <see cref="FontInstance"/>.</returns>
         public static FontInstance LoadFont(string path)
-            => LoadFont(path, CultureInfo.InvariantCulture);
-
-        /// <summary>
-        /// Reads a <see cref="FontInstance"/> from the specified stream.
-        /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <param name="culture">The Culture for loading font metadata.</param>
-        /// <returns>a <see cref="FontInstance"/>.</returns>
-        public static FontInstance LoadFont(string path, CultureInfo culture)
         {
             using (FileStream fs = File.OpenRead(path))
             {
                 var reader = new FontReader(fs);
-                return LoadFont(reader, culture);
-            }
-        }
-
-        /// <summary>
-        /// Reads a <see cref="FontInstance"/> from the specified stream.
-        /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <param name="offset">Position in the stream to read the font from.</param>
-        /// <param name="culture">The Culture for loading font metadata.</param>
-        /// <returns>a <see cref="FontInstance"/>.</returns>
-        public static FontInstance LoadFont(string path, long offset, CultureInfo culture)
-        {
-            using (FileStream fs = File.OpenRead(path))
-            {
-                fs.Position = offset;
-                return LoadFont(fs, culture);
+                return LoadFont(reader);
             }
         }
 
@@ -187,18 +161,12 @@ namespace SixLabors.Fonts
         /// <param name="offset">Position in the stream to read the font from.</param>
         /// <returns>a <see cref="FontInstance"/>.</returns>
         public static FontInstance LoadFont(string path, long offset)
-            => LoadFont(path, offset, CultureInfo.InvariantCulture);
-
-        /// <summary>
-        /// Reads a <see cref="FontInstance"/> from the specified stream.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <param name="culture">The Culture for loading font metadata.</param>
-        /// <returns>a <see cref="FontInstance"/>.</returns>
-        public static FontInstance LoadFont(Stream stream, CultureInfo culture)
         {
-            var reader = new FontReader(stream);
-            return LoadFont(reader, culture);
+            using (FileStream fs = File.OpenRead(path))
+            {
+                fs.Position = offset;
+                return LoadFont(fs);
+            }
         }
 
         /// <summary>
@@ -207,9 +175,12 @@ namespace SixLabors.Fonts
         /// <param name="stream">The stream.</param>
         /// <returns>a <see cref="FontInstance"/>.</returns>
         public static FontInstance LoadFont(Stream stream)
-            => LoadFont(stream, CultureInfo.InvariantCulture);
+        {
+            var reader = new FontReader(stream);
+            return LoadFont(reader);
+        }
 
-        internal static FontInstance LoadFont(FontReader reader, CultureInfo culture)
+        internal static FontInstance LoadFont(FontReader reader)
         {
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // recomended order
@@ -236,7 +207,7 @@ namespace SixLabors.Fonts
             // gasp - Grid-fitting/Scan-conversion (optional table)
             // PCLT - PCL 5 data
             // DSIG - Digital signature
-            return new FontInstance(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern, culture);
+            return new FontInstance(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern);
         }
 
         /// <summary>

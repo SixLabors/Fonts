@@ -12,6 +12,7 @@ namespace SixLabors.Fonts
     public sealed class Font
     {
         private readonly Lazy<IFontInstance?> instance;
+        private readonly Lazy<string> fontName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Font"/> class.
@@ -25,6 +26,7 @@ namespace SixLabors.Fonts
             this.RequestedStyle = style;
             this.Size = size;
             this.instance = new Lazy<IFontInstance?>(this.LoadInstanceInternal);
+            this.fontName = new Lazy<string>(this.LoadFontName);
         }
 
         /// <summary>
@@ -90,7 +92,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The name.
         /// </value>
-        public string Name => this.Instance.Description.FontName;
+        public string Name => this.fontName.Value;
 
         /// <summary>
         /// Gets the size.
@@ -160,6 +162,11 @@ namespace SixLabors.Fonts
         public Glyph GetGlyph(int codePoint)
         {
             return new Glyph(this.Instance.GetGlyph(codePoint), this.Size);
+        }
+
+        private string LoadFontName()
+        {
+            return this.instance.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;
         }
 
         private IFontInstance? LoadInstanceInternal()

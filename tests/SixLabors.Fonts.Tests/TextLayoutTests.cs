@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Tests.Fakes;
 using Xunit;
@@ -210,7 +211,7 @@ namespace SixLabors.Fonts.Tests
         public static Font CreateFont(string text)
         {
             var fc = new FontCollection();
-            Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
+            Font d = fc.Install(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
         }
     }

@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tests
         {
             var fc = new FontCollection();
             instance = FakeFontInstance.CreateFontWithVaryingVerticalFontMetrics(text);
-            Font d = fc.Install(instance).CreateFont(12);
+            Font d = fc.Install(instance, CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
         }
     }

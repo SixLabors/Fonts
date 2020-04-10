@@ -17,21 +17,21 @@ namespace SixLabors.Fonts
     {
         private readonly Lazy<IFontInstance> font;
 
-        public FileFontInstance(string path, CultureInfo culture)
-            : this(path, 0, culture)
+        public FileFontInstance(string path)
+            : this(path, 0)
         {
         }
 
-        public FileFontInstance(string path, long offset, CultureInfo culture)
-            : this(FontDescription.LoadDescription(path, culture), path, offset, culture)
+        public FileFontInstance(string path, long offset)
+            : this(FontDescription.LoadDescription(path), path, offset)
         {
         }
 
-        internal FileFontInstance(FontDescription description, string path, long offset, CultureInfo culture)
+        internal FileFontInstance(FontDescription description, string path, long offset)
         {
             this.Description = description;
             this.Path = path;
-            this.font = new Lazy<Fonts.IFontInstance>(() => FontInstance.LoadFont(path, offset, culture));
+            this.font = new Lazy<Fonts.IFontInstance>(() => FontInstance.LoadFont(path, offset));
         }
 
         public FontDescription Description { get; }
@@ -58,9 +58,8 @@ namespace SixLabors.Fonts
         /// Reads a <see cref="FontInstance"/> from the specified stream.
         /// </summary>
         /// <param name="path">The file path.</param>
-        /// <param name="culture">The Culture used while reading font metadata.</param>
         /// <returns>a <see cref="FontInstance"/>.</returns>
-        public static FileFontInstance[] LoadFontCollection(string path, CultureInfo culture)
+        public static FileFontInstance[] LoadFontCollection(string path)
         {
             using (FileStream fs = File.OpenRead(path))
             {
@@ -72,8 +71,8 @@ namespace SixLabors.Fonts
                 for (int i = 0; i < ttcHeader.NumFonts; ++i)
                 {
                     fs.Position = startPos + ttcHeader.OffsetTable[i];
-                    var description = FontDescription.LoadDescription(fs, culture);
-                    fonts[i] = new FileFontInstance(description, path, (long)ttcHeader.OffsetTable[i], culture);
+                    var description = FontDescription.LoadDescription(fs);
+                    fonts[i] = new FileFontInstance(description, path, (long)ttcHeader.OffsetTable[i]);
                 }
 
                 return fonts;

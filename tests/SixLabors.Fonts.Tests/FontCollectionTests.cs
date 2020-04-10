@@ -1,3 +1,4 @@
+using System.Globalization;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -11,8 +12,8 @@ namespace SixLabors.Fonts.Tests
 
             FontFamily family = sut.Install(TestFonts.CarterOneFile, out FontDescription description);
             Assert.NotNull(description);
-            Assert.Equal("Carter One", description.FontFamily);
-            Assert.Equal("Regular", description.FontSubFamilyName);
+            Assert.Equal("Carter One", description.FontFamilyInvariantCulture);
+            Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
             Assert.Equal(FontStyle.Regular, description.Style);
         }
 
@@ -22,7 +23,7 @@ namespace SixLabors.Fonts.Tests
             var sut = new FontCollection();
             var family = sut.Install(TestFonts.CarterOneFile, out var descriptions);
 
-            var allInstances = sut.FindAll(family.Name);
+            var allInstances = sut.FindAll(family.Name, CultureInfo.InvariantCulture);
 
             Assert.All(allInstances, i =>
             {
@@ -38,8 +39,8 @@ namespace SixLabors.Fonts.Tests
             {
                 FontFamily family = sut.Install(s, out FontDescription description);
                 Assert.NotNull(description);
-                Assert.Equal("Carter One", description.FontFamily);
-                Assert.Equal("Regular", description.FontSubFamilyName);
+                Assert.Equal("Carter One", description.FontFamilyInvariantCulture);
+                Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
                 Assert.Equal(FontStyle.Regular, description.Style);
             }
         }

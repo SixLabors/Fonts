@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq;
 using Xunit;
 
@@ -16,8 +17,8 @@ namespace SixLabors.Fonts.Tests
             var abFont = Assert.Single(collectionFromPath, x => x.Name == "SixLaborsSampleAB");
 
             Assert.Equal(2, descriptions.Count());
-            var openSansDescription = Assert.Single(descriptions, x => x.FontName == "Open Sans");
-            var abFontDescription = Assert.Single(descriptions, x => x.FontName == "SixLaborsSampleAB regular");
+            var openSansDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "Open Sans");
+            var abFontDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "SixLaborsSampleAB regular");
         }
 
         [Fact]
@@ -26,7 +27,7 @@ namespace SixLabors.Fonts.Tests
             var sut = new FontCollection();
             var collectionFromPath = sut.InstallCollection(TestFonts.SimpleTrueTypeCollection, out var descriptions);
 
-            var allInstances = sut.Families.SelectMany(x => sut.FindAll(x.Name));
+            var allInstances = sut.Families.SelectMany(x => sut.FindAll(x.Name, CultureInfo.InvariantCulture));
 
             Assert.All(allInstances, i =>
             {
@@ -45,8 +46,8 @@ namespace SixLabors.Fonts.Tests
             var abFont = Assert.Single(collectionFromPath, x => x.Name == "SixLaborsSampleAB");
 
             Assert.Equal(2, descriptions.Count());
-            var openSansDescription = Assert.Single(descriptions, x => x.FontName == "Open Sans");
-            var abFontDescription = Assert.Single(descriptions, x => x.FontName == "SixLaborsSampleAB regular");
+            var openSansDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "Open Sans");
+            var abFontDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "SixLaborsSampleAB regular");
         }
     }
 }

@@ -21,9 +21,9 @@ namespace SixLabors.Fonts.Tests
                     });
 
             var description = FontDescription.LoadDescription(writer.GetStream());
-            Assert.Equal("name", description.FontName);
-            Assert.Equal("sub", description.FontSubFamilyName);
-            Assert.Equal("fam", description.FontFamily);
+            Assert.Equal("name", description.FontNameInvariantCulture);
+            Assert.Equal("sub", description.FontSubFamilyNameInvariantCulture);
+            Assert.Equal("fam", description.FontFamilyInvariantCulture);
         }
 
         [Fact]
@@ -45,12 +45,12 @@ namespace SixLabors.Fonts.Tests
                 (WellKnownIds.NameIds.FontFamilyName, "fam_c2", c2)
                 );
 
-            var description = FontDescription.LoadDescription(writer.GetStream(), CultureInfo.InvariantCulture);
+            var description = FontDescription.LoadDescription(writer.GetStream());
 
             // unknown culture shoudl prioritise US, but missing so will return first
-            Assert.Equal("name_c1", description.FontName);
-            Assert.Equal("sub_c1", description.FontSubFamilyName);
-            Assert.Equal("fam_c1", description.FontFamily);
+            Assert.Equal("name_c1", description.FontNameInvariantCulture);
+            Assert.Equal("sub_c1", description.FontSubFamilyNameInvariantCulture);
+            Assert.Equal("fam_c1", description.FontFamilyInvariantCulture);
         }
 
         [Fact]
@@ -75,12 +75,12 @@ namespace SixLabors.Fonts.Tests
                 (WellKnownIds.NameIds.FontFamilyName, "fam_us", usCulture)
                 );
 
-            var description = FontDescription.LoadDescription(writer.GetStream(), CultureInfo.InvariantCulture);
+            var description = FontDescription.LoadDescription(writer.GetStream());
 
             // unknown culture shoudl prioritise US, but missing so will return first
-            Assert.Equal("name_us", description.FontName);
-            Assert.Equal("sub_us", description.FontSubFamilyName);
-            Assert.Equal("fam_us", description.FontFamily);
+            Assert.Equal("name_us", description.FontNameInvariantCulture);
+            Assert.Equal("sub_us", description.FontSubFamilyNameInvariantCulture);
+            Assert.Equal("fam_us", description.FontFamilyInvariantCulture);
         }
 
         [Fact]
@@ -105,12 +105,12 @@ namespace SixLabors.Fonts.Tests
                 (WellKnownIds.NameIds.FontFamilyName, "fam_us", usCulture)
                 );
 
-            var description = FontDescription.LoadDescription(writer.GetStream(), c2);
+            var description = FontDescription.LoadDescription(writer.GetStream());
 
             // unknown culture shoudl prioritise US, but missing so will return first
-            Assert.Equal("name_c2", description.FontName);
-            Assert.Equal("sub_c2", description.FontSubFamilyName);
-            Assert.Equal("fam_c2", description.FontFamily);
+            Assert.Equal("name_c2", description.FontName(c2));
+            Assert.Equal("sub_c2", description.FontSubFamilyName(c2));
+            Assert.Equal("fam_c2", description.FontFamily(c2));
         }
     }
 }
