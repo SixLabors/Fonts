@@ -1,6 +1,7 @@
 using Xunit;
 
 using SixLabors.Fonts.Tests.Fakes;
+using System.Globalization;
 
 namespace SixLabors.Fonts.Tests
 {
