@@ -65,7 +65,7 @@ namespace SixLabors.Fonts
         /// <param name="fontStream">The font stream.</param>
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(Stream fontStream)
-            => this.InstallInternal(fontStream, CultureInfo.CurrentCulture);
+            => this.InstallInternal(fontStream, CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Installs the specified font stream.
@@ -74,7 +74,7 @@ namespace SixLabors.Fonts
         /// <param name="fontDescription">The font description of the installed font.</param>
         /// <returns>the description of the font just loaded.</returns>
         public FontFamily Install(Stream fontStream, out FontDescription fontDescription)
-            => this.InstallInternal(fontStream, CultureInfo.CurrentCulture, out fontDescription);
+            => this.InstallInternal(fontStream, CultureInfo.InvariantCulture, out fontDescription);
 
         /// <summary>
         /// Installs a true type font collection (.ttc) from the specified font collection stream.
@@ -82,7 +82,7 @@ namespace SixLabors.Fonts
         /// <param name="fontCollectionPath">The font collection path (should be typically a .ttc file like simsun.ttc).</param>
         /// <returns>The font descriptions of the installed fonts.</returns>
         public IEnumerable<FontFamily> InstallCollection(string fontCollectionPath)
-            => this.InstallCollectionInternal(fontCollectionPath, CultureInfo.CurrentCulture);
+            => this.InstallCollectionInternal(fontCollectionPath, CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Installs a true type font collection (.ttc) from the specified font collection stream.
@@ -91,7 +91,7 @@ namespace SixLabors.Fonts
         /// <param name="fontDescriptions">The descriptions of fonts installed from the collection.</param>
         /// <returns>The font descriptions of the installed fonts.</returns>
         public IEnumerable<FontFamily> InstallCollection(string fontCollectionPath, out IEnumerable<FontDescription> fontDescriptions)
-            => this.InstallCollectionInternal(fontCollectionPath, CultureInfo.CurrentCulture, out fontDescriptions);
+            => this.InstallCollectionInternal(fontCollectionPath, CultureInfo.InvariantCulture, out fontDescriptions);
 
         /// <summary>
         /// Installs a true type font collection (.ttc) from the specified font collection stream.
@@ -100,7 +100,7 @@ namespace SixLabors.Fonts
         /// <param name="fontDescriptions">The descriptions of fonts installed from the collection.</param>
         /// <returns>The font descriptions of the installed fonts.</returns>
         public IEnumerable<FontFamily> InstallCollection(Stream fontCollectionStream, out IEnumerable<FontDescription> fontDescriptions)
-            => this.InstallCollectionInternal(fontCollectionStream, CultureInfo.CurrentCulture, out fontDescriptions);
+            => this.InstallCollectionInternal(fontCollectionStream, CultureInfo.InvariantCulture, out fontDescriptions);
 
 #if SUPPORTS_CULTUREINFO_LCID
         /// <summary>
@@ -277,11 +277,11 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc />
         public FontFamily Find(string fontFamily)
-            => this.FindInternal(fontFamily, CultureInfo.CurrentCulture);
+            => this.FindInternal(fontFamily, CultureInfo.InvariantCulture);
 
         /// <inheritdoc />
         public bool TryFind(string fontFamily, [NotNullWhen(true)]out FontFamily? family)
-            => this.TryFindInternal(fontFamily, CultureInfo.CurrentCulture, out family);
+            => this.TryFindInternal(fontFamily, CultureInfo.InvariantCulture, out family);
 
         internal IEnumerable<FontStyle> AvailableStyles(string fontFamily, CultureInfo culture)
         {
