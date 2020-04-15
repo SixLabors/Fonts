@@ -193,7 +193,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Theory]
-        [InlineData("a", 100, 100, 125, 452)]
+        [InlineData("a", 100, 100, 125, 640)]
         public void LayoutWithLocation(string text, float x, float y, float expectedX, float expectedY)
         {
             var c = new FontCollection();
