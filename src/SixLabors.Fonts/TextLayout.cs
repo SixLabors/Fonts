@@ -57,7 +57,9 @@ namespace SixLabors.Fonts
             float unscaledLineHeight = 0f;
             float lineHeight = 0f;
             float unscaledLineMaxAscender = 0f;
+            float unscaledLineMaxDescender = 0f;
             float lineMaxAscender = 0f;
+            float lineMaxDescender = 0f;
             Vector2 location = Vector2.Zero;
             float lineHeightOfFirstLine = 0;
 
@@ -110,6 +112,13 @@ namespace SixLabors.Fonts
                     lineMaxAscender = (unscaledLineMaxAscender * spanStyle.PointSize) / scale;
                 }
 
+                if (glyph.Font.Descender > unscaledLineMaxDescender)
+                {
+                    unscaledLineMaxDescender = glyph.Font.Descender;
+                    scale = glyph.Font.EmSize * 72;
+                    lineMaxDescender = (unscaledLineMaxDescender * spanStyle.PointSize) / scale;
+                }
+
                 if (firstLine)
                 {
                     if (lineHeight > lineHeightOfFirstLine)
@@ -117,7 +126,9 @@ namespace SixLabors.Fonts
                         lineHeightOfFirstLine = lineHeight;
                     }
 
-                    top = lineHeightOfFirstLine - lineMaxAscender;
+                    var lineGap = lineHeightOfFirstLine - lineMaxAscender - lineMaxDescender;
+
+                    top = lineHeightOfFirstLine - lineMaxAscender - (lineGap / 2);
                 }
 
                 if (options.WrappingWidth > 0 && char.IsWhiteSpace(text[i]))

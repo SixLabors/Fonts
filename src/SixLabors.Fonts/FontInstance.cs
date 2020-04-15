@@ -171,7 +171,8 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                this.colorGlyphCache[idx] = vectors ?? Array.Empty<GlyphInstance>();
+                vectors = vectors ?? Array.Empty<GlyphInstance>();
+                this.colorGlyphCache[idx] = vectors;
             }
 
             return vectors.Length > 0;
