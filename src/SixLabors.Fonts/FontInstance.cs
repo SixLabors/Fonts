@@ -23,7 +23,10 @@ namespace SixLabors.Fonts
         private readonly OS2Table os2;
         private readonly HorizontalMetricsTable horizontalMetrics;
         private readonly GlyphInstance[] glyphCache;
+        private readonly GlyphInstance[][] colorGlyphCache;
         private readonly KerningTable kerning;
+        private readonly ColrTable? colrTable;
+        private readonly CpalTable? cpalTable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontInstance"/> class.
@@ -35,7 +38,9 @@ namespace SixLabors.Fonts
         /// <param name="horizontalMetrics">The horizontal metrics.</param>
         /// <param name="head">The head.</param>
         /// <param name="kern">The kern.</param>
-        internal FontInstance(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern)
+        /// <param name="colrTable">The COLR table</param>
+        /// <param name="cpalTable">The CPAL table</param>
+        internal FontInstance(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern, ColrTable? colrTable, CpalTable? cpalTable)
         {
             this.cmap = cmap;
             this.os2 = os2;
@@ -43,6 +48,10 @@ namespace SixLabors.Fonts
             this.horizontalMetrics = horizontalMetrics;
             this.head = head;
             this.glyphCache = new GlyphInstance[this.glyphs.GlyphCount];
+            if (!(colrTable is null))
+            {
+                this.colorGlyphCache = new GlyphInstance[this.glyphs.GlyphCount][];
+            }
 
             // https://www.microsoft.com/typography/otspec/recom.htm#tad
             this.LineHeight = os2.TypoAscender - os2.TypoDescender + os2.TypoLineGap;
@@ -51,6 +60,8 @@ namespace SixLabors.Fonts
             this.LineGap = os2.TypoLineGap;
             this.EmSize = this.head.UnitsPerEm;
             this.kerning = kern;
+            this.colrTable = colrTable;
+            this.cpalTable = cpalTable;
             this.Description = new FontDescription(nameTable, os2, head);
         }
 
@@ -90,10 +101,10 @@ namespace SixLabors.Fonts
 
         internal bool TryGetGlyphIndex(int codePoint, out ushort glyphId)
         {
-            if (codePoint > ushort.MaxValue)
-            {
-                throw new NotImplementedException("cmap table doesn't support 32-bit characters yet.");
-            }
+            //if (codePoint > ushort.MaxValue)
+            //{
+            //    throw new NotImplementedException("cmap table doesn't support 32-bit characters yet.");
+            //}
 
             return this.cmap.TryGetGlyphId(codePoint, out glyphId);
         }
@@ -110,16 +121,60 @@ namespace SixLabors.Fonts
             {
                 idx = 0;
             }
-
             if (this.glyphCache[idx] is null)
             {
-                ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
-                short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
-                GlyphVector vector = this.glyphs.GetGlyph(idx);
-                this.glyphCache[idx] = new GlyphInstance(this, vector.ControlPoints, vector.OnCurves, vector.EndPoints, vector.Bounds, advanceWidth, lsb, this.EmSize, idx, !foundGlyph);
+                this.glyphCache[idx] = this.CreateInstance(idx, foundGlyph ? GlyphType.Standard : GlyphType.Fallback);
             }
 
             return this.glyphCache[idx];
+        }
+
+        private GlyphInstance CreateInstance(ushort idx, GlyphType glyphType, ushort palleteIndex = 0)
+        {
+
+            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
+            short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
+            GlyphVector vector = this.glyphs.GetGlyph(idx);
+            GlyphColor? color = null;
+            if (glyphType == GlyphType.ColrLayer)
+            {
+                // 0xFFFF is special index meaning use foreground color and thus leave unset
+                if (palleteIndex != 0xFFFF)
+                {
+                    color = this.cpalTable?.GetGlyphColor(0, palleteIndex);
+                }
+            }
+
+            return new GlyphInstance(this, vector, advanceWidth, lsb, this.EmSize, idx, glyphType, color);
+        }
+
+        internal bool TryGetColoredVectors(ushort idx, out GlyphInstance[] vectors)
+        {
+            if (this.colrTable == null)
+            {
+                vectors = null;
+                return false;
+            }
+
+            vectors = this.colorGlyphCache[idx];
+            if (vectors is null)
+            {
+                var indexes = this.colrTable.GetLayers(idx);
+                if (indexes.Length > 0)
+                {
+                    vectors = new GlyphInstance[indexes.Length];
+                    for (var i = 0; i < indexes.Length; i++)
+                    {
+                        var layer = indexes[i];
+
+                        vectors[i] = this.CreateInstance(layer.GlyphId, GlyphType.ColrLayer, layer.PalletteIndex);
+                    }
+                }
+
+                this.colorGlyphCache[idx] = vectors ?? Array.Empty<GlyphInstance>();
+            }
+
+            return vectors.Length > 0;
         }
 
         /// <summary>
@@ -203,11 +258,22 @@ namespace SixLabors.Fonts
             KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
             NameTable nameTable = reader.GetTable<NameTable>(); // name
 
+            ColrTable? colrTable = reader.TryGetTable<ColrTable>(); // colr
+            CpalTable? cpalTable;
+            if (colrTable != null)
+            {
+                cpalTable = reader.GetTable<CpalTable>(); // CPAL - required if COLR is provided
+            }
+            else
+            {
+                cpalTable = reader.TryGetTable<CpalTable>(); // colr
+            }
+
             // post - PostScript information
             // gasp - Grid-fitting/Scan-conversion (optional table)
             // PCLT - PCL 5 data
             // DSIG - Digital signature
-            return new FontInstance(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern);
+            return new FontInstance(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern, colrTable, cpalTable);
         }
 
         /// <summary>

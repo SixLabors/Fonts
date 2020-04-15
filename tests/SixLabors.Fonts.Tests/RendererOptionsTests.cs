@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using SixLabors.Fonts.Tables.General;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -122,7 +123,8 @@ namespace SixLabors.Fonts.Tests
                     FakeFont.CreateFont("GHI").Family
                     };
 
-            var options = new RendererOptions(font) {
+            var options = new RendererOptions(font)
+            {
                 FallbackFontFamilies = fontFamilys
             };
 
@@ -294,7 +296,7 @@ namespace SixLabors.Fonts.Tests
             var style = options.GetStyle(4, 10);
 
             var glyph = style.GetGlyph('Z');
-            Assert.True(glyph.Fallback);
+            Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
             Assert.Equal(abcFontInstance, glyph.Font);
         }
 
@@ -318,7 +320,7 @@ namespace SixLabors.Fonts.Tests
             var style = options.GetStyle(4, 10);
 
             var glyph = style.GetGlyph(character);
-            Assert.False(glyph.Fallback);
+            Assert.Equal(GlyphType.Standard, glyph.GlyphType);
             var expectedInstance = instance switch
             {
                 "abcFontInstance" => abcFontInstance,

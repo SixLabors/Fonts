@@ -2,8 +2,10 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Buffers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Tables.General.Glyphs;
 
 namespace SixLabors.Fonts
 {
@@ -15,26 +17,23 @@ namespace SixLabors.Fonts
         private static readonly Vector2 Scale = new Vector2(1, -1);
 
         private readonly ushort sizeOfEm;
-        private readonly Vector2[] controlPoints;
-        private readonly bool[] onCurves;
-        private readonly ushort[] endPoints;
+        private readonly GlyphVector vector;
         private readonly short leftSideBearing;
         private readonly float scaleFactor;
 
-        internal GlyphInstance(FontInstance font, Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index, bool fallback = false)
+        internal GlyphInstance(FontInstance font, GlyphVector vector, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index, GlyphType glyphType = GlyphType.Standard, GlyphColor? glyphColor = null)
         {
             this.Font = font;
             this.sizeOfEm = sizeOfEm;
-            this.controlPoints = controlPoints;
-            this.onCurves = onCurves;
-            this.endPoints = endPoints;
-            this.Bounds = bounds;
+            this.vector = vector;
+
             this.AdvanceWidth = advanceWidth;
             this.Index = index;
             this.Height = sizeOfEm - this.Bounds.Min.Y;
-            this.Fallback = fallback;
+            this.GlyphType = glyphType;
             this.leftSideBearing = leftSideBearing;
             this.scaleFactor = (float)(this.sizeOfEm * 72f);
+            this.GlyphColor = glyphColor;
         }
 
         /// <summary>
@@ -51,7 +50,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The bounds.
         /// </value>
-        internal Bounds Bounds { get; }
+        internal Bounds Bounds => vector.Bounds;
 
         /// <summary>
         /// Gets the width of the advance.
@@ -70,12 +69,20 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this is a fallback glyph vs a real existing glyph
+        /// Gets a value indicating the type of glyph instance this is.
         /// </summary>
         /// <value>
-        /// The Fallback status of this glyph
+        /// The type of this glyph
         /// </value>
-        public bool Fallback { get; }
+        public GlyphType GlyphType { get; }
+
+        /// <summary>
+        /// Gets the color of this glyph
+        /// </summary>
+        /// <value>
+        /// The color of the glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
+        /// </value>
+        public GlyphColor? GlyphColor { get; }
 
         /// <summary>
         /// Gets the index.
@@ -93,17 +100,17 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the points defining the shape of this glyph
         /// </summary>
-        public Vector2[] ControlPoints => this.controlPoints;
+        public Vector2[] ControlPoints => this.vector.ControlPoints;
 
         /// <summary>
         /// Gets wether or not the corresponding control point is on a curve
         /// </summary>
-        public bool[] OnCurves => this.onCurves;
+        public bool[] OnCurves => this.vector.OnCurves;
 
         /// <summary>
         /// Gets the end points
         /// </summary>
-        public ushort[] EndPoints => this.endPoints;
+        public ushort[] EndPoints => this.vector.EndPoints;
 
         /// <summary>
         /// Gets the distance from the bounding box start
@@ -125,48 +132,33 @@ namespace SixLabors.Fonts
             return new FontRectangle(loc.X, loc.Y, size.X, size.Y);
         }
 
-        /// <summary>
-        /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
-        /// </summary>
-        /// <param name="surface">The surface.</param>
-        /// <param name="pointSize">Size of the point.</param>
-        /// <param name="location">The location.</param>
-        /// <param name="dpi">The dpi.</param>
-        /// <param name="lineHeight">The lineHeight the current glyph was draw agains to offset topLeft while calling out to IGlyphRenderer.</param>
-        /// <exception cref="NotSupportedException">Too many control points</exception>
-        public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, float lineHeight)
+        private static void RenderToInternal(IGlyphRenderer surface, GlyphRendererParameters paramaters, Vector2 location, GlyphInstance glyph, FontRectangle box, Vector2 scaledPoint)
         {
-            location = location * dpi;
-
-            Vector2 firstPoint = Vector2.Zero;
-
-            Vector2 scaledPoint = dpi * pointSize;
-
-            FontRectangle box = this.BoundingBox(location, scaledPoint);
-
-            var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
-
             if (surface.BeginGlyph(box, paramaters))
             {
-                int startOfContor = 0;
+                if (glyph.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
+                {
+                    colorSurface.SetColor(glyph.GlyphColor.Value);
+                }
+
                 int endOfContor = -1;
-                for (int i = 0; i < this.endPoints.Length; i++)
+                for (int i = 0; i < glyph.vector.EndPoints.Length; i++)
                 {
                     surface.BeginFigure();
-                    startOfContor = endOfContor + 1;
-                    endOfContor = this.endPoints[i];
+                    int startOfContor = endOfContor + 1;
+                    endOfContor = glyph.vector.EndPoints[i];
 
                     Vector2 prev = Vector2.Zero;
-                    Vector2 curr = this.GetPoint(ref scaledPoint, endOfContor) + location;
-                    Vector2 next = this.GetPoint(ref scaledPoint, startOfContor) + location;
+                    Vector2 curr = glyph.GetPoint(ref scaledPoint, endOfContor) + location;
+                    Vector2 next = glyph.GetPoint(ref scaledPoint, startOfContor) + location;
 
-                    if (this.onCurves[endOfContor])
+                    if (glyph.vector.OnCurves[endOfContor])
                     {
                         surface.MoveTo(curr);
                     }
                     else
                     {
-                        if (this.onCurves[startOfContor])
+                        if (glyph.vector.OnCurves[startOfContor])
                         {
                             surface.MoveTo(next);
                         }
@@ -186,9 +178,9 @@ namespace SixLabors.Fonts
                         int currentIndex = startOfContor + p;
                         int nextIndex = startOfContor + ((p + 1) % length);
                         int prevIndex = startOfContor + (((length + p) - 1) % length);
-                        next = this.GetPoint(ref scaledPoint, nextIndex) + location;
+                        next = glyph.GetPoint(ref scaledPoint, nextIndex) + location;
 
-                        if (this.onCurves[currentIndex])
+                        if (glyph.vector.OnCurves[currentIndex])
                         {
                             // This is a straight line.
                             surface.LineTo(curr);
@@ -198,13 +190,13 @@ namespace SixLabors.Fonts
                             Vector2 prev2 = prev;
                             Vector2 next2 = next;
 
-                            if (!this.onCurves[prevIndex])
+                            if (!glyph.vector.OnCurves[prevIndex])
                             {
                                 prev2 = (curr + prev) / 2;
                                 surface.LineTo(prev2);
                             }
 
-                            if (!this.onCurves[nextIndex])
+                            if (!glyph.vector.OnCurves[nextIndex])
                             {
                                 next2 = (curr + next) / 2;
                             }
@@ -221,10 +213,45 @@ namespace SixLabors.Fonts
             surface.EndGlyph();
         }
 
+        /// <summary>
+        /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
+        /// </summary>
+        /// <param name="surface">The surface.</param>
+        /// <param name="pointSize">Size of the point.</param>
+        /// <param name="location">The location.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <param name="lineHeight">The lineHeight the current glyph was draw agains to offset topLeft while calling out to IGlyphRenderer.</param>
+        /// <exception cref="NotSupportedException">Too many control points</exception>
+        public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, float lineHeight)
+        {
+            location = location * dpi;
+
+            Vector2 firstPoint = Vector2.Zero;
+
+            Vector2 scaledPoint = dpi * pointSize;
+
+            FontRectangle box = this.BoundingBox(location, scaledPoint);
+
+            if (this.GlyphType == GlyphType.Standard && surface is IColorGlyphRenderer && this.Font.TryGetColoredVectors(this.Index, out var vectors))
+            {
+                // we support rendering color glyphs here we are allowed to fetch all the vectors now
+                foreach (var v in vectors)
+                {
+                    var paramaters = new GlyphRendererParameters(v, pointSize, dpi);
+                    RenderToInternal(surface, paramaters, location, v, box, scaledPoint);
+                }
+            }
+            else
+            {
+                var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
+                RenderToInternal(surface, paramaters, location, this, box, scaledPoint);
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector2 GetPoint(ref Vector2 scaledPoint, int pointIndex)
         {
-            Vector2 point = Scale * ((this.controlPoints[pointIndex] * scaledPoint) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
+            Vector2 point = Scale * ((this.vector.ControlPoints[pointIndex] * scaledPoint) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
 
             return point;
         }
@@ -296,5 +323,6 @@ namespace SixLabors.Fonts
                 this.Count = 0;
             }
         }
+
     }
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 using SixLabors.Fonts;
-using SixLabors.Primitives;
+using SixLabors.ImageSharp.Drawing;
 
 namespace SixLabors.Shapes.Temp
 {

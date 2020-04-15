@@ -24,7 +24,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe"/>    
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />    
   </ItemGroup>
 
   <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />

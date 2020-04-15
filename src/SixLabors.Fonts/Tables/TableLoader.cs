@@ -29,6 +29,8 @@ namespace SixLabors.Fonts.Tables
             this.Register(IndexLocationTable.Load);
             this.Register(GlyphTable.Load);
             this.Register(KerningTable.Load);
+            this.Register(ColrTable.Load);
+            this.Register(CpalTable.Load);
         }
 
         public static TableLoader Default { get; } = new TableLoader();

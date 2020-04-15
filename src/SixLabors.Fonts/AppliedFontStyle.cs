@@ -19,12 +19,12 @@ namespace SixLabors.Fonts
         public GlyphInstance GetGlyph(int codePoint)
         {
             GlyphInstance glyph = this.MainFont.GetGlyph(codePoint);
-            if (glyph.Fallback)
+            if (glyph.GlyphType == GlyphType.Fallback)
             {
                 foreach (var f in this.FallbackFonts)
                 {
                     var g = f.GetGlyph(codePoint);
-                    if (!g.Fallback)
+                    if (g.GlyphType != GlyphType.Fallback)
                     {
                         return g;
                     }

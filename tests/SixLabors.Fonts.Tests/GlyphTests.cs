@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void RenderToPointAndSingleDPI()
         {
-            var glyph = new Glyph(new GlyphInstance((FontInstance)CreateFont("A").Instance, new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1), 0, 0, 1, 0), 10);
+            var glyph = new Glyph(new GlyphInstance((FontInstance)CreateFont("A").Instance, new Fonts.Tables.General.Glyphs.GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1)), 0, 0, 1, 0), 10);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
             glyph.RenderTo(renderer, locationInFontSpace, 72, 0);
@@ -76,6 +76,36 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(20, instance.ControlPoints.Length);
             Assert.Equal(20, instance.OnCurves.Length);
+        }
+
+        [Fact]
+        public void RenderColrGlyph()
+        {
+            Font font = new FontCollection().Install(TestFonts.TwemojiMozillaData()).CreateFont(12);
+
+            // Get letter Grinning Face emoji
+            Glyph g = font.GetGlyph(AsCodePoint("😀"));
+
+            var render = new ColorGlyphRenderer();
+            g.RenderTo(render, Vector2.Zero, 72, 10);
+
+            Assert.Equal(3, render.Colors.Count);
+        }
+
+        private int AsCodePoint(string text)
+        {
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (char.IsLowSurrogate(text[i]))
+                {
+                    continue;
+                }
+
+                bool hasFourBytes = char.IsHighSurrogate(text[i]);
+                int codePoint = hasFourBytes ? char.ConvertToUtf32(text[i], text[i + 1]) : text[i];
+                return codePoint;
+            }
+            return 0;
         }
     }
 }
