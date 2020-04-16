@@ -1,5 +1,6 @@
 using SixLabors.Fonts.Tables.General;
 using Xunit;
+using static SixLabors.Fonts.Tests.WriterExtensions;
 
 namespace SixLabors.Fonts.Tests.Tables.General
 {

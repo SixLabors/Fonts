@@ -482,24 +482,23 @@ namespace SixLabors.Fonts.Tests
                 }
             }
         }
-    }
 
+        public class ColrGlyphRecord
+        {
+            public ushort Glyph { get; set; }
+            public List<ColrLayerRecord> Layers { get; set; } = new List<ColrLayerRecord>();
 
-    public class ColrGlyphRecord
-    {
-        public ushort Glyph { get; set; }
-        public List<ColrLayerRecord> Layers { get; set; } = new List<ColrLayerRecord>();
+            public int HeaderSize => 6;
 
-        public int HeaderSize => 6;
+            public int LayerSize => this.Layers.Sum(x => x.LayerSize);
+        }
 
-        public int LayerSize => this.Layers.Sum(x => x.LayerSize);
-    }
+        public class ColrLayerRecord
+        {
+            public ushort Glyph { get; set; }
+            public ushort Pallete { get; set; }
 
-    public class ColrLayerRecord
-    {
-        public ushort Glyph { get; set; }
-        public ushort Pallete { get; set; }
-
-        public int LayerSize => 4;
+            public int LayerSize => 4;
+        }
     }
 }
