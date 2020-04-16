@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     public interface IReadOnlyFontCollection
     {
         /// <summary>
-        /// Gets the collection of <see cref="FontFamily"/> objects associated with this <see cref="FontCollection"/> in the current threads culture.
+        /// Gets the collection of <see cref="FontFamily"/> objects associated with this <see cref="FontCollection"/> in the invariant culture.
         /// </summary>
         /// <value>
         /// The families.
@@ -23,7 +23,7 @@ namespace SixLabors.Fonts
 
 #if SUPPORTS_CULTUREINFO_LCID
         /// <summary>
-        /// Gets the collection of <see cref="FontFamily"/> objects associated with this <see cref="FontCollection"/> in the current threads culture.
+        /// Gets the collection of <see cref="FontFamily"/> objects associated with this <see cref="FontCollection"/>.
         /// </summary>
         /// <param name="culture">The culture to use while getting the family name from the installed set of fonts.</param>
         /// <returns>The set of fonts families using the fonts culture aware font name</returns>
@@ -48,14 +48,14 @@ namespace SixLabors.Fonts
 #endif
 
         /// <summary>
-        /// Finds the specified font family.
+        /// Finds the specified font family using the invariant culture font family name.
         /// </summary>
         /// <param name="fontFamily">The font family.</param>
         /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFoundException"/></returns>
         FontFamily Find(string fontFamily);
 
         /// <summary>
-        /// Finds the specified font family.
+        /// Finds the specified font family using the invariant culture font family name.
         /// </summary>
         /// <param name="fontFamily">The font family to find.</param>
         /// <param name="family">The found family.</param>
