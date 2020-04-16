@@ -23,10 +23,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public GlyphColor GetGlyphColor(int palletteIndex, int palletteEntryIndex)
         {
-            return palletteEntries[palletteOffsets[palletteIndex] + palletteEntryIndex];
+            return this.palletteEntries[this.palletteOffsets[palletteIndex] + palletteEntryIndex];
         }
 
-        public static CpalTable Load(FontReader reader)
+        public static CpalTable? Load(FontReader reader)
         {
             using (var binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
@@ -56,8 +56,6 @@ namespace SixLabors.Fonts.Tables.General
             // Offset32  | offsetPaletteTypeArray          | Offset from the beginning of CPAL table to the Palette Type Array. Set to 0 if no array is provided.
             // Offset32  | offsetPaletteLabelArray         | Offset from the beginning of CPAL table to the Palette Labels Array. Set to 0 if no array is provided.
             // Offset32  | offsetPaletteEntryLabelArray    | Offset from the beginning of CPAL table to the Palette Entry Label Array.Set to 0 if no array is provided.
-
-
             var version = reader.ReadUInt16();
             var numPaletteEntries = reader.ReadUInt16();
             var numPalettes = reader.ReadUInt16();
@@ -77,7 +75,6 @@ namespace SixLabors.Fonts.Tables.General
             }
 
             reader.Seek(offsetFirstColorRecord, System.IO.SeekOrigin.Begin);
-            // move to color record array
             var pallettes = new GlyphColor[numColorRecords];
             for (var n = 0; n < numColorRecords; n++)
             {
@@ -90,6 +87,5 @@ namespace SixLabors.Fonts.Tables.General
 
             return new CpalTable(colorRecordIndices, pallettes);
         }
-
     }
 }

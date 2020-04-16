@@ -17,7 +17,7 @@ namespace SixLabors.Fonts.Tests
             var glyph = new Glyph(new GlyphInstance((FontInstance)CreateFont("A").Instance, new Fonts.Tables.General.Glyphs.GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1)), 0, 0, 1, 0), 10);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyp ends up 10px over due to offiset in fake glyph
-            glyph.RenderTo(renderer, locationInFontSpace, 72, 0);
+            glyph.RenderTo(this.renderer, locationInFontSpace, 72, 0);
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Install(TestFonts.TwemojiMozillaData()).CreateFont(12);
 
             // Get letter Grinning Face emoji
-            Glyph g = font.GetGlyph(AsCodePoint("😀"));
+            Glyph g = font.GetGlyph(this.AsCodePoint("😀"));
 
             var render = new ColorGlyphRenderer();
             g.RenderTo(render, Vector2.Zero, 72, 10);

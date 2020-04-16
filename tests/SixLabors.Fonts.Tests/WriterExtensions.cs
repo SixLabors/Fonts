@@ -492,7 +492,7 @@ namespace SixLabors.Fonts.Tests
 
         public int HeaderSize => 6;
 
-        public int LayerSize => Layers.Sum(x => x.LayerSize);
+        public int LayerSize => this.Layers.Sum(x => x.LayerSize);
     }
 
     public class ColrLayerRecord

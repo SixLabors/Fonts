@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.General
             this.layers = layers;
         }
 
-        public static ColrTable Load(FontReader reader)
+        public static ColrTable? Load(FontReader reader)
         {
             using (var binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
@@ -36,17 +36,16 @@ namespace SixLabors.Fonts.Tables.General
 
         internal Span<LayerRecord> GetLayers(ushort glyph)
         {
-            foreach (var g in glyphRecords)
+            foreach (var g in this.glyphRecords)
             {
                 if (g.GlyphId == glyph)
                 {
-                    return layers.AsSpan().Slice(g.FirstLayerIndex, g.LayerCount);
+                    return this.layers.AsSpan().Slice(g.FirstLayerIndex, g.LayerCount);
                 }
             }
 
             return Span<LayerRecord>.Empty;
         }
-
 
         public static ColrTable Load(BinaryReader reader)
         {
@@ -60,7 +59,6 @@ namespace SixLabors.Fonts.Tables.General
             // Offset32  | layerRecordsOffset     | Offset(from beginning of COLR table) to Layer Records.
             // uint16    | numLayerRecords        | Number of Layer Records.
 
-
             // Base Glyph Record
             // Type      | Name                   | Description
             // ----------|------------------------|----------------------------------------------------------------------------------------------------
@@ -68,16 +66,14 @@ namespace SixLabors.Fonts.Tables.General
             // uint16    | firstLayerIndex        | Index(from beginning of the Layer Records) to the layer record. There will be numLayers consecutive entries for this base glyph.
             // uint16    | numLayers              | Number of color layers associated with this glyph.
 
-
             // Layer Record
             // Type      | Name                   | Description
             // ----------|------------------------|----------------------------------------------------------------------------------------------------
             // uint16    | gID                    | Glyph ID of layer glyph (must be in z-order from bottom to top).
             // uint16    | paletteIndex           | Index value to use with a selected color palette. This value must be less than numPaletteEntries in
             //           |                        | > the CPAL table. A palette entry index value of 0xFFFF is a special case indicating that the text
-            //           |                        | > foreground color (defined by a higher-level client) should be used and shall not be treated as 
+            //           |                        | > foreground color (defined by a higher-level client) should be used and shall not be treated as
             //           |                        | > actual index into CPAL ColorRecord array.
-
             var version = reader.ReadUInt16();
             var numBaseGlyphRecords = reader.ReadUInt16();
             var baseGlyphRecordsOffset = reader.ReadOffset32();

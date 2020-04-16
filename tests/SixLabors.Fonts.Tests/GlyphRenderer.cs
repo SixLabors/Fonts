@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tests
         public List<GlyphColor> Colors { get; } = new List<GlyphColor>();
         public void SetColor(GlyphColor color)
         {
-            Colors.Add(color);
+            this.Colors.Add(color);
         }
     }
 

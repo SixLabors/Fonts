@@ -50,7 +50,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The bounds.
         /// </value>
-        internal Bounds Bounds => vector.Bounds;
+        internal Bounds Bounds => this.vector.Bounds;
 
         /// <summary>
         /// Gets the width of the advance.
@@ -323,6 +323,5 @@ namespace SixLabors.Fonts
                 this.Count = 0;
             }
         }
-
     }
 }

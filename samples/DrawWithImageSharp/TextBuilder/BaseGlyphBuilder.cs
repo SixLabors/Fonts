@@ -33,7 +33,7 @@ namespace SixLabors.Shapes.Temp
         /// <summary>
         /// Get the colors for each path, where null means use user provided brush
         /// </summary>
-        public IEnumerable<Color?> PathColors => colors;
+        public IEnumerable<Color?> PathColors => this.colors;
 
         /// <summary>
         /// Gets the paths that have been rendered by this.
@@ -57,7 +57,7 @@ namespace SixLabors.Shapes.Temp
         void IGlyphRenderer.BeginText(FontRectangle rect)
         {
             this.TextBox = new RectangularPolygon(rect.Location, rect.Size);
-            BeginText(rect);
+            this.BeginText(rect);
         }
 
         protected virtual void BeginText(FontRectangle rect)
@@ -71,15 +71,15 @@ namespace SixLabors.Shapes.Temp
         /// <param name="size">The size.</param>
         bool IGlyphRenderer.BeginGlyph(FontRectangle rect, GlyphRendererParameters cachKey)
         {
-            currentColor = null;
+            this.currentColor = null;
             this.builder.Clear();
             this.glyphBounds.Add(rect);
-            return BeginGlyph(rect, cachKey);
+            return this.BeginGlyph(rect, cachKey);
         }
 
         protected virtual bool BeginGlyph(FontRectangle rect, GlyphRendererParameters cachKey)
         {
-            BeginGlyph(rect);
+            this.BeginGlyph(rect);
             return true;
         }
 
@@ -113,12 +113,12 @@ namespace SixLabors.Shapes.Temp
         void IGlyphRenderer.EndGlyph()
         {
             this.paths.Add(this.builder.Build());
-            this.colors.Add(currentColor);
+            this.colors.Add(this.currentColor);
         }
 
         void IColorGlyphRenderer.SetColor(GlyphColor color)
         {
-            currentColor = new Color(new Rgba32(color.Red, color.Green, color.Blue, color.Alpha));
+            this.currentColor = new Color(new Rgba32(color.Red, color.Green, color.Blue, color.Alpha));
         }
 
         /// <summary>

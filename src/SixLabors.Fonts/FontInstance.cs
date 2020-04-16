@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Numerics;
@@ -23,7 +24,7 @@ namespace SixLabors.Fonts
         private readonly OS2Table os2;
         private readonly HorizontalMetricsTable horizontalMetrics;
         private readonly GlyphInstance[] glyphCache;
-        private readonly GlyphInstance[][] colorGlyphCache;
+        private readonly GlyphInstance[][]? colorGlyphCache;
         private readonly KerningTable kerning;
         private readonly ColrTable? colrTable;
         private readonly CpalTable? cpalTable;
@@ -101,11 +102,6 @@ namespace SixLabors.Fonts
 
         internal bool TryGetGlyphIndex(int codePoint, out ushort glyphId)
         {
-            //if (codePoint > ushort.MaxValue)
-            //{
-            //    throw new NotImplementedException("cmap table doesn't support 32-bit characters yet.");
-            //}
-
             return this.cmap.TryGetGlyphId(codePoint, out glyphId);
         }
 
@@ -121,6 +117,7 @@ namespace SixLabors.Fonts
             {
                 idx = 0;
             }
+
             if (this.glyphCache[idx] is null)
             {
                 this.glyphCache[idx] = this.CreateInstance(idx, foundGlyph ? GlyphType.Standard : GlyphType.Fallback);
@@ -131,7 +128,6 @@ namespace SixLabors.Fonts
 
         private GlyphInstance CreateInstance(ushort idx, GlyphType glyphType, ushort palleteIndex = 0)
         {
-
             ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
             short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
             GlyphVector vector = this.glyphs.GetGlyph(idx);
@@ -148,9 +144,9 @@ namespace SixLabors.Fonts
             return new GlyphInstance(this, vector, advanceWidth, lsb, this.EmSize, idx, glyphType, color);
         }
 
-        internal bool TryGetColoredVectors(ushort idx, out GlyphInstance[] vectors)
+        internal bool TryGetColoredVectors(ushort idx, [NotNullWhen(true)] out GlyphInstance[]? vectors)
         {
-            if (this.colrTable == null)
+            if (this.colrTable == null || this.colorGlyphCache == null)
             {
                 vectors = null;
                 return false;

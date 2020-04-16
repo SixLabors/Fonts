@@ -17,8 +17,6 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public SequentialMapGroup[] SequentialMapGroups { get; }
 
-        public ushort[] GlyphIds { get; }
-
         public uint Language { get; }
 
         public override bool TryGetGlyphId(int codePoint, out ushort glyphId)
@@ -45,7 +43,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             // 'cmap' Subtable Format 4:
             // Type               | Name              | Description
             // -------------------|-------------------|------------------------------------------------------------------------
-            // uint16             |	format	          | Subtable format; set to 12.
+            // uint16             | format            | Subtable format; set to 12.
             // uint16             | reserved          | Reserved; set to 0
             // uint32             | length            | Byte length of this subtable(including the header)
             // uint32             | language          | For requirements on use of the language field, see “Use of the language field in 'cmap' subtables” in this document.

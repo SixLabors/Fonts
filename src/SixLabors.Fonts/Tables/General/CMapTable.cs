@@ -16,11 +16,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public CMapTable(CMapSubTable[] tables)
         {
-
             this.Tables = tables;
 
             // lets just pick the best table for us.. lets jsut treat everything as windows and get the format 4 if possible
-            List<CMapSubTable> tbls = new List<CMapSubTable>();
+            var tbls = new List<CMapSubTable>();
             foreach (CMapSubTable t in this.Tables)
             {
                 if (t != null)
