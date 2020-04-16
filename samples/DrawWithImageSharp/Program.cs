@@ -31,6 +31,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             RenderText(TwemojiMozilla, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
             RenderText(emojiFont, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
+            RenderText(font2, "abc😀def", pointSize: 72, fallbackFonts: new[] { emojiFont });
+            RenderText(font2, "😀 Hello World! 😀", pointSize: 72, fallbackFonts: new[] { emojiFont });
 
             //// general
 
