@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
@@ -13,13 +14,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public class FontDescription
     {
-        internal FontDescription(string fontName, string fontFamily, string fontSubFamilyName, FontStyle style)
-        {
-            this.FontName = fontName;
-            this.FontFamily = fontFamily;
-            this.FontSubFamilyName = fontSubFamilyName;
-            this.Style = style;
-        }
+        private NameTable nameTable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontDescription" /> class.
@@ -28,8 +23,13 @@ namespace SixLabors.Fonts
         /// <param name="os2">The os2.</param>
         /// <param name="head">The head.</param>
         internal FontDescription(NameTable nameTable, OS2Table? os2, HeadTable? head)
-            : this(nameTable.FontName, nameTable.FontFamilyName, nameTable.FontSubFamilyName, ConvertStyle(os2, head))
         {
+            this.nameTable = nameTable;
+            this.Style = ConvertStyle(os2, head);
+
+            this.FontNameInvariantCulture = this.FontName(CultureInfo.InvariantCulture);
+            this.FontFamilyInvariantCulture = this.FontFamily(CultureInfo.InvariantCulture);
+            this.FontSubFamilyNameInvariantCulture = this.FontSubFamilyName(CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -41,19 +41,43 @@ namespace SixLabors.Fonts
         public FontStyle Style { get; }
 
         /// <summary>
-        /// Gets the name of the font.
+        /// Gets the name of the font in the invariant culture.
         /// </summary>
-        public string FontName { get; }
+        /// <returns>The font name</returns>
+        public string FontNameInvariantCulture { get; }
+
+        /// <summary>
+        /// Gets the name of the font family in the invariant culture.
+        /// </summary>
+        /// <returns>The font name</returns>
+        public string FontFamilyInvariantCulture { get; }
+
+        /// <summary>
+        /// Gets the font sub family in the invariant culture.
+        /// </summary>
+        /// <returns>The font sub family name</returns>
+        public string FontSubFamilyNameInvariantCulture { get; }
 
         /// <summary>
         /// Gets the name of the font.
         /// </summary>
-        public string FontFamily { get; }
+        /// <param name="culture">The culture to load metadata in.</param>
+        /// <returns>The font name</returns>
+        public string FontName(CultureInfo culture) => this.nameTable.FontName(culture);
+
+        /// <summary>
+        /// Gets the name of the font family .
+        /// </summary>
+        /// <param name="culture">The culture to load metadata in.</param>
+        /// <returns>The font family name</returns>
+        public string FontFamily(CultureInfo culture) => this.nameTable.FontFamilyName(culture);
 
         /// <summary>
         /// Gets the font sub family.
         /// </summary>
-        public string FontSubFamilyName { get; }
+        /// <param name="culture">The culture to load metadata in.</param>
+        /// <returns>The font sub family name</returns>
+        public string FontSubFamilyName(CultureInfo culture) => this.nameTable.FontSubFamilyName(culture);
 
         /// <summary>
         /// Reads a <see cref="FontDescription"/> from the specified stream.

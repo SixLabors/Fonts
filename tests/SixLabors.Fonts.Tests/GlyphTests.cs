@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using Moq;
@@ -60,7 +61,7 @@ namespace SixLabors.Fonts.Tests
         public static Font CreateFont(string text)
         {
             var fc = new FontCollection();
-            Font d = fc.Install(new FakeFontInstance(text)).CreateFont(12);
+            Font d = fc.Install(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
         }
 

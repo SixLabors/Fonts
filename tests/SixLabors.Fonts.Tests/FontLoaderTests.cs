@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 
 namespace SixLabors.Fonts.Tests
 {
@@ -19,8 +19,8 @@ namespace SixLabors.Fonts.Tests
         {
             var description = FontDescription.LoadDescription(TestFonts.SimpleFontFileData());
 
-            Assert.Equal("SixLaborsSampleAB regular", description.FontName);
-            Assert.Equal("Regular", description.FontSubFamilyName);
+            Assert.Equal("SixLaborsSampleAB regular", description.FontNameInvariantCulture);
+            Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         }
 
         [Fact]
@@ -28,8 +28,8 @@ namespace SixLabors.Fonts.Tests
         {
             var description = FontDescription.LoadDescription(TestFonts.SimpleFontFileWoffData());
 
-            Assert.Equal("SixLaborsSampleAB regular", description.FontName);
-            Assert.Equal("Regular", description.FontSubFamilyName);
+            Assert.Equal("SixLaborsSampleAB regular", description.FontNameInvariantCulture);
+            Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         }
 
         [Fact]
@@ -37,8 +37,8 @@ namespace SixLabors.Fonts.Tests
         {
             IFontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileData());
 
-            Assert.Equal("SixLaborsSampleAB regular", font.Description.FontName);
-            Assert.Equal("Regular", font.Description.FontSubFamilyName);
+            Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
+            Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
 
             GlyphInstance glyph = font.GetGlyph('a');
             var r = new GlyphRenderer();
@@ -52,8 +52,8 @@ namespace SixLabors.Fonts.Tests
         {
             IFontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileWoffData());
 
-            Assert.Equal("SixLaborsSampleAB regular", font.Description.FontName);
-            Assert.Equal("Regular", font.Description.FontSubFamilyName);
+            Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
+            Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
 
             GlyphInstance glyph = font.GetGlyph('a');
             var r = new GlyphRenderer();

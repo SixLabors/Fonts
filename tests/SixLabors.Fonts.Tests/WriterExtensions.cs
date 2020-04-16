@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -85,8 +86,13 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16(entrySelector);
             writer.WriteUInt16(rangeShift);
         }
-
         public static void WriteNameTable(this BinaryWriter writer, Dictionary<NameIds, string> names, List<string> languages = null)
+            => writer.WriteNameTable(names.Select(x => (x.Key, x.Value, CultureInfo.InvariantCulture)).ToList(), languages);
+
+        public static void WriteNameTable(this BinaryWriter writer, params (NameIds nameId, string value, CultureInfo culture)[] names)
+            => writer.WriteNameTable(names.ToList());
+
+        public static void WriteNameTable(this BinaryWriter writer, List<(NameIds nameId, string value, CultureInfo culture)> names, List<string> languages = null)
         {
             // Type          | Name                        | Description
             // --------------|-----------------------------|--------------------------------------------------------
@@ -126,14 +132,14 @@ namespace SixLabors.Fonts.Tests
             Encoding encoding = Encoding.BigEndianUnicode; // this is Unicode2
             int stringOffset = 0;
             var offsets = new List<int>();
-            foreach (KeyValuePair<NameIds, string> n in names)
+            foreach ((NameIds name, string value, CultureInfo culture) in names)
             {
-                writer.WriteUInt16(0); // hard code platform
+                writer.WriteUInt16((ushort)PlatformIDs.Windows); // hard code platform
                 writer.WriteUInt16((ushort)EncodingIDs.Unicode2); // hard code encoding
-                writer.WriteUInt16(0); // hard code language
-                writer.WriteUInt16((ushort)n.Key);
+                writer.WriteUInt16((ushort)culture.LCID); // hard code language
+                writer.WriteUInt16((ushort)name);
 
-                int length = Encoding.BigEndianUnicode.GetBytes(n.Value).Length;
+                int length = Encoding.BigEndianUnicode.GetBytes(value).Length;
                 writer.WriteUInt16((ushort)length);
                 writer.WriteOffset16((ushort)stringOffset);
                 offsets.Add(stringOffset);
@@ -159,11 +165,11 @@ namespace SixLabors.Fonts.Tests
 
             int currentItem = 0;
 
-            foreach (KeyValuePair<NameIds, string> n in names)
+            foreach ((NameIds name, string value, CultureInfo culture) in names)
             {
                 int expectedPosition = offsets[currentItem];
                 currentItem++;
-                writer.WriteNoLength(n.Value, Encoding.BigEndianUnicode);
+                writer.WriteNoLength(value, Encoding.BigEndianUnicode);
             }
 
             if (languages != null)

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Globalization;
 using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.WellKnownIds;
@@ -27,13 +28,13 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             var table = NameTable.Load(writer.GetReader());
 
-            Assert.Equal("fullname", table.FontName);
-            Assert.Equal("family", table.FontFamilyName);
-            Assert.Equal("subfamily", table.FontSubFamilyName);
-            Assert.Equal("id", table.Id);
-            Assert.Equal("copyright", table.GetNameById(NameIds.CopyrightNotice));
-            Assert.Equal("other1", table.GetNameById(90));
-            Assert.Equal("other2", table.GetNameById(91));
+            Assert.Equal("fullname", table.FontName(CultureInfo.InvariantCulture));
+            Assert.Equal("family", table.FontFamilyName(CultureInfo.InvariantCulture));
+            Assert.Equal("subfamily", table.FontSubFamilyName(CultureInfo.InvariantCulture));
+            Assert.Equal("id", table.Id(CultureInfo.InvariantCulture));
+            Assert.Equal("copyright", table.GetNameById(CultureInfo.InvariantCulture, NameIds.CopyrightNotice));
+            Assert.Equal("other1", table.GetNameById(CultureInfo.InvariantCulture, 90));
+            Assert.Equal("other2", table.GetNameById(CultureInfo.InvariantCulture, 91));
         }
 
         [Fact]
@@ -58,13 +59,13 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             var table = NameTable.Load(writer.GetReader());
 
-            Assert.Equal("fullname", table.FontName);
-            Assert.Equal("family", table.FontFamilyName);
-            Assert.Equal("subfamily", table.FontSubFamilyName);
-            Assert.Equal("id", table.Id);
-            Assert.Equal("copyright", table.GetNameById(NameIds.CopyrightNotice));
-            Assert.Equal("other1", table.GetNameById(90));
-            Assert.Equal("other2", table.GetNameById(91));
+            Assert.Equal("fullname", table.FontName(CultureInfo.InvariantCulture));
+            Assert.Equal("family", table.FontFamilyName(CultureInfo.InvariantCulture));
+            Assert.Equal("subfamily", table.FontSubFamilyName(CultureInfo.InvariantCulture));
+            Assert.Equal("id", table.Id(CultureInfo.InvariantCulture));
+            Assert.Equal("copyright", table.GetNameById(CultureInfo.InvariantCulture, NameIds.CopyrightNotice));
+            Assert.Equal("other1", table.GetNameById(CultureInfo.InvariantCulture, 90));
+            Assert.Equal("other2", table.GetNameById(CultureInfo.InvariantCulture, 91));
         }
 
         [Fact]

@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     {
         internal GlyphRendererParameters(GlyphInstance glyph, float pointSize, Vector2 dpi)
         {
-            this.Font = glyph.Font.Description.FontName?.ToUpper() ?? string.Empty;
+            this.Font = glyph.Font.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
             this.FontStyle = glyph.Font.Description.Style;
             this.GlyphIndex = glyph.Index;
             this.PointSize = pointSize;

@@ -3,6 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts
 {
@@ -11,10 +14,10 @@ namespace SixLabors.Fonts
     /// </summary>
     public static class SystemFonts
     {
-        private static Lazy<SystemFontCollection> lazySystemFonts = new Lazy<SystemFontCollection>(() => new SystemFontCollection());
+        private static Lazy<IReadOnlyFontCollection> lazySystemFonts = new Lazy<IReadOnlyFontCollection>(() => new SystemFontCollection());
 
         /// <summary>
-        /// Gets the collection hosting the globably installled system fonts.
+        /// Gets the collection containing the globaly installled system fonts.
         /// </summary>
         /// <value>
         /// The system fonts.
@@ -43,7 +46,7 @@ namespace SixLabors.Fonts
         /// <param name="fontFamily">The font family to find.</param>
         /// <param name="family">The found family.</param>
         /// <returns>True if a font of that family has been installed into the font collection.</returns>
-        public static bool TryFind(string fontFamily, out FontFamily family) => Collection.TryFind(fontFamily, out family);
+        public static bool TryFind(string fontFamily, [NotNullWhen(true)] out FontFamily? family) => Collection.TryFind(fontFamily, out family);
 
         /// <summary>
         /// Create a new instance of the <see cref="Font"/> for the named font family.
@@ -61,5 +64,34 @@ namespace SixLabors.Fonts
         /// <param name="size">The size.</param>
         /// <returns>Returns instance of the <see cref="Font"/> from the current collection.</returns>
         public static Font CreateFont(string fontFamily, float size) => Collection.CreateFont(fontFamily, size);
+
+#if SUPPORTS_CULTUREINFO_LCID
+        /// <summary>
+        /// Gets the collection of <see cref="FontFamily"/> objects associated with this <see cref="FontCollection"/> in the current threads culture.
+        /// </summary>
+        /// <param name="culture">The culture to find the list of font familes for.</param>
+        /// <returns>The set of fonts families using the fonts culture aware font name</returns>
+        public static IEnumerable<FontFamily> FamiliesByCulture(CultureInfo culture)
+            => Collection.FamiliesByCulture(culture);
+
+        /// <summary>
+        /// Finds the specified font family.
+        /// </summary>
+        /// <param name="fontFamily">The font family.</param>
+        /// <param name="culture">The culture to find the font from of font family for.</param>
+        /// <returns>The family if installed otherwise throws <see cref="FontFamilyNotFoundException"/></returns>
+        public static FontFamily Find(string fontFamily, CultureInfo culture)
+            => Collection.Find(fontFamily, culture);
+
+        /// <summary>
+        /// Finds the specified font family.
+        /// </summary>
+        /// <param name="fontFamily">The font family to find.</param>
+        /// <param name="culture">The culture to find the font from of font family for.</param>
+        /// <param name="family">The found family.</param>
+        /// <returns>true if a font of that family has been installed into the font collection.</returns>
+        public static bool TryFind(string fontFamily, CultureInfo culture, [NotNullWhen(true)] out FontFamily? family)
+            => Collection.TryFind(fontFamily, culture, out family);
+#endif
     }
 }
