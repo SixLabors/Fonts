@@ -9,7 +9,7 @@ namespace SixLabors.Fonts
     public enum GlyphType
     {
         /// <summary>
-        /// This is a fall back glyph dure to missing code point
+        /// This is a fall back glyph due to a missing code point.
         /// </summary>
         Fallback,
 
@@ -19,7 +19,7 @@ namespace SixLabors.Fonts
         Standard,
 
         /// <summary>
-        /// This is a single layer of the multi-layer colored glyph (emoji)
+        /// This is a single layer of the multi-layer colored glyph (emoji).
         /// </summary>
         ColrLayer
     }
