@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors and contributors.
+// Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Numerics;
@@ -24,5 +24,18 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         public bool[] OnCurves { get; }
 
         public Bounds Bounds { get; }
+    }
+
+    internal readonly struct GlyphVectorWithColor
+    {
+        internal GlyphVectorWithColor(GlyphVector vector, GlyphColor color)
+        {
+            this.Vector = vector;
+            this.Color = color;
+        }
+
+        public GlyphVector Vector { get; }
+
+        public GlyphColor Color { get; }
     }
 }

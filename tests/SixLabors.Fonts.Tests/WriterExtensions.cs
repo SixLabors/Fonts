@@ -440,5 +440,65 @@ namespace SixLabors.Fonts.Tests
             writer.WriteInt16((short)table.IndexLocationFormat);
             writer.WriteInt16(0);
         }
+
+        public static void WriteColrTable(this BinaryWriter writer, ColrGlyphRecord[] data)
+        {
+            var formatted = data.ToList();
+
+            // Type      | Name                   | Description
+            // ----------|------------------------|----------------------------------------------------------------------------------------------------
+            // uint16    | version                | Table version number(starts at 0).
+            // uint16    | numBaseGlyphRecords    | Number of Base Glyph Records.
+            // Offset32  | baseGlyphRecordsOffset | Offset(from beginning of COLR table) to Base Glyph records.
+            // Offset32  | layerRecordsOffset     | Offset(from beginning of COLR table) to Layer Records.
+            // uint16    | numLayerRecords        | Number of Layer Records.
+
+            // write header
+            writer.WriteUInt16(0);
+            writer.WriteUInt16((ushort)formatted.Count);
+            uint headerEnd = 14;
+            writer.WriteOffset32(headerEnd);
+            var baseGlyphEnd = formatted.Sum(x => x.HeaderSize) + headerEnd;
+            writer.WriteOffset32((uint)baseGlyphEnd);
+            var layerCount = formatted.Sum(x => x.Layers.Count);
+            writer.WriteUInt16((ushort)layerCount);
+
+            ushort totalLayers = 0;
+            foreach (var g in formatted)
+            {
+                writer.WriteUInt16(g.Glyph);
+                writer.WriteUInt16(totalLayers);
+                var layers = (ushort)g.Layers.Count;
+                writer.WriteUInt16(layers);
+                totalLayers += layers;
+            }
+
+            foreach (var g in formatted)
+            {
+                foreach (var l in g.Layers)
+                {
+                    writer.WriteUInt16(l.Glyph);
+                    writer.WriteUInt16(l.Pallete);
+                }
+            }
+        }
+
+        public class ColrGlyphRecord
+        {
+            public ushort Glyph { get; set; }
+            public List<ColrLayerRecord> Layers { get; set; } = new List<ColrLayerRecord>();
+
+            public int HeaderSize => 6;
+
+            public int LayerSize => this.Layers.Sum(x => x.LayerSize);
+        }
+
+        public class ColrLayerRecord
+        {
+            public ushort Glyph { get; set; }
+            public ushort Pallete { get; set; }
+
+            public int LayerSize => 4;
+        }
     }
 }

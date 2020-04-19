@@ -3,7 +3,6 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tests
 {
-
     public class GlyphRenderer : IGlyphRenderer
     {
         public int FiguresCount = 0;

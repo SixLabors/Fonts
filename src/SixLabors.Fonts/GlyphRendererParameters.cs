@@ -20,12 +20,24 @@ namespace SixLabors.Fonts
             this.PointSize = pointSize;
             this.DpiX = dpi.X;
             this.DpiY = dpi.Y;
+            this.GlyphType = glyph.GlyphType;
+            this.GlyphColor = glyph.GlyphColor ?? default(GlyphColor);
         }
 
         /// <summary>
         /// Gets the name of the Font this glyph belongs to.
         /// </summary>
         public string Font { get; }
+
+        /// <summary>
+        /// Gets the type of this glyph.
+        /// </summary>
+        public GlyphColor GlyphColor { get; }
+
+        /// <summary>
+        /// Gets the type of this glyph.
+        /// </summary>
+        public GlyphType GlyphType { get; }
 
         /// <summary>
         /// Gets the style of the Font this glyph belongs to.
@@ -90,6 +102,8 @@ namespace SixLabors.Fonts
                 && other.DpiX == this.DpiX
                 && other.DpiY == this.DpiY
                 && other.GlyphIndex == this.GlyphIndex
+                && other.GlyphType == this.GlyphType
+                && other.GlyphColor.Equals(this.GlyphColor)
                 && ((other.Font is null && this.Font is null)
                 || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
         }
@@ -104,6 +118,8 @@ namespace SixLabors.Fonts
                 this.Font,
                 this.PointSize,
                 this.GlyphIndex,
+                this.GlyphType,
+                this.GlyphColor,
                 this.FontStyle,
                 this.DpiX,
                 this.DpiY);

@@ -5,6 +5,8 @@ using System;
 using System.Numerics;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Drawing;
 
 namespace DrawWithImageSharp
 {
@@ -15,7 +17,7 @@ namespace DrawWithImageSharp
         {
             using (var img = new Image<Rgba32>(1000, 1000))
             {
-                img.Mutate(x => x.Fill(Rgba32.White));
+                img.Mutate(x => x.Fill(Color.White));
 
                 foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
                 {
@@ -78,15 +80,15 @@ namespace DrawWithImageSharp
             string text = $"{horiz} x y z\n{vert} x y z";
             renderer.RenderText(text, style);
 
-            System.Collections.Generic.IEnumerable<SixLabors.Shapes.IPath> shapesToDraw = glyphBuilder.Paths;
-            img.Mutate(x => x.Fill(Rgba32.Black, glyphBuilder.Paths));
+            System.Collections.Generic.IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
+            img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
 
-            Rgba32 f = Rgba32.Fuchsia;
+            Rgba32 f = Color.Fuchsia;
             f.A = 128;
-            img.Mutate(x => x.Fill(Rgba32.Black, glyphBuilder.Paths));
+            img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
             img.Mutate(x => x.Draw(f, 1, glyphBuilder.Boxes));
 
-            img.Mutate(x => x.Draw(Rgba32.Lime, 1, glyphBuilder.TextBox));
+            img.Mutate(x => x.Draw(Color.Lime, 1, glyphBuilder.TextBox));
         }
     }
 }

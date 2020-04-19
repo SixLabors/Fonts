@@ -12,6 +12,9 @@ namespace SixLabors.Fonts.Tests
     public static class TestFonts
     {
         private static Dictionary<string, Stream> cache = new Dictionary<string, Stream>();
+
+        public static string TwemojiMozillaFile => GetFullPath("TwemojiMozilla.ttf");
+
         public static string CarterOneFile => GetFullPath("Carter_One/CarterOne.ttf");
         public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");
         public static string OpenSansFile => GetFullPath("OpenSans-Regular.ttf");
@@ -20,6 +23,7 @@ namespace SixLabors.Fonts.Tests
 
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
+        public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
         public static Stream WendyOneFileData() => OpenStream(WendyOneFile);
         public static Stream CarterOneFileData() => OpenStream(CarterOneFile);
         public static Stream SimpleFontFileData() => OpenStream(SimpleFontFile);

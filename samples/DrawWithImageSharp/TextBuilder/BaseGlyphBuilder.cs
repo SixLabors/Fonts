@@ -2,20 +2,24 @@ using System.Collections.Generic;
 using System.Numerics;
 
 using SixLabors.Fonts;
-using SixLabors.Primitives;
 using System.Linq;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace SixLabors.Shapes.Temp
 {
     /// <summary>
     /// rendering surface that Fonts can use to generate Shapes.
     /// </summary>
-    internal class BaseGlyphBuilder : IGlyphRenderer
+    internal class BaseGlyphBuilder : IColorGlyphRenderer
     {
         protected readonly PathBuilder builder = new PathBuilder();
         private readonly List<FontRectangle> glyphBounds = new List<FontRectangle>();
         private readonly List<IPath> paths = new List<IPath>();
+        private readonly List<Color?> colors = new List<Color?>();
         private Vector2 currentPoint = default(Vector2);
+        private Color? currentColor = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphBuilder"/> class.
@@ -27,6 +31,11 @@ namespace SixLabors.Shapes.Temp
         }
 
         /// <summary>
+        /// Get the colors for each path, where null means use user provided brush
+        /// </summary>
+        public IEnumerable<Color?> PathColors => this.colors;
+
+        /// <summary>
         /// Gets the paths that have been rendered by this.
         /// </summary>
         public IPathCollection Paths => new PathCollection(this.paths);
@@ -34,7 +43,7 @@ namespace SixLabors.Shapes.Temp
         /// <summary>
         /// Gets the paths that have been rendered by this.
         /// </summary>
-        public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new SixLabors.Shapes.RectangularPolygon(x.Location, x.Size)));
+        public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new RectangularPolygon(x.Location, x.Size)));
 
         /// <summary>
         /// Gets the paths that have been rendered by this.
@@ -47,8 +56,8 @@ namespace SixLabors.Shapes.Temp
 
         void IGlyphRenderer.BeginText(FontRectangle rect)
         {
-            this.TextBox = new SixLabors.Shapes.RectangularPolygon(rect.Location, rect.Size);
-            BeginText(rect);
+            this.TextBox = new RectangularPolygon(rect.Location, rect.Size);
+            this.BeginText(rect);
         }
 
         protected virtual void BeginText(FontRectangle rect)
@@ -62,14 +71,15 @@ namespace SixLabors.Shapes.Temp
         /// <param name="size">The size.</param>
         bool IGlyphRenderer.BeginGlyph(FontRectangle rect, GlyphRendererParameters cachKey)
         {
+            this.currentColor = null;
             this.builder.Clear();
             this.glyphBounds.Add(rect);
-            return BeginGlyph(rect, cachKey);
+            return this.BeginGlyph(rect, cachKey);
         }
 
         protected virtual bool BeginGlyph(FontRectangle rect, GlyphRendererParameters cachKey)
         {
-            BeginGlyph(rect);
+            this.BeginGlyph(rect);
             return true;
         }
 
@@ -103,6 +113,12 @@ namespace SixLabors.Shapes.Temp
         void IGlyphRenderer.EndGlyph()
         {
             this.paths.Add(this.builder.Build());
+            this.colors.Add(this.currentColor);
+        }
+
+        void IColorGlyphRenderer.SetColor(GlyphColor color)
+        {
+            this.currentColor = new Color(new Rgba32(color.Red, color.Green, color.Blue, color.Alpha));
         }
 
         /// <summary>
