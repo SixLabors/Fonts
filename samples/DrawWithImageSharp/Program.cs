@@ -10,6 +10,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
     using SixLabors.ImageSharp.PixelFormats;
     using SixLabors.ImageSharp.Processing;
     using SixLabors.Shapes.Temp;
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Numerics;
@@ -22,16 +23,18 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var fonts = new FontCollection();
             FontFamily font = fonts.Install(@"Fonts\SixLaborsSampleAB.ttf");
             FontFamily fontWoff = fonts.Install(@"Fonts\SixLaborsSampleAB.woff");
-            FontFamily font2 = fonts.Install(@"Fonts\OpenSans-Regular.ttf");
             FontFamily carter = fonts.Install(@"Fonts\CarterOne.ttf");
             FontFamily Wendy_One = fonts.Install(@"Fonts\WendyOne-Regular.ttf");
-            FontFamily TwemojiMozilla = fonts.Install(@"Fonts\TwemojiMozilla.ttf");
+            FontFamily ColorEmoji = fonts.Install(@"Fonts\Twemoji Mozilla.ttf");
+            FontFamily font2 = fonts.Install(@"Fonts\OpenSans-Regular.ttf");
             var emojiFont = SystemFonts.Find("Segoe UI Emoji");
-            //// fallback font tests
+            // fallback font tests
+            RenderTextProcessor(ColorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
+            RenderText(ColorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
 
-            RenderText(TwemojiMozilla, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
+            RenderText(ColorEmoji, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
             RenderText(emojiFont, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
-            RenderText(font2, "abc😀def", pointSize: 72, fallbackFonts: new[] { emojiFont });
+            RenderText(font2, "", pointSize: 72, fallbackFonts: new[] { emojiFont });
             RenderText(font2, "😀 Hello World! 😀", pointSize: 72, fallbackFonts: new[] { emojiFont });
 
             //// general
@@ -98,7 +101,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
         }
 
-
         public static void RenderText(Font font, string text, int width, int height)
         {
             string path = System.IO.Path.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
@@ -125,6 +127,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var builder = new GlyphBuilder();
             var renderer = new TextRenderer(builder);
             FontRectangle size = TextMeasurer.Measure(text, font);
+            font.ColorFontSupport = ColorFontSupport.MicrosoftColrFormat;
             renderer.RenderText(text, font);
 
             builder.Paths
@@ -136,19 +139,58 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 ApplyKerning = true,
                 WrappingWidth = 340,
-                FallbackFontFamilies = fallbackFonts?.ToArray()
+                FallbackFontFamilies = fallbackFonts?.ToArray(),
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             }, text);
         }
+        public static void RenderTextProcessor(FontFamily fontFamily, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
+        {
+            var textOptions = new TextGraphicsOptionsCopy
+            {
+                ApplyKerning = true,
+                DpiX = 96,
+                DpiY = 96,
+                RenderColorFonts = true,
+            };
+            if (fallbackFonts != null)
+            {
+                textOptions.FallbackFonts.AddRange(fallbackFonts);
+            }
+            var font = new Font(fontFamily, pointSize);
+            var renderOptions = new RendererOptions(font, textOptions.DpiX, textOptions.DpiY)
+            {
+                ApplyKerning = true,
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
+                FallbackFontFamilies = textOptions.FallbackFonts?.ToArray()
+            };
+
+            var textSize = TextMeasurer.Measure(text, renderOptions);
+            using (var img = new Image<Rgba32>((int)Math.Ceiling(textSize.Width) + 20, (int)Math.Ceiling(textSize.Height) + 20))
+            {
+                img.Mutate(x => x.Fill(Color.White).ApplyProcessor(new DrawTextProcessorCopy(textOptions, text, font, new SolidBrushCopy(Color.Black), null, new PointF(5, 5))));
+
+                string fullPath = CreatePath(font.Name, text + ".caching.png");
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+                img.Save(fullPath);
+            }
+        }
+
         public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)
         {
             shapes.SaveImage(new Color?[shapes.Count()], width, height, path);
         }
 
-        public static void SaveImage(this IEnumerable<IPath> shapes, IEnumerable<Color?> colors, int width, int height, params string[] path)
+        private static string CreatePath(params string[] path)
         {
+
             path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
             string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            return fullPath;
+        }
 
+        public static void SaveImage(this IEnumerable<IPath> shapes, IEnumerable<Color?> colors, int width, int height, params string[] path)
+        {
+            string fullPath = CreatePath(path);
             using (var img = new Image<Rgba32>(width, height))
             {
                 img.Mutate(x => x.Fill(Color.White));

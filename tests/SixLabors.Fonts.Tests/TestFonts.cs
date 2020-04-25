@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tests
     {
         private static Dictionary<string, Stream> cache = new Dictionary<string, Stream>();
 
-        public static string TwemojiMozillaFile => GetFullPath("TwemojiMozilla.ttf");
+        public static string TwemojiMozillaFile => GetFullPath("Twemoji Mozilla.ttf");
 
         public static string CarterOneFile => GetFullPath("Carter_One/CarterOne.ttf");
         public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");

@@ -91,12 +91,13 @@ namespace SixLabors.Fonts
                 bool hasFourBytes = char.IsHighSurrogate(text[i]);
                 int codePoint = hasFourBytes ? char.ConvertToUtf32(text[i], text[i + 1]) : text[i];
 
-                GlyphInstance glyph = spanStyle.GetGlyph(codePoint);
-                if (glyph == null)
+                GlyphInstance[] glyphs = spanStyle.GetGlyphLayers(codePoint, options.ColorFontSupport);
+                if (glyphs.Length == 0)
                 {
                     return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint);
                 }
 
+                var glyph = glyphs[0];
                 if (glyph.Font.LineHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
@@ -161,7 +162,18 @@ namespace SixLabors.Fonts
                         location.X = glyphLocation.X;
                     }
 
-                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), glyphLocation, glyphWidth, glyphHeight, lineHeight, startOfLine, false, false));
+                    foreach (var g in glyphs)
+                    {
+                        var w = (g.AdvanceWidth * spanStyle.PointSize) / scale;
+                        var h = (g.Height * spanStyle.PointSize) / scale;
+                        layout.Add(new GlyphLayout(codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine, false, false));
+
+                        if (w > glyphWidth)
+                        {
+                            glyphWidth = w;
+                        }
+                    }
+
                     startOfLine = false;
 
                     // move forward the actual width of the glyph, we are retaining the baseline
