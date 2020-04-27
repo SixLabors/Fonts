@@ -295,7 +295,7 @@ namespace SixLabors.Fonts.Tests
 
             var style = options.GetStyle(4, 10);
 
-            var glyph = style.GetGlyph('Z');
+            var glyph = Assert.Single(style.GetGlyphLayers('Z', ColorFontSupport.None));
             Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
             Assert.Equal(abcFontInstance, glyph.Font);
         }
@@ -319,7 +319,7 @@ namespace SixLabors.Fonts.Tests
 
             var style = options.GetStyle(4, 10);
 
-            var glyph = style.GetGlyph(character);
+            var glyph = Assert.Single(style.GetGlyphLayers(character, ColorFontSupport.None));
             Assert.Equal(GlyphType.Standard, glyph.GlyphType);
             var expectedInstance = instance switch
             {

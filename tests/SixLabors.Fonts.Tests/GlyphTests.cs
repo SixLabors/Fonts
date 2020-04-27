@@ -84,12 +84,25 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Install(TestFonts.TwemojiMozillaData()).CreateFont(12);
 
             // Get letter Grinning Face emoji
-            Glyph g = font.GetGlyph(this.AsCodePoint("😀"));
+            var instance = font.Instance as FontInstance;
+            Assert.True(instance.TryGetGlyphIndex(this.AsCodePoint("😀"), out var idx));
+            Assert.True(instance.TryGetColoredVectors(idx, out var vectors));
 
-            var render = new ColorGlyphRenderer();
-            g.RenderTo(render, Vector2.Zero, 72, 10);
+            Assert.Equal(3, vectors.Length);
+        }
 
-            Assert.Equal(3, render.Colors.Count);
+        [Fact]
+        public void RenderColrGlyphTextRenderer()
+        {
+            Font font = new FontCollection().Install(TestFonts.TwemojiMozillaData()).CreateFont(12);
+
+            var renderer = new ColorGlyphRenderer();
+            TextRenderer.RenderTextTo(renderer, "😀", new RendererOptions(font)
+            {
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+            });
+
+            Assert.Equal(3, renderer.Colors.Count);
         }
 
         private int AsCodePoint(string text)

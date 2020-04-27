@@ -142,6 +142,11 @@ namespace SixLabors.Fonts
         public Vector2 Origin { get; set; } = Vector2.Zero;
 
         /// <summary>
+        /// Gets or sets a value indicating whether we enable various color font formats.
+        /// </summary>
+        public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.None;
+
+        /// <summary>
         /// Gets the style. In derived classes this could switchout to different fonts mid stream
         /// </summary>
         /// <param name="index">The index.</param>

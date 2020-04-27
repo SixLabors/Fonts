@@ -132,87 +132,6 @@ namespace SixLabors.Fonts
             return new FontRectangle(loc.X, loc.Y, size.X, size.Y);
         }
 
-        private static void RenderToInternal(IGlyphRenderer surface, GlyphRendererParameters paramaters, Vector2 location, GlyphInstance glyph, FontRectangle box, Vector2 scaledPoint)
-        {
-            if (surface.BeginGlyph(box, paramaters))
-            {
-                if (glyph.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
-                {
-                    colorSurface.SetColor(glyph.GlyphColor.Value);
-                }
-
-                int endOfContor = -1;
-                for (int i = 0; i < glyph.vector.EndPoints.Length; i++)
-                {
-                    surface.BeginFigure();
-                    int startOfContor = endOfContor + 1;
-                    endOfContor = glyph.vector.EndPoints[i];
-
-                    Vector2 prev = Vector2.Zero;
-                    Vector2 curr = glyph.GetPoint(ref scaledPoint, endOfContor) + location;
-                    Vector2 next = glyph.GetPoint(ref scaledPoint, startOfContor) + location;
-
-                    if (glyph.vector.OnCurves[endOfContor])
-                    {
-                        surface.MoveTo(curr);
-                    }
-                    else
-                    {
-                        if (glyph.vector.OnCurves[startOfContor])
-                        {
-                            surface.MoveTo(next);
-                        }
-                        else
-                        {
-                            // If both first and last points are off-curve, start at their middle.
-                            Vector2 startPoint = (curr + next) / 2;
-                            surface.MoveTo(startPoint);
-                        }
-                    }
-
-                    int length = (endOfContor - startOfContor) + 1;
-                    for (int p = 0; p < length; p++)
-                    {
-                        prev = curr;
-                        curr = next;
-                        int currentIndex = startOfContor + p;
-                        int nextIndex = startOfContor + ((p + 1) % length);
-                        int prevIndex = startOfContor + (((length + p) - 1) % length);
-                        next = glyph.GetPoint(ref scaledPoint, nextIndex) + location;
-
-                        if (glyph.vector.OnCurves[currentIndex])
-                        {
-                            // This is a straight line.
-                            surface.LineTo(curr);
-                        }
-                        else
-                        {
-                            Vector2 prev2 = prev;
-                            Vector2 next2 = next;
-
-                            if (!glyph.vector.OnCurves[prevIndex])
-                            {
-                                prev2 = (curr + prev) / 2;
-                                surface.LineTo(prev2);
-                            }
-
-                            if (!glyph.vector.OnCurves[nextIndex])
-                            {
-                                next2 = (curr + next) / 2;
-                            }
-
-                            surface.LineTo(prev2);
-                            surface.QuadraticBezierTo(curr, next2);
-                        }
-                    }
-
-                    surface.EndFigure();
-                }
-            }
-
-            surface.EndGlyph();
-        }
-
         /// <summary>
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
         /// </summary>
@@ -232,20 +151,85 @@ namespace SixLabors.Fonts
 
             FontRectangle box = this.BoundingBox(location, scaledPoint);
 
-            if (this.GlyphType == GlyphType.Standard && surface is IColorGlyphRenderer && this.Font.TryGetColoredVectors(this.Index, out var vectors))
+            var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
+
+            if (surface.BeginGlyph(box, paramaters))
             {
-                // we support rendering color glyphs here we are allowed to fetch all the vectors now
-                foreach (var v in vectors)
+                if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
                 {
-                    var paramaters = new GlyphRendererParameters(v, pointSize, dpi);
-                    RenderToInternal(surface, paramaters, location, v, box, scaledPoint);
+                    colorSurface.SetColor(this.GlyphColor.Value);
+                }
+
+                int endOfContor = -1;
+                for (int i = 0; i < this.vector.EndPoints.Length; i++)
+                {
+                    surface.BeginFigure();
+                    int startOfContor = endOfContor + 1;
+                    endOfContor = this.vector.EndPoints[i];
+
+                    Vector2 prev = Vector2.Zero;
+                    Vector2 curr = this.GetPoint(ref scaledPoint, endOfContor) + location;
+                    Vector2 next = this.GetPoint(ref scaledPoint, startOfContor) + location;
+
+                    if (this.vector.OnCurves[endOfContor])
+                    {
+                        surface.MoveTo(curr);
+                    }
+                    else
+                    {
+                        if (this.vector.OnCurves[startOfContor])
+                        {
+                            surface.MoveTo(next);
+                        }
+                        else
+                        {
+                            // If both first and last points are off-curve, start at their middle.
+                            Vector2 startPoint = (curr + next) / 2;
+                            surface.MoveTo(startPoint);
+                        }
+                    }
+
+                    int length = (endOfContor - startOfContor) + 1;
+                    for (int p = 0; p < length; p++)
+                    {
+                        prev = curr;
+                        curr = next;
+                        int currentIndex = startOfContor + p;
+                        int nextIndex = startOfContor + ((p + 1) % length);
+                        int prevIndex = startOfContor + (((length + p) - 1) % length);
+                        next = this.GetPoint(ref scaledPoint, nextIndex) + location;
+
+                        if (this.vector.OnCurves[currentIndex])
+                        {
+                            // This is a straight line.
+                            surface.LineTo(curr);
+                        }
+                        else
+                        {
+                            Vector2 prev2 = prev;
+                            Vector2 next2 = next;
+
+                            if (!this.vector.OnCurves[prevIndex])
+                            {
+                                prev2 = (curr + prev) / 2;
+                                surface.LineTo(prev2);
+                            }
+
+                            if (!this.vector.OnCurves[nextIndex])
+                            {
+                                next2 = (curr + next) / 2;
+                            }
+
+                            surface.LineTo(prev2);
+                            surface.QuadraticBezierTo(curr, next2);
+                        }
+                    }
+
+                    surface.EndFigure();
                 }
             }
-            else
-            {
-                var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
-                RenderToInternal(surface, paramaters, location, this, box, scaledPoint);
-            }
+
+            surface.EndGlyph();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

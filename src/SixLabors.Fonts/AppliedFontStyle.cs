@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors and contributors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -16,7 +17,7 @@ namespace SixLabors.Fonts
         public int End;
         public bool ApplyKerning;
 
-        public GlyphInstance GetGlyph(int codePoint)
+        public GlyphInstance[] GetGlyphLayers(int codePoint, ColorFontSupport colorFontOptions)
         {
             GlyphInstance glyph = this.MainFont.GetGlyph(codePoint);
             if (glyph.GlyphType == GlyphType.Fallback)
@@ -26,12 +27,26 @@ namespace SixLabors.Fonts
                     var g = f.GetGlyph(codePoint);
                     if (g.GlyphType != GlyphType.Fallback)
                     {
-                        return g;
+                        glyph = g;
+                        break;
                     }
                 }
             }
 
-            return glyph;
+            if (glyph == null)
+            {
+                return Array.Empty<GlyphInstance>();
+            }
+
+            if (colorFontOptions == ColorFontSupport.MicrosoftColrFormat)
+            {
+                if (glyph.Font.TryGetColoredVectors(glyph.Index, out var layers))
+                {
+                    return layers;
+                }
+            }
+
+            return new[] { glyph };
         }
 
         public Vector2 GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
