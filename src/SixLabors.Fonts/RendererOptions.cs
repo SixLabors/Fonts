@@ -142,7 +142,7 @@ namespace SixLabors.Fonts
         public Vector2 Origin { get; set; } = Vector2.Zero;
 
         /// <summary>
-        /// Gets or sets weather we enable various color font formats.
+        /// Gets or sets a value indicating whether we enable various color font formats.
         /// </summary>
         public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.None;
 
