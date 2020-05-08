@@ -9,7 +9,7 @@ SixLabors.Fonts
 
 [![Build Status](https://img.shields.io/github/workflow/status/SixLabors/Fonts/Build/master)](https://github.com/SixLabors/Fonts/actions)
 [![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/master/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
-[![GitHub license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/SixLabors/Fonts/master/LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 [![Join the chat at https://gitter.im/SixLabors/Shapes](https://badges.gitter.im/SixLabors/Fonts.svg)](https://gitter.im/SixLabors/Fonts?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![GitHub issues](https://img.shields.io/github/issues/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/issues)
