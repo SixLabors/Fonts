@@ -105,6 +105,7 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)shared-infrastructure\stylecop.json" Visible="false" />
     <!--NuGet package icon source-->
     <None Include="$(MSBuildThisFileDirectory)shared-infrastructure\branding\icons\fonts\sixlabors.fonts.128.png" Pack="true" PackagePath="\icon.png"  Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)shared-infrastructure\NUGETLICENSE.md" Pack="true" PackagePath="LICENSE.md" />
   </ItemGroup>
 
 </Project>
