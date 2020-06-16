@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
                 {
                     if (seg.Offset == 0)
                     {
-                        glyphId = (ushort)((charAsInt + seg.Delta) % ushort.MaxValue); // TODO: bitmask instead?
+                        glyphId = (ushort)((charAsInt + seg.Delta) & ushort.MaxValue);
                         return true;
                     }
                     else
