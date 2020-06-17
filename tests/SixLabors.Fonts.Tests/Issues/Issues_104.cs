@@ -1,4 +1,3 @@
-using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General.CMap;
 using Xunit;
 using static SixLabors.Fonts.Tables.General.CMap.Format4SubTable;
@@ -19,10 +18,10 @@ namespace SixLabors.Fonts.Tests.Issues
                 )
             }, null);
 
-            var delta = short.MaxValue + 2;// extra 2 to handle the difference between ushort and short when offsettings
-            
-            var codePoint = delta + 5;
-            Assert.True(tbl.TryGetGlyphId(codePoint, out var gid));
+            const int delta = short.MaxValue + 2; // extra 2 to handle the difference between ushort and short when offsettings
+
+            const int codePoint = delta + 5;
+            Assert.True(tbl.TryGetGlyphId(codePoint, out ushort gid));
 
             Assert.Equal(5, gid);
         }
