@@ -32,7 +32,7 @@ Please visit https://sixlabors.com/pricing for details.
 
 ## Questions
 
-- Do you have questions? We are happy to help! Please [join our Discussions Forum](https://github.com/SixLabors/ImageSharp/discussions/category_choices).
+- Do you have questions? We are happy to help! Please [join our Discussions Forum](https://github.com/SixLabors/Fonts/discussions/category_choices).
 - Please read our [Contribution Guide](https://github.com/SixLabors/Fonts/blob/master/.github/CONTRIBUTING.md) before opening issues or pull requests!
 
 ## Code of Conduct  
