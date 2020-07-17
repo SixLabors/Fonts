@@ -21,7 +21,10 @@
     <PackageReference Update="Microsoft.Net.Compilers.Toolset" Version="3.3.1" PrivateAssets="All" />
     <PackageReference Update="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" />
     <PackageReference Update="StyleCop.Analyzers" PrivateAssets="All" Version="1.1.118" />
-    
+
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+    <PackageReference Update="MinVer" PrivateAssets="All" Version="2.3.0" />
+
     <!--Src Dependencies-->
     <PackageReference Update="System.Numerics.Vectors" Version="4.5.0" />
     <PackageReference Update="System.IO.Compression" Version="4.3.0" />
