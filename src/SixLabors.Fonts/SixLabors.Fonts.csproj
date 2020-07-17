@@ -22,9 +22,11 @@
     <PackageReference Include="System.Buffers" />
     <PackageReference Include="System.Memory" />
   </ItemGroup>
-  
+
   <ItemGroup>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />    
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub"/>
+    <PackageReference Include="MinVer" PrivateAssets="All" />
   </ItemGroup>
 
   <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />
