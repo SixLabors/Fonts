@@ -205,7 +205,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
                     img.Mutate(x => x.Fill(new ShapeGraphicsOptions
                     {
-                        IntersectionRule = IntersectionRule.Nonzero
+                        ShapeOptions = {
+                            IntersectionRule = IntersectionRule.Nonzero
+                        }
                     }, c, s.Translate(new Vector2(0, 0))));
                 }
                 // img.Draw(Color.LawnGreen, 1, shape);
