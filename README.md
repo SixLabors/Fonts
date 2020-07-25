@@ -17,7 +17,7 @@ SixLabors.Fonts
 
 </div>
 
-**SixLabors.Fonts** is a new cross-platform font loadings and drawing library.
+**SixLabors.Fonts** is a new cross-platform font loading and drawing library.
 
 ## License
   
@@ -49,7 +49,7 @@ Install stable releases via Nuget; development releases are available via MyGet.
 
 ## Manual build
 
-If you prefer, you can compile FOnts yourself (please do and help!)
+If you prefer, you can compile Fonts yourself (please do and help!)
 
 - Using [Visual Studio 2019](https://visualstudio.microsoft.com/vs/)
   - Make sure you have the latest version installed

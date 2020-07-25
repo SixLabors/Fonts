@@ -20,7 +20,6 @@
 
 * Do not open an issue on GitHub until you have collected positive feedback about the change. GitHub issues are primarily intended for bug reports and fixes.
 
-
 #### **Do you have questions about consuming the library or the source code?**
 
 * Ask any question about how to use SixLabors.Fonts in the [Help Discussions Channel](https://github.com/SixLabors/Fonts/discussions?discussions_q=category%3AHelp).
