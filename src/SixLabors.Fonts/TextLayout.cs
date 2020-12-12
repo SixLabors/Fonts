@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts
@@ -97,11 +96,12 @@ namespace SixLabors.Fonts
                     return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint);
                 }
 
-                var glyph = glyphs[0];
-                if (glyph.Font.LineHeight > unscaledLineHeight)
+                GlyphInstance? glyph = glyphs[0];
+                float fontHeight = glyph.Font.LineHeight * options.LineSpacing;
+                if (fontHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
-                    unscaledLineHeight = glyph.Font.LineHeight;
+                    unscaledLineHeight = fontHeight;
                     scale = glyph.Font.EmSize * 72;
                     lineHeight = (unscaledLineHeight * spanStyle.PointSize) / scale;
                 }
@@ -122,12 +122,15 @@ namespace SixLabors.Fonts
 
                 if (firstLine)
                 {
-                    if (lineHeight > lineHeightOfFirstLine)
+                    // Reset the line height for the first line to prevent
+                    // initial lead.
+                    float unspacedLineHeight = lineHeight / options.LineSpacing;
+                    if (unspacedLineHeight > lineHeightOfFirstLine)
                     {
-                        lineHeightOfFirstLine = lineHeight;
+                        lineHeightOfFirstLine = unspacedLineHeight;
                     }
 
-                    var lineGap = lineHeightOfFirstLine - lineMaxAscender - lineMaxDescender;
+                    float lineGap = lineHeightOfFirstLine - lineMaxAscender - lineMaxDescender;
 
                     top = lineHeightOfFirstLine - lineMaxAscender - (lineGap / 2);
                 }
@@ -162,10 +165,10 @@ namespace SixLabors.Fonts
                         location.X = glyphLocation.X;
                     }
 
-                    foreach (var g in glyphs)
+                    foreach (GlyphInstance? g in glyphs)
                     {
-                        var w = (g.AdvanceWidth * spanStyle.PointSize) / scale;
-                        var h = (g.Height * spanStyle.PointSize) / scale;
+                        float w = (g.AdvanceWidth * spanStyle.PointSize) / scale;
+                        float h = (g.Height * spanStyle.PointSize) / scale;
                         layout.Add(new GlyphLayout(codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine, false, false));
 
                         if (w > glyphWidth)
