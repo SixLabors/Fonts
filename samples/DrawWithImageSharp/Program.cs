@@ -27,7 +27,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily Wendy_One = fonts.Install(@"Fonts\WendyOne-Regular.ttf");
             FontFamily ColorEmoji = fonts.Install(@"Fonts\Twemoji Mozilla.ttf");
             FontFamily font2 = fonts.Install(@"Fonts\OpenSans-Regular.ttf");
-            var emojiFont = SystemFonts.Find("Segoe UI Emoji");
+            FontFamily emojiFont = SystemFonts.Find("Segoe UI Emoji");
             // fallback font tests
             RenderTextProcessor(ColorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
             RenderText(ColorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
@@ -53,6 +53,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, "Hello\nWorld", 72);
             RenderText(carter, "Hello\0World", 72);
             RenderText(Wendy_One, "Hello\0World", 72);
+
 
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
@@ -164,7 +165,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 FallbackFontFamilies = textOptions.FallbackFonts?.ToArray()
             };
 
-            var textSize = TextMeasurer.Measure(text, renderOptions);
+            FontRectangle textSize = TextMeasurer.Measure(text, renderOptions);
             using (var img = new Image<Rgba32>((int)Math.Ceiling(textSize.Width) + 20, (int)Math.Ceiling(textSize.Height) + 20))
             {
                 img.Mutate(x => x.Fill(Color.White).ApplyProcessor(new DrawTextProcessorCopy(textOptions, text, font, new SolidBrushCopy(Color.Black), null, new PointF(5, 5))));
@@ -194,13 +195,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             using (var img = new Image<Rgba32>(width, height))
             {
                 img.Mutate(x => x.Fill(Color.White));
-                var shapesArray = shapes.ToArray();
-                var colorsArray = colors.ToArray();
+                IPath[] shapesArray = shapes.ToArray();
+                Color?[] colorsArray = colors.ToArray();
 
-                for (var i = 0; i < shapesArray.Length; i++)
+                for (int i = 0; i < shapesArray.Length; i++)
                 {
-                    var s = shapesArray[i];
-                    var c = colorsArray[i] ?? Color.HotPink;
+                    IPath s = shapesArray[i];
+                    Color c = colorsArray[i] ?? Color.HotPink;
 
                     // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
                     img.Mutate(x => x.Fill(new ShapeGraphicsOptions
@@ -232,13 +233,16 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             IEnumerable<ISimplePath> converted = shape.Flatten();
             converted.Aggregate(sb, (s, p) =>
             {
-                foreach (Vector2 point in p.Points)
+                ReadOnlySpan<PointF> points = p.Points.Span;
+                for (int i = 0; i < points.Length; i++)
                 {
+                    PointF point = points[i];
                     sb.Append(point.X);
                     sb.Append('x');
                     sb.Append(point.Y);
                     sb.Append(' ');
                 }
+
                 s.Append('\n');
                 return s;
             });

@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
-using SixLabors.Fonts.Tables.General;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -17,6 +14,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(-1, options.WrappingWidth);
             Assert.Equal(HorizontalAlignment.Left, options.HorizontalAlignment);
             Assert.Equal(VerticalAlignment.Top, options.VerticalAlignment);
+            Assert.Equal(1, options.LineSpacing);
         }
 
         [Fact]
