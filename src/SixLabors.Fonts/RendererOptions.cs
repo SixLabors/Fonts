@@ -124,7 +124,7 @@ namespace SixLabors.Fonts
         /// <value>
         ///     if value is -1 then wrapping is disabled.
         /// </value>
-        public float WrappingWidth { get; set; } = 150;
+        public float WrappingWidth { get; set; } = -1;
 
         /// <summary>
         /// Gets or sets the line spacing. Applied as a multiple of the line height.
