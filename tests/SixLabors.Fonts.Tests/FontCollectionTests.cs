@@ -1,3 +1,7 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
+using System.Collections.Generic;
 using System.Globalization;
 using Xunit;
 
@@ -21,13 +25,13 @@ namespace SixLabors.Fonts.Tests
         public void InstallViaPathInstallFontFileInstances()
         {
             var sut = new FontCollection();
-            var family = sut.Install(TestFonts.CarterOneFile, out var descriptions);
+            FontFamily family = sut.Install(TestFonts.CarterOneFile, out FontDescription descriptions);
 
-            var allInstances = sut.FindAll(family.Name, CultureInfo.InvariantCulture);
+            IEnumerable<IFontInstance> allInstances = sut.FindAll(family.Name, CultureInfo.InvariantCulture);
 
             Assert.All(allInstances, i =>
             {
-                var font = Assert.IsType<FileFontInstance>(i);
+                FileFontInstance font = Assert.IsType<FileFontInstance>(i);
             });
         }
 

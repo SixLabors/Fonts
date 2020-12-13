@@ -138,7 +138,7 @@ namespace SixLabors.Fonts
         /// <exception cref="NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, float lineHeight)
         {
-            location = location * dpi;
+            location *= dpi;
 
             Vector2 firstPoint = Vector2.Zero;
 

@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -5,7 +8,7 @@ namespace SixLabors.Fonts.Tests
 {
     public class GlyphRenderer : IGlyphRenderer
     {
-        public int FiguresCount = 0;
+        private int figuresCount = 0;
 
         public List<Vector2> ControlPoints { get; } = new List<Vector2>();
 
@@ -22,10 +25,7 @@ namespace SixLabors.Fonts.Tests
             return true;
         }
 
-        public void BeginFigure()
-        {
-            this.FiguresCount++;
-        }
+        public void BeginFigure() => this.figuresCount++;
 
         public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
         {
@@ -37,12 +37,10 @@ namespace SixLabors.Fonts.Tests
 
         public void EndGlyph()
         {
-
         }
 
         public void EndFigure()
         {
-
         }
 
         public void LineTo(Vector2 point)

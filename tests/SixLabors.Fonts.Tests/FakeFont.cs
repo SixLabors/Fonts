@@ -1,7 +1,9 @@
-using Xunit;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
 
-using SixLabors.Fonts.Tests.Fakes;
 using System.Globalization;
+using SixLabors.Fonts.Tests.Fakes;
+using Xunit;
 
 namespace SixLabors.Fonts.Tests
 {
@@ -19,9 +21,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         public static Font CreateFont(string text)
-        {
-            return CreateFontWithInstance(text, out _);
-        }
+            => CreateFontWithInstance(text, out _);
 
         internal static Font CreateFontWithInstance(string text, out FakeFontInstance instance)
         {

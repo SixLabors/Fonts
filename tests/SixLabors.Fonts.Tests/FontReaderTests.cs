@@ -1,4 +1,6 @@
-﻿
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
 
@@ -50,9 +52,15 @@ namespace SixLabors.Fonts.Tests
 
             writer.WriteTrueTypeFileHeader(new TableHeader("cmap", 0, 0, 20));
 
-            writer.WriteCMapTable(new[] {
-                new Fonts.Tables.General.CMap.Format0SubTable(0, WellKnownIds.PlatformIDs.Macintosh, 1, new byte[] {2,9})
-            });
+            writer.WriteCMapTable(
+                new[]
+                {
+                    new Fonts.Tables.General.CMap.Format0SubTable(
+                        0,
+                        WellKnownIds.PlatformIDs.Macintosh,
+                        1,
+                        new byte[] { 2, 9 })
+                });
 
             var reader = new FontReader(writer.GetStream());
             CMapTable cmap = reader.GetTable<CMapTable>();

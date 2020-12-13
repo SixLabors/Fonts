@@ -1,9 +1,11 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.CMap;
@@ -28,23 +30,30 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt32(length);
         }
 
-        public static void WriteTrueTypeFileHeader(this BinaryWriter writer, ushort tableCount, ushort searchRange, ushort entrySelector, ushort rangeShift)
-        {
-            // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
-            writer.WriteFileHeader(0x00010000, tableCount, searchRange, entrySelector, rangeShift);
-        }
+        public static void WriteTrueTypeFileHeader(
+            this BinaryWriter writer,
+            ushort tableCount,
+            ushort searchRange,
+            ushort entrySelector,
+            ushort rangeShift)
+
+             // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
+             => writer.WriteFileHeader(0x00010000, tableCount, searchRange, entrySelector, rangeShift);
 
         public static void WriteTrueTypeFileHeader(this BinaryWriter writer, params TableHeader[] headers)
-        {
-            // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
-            writer.WriteFileHeader(0x00010000, headers);
-        }
 
-        public static void WriteCffFileHeader(this BinaryWriter writer, ushort tableCount, ushort searchRange, ushort entrySelector, ushort rangeShift)
-        {
             // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
-            writer.WriteFileHeader(0x4F54544F, tableCount, searchRange, entrySelector, rangeShift);
-        }
+            => writer.WriteFileHeader(0x00010000, headers);
+
+        public static void WriteCffFileHeader(
+            this BinaryWriter writer,
+            ushort tableCount,
+            ushort searchRange,
+            ushort entrySelector,
+            ushort rangeShift)
+
+            // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
+            => writer.WriteFileHeader(0x4F54544F, tableCount, searchRange, entrySelector, rangeShift);
 
         private static void WriteFileHeader(this BinaryWriter writer, uint version, params TableHeader[] headers)
         {
@@ -86,6 +95,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16(entrySelector);
             writer.WriteUInt16(rangeShift);
         }
+
         public static void WriteNameTable(this BinaryWriter writer, Dictionary<NameIds, string> names, List<string> languages = null)
             => writer.WriteNameTable(names.Select(x => (x.Key, x.Value, CultureInfo.InvariantCulture)).ToList(), languages);
 
@@ -312,15 +322,15 @@ namespace SixLabors.Fonts.Tests
 
         private static int DataLength(this CMapSubTable subtable)
         {
-            if (subtable is Format0SubTable)
+            if (subtable is Format0SubTable table)
             {
-                return 6 + ((Format0SubTable)subtable).GlyphIds.Length;
+                return 6 + table.GlyphIds.Length;
             }
 
-            if (subtable is Format4SubTable)
+            if (subtable is Format4SubTable format4Table)
             {
-                Format4SubTable.Segment[] segs = ((Format4SubTable)subtable).Segments;
-                ushort[] glyphs = ((Format4SubTable)subtable).GlyphIds;
+                Format4SubTable.Segment[] segs = format4Table.Segments;
+                ushort[] glyphs = format4Table.GlyphIds;
                 return 16 + (segs.Length * 8) + (glyphs.Length * 2);
             }
 
@@ -349,7 +359,6 @@ namespace SixLabors.Fonts.Tests
             // int16     | (reserved)           | set to 0
             // int16     | metricDataFormat     | 0 for current format.
             // uint16    | numberOfHMetrics     | Number of hMetric entries in 'hmtx' table
-
             writer.WriteUInt16(1);
             writer.WriteUInt16(1);
             writer.WriteFWORD(table.Ascender);
@@ -372,8 +381,6 @@ namespace SixLabors.Fonts.Tests
 
         public static void WriteHeadTable(this BinaryWriter writer, HeadTable table)
         {
-
-
             // Type         | Name               | Description
             // -------------|--------------------|----------------------------------------------------------------------------------------------------
             // uint16       | majorVersion       | Major version number of the font header table — set to 1.
@@ -384,15 +391,15 @@ namespace SixLabors.Fonts.Tests
             // uint16       | flags              |    Bit 0: Baseline for font at y = 0;
             //                                            Bit 1: Left sidebearing point at x = 0(relevant only for TrueType rasterizers) — see the note below regarding variable fonts;
             //                                            Bit 2: Instructions may depend on point size;
-            //                                            Bit 3: Force ppem to integer values for all internal scaler math; may use fractional ppem sizes if this bit is clear; 
+            //                                            Bit 3: Force ppem to integer values for all internal scaler math; may use fractional ppem sizes if this bit is clear;
             //                                            Bit 4: Instructions may alter advance width(the advance widths might not scale linearly);
             //                                            Bit 5: This bit is not used in OpenType, and should not be set in order to ensure compatible behavior on all platforms.If set, it may result in different behavior for vertical layout in some platforms. (See Apple's specification for details regarding behavior in Apple platforms.)
-            //                                            Bits 6–10: These bits are not used in Opentype and should always be cleared. (See Apple's specification for details regarding legacy used in Apple platforms.) 
+            //                                            Bits 6–10: These bits are not used in Opentype and should always be cleared. (See Apple's specification for details regarding legacy used in Apple platforms.)
             //                                            Bit 11: Font data is ‘lossless’ as a results of having been subjected to optimizing transformation and/or compression (such as e.g.compression mechanisms defined by ISO/IEC 14496-18, MicroType Express, WOFF 2.0 or similar) where the original font functionality and features are retained but the binary compatibility between input and output font files is not guaranteed.As a result of the applied transform, the ‘DSIG’ Table may also be invalidated.
             //                                            Bit 12: Font converted (produce compatible metrics)
             //                                            Bit 13: Font optimized for ClearType™. Note, fonts that rely on embedded bitmaps (EBDT) for rendering should not be considered optimized for ClearType, and therefore should keep this bit cleared.
             //                                            Bit 14: Last Resort font.If set, indicates that the glyphs encoded in the cmap subtables are simply generic symbolic representations of code point ranges and don’t truly represent support for those code points.If unset, indicates that the glyphs encoded in the cmap subtables represent proper support for those code points.
-            //                                            Bit 15: Reserved, set to 0 
+            //                                            Bit 15: Reserved, set to 0
             // uint16       | unitsPerEm         | Valid range is from 16 to 16384. This value should be a power of 2 for fonts that have TrueType outlines.
             // LONGDATETIME | created            | Number of seconds since 12:00 midnight that started January 1st 1904 in GMT/UTC time zone. 64-bit integer
             // LONGDATETIME | modified           | Number of seconds since 12:00 midnight that started January 1st 1904 in GMT/UTC time zone. 64-bit integer
@@ -409,15 +416,14 @@ namespace SixLabors.Fonts.Tests
             //                                       Bit 6: Extended(if set to 1)
             //                                       Bits 7–15: Reserved(set to 0).
             // uint16       |lowestRecPPEM       |  Smallest readable size in pixels.
-            // int16        | fontDirectionHint  |  Deprecated(Set to 2). 
-            //                                          0: Fully mixed directional glyphs; 
-            //                                          1: Only strongly left to right; 
-            //                                          2: Like 1 but also contains neutrals; 
-            //                                          -1: Only strongly right to left; 
+            // int16        | fontDirectionHint  |  Deprecated(Set to 2).
+            //                                          0: Fully mixed directional glyphs;
+            //                                          1: Only strongly left to right;
+            //                                          2: Like 1 but also contains neutrals;
+            //                                          -1: Only strongly right to left;
             //                                          -2: Like -1 but also contains neutrals. 1
             // int16        | indexToLocFormat   | 0 for short offsets (Offset16), 1 for long (Offset32).
             // int16        | glyphDataFormat    | 0 for current format.
-
             writer.WriteUInt16(1);
             writer.WriteUInt16(0);
             writer.WriteUInt32(0);
@@ -458,24 +464,24 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16((ushort)formatted.Count);
             uint headerEnd = 14;
             writer.WriteOffset32(headerEnd);
-            var baseGlyphEnd = formatted.Sum(x => x.HeaderSize) + headerEnd;
+            long baseGlyphEnd = formatted.Sum(x => x.HeaderSize) + headerEnd;
             writer.WriteOffset32((uint)baseGlyphEnd);
-            var layerCount = formatted.Sum(x => x.Layers.Count);
+            int layerCount = formatted.Sum(x => x.Layers.Count);
             writer.WriteUInt16((ushort)layerCount);
 
             ushort totalLayers = 0;
-            foreach (var g in formatted)
+            foreach (ColrGlyphRecord g in formatted)
             {
                 writer.WriteUInt16(g.Glyph);
                 writer.WriteUInt16(totalLayers);
-                var layers = (ushort)g.Layers.Count;
+                ushort layers = (ushort)g.Layers.Count;
                 writer.WriteUInt16(layers);
                 totalLayers += layers;
             }
 
-            foreach (var g in formatted)
+            foreach (ColrGlyphRecord g in formatted)
             {
-                foreach (var l in g.Layers)
+                foreach (ColrLayerRecord l in g.Layers)
                 {
                     writer.WriteUInt16(l.Glyph);
                     writer.WriteUInt16(l.Pallete);
@@ -486,6 +492,7 @@ namespace SixLabors.Fonts.Tests
         public class ColrGlyphRecord
         {
             public ushort Glyph { get; set; }
+
             public List<ColrLayerRecord> Layers { get; set; } = new List<ColrLayerRecord>();
 
             public int HeaderSize => 6;
@@ -496,6 +503,7 @@ namespace SixLabors.Fonts.Tests
         public class ColrLayerRecord
         {
             public ushort Glyph { get; set; }
+
             public ushort Pallete { get; set; }
 
             public int LayerSize => 4;

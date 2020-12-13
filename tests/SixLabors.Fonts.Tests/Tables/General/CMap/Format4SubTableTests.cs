@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.WellKnownIds;
@@ -13,29 +16,27 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         {
             var writer = new BinaryWriter();
 
-            //int subtableCount = 1;
-            writer.WriteCMapSubTable(new Format4SubTable(0, PlatformIDs.Windows, 2,
-                new[]
-                    {
-                        new Format4SubTable.Segment(0,1,2,3,4)
-                    }, new ushort[] {
-                1,2,3,4,5,6,7,8
-            }));
+            // int subtableCount = 1;
+            writer.WriteCMapSubTable(
+                new Format4SubTable(
+                    0,
+                    PlatformIDs.Windows,
+                    2,
+                    new[] { new Format4SubTable.Segment(0, 1, 2, 3, 4) },
+                    new ushort[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
 
             BinaryReader reader = writer.GetReader();
             ushort format = reader.ReadUInt16(); // read format before we pass along as thats whet the cmap table does
             Assert.Equal(4, format);
 
-            Format4SubTable table = Format4SubTable.Load(new[] {
-                new EncodingRecord(PlatformIDs.Windows, 2, 0)
-            }, reader).Single();
+            Format4SubTable table = Format4SubTable.Load(
+                new[] { new EncodingRecord(PlatformIDs.Windows, 2, 0) },
+                reader).Single();
 
             Assert.Equal(0, table.Language);
             Assert.Equal(PlatformIDs.Windows, table.Platform);
             Assert.Equal(2, table.Encoding);
-            Assert.Equal(new ushort[] {
-                1,2,3,4,5,6,7,8
-            }, table.GlyphIds);
+            Assert.Equal(new ushort[] { 1, 2, 3, 4, 5, 6, 7, 8 }, table.GlyphIds);
 
             Assert.Single(table.Segments);
             Format4SubTable.Segment seg = table.Segments[0];
@@ -44,7 +45,6 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
             Assert.Equal(2, seg.Start);
             Assert.Equal(3, seg.Delta);
             Assert.Equal(4, seg.Offset);
-
         }
 
         [Theory]
@@ -52,8 +52,8 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         [InlineData(20, 11, true)]
         [InlineData(30, 12, true)]
         [InlineData(90, 72, true)]
-        [InlineData(500, 0, false)] //not in range
-        public void GetCharcter(int src, int expected, bool expectedFound)
+        [InlineData(500, 0, false)] // not in range
+        public void GetCharacter(int src, int expected, bool expectedFound)
         {
             // segCountX2:    8
             // searchRange:   8
@@ -66,18 +66,21 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
             // idRangeOffset: 0   0   0    0
             ushort[] glyphs = Enumerable.Range(0, expected).Select(x => (ushort)x).ToArray();
 
+            Format4SubTable.Segment[] segments = new[]
+            {
+                new Format4SubTable.Segment(0, 20, 10, -9, 0),
+                new Format4SubTable.Segment(1, 90, 30, -18, 0),
+                new Format4SubTable.Segment(2, 480, 153, -27, 0),
+            };
+
             var table = new Format4SubTable(
                 0,
                 PlatformIDs.Windows,
                 0,
-                new[]
-                    {
-                        new Format4SubTable.Segment(0, 20, 10, -9, 0),
-                        new Format4SubTable.Segment(1, 90, 30, -18, 0),
-                        new Format4SubTable.Segment(2, 480, 153, -27, 0),
-                    },
+                segments,
                 glyphs);
-            //ushort id = table.GetGlyphId(src);
+
+            // ushort id = table.GetGlyphId(src);
             var found = table.TryGetGlyphId(src, out var id);
 
             Assert.Equal(expected, id);

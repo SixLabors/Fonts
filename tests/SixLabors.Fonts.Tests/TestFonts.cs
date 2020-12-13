@@ -1,60 +1,72 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using Xunit;
 
 namespace SixLabors.Fonts.Tests
 {
-    using System.IO;
-    using System.Reflection;
-
-    using Xunit;
-
     public static class TestFonts
     {
-        private static Dictionary<string, Stream> cache = new Dictionary<string, Stream>();
+        private static readonly Dictionary<string, Stream> Cache = new Dictionary<string, Stream>();
 
         public static string TwemojiMozillaFile => GetFullPath("Twemoji Mozilla.ttf");
 
         public static string CarterOneFile => GetFullPath("Carter_One/CarterOne.ttf");
+
         public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");
+
         public static string OpenSansFile => GetFullPath("OpenSans-Regular.ttf");
+
         public static string SimpleFontFile => GetFullPath("SixLaborsSampleAB.ttf");
+
         public static string SimpleFontFileWoff => GetFullPath("SixLaborsSampleAB.woff");
 
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
+
         public static Stream WendyOneFileData() => OpenStream(WendyOneFile);
+
         public static Stream CarterOneFileData() => OpenStream(CarterOneFile);
+
         public static Stream SimpleFontFileData() => OpenStream(SimpleFontFile);
+
         public static Stream OpenSansData() => OpenStream(OpenSansFile);
+
         public static Stream SimpleFontFileWoffData() => OpenStream(SimpleFontFileWoff);
+
         public static Stream SSimpleTrueTypeCollectionData() => OpenStream(SimpleTrueTypeCollection);
 
         public static class Issues
         {
             public static string Issue96File => GetFullPath("Issues/Issue96.fuzz");
+
             public static string Issue97File => GetFullPath("Issues/Issue97.fuzz");
         }
 
         private static Stream OpenStream(string path)
         {
-            if (cache.ContainsKey(path))
+            if (Cache.ContainsKey(path))
             {
-                return cache[path].Clone();
+                return Cache[path].Clone();
             }
 
-            lock (cache)
+            lock (Cache)
             {
-                if (cache.ContainsKey(path))
+                if (Cache.ContainsKey(path))
                 {
-                    return cache[path].Clone();
+                    return Cache[path].Clone();
                 }
 
                 using (FileStream fs = File.OpenRead(path))
                 {
-                    cache.Add(path, fs.Clone());
-                    return cache[path].Clone();
+                    Cache.Add(path, fs.Clone());
+                    return Cache[path].Clone();
                 }
             }
         }

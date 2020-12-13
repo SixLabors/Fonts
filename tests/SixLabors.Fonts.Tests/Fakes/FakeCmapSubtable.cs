@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Collections.Generic;
 using SixLabors.Fonts.Tables.General.CMap;
 
@@ -8,9 +11,7 @@ namespace SixLabors.Fonts.Tests.Fakes
         private readonly List<FakeGlyphSource> glyphs;
 
         public FakeCmapSubtable(List<FakeGlyphSource> glyphs)
-        {
-            this.glyphs = glyphs;
-        }
+            => this.glyphs = glyphs;
 
         public override bool TryGetGlyphId(int codePoint, out ushort glyphId)
         {
@@ -22,6 +23,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                     return true;
                 }
             }
+
             glyphId = 0;
             return false;
         }
