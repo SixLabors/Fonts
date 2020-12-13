@@ -6,9 +6,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using SixLabors.Fonts;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Memory;
@@ -30,9 +28,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public DrawTextProcessorCopy(Configuration configuration, DrawTextProcessorCopy definition, Image<TPixel> source, Rectangle sourceRectangle)
             : base(configuration, source, sourceRectangle)
-        {
-            this.definition = definition;
-        }
+            => this.definition = definition;
 
         private TextGraphicsOptionsCopy Options => this.definition.Options;
 
@@ -62,16 +58,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 ColorFontSupport = this.definition.Options.RenderColorFonts ? ColorFontSupport.MicrosoftColrFormat : ColorFontSupport.None,
             };
 
-            // (this.definition.Options.RenderColorFonts)
-            //{
-                this.textRenderer = new ColorCachingGlyphRenderer(this.Configuration.MemoryAllocator, this.Text.Length, this.Pen, this.Brush != null);
-           // }
-           // else
-           // {
-           //     this.textRenderer = new CachingGlyphRenderer(this.Configuration.MemoryAllocator, this.Text.Length, this.Pen, this.Brush != null);
-           // }
+            this.textRenderer = new ColorCachingGlyphRenderer(this.Configuration.MemoryAllocator, this.Text.Length, this.Pen, this.Brush != null)
+            {
+                Options = (GraphicsOptions)this.Options
+            };
 
-            this.textRenderer.Options = (GraphicsOptions)this.Options;
             var renderer = new TextRenderer(this.textRenderer);
             renderer.RenderText(this.Text, style);
         }
@@ -88,7 +79,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         {
             // this is a no-op as we have processes all as an image, we should be able to pass out of before email apply a skip frames outcome
             Draw(this.textRenderer.FillOperations, this.Brush);
-            //Draw(this.textRenderer.OutlineOperations, this.Pen?.StrokeFill);
 
             void Draw(List<DrawingOperation> operations, SolidBrushCopy brush)
             {
@@ -110,7 +100,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     {
                         foreach (DrawingOperation operation in operations)
                         {
-                            var currentApp = app;
+                            BrushApplicatorCopy<TPixel> currentApp = app;
                             if (operation.Color != null)
                             {
                                 brushes.TryGetValue(operation.Color.Value, out currentApp);
@@ -160,7 +150,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                         }
                     }
 
-                    foreach (var app in brushes.Values)
+                    foreach (BrushApplicatorCopy<TPixel> app in brushes.Values)
                     {
                         app.Dispose();
                     }
@@ -185,9 +175,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
 
             public void SetColor(GlyphColor color)
-            {
-                this.SetLayerColor(new Color(new Rgba32(color.Red, color.Green, color.Blue, color.Alpha)));
-            }
+                => this.SetLayerColor(new Color(new Rgba32(color.Red, color.Green, color.Blue, color.Alpha)));
         }
 
         private sealed class CachingGlyphRenderer : BaseCachingGlyphRenderer
@@ -245,9 +233,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
 
             protected void SetLayerColor(Color color)
-            {
-                this.currentColor = color;
-            }
+                => this.currentColor = color;
 
             public List<DrawingOperation> FillOperations { get; }
 
@@ -260,9 +246,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             public GraphicsOptions Options { get; internal set; }
 
             public void BeginFigure()
-            {
-                this.builder.StartFigure();
-            }
+                => this.builder.StartFigure();
 
             public bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters)
             {
@@ -317,10 +301,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 this.glyphData.Clear();
             }
 
-            public void EndFigure()
-            {
-                this.builder.CloseFigure();
-            }
+            public void EndFigure() => this.builder.CloseFigure();
 
             public void EndGlyph()
             {
@@ -546,27 +527,22 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         /// Initializes a new instance of the <see cref="SolidBrush"/> class.
         /// </summary>
         /// <param name="color">The color.</param>
-        public SolidBrushCopy(Color color)
-        {
-            this.Color = color;
-        }
+        public SolidBrushCopy(Color color) => this.Color = color;
 
         /// <summary>
         /// Gets the color.
         /// </summary>
         public Color Color { get; }
 
-        /// <inheritdoc />
         public BrushApplicatorCopy<TPixel> CreateApplicator<TPixel>(
             Configuration configuration,
             GraphicsOptions options,
             ImageFrame<TPixel> source,
             RectangleF region)
             where TPixel : unmanaged, IPixel<TPixel>
-        {
-            return new SolidBrushApplicatorCopy<TPixel>(configuration, options, source, this.Color.ToPixel<TPixel>());
-        }
+            => new SolidBrushApplicatorCopy<TPixel>(configuration, options, source, this.Color.ToPixel<TPixel>());
     }
+
     /// <summary>
     /// The solid brush applicator.
     /// </summary>
@@ -767,6 +743,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
         }
     }
+
     /// <summary>
     /// Optimized quick sort implementation for Span{float} input
     /// </summary>
@@ -823,13 +800,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 do
                 {
-                    i = i + 1;
+                    i += 1;
                 }
                 while (Unsafe.Add(ref data0, i) < pivot && i < hi);
 
                 do
                 {
-                    j = j - 1;
+                    j -= 1;
                 }
                 while (Unsafe.Add(ref data0, j) > pivot && j > lo);
 
@@ -900,13 +877,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 do
                 {
-                    i = i + 1;
+                    i += 1;
                 }
                 while (Unsafe.Add(ref data0, i) < pivot && i < hi);
 
                 do
                 {
-                    j = j - 1;
+                    j -= 1;
                 }
                 while (Unsafe.Add(ref data0, j) > pivot && j > lo);
 
@@ -977,13 +954,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 do
                 {
-                    i = i + 1;
+                    i += 1;
                 }
                 while (Unsafe.Add(ref data0, i) < pivot && i < hi);
 
                 do
                 {
-                    j = j - 1;
+                    j -= 1;
                 }
                 while (Unsafe.Add(ref data0, j) > pivot && j > lo);
 

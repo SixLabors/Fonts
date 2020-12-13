@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="Fonts.Samples" ToolsVersion="16.0">
+  <Include Path="..\shared-infrastructure\sixlabors.tests.ruleset" Action="Default" />
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp.Features" RuleNamespace="Microsoft.CodeAnalysis.CSharp.Features">
+    <Rule Id="IDE0060" Action="None" />
+  </Rules>
+</RuleSet>

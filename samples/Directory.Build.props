@@ -19,4 +19,8 @@
   <!-- Import the solution .props file. -->
   <Import Project="$(MSBuildThisFileDirectory)..\Directory.Build.props" />
 
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>..\Fonts.Samples.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  
 </Project>
