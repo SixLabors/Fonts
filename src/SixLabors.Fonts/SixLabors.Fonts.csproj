@@ -1,32 +1,36 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <AssemblyName>SixLabors.Fonts</AssemblyName>
     <AssemblyTitle>SixLabors.Fonts</AssemblyTitle>
-    <Description>A cross-platform library for loading and laying out fonts for processing and measuring; written in C#</Description>
-    <NeutralLanguage>en</NeutralLanguage>
-
-    <TargetFrameworks>netstandard2.1;netstandard2.0;netstandard1.3</TargetFrameworks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>SixLabors.Fonts</RootNamespace>
     <PackageId>SixLabors.Fonts</PackageId>
+    <PackageIcon>sixlabors.fonts.128.png</PackageIcon>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl Condition="'$(RepositoryUrl)' == ''">https://github.com/SixLabors/Fonts/</RepositoryUrl>
+    <PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
     <PackageTags>font;truetype;opentype;woff</PackageTags>
-    <LangVersion>8.0</LangVersion>
+    <Description>A cross-platform library for loading and laying out fonts for processing and measuring; written in C#</Description>
+    <TargetFrameworks>netstandard2.1;netstandard2.0;netstandard1.3</TargetFrameworks>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup Condition=" $(TargetFramework.StartsWith('netstandard')) ">
-    <PackageReference Include="System.Numerics.Vectors" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
-    <PackageReference Include="System.Buffers" />
-    <PackageReference Include="System.Memory" />
+  <ItemGroup>
+    <None Include="..\..\shared-infrastructure\branding\icons\imagesharp.drawing\sixlabors.fonts.128.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub"/>
-    <PackageReference Include="MinVer" PrivateAssets="All" />
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+    <PackageReference Include="System.IO.UnmanagedMemoryStream" Version="4.3.0" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.0" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+  </ItemGroup>
+  
+  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
+    <PackageReference Include="System.Buffers" Version="4.5.0" />
+    <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
   <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />

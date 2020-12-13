@@ -5,33 +5,21 @@
     Directory.Build.targets is automatically picked up and imported by
     Microsoft.Common.targets. This file needs to exist, even if empty so that
     files in the parent directory tree, with the same name, are not imported
-    instead. The import fairly late and most other props/targets will have
+    instead. They import fairly late and most other props/targets will have
     been imported beforehand. We also don't need to add ourselves to
     MSBuildAllProjects, as that is done by the file that imports us.
   -->
 
-  <PropertyGroup>
-    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileDirectory)..\Directory.Build.targets</MSBuildAllProjects>
-  </PropertyGroup>
+  <!-- Import the shared tests .targets file -->
+  <Import Project="$(MSBuildThisFileDirectory)..\shared-infrastructure\msbuild\targets\SixLabors.Tests.targets" />
 
+  <!-- Import the solution .targets file. -->
   <Import Project="$(MSBuildThisFileDirectory)..\Directory.Build.targets" />
 
-  <!-- Tool versions for tool references across all projects -->
-  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
-    <!--dotnet tools does not have an x86 runner. You have to use separate SDKs-->
-    <!--https://github.com/actions/setup-dotnet/issues/72-->
-    <DotNetCliToolReference Update="dotnet-xunit" Version="2.3.1" />
-  </ItemGroup>
-
   <ItemGroup>
-    <!--Test Dependencies-->
-    <PackageReference Update="BenchmarkDotNet" Version="0.12.0" />
-    <PackageReference Update="coverlet.collector" Version="1.3.0" PrivateAssets="All"/>
-    <PackageReference Update="coverlet.msbuild" Version="2.8.0" PrivateAssets="All"/>
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.5.0-preview-20200116-01" />
-    <PackageReference Update="Moq" Version="4.10.0" />
-    <PackageReference Update="xunit" Version="2.4.1" />
-    <PackageReference Update="xunit.runner.visualstudio" Version="2.4.1" />
+    <!-- Test Dependencies -->
+    <PackageReference Update="BenchmarkDotNet" Version="0.12.1" />
+    <PackageReference Update="Moq" Version="4.14.6" />
   </ItemGroup>
 
 </Project>
