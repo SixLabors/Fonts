@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Exceptions
     /// <summary>
     /// Base class for exceptions thrown by this library.
     /// </summary>
-    /// <seealso cref="System.Exception" />
+    /// <seealso cref="Exception" />
     public class FontException : Exception
     {
         /// <summary>

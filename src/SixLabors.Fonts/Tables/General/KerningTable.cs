@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using System.Numerics;
-
 using SixLabors.Fonts.Tables.General.Kern;
 
 namespace SixLabors.Fonts.Tables.General
@@ -15,9 +14,7 @@ namespace SixLabors.Fonts.Tables.General
         private readonly KerningSubTable[] kerningSubTable;
 
         public KerningTable(KerningSubTable[] kerningSubTable)
-        {
-            this.kerningSubTable = kerningSubTable;
-        }
+            => this.kerningSubTable = kerningSubTable;
 
         public static KerningTable Load(FontReader reader)
         {

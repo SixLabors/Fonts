@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors.
+// Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -30,18 +30,15 @@ namespace SixLabors.Fonts.Tables.General.Kern
         }
 
         public static KearningPair Read(BinaryReader reader)
-        {
-            // Type   | Field | Description
-            // -------|-------|-------------------------------
-            // uint16 | left  | The glyph index for the left-hand glyph in the kerning pair.
-            // uint16 | right | The glyph index for the right-hand glyph in the kerning pair.
-            // FWORD  | value | The kerning value for the above pair, in FUnits.If this value is greater than zero, the characters will be moved apart.If this value is less than zero, the character will be moved closer together.
-            return new KearningPair(reader.ReadUInt16(), reader.ReadUInt16(), reader.ReadFWORD());
-        }
+
+             // Type   | Field | Description
+             // -------|-------|-------------------------------
+             // uint16 | left  | The glyph index for the left-hand glyph in the kerning pair.
+             // uint16 | right | The glyph index for the right-hand glyph in the kerning pair.
+             // FWORD  | value | The kerning value for the above pair, in FUnits.If this value is greater than zero, the characters will be moved apart.If this value is less than zero, the character will be moved closer together.
+             => new KearningPair(reader.ReadUInt16(), reader.ReadUInt16(), reader.ReadFWORD());
 
         public int CompareTo(KearningPair other)
-        {
-            return this.Key.CompareTo(other.Key);
-        }
+            => this.Key.CompareTo(other.Key);
     }
 }

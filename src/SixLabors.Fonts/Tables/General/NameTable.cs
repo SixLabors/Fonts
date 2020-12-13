@@ -18,9 +18,7 @@ namespace SixLabors.Fonts.Tables.General
         private readonly NameRecord[] names;
 
         internal NameTable(NameRecord[] names, string[] languages)
-        {
-            this.names = names;
-        }
+            => this.names = names;
 
         /// <summary>
         /// Gets the name of the font.
@@ -100,9 +98,7 @@ namespace SixLabors.Fonts.Tables.General
         }
 
         public string GetNameById(CultureInfo culture, ushort nameId)
-        {
-            return this.GetNameById(culture, (NameIds)nameId);
-        }
+            => this.GetNameById(culture, (NameIds)nameId);
 
         public static NameTable Load(FontReader reader)
         {

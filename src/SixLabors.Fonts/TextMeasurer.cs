@@ -169,9 +169,7 @@ namespace SixLabors.Fonts
             private readonly TextLayout layoutEngine;
 
             internal TextMeasurerInt(TextLayout layoutEngine)
-            {
-                this.layoutEngine = layoutEngine;
-            }
+                => this.layoutEngine = layoutEngine;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="TextMeasurerInt"/> class.

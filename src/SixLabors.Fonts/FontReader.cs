@@ -142,11 +142,9 @@ namespace SixLabors.Fonts
         }
 
         public TableHeader? GetHeader(string tag)
-        {
-            return this.Headers.TryGetValue(tag, out TableHeader header)
+            => this.Headers.TryGetValue(tag, out TableHeader header)
                 ? header
                 : null;
-        }
 
         public BinaryReader GetReaderAtTablePosition(string tableName)
         {

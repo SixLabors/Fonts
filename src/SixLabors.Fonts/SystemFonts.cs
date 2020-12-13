@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public static class SystemFonts
     {
-        private static Lazy<IReadOnlyFontCollection> lazySystemFonts = new Lazy<IReadOnlyFontCollection>(() => new SystemFontCollection());
+        private static readonly Lazy<IReadOnlyFontCollection> LazySystemFonts = new Lazy<IReadOnlyFontCollection>(() => new SystemFontCollection());
 
         /// <summary>
         /// Gets the collection containing the globaly installled system fonts.
@@ -22,7 +22,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The system fonts.
         /// </value>
-        public static IReadOnlyFontCollection Collection => lazySystemFonts.Value;
+        public static IReadOnlyFontCollection Collection => LazySystemFonts.Value;
 
         /// <summary>
         /// Gets the collection of <see cref="FontFamily"/>s installed on current system.

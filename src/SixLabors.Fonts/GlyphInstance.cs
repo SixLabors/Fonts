@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Buffers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.General.Glyphs;
@@ -15,24 +14,20 @@ namespace SixLabors.Fonts
     public partial class GlyphInstance
     {
         private static readonly Vector2 Scale = new Vector2(1, -1);
-
-        private readonly ushort sizeOfEm;
         private readonly GlyphVector vector;
-        private readonly short leftSideBearing;
-        private readonly float scaleFactor;
 
         internal GlyphInstance(FontInstance font, GlyphVector vector, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index, GlyphType glyphType = GlyphType.Standard, GlyphColor? glyphColor = null)
         {
             this.Font = font;
-            this.sizeOfEm = sizeOfEm;
+            this.SizeOfEm = sizeOfEm;
             this.vector = vector;
 
             this.AdvanceWidth = advanceWidth;
             this.Index = index;
             this.Height = sizeOfEm - this.Bounds.Min.Y;
             this.GlyphType = glyphType;
-            this.leftSideBearing = leftSideBearing;
-            this.scaleFactor = (float)(this.sizeOfEm * 72f);
+            this.LeftSideBearing = leftSideBearing;
+            this.ScaleFactor = this.SizeOfEm * 72F;
             this.GlyphColor = glyphColor;
         }
 
@@ -95,7 +90,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the size of the EM
         /// </summary>
-        public ushort SizeOfEm => this.sizeOfEm;
+        public ushort SizeOfEm { get; }
 
         /// <summary>
         /// Gets the points defining the shape of this glyph
@@ -115,17 +110,17 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the distance from the bounding box start
         /// </summary>
-        public short LeftSideBearing => this.leftSideBearing;
+        public short LeftSideBearing { get; }
 
         /// <summary>
         /// Gets the scale factor that is applied to the glyph
         /// </summary>
-        public float ScaleFactor => this.scaleFactor;
+        public float ScaleFactor { get; }
 
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
-            Vector2 size = (this.Bounds.Size() * scaledPointSize) / this.scaleFactor;
-            Vector2 loc = ((new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize) / this.scaleFactor) * Scale;
+            Vector2 size = this.Bounds.Size() * scaledPointSize / this.ScaleFactor;
+            Vector2 loc = new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize / this.ScaleFactor * Scale;
 
             loc = origin + loc;
 
@@ -189,14 +184,14 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    int length = (endOfContor - startOfContor) + 1;
+                    int length = endOfContor - startOfContor + 1;
                     for (int p = 0; p < length; p++)
                     {
                         prev = curr;
                         curr = next;
                         int currentIndex = startOfContor + p;
                         int nextIndex = startOfContor + ((p + 1) % length);
-                        int prevIndex = startOfContor + (((length + p) - 1) % length);
+                        int prevIndex = startOfContor + ((length + p - 1) % length);
                         next = this.GetPoint(ref scaledPoint, nextIndex) + location;
 
                         if (this.vector.OnCurves[currentIndex])
@@ -235,7 +230,7 @@ namespace SixLabors.Fonts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector2 GetPoint(ref Vector2 scaledPoint, int pointIndex)
         {
-            Vector2 point = Scale * ((this.vector.ControlPoints[pointIndex] * scaledPoint) / this.scaleFactor); // scale each point as we go, w will now have the correct relative point size
+            Vector2 point = Scale * (this.vector.ControlPoints[pointIndex] * scaledPoint / this.ScaleFactor); // scale each point as we go, w will now have the correct relative point size
 
             return point;
         }
@@ -255,7 +250,8 @@ namespace SixLabors.Fonts
         {
             switch (points.Count)
             {
-                case 0: break;
+                case 0:
+                    break;
                 case 1:
                     surface.QuadraticBezierTo(
                         points.SecondControlPoint,
@@ -303,9 +299,7 @@ namespace SixLabors.Fonts
             }
 
             public void Clear()
-            {
-                this.Count = 0;
-            }
+                => this.Count = 0;
         }
     }
 }

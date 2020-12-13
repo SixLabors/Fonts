@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\shared-infrastructure\branding\icons\imagesharp.drawing\sixlabors.fonts.128.png" Pack="true" PackagePath="" />
+    <None Include="..\..\shared-infrastructure\branding\icons\fonts\sixlabors.fonts.128.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>

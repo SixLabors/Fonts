@@ -24,18 +24,12 @@ namespace SixLabors.Fonts.Utilities
         public Encoding Encoding { get; }
 
         public static StringLoader Create(BinaryReader reader)
-        {
-            return Create(reader, Encoding.BigEndianUnicode);
-        }
+            => Create(reader, Encoding.BigEndianUnicode);
 
         public static StringLoader Create(BinaryReader reader, Encoding encoding)
-        {
-            return new StringLoader(reader.ReadUInt16(), reader.ReadUInt16(), encoding);
-        }
+            => new StringLoader(reader.ReadUInt16(), reader.ReadUInt16(), encoding);
 
         public void LoadValue(BinaryReader reader)
-        {
-            this.Value = reader.ReadString(this.Length, this.Encoding).Replace("\0", string.Empty);
-        }
+            => this.Value = reader.ReadString(this.Length, this.Encoding).Replace("\0", string.Empty);
     }
 }

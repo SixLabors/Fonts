@@ -112,27 +112,17 @@ namespace SixLabors.Fonts.IO
         /// <inheritdoc/>
         public override long Position
         {
-            get
-            {
-                return this.position;
-            }
+            get => this.position;
 
-            set
-            {
-                throw new NotSupportedException();
-            }
+            set => throw new NotSupportedException();
         }
 
         /// <inheritdoc/>
         public override void Flush()
-        {
-            this.deflateStream?.Flush();
-        }
+            => this.deflateStream?.Flush();
 
         public override int ReadByte()
-        {
-            return base.ReadByte();
-        }
+            => base.ReadByte();
 
         /// <inheritdoc/>
         public override int Read(byte[] buffer, int offset, int count)
@@ -165,7 +155,7 @@ namespace SixLabors.Fonts.IO
             if (origin == SeekOrigin.Begin)
             {
                 origin = SeekOrigin.Current;
-                offset = offset - this.position;
+                offset -= this.position;
             }
 
             if (origin == SeekOrigin.Current && offset >= 0)
@@ -184,15 +174,11 @@ namespace SixLabors.Fonts.IO
 
         /// <inheritdoc/>
         public override void SetLength(long value)
-        {
-            throw new NotSupportedException();
-        }
+            => throw new NotSupportedException();
 
         /// <inheritdoc/>
         public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException();
-        }
+            => throw new NotSupportedException();
 
         /// <inheritdoc/>
         protected override void Dispose(bool disposing)

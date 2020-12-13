@@ -20,7 +20,8 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the default set of locations we probe for System Fonts.
         /// </summary>
-        private static IReadOnlyCollection<string> standardFontLocations = new[]
+        private static readonly IReadOnlyCollection<string> StandardFontLocations
+            = new[]
             {
                 // windows directories
                 "%SYSTEMROOT%\\Fonts",
@@ -39,7 +40,7 @@ namespace SixLabors.Fonts
             };
 
         public SystemFontCollection()
-            : this(standardFontLocations)
+            : this(StandardFontLocations)
         {
         }
 

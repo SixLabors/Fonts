@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors.
+// Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
 using System;
@@ -11,9 +11,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
 
         public Format0SubTable(KearningPair[] pairs, KerningCoverage coverage)
             : base(coverage)
-        {
-            this.pairs = pairs;
-        }
+            => this.pairs = pairs;
 
         public static Format0SubTable Load(BinaryReader reader, in KerningCoverage coverage)
         {

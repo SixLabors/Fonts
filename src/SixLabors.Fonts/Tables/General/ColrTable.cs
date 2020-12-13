@@ -2,9 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Linq;
 using SixLabors.Fonts.Tables.General.Colr;
-using SixLabors.Fonts.Tables.General.Glyphs;
 
 namespace SixLabors.Fonts.Tables.General
 {
