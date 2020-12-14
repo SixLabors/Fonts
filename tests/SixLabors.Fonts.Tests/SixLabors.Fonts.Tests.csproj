@@ -2,15 +2,10 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;netcoreapp2.1;net472</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <DebugSymbols>True</DebugSymbols>
     <Platforms>AnyCPU;x64;x86</Platforms>
-    <!--Used to show test project to dotnet test-->
-    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
-
-  <ItemGroup>
-    <DotNetCliToolReference Include="dotnet-xunit" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SixLabors.Fonts\SixLabors.Fonts.csproj" />
@@ -18,8 +13,8 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" />
-    <PackageReference Include="System.Numerics.Vectors" />
   </ItemGroup>
+  
   <ItemGroup>
     <None Update="Fonts\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

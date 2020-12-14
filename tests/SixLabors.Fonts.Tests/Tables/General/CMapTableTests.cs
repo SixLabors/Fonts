@@ -1,4 +1,7 @@
-﻿using System.Linq;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
+using System.Linq;
 using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.CMap;
@@ -15,7 +18,8 @@ namespace SixLabors.Fonts.Tests.Tables.General
         {
             var writer = new BinaryWriter();
 
-            writer.WriteCMapTable(new[] {
+            writer.WriteCMapTable(new[]
+            {
                 new Format0SubTable(0, PlatformIDs.Windows, 9, new byte[] { 0, 1, 2 })
             });
 

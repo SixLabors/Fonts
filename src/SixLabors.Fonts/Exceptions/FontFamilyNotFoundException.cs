@@ -15,9 +15,7 @@ namespace SixLabors.Fonts.Exceptions
         /// <param name="family">The name of the missing font family.</param>
         public FontFamilyNotFoundException(string family)
             : base($"{family} could not be found")
-        {
-            this.FontFamily = family;
-        }
+            => this.FontFamily = family;
 
         /// <summary>
         /// Gets the name of the font familiy we failed to find.

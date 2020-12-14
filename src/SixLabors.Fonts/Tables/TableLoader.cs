@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
 using SixLabors.Fonts.Tables.General;
 
 namespace SixLabors.Fonts.Tables
@@ -80,12 +79,11 @@ namespace SixLabors.Fonts.Tables
         }
 
         internal Table? Load(string tag, FontReader reader)
-        {
-            // loader missing register an unknow type loader and carry on
-            return this.loaders.TryGetValue(tag, out Func<FontReader, Table?> func)
+
+             // loader missing? register an unknown type loader and carry on
+             => this.loaders.TryGetValue(tag, out Func<FontReader, Table?> func)
                 ? func.Invoke(reader)
                 : new UnknownTable(tag);
-        }
 
         internal TTable? Load<TTable>(FontReader reader)
             where TTable : Table

@@ -21,7 +21,7 @@ namespace SixLabors.Fonts
             this.DpiX = dpi.X;
             this.DpiY = dpi.Y;
             this.GlyphType = glyph.GlyphType;
-            this.GlyphColor = glyph.GlyphColor ?? default(GlyphColor);
+            this.GlyphColor = glyph.GlyphColor ?? default;
         }
 
         /// <summary>
@@ -96,25 +96,22 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         public bool Equals(GlyphRendererParameters other)
-        {
-            return other.PointSize == this.PointSize
-                && other.FontStyle == this.FontStyle
-                && other.DpiX == this.DpiX
-                && other.DpiY == this.DpiY
-                && other.GlyphIndex == this.GlyphIndex
-                && other.GlyphType == this.GlyphType
-                && other.GlyphColor.Equals(this.GlyphColor)
-                && ((other.Font is null && this.Font is null)
-                || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
-        }
+            => other.PointSize == this.PointSize
+            && other.FontStyle == this.FontStyle
+            && other.DpiX == this.DpiX
+            && other.DpiY == this.DpiY
+            && other.GlyphIndex == this.GlyphIndex
+            && other.GlyphType == this.GlyphType
+            && other.GlyphColor.Equals(this.GlyphColor)
+            && ((other.Font is null && this.Font is null)
+            || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
 
         /// <inheritdoc/>
         public override bool Equals(object obj) => obj is GlyphRendererParameters p && this.Equals(p);
 
         /// <inheritdoc/>
         public override int GetHashCode()
-        {
-            return HashCode.Combine(
+            => HashCode.Combine(
                 this.Font,
                 this.PointSize,
                 this.GlyphIndex,
@@ -123,6 +120,5 @@ namespace SixLabors.Fonts
                 this.FontStyle,
                 this.DpiX,
                 this.DpiY);
-        }
     }
 }

@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Exceptions
     /// <summary>
     /// Exception font loading can throw if it encounteres invalid data during font loading.
     /// </summary>
-    /// <seealso cref="System.Exception" />
+    /// <seealso cref="Exception" />
     public class InvalidFontFileException : Exception
     {
         /// <summary>

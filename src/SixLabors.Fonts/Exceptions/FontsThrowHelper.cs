@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Exceptions
@@ -16,8 +15,6 @@ namespace SixLabors.Fonts.Exceptions
         /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static T ThrowGlyphMissingException<T>(int codePoint)
-        {
-            throw new GlyphMissingException(codePoint);
-        }
+            => throw new GlyphMissingException(codePoint);
     }
 }

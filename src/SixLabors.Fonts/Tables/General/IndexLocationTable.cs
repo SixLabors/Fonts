@@ -11,9 +11,7 @@ namespace SixLabors.Fonts.Tables.General
         private const string TableName = "loca";
 
         public IndexLocationTable(uint[] convertedData)
-        {
-            this.GlyphOffsets = convertedData;
-        }
+            => this.GlyphOffsets = convertedData;
 
         public uint[] GlyphOffsets { get; }
 

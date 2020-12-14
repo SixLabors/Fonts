@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors.
+// Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Numerics;
@@ -12,9 +12,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         private GlyphVector? glyph;
 
         public EmptyGlyphLoader(Bounds fallbackEmptyBounds)
-        {
-            this.fallbackEmptyBounds = fallbackEmptyBounds;
-        }
+            => this.fallbackEmptyBounds = fallbackEmptyBounds;
 
         public override GlyphVector CreateGlyph(GlyphTable table)
         {

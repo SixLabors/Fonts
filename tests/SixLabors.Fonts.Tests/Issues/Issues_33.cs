@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Globalization;
 using SixLabors.Fonts.Tests.Fakes;
 using Xunit;
@@ -16,9 +19,7 @@ namespace SixLabors.Fonts.Tests.Issues
         public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height)
         {
             Font font = CreateFont(text);
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, (72 * font.EmSize))
-            {
-            });
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, 72 * font.EmSize));
 
             Assert.Equal(height, size.Height, 2);
             Assert.Equal(width, size.Width, 2);

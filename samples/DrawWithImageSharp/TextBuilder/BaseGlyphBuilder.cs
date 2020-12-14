@@ -1,10 +1,12 @@
-using System.Collections.Generic;
-using System.Numerics;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
 
-using SixLabors.Fonts;
+using System.Collections.Generic;
 using System.Linq;
-using SixLabors.ImageSharp.Drawing;
+using System.Numerics;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace SixLabors.Shapes.Temp
@@ -18,20 +20,20 @@ namespace SixLabors.Shapes.Temp
         private readonly List<FontRectangle> glyphBounds = new List<FontRectangle>();
         private readonly List<IPath> paths = new List<IPath>();
         private readonly List<Color?> colors = new List<Color?>();
-        private Vector2 currentPoint = default(Vector2);
+        private Vector2 currentPoint = default;
         private Color? currentColor = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphBuilder"/> class.
         /// </summary>
         public BaseGlyphBuilder()
-        {
-            // glyphs are renderd realative to bottom left so invert the Y axis to allow it to render on top left origin surface
-            this.builder = new PathBuilder();
-        }
+
+           // glyphs are renderd relative to bottom left so invert
+           // the Y axis to allow it to render on top left origin surface
+           => this.builder = new PathBuilder();
 
         /// <summary>
-        /// Get the colors for each path, where null means use user provided brush
+        /// Gets the colors for each path, where null means use user provided brush
         /// </summary>
         public IEnumerable<Color?> PathColors => this.colors;
 
@@ -64,11 +66,7 @@ namespace SixLabors.Shapes.Temp
         {
         }
 
-        /// <summary>
-        /// Begins the glyph.
-        /// </summary>
-        /// <param name="location">The offset that the glyph will be rendered at.</param>
-        /// <param name="size">The size.</param>
+        /// <inheritdoc/>
         bool IGlyphRenderer.BeginGlyph(FontRectangle rect, GlyphRendererParameters cachKey)
         {
             this.currentColor = null;
@@ -90,10 +88,7 @@ namespace SixLabors.Shapes.Temp
         /// <summary>
         /// Begins the figure.
         /// </summary>
-        void IGlyphRenderer.BeginFigure()
-        {
-            this.builder.StartFigure();
-        }
+        void IGlyphRenderer.BeginFigure() => this.builder.StartFigure();
 
         /// <summary>
         /// Draws a cubic bezier from the current point  to the <paramref name="point"/>
@@ -117,17 +112,13 @@ namespace SixLabors.Shapes.Temp
         }
 
         void IColorGlyphRenderer.SetColor(GlyphColor color)
-        {
-            this.currentColor = new Color(new Rgba32(color.Red, color.Green, color.Blue, color.Alpha));
-        }
+            => this.currentColor = new Color(new Rgba32(color.Red, color.Green, color.Blue, color.Alpha));
 
         /// <summary>
         /// Ends the figure.
         /// </summary>
         void IGlyphRenderer.EndFigure()
-        {
-            this.builder.CloseFigure();
-        }
+            => this.builder.CloseFigure();
 
         /// <summary>
         /// Draws a line from the current point  to the <paramref name="point"/>.
@@ -153,15 +144,15 @@ namespace SixLabors.Shapes.Temp
         /// Draws a quadratics bezier from the current point  to the <paramref name="point"/>
         /// </summary>
         /// <param name="secondControlPoint">The second control point.</param>
-        /// <param name="point">The point.</param>
+        /// <param name="endPoint">The point.</param>
         void IGlyphRenderer.QuadraticBezierTo(Vector2 secondControlPoint, Vector2 endPoint)
         {
             Vector2 startPointVector = this.currentPoint;
             Vector2 controlPointVector = secondControlPoint;
             Vector2 endPointVector = endPoint;
 
-            Vector2 c1 = (((controlPointVector - startPointVector) * 2) / 3) + startPointVector;
-            Vector2 c2 = (((controlPointVector - endPointVector) * 2) / 3) + endPointVector;
+            Vector2 c1 = ((controlPointVector - startPointVector) * 2 / 3) + startPointVector;
+            Vector2 c2 = ((controlPointVector - endPointVector) * 2 / 3) + endPointVector;
 
             this.builder.AddBezier(startPointVector, c1, c2, endPoint);
             this.currentPoint = endPoint;

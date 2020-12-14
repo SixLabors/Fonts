@@ -37,9 +37,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         public static void RenderTextTo(IGlyphRenderer renderer, ReadOnlySpan<char> text, RendererOptions options)
-        {
-            new TextRenderer(renderer).RenderText(text, options);
-        }
+            => new TextRenderer(renderer).RenderText(text, options);
 
         /// <summary>
         /// Renders the text to the <paramref name="renderer"/>.
@@ -48,9 +46,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         public static void RenderTextTo(IGlyphRenderer renderer, string text, RendererOptions options)
-        {
-            new TextRenderer(renderer).RenderText(text, options);
-        }
+            => new TextRenderer(renderer).RenderText(text, options);
 
         /// <summary>
         /// Renders the text.
@@ -58,9 +54,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         public void RenderText(string text, RendererOptions options)
-        {
-            this.RenderText(text.AsSpan(), options);
-        }
+            => this.RenderText(text.AsSpan(), options);
 
         /// <summary>
         /// Renders the text.

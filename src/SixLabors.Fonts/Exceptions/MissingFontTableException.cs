@@ -1,12 +1,14 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
+
 namespace SixLabors.Fonts.Exceptions
 {
     /// <summary>
     /// Exception font loading can throw if it finds a required table is missing during font loading.
     /// </summary>
-    /// <seealso cref="System.Exception" />
+    /// <seealso cref="Exception" />
     public class MissingFontTableException : InvalidFontFileException
     {
         /// <summary>
@@ -16,9 +18,7 @@ namespace SixLabors.Fonts.Exceptions
         /// <param name="table">The table.</param>
         public MissingFontTableException(string message, string table)
             : base(message)
-        {
-            this.Table = table;
-        }
+            => this.Table = table;
 
         /// <summary>
         /// Gets the table where the error originated.

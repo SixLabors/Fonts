@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
-
 namespace SixLabors.Fonts
 {
     /// <summary>
@@ -46,8 +44,6 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         public override string ToString()
-        {
-            return $"Character: {this.Character}, bounds: {this.Bounds}, is control char: {this.IsControlCharacter}";
-        }
+            => $"Character: {this.Character}, bounds: {this.Bounds}, is control char: {this.IsControlCharacter}";
     }
 }

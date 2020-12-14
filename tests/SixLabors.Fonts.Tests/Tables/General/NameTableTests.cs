@@ -1,9 +1,11 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Collections.Generic;
 using System.Globalization;
 using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.WellKnownIds;
-
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Tables.General
@@ -15,16 +17,17 @@ namespace SixLabors.Fonts.Tests.Tables.General
         {
             var writer = new BinaryWriter();
 
-            writer.WriteNameTable(new Dictionary<NameIds, string>
-                                      {
-                { NameIds.CopyrightNotice, "copyright"},
-                { NameIds.FullFontName, "fullname" },
-                { NameIds.FontFamilyName, "family" },
-                { NameIds.FontSubfamilyName, "subfamily" },
-                { NameIds.UniqueFontID, "id" },
-                { (NameIds)90, "other1" },
-                { (NameIds)91, "other2" }
-                                      });
+            writer.WriteNameTable(
+                new Dictionary<NameIds, string>
+                {
+                    { NameIds.CopyrightNotice, "copyright" },
+                    { NameIds.FullFontName, "fullname" },
+                    { NameIds.FontFamilyName, "family" },
+                    { NameIds.FontSubfamilyName, "subfamily" },
+                    { NameIds.UniqueFontID, "id" },
+                    { (NameIds)90, "other1" },
+                    { (NameIds)91, "other2" }
+                });
 
             var table = NameTable.Load(writer.GetReader());
 
@@ -42,20 +45,22 @@ namespace SixLabors.Fonts.Tests.Tables.General
         {
             var writer = new BinaryWriter();
 
-            writer.WriteNameTable(new Dictionary<NameIds, string>
-                                      {
-                { NameIds.CopyrightNotice, "copyright"},
-                { NameIds.FullFontName, "fullname" },
-                { NameIds.FontFamilyName, "family" },
-                { NameIds.FontSubfamilyName, "subfamily" },
-                { NameIds.UniqueFontID, "id" },
-                { (NameIds)90, "other1" },
-                { (NameIds)91, "other2" }
-                                      }, new List<string>
-                                             {
-                                                 "lang1",
-                                                 "lang2"
-                                             });
+            writer.WriteNameTable(
+                new Dictionary<NameIds, string>
+                {
+                    { NameIds.CopyrightNotice, "copyright" },
+                    { NameIds.FullFontName, "fullname" },
+                    { NameIds.FontFamilyName, "family" },
+                    { NameIds.FontSubfamilyName, "subfamily" },
+                    { NameIds.UniqueFontID, "id" },
+                    { (NameIds)90, "other1" },
+                    { (NameIds)91, "other2" }
+                },
+                new List<string>
+                {
+                    "lang1",
+                    "lang2"
+                });
 
             var table = NameTable.Load(writer.GetReader());
 
@@ -76,7 +81,8 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             using (System.IO.MemoryStream stream = writer.GetStream())
             {
-                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() => NameTable.Load(new FontReader(stream)));
+                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(
+                    () => NameTable.Load(new FontReader(stream)));
 
                 Assert.Equal("name", exception.Table);
             }

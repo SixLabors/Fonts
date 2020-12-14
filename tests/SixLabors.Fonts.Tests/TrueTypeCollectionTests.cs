@@ -1,3 +1,7 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Xunit;
@@ -9,45 +13,45 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void InstallViaPathReturnsDecription()
         {
-            var sut = new FontCollection();
-            var collectionFromPath = sut.InstallCollection(TestFonts.SimpleTrueTypeCollection, out var descriptions);
+            var suit = new FontCollection();
+            IEnumerable<FontFamily> collectionFromPath = suit.InstallCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
 
             Assert.Equal(2, descriptions.Count());
-            var openSans = Assert.Single(collectionFromPath, x => x.Name == "Open Sans");
-            var abFont = Assert.Single(collectionFromPath, x => x.Name == "SixLaborsSampleAB");
+            FontFamily openSans = Assert.Single(collectionFromPath, x => x.Name == "Open Sans");
+            FontFamily abFont = Assert.Single(collectionFromPath, x => x.Name == "SixLaborsSampleAB");
 
             Assert.Equal(2, descriptions.Count());
-            var openSansDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "Open Sans");
-            var abFontDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "SixLaborsSampleAB regular");
+            FontDescription openSansDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "Open Sans");
+            FontDescription abFontDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "SixLaborsSampleAB regular");
         }
 
         [Fact]
         public void InstallViaPathInstallFontFileInstances()
         {
             var sut = new FontCollection();
-            var collectionFromPath = sut.InstallCollection(TestFonts.SimpleTrueTypeCollection, out var descriptions);
+            IEnumerable<FontFamily> collectionFromPath = sut.InstallCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
 
-            var allInstances = sut.Families.SelectMany(x => sut.FindAll(x.Name, CultureInfo.InvariantCulture));
+            IEnumerable<IFontInstance> allInstances = sut.Families.SelectMany(x => sut.FindAll(x.Name, CultureInfo.InvariantCulture));
 
             Assert.All(allInstances, i =>
             {
-                var font = Assert.IsType<FileFontInstance>(i);
+                FileFontInstance font = Assert.IsType<FileFontInstance>(i);
             });
         }
 
         [Fact]
         public void InstallViaStreamhReturnsDecription()
         {
-            var sut = new FontCollection();
-            var collectionFromPath = sut.InstallCollection(TestFonts.SSimpleTrueTypeCollectionData(), out var descriptions);
+            var suit = new FontCollection();
+            IEnumerable<FontFamily> collectionFromPath = suit.InstallCollection(TestFonts.SSimpleTrueTypeCollectionData(), out IEnumerable<FontDescription> descriptions);
 
             Assert.Equal(2, collectionFromPath.Count());
-            var openSans = Assert.Single(collectionFromPath, x => x.Name == "Open Sans");
-            var abFont = Assert.Single(collectionFromPath, x => x.Name == "SixLaborsSampleAB");
+            FontFamily openSans = Assert.Single(collectionFromPath, x => x.Name == "Open Sans");
+            FontFamily abFont = Assert.Single(collectionFromPath, x => x.Name == "SixLaborsSampleAB");
 
             Assert.Equal(2, descriptions.Count());
-            var openSansDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "Open Sans");
-            var abFontDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "SixLaborsSampleAB regular");
+            FontDescription openSansDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "Open Sans");
+            FontDescription abFontDescription = Assert.Single(descriptions, x => x.FontNameInvariantCulture == "SixLaborsSampleAB regular");
         }
     }
 }

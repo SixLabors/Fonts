@@ -103,21 +103,21 @@ namespace SixLabors.Fonts
                     // get the larget lineheight thus far
                     unscaledLineHeight = fontHeight;
                     scale = glyph.Font.EmSize * 72;
-                    lineHeight = (unscaledLineHeight * spanStyle.PointSize) / scale;
+                    lineHeight = unscaledLineHeight * spanStyle.PointSize / scale;
                 }
 
                 if (glyph.Font.Ascender > unscaledLineMaxAscender)
                 {
                     unscaledLineMaxAscender = glyph.Font.Ascender;
                     scale = glyph.Font.EmSize * 72;
-                    lineMaxAscender = (unscaledLineMaxAscender * spanStyle.PointSize) / scale;
+                    lineMaxAscender = unscaledLineMaxAscender * spanStyle.PointSize / scale;
                 }
 
                 if (glyph.Font.Descender > unscaledLineMaxDescender)
                 {
                     unscaledLineMaxDescender = glyph.Font.Descender;
                     scale = glyph.Font.EmSize * 72;
-                    lineMaxDescender = (unscaledLineMaxDescender * spanStyle.PointSize) / scale;
+                    lineMaxDescender = unscaledLineMaxDescender * spanStyle.PointSize / scale;
                 }
 
                 if (firstLine)
@@ -148,8 +148,8 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                float glyphWidth = (glyph.AdvanceWidth * spanStyle.PointSize) / scale;
-                float glyphHeight = (glyph.Height * spanStyle.PointSize) / scale;
+                float glyphWidth = glyph.AdvanceWidth * spanStyle.PointSize / scale;
+                float glyphHeight = glyph.Height * spanStyle.PointSize / scale;
 
                 if (hasFourBytes || (text[i] != '\r' && text[i] != '\n' && text[i] != '\t' && text[i] != ' '))
                 {
@@ -157,7 +157,7 @@ namespace SixLabors.Fonts
                     if (spanStyle.ApplyKerning && previousGlyph != null)
                     {
                         // if there is special instructions for this glyph pair use that width
-                        Vector2 scaledOffset = (spanStyle.GetOffset(glyph, previousGlyph) * spanStyle.PointSize) / scale;
+                        Vector2 scaledOffset = spanStyle.GetOffset(glyph, previousGlyph) * spanStyle.PointSize / scale;
 
                         glyphLocation += scaledOffset;
 
@@ -167,8 +167,8 @@ namespace SixLabors.Fonts
 
                     foreach (GlyphInstance? g in glyphs)
                     {
-                        float w = (g.AdvanceWidth * spanStyle.PointSize) / scale;
-                        float h = (g.Height * spanStyle.PointSize) / scale;
+                        float w = g.AdvanceWidth * spanStyle.PointSize / scale;
+                        float h = g.Height * spanStyle.PointSize / scale;
                         layout.Add(new GlyphLayout(codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine, false, false));
 
                         if (w > glyphWidth)

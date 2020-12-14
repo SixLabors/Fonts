@@ -1,4 +1,7 @@
-﻿using System.Numerics;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
+using System.Numerics;
 
 namespace SixLabors.Shapes.Temp
 {
@@ -21,8 +24,6 @@ namespace SixLabors.Shapes.Temp
         /// <param name="origin">The origin.</param>
         public GlyphBuilder(Vector2 origin)
             : base()
-        {
-            this.builder.SetOrigin(origin);
-        }
+            => this.builder.SetOrigin(origin);
     }
 }

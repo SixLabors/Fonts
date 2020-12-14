@@ -1,18 +1,20 @@
-using SixLabors.ImageSharp;
-using SixLabors.Fonts;
-using SixLabors.Shapes.Temp;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System;
 using System.Numerics;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.Drawing;
+using SixLabors.Shapes.Temp;
 
 namespace DrawWithImageSharp
 {
     public static class TextAlignment
     {
-
         public static void Generate(Font font)
         {
             using (var img = new Image<Rgba32>(1000, 1000))
@@ -26,6 +28,7 @@ namespace DrawWithImageSharp
                         Draw(img, font, v, h);
                     }
                 }
+
                 img.Save("Output/Alignment.png");
             }
         }
@@ -48,6 +51,7 @@ namespace DrawWithImageSharp
                 default:
                     break;
             }
+
             switch (horiz)
             {
                 case HorizontalAlignment.Left:

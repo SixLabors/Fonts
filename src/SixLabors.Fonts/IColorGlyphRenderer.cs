@@ -93,21 +93,17 @@ namespace SixLabors.Fonts
         /// True if the current color is equal to the <paramref name="other"/> parameter; otherwise, false.
         /// </returns>
         public bool Equals(GlyphColor other)
-        {
-            return other.Red == this.Red
-                && other.Green == this.Green
-                && other.Blue == this.Blue
-                && other.Alpha == this.Alpha;
-        }
+            => other.Red == this.Red
+            && other.Green == this.Green
+            && other.Blue == this.Blue
+            && other.Alpha == this.Alpha;
 
         /// <inheritdoc/>
         public override int GetHashCode()
-        {
-            return HashCode.Combine(
+            => HashCode.Combine(
                 this.Red,
                 this.Green,
                 this.Blue,
                 this.Alpha);
-        }
     }
 }

@@ -10,9 +10,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
         private readonly KerningCoverage coverage;
 
         public KerningSubTable(KerningCoverage coverage)
-        {
-            this.coverage = coverage;
-        }
+            => this.coverage = coverage;
 
         public static KerningSubTable? Load(BinaryReader reader)
         {

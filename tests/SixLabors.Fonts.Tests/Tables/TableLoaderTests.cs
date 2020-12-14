@@ -1,4 +1,7 @@
-﻿using System;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -36,10 +39,7 @@ namespace SixLabors.Fonts.Tests.Tables
         }
 
         [Fact]
-        public void DefaultIsnotNull()
-        {
-            Assert.NotNull(TableLoader.Default);
-        }
+        public void DefaultIsnotNull() => Assert.NotNull(TableLoader.Default);
 
         [Fact]
         public void TryingToLoadUnregisteredTagReturnsUnknownTable()
@@ -52,7 +52,6 @@ namespace SixLabors.Fonts.Tests.Tables
             UnknownTable table = Assert.IsType<UnknownTable>(result);
             Assert.Equal(tag, table.Name);
         }
-
 
         [Fact]
         public void NullForUnknownTypes()

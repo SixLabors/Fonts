@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Collections.Generic;
 using System.Globalization;
 using Xunit;
@@ -14,11 +17,11 @@ namespace SixLabors.Fonts.Tests
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(
                 new Dictionary<WellKnownIds.NameIds, string>
-                    {
-                        { WellKnownIds.NameIds.FullFontName, "name" } ,
-                         { WellKnownIds.NameIds.FontSubfamilyName, "sub" },
-                         { WellKnownIds.NameIds.FontFamilyName, "fam" }
-                    });
+                {
+                    { WellKnownIds.NameIds.FullFontName, "name" },
+                    { WellKnownIds.NameIds.FontSubfamilyName, "sub" },
+                    { WellKnownIds.NameIds.FontFamilyName, "fam" }
+                });
 
             var description = FontDescription.LoadDescription(writer.GetStream());
             Assert.Equal("name", description.FontNameInvariantCulture);
@@ -42,8 +45,7 @@ namespace SixLabors.Fonts.Tests
                 (WellKnownIds.NameIds.FontFamilyName, "fam_c1", c1),
                 (WellKnownIds.NameIds.FullFontName, "name_c2", c2),
                 (WellKnownIds.NameIds.FontSubfamilyName, "sub_c2", c2),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_c2", c2)
-                );
+                (WellKnownIds.NameIds.FontFamilyName, "fam_c2", c2));
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
@@ -72,8 +74,7 @@ namespace SixLabors.Fonts.Tests
                 (WellKnownIds.NameIds.FontFamilyName, "fam_c2", c2),
                 (WellKnownIds.NameIds.FullFontName, "name_us", usCulture),
                 (WellKnownIds.NameIds.FontSubfamilyName, "sub_us", usCulture),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_us", usCulture)
-                );
+                (WellKnownIds.NameIds.FontFamilyName, "fam_us", usCulture));
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
@@ -102,8 +103,7 @@ namespace SixLabors.Fonts.Tests
                 (WellKnownIds.NameIds.FontFamilyName, "fam_c2", c2),
                 (WellKnownIds.NameIds.FullFontName, "name_us", usCulture),
                 (WellKnownIds.NameIds.FontSubfamilyName, "sub_us", usCulture),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_us", usCulture)
-                );
+                (WellKnownIds.NameIds.FontFamilyName, "fam_us", usCulture));
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 

@@ -1,11 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
-using System.Linq;
-using SixLabors.Fonts.Tables.General.Colr;
-using SixLabors.Fonts.Tables.General.Glyphs;
-
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
@@ -22,13 +17,11 @@ namespace SixLabors.Fonts.Tables.General
         }
 
         public GlyphColor GetGlyphColor(int palletteIndex, int palletteEntryIndex)
-        {
-            return this.palletteEntries[this.palletteOffsets[palletteIndex] + palletteEntryIndex];
-        }
+            => this.palletteEntries[this.palletteOffsets[palletteIndex] + palletteEntryIndex];
 
         public static CpalTable? Load(FontReader reader)
         {
-            using (var binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            using (BinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader == null)
                 {

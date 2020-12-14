@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System;
 using System.Numerics;
 using SixLabors.Fonts;
@@ -11,11 +14,8 @@ namespace SixLabors.Shapes.Temp
     internal class PathGlyphBuilder : GlyphBuilder
     {
         private readonly IPath path;
-
         private float offsetY = 0;
-
-        const float Pi = (float)Math.PI;
-        const float HalfPi = Pi / 2f;
+        private const float Pi = MathF.PI;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphBuilder"/> class.
@@ -23,14 +23,10 @@ namespace SixLabors.Shapes.Temp
         /// <param name="path">The path to render the glyps along.</param>
         public PathGlyphBuilder(IPath path)
             : base()
-        {
-            this.path = path;
-        }
+            => this.path = path;
 
         protected override void BeginText(FontRectangle rect)
-        {
-            this.offsetY = rect.Height;
-        }
+            => this.offsetY = rect.Height;
 
         protected override void BeginGlyph(FontRectangle rect)
         {

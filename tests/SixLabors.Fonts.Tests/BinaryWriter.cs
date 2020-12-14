@@ -1,4 +1,7 @@
-﻿using System;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
+using System;
 using System.Buffers.Binary;
 using System.IO;
 using System.Text;
@@ -21,7 +24,6 @@ namespace SixLabors.Fonts.Tests
         /// Whether or not this writer has been disposed yet.
         /// </summary>
         private bool disposed;
-
 
         public BinaryWriter()
             : this(new MemoryStream())
@@ -51,10 +53,7 @@ namespace SixLabors.Fonts.Tests
         /// <summary>
         /// Closes the writer, including the underlying stream.
         /// </summary>
-        public void Close()
-        {
-            this.Dispose();
-        }
+        public void Close() => this.Dispose();
 
         /// <summary>
         /// Flushes the underlying stream.
@@ -65,11 +64,7 @@ namespace SixLabors.Fonts.Tests
             this.BaseStream.Flush();
         }
 
-
-        public BinaryReader GetReader()
-        {
-            return new BinaryReader(this.GetStream(), true);
-        }
+        public BinaryReader GetReader() => new BinaryReader(this.GetStream(), true);
 
         public MemoryStream GetStream()
         {
@@ -164,16 +159,9 @@ namespace SixLabors.Fonts.Tests
             this.WriteInternal(this.buffer, 8);
         }
 
-        public void WriteOffset32(uint? value)
-        {
-            this.WriteUInt32(value ?? 0);
-        }
+        public void WriteOffset32(uint? value) => this.WriteUInt32(value ?? 0);
 
-
-        public void WriteOffset16(ushort? value)
-        {
-            this.WriteUInt16(value ?? 0);
-        }
+        public void WriteOffset16(ushort? value) => this.WriteUInt16(value ?? 0);
 
         /// <summary>
         /// Writes a 32-bit unsigned integer to the stream.
@@ -318,7 +306,7 @@ namespace SixLabors.Fonts.Tests
             while (value >= 128)
             {
                 this.buffer[index++] = (byte)((value & 0x7f) | 0x80);
-                value = value >> 7;
+                value >>= 7;
                 index++;
             }
 
@@ -383,14 +371,8 @@ namespace SixLabors.Fonts.Tests
             this.WriteInternal(this.buffer, 1);
         }
 
-        public void WriteFWORD(short value)
-        {
-            this.WriteInt16(value);
-        }
+        public void WriteFWORD(short value) => this.WriteInt16(value);
 
-        public void WriteUFWORD(ushort value)
-        {
-            this.WriteUInt16(value);
-        }
+        public void WriteUFWORD(ushort value) => this.WriteUInt16(value);
     }
 }

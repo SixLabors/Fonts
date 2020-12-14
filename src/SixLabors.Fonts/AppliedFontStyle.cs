@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace SixLabors.Fonts
@@ -22,9 +21,9 @@ namespace SixLabors.Fonts
             GlyphInstance glyph = this.MainFont.GetGlyph(codePoint);
             if (glyph.GlyphType == GlyphType.Fallback)
             {
-                foreach (var f in this.FallbackFonts)
+                foreach (IFontInstance? f in this.FallbackFonts)
                 {
-                    var g = f.GetGlyph(codePoint);
+                    GlyphInstance? g = f.GetGlyph(codePoint);
                     if (g.GlyphType != GlyphType.Fallback)
                     {
                         glyph = g;
@@ -40,7 +39,7 @@ namespace SixLabors.Fonts
 
             if (colorFontOptions == ColorFontSupport.MicrosoftColrFormat)
             {
-                if (glyph.Font.TryGetColoredVectors(glyph.Index, out var layers))
+                if (glyph.Font.TryGetColoredVectors(glyph.Index, out GlyphInstance[]? layers))
                 {
                     return layers;
                 }

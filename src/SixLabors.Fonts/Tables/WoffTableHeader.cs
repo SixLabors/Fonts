@@ -9,9 +9,7 @@ namespace SixLabors.Fonts.Tables
     {
         public WoffTableHeader(string tag, uint offset, uint compressedLength, uint origLength, uint checkSum)
             : base(tag, checkSum, offset, origLength)
-        {
-            this.CompressedLength = compressedLength;
-        }
+            => this.CompressedLength = compressedLength;
 
         public uint CompressedLength { get; }
 

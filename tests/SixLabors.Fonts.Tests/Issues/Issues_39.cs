@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Globalization;
 using SixLabors.Fonts.Tests.Fakes;
 using Xunit;
@@ -13,7 +16,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            new TextRenderer(r).RenderText("", new RendererOptions(new Font(font, 30), 72));
+            new TextRenderer(r).RenderText(string.Empty, new RendererOptions(new Font(font, 30), 72));
         }
 
         public static Font CreateFont(string text)

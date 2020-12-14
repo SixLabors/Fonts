@@ -12,16 +12,12 @@ namespace SixLabors.Fonts.Tables.General
         private readonly GlyphLoader[] loaders;
 
         public GlyphTable(GlyphLoader[] glyphLoaders)
-        {
-            this.loaders = glyphLoaders;
-        }
+            => this.loaders = glyphLoaders;
 
         public int GlyphCount => this.loaders.Length;
 
         internal virtual GlyphVector GetGlyph(int index)
-        {
-            return this.loaders[index].CreateGlyph(this);
-        }
+            => this.loaders[index].CreateGlyph(this);
 
         public static GlyphTable Load(FontReader reader)
         {

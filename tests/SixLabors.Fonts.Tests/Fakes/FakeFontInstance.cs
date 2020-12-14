@@ -1,6 +1,8 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using SixLabors.Fonts.Tables.General;
 
@@ -14,12 +16,13 @@ namespace SixLabors.Fonts.Tests.Fakes
         }
 
         internal FakeFontInstance(List<FakeGlyphSource> glyphs)
-            : base(GenerateNameTable(),
+            : base(
+                  GenerateNameTable(),
                   GenerateCMapTable(glyphs),
                   new FakeGlyphTable(glyphs),
                   GenerateOS2Table(),
                   GenerateHorizontalMetricsTable(glyphs),
-                  GenerateHeadTable(glyphs),
+                  GenerateHeadTable(),
                   new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]),
                   null,
                   null)
@@ -43,9 +46,9 @@ namespace SixLabors.Fonts.Tests.Fakes
                 new FakeGlyphTable(glyphs),
                 GenerateOS2TableWithVaryingVerticalFontMetrics(),
                 GenerateHorizontalMetricsTable(glyphs),
-                GenerateHeadTable(glyphs),
-                new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0])
-            );
+                GenerateHeadTable(),
+                new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]));
+
             return result;
         }
 
@@ -55,37 +58,36 @@ namespace SixLabors.Fonts.Tests.Fakes
             return glyphs;
         }
 
-        static NameTable GenerateNameTable()
-        {
-            return new NameTable(new[] {
-                new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.NameIds.FullFontName, "name"),
-                new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.NameIds.FontFamilyName, "name")
-            }, new string[0]);
-        }
+        private static NameTable GenerateNameTable()
+            => new NameTable(
+                new[]
+                {
+                    new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.NameIds.FullFontName, "name"),
+                    new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.NameIds.FontFamilyName, "name")
+                },
+                Array.Empty<string>());
 
-        static CMapTable GenerateCMapTable(List<FakeGlyphSource> glyphs)
-        {
-            return new CMapTable(new[] { new FakeCmapSubtable(glyphs) });
-        }
+        private static CMapTable GenerateCMapTable(List<FakeGlyphSource> glyphs)
+            => new CMapTable(new[] { new FakeCmapSubtable(glyphs) });
 
-        static OS2Table GenerateOS2Table()
-        {
-            return new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, "", OS2Table.FontStyleSelection.ITALIC, 1, 1, 20, 10, 20, 1, 1);
-        }
+        private static OS2Table GenerateOS2Table()
+            => new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.ITALIC, 1, 1, 20, 10, 20, 1, 1);
 
-        static OS2Table GenerateOS2TableWithVaryingVerticalFontMetrics()
-        {
-            return new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, "", OS2Table.FontStyleSelection.ITALIC, 1, 1, 35, 8, 12, 33, 11);
-        }
+        private static OS2Table GenerateOS2TableWithVaryingVerticalFontMetrics()
+            => new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.ITALIC, 1, 1, 35, 8, 12, 33, 11);
 
-        static HorizontalMetricsTable GenerateHorizontalMetricsTable(List<FakeGlyphSource> glyphs)
-        {
-            return new HorizontalMetricsTable(glyphs.Select(x => (ushort)30).ToArray(), glyphs.Select(x => (short)10).ToArray());
-        }
+        private static HorizontalMetricsTable GenerateHorizontalMetricsTable(List<FakeGlyphSource> glyphs)
+            => new HorizontalMetricsTable(glyphs.Select(x => (ushort)30).ToArray(), glyphs.Select(x => (short)10).ToArray());
 
-        static HeadTable GenerateHeadTable(List<FakeGlyphSource> glyphs)
-        {
-            return new HeadTable(HeadTable.HeadFlags.ForcePPEMToInt, HeadTable.HeadMacStyle.None, 30, DateTime.Now, DateTime.Now, new Bounds(10, 10, 20, 20), 1, HeadTable.IndexLocationFormats.Offset16);
-        }
+        private static HeadTable GenerateHeadTable()
+            => new HeadTable(
+                HeadTable.HeadFlags.ForcePPEMToInt,
+                HeadTable.HeadMacStyle.None,
+                30,
+                DateTime.Now,
+                DateTime.Now,
+                new Bounds(10, 10, 20, 20),
+                1,
+                HeadTable.IndexLocationFormats.Offset16);
     }
 }

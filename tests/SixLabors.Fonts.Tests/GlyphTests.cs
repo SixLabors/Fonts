@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
@@ -85,8 +88,8 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter Grinning Face emoji
             var instance = font.Instance as FontInstance;
-            Assert.True(instance.TryGetGlyphIndex(this.AsCodePoint("😀"), out var idx));
-            Assert.True(instance.TryGetColoredVectors(idx, out var vectors));
+            Assert.True(instance.TryGetGlyphIndex(this.AsCodePoint("😀"), out ushort idx));
+            Assert.True(instance.TryGetColoredVectors(idx, out GlyphInstance[] vectors));
 
             Assert.Equal(3, vectors.Length);
         }
@@ -118,6 +121,7 @@ namespace SixLabors.Fonts.Tests
                 int codePoint = hasFourBytes ? char.ConvertToUtf32(text[i], text[i + 1]) : text[i];
                 return codePoint;
             }
+
             return 0;
         }
     }

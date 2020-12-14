@@ -2,11 +2,9 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace SixLabors.Fonts
 {
@@ -261,9 +259,7 @@ namespace SixLabors.Fonts
         /// <returns>New <see cref="FontRectangle"/> representing the intersections between the two rectrangles.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Intersect(FontRectangle rectangle)
-        {
-            return Intersect(rectangle, this);
-        }
+            => Intersect(rectangle, this);
 
         /// <summary>
         /// Inflates this <see cref="FontRectangle"/> by the specified amount.
@@ -273,13 +269,11 @@ namespace SixLabors.Fonts
         /// <returns>New <see cref="FontRectangle"/> representing the inflated rectrangle</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Inflate(float width, float height)
-        {
-            return new FontRectangle(
+            => new FontRectangle(
                 this.X - width,
                 this.Y - height,
                 this.Width + (2 * width),
                 this.Height + (2 * height));
-        }
 
         /// <summary>
         /// Inflates this <see cref="FontRectangle"/> by the specified amount.
@@ -345,31 +339,27 @@ namespace SixLabors.Fonts
         /// <returns>New <see cref="FontRectangle"/> representing the inflated rectrangle.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Offset(float dx, float dy)
-        {
-            return new FontRectangle(this.X + dx, this.Y + dy, this.Width, this.Height);
-        }
+            => new FontRectangle(this.X + dx, this.Y + dy, this.Width, this.Height);
 
         /// <inheritdoc/>
         public override int GetHashCode()
-        {
-            return HashCode.Combine(this.X, this.Y, this.Width, this.Height);
-        }
+            => HashCode.Combine(this.X, this.Y, this.Width, this.Height);
 
         /// <inheritdoc/>
         public override string ToString()
-        {
-            return $"FontRectangle [ X={this.X}, Y={this.Y}, Width={this.Width}, Height={this.Height} ]";
-        }
+            => $"FontRectangle [ X={this.X}, Y={this.Y}, Width={this.Width}, Height={this.Height} ]";
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => obj is FontRectangle other && this.Equals(other);
+        public override bool Equals(object obj)
+            => obj is FontRectangle other
+            && this.Equals(other);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(FontRectangle other) =>
-            this.X.Equals(other.X) &&
-            this.Y.Equals(other.Y) &&
-            this.Width.Equals(other.Width) &&
-            this.Height.Equals(other.Height);
+        public bool Equals(FontRectangle other)
+            => this.X.Equals(other.X)
+            && this.Y.Equals(other.Y)
+            && this.Width.Equals(other.Width)
+            && this.Height.Equals(other.Height);
     }
 }

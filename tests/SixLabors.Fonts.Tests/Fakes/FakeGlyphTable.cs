@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
+using System.Collections.Generic;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Glyphs;
 
@@ -10,9 +13,7 @@ namespace SixLabors.Fonts.Tests.Fakes
 
         public FakeGlyphTable(List<FakeGlyphSource> glyphs)
             : base(new GlyphLoader[glyphs.Count])
-        {
-            this.glyphs = glyphs;
-        }
+            => this.glyphs = glyphs;
 
         internal override GlyphVector GetGlyph(int index)
         {
@@ -24,7 +25,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                 }
             }
 
-            return default(GlyphVector);
+            return default;
         }
     }
 }

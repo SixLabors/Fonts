@@ -2,13 +2,12 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Glyphs;
 
 namespace SixLabors.Fonts
@@ -101,9 +100,7 @@ namespace SixLabors.Fonts
         public FontDescription Description { get; }
 
         internal bool TryGetGlyphIndex(int codePoint, out ushort glyphId)
-        {
-            return this.cmap.TryGetGlyphId(codePoint, out glyphId);
-        }
+            => this.cmap.TryGetGlyphId(codePoint, out glyphId);
 
         /// <summary>
         /// Gets the glyph.
@@ -112,7 +109,7 @@ namespace SixLabors.Fonts
         /// <returns>the glyph for a known character.</returns>
         GlyphInstance IFontInstance.GetGlyph(int codePoint)
         {
-            var foundGlyph = this.TryGetGlyphIndex(codePoint, out var idx);
+            bool foundGlyph = this.TryGetGlyphIndex(codePoint, out ushort idx);
             if (!foundGlyph)
             {
                 idx = 0;
@@ -155,19 +152,19 @@ namespace SixLabors.Fonts
             vectors = this.colorGlyphCache[idx];
             if (vectors is null)
             {
-                var indexes = this.colrTable.GetLayers(idx);
+                Span<LayerRecord> indexes = this.colrTable.GetLayers(idx);
                 if (indexes.Length > 0)
                 {
                     vectors = new GlyphInstance[indexes.Length];
-                    for (var i = 0; i < indexes.Length; i++)
+                    for (int i = 0; i < indexes.Length; i++)
                     {
-                        var layer = indexes[i];
+                        LayerRecord? layer = indexes[i];
 
                         vectors[i] = this.CreateInstance(layer.GlyphId, GlyphType.ColrLayer, layer.PalletteIndex);
                     }
                 }
 
-                vectors = vectors ?? Array.Empty<GlyphInstance>();
+                vectors ??= Array.Empty<GlyphInstance>();
                 this.colorGlyphCache[idx] = vectors;
             }
 

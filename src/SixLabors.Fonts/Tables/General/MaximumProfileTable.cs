@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors.
+// Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
 namespace SixLabors.Fonts.Tables.General
@@ -9,9 +9,7 @@ namespace SixLabors.Fonts.Tables.General
         private const string TableName = "maxp";
 
         public MaximumProfileTable(ushort numGlyphs)
-        {
-            this.GlyphCount = numGlyphs;
-        }
+            => this.GlyphCount = numGlyphs;
 
         public MaximumProfileTable(ushort numGlyphs, ushort maxPoints, ushort maxContours, ushort maxCompositePoints, ushort maxCompositeContours, ushort maxZones, ushort maxTwilightPoints, ushort maxStorage, ushort maxFunctionDefs, ushort maxInstructionDefs, ushort maxStackElements, ushort maxSizeOfInstructions, ushort maxComponentElements, ushort maxComponentDepth)
                 : this(numGlyphs)

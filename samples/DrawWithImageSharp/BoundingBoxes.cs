@@ -1,10 +1,12 @@
-using SixLabors.ImageSharp;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using SixLabors.Fonts;
-using SixLabors.Shapes.Temp;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.Drawing;
 using TextBuilder = SixLabors.Shapes.Temp.TextBuilder;
 
 namespace DrawWithImageSharp
@@ -15,7 +17,7 @@ namespace DrawWithImageSharp
         {
             using (var img = new Image<Rgba32>(1000, 1000))
             {
-                img.Mutate(x=>x.Fill(Color.White));
+                img.Mutate(x => x.Fill(Color.White));
 
                 FontRectangle box = TextMeasurer.MeasureBounds(text, new RendererOptions(font));
                 (IPathCollection paths, IPathCollection boxes, IPath textBox) = TextBuilder.GenerateGlyphsWithBox(text, new RendererOptions(font));
