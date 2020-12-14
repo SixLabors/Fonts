@@ -13,8 +13,4 @@
   <!-- Import the solution .targets file. -->
   <Import Project="$(MSBuildThisFileDirectory)..\Directory.Build.targets" />
 
-  <ItemGroup>
-    <!-- Since our src does not target NET 472 we need to explicitly target the reference pack -->
-    <PackageReference Update="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" IsImplicitlyDefined="true"  />
-  </ItemGroup>
 </Project>

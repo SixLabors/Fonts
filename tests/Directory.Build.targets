@@ -19,7 +19,7 @@
   <ItemGroup>
     <!-- Test Dependencies -->
     <!-- Since our src does not target NET 472 we need to explicitly target the reference pack -->
-    <PackageReference Update="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" IsImplicitlyDefined="true"  />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" />
     <PackageReference Update="BenchmarkDotNet" Version="0.12.1" />
     <PackageReference Update="Moq" Version="4.14.6" />
   </ItemGroup>
