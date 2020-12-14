@@ -503,11 +503,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
                 public Buffer2D<float> FillMap;
 
-                public PointF FillOffset;
-
                 public Buffer2D<float> OutlineMap;
-
-                internal PointF OutlineOffset;
 
                 public void Dispose()
                 {
@@ -552,7 +548,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         private bool isDisposed;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SolidBrushApplicator{TPixel}"/> class.
+        /// Initializes a new instance of the <see cref="SolidBrushApplicatorCopy{TPixel}"/> class.
         /// </summary>
         /// <param name="configuration">The configuration instance to use when performing operations.</param>
         /// <param name="options">The graphics options.</param>
@@ -676,7 +672,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         protected ImageFrame<TPixel> Target { get; }
 
         /// <summary>
-        /// Gets thegraphics options
+        /// Gets the graphics options
         /// </summary>
         protected GraphicsOptions Options { get; }
 
