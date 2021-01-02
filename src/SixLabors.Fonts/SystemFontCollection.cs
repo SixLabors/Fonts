@@ -82,19 +82,22 @@ namespace SixLabors.Fonts
         /// </value>
         public IEnumerable<FontFamily> Families => this.collection.Families;
 
-        /// <inheritdocs />
+        /// <inheritdoc />
         public FontFamily Find(string fontFamily) => this.collection.Find(fontFamily);
 
-        /// <inheritdocs />
+        /// <inheritdoc />
         public bool TryFind(string fontFamily, [NotNullWhen(true)] out FontFamily? family) => this.collection.TryFind(fontFamily, out family);
 
 #if SUPPORTS_CULTUREINFO_LCID
+        /// <inheritdoc />
         public IEnumerable<FontFamily> FamiliesByCulture(CultureInfo culture)
             => this.collection.FamiliesByCulture(culture);
 
+        /// <inheritdoc />
         public FontFamily Find(string fontFamily, CultureInfo culture)
             => this.collection.Find(fontFamily, culture);
 
+        /// <inheritdoc />
         public bool TryFind(string fontFamily, CultureInfo culture, [NotNullWhen(true)] out FontFamily? family)
             => this.collection.TryFind(fontFamily, culture, out family);
 #endif

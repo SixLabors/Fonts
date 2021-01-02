@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts
 {
@@ -51,36 +50,16 @@ namespace SixLabors.Fonts
         /// <value>
         /// The available styles.
         /// </value>
-        public IEnumerable<FontStyle> AvailableStyles => this.collection.AvailableStyles(this.Name, this.Culture);
+        public IEnumerable<FontStyle> AvailableStyles
+            => this.collection.AvailableStyles(this.Name, this.Culture);
 
-        internal FontStyle DefaultStyle => this.IsStyleAvailable(FontStyle.Regular) ? FontStyle.Regular : this.AvailableStyles.First();
-
-        /// <summary>
-        /// Compares two <see cref="FontFamily"/> objects for equality.
-        /// </summary>
-        /// <param name="left">The <see cref="FontFamily"/> on the left side of the operand.</param>
-        /// <param name="right">The <see cref="FontFamily"/> on the right side of the operand.</param>
-        /// <returns>
-        /// True if the current left is equal to the <paramref name="right"/> parameter; otherwise, false.
-        /// </returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(FontFamily left, FontFamily right) => left.Equals(right);
-
-        /// <summary>
-        /// Compares two <see cref="FontRectangle"/> objects for inequality.
-        /// </summary>
-        /// <param name="left">The <see cref="FontRectangle"/> on the left side of the operand.</param>
-        /// <param name="right">The <see cref="FontRectangle"/> on the right side of the operand.</param>
-        /// <returns>
-        /// True if the current left is unequal to the <paramref name="right"/> parameter; otherwise, false.
-        /// </returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(FontFamily left, FontFamily right) => !left.Equals(right);
+        internal FontStyle DefaultStyle
+            => this.IsStyleAvailable(FontStyle.Regular)
+            ? FontStyle.Regular
+            : this.AvailableStyles.First();
 
         internal IFontInstance? Find(FontStyle style)
-        {
-            return this.collection.Find(this.Name, this.Culture, style);
-        }
+            => this.collection.Find(this.Name, this.Culture, style);
 
         /// <summary>
         /// Determines whether the specified <see cref="FontStyle"/> is available.
@@ -104,17 +83,21 @@ namespace SixLabors.Fonts
         {
             if (obj is FontFamily other)
             {
-                var comparer = StringComparerHelpers.GetCaseInsenativeStringComparer(this.Culture);
-                return this.collection == other?.collection && this.Culture == other?.Culture && comparer.Equals(this.Name, other?.Name);
+                StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
+                return this.collection == other.collection
+                    && this.Culture == other.Culture
+                    && this.DefaultStyle == other.DefaultStyle
+                    && this.AvailableStyles.SequenceEqual(other.AvailableStyles)
+                    && comparer.Equals(this.Name, other.Name);
             }
 
-            return false;
+            return base.Equals(obj);
         }
 
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            var comparer = StringComparerHelpers.GetCaseInsenativeStringComparer(this.Culture);
+            StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
             return HashCode.Combine(this.collection, this.Culture) ^ comparer.GetHashCode(this.Name);
         }
     }
