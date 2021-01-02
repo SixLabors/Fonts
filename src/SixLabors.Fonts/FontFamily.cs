@@ -98,7 +98,7 @@ namespace SixLabors.Fonts
         public override int GetHashCode()
         {
             StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
-            return HashCode.Combine(this.collection, this.Culture) ^ comparer.GetHashCode(this.Name);
+            return HashCode.Combine(this.collection, this.Culture, this.DefaultStyle, this.AvailableStyles) ^ comparer.GetHashCode(this.Name);
         }
     }
 }
