@@ -4,6 +4,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace SixLabors.Fonts.Tests
 {
@@ -24,7 +25,7 @@ namespace SixLabors.Fonts.Tests
 
         private static string GetSolutionDirectoryFullPathImpl()
         {
-            string assemblyLocation = typeof(TestEnvironment).Assembly.Location;
+            string assemblyLocation = typeof(TestEnvironment).GetTypeInfo().Assembly.Location;
 
             var assemblyFile = new FileInfo(assemblyLocation);
 
