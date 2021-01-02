@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static CpalTable? Load(FontReader reader)
         {
-            using (BinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader == null)
                 {
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Tables.General
             }
         }
 
-        public static CpalTable Load(BinaryReader reader)
+        public static CpalTable Load(BigEndianBinaryReader reader)
         {
             // FORMAT 0
 

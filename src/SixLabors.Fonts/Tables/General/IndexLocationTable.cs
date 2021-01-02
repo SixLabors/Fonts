@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tables.General
             MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>();
 
             // must not get a binary reader untill all depended data is retrieved in case they need to use the stream
-            using (BinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader == null)
                 {
@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tables.General
             }
         }
 
-        public static IndexLocationTable Load(BinaryReader reader, int glyphCount, HeadTable.IndexLocationFormats format)
+        public static IndexLocationTable Load(BigEndianBinaryReader reader, int glyphCount, HeadTable.IndexLocationFormats format)
         {
             int entrycount = glyphCount + 1;
 

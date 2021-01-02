@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void ShouldThrowExceptionWhenHeadTableCouldNotBeFound()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
             using (System.IO.MemoryStream stream = writer.GetStream())
@@ -29,7 +29,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void ShouldThrowExceptionWhenMaximumProfileTableCouldNotBeFound()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader(new TableHeader("head", 0, 0, 0));
 
             writer.WriteHeadTable(new HeadTable(
@@ -54,7 +54,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void ShouldReturnNullWhenTableCouldNotBeFound()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader(new TableHeader("head", 0, 0, 0), new TableHeader("maxp", 0, 0, 0));
 
             writer.WriteHeadTable(new HeadTable(

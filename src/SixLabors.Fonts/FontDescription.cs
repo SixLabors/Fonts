@@ -152,7 +152,7 @@ namespace SixLabors.Fonts
         public static FontDescription[] LoadFontCollectionDescriptions(Stream stream)
         {
             long startPos = stream.Position;
-            var reader = new BinaryReader(stream, true);
+            var reader = new BigEndianBinaryReader(stream, true);
             var ttcHeader = TtcHeader.Read(reader);
 
             var result = new FontDescription[(int)ttcHeader.NumFonts];

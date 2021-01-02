@@ -29,7 +29,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
             return value + right;
         }
 
-        public static KearningPair Read(BinaryReader reader)
+        public static KearningPair Read(BigEndianBinaryReader reader)
 
              // Type   | Field | Description
              // -------|-------|-------------------------------

@@ -64,7 +64,7 @@ namespace SixLabors.Fonts
             using (FileStream fs = File.OpenRead(path))
             {
                 long startPos = fs.Position;
-                var reader = new BinaryReader(fs, true);
+                var reader = new BigEndianBinaryReader(fs, true);
                 var ttcHeader = TtcHeader.Read(reader);
                 var fonts = new FileFontInstance[(int)ttcHeader.NumFonts];
 

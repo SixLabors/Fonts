@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             return false;
         }
 
-        public static IEnumerable<Format4SubTable> Load(IEnumerable<EncodingRecord> encodings, BinaryReader reader)
+        public static IEnumerable<Format4SubTable> Load(IEnumerable<EncodingRecord> encodings, BigEndianBinaryReader reader)
         {
             // 'cmap' Subtable Format 4:
             // Type   | Name                       | Description

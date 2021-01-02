@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// BinaryReader using bigendian encoding.
     /// </summary>
-    internal class BinaryReader : IDisposable
+    internal class BigEndianBinaryReader : IDisposable
     {
         /// <summary>
         /// Buffer used for temporary storage before conversion into primitives
@@ -22,13 +22,13 @@ namespace SixLabors.Fonts
         private readonly bool leaveOpen;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BinaryReader" /> class.
+        /// Initializes a new instance of the <see cref="BigEndianBinaryReader" /> class.
         /// Constructs a new binary reader with the given bit converter, reading
         /// to the given stream, using the given encoding.
         /// </summary>
         /// <param name="stream">Stream to read data from</param>
         /// <param name="leaveOpen">if set to <c>true</c> [leave open].</param>
-        public BinaryReader(Stream stream, bool leaveOpen)
+        public BigEndianBinaryReader(Stream stream, bool leaveOpen)
         {
             this.BaseStream = stream;
             this.StartOfStream = stream.Position;
@@ -59,7 +59,7 @@ namespace SixLabors.Fonts
             // if begin offsert the offset by the start of stream postion
             if (origin == SeekOrigin.Begin)
             {
-                offset = offset + this.StartOfStream;
+                offset += this.StartOfStream;
             }
 
             this.BaseStream.Seek(offset, origin);
@@ -70,9 +70,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="header">The header.</param>
         public void Seek(Tables.TableHeader header)
-        {
-            this.BaseStream.Seek(header.Offset, SeekOrigin.Begin);
-        }
+            => this.BaseStream.Seek(header.Offset, SeekOrigin.Begin);
 
         /// <summary>
         /// Reads a single byte from the stream.
@@ -125,20 +123,11 @@ namespace SixLabors.Fonts
         }
 
         public TEnum ReadInt16<TEnum>()
-            where TEnum : Enum
-        {
-            return CastTo<TEnum>.From(this.ReadInt16());
-        }
+            where TEnum : Enum => CastTo<TEnum>.From(this.ReadInt16());
 
-        public short ReadFWORD()
-        {
-            return this.ReadInt16();
-        }
+        public short ReadFWORD() => this.ReadInt16();
 
-        public ushort ReadUFWORD()
-        {
-            return this.ReadUInt16();
-        }
+        public ushort ReadUFWORD() => this.ReadUInt16();
 
         /// <summary>
         /// Reads a 32-bit signed integer from the stream
@@ -178,10 +167,7 @@ namespace SixLabors.Fonts
             return BinaryPrimitives.ReadUInt16BigEndian(this.buffer);
         }
 
-        public TEnum ReadUInt16<TEnum>()
-        {
-            return CastTo<TEnum>.From(this.ReadUInt16());
-        }
+        public TEnum ReadUInt16<TEnum>() => CastTo<TEnum>.From(this.ReadUInt16());
 
         /// <summary>
         /// Reads array or 16-bit unsigned integers from the stream.
@@ -229,10 +215,7 @@ namespace SixLabors.Fonts
         /// <returns>
         /// The 16-bit unsigned integer read
         /// </returns>
-        public ushort[] Offset16Array(int length)
-        {
-            return this.ReadUInt16Array(length);
-        }
+        public ushort[] Offset16Array(int length) => this.ReadUInt16Array(length);
 
         /// <summary>
         /// Reads array or 16-bit unsigned integers from the stream.
@@ -242,10 +225,7 @@ namespace SixLabors.Fonts
         /// <returns>
         /// The 16-bit unsigned integer read
         /// </returns>
-        public uint[] Offset32Array(int length)
-        {
-            return this.ReadUInt32Array(length);
-        }
+        public uint[] Offset32Array(int length) => this.ReadUInt32Array(length);
 
         public byte[] ReadUInt8Array(int length)
         {
@@ -310,10 +290,7 @@ namespace SixLabors.Fonts
             return BinaryPrimitives.ReadUInt32BigEndian(this.buffer);
         }
 
-        public uint ReadOffset32()
-        {
-            return this.ReadUInt32();
-        }
+        public uint ReadOffset32() => this.ReadUInt32();
 
         /// <summary>
         /// Reads a 64-bit unsigned integer from the stream.
@@ -492,10 +469,7 @@ namespace SixLabors.Fonts
             /// </summary>
             /// <typeparam name="TSource">Source type to cast from. Usually a generic type.</typeparam>
             /// <param name="s">The s.</param>
-            public static TTarget From<TSource>(TSource s)
-            {
-                return Cache<TSource>.Caster(s);
-            }
+            public static TTarget From<TSource>(TSource s) => Cache<TSource>.Caster(s);
 
             private static class Cache<TSource>
             {

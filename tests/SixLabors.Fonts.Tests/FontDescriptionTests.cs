@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontDescription()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(
@@ -36,7 +36,7 @@ namespace SixLabors.Fonts.Tests
             var c1 = new CultureInfo(1034); // spanish - international
             var c2 = new CultureInfo(3082); // spanish - traditional
 
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(
@@ -62,7 +62,7 @@ namespace SixLabors.Fonts.Tests
             var c1 = new CultureInfo(1034); // spanish - international
             var c2 = new CultureInfo(3082); // spanish - traditional
 
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(
@@ -91,7 +91,7 @@ namespace SixLabors.Fonts.Tests
             var c1 = new CultureInfo(1034); // spanish - international
             var c2 = new CultureInfo(3082); // spanish - traditional
 
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(

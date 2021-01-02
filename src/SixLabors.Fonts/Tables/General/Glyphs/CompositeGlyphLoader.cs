@@ -68,7 +68,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             return new GlyphVector(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds);
         }
 
-        public static CompositeGlyphLoader LoadCompositeGlyph(BinaryReader reader, in Bounds bounds)
+        public static CompositeGlyphLoader LoadCompositeGlyph(BigEndianBinaryReader reader, in Bounds bounds)
         {
             var result = new List<Composite>();
             CompositeFlags flags;

@@ -8,7 +8,7 @@ using System.Text;
 
 namespace SixLabors.Fonts.Tests
 {
-    internal class BinaryWriter
+    internal class BigEndianBinaryWriter
     {
         /// <summary>
         /// Buffer used for temporary storage during conversion from primitives
@@ -25,12 +25,12 @@ namespace SixLabors.Fonts.Tests
         /// </summary>
         private bool disposed;
 
-        public BinaryWriter()
+        public BigEndianBinaryWriter()
             : this(new MemoryStream())
         {
         }
 
-        public BinaryWriter(Stream stream)
+        public BigEndianBinaryWriter(Stream stream)
         {
             if (stream is null)
             {
@@ -64,7 +64,7 @@ namespace SixLabors.Fonts.Tests
             this.BaseStream.Flush();
         }
 
-        public BinaryReader GetReader() => new BinaryReader(this.GetStream(), true);
+        public BigEndianBinaryReader GetReader() => new BigEndianBinaryReader(this.GetStream(), true);
 
         public MemoryStream GetStream()
         {
@@ -334,7 +334,7 @@ namespace SixLabors.Fonts.Tests
         {
             if (this.disposed)
             {
-                throw new ObjectDisposedException(nameof(BinaryWriter));
+                throw new ObjectDisposedException(nameof(BigEndianBinaryWriter));
             }
         }
 

@@ -102,14 +102,14 @@ namespace SixLabors.Fonts.Tables.General
 
         public static NameTable Load(FontReader reader)
         {
-            using (BinaryReader r = reader.GetReaderAtTablePosition(TableName))
+            using (BigEndianBinaryReader r = reader.GetReaderAtTablePosition(TableName))
             {
                 // move to start of table
                 return Load(r);
             }
         }
 
-        public static NameTable Load(BinaryReader reader)
+        public static NameTable Load(BigEndianBinaryReader reader)
         {
             var strings = new List<StringLoader>();
             ushort format = reader.ReadUInt16();

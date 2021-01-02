@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         [Fact]
         public void LoadFormat0()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
 
             // int subtableCount = 1;
             writer.WriteCMapSubTable(
@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
                     2,
                     new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
 
-            BinaryReader reader = writer.GetReader();
+            BigEndianBinaryReader reader = writer.GetReader();
             ushort format = reader.ReadUInt16(); // read format before we pass along as thats whet the cmap table does
             Assert.Equal(0, format);
 

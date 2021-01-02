@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Tests.Tables
         [MemberData(nameof(ReadAllValuesData))]
         public void ReadAllValues(string tag, uint checksum, uint offset, uint length)
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTableHeader(tag, checksum, offset, length);
 
             var header = TableHeader.Read(writer.GetReader());

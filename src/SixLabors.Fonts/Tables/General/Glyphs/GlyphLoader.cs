@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
     {
         public abstract GlyphVector CreateGlyph(GlyphTable table);
 
-        public static GlyphLoader Load(BinaryReader reader)
+        public static GlyphLoader Load(BigEndianBinaryReader reader)
         {
             short contoursCount = reader.ReadInt16();
             var bounds = Bounds.Load(reader);

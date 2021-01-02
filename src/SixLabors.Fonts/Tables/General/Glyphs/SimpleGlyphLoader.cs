@@ -60,7 +60,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             return vectors;
         }
 
-        public static GlyphLoader LoadSimpleGlyph(BinaryReader reader, short count, in Bounds bounds)
+        public static GlyphLoader LoadSimpleGlyph(BigEndianBinaryReader reader, short count, in Bounds bounds)
         {
             if (count == 0)
             {
@@ -98,7 +98,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             return new SimpleGlyphLoader(xs, ys, onCurves, endPoints, bounds);
         }
 
-        private static Flags[] ReadFlags(BinaryReader reader, int flagCount)
+        private static Flags[] ReadFlags(BigEndianBinaryReader reader, int flagCount)
         {
             var result = new Flags[flagCount];
             int c = 0;
@@ -125,7 +125,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             return result;
         }
 
-        private static short[] ReadCoordinates(BinaryReader reader, int pointCount, Flags[] flags, Flags isByte, Flags signOrSame)
+        private static short[] ReadCoordinates(BigEndianBinaryReader reader, int pointCount, Flags[] flags, Flags isByte, Flags signOrSame)
         {
             short[] xs = new short[pointCount];
             int x = 0;

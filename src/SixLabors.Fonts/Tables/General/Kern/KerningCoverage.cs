@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
 
         public byte Format { get; }
 
-        public static KerningCoverage Read(BinaryReader reader)
+        public static KerningCoverage Read(BigEndianBinaryReader reader)
         {
             // The coverage field is divided into the following sub-fields, with sizes given in bits:
             // Sub-field    | Bits #'s | Size | Description

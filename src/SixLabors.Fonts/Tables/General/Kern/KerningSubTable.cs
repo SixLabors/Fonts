@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
         public KerningSubTable(KerningCoverage coverage)
             => this.coverage = coverage;
 
-        public static KerningSubTable? Load(BinaryReader reader)
+        public static KerningSubTable? Load(BigEndianBinaryReader reader)
         {
             // Kerning subtables will share the same header format. This header is used to identify the format of the subtable and the kind of information it contains:
             // Type   | Field    | Description

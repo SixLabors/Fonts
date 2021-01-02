@@ -16,7 +16,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadFormat0()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
 
             writer.WriteCMapTable(new[]
             {
@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void ShouldThrowExceptionWhenTableCouldNotBeFound()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
             using (System.IO.MemoryStream stream = writer.GetStream())

@@ -49,7 +49,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static HorizontalHeadTable? Load(FontReader reader)
         {
-            using (BinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader == null)
                 {
@@ -60,7 +60,7 @@ namespace SixLabors.Fonts.Tables.General
             }
         }
 
-        public static HorizontalHeadTable Load(BinaryReader reader)
+        public static HorizontalHeadTable Load(BigEndianBinaryReader reader)
         {
             // Type      | Name                 | Description
             // ----------|----------------------|----------------------------------------------------------------------------------------------------

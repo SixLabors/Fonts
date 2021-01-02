@@ -20,11 +20,11 @@ namespace SixLabors.Fonts
         {
             this.loader = loader;
 
-            Func<BinaryReader, TableHeader> loadHeader = TableHeader.Read;
+            Func<BigEndianBinaryReader, TableHeader> loadHeader = TableHeader.Read;
             long startOfFilePosition = stream.Position;
 
             this.stream = stream;
-            var reader = new BinaryReader(stream, true);
+            var reader = new BigEndianBinaryReader(stream, true);
 
             // we should immediately read the table header to learn which tables we have and what order they are in
             uint version = reader.ReadUInt32();
@@ -146,9 +146,9 @@ namespace SixLabors.Fonts
                 ? header
                 : null;
 
-        public BinaryReader GetReaderAtTablePosition(string tableName)
+        public BigEndianBinaryReader GetReaderAtTablePosition(string tableName)
         {
-            BinaryReader? reader = this.TryGetReaderAtTablePosition(tableName);
+            BigEndianBinaryReader? reader = this.TryGetReaderAtTablePosition(tableName);
             if (reader == null)
             {
                 throw new InvalidFontTableException("Unable to find table", tableName);
@@ -157,7 +157,7 @@ namespace SixLabors.Fonts
             return reader;
         }
 
-        public BinaryReader? TryGetReaderAtTablePosition(string tableName)
+        public BigEndianBinaryReader? TryGetReaderAtTablePosition(string tableName)
         {
             TableHeader? header = this.GetHeader(tableName);
             return header?.CreateReader(this.stream);

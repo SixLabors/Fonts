@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public uint Offset { get; }
 
-        public static EncodingRecord Read(BinaryReader reader)
+        public static EncodingRecord Read(BigEndianBinaryReader reader)
         {
             var platform = (PlatformIDs)reader.ReadUInt16();
             ushort encoding = reader.ReadUInt16();

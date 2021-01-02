@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void ShouldReturnNullWhenTableCouldNotBeFound()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
             using (System.IO.MemoryStream stream = writer.GetStream())
@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void ShouldReturnTableValues()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader();
             writer.WriteColrTable(new[]
             {

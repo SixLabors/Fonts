@@ -29,7 +29,7 @@ namespace SixLabors.Fonts.Tables.General.Name
 
         public string Value => this.StringReader?.Value ?? this.value;
 
-        public static NameRecord Read(BinaryReader reader)
+        public static NameRecord Read(BigEndianBinaryReader reader)
         {
             PlatformIDs platform = reader.ReadUInt16<PlatformIDs>();
             EncodingIDs encodingId = reader.ReadUInt16<EncodingIDs>();
