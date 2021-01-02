@@ -25,7 +25,7 @@ namespace SixLabors.Fonts.Tests
 
         private static string GetSolutionDirectoryFullPathImpl()
         {
-            string assemblyLocation = typeof(TestEnvironment).GetTypeInfo().Assembly.Location;
+            string assemblyLocation = Path.GetDirectoryName(new Uri(typeof(TestEnvironment).GetTypeInfo().Assembly.CodeBase).LocalPath);
 
             var assemblyFile = new FileInfo(assemblyLocation);
 
