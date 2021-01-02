@@ -20,6 +20,10 @@ namespace SixLabors.Fonts.Unicode
         private readonly int highStart;
         private readonly uint errorValue;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UnicodeTrie"/> class.
+        /// </summary>
+        /// <param name="stream">The stream containing the compressed data.</param>
         public UnicodeTrie(Stream stream)
         {
             // Read the header info
@@ -41,6 +45,12 @@ namespace SixLabors.Fonts.Unicode
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UnicodeTrie"/> class.
+        /// </summary>
+        /// <param name="data">The uncompressed trie data.</param>
+        /// <param name="highStart">The start of the last range which ends at U+10ffff.</param>
+        /// <param name="errorValue">The value for out-of-range code points and illegal UTF-8.</param>
         public UnicodeTrie(uint[] data, int highStart, uint errorValue)
         {
             this.data = data;
@@ -104,6 +114,10 @@ namespace SixLabors.Fonts.Unicode
             return this.errorValue;
         }
 
+        /// <summary>
+        /// Saves the <see cref="UnicodeTrie"/> to the stream in a compressed format.
+        /// </summary>
+        /// <param name="stream">The output stream.</param>
         public void Save(Stream stream)
         {
             // Write the header info

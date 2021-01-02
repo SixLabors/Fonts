@@ -24,31 +24,31 @@ namespace SixLabors.Fonts.Tests.Unicode
             var lineBreaker = new LineBreaker();
             lineBreaker.Reset("Hello World\r\nThis is a test.");
 
-            Assert.True(lineBreaker.NextBreak(out LineBreak b));
+            Assert.True(lineBreaker.TryGetNextBreak(out LineBreak b));
             Assert.Equal(6, b.PositionWrap);
             Assert.False(b.Required);
 
-            Assert.True(lineBreaker.NextBreak(out b));
+            Assert.True(lineBreaker.TryGetNextBreak(out b));
             Assert.Equal(13, b.PositionWrap);
             Assert.True(b.Required);
 
-            Assert.True(lineBreaker.NextBreak(out b));
+            Assert.True(lineBreaker.TryGetNextBreak(out b));
             Assert.Equal(18, b.PositionWrap);
             Assert.False(b.Required);
 
-            Assert.True(lineBreaker.NextBreak(out b));
+            Assert.True(lineBreaker.TryGetNextBreak(out b));
             Assert.Equal(21, b.PositionWrap);
             Assert.False(b.Required);
 
-            Assert.True(lineBreaker.NextBreak(out b));
+            Assert.True(lineBreaker.TryGetNextBreak(out b));
             Assert.Equal(23, b.PositionWrap);
             Assert.False(b.Required);
 
-            Assert.True(lineBreaker.NextBreak(out b));
+            Assert.True(lineBreaker.TryGetNextBreak(out b));
             Assert.Equal(28, b.PositionWrap);
             Assert.False(b.Required);
 
-            Assert.False(lineBreaker.NextBreak(out b));
+            Assert.False(lineBreaker.TryGetNextBreak(out b));
         }
 
         [Fact]
@@ -168,7 +168,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
                 // Run the line breaker and build a list of break points
                 lineBreaker.Reset(t.CodePoints);
-                while (lineBreaker.NextBreak(out LineBreak b))
+                while (lineBreaker.TryGetNextBreak(out LineBreak b))
                 {
                     foundBreaks.Add(b.PositionWrap);
                 }

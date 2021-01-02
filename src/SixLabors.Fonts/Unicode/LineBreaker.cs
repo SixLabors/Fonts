@@ -25,15 +25,15 @@ namespace SixLabors.Fonts.Unicode
         private int lb30a;
 
         /// <summary>
-        /// Reset this line breaker
+        /// Reset this line breaker.
         /// </summary>
-        /// <param name="str">The string to be broken</param>
-        public void Reset(string str) => this.Reset(ToUtf32(str.AsSpan()));
+        /// <param name="value">The string to be broken.</param>
+        public void Reset(string value) => this.Reset(ToUtf32(value.AsSpan()));
 
         /// <summary>
-        /// Reset this line breaker
+        /// Reset this line breaker.
         /// </summary>
-        /// <param name="codePoints">The code points of the string to be broken</param>
+        /// <param name="codePoints">The code points of the string to be broken.</param>
         public void Reset(Memory<int> codePoints)
         {
             this.codePoints = codePoints;
@@ -46,9 +46,9 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Enumerate all line breaks
+        /// Enumerates all line breaks returning the result.
         /// </summary>
-        /// <returns>A collection of line break positions</returns>
+        /// <returns>The <see cref="List{LineBreak}"/>.</returns>
         public List<LineBreak> GetBreaks(bool mandatoryOnly = false)
         {
             var list = new List<LineBreak>();
@@ -58,7 +58,7 @@ namespace SixLabors.Fonts.Unicode
             }
             else
             {
-                while (this.NextBreak(out LineBreak lb))
+                while (this.TryGetNextBreak(out LineBreak lb))
                 {
                     list.Add(lb);
                 }
@@ -198,7 +198,15 @@ namespace SixLabors.Fonts.Unicode
             return shouldBreak;
         }
 
-        public bool NextBreak(out LineBreak lineBreak)
+        /// <summary>
+        /// Returns the line break from the current code points if one is found.
+        /// </summary>
+        /// <param name="lineBreak">
+        /// When this method returns, contains the value associate with the break;
+        /// otherwise, the default value.
+        /// This parameter is passed uninitialized.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public bool TryGetNextBreak(out LineBreak lineBreak)
         {
             // get the first char if we're at the beginning of the string
             if (this.first)
@@ -251,11 +259,15 @@ namespace SixLabors.Fonts.Unicode
             }
             else
             {
-                lineBreak = new LineBreak(0, 0, false);
+                lineBreak = default;
                 return false;
             }
         }
 
+        /// <summary>
+        /// Finds all mandatory breaks within the current codepoints.
+        /// </summary>
+        /// <returns>The <see cref="IEnumerable{LineBreak}"/>.</returns>
         public IEnumerable<LineBreak> FindMandatoryBreaks()
         {
             for (int i = 0; i < this.codePoints.Span.Length; i++)
@@ -287,7 +299,7 @@ namespace SixLabors.Fonts.Unicode
 
         private int FindPriorNonWhitespace(int from)
         {
-            var codePointSpan = this.codePoints.Span;
+            Span<int> codePointSpan = this.codePoints.Span;
             if (from > 0)
             {
                 LineBreakClass cls = GetLineBreakClass(codePointSpan[from - 1]);

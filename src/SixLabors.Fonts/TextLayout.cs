@@ -50,7 +50,7 @@ namespace SixLabors.Fonts
             }
 
             var dpi = new Vector2(options.DpiX, options.DpiY);
-            Vector2 origin = (Vector2)options.Origin / dpi;
+            Vector2 origin = options.Origin / dpi;
 
             float maxWidth = float.MaxValue;
             float originX = 0;
@@ -77,13 +77,13 @@ namespace SixLabors.Fonts
             }
 
             // lets convert the text into codepoints
-            var codePointsMemory = LineBreaker.ToUtf32(text);
+            Memory<int> codePointsMemory = LineBreaker.ToUtf32(text);
             if (codePointsMemory.IsEmpty)
             {
                 return Array.Empty<GlyphLayout>();
             }
 
-            var codepoints = codePointsMemory.Span;
+            Span<int> codepoints = codePointsMemory.Span;
             var lineBreaker = new LineBreaker();
             lineBreaker.Reset(codePointsMemory);
 
@@ -112,7 +112,7 @@ namespace SixLabors.Fonts
             bool startOfLine = true;
             float totalHeight = 0;
 
-            if (lineBreaker.NextBreak(out LineBreak b))
+            if (lineBreaker.TryGetNextBreak(out LineBreak b))
             {
                 nextWrappableLocation = b.PositionWrap - 1;
                 nextWrappableRequired = b.Required;
@@ -188,7 +188,7 @@ namespace SixLabors.Fonts
 
                 if (nextWrappableLocation == i)
                 {
-                    if (lineBreaker.NextBreak(out b))
+                    if (lineBreaker.TryGetNextBreak(out b))
                     {
                         nextWrappableLocation = b.PositionWrap - 1;
                         nextWrappableRequired = b.Required;
@@ -348,8 +348,6 @@ namespace SixLabors.Fonts
                 GlyphLayout glyphLayout = layout[i];
                 if (glyphLayout.StartOfLine)
                 {
-                    lineOffset = offset;
-
                     // scan ahead measuring width
                     float width = glyphLayout.Width;
                     for (int j = i + 1; j < layout.Count; j++)

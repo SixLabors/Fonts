@@ -533,7 +533,8 @@ namespace SixLabors.Fonts.Unicode
               || ((dataMove + this.dataNullOffset) > 0xffff) // for unshifted dataNullOffset
               || ((dataMove + UNEWTRIE2_DATA_0800_OFFSET) > 0xffff) // for unshifted 2-byte UTF-8 index-2 values
               || ((dataMove + this.dataLength) > UTRIE2_MAX_DATA_LENGTH))
-            { // for shiftedDataLength
+            {
+                // for shiftedDataLength
                 throw new InvalidOperationException("Trie data is too large.");
             }
 
@@ -1038,7 +1039,7 @@ namespace SixLabors.Fonts.Unicode
                     blockCount = 1;
                 }
 
-                /* skip blocks that are not used */
+                // skip blocks that are not used
                 if (this.map[start >> UTRIE2_SHIFT_2] <= 0)
                 {
                     // advance start to the next block
@@ -1067,10 +1068,10 @@ namespace SixLabors.Fonts.Unicode
 
                 // see if the beginning of this block can be overlapped with the end of the previous block
                 // look for maximum overlap (modulo granularity) with the previous, adjacent block
-                for (overlap = blockLength - UTRIE2_DATA_GRANULARITY;
-                    overlap > 0 && !Equal(this.data, newStart - overlap, start, overlap);
-                    overlap -= UTRIE2_DATA_GRANULARITY)
+                overlap = blockLength - UTRIE2_DATA_GRANULARITY;
+                while (overlap > 0 && !Equal(this.data, newStart - overlap, start, overlap))
                 {
+                    overlap -= UTRIE2_DATA_GRANULARITY;
                 }
 
                 if (overlap > 0 || newStart < start)
