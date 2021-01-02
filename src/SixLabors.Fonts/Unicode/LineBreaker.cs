@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Unicode
     /// </summary>
     internal class LineBreaker
     {
-        private int[] codePoints = Array.Empty<int>();
+        private Memory<int> codePoints = Array.Empty<int>();
         private bool first = true;
         private int position;
         private int lastPosition;
@@ -28,13 +28,13 @@ namespace SixLabors.Fonts.Unicode
         /// Reset this line breaker
         /// </summary>
         /// <param name="str">The string to be broken</param>
-        public void Reset(string str) => this.Reset(ToUtf32(str));
+        public void Reset(string str) => this.Reset(ToUtf32(str.AsSpan()));
 
         /// <summary>
         /// Reset this line breaker
         /// </summary>
         /// <param name="codePoints">The code points of the string to be broken</param>
-        public void Reset(int[] codePoints)
+        public void Reset(Memory<int> codePoints)
         {
             this.codePoints = codePoints;
             this.first = true;
@@ -103,7 +103,7 @@ namespace SixLabors.Fonts.Unicode
 
         // Get the next character class
         private LineBreakClass NextCharClass()
-            => this.MapClass(GetLineBreakClass(this.codePoints[this.position++]));
+            => this.MapClass(GetLineBreakClass(this.codePoints.Span[this.position++]));
 
         private bool? GetSimpleBreak()
         {
@@ -258,16 +258,16 @@ namespace SixLabors.Fonts.Unicode
 
         public IEnumerable<LineBreak> FindMandatoryBreaks()
         {
-            for (int i = 0; i < this.codePoints.Length; i++)
+            for (int i = 0; i < this.codePoints.Span.Length; i++)
             {
-                switch (GetLineBreakClass(this.codePoints[i]))
+                switch (GetLineBreakClass(this.codePoints.Span[i]))
                 {
                     case LineBreakClass.BK:
                         yield return new LineBreak(i, i + 1, true);
                         break;
 
                     case LineBreakClass.CR:
-                        if (i + 1 < this.codePoints.Length && GetLineBreakClass(this.codePoints[i + 1]) == LineBreakClass.LF)
+                        if (i + 1 < this.codePoints.Length && GetLineBreakClass(this.codePoints.Span[i + 1]) == LineBreakClass.LF)
                         {
                             yield return new LineBreak(i, i + 2, true);
                         }
@@ -287,9 +287,10 @@ namespace SixLabors.Fonts.Unicode
 
         private int FindPriorNonWhitespace(int from)
         {
+            var codePointSpan = this.codePoints.Span;
             if (from > 0)
             {
-                LineBreakClass cls = GetLineBreakClass(this.codePoints[from - 1]);
+                LineBreakClass cls = GetLineBreakClass(codePointSpan[from - 1]);
                 if (cls == LineBreakClass.BK || cls == LineBreakClass.LF || cls == LineBreakClass.CR)
                 {
                     from--;
@@ -298,7 +299,7 @@ namespace SixLabors.Fonts.Unicode
 
             while (from > 0)
             {
-                LineBreakClass cls = GetLineBreakClass(this.codePoints[from - 1]);
+                LineBreakClass cls = GetLineBreakClass(codePointSpan[from - 1]);
                 if (cls == LineBreakClass.SP)
                 {
                     from--;
@@ -315,27 +316,28 @@ namespace SixLabors.Fonts.Unicode
         private static LineBreakClass GetLineBreakClass(int codePoint)
             => (LineBreakClass)UnicodeResources.LineBreakTrie.Get(codePoint);
 
-        public static int[] ToUtf32(string str)
+        public static Memory<int> ToUtf32(ReadOnlySpan<char> text)
         {
             unsafe
             {
-                fixed (char* pstr = str)
+                fixed (char* pstr = text)
                 {
                     // Get required byte count
-                    int byteCount = Encoding.UTF32.GetByteCount(pstr, str.Length);
+                    int byteCount = Encoding.UTF32.GetByteCount(pstr, text.Length);
 
                     // Allocate buffer
                     int[] utf32 = new int[byteCount / sizeof(int)];
                     fixed (int* putf32 = utf32)
                     {
                         // Convert
-                        Encoding.UTF32.GetBytes(pstr, str.Length, (byte*)putf32, byteCount);
+                        Encoding.UTF32.GetBytes(pstr, text.Length, (byte*)putf32, byteCount);
 
                         // Done
                         return utf32;
                     }
                 }
             }
+
         }
     }
 }

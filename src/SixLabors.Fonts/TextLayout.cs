@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Exceptions;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
@@ -23,6 +24,11 @@ namespace SixLabors.Fonts
         /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
         public IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, RendererOptions options)
         {
+            if (text.IsEmpty)
+            {
+                return Array.Empty<GlyphLayout>();
+            }
+
             var dpi = new Vector2(options.DpiX, options.DpiY);
             Vector2 origin = (Vector2)options.Origin / dpi;
 
@@ -50,8 +56,19 @@ namespace SixLabors.Fonts
                 }
             }
 
-            AppliedFontStyle spanStyle = options.GetStyle(0, text.Length);
-            var layout = new List<GlyphLayout>(text.Length);
+            // lets convert the text into codepoints
+            var codePointsMemory = LineBreaker.ToUtf32(text);
+            if (codePointsMemory.IsEmpty)
+            {
+                return Array.Empty<GlyphLayout>();
+            }
+
+            var codepoints = codePointsMemory.Span;
+            var lineBreaker = new LineBreaker();
+            lineBreaker.Reset(codePointsMemory);
+
+            AppliedFontStyle spanStyle = options.GetStyle(0, codepoints.Length);
+            var layout = new List<GlyphLayout>(codepoints.Length);
 
             float unscaledLineHeight = 0f;
             float lineHeight = 0f;
@@ -70,25 +87,26 @@ namespace SixLabors.Fonts
             GlyphInstance? previousGlyph = null;
             float scale = 0;
             int lastWrappableLocation = -1;
+            int nextWrappableLocation = codepoints.Length;
+            bool nextWrappableRequired = false;
             bool startOfLine = true;
             float totalHeight = 0;
 
-            for (int i = 0; i < text.Length; i++)
+            if (lineBreaker.NextBreak(out LineBreak b))
             {
-                // four-byte characters are processed on the first char
-                if (char.IsLowSurrogate(text[i]))
-                {
-                    continue;
-                }
+                nextWrappableLocation = b.PositionWrap - 1;
+                nextWrappableRequired = b.Required;
+            }
 
+            for (int i = 0; i < codepoints.Length; i++)
+            {
                 if (spanStyle.End < i)
                 {
-                    spanStyle = options.GetStyle(i, text.Length);
+                    spanStyle = options.GetStyle(i, codepoints.Length);
                     previousGlyph = null;
                 }
 
-                bool hasFourBytes = char.IsHighSurrogate(text[i]);
-                int codePoint = hasFourBytes ? char.ConvertToUtf32(text[i], text[i + 1]) : text[i];
+                int codePoint = codepoints[i];
 
                 GlyphInstance[] glyphs = spanStyle.GetGlyphLayers(codePoint, options.ColorFontSupport);
                 if (glyphs.Length == 0)
@@ -135,11 +153,12 @@ namespace SixLabors.Fonts
                     top = lineHeightOfFirstLine - lineMaxAscender - (lineGap / 2);
                 }
 
-                if (options.WrappingWidth > 0 && char.IsWhiteSpace(text[i]))
+                if ((options.WrappingWidth > 0 && nextWrappableLocation == i) || nextWrappableRequired)
                 {
                     // keep a record of where to wrap text and ensure that no line starts with white space
                     for (int j = layout.Count - 1; j >= 0; j--)
                     {
+
                         if (!layout[j].IsWhiteSpace)
                         {
                             lastWrappableLocation = j + 1;
@@ -148,10 +167,19 @@ namespace SixLabors.Fonts
                     }
                 }
 
+                if (nextWrappableLocation == i)
+                {
+                    if (lineBreaker.NextBreak(out b))
+                    {
+                        nextWrappableLocation = b.PositionWrap - 1;
+                        nextWrappableRequired = b.Required;
+                    }
+                }
+
                 float glyphWidth = glyph.AdvanceWidth * spanStyle.PointSize / scale;
                 float glyphHeight = glyph.Height * spanStyle.PointSize / scale;
 
-                if (hasFourBytes || (text[i] != '\r' && text[i] != '\n' && text[i] != '\t' && text[i] != ' '))
+                if (codepoints[i] != '\r' && codepoints[i] != '\n' && codepoints[i] != '\t' && codepoints[i] != ' ')
                 {
                     Vector2 glyphLocation = location;
                     if (spanStyle.ApplyKerning && previousGlyph != null)
@@ -222,7 +250,7 @@ namespace SixLabors.Fonts
 
                     previousGlyph = glyph;
                 }
-                else if (text[i] == '\r')
+                else if (codepoints[i] == '\r')
                 {
                     // carriage return resets the XX coordinate to 0
                     location.X = 0;
@@ -232,7 +260,7 @@ namespace SixLabors.Fonts
                     layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
                     startOfLine = false;
                 }
-                else if (text[i] == '\n')
+                else if (codepoints[i] == '\n')
                 {
                     // carriage return resets the XX coordinate to 0
                     layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
@@ -245,7 +273,7 @@ namespace SixLabors.Fonts
                     lastWrappableLocation = -1;
                     startOfLine = true;
                 }
-                else if (text[i] == '\t')
+                else if (codepoints[i] == '\t')
                 {
                     float tabStop = glyphWidth * spanStyle.TabWidth;
                     float finalWidth = 0;
@@ -269,7 +297,7 @@ namespace SixLabors.Fonts
                     location.X += finalWidth;
                     previousGlyph = null;
                 }
-                else if (text[i] == ' ')
+                else if (codepoints[i] == ' ')
                 {
                     layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, glyphWidth, glyphHeight, lineHeight, startOfLine, true, false));
                     startOfLine = false;
@@ -335,6 +363,37 @@ namespace SixLabors.Fonts
             }
 
             return layout;
+        }
+
+        // adapted from https://github.com/dotnet/runtime/blob/master/src/libraries/System.Private.CoreLib/src/System/Text/Rune.cs
+        // Contains information about the ASCII character range [ U+0000..U+007F ], with:
+        // - 0x80 bit if set means 'is whitespace'
+        // - 0x40 bit if set means 'is letter or digit'
+        // - 0x20 bit is reserved for future use
+        // - bottom 5 bits are the UnicodeCategory of the character
+        private static ReadOnlySpan<byte> AsciiCharInfo => new byte[]
+        {
+            0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x8E, 0x8E, 0x8E, 0x8E, 0x8E, 0x0E, 0x0E, // U+0000..U+000F
+            0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, // U+0010..U+001F
+            0x8B, 0x18, 0x18, 0x18, 0x1A, 0x18, 0x18, 0x18, 0x14, 0x15, 0x18, 0x19, 0x18, 0x13, 0x18, 0x18, // U+0020..U+002F
+            0x48, 0x48, 0x48, 0x48, 0x48, 0x48, 0x48, 0x48, 0x48, 0x48, 0x18, 0x18, 0x19, 0x19, 0x19, 0x18, // U+0030..U+003F
+            0x18, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, // U+0040..U+004F
+            0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x14, 0x18, 0x15, 0x1B, 0x12, // U+0050..U+005F
+            0x1B, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, // U+0060..U+006F
+            0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x14, 0x19, 0x15, 0x19, 0x0E, // U+0070..U+007F
+        };
+
+        private const byte IsWhiteSpaceFlag = 0x80;
+
+        private bool IsWhiteSpace(int codepoint)
+        {
+            // is ascci
+            if (codepoint <= 0x7Fu)
+            {
+                return (AsciiCharInfo[codepoint] & IsWhiteSpaceFlag) != 0;
+            }
+
+            return char.IsWhiteSpace((char)codepoint);
         }
     }
 }
