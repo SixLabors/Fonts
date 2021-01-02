@@ -61,6 +61,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\build-and-test.yml = .github\workflows\build-and-test.yml
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{249327CF-1415-428B-8EEA-8C7705B1DE8F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnicodeTrieGenerator", "src\UnicodeTrieGenerator\UnicodeTrieGenerator.csproj", "{ABB6E111-672F-4846-88D6-C49C6CD01606}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems*{09e744ec-4852-4fc7-be78-c1b399f17967}*SharedItemsImports = 5
@@ -86,6 +90,10 @@ Global
 		{6DF4C474-1FDF-4DE0-9CB2-9674D2CCE1BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6DF4C474-1FDF-4DE0-9CB2-9674D2CCE1BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6DF4C474-1FDF-4DE0-9CB2-9674D2CCE1BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABB6E111-672F-4846-88D6-C49C6CD01606}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABB6E111-672F-4846-88D6-C49C6CD01606}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABB6E111-672F-4846-88D6-C49C6CD01606}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABB6E111-672F-4846-88D6-C49C6CD01606}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -98,6 +106,7 @@ Global
 		{7CDD4908-7CCD-4945-860C-D2F1732D3AE6} = {C317F1B1-D75E-4C6D-83EB-80367343E0D7}
 		{EC0F1812-C6AF-48D8-882B-5637730D2DB1} = {7CDD4908-7CCD-4945-860C-D2F1732D3AE6}
 		{CFCC940C-DEA3-42CC-9626-0B7D09289FF4} = {7CDD4908-7CCD-4945-860C-D2F1732D3AE6}
+		{ABB6E111-672F-4846-88D6-C49C6CD01606} = {249327CF-1415-428B-8EEA-8C7705B1DE8F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {38F4B47F-4F74-40F5-8707-C0EF1D0BDF92}

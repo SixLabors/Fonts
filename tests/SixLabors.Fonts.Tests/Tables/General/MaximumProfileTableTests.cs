@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void ShouldThrowExceptionWhenTableCouldNotBeFound()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
             using (MemoryStream stream = writer.GetStream())

@@ -23,13 +23,13 @@ namespace SixLabors.Fonts.Utilities
 
         public Encoding Encoding { get; }
 
-        public static StringLoader Create(BinaryReader reader)
+        public static StringLoader Create(BigEndianBinaryReader reader)
             => Create(reader, Encoding.BigEndianUnicode);
 
-        public static StringLoader Create(BinaryReader reader, Encoding encoding)
+        public static StringLoader Create(BigEndianBinaryReader reader, Encoding encoding)
             => new StringLoader(reader.ReadUInt16(), reader.ReadUInt16(), encoding);
 
-        public void LoadValue(BinaryReader reader)
+        public void LoadValue(BigEndianBinaryReader reader)
             => this.Value = reader.ReadString(this.Length, this.Encoding).Replace("\0", string.Empty);
     }
 }

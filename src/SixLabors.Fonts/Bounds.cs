@@ -27,7 +27,7 @@ namespace SixLabors.Fonts
             return new Vector2(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
         }
 
-        internal static Bounds Load(BinaryReader reader)
+        internal static Bounds Load(BigEndianBinaryReader reader)
         {
             short minX = reader.ReadInt16();
             short minY = reader.ReadInt16();

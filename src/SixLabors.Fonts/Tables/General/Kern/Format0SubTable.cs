@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
             : base(coverage)
             => this.pairs = pairs;
 
-        public static Format0SubTable Load(BinaryReader reader, in KerningCoverage coverage)
+        public static Format0SubTable Load(BigEndianBinaryReader reader, in KerningCoverage coverage)
         {
             // Type   | Field         | Description
             // -------|---------------|--------------------------------------------------------

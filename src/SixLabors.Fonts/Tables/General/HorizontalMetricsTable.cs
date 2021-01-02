@@ -43,13 +43,13 @@ namespace SixLabors.Fonts.Tables.General
             MaximumProfileTable profileTable = reader.GetTable<MaximumProfileTable>();
 
             // move to start of table
-            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(binaryReader, headTable.NumberOfHMetrics, profileTable.GlyphCount);
             }
         }
 
-        public static HorizontalMetricsTable Load(BinaryReader reader, int metricCount, int glyphCount)
+        public static HorizontalMetricsTable Load(BigEndianBinaryReader reader, int metricCount, int glyphCount)
         {
             // Type           | Name                                          | Description
             // longHorMetric  | hMetrics[numberOfHMetrics]                    | Paired advance width and left side bearing values for each glyph. Records are indexed by glyph ID.

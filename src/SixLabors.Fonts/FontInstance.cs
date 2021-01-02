@@ -291,7 +291,7 @@ namespace SixLabors.Fonts
         public static FontInstance[] LoadFontCollection(Stream stream)
         {
             long startPos = stream.Position;
-            var reader = new BinaryReader(stream, true);
+            var reader = new BigEndianBinaryReader(stream, true);
             var ttcHeader = TtcHeader.Read(reader);
             var fonts = new FontInstance[(int)ttcHeader.NumFonts];
 

@@ -221,7 +221,7 @@ namespace SixLabors.Fonts
         private IEnumerable<FontFamily> InstallCollectionInternal(Stream fontCollectionStream, CultureInfo culture, out IEnumerable<FontDescription> fontDescriptions)
         {
             long startPos = fontCollectionStream.Position;
-            var reader = new BinaryReader(fontCollectionStream, true);
+            var reader = new BigEndianBinaryReader(fontCollectionStream, true);
             var ttcHeader = TtcHeader.Read(reader);
             var result = new List<FontDescription>((int)ttcHeader.NumFonts);
             var installedFamilies = new HashSet<FontFamily>();

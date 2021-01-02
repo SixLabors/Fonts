@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadHead()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
 
             writer.WriteHeadTable(new HeadTable(
                 HeadTable.HeadFlags.None,

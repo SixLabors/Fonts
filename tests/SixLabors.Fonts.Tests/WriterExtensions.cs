@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests
 {
     internal static class WriterExtensions
     {
-        public static void WriteTableHeader(this BinaryWriter writer, string tag, uint checksum, uint? offset, uint length)
+        public static void WriteTableHeader(this BigEndianBinaryWriter writer, string tag, uint checksum, uint? offset, uint length)
         {
             // table header
             // Record Type | Name     | Description
@@ -31,7 +31,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         public static void WriteTrueTypeFileHeader(
-            this BinaryWriter writer,
+            this BigEndianBinaryWriter writer,
             ushort tableCount,
             ushort searchRange,
             ushort entrySelector,
@@ -40,13 +40,13 @@ namespace SixLabors.Fonts.Tests
              // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
              => writer.WriteFileHeader(0x00010000, tableCount, searchRange, entrySelector, rangeShift);
 
-        public static void WriteTrueTypeFileHeader(this BinaryWriter writer, params TableHeader[] headers)
+        public static void WriteTrueTypeFileHeader(this BigEndianBinaryWriter writer, params TableHeader[] headers)
 
             // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
             => writer.WriteFileHeader(0x00010000, headers);
 
         public static void WriteCffFileHeader(
-            this BinaryWriter writer,
+            this BigEndianBinaryWriter writer,
             ushort tableCount,
             ushort searchRange,
             ushort entrySelector,
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tests
             // uint32    | sfntVersion 0x00010000 or 0x4F54544F('OTTO') — see below.
             => writer.WriteFileHeader(0x4F54544F, tableCount, searchRange, entrySelector, rangeShift);
 
-        private static void WriteFileHeader(this BinaryWriter writer, uint version, params TableHeader[] headers)
+        private static void WriteFileHeader(this BigEndianBinaryWriter writer, uint version, params TableHeader[] headers)
         {
             // file header
             // Type Name | name          | Description
@@ -79,7 +79,7 @@ namespace SixLabors.Fonts.Tests
             }
         }
 
-        private static void WriteFileHeader(this BinaryWriter writer, uint version, ushort tableCount, ushort searchRange, ushort entrySelector, ushort rangeShift)
+        private static void WriteFileHeader(this BigEndianBinaryWriter writer, uint version, ushort tableCount, ushort searchRange, ushort entrySelector, ushort rangeShift)
         {
             // file header
             // Type Name | name          | Description
@@ -96,13 +96,13 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16(rangeShift);
         }
 
-        public static void WriteNameTable(this BinaryWriter writer, Dictionary<NameIds, string> names, List<string> languages = null)
+        public static void WriteNameTable(this BigEndianBinaryWriter writer, Dictionary<NameIds, string> names, List<string> languages = null)
             => writer.WriteNameTable(names.Select(x => (x.Key, x.Value, CultureInfo.InvariantCulture)).ToList(), languages);
 
-        public static void WriteNameTable(this BinaryWriter writer, params (NameIds nameId, string value, CultureInfo culture)[] names)
+        public static void WriteNameTable(this BigEndianBinaryWriter writer, params (NameIds nameId, string value, CultureInfo culture)[] names)
             => writer.WriteNameTable(names.ToList());
 
-        public static void WriteNameTable(this BinaryWriter writer, List<(NameIds nameId, string value, CultureInfo culture)> names, List<string> languages = null)
+        public static void WriteNameTable(this BigEndianBinaryWriter writer, List<(NameIds nameId, string value, CultureInfo culture)> names, List<string> languages = null)
         {
             // Type          | Name                        | Description
             // --------------|-----------------------------|--------------------------------------------------------
@@ -193,7 +193,7 @@ namespace SixLabors.Fonts.Tests
             }
         }
 
-        public static void WriteCMapTable(this BinaryWriter writer, IEnumerable<CMapSubTable> subtables)
+        public static void WriteCMapTable(this BigEndianBinaryWriter writer, IEnumerable<CMapSubTable> subtables)
         {
             // 'cmap' Header:
             // Type           | Name                       | Description
@@ -229,13 +229,13 @@ namespace SixLabors.Fonts.Tests
             }
         }
 
-        public static void WriteCMapSubTable(this BinaryWriter writer, CMapSubTable subtable)
+        public static void WriteCMapSubTable(this BigEndianBinaryWriter writer, CMapSubTable subtable)
         {
             writer.WriteCMapSubTable(subtable as Format0SubTable);
             writer.WriteCMapSubTable(subtable as Format4SubTable);
         }
 
-        public static void WriteCMapSubTable(this BinaryWriter writer, Format0SubTable subtable)
+        public static void WriteCMapSubTable(this BigEndianBinaryWriter writer, Format0SubTable subtable)
         {
             if (subtable == null)
             {
@@ -259,7 +259,7 @@ namespace SixLabors.Fonts.Tests
             }
         }
 
-        public static void WriteCMapSubTable(this BinaryWriter writer, Format4SubTable subtable)
+        public static void WriteCMapSubTable(this BigEndianBinaryWriter writer, Format4SubTable subtable)
         {
             if (subtable == null)
             {
@@ -337,7 +337,7 @@ namespace SixLabors.Fonts.Tests
             return 0;
         }
 
-        public static void WriteHorizontalHeadTable(this BinaryWriter writer, HorizontalHeadTable table)
+        public static void WriteHorizontalHeadTable(this BigEndianBinaryWriter writer, HorizontalHeadTable table)
         {
             // Type      | Name                 | Description
             // ----------|----------------------|----------------------------------------------------------------------------------------------------
@@ -379,7 +379,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16(table.NumberOfHMetrics);
         }
 
-        public static void WriteHeadTable(this BinaryWriter writer, HeadTable table)
+        public static void WriteHeadTable(this BigEndianBinaryWriter writer, HeadTable table)
         {
             // Type         | Name               | Description
             // -------------|--------------------|----------------------------------------------------------------------------------------------------
@@ -447,7 +447,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteInt16(0);
         }
 
-        public static void WriteColrTable(this BinaryWriter writer, ColrGlyphRecord[] data)
+        public static void WriteColrTable(this BigEndianBinaryWriter writer, ColrGlyphRecord[] data)
         {
             var formatted = data.ToList();
 

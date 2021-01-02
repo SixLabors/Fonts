@@ -38,7 +38,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             return false;
         }
 
-        public static IEnumerable<Format12SubTable> Load(IEnumerable<EncodingRecord> encodings, BinaryReader reader)
+        public static IEnumerable<Format12SubTable> Load(IEnumerable<EncodingRecord> encodings, BigEndianBinaryReader reader)
         {
             // 'cmap' Subtable Format 4:
             // Type               | Name              | Description
@@ -81,7 +81,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
                 this.StartGlyphId = startGlyph;
             }
 
-            public static SequentialMapGroup Load(BinaryReader reader)
+            public static SequentialMapGroup Load(BigEndianBinaryReader reader)
             {
                 var startCodePoint = reader.ReadUInt32();
                 var endCodePoint = reader.ReadUInt32();

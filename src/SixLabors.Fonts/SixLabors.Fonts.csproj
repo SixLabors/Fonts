@@ -16,6 +16,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Unicode\Resources\LineBreak.trie" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Unicode\Resources\LineBreak.trie" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\shared-infrastructure\branding\icons\fonts\sixlabors.fonts.128.png" Pack="true" PackagePath="" />
   </ItemGroup>
 

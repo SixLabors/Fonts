@@ -104,6 +104,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 RenderText(f, text, 72);
             }
+
+            FontFamily simsum = SystemFonts.Find("SimSun");
+            RenderText(simsum, "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 16);
         }
 
         public static void RenderText(Font font, string text, int width, int height)

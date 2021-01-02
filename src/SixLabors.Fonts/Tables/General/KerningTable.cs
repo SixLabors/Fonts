@@ -18,7 +18,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static KerningTable Load(FontReader reader)
         {
-            using (BinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader is null)
                 {
@@ -31,7 +31,7 @@ namespace SixLabors.Fonts.Tables.General
             }
         }
 
-        public static KerningTable Load(BinaryReader reader)
+        public static KerningTable Load(BigEndianBinaryReader reader)
         {
             // Type   | Field    | Description
             // -------|----------|-----------------------------------------

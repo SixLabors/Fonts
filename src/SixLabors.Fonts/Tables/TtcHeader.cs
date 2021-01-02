@@ -45,7 +45,7 @@ namespace SixLabors.Fonts.Tables
 
         public uint DsigOffset { get; }
 
-        public static TtcHeader Read(BinaryReader reader)
+        public static TtcHeader Read(BigEndianBinaryReader reader)
         {
             string tag = reader.ReadTag();
             ushort majorVersion = reader.ReadUInt16();

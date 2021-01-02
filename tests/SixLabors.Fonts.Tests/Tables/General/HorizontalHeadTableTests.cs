@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void LoadHorizontalHeadTable()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
 
             writer.WriteHorizontalHeadTable(new HorizontalHeadTable(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
 
@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         [Fact]
         public void ShouldReturnNullWhenTableCouldNotBeFound()
         {
-            var writer = new BinaryWriter();
+            var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader();
 
             using (System.IO.MemoryStream stream = writer.GetStream())

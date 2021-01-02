@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tables
 
         public uint CompressedLength { get; }
 
-        public override BinaryReader CreateReader(Stream stream)
+        public override BigEndianBinaryReader CreateReader(Stream stream)
         {
             // not compressed use uncompress
             if (this.Length == this.CompressedLength)
@@ -24,11 +24,11 @@ namespace SixLabors.Fonts.Tables
             {
                 stream.Seek(this.Offset, SeekOrigin.Begin);
                 var compressedStream = new IO.ZlibInflateStream(stream);
-                return new BinaryReader(compressedStream, false);
+                return new BigEndianBinaryReader(compressedStream, false);
             }
         }
 
-        public static new WoffTableHeader Read(BinaryReader reader)
+        public static new WoffTableHeader Read(BigEndianBinaryReader reader)
         {
             // WOFF TableDirectoryEntry
             // UInt32 | tag          | 4-byte sfnt table identifier.

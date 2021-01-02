@@ -45,7 +45,7 @@ namespace SixLabors.Fonts.Tables.General
             return Span<LayerRecord>.Empty;
         }
 
-        public static ColrTable Load(BinaryReader reader)
+        public static ColrTable Load(BigEndianBinaryReader reader)
         {
             // HEADER
 

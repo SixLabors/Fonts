@@ -64,13 +64,13 @@ namespace SixLabors.Fonts.Tables.General
 
         public static CMapTable Load(FontReader reader)
         {
-            using (BinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
+            using (BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(binaryReader);
             }
         }
 
-        public static CMapTable Load(BinaryReader reader)
+        public static CMapTable Load(BigEndianBinaryReader reader)
         {
             ushort version = reader.ReadUInt16();
             ushort numTables = reader.ReadUInt16();

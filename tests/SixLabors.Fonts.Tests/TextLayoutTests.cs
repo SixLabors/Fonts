@@ -174,6 +174,10 @@ namespace SixLabors.Fonts.Tests
             "hello world hello world hello world",
             70, // 30 actual line height * 2 + 10 actual height
             310)]
+        [InlineData( // issue https://github.com/SixLabors/ImageSharp.Drawing/issues/115
+            "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。",
+            160, // 30 actual line height * 2 + 10 actual height
+            310)]
         public void MeasureTextWordWrapping(string text, float height, float width)
         {
             Font font = CreateFont(text);
@@ -215,7 +219,7 @@ namespace SixLabors.Fonts.Tests
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px
             var glyphRenderer = new GlyphRenderer();
             var renderer = new TextRenderer(glyphRenderer);
-            renderer.RenderText(text, new RendererOptions(new Font(font, 1), 72 * font.EmSize, new Vector2(x, y)));
+            renderer.RenderText(text, new RendererOptions(new Font(font, 1), scaleFactor, new Vector2(x, y)));
 
             Assert.Equal(expectedX, glyphRenderer.GlyphRects[0].Location.X, 2);
             Assert.Equal(expectedY, glyphRenderer.GlyphRects[0].Location.Y, 2);

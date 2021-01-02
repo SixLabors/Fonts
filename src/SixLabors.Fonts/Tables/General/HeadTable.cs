@@ -98,7 +98,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public static HeadTable? Load(FontReader reader)
         {
-            using (BinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
             {
                 if (binaryReader is null)
                 {
@@ -109,7 +109,7 @@ namespace SixLabors.Fonts.Tables.General
             }
         }
 
-        public static HeadTable Load(BinaryReader reader)
+        public static HeadTable Load(BigEndianBinaryReader reader)
         {
             // Type         | Name               | Description
             // -------------|--------------------|----------------------------------------------------------------------------------------------------
