@@ -337,7 +337,6 @@ namespace SixLabors.Fonts.Unicode
                     }
                 }
             }
-
         }
     }
 }
