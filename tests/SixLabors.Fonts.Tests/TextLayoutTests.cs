@@ -219,7 +219,7 @@ namespace SixLabors.Fonts.Tests
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px
             var glyphRenderer = new GlyphRenderer();
             var renderer = new TextRenderer(glyphRenderer);
-            renderer.RenderText(text, new RendererOptions(new Font(font, 1), 72 * font.EmSize, new Vector2(x, y)));
+            renderer.RenderText(text, new RendererOptions(new Font(font, 1), scaleFactor, new Vector2(x, y)));
 
             Assert.Equal(expectedX, glyphRenderer.GlyphRects[0].Location.X, 2);
             Assert.Equal(expectedY, glyphRenderer.GlyphRects[0].Location.Y, 2);

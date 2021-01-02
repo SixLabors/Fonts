@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using System.IO;
 using SixLabors.Fonts.Unicode;
 using Xunit;
 
@@ -179,6 +180,27 @@ namespace SixLabors.Fonts.Tests.Unicode
             builder.SetRange(6000, 7000, 9900, true);
 
             UnicodeTrie trie = builder.Freeze();
+            Assert.Equal(10u, trie.Get(12));
+            Assert.Equal(7788u, trie.Get(13));
+            Assert.Equal(7788u, trie.Get(5999));
+            Assert.Equal(9900u, trie.Get(6000));
+            Assert.Equal(9900u, trie.Get(7000));
+            Assert.Equal(10u, trie.Get(7001));
+            Assert.Equal(666u, trie.Get(0x110000));
+        }
+
+        [Fact]
+        public void SetRangeSerialized()
+        {
+            var builder = new UnicodeTrieBuilder(10, 666);
+            builder.SetRange(13, 6666, 7788, false);
+            builder.SetRange(6000, 7000, 9900, true);
+
+            using var ms = new MemoryStream();
+            builder.Freeze().Save(ms);
+            ms.Position = 0;
+
+            var trie = new UnicodeTrie(ms);
             Assert.Equal(10u, trie.Get(12));
             Assert.Equal(7788u, trie.Get(13));
             Assert.Equal(7788u, trie.Get(5999));
