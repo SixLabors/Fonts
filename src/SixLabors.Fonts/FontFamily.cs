@@ -11,7 +11,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Defines a group of type faces having a similar basic design and certain variations in styles. This class cannot be inherited.
     /// </summary>
-    public sealed class FontFamily
+    public sealed class FontFamily : IEquatable<FontFamily?>
     {
         private readonly FontCollection collection;
 
@@ -58,6 +58,30 @@ namespace SixLabors.Fonts
             ? FontStyle.Regular
             : this.AvailableStyles.First();
 
+        /// <summary>
+        /// Compares two <see cref="FontFamily"/> objects for equality.
+        /// </summary>
+        /// <param name="left">The <see cref="FontFamily"/> on the left side of the operand.</param>
+        /// <param name="right">The <see cref="FontFamily"/> on the right side of the operand.</param>
+        /// <returns>
+        /// <see langword="true"/> if the current left is equal to the <paramref name="right"/>
+        /// parameter; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool operator ==(FontFamily? left, FontFamily? right)
+            => EqualityComparer<FontFamily?>.Default.Equals(left, right);
+
+        /// <summary>
+        /// Compares two <see cref="FontFamily"/> objects for inequality.
+        /// </summary>
+        /// <param name="left">The <see cref="FontFamily"/> on the left side of the operand.</param>
+        /// <param name="right">The <see cref="FontFamily"/> on the right side of the operand.</param>
+        /// <returns>
+        /// <see langword="true"/> if the current left is unequal to the <paramref name="right"/>
+        /// parameter; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool operator !=(FontFamily? left, FontFamily? right)
+            => !(left == right);
+
         internal IFontInstance? Find(FontStyle style)
             => this.collection.Find(this.Name, this.Culture, style);
 
@@ -79,26 +103,30 @@ namespace SixLabors.Fonts
         public override string ToString() => this.Name;
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            if (obj is FontFamily other)
-            {
-                StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
-                return this.collection == other.collection
-                    && this.Culture == other.Culture
-                    && this.DefaultStyle == other.DefaultStyle
-                    && this.AvailableStyles.SequenceEqual(other.AvailableStyles)
-                    && comparer.Equals(this.Name, other.Name);
-            }
-
-            return base.Equals(obj);
-        }
-
-        /// <inheritdoc />
         public override int GetHashCode()
         {
             StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
             return HashCode.Combine(this.collection, this.Culture, this.DefaultStyle, this.AvailableStyles) ^ comparer.GetHashCode(this.Name);
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+            => this.Equals(obj as FontFamily);
+
+        /// <inheritdoc/>
+        public bool Equals(FontFamily? other)
+        {
+            if (other is null)
+            {
+                return false;
+            }
+
+            StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
+            return this.collection == other.collection
+                && this.Culture == other.Culture
+                && this.DefaultStyle == other.DefaultStyle
+                && this.AvailableStyles.SequenceEqual(other.AvailableStyles)
+                && comparer.Equals(this.Name, other.Name);
         }
     }
 }
