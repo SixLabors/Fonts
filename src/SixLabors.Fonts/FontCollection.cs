@@ -7,7 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables;
 
@@ -172,9 +171,7 @@ namespace SixLabors.Fonts
 #endif
 
         private FontFamily InstallInternal(string path, CultureInfo culture)
-        {
-            return this.InstallInternal(path, culture, out _);
-        }
+            => this.InstallInternal(path, culture, out _);
 
         private FontFamily InstallInternal(string path, CultureInfo culture, out FontDescription fontDescription)
         {
@@ -184,9 +181,7 @@ namespace SixLabors.Fonts
         }
 
         private FontFamily InstallInternal(Stream fontStream, CultureInfo culture)
-        {
-            return this.InstallInternal(fontStream, culture, out _);
-        }
+            => this.InstallInternal(fontStream, culture, out _);
 
         private FontFamily InstallInternal(Stream fontStream, CultureInfo culture, out FontDescription fontDescription)
         {
@@ -197,9 +192,7 @@ namespace SixLabors.Fonts
         }
 
         private IEnumerable<FontFamily> InstallCollectionInternal(string fontCollectionPath, CultureInfo culture)
-        {
-            return this.InstallCollectionInternal(fontCollectionPath, culture, out _);
-        }
+            => this.InstallCollectionInternal(fontCollectionPath, culture, out _);
 
         private IEnumerable<FontFamily> InstallCollectionInternal(string fontCollectionPath, CultureInfo culture, out IEnumerable<FontDescription> fontDescriptions)
         {
@@ -244,13 +237,13 @@ namespace SixLabors.Fonts
             => this.FindInternal(fontFamily, culture);
 
         /// <inheritdoc />
-        public bool TryFind(string fontFamily, CultureInfo culture, [NotNullWhen(true)]out FontFamily? family)
+        public bool TryFind(string fontFamily, CultureInfo culture, [NotNullWhen(true)] out FontFamily? family)
             => this.TryFindInternal(fontFamily, culture, out family);
 #endif
 
         private FontFamily FindInternal(string fontFamily, CultureInfo culture)
         {
-            if (this.TryFindInternal(fontFamily, culture, out var result))
+            if (this.TryFindInternal(fontFamily, culture, out FontFamily? result))
             {
                 return result;
             }
@@ -258,12 +251,12 @@ namespace SixLabors.Fonts
             throw new FontFamilyNotFoundException(fontFamily);
         }
 
-        private bool TryFindInternal(string fontFamily, CultureInfo culture, [NotNullWhen(true)]out FontFamily? family)
+        private bool TryFindInternal(string fontFamily, CultureInfo culture, [NotNullWhen(true)] out FontFamily? family)
         {
-            var comparer = StringComparerHelpers.GetCaseInsenativeStringComparer(culture);
+            StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(culture);
             family = null!; // make the compiler shutup
 
-            var familyName = this.instances
+            string? familyName = this.instances
                 .Select(x => x.Description.FontFamily(culture))
                 .FirstOrDefault(x => comparer.Equals(x, fontFamily));
             if (familyName == null)
@@ -280,13 +273,11 @@ namespace SixLabors.Fonts
             => this.FindInternal(fontFamily, CultureInfo.InvariantCulture);
 
         /// <inheritdoc />
-        public bool TryFind(string fontFamily, [NotNullWhen(true)]out FontFamily? family)
+        public bool TryFind(string fontFamily, [NotNullWhen(true)] out FontFamily? family)
             => this.TryFindInternal(fontFamily, CultureInfo.InvariantCulture, out family);
 
         internal IEnumerable<FontStyle> AvailableStyles(string fontFamily, CultureInfo culture)
-        {
-            return this.FindAll(fontFamily, culture).Select(x => x.Description.Style).ToArray();
-        }
+            => this.FindAll(fontFamily, culture).Select(x => x.Description.Style).ToArray();
 
         internal FontFamily Install(IFontInstance instance, CultureInfo culture)
         {
@@ -309,20 +300,16 @@ namespace SixLabors.Fonts
         }
 
         internal IFontInstance? Find(string fontFamily, CultureInfo culture, FontStyle style)
-        {
-            return this.FindAll(fontFamily, culture)
-                        .FirstOrDefault(x => x.Description.Style == style);
-        }
+            => this.FindAll(fontFamily, culture)
+            .FirstOrDefault(x => x.Description.Style == style);
 
         internal IEnumerable<IFontInstance> FindAll(string name, CultureInfo culture)
         {
-            var comparer = StringComparerHelpers.GetCaseInsenativeStringComparer(culture);
+            StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(culture);
 
-            var instances = this.instances
-                                .Where(x => comparer.Equals(x.Description.FontFamily(culture), name))
-                                .ToArray();
-
-            return instances;
+            return this.instances
+                .Where(x => comparer.Equals(x.Description.FontFamily(culture), name))
+                .ToArray();
         }
     }
 }

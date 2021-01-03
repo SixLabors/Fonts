@@ -2,21 +2,18 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 
 namespace SixLabors.Fonts
 {
-    internal class StringComparerHelpers
+    internal static class StringComparerHelpers
     {
-        public static StringComparer GetCaseInsenativeStringComparer(CultureInfo culture)
-        {
+        public static StringComparer GetCaseInsensitiveStringComparer(CultureInfo culture)
 #if SUPPORTS_CULTUREINFO_LCID
-            return StringComparer.Create(culture, true);
+        => StringComparer.Create(culture, true);
 #else
-            return StringComparer.OrdinalIgnoreCase;
+        => StringComparer.OrdinalIgnoreCase;
 #endif
-        }
+
     }
 }
