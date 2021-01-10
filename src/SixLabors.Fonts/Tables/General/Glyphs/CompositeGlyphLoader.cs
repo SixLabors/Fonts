@@ -78,32 +78,33 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 flags = (CompositeFlags)reader.ReadUInt16();
                 glyphIndex = reader.ReadUInt16();
 
-                short arg1;
-                short arg2;
-                if (flags.HasFlag(CompositeFlags.ArgsAreWords))
-                {
-                    arg1 = reader.ReadInt16();
-                    arg2 = reader.ReadInt16();
-                }
-                else
-                {
-                    arg1 = reader.ReadByte();
-                    arg2 = reader.ReadByte();
-                }
-
                 short dx;
                 short dy;
-                if (flags.HasFlag(CompositeFlags.ArgsAreXYValues))
+                if (flags.HasFlag(CompositeFlags.ArgsAreWords))
                 {
-                    dx = arg1;
-                    dy = arg2;
+                    if (flags.HasFlag(CompositeFlags.ArgsAreXYValues))
+                    {
+                        dx = reader.ReadInt16();
+                        dy = reader.ReadInt16();
+                    }
+                    else
+                    {
+                        dx = (short)reader.ReadUInt16();
+                        dy = (short)reader.ReadUInt16();
+                    }
                 }
                 else
                 {
-                    // args are points to be matched
-                    // TODO: Implement
-                    dx = 0;
-                    dy = 0;
+                    if (flags.HasFlag(CompositeFlags.ArgsAreXYValues))
+                    {
+                        dx = reader.ReadSByte();
+                        dy = reader.ReadSByte();
+                    }
+                    else
+                    {
+                        dx = reader.ReadByte();
+                        dy = reader.ReadByte();
+                    }
                 }
 
                 Matrix3x2 transform = Matrix3x2.Identity;
