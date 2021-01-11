@@ -371,6 +371,12 @@ namespace SixLabors.Fonts.Tests
             this.WriteInternal(this.buffer, 1);
         }
 
+        public void WriteInt8(sbyte value)
+        {
+            this.buffer[0] = unchecked((byte)value);
+            this.WriteInternal(this.buffer, 1);
+        }
+
         public void WriteFWORD(short value) => this.WriteInt16(value);
 
         public void WriteUFWORD(ushort value) => this.WriteUInt16(value);
