@@ -1,7 +1,7 @@
-using System;
-using System.Collections.Generic;
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System.Numerics;
-using System.Text;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using Xunit;
@@ -15,9 +15,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void LoadSingleGlyphWithUInt16Offset_unsignd_short()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteUInt16((ushort)
-                CompositeFlags.ArgsAreWords // 16bit unsigned
-                ); // flags
+            writer.WriteUInt16((ushort)CompositeFlags.ArgsAreWords); // 16bit unsigned
             writer.WriteUInt16(1); // glyph id
 
             writer.WriteUInt16(short.MaxValue + 1); // dx
@@ -27,7 +25,8 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var bounds = new Bounds(0, 0, 100, 100);
             var glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-            var tbl = new GlyphTable(new[] {
+            var tbl = new GlyphTable(new[]
+            {
                 new SimpleGlyphLoader(bounds), // padding
                 new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds)
             });
@@ -42,10 +41,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void LoadSingleGlyphWithInt16Offset_signed_short()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteUInt16((ushort)(
-                CompositeFlags.ArgsAreWords // 16bit
-                | CompositeFlags.ArgsAreXYValues // signed
-                )); // flags
+            writer.WriteUInt16((ushort)(CompositeFlags.ArgsAreWords /* 16bit */ | CompositeFlags.ArgsAreXYValues /* signed */)); // flags
             writer.WriteUInt16(1); // glyph id
 
             writer.WriteInt16(short.MinValue + 1); // dx
@@ -55,7 +51,8 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var bounds = new Bounds(0, 0, 100, 100);
             var glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-            var tbl = new GlyphTable(new[] {
+            var tbl = new GlyphTable(new[]
+            {
                 new SimpleGlyphLoader(bounds), // padding
                 new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds)
             });
@@ -70,9 +67,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void LoadSingleGlyphWithUInt8Offset_unsignd_byte()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteUInt16(
-                    0 // 8bit unsigned
-                ); // flags
+            writer.WriteUInt16(0); // 8bit unsigned
             writer.WriteUInt16(1); // glyph id
 
             writer.WriteUInt8(sbyte.MaxValue + 1); // dx
@@ -82,7 +77,8 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var bounds = new Bounds(0, 0, 100, 100);
             var glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-            var tbl = new GlyphTable(new[] {
+            var tbl = new GlyphTable(new[]
+            {
                 new SimpleGlyphLoader(bounds), // padding
                 new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds)
             });
@@ -97,9 +93,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void LoadSingleGlyphWithInt8Offset_signed_byte()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteUInt16((ushort)
-                CompositeFlags.ArgsAreXYValues // signed byte
-                ); // flags
+            writer.WriteUInt16((ushort)CompositeFlags.ArgsAreXYValues); // signed byte
             writer.WriteUInt16(1); // glyph id
 
             writer.WriteInt8(sbyte.MinValue + 1); // dx
@@ -109,7 +103,8 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var bounds = new Bounds(0, 0, 100, 100);
             var glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-            var tbl = new GlyphTable(new[] {
+            var tbl = new GlyphTable(new[]
+            {
                 new SimpleGlyphLoader(bounds), // padding
                 new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds)
             });
