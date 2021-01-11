@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         | Mask   | Name                     | Description
         |--------|--------------------------|--------------------
-        | 0x0001 | ARG_1_AND_2_ARE_WORDS    | Bit 0: If this is set, the arguments are 16-bit (uint16 or int16); otherwise, they are bytes (uint8 or int8). 
+        | 0x0001 | ARG_1_AND_2_ARE_WORDS    | Bit 0: If this is set, the arguments are 16-bit (uint16 or int16); otherwise, they are bytes (uint8 or int8).
         | 0x0002 | ARGS_ARE_XY_VALUES       | Bit 1: If this is set, the arguments are signed xy values; otherwise, they are unsigned point numbers.
         | 0x0004 | ROUND_XY_TO_GRID         | Bit 2: For the xy values if the preceding is true.
         | 0x0008 | WE_HAVE_A_SCALE          | Bit 3: This indicates that there is a simple scale for the component. Otherwise, scale = 1.0.
