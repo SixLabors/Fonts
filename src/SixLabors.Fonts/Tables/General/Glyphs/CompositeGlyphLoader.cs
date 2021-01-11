@@ -39,7 +39,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         | 0xE010 | Reserved                 | Bits 4, 13, 14 and 15 are reserved: set to 0.
          */
         [Flags]
-        private enum CompositeFlags : ushort
+        internal enum CompositeFlags : ushort
         {
             ArgsAreWords = 1,    // If this is set, the arguments are words; otherwise, they are bytes.
             ArgsAreXYValues = 2, // If this is set, the arguments are xy values; otherwise, they are points.
@@ -97,10 +97,11 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 flags = (CompositeFlags)reader.ReadUInt16();
                 glyphIndex = reader.ReadUInt16();
 
-                LoadArguments(reader, flags, out short dx, out short dy);
+                LoadArguments(reader, flags, out int dx, out int dy);
 
                 Matrix3x2 transform = Matrix3x2.Identity;
                 transform.Translation = new Vector2(dx, dy);
+
                 if (flags.HasFlag(CompositeFlags.WeHaveAScale))
                 {
                     float scale = reader.ReadF2dot14(); // Format 2.14
@@ -132,7 +133,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             return new CompositeGlyphLoader(result, bounds);
         }
 
-        private static void LoadArguments(BigEndianBinaryReader reader, CompositeFlags flags, out short dx, out short dy)
+        private static void LoadArguments(BigEndianBinaryReader reader, CompositeFlags flags, out int dx, out int dy)
         {
             // are we 16 or 8 bits values?
             if (flags.HasFlag(CompositeFlags.ArgsAreWords))
@@ -148,8 +149,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 else
                 {
                     // unsigned
-                    dx = (short)reader.ReadUInt16();
-                    dy = (short)reader.ReadUInt16();
+                    dx = reader.ReadUInt16();
+                    dy = reader.ReadUInt16();
                 }
             }
             else
