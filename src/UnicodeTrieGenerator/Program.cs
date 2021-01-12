@@ -10,7 +10,7 @@ namespace UnicodeTrieGenerator
         private static void Main()
         {
             Console.WriteLine("Generating Trie Data");
-            Generator.GenerateLineBreakTrie();
+            Generator.GenerateUnicodeTries();
             Console.WriteLine("Done");
             Console.ReadLine();
         }

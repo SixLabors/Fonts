@@ -16,10 +16,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Unicode\Resources\Bidi.trie" />
     <None Remove="Unicode\Resources\LineBreak.trie" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Unicode\Resources\Bidi.trie" />
     <EmbeddedResource Include="Unicode\Resources\LineBreak.trie" />
   </ItemGroup>
 

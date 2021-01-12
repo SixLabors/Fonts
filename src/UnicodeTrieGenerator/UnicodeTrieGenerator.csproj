@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\SixLabors.Fonts\Unicode\BidiCharacterType.cs" Link="BidiCharacterType.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\BidiPairedBracketType.cs" Link="BidiPairedBracketType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\LineBreakClass.cs" Link="LineBreakClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrie.cs" Link="UnicodeTrie.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrieBuilder.cs" Link="UnicodeTrieBuilder.cs" />
