@@ -6,17 +6,29 @@ using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Unicode
 {
+    /// <summary>
+    /// A data buffer of <typeparamref name="T"/> that can be expanded to allow
+    /// for the addition of new data.
+    /// </summary>
+    /// <typeparam name="T">The type of item contained in the buffer.</typeparam>
     internal sealed class ExpandableBuffer<T>
     {
         private const int DefaultCapacity = 32;
         private T[] data;
         private int size;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExpandableBuffer{T}"/> class.
+        /// </summary>
         public ExpandableBuffer()
             : this(0)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExpandableBuffer{T}"/> class.
+        /// </summary>
+        /// <param name="capacity">The intitial capacity of the buffer.</param>
         public ExpandableBuffer(int capacity)
         {
             Guard.MustBeGreaterThanOrEqualTo(capacity, 0, nameof(capacity));
@@ -31,6 +43,9 @@ namespace SixLabors.Fonts.Unicode
             }
         }
 
+        /// <summary>
+        /// Gets or sets the number of items in the buffer.
+        /// </summary>
         public int Length
         {
             get => this.size;
@@ -53,6 +68,14 @@ namespace SixLabors.Fonts.Unicode
             }
         }
 
+        /// <summary>
+        /// Returns a reference to specified element of the buffer.
+        /// </summary>
+        /// <param name="index">The index of the element to return.</param>
+        /// <returns>The <typeparamref name="T"/>.</returns>
+        /// <exception cref="IndexOutOfRangeException">
+        /// Thrown when index less than 0 or index greater than or equal to <see cref="Length"/>.
+        /// </exception>
         public ref T this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -71,6 +94,12 @@ namespace SixLabors.Fonts.Unicode
             }
         }
 
+        /// <summary>
+        /// Appends a given number of empty items to the buffer returning
+        /// the items as a slice.
+        /// </summary>
+        /// <param name="length">The number of items in the slice.</param>
+        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
         public BufferSlice<T> Add(int length)
         {
             int position = this.size;
@@ -81,7 +110,12 @@ namespace SixLabors.Fonts.Unicode
             return this.Slice(position, this.Length - position);
         }
 
-        public BufferSlice<T> Add(BufferSlice<T> value)
+        /// <summary>
+        /// Appends the slice to the buffer copying the data across.
+        /// </summary>
+        /// <param name="value">The buffer slice.</param>
+        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
+        public BufferSlice<T> Add(in BufferSlice<T> value)
         {
             int position = this.size;
 
@@ -94,6 +128,10 @@ namespace SixLabors.Fonts.Unicode
             return slice;
         }
 
+        /// <summary>
+        /// Clears the buffer.
+        /// Allocated memory is left intact for future usage.
+        /// </summary>
         public void Clear()
         {
             // Clear to allow GC to claim any reference types.
@@ -105,6 +143,7 @@ namespace SixLabors.Fonts.Unicode
         {
             if (this.data.Length < min)
             {
+                // Same expansion algorithm as List<T>.
                 uint newCapacity = this.data.Length == 0 ? DefaultCapacity : (uint)this.data.Length * 2u;
                 if (newCapacity > int.MaxValue)
                 {
@@ -122,13 +161,28 @@ namespace SixLabors.Fonts.Unicode
             }
         }
 
+        /// <summary>
+        /// Returns the current state of the buffer as a slice.
+        /// </summary>
+        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BufferSlice<T> AsSlice() => this.Slice(this.Length);
 
+        /// <summary>
+        /// Returns the current state of the buffer as a slice.
+        /// </summary>
+        /// <param name="length">The number of items in the slice.</param>
+        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BufferSlice<T> Slice(int length)
             => new BufferSlice<T>(this.data, 0, length);
 
+        /// <summary>
+        /// Returns the current state of the buffer as a slice.
+        /// </summary>
+        /// <param name="start">The index at which to begin the slice.</param>
+        /// <param name="length">The number of items in the slice.</param>
+        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BufferSlice<T> Slice(int start, int length)
             => new BufferSlice<T>(this.data, start, length);
