@@ -12,6 +12,7 @@ namespace SixLabors.Fonts.Unicode
     /// </summary>
     /// <typeparam name="T">The type of item contained in the buffer.</typeparam>
     internal sealed class ExpandableBuffer<T>
+        where T : struct
     {
         private const int DefaultCapacity = 32;
         private T[] data;

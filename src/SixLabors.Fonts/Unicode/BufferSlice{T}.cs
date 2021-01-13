@@ -13,6 +13,7 @@ namespace SixLabors.Fonts.Unicode
     /// </summary>
     /// <typeparam name="T">The type of item contained in the slice.</typeparam>
     internal readonly struct BufferSlice<T>
+        where T : struct
     {
         private readonly T[] data;
 
