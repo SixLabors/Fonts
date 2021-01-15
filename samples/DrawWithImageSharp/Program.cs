@@ -40,7 +40,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, "😀 Hello World! 😀", pointSize: 72, fallbackFonts: new[] { emojiFont });
 
             //// general
-
             RenderText(font, "abc", 72);
             RenderText(font, "ABd", 72);
             RenderText(fontWoff, "abe", 72);
@@ -107,6 +106,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             FontFamily simsum = SystemFonts.Find("SimSun");
             RenderText(simsum, "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 16);
+
+            FontFamily arial = SystemFonts.Find("Arial");
+            RenderText(arial, "ìíîï", 72);
         }
 
         public static void RenderText(Font font, string text, int width, int height)
