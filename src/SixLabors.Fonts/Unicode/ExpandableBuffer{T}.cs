@@ -11,38 +11,33 @@ namespace SixLabors.Fonts.Unicode
     /// for the addition of new data.
     /// </summary>
     /// <typeparam name="T">The type of item contained in the buffer.</typeparam>
-    internal sealed class ExpandableBuffer<T>
+    internal struct ExpandableBuffer<T>
         where T : struct
     {
-        private const int DefaultCapacity = 32;
-        private T[] data;
+        private const int DefaultCapacity = 4;
+        private const int MaxCoreClrArrayLength = 0x7FeFFFFF;
+
+        // Starts out null, initialized on first Add.
+        private T[]? data;
         private int size;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExpandableBuffer{T}"/> class.
-        /// </summary>
-        public ExpandableBuffer()
-            : this(0)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExpandableBuffer{T}"/> class.
+        /// Initializes a new instance of the <see cref="ExpandableBuffer{T}"/> struct.
         /// </summary>
         /// <param name="capacity">The intitial capacity of the buffer.</param>
         public ExpandableBuffer(int capacity)
+            : this()
         {
             Guard.MustBeGreaterThanOrEqualTo(capacity, 0, nameof(capacity));
 
-            if (capacity == 0)
-            {
-                this.data = Array.Empty<T>();
-            }
-            else
-            {
-                this.data = new T[capacity];
-            }
+            this.data = new T[capacity];
+            this.size = capacity;
         }
+
+        /// <summary>
+        /// Gets an empty <see cref="ExpandableBuffer{T}"/>
+        /// </summary>
+        public static ExpandableBuffer<T> Empty => new ExpandableBuffer<T>(0);
 
         /// <summary>
         /// Gets or sets the number of items in the buffer.
@@ -62,7 +57,6 @@ namespace SixLabors.Fonts.Unicode
                     }
                     else
                     {
-                        this.data = Array.Empty<T>();
                         this.size = 0;
                     }
                 }
@@ -83,7 +77,7 @@ namespace SixLabors.Fonts.Unicode
             get
             {
                 DebugGuard.MustBeBetweenOrEqualTo(index, 0, this.size, nameof(index));
-                if ((uint)index < (uint)this.data.Length)
+                if ((uint)index < (uint)this.data!.Length)
                 {
                     return ref this.data[index];
                 }
@@ -136,19 +130,20 @@ namespace SixLabors.Fonts.Unicode
         public void Clear()
         {
             // Clear to allow GC to claim any reference types.
-            this.data.AsSpan(0, this.size).Clear();
+            this.data!.AsSpan(0, this.size).Clear();
             this.size = 0;
         }
 
         private void EnsureCapacity(int min)
         {
-            if (this.data.Length < min)
+            int length = this.data?.Length ?? 0;
+            if (length < min)
             {
                 // Same expansion algorithm as List<T>.
-                uint newCapacity = this.data.Length == 0 ? DefaultCapacity : (uint)this.data.Length * 2u;
-                if (newCapacity > int.MaxValue)
+                uint newCapacity = length == 0 ? DefaultCapacity : (uint)length * 2u;
+                if (newCapacity > MaxCoreClrArrayLength)
                 {
-                    newCapacity = int.MaxValue;
+                    newCapacity = MaxCoreClrArrayLength;
                 }
 
                 var buffer = new T[newCapacity];
@@ -176,7 +171,7 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BufferSlice<T> Slice(int length)
-            => new BufferSlice<T>(this.data, 0, length);
+            => new BufferSlice<T>(this.data!, 0, length);
 
         /// <summary>
         /// Returns the current state of the buffer as a slice.
@@ -186,6 +181,6 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BufferSlice<T> Slice(int start, int length)
-            => new BufferSlice<T>(this.data, start, length);
+            => new BufferSlice<T>(this.data!, start, length);
     }
 }

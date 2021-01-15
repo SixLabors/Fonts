@@ -8,7 +8,8 @@ namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
     /// BufferSlice represents a contiguous region of arbitrary memory similar
-    /// to <see cref="Memory{T}"/> and <see cref="Span{T}"/>.
+    /// to <see cref="Memory{T}"/> and <see cref="Span{T}"/> though constained
+    /// to simple array handling.
     /// Unlike <see cref="Span{T}"/>, it is not a byref-like type.
     /// </summary>
     /// <typeparam name="T">The type of item contained in the slice.</typeparam>

@@ -1,3 +1,6 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,7 +30,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
             var bidi = new Bidi();
 
-            List<Test> tests = new List<Test>();
+            var tests = new List<Test>();
 
             // Process each line
             int[] levels = null;
@@ -101,13 +104,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                             throw new NotSupportedException();
                     }
 
-                    tests.Add(new Test()
-                    {
-                        Types = directions,
-                        ParagraphEmbeddingLevel = paragraphEmbeddingLevel,
-                        ExpectedLevels = levels,
-                        LineNumber = lineNumber,
-                    });
+                    tests.Add(new Test(directions, paragraphEmbeddingLevel, levels, lineNumber));
                 }
             }
 
@@ -169,12 +166,27 @@ namespace SixLabors.Fonts.Tests.Unicode
             return true;
         }
 
-        class Test
+        private readonly struct Test
         {
-            public BidiCharacterType[] Types;
-            public sbyte ParagraphEmbeddingLevel;
-            public int[] ExpectedLevels;
-            public int LineNumber;
+            public Test(
+                BidiCharacterType[] types,
+                sbyte paragraphEmbeddingLevel,
+                int[] expectedLevels,
+                int lineNumber)
+            {
+                this.Types = types;
+                this.ParagraphEmbeddingLevel = paragraphEmbeddingLevel;
+                this.ExpectedLevels = expectedLevels;
+                this.LineNumber = lineNumber;
+            }
+
+            public BidiCharacterType[] Types { get; }
+
+            public sbyte ParagraphEmbeddingLevel { get; }
+
+            public int[] ExpectedLevels { get; }
+
+            public int LineNumber { get; }
         }
     }
 }
