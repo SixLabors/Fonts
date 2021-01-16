@@ -94,15 +94,22 @@ namespace SixLabors.Fonts.Unicode
         /// the items as a slice.
         /// </summary>
         /// <param name="length">The number of items in the slice.</param>
+        /// <param name="clear">Whether to clear the new slice, Defaults to <see langword="true"/>.</param>
         /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
-        public BufferSlice<T> Add(int length)
+        public BufferSlice<T> Add(int length, bool clear = true)
         {
             int position = this.size;
 
             // Expand the buffer.
             this.Length += length;
 
-            return this.Slice(position, this.Length - position);
+            BufferSlice<T> slice = this.Slice(position, this.Length - position);
+            if (clear)
+            {
+                slice.Span.Clear();
+            }
+
+            return slice;
         }
 
         /// <summary>
@@ -127,12 +134,10 @@ namespace SixLabors.Fonts.Unicode
         /// Clears the buffer.
         /// Allocated memory is left intact for future usage.
         /// </summary>
-        public void Clear()
-        {
-            // Clear to allow GC to claim any reference types.
-            this.data!.AsSpan(0, this.size).Clear();
+        public void Clear() =>
+
+            // No need to actually clear since we're not allowing reference types.
             this.size = 0;
-        }
 
         private void EnsureCapacity(int min)
         {
