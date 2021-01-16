@@ -2,6 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Unicode
@@ -13,7 +15,7 @@ namespace SixLabors.Fonts.Unicode
     /// Unlike <see cref="Span{T}"/>, it is not a byref-like type.
     /// </summary>
     /// <typeparam name="T">The type of item contained in the slice.</typeparam>
-    internal readonly struct BufferSlice<T>
+    internal readonly struct BufferSlice<T> : IEnumerable<T>, IEnumerable
         where T : struct
     {
         private readonly T[] data;
@@ -124,5 +126,82 @@ namespace SixLabors.Fonts.Unicode
         /// </exception>
         public BufferSlice<T> Slice(int start, int length)
             => new BufferSlice<T>(this.data, start, length);
+
+        /// <inheritdoc/>
+        public IEnumerator<T> GetEnumerator() => new Enumerator(this);
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
+
+        public struct Enumerator : IEnumerator<T>
+        {
+            private readonly T[]? array;
+            private readonly int start;
+            private readonly int end; // cache Start + Length, since it's a little slow
+            private int current;
+
+            internal Enumerator(BufferSlice<T> slice)
+            {
+                DebugGuard.NotNull(slice.data, nameof(slice.data));
+                DebugGuard.MustBeGreaterThanOrEqualTo(slice.Start, 0, nameof(slice.Start));
+                DebugGuard.MustBeGreaterThanOrEqualTo(slice.Length, 0, nameof(slice.Length));
+
+                DebugGuard.MustBeLessThanOrEqualTo(
+                    slice.Start + slice.Length,
+                    slice.data.Length,
+                    nameof(slice.data.Length));
+
+                this.array = slice.data;
+                this.start = slice.Start;
+                this.end = slice.Start + slice.Length;
+                this.current = slice.Start - 1;
+            }
+
+            /// <inheritdoc/>
+            public T Current
+            {
+                get
+                {
+                    if (this.current < this.start)
+                    {
+                        ThrowEnumNotStarted();
+                    }
+
+                    if (this.current >= this.end)
+                    {
+                        ThrowEnumEnded();
+                    }
+
+                    return this.array![this.current];
+                }
+            }
+
+            object? IEnumerator.Current => this.Current;
+
+            /// <inheritdoc/>
+            public bool MoveNext()
+            {
+                if (this.current < this.end)
+                {
+                    this.current++;
+                    return this.current < this.end;
+                }
+
+                return false;
+            }
+
+            /// <inheritdoc/>
+            void IEnumerator.Reset() => this.current = this.start - 1;
+
+            public void Dispose()
+            {
+            }
+
+            private static void ThrowEnumNotStarted()
+                => throw new InvalidOperationException("Enumeration has not started. Call MoveNext.");
+
+            private static void ThrowEnumEnded()
+                => throw new InvalidOperationException("Enumeration already finished.");
+        }
     }
 }

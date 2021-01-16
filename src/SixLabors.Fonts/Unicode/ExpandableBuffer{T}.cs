@@ -35,11 +35,6 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Gets an empty <see cref="ExpandableBuffer{T}"/>
-        /// </summary>
-        public static ExpandableBuffer<T> Empty => new ExpandableBuffer<T>(0);
-
-        /// <summary>
         /// Gets or sets the number of items in the buffer.
         /// </summary>
         public int Length
@@ -149,6 +144,11 @@ namespace SixLabors.Fonts.Unicode
                 if (newCapacity > MaxCoreClrArrayLength)
                 {
                     newCapacity = MaxCoreClrArrayLength;
+                }
+
+                if (newCapacity < min)
+                {
+                    newCapacity = (uint)min;
                 }
 
                 var buffer = new T[newCapacity];

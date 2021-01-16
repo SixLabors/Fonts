@@ -76,9 +76,7 @@ namespace UnicodeTrieGenerator
                         int otherPoint = ParseHexInt(match.Groups[2].Value);
                         BidiPairedBracketType kind = Enum.Parse<BidiPairedBracketType>(match.Groups[3].Value, true);
 
-                        int value = 0;
-                        value |= otherPoint | ((int)kind << 16);
-                        Bidi[point] = value;
+                        Bidi[point] |= otherPoint | ((int)kind << 16);
                     }
                 }
             }

@@ -8,8 +8,13 @@ namespace SixLabors.Fonts.Unicode
     /// for the purposes of the Unicode Bidirectional Algorithm.
     /// <see href="https://www.unicode.org/Public/UCD/latest/ucd/BidiBrackets.txt"/>.
     /// </summary>
-    internal enum BidiPairedBracketType
+    internal enum BidiPairedBracketType : byte
     {
+        /// <summary>
+        /// None.
+        /// </summary>
+        N,
+
         /// <summary>
         /// Open.
         /// </summary>
@@ -18,11 +23,6 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Close.
         /// </summary>
-        C,
-
-        /// <summary>
-        /// None.
-        /// </summary>
-        N
+        C
     }
 }
