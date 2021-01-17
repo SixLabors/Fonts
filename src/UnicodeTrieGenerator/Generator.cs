@@ -13,7 +13,7 @@ namespace UnicodeTrieGenerator
 {
     /// <summary>
     /// Provides methods to generate Unicode Tries.
-    /// Ported from <see href=""/>.
+    /// Ported from <see href="https://github.com/toptensoftware/RichTextKit/blob/master/BuildUnicodeData/generate.js"/>.
     /// </summary>
     public static class Generator
     {
