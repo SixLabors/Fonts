@@ -11,11 +11,11 @@ using Xunit.Abstractions;
 
 namespace SixLabors.Fonts.Tests.Unicode
 {
-    public class BidiTests
+    public class BidiAlgorithmTests
     {
         private readonly ITestOutputHelper output;
 
-        public BidiTests(ITestOutputHelper output) => this.output = output;
+        public BidiAlgorithmTests(ITestOutputHelper output) => this.output = output;
 
         [Fact]
         public void ICUTests() => Assert.True(this.ICUTestsImpl());
@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tests.Unicode
             // Read the test file
             string[] lines = File.ReadAllLines(Path.Combine(TestEnvironment.UnicodeTestDataFullPath, "BidiTest.txt"));
 
-            var bidi = new Bidi();
+            var bidi = new BidiAlgorithm();
 
             var tests = new List<Test>();
 
@@ -115,12 +115,12 @@ namespace SixLabors.Fonts.Tests.Unicode
                 Test t = tests[testNumber];
 
                 // Run the algorithm...
-                BufferSlice<sbyte> resultLevels;
+                ArraySlice<sbyte> resultLevels;
 
                 bidi.Process(
                     t.Types,
-                    BufferSlice<BidiPairedBracketType>.Empty,
-                    BufferSlice<int>.Empty,
+                    ArraySlice<BidiPairedBracketType>.Empty,
+                    ArraySlice<int>.Empty,
                     t.ParagraphEmbeddingLevel,
                     false,
                     null,

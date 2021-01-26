@@ -11,18 +11,18 @@ namespace SixLabors.Fonts.Unicode
     /// from the source array.
     /// </summary>
     /// <typeparam name="T">The type of item contained in the underlying array.</typeparam>
-    internal readonly struct MappedBuffer<T>
+    internal readonly struct MappedArraySlice<T>
         where T : struct
     {
-        private readonly BufferSlice<T> data;
-        private readonly BufferSlice<int> map;
+        private readonly ArraySlice<T> data;
+        private readonly ArraySlice<int> map;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MappedBuffer{T}"/> struct.
+        /// Initializes a new instance of the <see cref="MappedArraySlice{T}"/> struct.
         /// </summary>
         /// <param name="data">The data slice.</param>
         /// <param name="map">The map slice.</param>
-        public MappedBuffer(in BufferSlice<T> data, in BufferSlice<int> map)
+        public MappedArraySlice(in ArraySlice<T> data, in ArraySlice<int> map)
         {
             Guard.MustBeGreaterThanOrEqualTo(data.Length, map.Length, nameof(map));
 

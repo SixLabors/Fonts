@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using SixLabors.Fonts.Unicode.Resources;
 
 namespace SixLabors.Fonts.Unicode
 {
@@ -13,12 +12,12 @@ namespace SixLabors.Fonts.Unicode
     /// </summary>
     internal class BidiData
     {
-        private ExpandableBuffer<BidiCharacterType> types;
-        private ExpandableBuffer<BidiPairedBracketType> pairedBracketTypes;
-        private ExpandableBuffer<int> pairedBracketValues;
-        private ExpandableBuffer<BidiCharacterType> savedTypes;
-        private ExpandableBuffer<BidiPairedBracketType> savedPairedBracketTypes;
-        private ExpandableBuffer<sbyte> tempLevelBuffer;
+        private ArrayBuilder<BidiCharacterType> types;
+        private ArrayBuilder<BidiPairedBracketType> pairedBracketTypes;
+        private ArrayBuilder<int> pairedBracketValues;
+        private ArrayBuilder<BidiCharacterType> savedTypes;
+        private ArrayBuilder<BidiPairedBracketType> savedPairedBracketTypes;
+        private ArrayBuilder<sbyte> tempLevelBuffer;
         private readonly List<int> paragraphPositions = new List<int>();
 
         public sbyte ParagraphEmbeddingLevel { get; private set; }
@@ -37,12 +36,12 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Gets the BidiCharacterType of each code point
         /// </summary>
-        public BufferSlice<BidiCharacterType> Types { get; private set; }
+        public ArraySlice<BidiCharacterType> Types { get; private set; }
 
         /// <summary>
         /// Gets the paired bracket type for each code point
         /// </summary>
-        public BufferSlice<BidiPairedBracketType> PairedBracketTypes { get; private set; }
+        public ArraySlice<BidiPairedBracketType> PairedBracketTypes { get; private set; }
 
         /// <summary>
         /// Gets the paired bracket value for code point
@@ -54,14 +53,14 @@ namespace SixLabors.Fonts.Unicode
         /// matching.  Also, bracket code points are mapped
         /// to their canonical equivalents
         /// </remarks>
-        public BufferSlice<int> PairedBracketValues { get; private set; }
+        public ArraySlice<int> PairedBracketValues { get; private set; }
 
         /// <summary>
         /// Initialize with an array of Unicode code points
         /// </summary>
         /// <param name="codePoints">The unicode code points to be processed</param>
         /// <param name="paragraphEmbeddingLevel">The paragraph embedding level</param>
-        public void Init(BufferSlice<int> codePoints, sbyte paragraphEmbeddingLevel)
+        public void Init(ArraySlice<int> codePoints, sbyte paragraphEmbeddingLevel)
         {
             // Set working buffer sizes
             this.types.Length = codePoints.Length;
@@ -78,7 +77,7 @@ namespace SixLabors.Fonts.Unicode
             this.HasIsolates = false;
             for (int i = 0; i < codePoints.Length; i++)
             {
-                var bidiData = UnicodeResources.BidiTrie.Get(codePoints[i]);
+                var bidiData = UnicodeData.GetBidiData(codePoints[i]);
 
                 // Look up BidiCharacterType
                 var dir = (BidiCharacterType)(bidiData >> 24);
@@ -184,7 +183,7 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="length">Length of the required ExpandableBuffer</param>
         /// <returns>An uninitialized level ExpandableBuffer</returns>
-        public BufferSlice<sbyte> GetTempLevelBuffer(int length)
+        public ArraySlice<sbyte> GetTempLevelBuffer(int length)
         {
             this.tempLevelBuffer.Clear();
             return this.tempLevelBuffer.Add(length, false);

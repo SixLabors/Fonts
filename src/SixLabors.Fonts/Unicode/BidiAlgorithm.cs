@@ -25,22 +25,22 @@ namespace SixLabors.Fonts.Unicode
     /// as much as possible.
     /// </para>
     /// </remarks>
-    internal sealed class Bidi
+    internal sealed class BidiAlgorithm
     {
         /// <summary>
         /// The original BidiCharacterType types as provided by the caller
         /// </summary>
-        private BufferSlice<BidiCharacterType> originalTypes;
+        private ArraySlice<BidiCharacterType> originalTypes;
 
         /// <summary>
         /// Paired bracket types as provided by caller
         /// </summary>
-        private BufferSlice<BidiPairedBracketType> pairedBracketTypes;
+        private ArraySlice<BidiPairedBracketType> pairedBracketTypes;
 
         /// <summary>
         /// Paired bracket values as provided by caller
         /// </summary>
-        private BufferSlice<int> pairedBracketValues;
+        private ArraySlice<int> pairedBracketValues;
 
         /// <summary>
         /// Try if the incoming data is known to contain brackets
@@ -69,17 +69,17 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// The working BidiCharacterType types
         /// </summary>
-        private BufferSlice<BidiCharacterType> workingTypes;
+        private ArraySlice<BidiCharacterType> workingTypes;
 
         /// <summary>
         /// The buffer underlying _workingTypes
         /// </summary>
-        private ExpandableBuffer<BidiCharacterType> workingTypesBuffer;
+        private ArrayBuilder<BidiCharacterType> workingTypesBuffer;
 
         /// <summary>
         /// The buffer underlying _resolvedLevels
         /// </summary>
-        private ExpandableBuffer<sbyte> resolvedLevelsBuffer;
+        private ArrayBuilder<sbyte> resolvedLevelsBuffer;
 
         /// <summary>
         /// The resolve paragraph embedding level
@@ -95,7 +95,7 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Mapping used to virtually remove characters for rule X9
         /// </summary>
-        private ExpandableBuffer<int> x9Map;
+        private ArrayBuilder<int> x9Map;
 
         /// <summary>
         /// Re-usable list of level runs
@@ -106,7 +106,7 @@ namespace SixLabors.Fonts.Unicode
         /// Mapping for the current isolating sequence, built
         /// by joining level runs from the x9 map.
         /// </summary>
-        private ExpandableBuffer<int> isolatedRunMapping;
+        private ArrayBuilder<int> isolatedRunMapping;
 
         /// <summary>
         /// A stack of pending isolate openings used by FindIsolatePairs()
@@ -132,31 +132,31 @@ namespace SixLabors.Fonts.Unicode
         /// A mapped slice of the resolved types for the isolating run currently
         /// being processed
         /// </summary>
-        private MappedBuffer<BidiCharacterType> runResolvedTypes;
+        private MappedArraySlice<BidiCharacterType> runResolvedTypes;
 
         /// <summary>
         /// A mapped slice of the original types for the isolating run currently
         /// being processed
         /// </summary>
-        private MappedBuffer<BidiCharacterType> runOriginalTypes;
+        private MappedArraySlice<BidiCharacterType> runOriginalTypes;
 
         /// <summary>
         /// A mapped slice of the run levels for the isolating run currently
         /// being processed
         /// </summary>
-        private MappedBuffer<sbyte> runLevels;
+        private MappedArraySlice<sbyte> runLevels;
 
         /// <summary>
         /// A mapped slice of the paired bracket types of the isolating
         /// run currently being processed
         /// </summary>
-        private MappedBuffer<BidiPairedBracketType> runBidiPairedBracketTypes;
+        private MappedArraySlice<BidiPairedBracketType> runBidiPairedBracketTypes;
 
         /// <summary>
         /// A mapped slice of the paired bracket values of the isolating
         /// run currently being processed
         /// </summary>
-        private MappedBuffer<int> runPairedBracketValues;
+        private MappedArraySlice<int> runPairedBracketValues;
 
         /// <summary>
         /// Maximum pairing depth for paired brackets
@@ -175,9 +175,9 @@ namespace SixLabors.Fonts.Unicode
         private readonly List<BracketPair> pairedBrackets = new List<BracketPair>();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Bidi"/> class.
+        /// Initializes a new instance of the <see cref="BidiAlgorithm"/> class.
         /// </summary>
-        public Bidi()
+        public BidiAlgorithm()
         {
         }
 
@@ -185,12 +185,12 @@ namespace SixLabors.Fonts.Unicode
         /// Gets a per-thread instance that can be re-used as often
         /// as necessary.
         /// </summary>
-        public static ThreadLocal<Bidi> Instance { get; } = new ThreadLocal<Bidi>(() => new Bidi());
+        public static ThreadLocal<BidiAlgorithm> Instance { get; } = new ThreadLocal<BidiAlgorithm>(() => new BidiAlgorithm());
 
         /// <summary>
         /// Gets the resolved levels.
         /// </summary>
-        public BufferSlice<sbyte> ResolvedLevels { get; private set; }
+        public ArraySlice<sbyte> ResolvedLevels { get; private set; }
 
         /// <summary>
         /// Gets the resolved paragraph embedding level
@@ -216,14 +216,14 @@ namespace SixLabors.Fonts.Unicode
         /// Processes Bidi Data
         /// </summary>
         public void Process(
-            BufferSlice<BidiCharacterType> types,
-            BufferSlice<BidiPairedBracketType> pairedBracketTypes,
-            BufferSlice<int> pairedBracketValues,
+            ArraySlice<BidiCharacterType> types,
+            ArraySlice<BidiPairedBracketType> pairedBracketTypes,
+            ArraySlice<int> pairedBracketValues,
             sbyte paragraphEmbeddingLevel,
             bool? hasBrackets,
             bool? hasEmbeddings,
             bool? hasIsolates,
-            BufferSlice<sbyte>? outLevels)
+            ArraySlice<sbyte>? outLevels)
         {
             // Reset state
             this.isolatePairs.Clear();
@@ -295,7 +295,7 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="data">The data to be evaluated</param>
         /// <returns>The resolved embedding level</returns>
-        public sbyte ResolveEmbeddingLevel(BufferSlice<BidiCharacterType> data)
+        public sbyte ResolveEmbeddingLevel(ArraySlice<BidiCharacterType> data)
         {
             // P2
             for (int i = 0; i < data.Length; ++i)
@@ -820,13 +820,13 @@ namespace SixLabors.Fonts.Unicode
         private void ProcessIsolatedRunSequence(BidiCharacterType sos, BidiCharacterType eos, int runLevel)
         {
             // Create mappings onto the underlying data
-            this.runResolvedTypes = new MappedBuffer<BidiCharacterType>(this.workingTypes, this.isolatedRunMapping.AsSlice());
-            this.runOriginalTypes = new MappedBuffer<BidiCharacterType>(this.originalTypes, this.isolatedRunMapping.AsSlice());
-            this.runLevels = new MappedBuffer<sbyte>(this.ResolvedLevels, this.isolatedRunMapping.AsSlice());
+            this.runResolvedTypes = new MappedArraySlice<BidiCharacterType>(this.workingTypes, this.isolatedRunMapping.AsSlice());
+            this.runOriginalTypes = new MappedArraySlice<BidiCharacterType>(this.originalTypes, this.isolatedRunMapping.AsSlice());
+            this.runLevels = new MappedArraySlice<sbyte>(this.ResolvedLevels, this.isolatedRunMapping.AsSlice());
             if (this.hasBrackets)
             {
-                this.runBidiPairedBracketTypes = new MappedBuffer<BidiPairedBracketType>(this.pairedBracketTypes, this.isolatedRunMapping.AsSlice());
-                this.runPairedBracketValues = new MappedBuffer<int>(this.pairedBracketValues, this.isolatedRunMapping.AsSlice());
+                this.runBidiPairedBracketTypes = new MappedArraySlice<BidiPairedBracketType>(this.pairedBracketTypes, this.isolatedRunMapping.AsSlice());
+                this.runPairedBracketValues = new MappedArraySlice<int>(this.pairedBracketValues, this.isolatedRunMapping.AsSlice());
             }
 
             this.runLevel = runLevel;

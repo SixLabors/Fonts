@@ -7,11 +7,10 @@ using System.Runtime.CompilerServices;
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
-    /// A data buffer of <typeparamref name="T"/> that can be expanded to allow
-    /// for the addition of new data.
+    /// A helper type for avoiding allocations while building arrays.
     /// </summary>
-    /// <typeparam name="T">The type of item contained in the buffer.</typeparam>
-    internal struct ExpandableBuffer<T>
+    /// <typeparam name="T">The type of item contained in the array.</typeparam>
+    internal struct ArrayBuilder<T>
         where T : struct
     {
         private const int DefaultCapacity = 4;
@@ -22,10 +21,10 @@ namespace SixLabors.Fonts.Unicode
         private int size;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExpandableBuffer{T}"/> struct.
+        /// Initializes a new instance of the <see cref="ArrayBuilder{T}"/> struct.
         /// </summary>
-        /// <param name="capacity">The intitial capacity of the buffer.</param>
-        public ExpandableBuffer(int capacity)
+        /// <param name="capacity">The intitial capacity of the array.</param>
+        public ArrayBuilder(int capacity)
             : this()
         {
             Guard.MustBeGreaterThanOrEqualTo(capacity, 0, nameof(capacity));
@@ -35,7 +34,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Gets or sets the number of items in the buffer.
+        /// Gets or sets the number of items in the array.
         /// </summary>
         public int Length
         {
@@ -59,7 +58,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Returns a reference to specified element of the buffer.
+        /// Returns a reference to specified element of the array.
         /// </summary>
         /// <param name="index">The index of the element to return.</param>
         /// <returns>The <typeparamref name="T"/>.</returns>
@@ -85,20 +84,20 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Appends a given number of empty items to the buffer returning
+        /// Appends a given number of empty items to the array returning
         /// the items as a slice.
         /// </summary>
         /// <param name="length">The number of items in the slice.</param>
         /// <param name="clear">Whether to clear the new slice, Defaults to <see langword="true"/>.</param>
-        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
-        public BufferSlice<T> Add(int length, bool clear = true)
+        /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
+        public ArraySlice<T> Add(int length, bool clear = true)
         {
             int position = this.size;
 
-            // Expand the buffer.
+            // Expand the array.
             this.Length += length;
 
-            BufferSlice<T> slice = this.Slice(position, this.Length - position);
+            ArraySlice<T> slice = this.Slice(position, this.Length - position);
             if (clear)
             {
                 slice.Span.Clear();
@@ -108,25 +107,25 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Appends the slice to the buffer copying the data across.
+        /// Appends the slice to the array copying the data across.
         /// </summary>
-        /// <param name="value">The buffer slice.</param>
-        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
-        public BufferSlice<T> Add(in BufferSlice<T> value)
+        /// <param name="value">The array slice.</param>
+        /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
+        public ArraySlice<T> Add(in ArraySlice<T> value)
         {
             int position = this.size;
 
-            // Expand the buffer.
+            // Expand the array.
             this.Length += value.Length;
 
-            BufferSlice<T> slice = this.Slice(position, this.Length - position);
+            ArraySlice<T> slice = this.Slice(position, this.Length - position);
             value.CopyTo(slice);
 
             return slice;
         }
 
         /// <summary>
-        /// Clears the buffer.
+        /// Clears the array.
         /// Allocated memory is left intact for future usage.
         /// </summary>
         public void Clear() =>
@@ -151,41 +150,41 @@ namespace SixLabors.Fonts.Unicode
                     newCapacity = (uint)min;
                 }
 
-                var buffer = new T[newCapacity];
+                var array = new T[newCapacity];
 
                 if (this.size > 0)
                 {
-                    Array.Copy(this.data, buffer, this.size);
+                    Array.Copy(this.data, array, this.size);
                 }
 
-                this.data = buffer;
+                this.data = array;
             }
         }
 
         /// <summary>
-        /// Returns the current state of the buffer as a slice.
+        /// Returns the current state of the array as a slice.
         /// </summary>
-        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
+        /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BufferSlice<T> AsSlice() => this.Slice(this.Length);
+        public ArraySlice<T> AsSlice() => this.Slice(this.Length);
 
         /// <summary>
-        /// Returns the current state of the buffer as a slice.
+        /// Returns the current state of the array as a slice.
         /// </summary>
         /// <param name="length">The number of items in the slice.</param>
-        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
+        /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BufferSlice<T> Slice(int length)
-            => new BufferSlice<T>(this.data!, 0, length);
+        public ArraySlice<T> Slice(int length)
+            => new ArraySlice<T>(this.data!, 0, length);
 
         /// <summary>
-        /// Returns the current state of the buffer as a slice.
+        /// Returns the current state of the array as a slice.
         /// </summary>
         /// <param name="start">The index at which to begin the slice.</param>
         /// <param name="length">The number of items in the slice.</param>
-        /// <returns>The <see cref="BufferSlice{T}"/>.</returns>
+        /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BufferSlice<T> Slice(int start, int length)
-            => new BufferSlice<T>(this.data!, start, length);
+        public ArraySlice<T> Slice(int start, int length)
+            => new ArraySlice<T>(this.data!, start, length);
     }
 }

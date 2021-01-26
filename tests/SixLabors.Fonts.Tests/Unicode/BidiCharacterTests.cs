@@ -65,7 +65,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
             this.output.WriteLine($"Test data loaded: {tests.Count} test cases");
 
-            var bidi = new Bidi();
+            var bidi = new BidiAlgorithm();
             var bidiData = new BidiData();
 
             // Run tests...
@@ -74,7 +74,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                 Test t = tests[testNumber];
 
                 // Arrange
-                bidiData.Init(new BufferSlice<int>(t.CodePoints), t.ParagraphLevel);
+                bidiData.Init(new ArraySlice<int>(t.CodePoints), t.ParagraphLevel);
 
                 // Act
                 for (int i = 0; i < 10; i++)
@@ -82,7 +82,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                     bidi.Process(bidiData);
                 }
 
-                BufferSlice<sbyte> resultLevels = bidi.ResolvedLevels;
+                ArraySlice<sbyte> resultLevels = bidi.ResolvedLevels;
                 int resultParagraphLevel = bidi.ResolvedParagraphEmbeddingLevel;
 
                 // Assert

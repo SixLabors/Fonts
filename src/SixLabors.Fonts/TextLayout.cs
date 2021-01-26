@@ -57,14 +57,14 @@ namespace SixLabors.Fonts
             }
 
             // lets convert the text into codepoints
-            Memory<int> codePointsMemory = LineBreaker.ToUtf32(text);
+            Memory<int> codePointsMemory = LineBreakAlgorithm.ToUtf32(text);
             if (codePointsMemory.IsEmpty)
             {
                 return Array.Empty<GlyphLayout>();
             }
 
             Span<int> codepoints = codePointsMemory.Span;
-            var lineBreaker = new LineBreaker();
+            var lineBreaker = new LineBreakAlgorithm();
             lineBreaker.Reset(codePointsMemory);
 
             AppliedFontStyle spanStyle = options.GetStyle(0, codepoints.Length);

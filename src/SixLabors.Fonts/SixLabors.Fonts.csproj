@@ -17,11 +17,13 @@
 
   <ItemGroup>
     <None Remove="Unicode\Resources\Bidi.trie" />
+    <None Remove="Unicode\Resources\Grapheme.trie" />
     <None Remove="Unicode\Resources\LineBreak.trie" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Unicode\Resources\Bidi.trie" />
+    <EmbeddedResource Include="Unicode\Resources\Grapheme.trie" />
     <EmbeddedResource Include="Unicode\Resources\LineBreak.trie" />
   </ItemGroup>
 
@@ -41,6 +43,10 @@
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
     <PackageReference Include="System.Buffers" Version="4.5.1" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Resource Include="Unicode\Resources\Grapheme.trie" />
   </ItemGroup>
 
   <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />

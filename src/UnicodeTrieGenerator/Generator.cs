@@ -36,6 +36,7 @@ namespace UnicodeTrieGenerator
             ProcessUnicodeData();
             GenerateBidiBracketsTrie();
             GenerateLineBreakTrie();
+            GenerateGraphemeBreakTrie();
         }
 
         private static void ProcessUnicodeData()
@@ -54,6 +55,69 @@ namespace UnicodeTrieGenerator
                     Bidi[codePoint] = (int)cls << 24;
                 }
             }
+        }
+
+        /// <summary>
+        /// Generates the UnicodeTrie for the Grapheme cluster breaks code points.
+        /// </summary>
+        public static void GenerateGraphemeBreakTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+            var builder = new UnicodeTrieBuilder((uint)GraphemeClusterClass.Any);
+
+            using (StreamReader sr = GetStreamReader("GraphemeBreakProperty.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        var start = match.Groups[1].Value;
+                        var end = match.Groups[2].Value;
+                        var point = match.Groups[3].Value;
+
+                        if (end?.Length == 0)
+                        {
+                            end = start;
+                        }
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)Enum.Parse<GraphemeClusterClass>(point), true);
+                    }
+                }
+            }
+
+            using (StreamReader sr = GetStreamReader("emoji-data.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        var start = match.Groups[1].Value;
+                        var end = match.Groups[2].Value;
+                        var prop = match.Groups[3].Value;
+
+                        if (end?.Length == 0)
+                        {
+                            end = start;
+                        }
+
+                        if (prop == "Extended_Pictographic")
+                        {
+                            builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)GraphemeClusterClass.ExtPict, true);
+                        }
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+
+            using FileStream stream = GetStreamWriter("Grapheme.trie");
+            trie.Save(stream);
         }
 
         /// <summary>

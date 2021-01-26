@@ -1,4 +1,4 @@
-UnicodeTrieBuilder and acompanying classes ported from the following sources:
+UnicodeTrieBuilder and accompanying classes ported from the following sources:
 
 https://github.com/unicode-org/icu ICU License (Permissive)
 https://github.com/toptensoftware/RichTextKit Apache 2.0

@@ -6,22 +6,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Unicode;
-using SixLabors.Fonts.Unicode.Resources;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace SixLabors.Fonts.Tests.Unicode
 {
-    public class LineBreakerTests
+    public class LineBreakAlgorithmTests
     {
         private readonly ITestOutputHelper output;
 
-        public LineBreakerTests(ITestOutputHelper output) => this.output = output;
+        public LineBreakAlgorithmTests(ITestOutputHelper output) => this.output = output;
 
         [Fact]
         public void BasicLatinTest()
         {
-            var lineBreaker = new LineBreaker();
+            var lineBreaker = new LineBreakAlgorithm();
             lineBreaker.Reset("Hello World\r\nThis is a test.");
 
             Assert.True(lineBreaker.TryGetNextBreak(out LineBreak b));
@@ -54,7 +53,7 @@ namespace SixLabors.Fonts.Tests.Unicode
         [Fact]
         public void ForwardTextWithOuterWhitespace()
         {
-            var lineBreaker = new LineBreaker();
+            var lineBreaker = new LineBreakAlgorithm();
             lineBreaker.Reset(" Apples Pears Bananas   ");
             var positionsF = lineBreaker.GetBreaks().ToList();
             Assert.Equal(1, positionsF[0].PositionWrap);
@@ -70,7 +69,7 @@ namespace SixLabors.Fonts.Tests.Unicode
         [Fact]
         public void ForwardTest()
         {
-            var lineBreaker = new LineBreaker();
+            var lineBreaker = new LineBreakAlgorithm();
 
             lineBreaker.Reset("Apples Pears Bananas");
             var positionsF = lineBreaker.GetBreaks().ToList();
@@ -157,7 +156,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                 tests.Add(test);
             }
 
-            var lineBreaker = new LineBreaker();
+            var lineBreaker = new LineBreakAlgorithm();
             var foundBreaks = new List<int>();
 
             for (int testNumber = 0; testNumber < tests.Count; testNumber++)
@@ -192,7 +191,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
                 if (!pass)
                 {
-                    LineBreakClass[] classes = t.CodePoints.Select(x => (LineBreakClass)UnicodeResources.LineBreakTrie.Get(x)).ToArray();
+                    LineBreakClass[] classes = t.CodePoints.Select(x => UnicodeData.GetLineBreakClass(x)).ToArray();
 
                     this.output.WriteLine($"Failed test on line {t.LineNumber}");
                     this.output.WriteLine($"    Code Points: {string.Join(" ", t.CodePoints)}");

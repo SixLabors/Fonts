@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using SixLabors.Fonts.Unicode.Resources;
 
 namespace SixLabors.Fonts.Unicode
 {
@@ -12,7 +11,7 @@ namespace SixLabors.Fonts.Unicode
     /// Implementation of the Unicode Line Break Algorithm. UAX:14
     /// <see href="https://www.unicode.org/reports/tr14/tr14-37.html"/>
     /// </summary>
-    internal class LineBreaker
+    internal class LineBreakAlgorithm
     {
         private Memory<int> codePoints = Array.Empty<int>();
         private bool first = true;
@@ -103,7 +102,7 @@ namespace SixLabors.Fonts.Unicode
 
         // Get the next character class
         private LineBreakClass NextCharClass()
-            => this.MapClass(GetLineBreakClass(this.codePoints.Span[this.position++]));
+            => this.MapClass(UnicodeData.GetLineBreakClass(this.codePoints.Span[this.position++]));
 
         private bool? GetSimpleBreak()
         {
@@ -272,14 +271,14 @@ namespace SixLabors.Fonts.Unicode
         {
             for (int i = 0; i < this.codePoints.Span.Length; i++)
             {
-                switch (GetLineBreakClass(this.codePoints.Span[i]))
+                switch (UnicodeData.GetLineBreakClass(this.codePoints.Span[i]))
                 {
                     case LineBreakClass.BK:
                         yield return new LineBreak(i, i + 1, true);
                         break;
 
                     case LineBreakClass.CR:
-                        if (i + 1 < this.codePoints.Length && GetLineBreakClass(this.codePoints.Span[i + 1]) == LineBreakClass.LF)
+                        if (i + 1 < this.codePoints.Length && UnicodeData.GetLineBreakClass(this.codePoints.Span[i + 1]) == LineBreakClass.LF)
                         {
                             yield return new LineBreak(i, i + 2, true);
                         }
@@ -302,7 +301,7 @@ namespace SixLabors.Fonts.Unicode
             Span<int> codePointSpan = this.codePoints.Span;
             if (from > 0)
             {
-                LineBreakClass cls = GetLineBreakClass(codePointSpan[from - 1]);
+                LineBreakClass cls = UnicodeData.GetLineBreakClass(codePointSpan[from - 1]);
                 if (cls == LineBreakClass.BK || cls == LineBreakClass.LF || cls == LineBreakClass.CR)
                 {
                     from--;
@@ -311,7 +310,7 @@ namespace SixLabors.Fonts.Unicode
 
             while (from > 0)
             {
-                LineBreakClass cls = GetLineBreakClass(codePointSpan[from - 1]);
+                LineBreakClass cls = UnicodeData.GetLineBreakClass(codePointSpan[from - 1]);
                 if (cls == LineBreakClass.SP)
                 {
                     from--;
@@ -324,9 +323,6 @@ namespace SixLabors.Fonts.Unicode
 
             return from;
         }
-
-        private static LineBreakClass GetLineBreakClass(int codePoint)
-            => (LineBreakClass)UnicodeResources.LineBreakTrie.Get(codePoint);
 
         public static Memory<int> ToUtf32(ReadOnlySpan<char> text)
         {

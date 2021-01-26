@@ -9,33 +9,33 @@ using System.Runtime.CompilerServices;
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
-    /// BufferSlice represents a contiguous region of arbitrary memory similar
+    /// ArraySlice represents a contiguous region of arbitrary memory similar
     /// to <see cref="Memory{T}"/> and <see cref="Span{T}"/> though constrained
-    /// to simple array handling.
+    /// to arrays.
     /// Unlike <see cref="Span{T}"/>, it is not a byref-like type.
     /// </summary>
     /// <typeparam name="T">The type of item contained in the slice.</typeparam>
-    internal readonly struct BufferSlice<T> : IEnumerable<T>, IEnumerable
+    internal readonly struct ArraySlice<T> : IEnumerable<T>, IEnumerable
         where T : struct
     {
         private readonly T[] data;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BufferSlice{T}"/> struct.
+        /// Initializes a new instance of the <see cref="ArraySlice{T}"/> struct.
         /// </summary>
         /// <param name="data">The underlying data buffer.</param>
-        public BufferSlice(T[] data)
+        public ArraySlice(T[] data)
             : this(data, 0, data.Length)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BufferSlice{T}"/> struct.
+        /// Initializes a new instance of the <see cref="ArraySlice{T}"/> struct.
         /// </summary>
         /// <param name="data">The underlying data buffer.</param>
         /// <param name="start">The offset position in the underlying buffer this slice was created from.</param>
         /// <param name="length">The number of items in the slice.</param>
-        public BufferSlice(T[] data, int start, int length)
+        public ArraySlice(T[] data, int start, int length)
         {
             DebugGuard.MustBeGreaterThanOrEqualTo(start, 0, nameof(start));
             DebugGuard.MustBeLessThanOrEqualTo(length, data.Length, nameof(length));
@@ -47,9 +47,9 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Gets an empty <see cref="BufferSlice{T}"/>
+        /// Gets an empty <see cref="ArraySlice{T}"/>
         /// </summary>
-        public static BufferSlice<T> Empty => new BufferSlice<T>(new T[0]);
+        public static ArraySlice<T> Empty => new ArraySlice<T>(new T[0]);
 
         /// <summary>
         /// Gets the offset position in the underlying buffer this slice was created from.
@@ -94,10 +94,10 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Defines an implicit conversion of an array to a <see cref="BufferSlice{T}"/>
+        /// Defines an implicit conversion of an array to a <see cref="ArraySlice{T}"/>
         /// </summary>
-        public static implicit operator BufferSlice<T>(T[] array)
-            => new BufferSlice<T>(array, 0, array.Length);
+        public static implicit operator ArraySlice<T>(T[] array)
+            => new ArraySlice<T>(array, 0, array.Length);
 
         /// <summary>
         /// Copies the contents of this slice into destination span. If the source
@@ -108,7 +108,7 @@ namespace SixLabors.Fonts.Unicode
         /// <exception cref="ArgumentException">
         /// Thrown when the destination slice is shorter than the source Span.
         /// </exception>
-        public void CopyTo(BufferSlice<T> destination)
+        public void CopyTo(ArraySlice<T> destination)
             => this.Span.CopyTo(destination.Span);
 
         /// <summary>
@@ -124,8 +124,8 @@ namespace SixLabors.Fonts.Unicode
         /// <exception cref="ArgumentOutOfRangeException">
         /// Thrown when the specified <paramref name="start"/> or end index is not in range (&lt;0 or &gt;Length).
         /// </exception>
-        public BufferSlice<T> Slice(int start, int length)
-            => new BufferSlice<T>(this.data, start, length);
+        public ArraySlice<T> Slice(int start, int length)
+            => new ArraySlice<T>(this.data, start, length);
 
         /// <inheritdoc/>
         public IEnumerator<T> GetEnumerator() => new Enumerator(this);
@@ -140,7 +140,7 @@ namespace SixLabors.Fonts.Unicode
             private readonly int end; // cache Start + Length, since it's a little slow
             private int current;
 
-            internal Enumerator(BufferSlice<T> slice)
+            internal Enumerator(ArraySlice<T> slice)
             {
                 DebugGuard.NotNull(slice.data, nameof(slice.data));
                 DebugGuard.MustBeGreaterThanOrEqualTo(slice.Start, 0, nameof(slice.Start));
