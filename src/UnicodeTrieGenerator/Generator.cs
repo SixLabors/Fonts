@@ -23,6 +23,7 @@ namespace UnicodeTrieGenerator
 
         private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new Lazy<string>(GetSolutionDirectoryFullPathImpl);
         private static readonly Dictionary<int, int> Bidi = new Dictionary<int, int>();
+
         private static string SolutionDirectoryFullPath => SolutionDirectoryFullPathLazy.Value;
 
         /// <summary>

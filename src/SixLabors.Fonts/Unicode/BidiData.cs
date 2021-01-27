@@ -152,7 +152,7 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <remarks>
         /// This is used when processing embedded style runs with
-        /// BidiCharacterType overrides.  TextBlock saves the data,
+        /// BidiCharacterType overrides.  TextLayout saves the data,
         /// overrides the style runs to neutral, processes the bidi
         /// data for the entire paragraph and then restores this data
         /// before processing the embedded runs.
@@ -178,7 +178,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Gets a temporary level buffer.  Used by TextBlock when
+        /// Gets a temporary level buffer. Used by TextLayout when
         /// resolving style runs with different BidiCharacterType.
         /// </summary>
         /// <param name="length">Length of the required ExpandableBuffer</param>
