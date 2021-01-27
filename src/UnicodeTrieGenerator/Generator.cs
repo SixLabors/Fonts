@@ -18,14 +18,11 @@ namespace UnicodeTrieGenerator
     public static class Generator
     {
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
-
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
 
         private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new Lazy<string>(GetSolutionDirectoryFullPathImpl);
-
         private static readonly Dictionary<int, int> Bidi = new Dictionary<int, int>();
-
         private static string SolutionDirectoryFullPath => SolutionDirectoryFullPathLazy.Value;
 
         /// <summary>

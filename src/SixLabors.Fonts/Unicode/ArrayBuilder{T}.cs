@@ -71,15 +71,7 @@ namespace SixLabors.Fonts.Unicode
             get
             {
                 DebugGuard.MustBeBetweenOrEqualTo(index, 0, this.size, nameof(index));
-                if ((uint)index < (uint)this.data!.Length)
-                {
-                    return ref this.data[index];
-                }
-
-                unsafe
-                {
-                    return ref Unsafe.AsRef<T>(null);
-                }
+                return ref this.data![index];
             }
         }
 
