@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using SixLabors.Fonts.Unicode;
 using Xunit;
 using Xunit.Abstractions;
@@ -73,8 +75,10 @@ namespace SixLabors.Fonts.Tests.Unicode
             {
                 Test t = tests[testNumber];
 
+                var text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
+
                 // Arrange
-                bidiData.Init(new ArraySlice<int>(t.CodePoints), t.ParagraphLevel);
+                bidiData.Init(text, t.ParagraphLevel);
 
                 // Act
                 for (int i = 0; i < 10; i++)
@@ -82,7 +86,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                     bidi.Process(bidiData);
                 }
 
-                ArraySlice<sbyte> resultLevels = bidi.ResolvedLevels;
+                ReadOnlyArraySlice<sbyte> resultLevels = bidi.ResolvedLevels;
                 int resultParagraphLevel = bidi.ResolvedParagraphEmbeddingLevel;
 
                 // Assert

@@ -14,15 +14,15 @@ namespace SixLabors.Fonts.Unicode
     internal readonly struct MappedArraySlice<T>
         where T : struct
     {
-        private readonly ArraySlice<T> data;
-        private readonly ArraySlice<int> map;
+        private readonly ReadOnlyArraySlice<T> data;
+        private readonly ReadOnlyArraySlice<int> map;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MappedArraySlice{T}"/> struct.
         /// </summary>
         /// <param name="data">The data slice.</param>
         /// <param name="map">The map slice.</param>
-        public MappedArraySlice(in ArraySlice<T> data, in ArraySlice<int> map)
+        public MappedArraySlice(in ReadOnlyArraySlice<T> data, in ReadOnlyArraySlice<int> map)
         {
             Guard.MustBeGreaterThanOrEqualTo(data.Length, map.Length, nameof(map));
 
@@ -43,7 +43,7 @@ namespace SixLabors.Fonts.Unicode
         /// <exception cref="IndexOutOfRangeException">
         /// Thrown when index less than 0 or index greater than or equal to <see cref="Length"/>.
         /// </exception>
-        public ref T this[int index]
+        public readonly ref T this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => ref this.data[this.map[index]];

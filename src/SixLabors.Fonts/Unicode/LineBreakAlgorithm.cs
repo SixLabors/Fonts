@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Unicode
     /// </summary>
     internal class LineBreakAlgorithm
     {
-        private Memory<int> codePoints = Array.Empty<int>();
+        private ReadOnlyMemory<int> codePoints = Array.Empty<int>();
         private bool first = true;
         private int position;
         private int lastPosition;
@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Unicode
         /// Reset this line breaker.
         /// </summary>
         /// <param name="codePoints">The code points of the string to be broken.</param>
-        public void Reset(Memory<int> codePoints)
+        public void Reset(ReadOnlyMemory<int> codePoints)
         {
             this.codePoints = codePoints;
             this.first = true;
@@ -298,7 +298,7 @@ namespace SixLabors.Fonts.Unicode
 
         private int FindPriorNonWhitespace(int from)
         {
-            Span<int> codePointSpan = this.codePoints.Span;
+            ReadOnlySpan<int> codePointSpan = this.codePoints.Span;
             if (from > 0)
             {
                 LineBreakClass cls = UnicodeData.GetLineBreakClass(codePointSpan[from - 1]);

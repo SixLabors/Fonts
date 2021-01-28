@@ -17,6 +17,41 @@ namespace UnicodeTrieGenerator
     /// </summary>
     public static class Generator
     {
+        private static readonly Dictionary<string, UnicodeCategory> UnicodeCategoryMap
+            = new Dictionary<string, UnicodeCategory>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Lu", UnicodeCategory.UppercaseLetter },
+            { "Ll", UnicodeCategory.LowercaseLetter },
+            { "Lt", UnicodeCategory.TitlecaseLetter },
+            { "Lm", UnicodeCategory.ModifierLetter },
+            { "Lo", UnicodeCategory.OtherLetter },
+            { "Mn", UnicodeCategory.NonSpacingMark },
+            { "Mc", UnicodeCategory.SpacingCombiningMark },
+            { "Me", UnicodeCategory.EnclosingMark },
+            { "Nd", UnicodeCategory.DecimalDigitNumber },
+            { "Nl", UnicodeCategory.LetterNumber },
+            { "No", UnicodeCategory.OtherNumber },
+            { "Zs", UnicodeCategory.SpaceSeparator },
+            { "Zl", UnicodeCategory.LineSeparator },
+            { "Zp", UnicodeCategory.ParagraphSeparator },
+            { "Cc", UnicodeCategory.Control },
+            { "Cf", UnicodeCategory.Format },
+            { "Cs", UnicodeCategory.Surrogate },
+            { "Co", UnicodeCategory.PrivateUse },
+            { "Pc", UnicodeCategory.ConnectorPunctuation },
+            { "Pd", UnicodeCategory.DashPunctuation },
+            { "Ps", UnicodeCategory.OpenPunctuation },
+            { "Pe", UnicodeCategory.ClosePunctuation },
+            { "Pi", UnicodeCategory.InitialQuotePunctuation },
+            { "Pf", UnicodeCategory.FinalQuotePunctuation },
+            { "Po", UnicodeCategory.OtherPunctuation },
+            { "Sm", UnicodeCategory.MathSymbol },
+            { "Sc", UnicodeCategory.CurrencySymbol },
+            { "Sk", UnicodeCategory.ModifierSymbol },
+            { "So", UnicodeCategory.OtherSymbol },
+            { "Cn", UnicodeCategory.OtherNotAssigned }
+        };
+
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
@@ -34,6 +69,7 @@ namespace UnicodeTrieGenerator
             ProcessUnicodeData();
             GenerateBidiBracketsTrie();
             GenerateLineBreakTrie();
+            GenerateUnicodeCategoryTrie();
             GenerateGraphemeBreakTrie();
         }
 
@@ -191,6 +227,43 @@ namespace UnicodeTrieGenerator
             UnicodeTrie trie = builder.Freeze();
 
             using FileStream stream = GetStreamWriter("LineBreak.trie");
+            trie.Save(stream);
+        }
+
+        /// <summary>
+        /// Generates the UnicodeTrie for the general category code point ranges.
+        /// </summary>
+        private static void GenerateUnicodeCategoryTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+            var builder = new UnicodeTrieBuilder((uint)UnicodeCategory.OtherNotAssigned);
+
+            using (StreamReader sr = GetStreamReader("DerivedGeneralCategory.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        var start = match.Groups[1].Value;
+                        var end = match.Groups[2].Value;
+                        var point = match.Groups[3].Value;
+
+                        if (end?.Length == 0)
+                        {
+                            end = start;
+                        }
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)UnicodeCategoryMap[point], true);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+
+            using FileStream stream = GetStreamWriter("UnicodeCategory.trie");
             trie.Save(stream);
         }
 

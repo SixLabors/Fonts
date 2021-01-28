@@ -19,12 +19,14 @@
     <None Remove="Unicode\Resources\Bidi.trie" />
     <None Remove="Unicode\Resources\Grapheme.trie" />
     <None Remove="Unicode\Resources\LineBreak.trie" />
+    <None Remove="Unicode\Resources\UnicodeCategory.trie" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Unicode\Resources\Bidi.trie" />
     <EmbeddedResource Include="Unicode\Resources\Grapheme.trie" />
     <EmbeddedResource Include="Unicode\Resources\LineBreak.trie" />
+    <EmbeddedResource Include="Unicode\Resources\UnicodeCategory.trie" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,6 +49,7 @@
   
   <ItemGroup>
     <Resource Include="Unicode\Resources\Grapheme.trie" />
+    <Resource Include="Unicode\Resources\UnicodeCategory.trie" />
   </ItemGroup>
 
   <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />

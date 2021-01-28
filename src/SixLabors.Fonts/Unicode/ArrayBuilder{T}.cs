@@ -76,6 +76,19 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
+        /// Adds the given item to the array.
+        /// </summary>
+        /// <param name="item">The item to add.</param>
+        public void Add(T item)
+        {
+            int position = this.size;
+
+            // Expand the array.
+            this.Length++;
+            this.data![position] = item;
+        }
+
+        /// <summary>
         /// Appends a given number of empty items to the array returning
         /// the items as a slice.
         /// </summary>
@@ -89,7 +102,7 @@ namespace SixLabors.Fonts.Unicode
             // Expand the array.
             this.Length += length;
 
-            ArraySlice<T> slice = this.Slice(position, this.Length - position);
+            ArraySlice<T> slice = this.AsSlice(position, this.Length - position);
             if (clear)
             {
                 slice.Span.Clear();
@@ -103,14 +116,14 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="value">The array slice.</param>
         /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
-        public ArraySlice<T> Add(in ArraySlice<T> value)
+        public ArraySlice<T> Add(in ReadOnlyArraySlice<T> value)
         {
             int position = this.size;
 
             // Expand the array.
             this.Length += value.Length;
 
-            ArraySlice<T> slice = this.Slice(position, this.Length - position);
+            ArraySlice<T> slice = this.AsSlice(position, this.Length - position);
             value.CopyTo(slice);
 
             return slice;
@@ -158,7 +171,7 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ArraySlice<T> AsSlice() => this.Slice(this.Length);
+        public ArraySlice<T> AsSlice() => this.AsSlice(this.Length);
 
         /// <summary>
         /// Returns the current state of the array as a slice.
@@ -166,7 +179,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="length">The number of items in the slice.</param>
         /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ArraySlice<T> Slice(int length)
+        public ArraySlice<T> AsSlice(int length)
             => new ArraySlice<T>(this.data!, 0, length);
 
         /// <summary>
@@ -176,7 +189,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="length">The number of items in the slice.</param>
         /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ArraySlice<T> Slice(int start, int length)
+        public ArraySlice<T> AsSlice(int start, int length)
             => new ArraySlice<T>(this.data!, start, length);
     }
 }

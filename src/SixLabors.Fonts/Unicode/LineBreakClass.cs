@@ -10,51 +10,219 @@ namespace SixLabors.Fonts.Unicode
     /// </summary>
     internal enum LineBreakClass : uint
     {
-        // The following break classes are handled by the pair table.
+        /// <summary>
+        /// Open punctuation
+        /// </summary>
         OP = 0,
-        CL = 1,   // Closing punctuation
-        CP = 2,   // Closing parenthesis
-        QU = 3,   // Ambiguous quotation
-        GL = 4,   // Glue
-        NS = 5,   // Non-starters
-        EX = 6,   // Exclamation/Interrogation
-        SY = 7,   // Symbols allowing break after
-        IS = 8,   // Infix separator
-        PR = 9,   // Prefix
-        PO = 10,  // Postfix
-        NU = 11,  // Numeric
-        AL = 12,  // Alphabetic
-        HL = 13,  // Hebrew Letter
-        ID = 14,  // Ideographic
-        IN = 15,  // Inseparable characters
-        HY = 16,  // Hyphen
-        BA = 17,  // Break after
-        BB = 18,  // Break before
-        B2 = 19,  // Break on either side (but not pair)
-        ZW = 20,  // Zero-width space
-        CM = 21,  // Combining marks
-        WJ = 22,  // Word joiner
-        H2 = 23,  // Hangul LV
-        H3 = 24,  // Hangul LVT
-        JL = 25,  // Hangul L Jamo
-        JV = 26,  // Hangul V Jamo
-        JT = 27,  // Hangul T Jamo
-        RI = 28,  // Regional Indicator
-        EB = 29,  // Emoji Base
-        EM = 30,  // Emoji Modifier
-        ZWJ = 31, // Zero Width Joiner
-        CB = 32,  // Contingent break
 
-        // The following break classes are not handled by the pair table
-        AI = 33,  // Ambiguous (Alphabetic or Ideograph)
-        BK = 34,  // Break (mandatory)
-        CJ = 35,  // Conditional Japanese Starter
-        CR = 36,  // Carriage return
-        LF = 37,  // Line feed
-        NL = 38,  // Next line
-        SA = 39,  // South-East Asian
-        SG = 40,  // Surrogates
-        SP = 41,  // Space
-        XX = 42,  // Unknown
+        /// <summary>
+        /// Closing punctuation
+        /// </summary>
+        CL = 1,
+
+        /// <summary>
+        /// Closing parenthesis
+        /// </summary>
+        CP = 2,
+
+        /// <summary>
+        /// Ambiguous quotation
+        /// </summary>
+        QU = 3,
+
+        /// <summary>
+        /// Glue
+        /// </summary>
+        GL = 4,
+
+        /// <summary>
+        /// Non-starters
+        /// </summary>
+        NS = 5,
+
+        /// <summary>
+        /// Exclamation/Interrogation
+        /// </summary>
+        EX = 6,
+
+        /// <summary>
+        /// Symbols allowing break after
+        /// </summary>
+        SY = 7,
+
+        /// <summary>
+        /// Infix separator
+        /// </summary>
+        IS = 8,
+
+        /// <summary>
+        /// Prefix
+        /// </summary>
+        PR = 9,
+
+        /// <summary>
+        /// Postfix
+        /// </summary>
+        PO = 10,
+
+        /// <summary>
+        /// Numeric
+        /// </summary>
+        NU = 11,
+
+        /// <summary>
+        /// Alphabetic
+        /// </summary>
+        AL = 12,
+
+        /// <summary>
+        /// Hebrew Letter
+        /// </summary>
+        HL = 13,
+
+        /// <summary>
+        /// Ideographic
+        /// </summary>
+        ID = 14,
+
+        /// <summary>
+        /// Inseparable characters
+        /// </summary>
+        IN = 15,
+
+        /// <summary>
+        /// Hyphen
+        /// </summary>
+        HY = 16,
+
+        /// <summary>
+        /// Break after
+        /// </summary>
+        BA = 17,
+
+        /// <summary>
+        /// Break before
+        /// </summary>
+        BB = 18,
+
+        /// <summary>
+        /// Break on either side (but not pair)
+        /// </summary>
+        B2 = 19,
+
+        /// <summary>
+        /// Zero-width space
+        /// </summary>
+        ZW = 20,
+
+        /// <summary>
+        /// Combining marks
+        /// </summary>
+        CM = 21,
+
+        /// <summary>
+        /// Word joiner
+        /// </summary>
+        WJ = 22,
+
+        /// <summary>
+        /// Hangul LV
+        /// </summary>
+        H2 = 23,
+
+        /// <summary>
+        /// Hangul LVT
+        /// </summary>
+        H3 = 24,
+
+        /// <summary>
+        /// Hangul L Jamo
+        /// </summary>
+        JL = 25,
+
+        /// <summary>
+        /// Hangul V Jamo
+        /// </summary>
+        JV = 26,
+
+        /// <summary>
+        /// Hangul T Jamo
+        /// </summary>
+        JT = 27,
+
+        /// <summary>
+        /// Regional Indicator
+        /// </summary>
+        RI = 28,
+
+        /// <summary>
+        /// Emoji Base
+        /// </summary>
+        EB = 29,
+
+        /// <summary>
+        /// Emoji Modifier
+        /// </summary>
+        EM = 30,
+
+        /// <summary>
+        /// Zero Width Joiner
+        /// </summary>
+        ZWJ = 31,
+
+        /// <summary>
+        /// Contingent break
+        /// </summary>
+        CB = 32,
+
+        /// <summary>
+        /// Ambiguous (Alphabetic or Ideograph)
+        /// </summary>
+        AI = 33,
+
+        /// <summary>
+        /// Break (mandatory)
+        /// </summary>
+        BK = 34,
+
+        /// <summary>
+        /// Conditional Japanese Starter
+        /// </summary>
+        CJ = 35,
+
+        /// <summary>
+        /// Carriage return
+        /// </summary>
+        CR = 36,
+
+        /// <summary>
+        /// Line feed
+        /// </summary>
+        LF = 37,
+
+        /// <summary>
+        /// Next line
+        /// </summary>
+        NL = 38,
+
+        /// <summary>
+        /// South-East Asian
+        /// </summary>
+        SA = 39,
+
+        /// <summary>
+        /// Surrogates
+        /// </summary>
+        SG = 40,
+
+        /// <summary>
+        /// Space
+        /// </summary>
+        SP = 41,
+
+        /// <summary>
+        /// Unknown
+        /// </summary>
+        XX = 42,
     }
 }

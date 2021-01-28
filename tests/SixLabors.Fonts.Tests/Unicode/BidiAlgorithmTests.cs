@@ -115,7 +115,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                 Test t = tests[testNumber];
 
                 // Run the algorithm...
-                ArraySlice<sbyte> resultLevels;
+                ReadOnlyArraySlice<sbyte> resultLevels;
 
                 bidi.Process(
                     t.Types,

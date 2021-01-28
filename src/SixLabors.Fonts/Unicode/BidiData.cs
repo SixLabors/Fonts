@@ -36,12 +36,12 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Gets the BidiCharacterType of each code point
         /// </summary>
-        public ArraySlice<BidiCharacterType> Types { get; private set; }
+        public ReadOnlyArraySlice<BidiCharacterType> Types { get; private set; }
 
         /// <summary>
         /// Gets the paired bracket type for each code point
         /// </summary>
-        public ArraySlice<BidiPairedBracketType> PairedBracketTypes { get; private set; }
+        public ReadOnlyArraySlice<BidiPairedBracketType> PairedBracketTypes { get; private set; }
 
         /// <summary>
         /// Gets the paired bracket value for code point
@@ -53,19 +53,20 @@ namespace SixLabors.Fonts.Unicode
         /// matching.  Also, bracket code points are mapped
         /// to their canonical equivalents
         /// </remarks>
-        public ArraySlice<int> PairedBracketValues { get; private set; }
+        public ReadOnlyArraySlice<int> PairedBracketValues { get; private set; }
 
         /// <summary>
-        /// Initialize with an array of Unicode code points
+        /// Initialize with a text value.
         /// </summary>
-        /// <param name="codePoints">The unicode code points to be processed</param>
+        /// <param name="text">The text to process.</param>
         /// <param name="paragraphEmbeddingLevel">The paragraph embedding level</param>
-        public void Init(ArraySlice<int> codePoints, sbyte paragraphEmbeddingLevel)
+        public void Init(string text, sbyte paragraphEmbeddingLevel)
         {
             // Set working buffer sizes
-            this.types.Length = codePoints.Length;
-            this.pairedBracketTypes.Length = codePoints.Length;
-            this.pairedBracketValues.Length = codePoints.Length;
+            int length = CodePoint.GetCodePointCount(text);
+            this.types.Length = length;
+            this.pairedBracketTypes.Length = length;
+            this.pairedBracketValues.Length = length;
 
             this.paragraphPositions.Clear();
             this.ParagraphEmbeddingLevel = paragraphEmbeddingLevel;
@@ -75,12 +76,16 @@ namespace SixLabors.Fonts.Unicode
             this.HasBrackets = false;
             this.HasEmbeddings = false;
             this.HasIsolates = false;
-            for (int i = 0; i < codePoints.Length; i++)
+
+            int i = 0;
+            int position = 0;
+            while (position < text.Length)
             {
-                var bidiData = UnicodeData.GetBidiData(codePoints[i]);
+                var codePoint = CodePoint.ReadAt(text, position, out int count);
+                BidiType bidi = CodePoint.GetBidiType(codePoint);
 
                 // Look up BidiCharacterType
-                var dir = (BidiCharacterType)(bidiData >> 24);
+                BidiCharacterType dir = bidi.CharacterType;
                 this.types[i] = dir;
 
                 switch (dir)
@@ -102,20 +107,23 @@ namespace SixLabors.Fonts.Unicode
                 }
 
                 // Lookup paired bracket types
-                var pbt = (BidiPairedBracketType)((bidiData >> 16) & 0xFF);
+                BidiPairedBracketType pbt = bidi.PairedBracketType;
                 this.pairedBracketTypes[i] = pbt;
                 switch (pbt)
                 {
                     case BidiPairedBracketType.O:
-                        this.pairedBracketValues[i] = MapCanon((int)(bidiData & 0xFFFF));
+                        this.pairedBracketValues[i] = MapCanon((int)(bidi.Value & 0xFFFF));
                         this.HasBrackets = true;
                         break;
 
                     case BidiPairedBracketType.C:
-                        this.pairedBracketValues[i] = MapCanon(codePoints[i]);
+                        this.pairedBracketValues[i] = MapCanon(codePoint.Value);
                         this.HasBrackets = true;
                         break;
                 }
+
+                i++;
+                position += count;
             }
 
             // Create slices on work buffers
@@ -125,7 +133,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Map bracket types 0x3008 and 0x3009 to their canonical equivalents
+        /// Map bracket types U+3008 and U+3009 to their canonical equivalents.
         /// </summary>
         /// <param name="codePoint">The code point to be mapped</param>
         /// <returns>The mapped canonical code point, or the passed code point</returns>
