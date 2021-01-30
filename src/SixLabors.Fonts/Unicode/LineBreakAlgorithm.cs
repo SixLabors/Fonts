@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SixLabors.Fonts.Unicode
 {
@@ -11,60 +10,98 @@ namespace SixLabors.Fonts.Unicode
     /// Implementation of the Unicode Line Break Algorithm. UAX:14
     /// <see href="https://www.unicode.org/reports/tr14/tr14-37.html"/>
     /// </summary>
-    internal class LineBreakAlgorithm
+    internal ref struct LineBreakAlgorithm
     {
-        private ReadOnlyMemory<int> codePoints = Array.Empty<int>();
-        private bool first = true;
+        private readonly ReadOnlySpan<char> source;
+        private int charPosition;
+        private readonly int pointsLength;
         private int position;
         private int lastPosition;
         private LineBreakClass currentClass;
         private LineBreakClass nextClass;
+        private bool first;
         private bool lb8a;
         private bool lb21a;
         private int lb30a;
 
-        /// <summary>
-        /// Reset this line breaker.
-        /// </summary>
-        /// <param name="value">The string to be broken.</param>
-        public void Reset(string value)
-            => this.Reset(UnicodeUtility.ToUtf32(value.AsSpan()));
-
-        /// <summary>
-        /// Reset this line breaker.
-        /// </summary>
-        /// <param name="codePoints">The code points of the string to be broken.</param>
-        public void Reset(ReadOnlyMemory<int> codePoints)
+        public LineBreakAlgorithm(ReadOnlySpan<char> source)
+            : this()
         {
-            this.codePoints = codePoints;
-            this.first = true;
+            this.source = source;
+            this.pointsLength = CodePoint.GetCodePointCount(source);
+            this.charPosition = 0;
             this.position = 0;
             this.lastPosition = 0;
+            this.currentClass = LineBreakClass.XX;
+            this.nextClass = LineBreakClass.XX;
+            this.first = true;
             this.lb8a = false;
             this.lb21a = false;
             this.lb30a = 0;
+            this.Current = default;
         }
 
+        public LineBreak Current { get; private set; }
+
         /// <summary>
-        /// Enumerates all line breaks returning the result.
+        /// Returns the line break from the current text if one is found.
         /// </summary>
-        /// <returns>The <see cref="List{LineBreak}"/>.</returns>
-        public List<LineBreak> GetBreaks(bool mandatoryOnly = false)
+        /// <param name="lineBreak">
+        /// When this method returns, contains the value associate with the break;
+        /// otherwise, the default value.
+        /// This parameter is passed uninitialized.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public bool TryGetNextBreak(out LineBreak lineBreak)
         {
-            var list = new List<LineBreak>();
-            if (mandatoryOnly)
+            // Get the first char if we're at the beginning of the string.
+            if (this.first)
             {
-                list.AddRange(this.FindMandatoryBreaks());
+                this.first = false;
+                LineBreakClass firstClass = this.NextCharClass();
+                this.currentClass = this.MapFirst(firstClass);
+                this.nextClass = firstClass;
+                this.lb8a = firstClass == LineBreakClass.ZWJ;
+                this.lb30a = 0;
             }
-            else
+
+            while (this.position < this.pointsLength)
             {
-                while (this.TryGetNextBreak(out LineBreak lb))
+                this.lastPosition = this.position;
+                LineBreakClass lastClass = this.nextClass;
+                this.nextClass = this.NextCharClass();
+
+                // explicit newline
+                if ((this.currentClass == LineBreakClass.BK) || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF)))
                 {
-                    list.Add(lb);
+                    this.currentClass = this.MapFirst(this.MapClass(this.nextClass));
+                    lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, true);
+                    return true;
+                }
+
+                bool? shouldBreak = this.GetSimpleBreak() ?? (bool?)this.GetPairTableBreak(lastClass);
+
+                // Rule LB8a
+                this.lb8a = this.nextClass == LineBreakClass.ZWJ;
+
+                if (shouldBreak.Value)
+                {
+                    lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, false);
+                    return true;
                 }
             }
 
-            return list;
+            if (this.lastPosition < this.pointsLength)
+            {
+                this.lastPosition = this.pointsLength;
+                bool required = (this.currentClass == LineBreakClass.BK) || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF));
+                lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.pointsLength), this.lastPosition, required);
+                return true;
+            }
+            else
+            {
+                lineBreak = default;
+                return false;
+            }
         }
 
         private LineBreakClass MapClass(LineBreakClass c)
@@ -103,7 +140,13 @@ namespace SixLabors.Fonts.Unicode
 
         // Get the next character class
         private LineBreakClass NextCharClass()
-            => this.MapClass(CodePoint.GetLineBreakClass(new CodePoint(this.codePoints.Span[this.position++])));
+        {
+            var cp = CodePoint.DecodeFromUtf16At(this.source, this.charPosition, out int count);
+            this.charPosition += count;
+            this.position++;
+
+            return this.MapClass(CodePoint.GetLineBreakClass(cp));
+        }
 
         private bool? GetSimpleBreak()
         {
@@ -198,125 +241,27 @@ namespace SixLabors.Fonts.Unicode
             return shouldBreak;
         }
 
-        /// <summary>
-        /// Returns the line break from the current code points if one is found.
-        /// </summary>
-        /// <param name="lineBreak">
-        /// When this method returns, contains the value associate with the break;
-        /// otherwise, the default value.
-        /// This parameter is passed uninitialized.</param>
-        /// <returns>The <see cref="bool"/>.</returns>
-        public bool TryGetNextBreak(out LineBreak lineBreak)
-        {
-            // get the first char if we're at the beginning of the string
-            if (this.first)
-            {
-                this.first = false;
-                LineBreakClass firstClass = this.NextCharClass();
-                this.currentClass = this.MapFirst(firstClass);
-                this.nextClass = firstClass;
-                this.lb8a = firstClass == LineBreakClass.ZWJ;
-                this.lb30a = 0;
-            }
-
-            while (this.position < this.codePoints.Length)
-            {
-                this.lastPosition = this.position;
-                LineBreakClass lastClass = this.nextClass;
-                this.nextClass = this.NextCharClass();
-
-                // explicit newline
-                if ((this.currentClass == LineBreakClass.BK) || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF)))
-                {
-                    this.currentClass = this.MapFirst(this.MapClass(this.nextClass));
-                    lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, true);
-                    return true;
-                }
-
-                bool? shouldBreak = this.GetSimpleBreak();
-
-                if (!shouldBreak.HasValue)
-                {
-                    shouldBreak = this.GetPairTableBreak(lastClass);
-                }
-
-                // Rule LB8a
-                this.lb8a = this.nextClass == LineBreakClass.ZWJ;
-
-                if (shouldBreak.Value)
-                {
-                    lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, false);
-                    return true;
-                }
-            }
-
-            if (this.lastPosition < this.codePoints.Length)
-            {
-                this.lastPosition = this.codePoints.Length;
-                bool required = (this.currentClass == LineBreakClass.BK) || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF));
-                lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.codePoints.Length), this.lastPosition, required);
-                return true;
-            }
-            else
-            {
-                lineBreak = default;
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Finds all mandatory breaks within the current codepoints.
-        /// </summary>
-        /// <returns>The <see cref="IEnumerable{LineBreak}"/>.</returns>
-        public IEnumerable<LineBreak> FindMandatoryBreaks()
-        {
-            for (int i = 0; i < this.codePoints.Span.Length; i++)
-            {
-                var codePoint = new CodePoint(this.codePoints.Span[i]);
-
-                switch (CodePoint.GetLineBreakClass(codePoint))
-                {
-                    case LineBreakClass.BK:
-                        yield return new LineBreak(i, i + 1, true);
-                        break;
-
-                    case LineBreakClass.CR:
-                        if (i + 1 < this.codePoints.Length && CodePoint.GetLineBreakClass(new CodePoint(this.codePoints.Span[i + 1])) == LineBreakClass.LF)
-                        {
-                            yield return new LineBreak(i, i + 2, true);
-                        }
-                        else
-                        {
-                            yield return new LineBreak(i, i + 1, true);
-                        }
-
-                        break;
-
-                    case LineBreakClass.LF:
-                        yield return new LineBreak(i, i + 1, true);
-                        break;
-                }
-            }
-        }
-
         private int FindPriorNonWhitespace(int from)
         {
-            ReadOnlySpan<int> points = this.codePoints.Span;
             if (from > 0)
             {
-                LineBreakClass cls = CodePoint.GetLineBreakClass(new CodePoint(points[from - 1]));
+                var cp = CodePoint.DecodeFromUtf16At(this.source, from - 1, out int count);
+                LineBreakClass cls = CodePoint.GetLineBreakClass(cp);
+
                 if (cls == LineBreakClass.BK || cls == LineBreakClass.LF || cls == LineBreakClass.CR)
                 {
-                    from--;
+                    from -= count;
                 }
             }
 
             while (from > 0)
             {
-                LineBreakClass cls = CodePoint.GetLineBreakClass(new CodePoint(points[from - 1]));
+                var cp = CodePoint.DecodeFromUtf16At(this.source, from - 1, out int count);
+                LineBreakClass cls = CodePoint.GetLineBreakClass(cp);
+
                 if (cls == LineBreakClass.SP)
                 {
-                    from--;
+                    from -= count;
                 }
                 else
                 {

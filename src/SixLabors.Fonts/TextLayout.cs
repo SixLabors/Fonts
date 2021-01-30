@@ -57,6 +57,7 @@ namespace SixLabors.Fonts
             }
 
             // lets convert the text into codepoints
+            // TODO: This shouldn't be required. We can read the individual code points at an incremental offset.
             Memory<int> codePointsMemory = UnicodeUtility.ToUtf32(text);
             if (codePointsMemory.IsEmpty)
             {
@@ -64,8 +65,7 @@ namespace SixLabors.Fonts
             }
 
             Span<int> codepoints = codePointsMemory.Span;
-            var lineBreaker = new LineBreakAlgorithm();
-            lineBreaker.Reset(codePointsMemory);
+            var lineBreaker = new LineBreakAlgorithm(text);
 
             AppliedFontStyle spanStyle = options.GetStyle(0, codepoints.Length);
             var layout = new List<GlyphLayout>(codepoints.Length);

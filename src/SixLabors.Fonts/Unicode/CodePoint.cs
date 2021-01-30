@@ -120,9 +120,26 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Returns the number of codepoints in a given string.
         /// </summary>
+        /// <param name="source">The source buffer to parse.</param>
+        /// <returns>The <see cref="int"/>.</returns>
+        public static int GetCodePointCount(ReadOnlySpan<char> source)
+        {
+            unsafe
+            {
+                fixed (char* c = source)
+                {
+                    return Encoding.UTF32.GetByteCount(c, source.Length) / sizeof(uint);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns the number of codepoints in a given string.
+        /// </summary>
         /// <param name="text">The text to parse.</param>
         /// <returns>The <see cref="int"/>.</returns>
-        public static int GetCodePointCount(string text) => Encoding.UTF32.GetByteCount(text) / sizeof(uint);
+        public static int GetCodePointCount(string text)
+            => Encoding.UTF32.GetByteCount(text) / sizeof(uint);
 
         /// <summary>
         /// Gets the <see cref="BidiType"/> for the given codepoint.
@@ -173,6 +190,15 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="CodePoint"/>.</returns>
         public static CodePoint ReadAt(string text, int index, out int charsConsumed)
             => DecodeFromUtf16At(text.AsMemory().Span, index, out charsConsumed);
+
+        /// <summary>
+        /// Decodes the <see cref="CodePoint"/> from the provided UTF-16 source buffer at the specified position.
+        /// </summary>
+        /// <param name="source">The buffer to read from.</param>
+        /// <param name="index">The index to read at.</param>
+        /// <returns>The <see cref="CodePoint"/>.</returns>
+        public static CodePoint DecodeFromUtf16At(ReadOnlySpan<char> source, int index)
+            => DecodeFromUtf16At(source, index, out int _);
 
         /// <summary>
         /// Decodes the <see cref="CodePoint"/> from the provided UTF-16 source buffer at the specified position.

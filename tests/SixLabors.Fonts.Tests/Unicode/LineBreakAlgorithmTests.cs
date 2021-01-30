@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using SixLabors.Fonts.Unicode;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,8 +22,7 @@ namespace SixLabors.Fonts.Tests.Unicode
         [Fact]
         public void BasicLatinTest()
         {
-            var lineBreaker = new LineBreakAlgorithm();
-            lineBreaker.Reset("Hello World\r\nThis is a test.");
+            var lineBreaker = new LineBreakAlgorithm("Hello World\r\nThis is a test.".AsSpan());
 
             Assert.True(lineBreaker.TryGetNextBreak(out LineBreak b));
             Assert.Equal(6, b.PositionWrap);
@@ -53,32 +54,41 @@ namespace SixLabors.Fonts.Tests.Unicode
         [Fact]
         public void ForwardTextWithOuterWhitespace()
         {
-            var lineBreaker = new LineBreakAlgorithm();
-            lineBreaker.Reset(" Apples Pears Bananas   ");
-            var positionsF = lineBreaker.GetBreaks().ToList();
-            Assert.Equal(1, positionsF[0].PositionWrap);
-            Assert.Equal(0, positionsF[0].PositionMeasure);
-            Assert.Equal(8, positionsF[1].PositionWrap);
-            Assert.Equal(7, positionsF[1].PositionMeasure);
-            Assert.Equal(14, positionsF[2].PositionWrap);
-            Assert.Equal(13, positionsF[2].PositionMeasure);
-            Assert.Equal(24, positionsF[3].PositionWrap);
-            Assert.Equal(21, positionsF[3].PositionMeasure);
+            var lineBreaker = new LineBreakAlgorithm(" Apples Pears Bananas   ".AsSpan());
+            var breaks = new List<LineBreak>();
+
+            while (lineBreaker.TryGetNextBreak(out LineBreak lineBreak))
+            {
+                breaks.Add(lineBreak);
+            }
+
+            Assert.Equal(1, breaks[0].PositionWrap);
+            Assert.Equal(0, breaks[0].PositionMeasure);
+            Assert.Equal(8, breaks[1].PositionWrap);
+            Assert.Equal(7, breaks[1].PositionMeasure);
+            Assert.Equal(14, breaks[2].PositionWrap);
+            Assert.Equal(13, breaks[2].PositionMeasure);
+            Assert.Equal(24, breaks[3].PositionWrap);
+            Assert.Equal(21, breaks[3].PositionMeasure);
         }
 
         [Fact]
         public void ForwardTest()
         {
-            var lineBreaker = new LineBreakAlgorithm();
+            var lineBreaker = new LineBreakAlgorithm("Apples Pears Bananas".AsSpan());
+            var breaks = new List<LineBreak>();
 
-            lineBreaker.Reset("Apples Pears Bananas");
-            var positionsF = lineBreaker.GetBreaks().ToList();
-            Assert.Equal(7, positionsF[0].PositionWrap);
-            Assert.Equal(6, positionsF[0].PositionMeasure);
-            Assert.Equal(13, positionsF[1].PositionWrap);
-            Assert.Equal(12, positionsF[1].PositionMeasure);
-            Assert.Equal(20, positionsF[2].PositionWrap);
-            Assert.Equal(20, positionsF[2].PositionMeasure);
+            while (lineBreaker.TryGetNextBreak(out LineBreak lineBreak))
+            {
+                breaks.Add(lineBreak);
+            }
+
+            Assert.Equal(7, breaks[0].PositionWrap);
+            Assert.Equal(6, breaks[0].PositionMeasure);
+            Assert.Equal(13, breaks[1].PositionWrap);
+            Assert.Equal(12, breaks[1].PositionMeasure);
+            Assert.Equal(20, breaks[2].PositionWrap);
+            Assert.Equal(20, breaks[2].PositionMeasure);
         }
 
         [Fact]
@@ -156,7 +166,6 @@ namespace SixLabors.Fonts.Tests.Unicode
                 tests.Add(test);
             }
 
-            var lineBreaker = new LineBreakAlgorithm();
             var foundBreaks = new List<int>();
 
             for (int testNumber = 0; testNumber < tests.Count; testNumber++)
@@ -166,7 +175,9 @@ namespace SixLabors.Fonts.Tests.Unicode
                 foundBreaks.Clear();
 
                 // Run the line breaker and build a list of break points
-                lineBreaker.Reset(t.CodePoints);
+                var text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
+
+                var lineBreaker = new LineBreakAlgorithm(text.AsSpan());
                 while (lineBreaker.TryGetNextBreak(out LineBreak b))
                 {
                     foundBreaks.Add(b.PositionWrap);
