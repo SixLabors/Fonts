@@ -8,9 +8,9 @@ namespace SixLabors.Fonts.Unicode
     /// <summary>
     /// Represents the smallest unit of a writing system of any given language.
     /// </summary>
-    internal readonly struct Grapheme
+    internal readonly ref struct Grapheme
     {
-        public Grapheme(CodePoint codePoint, int index, int offset, ReadOnlyMemory<char> text)
+        public Grapheme(CodePoint codePoint, int index, int offset, ReadOnlySpan<char> text)
         {
             this.LeadingCodePoint = codePoint;
             this.CodePointIndex = index;
@@ -36,6 +36,6 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Gets the text that is represented by the grapheme cluster..
         /// </summary>
-        public ReadOnlyMemory<char> Text { get; }
+        public ReadOnlySpan<char> Text { get; }
     }
 }

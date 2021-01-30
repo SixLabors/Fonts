@@ -25,10 +25,10 @@ namespace SixLabors.Fonts.Tests.Unicode
             const string text = "ABCDEFGHIJ";
 
             int count = 0;
-            foreach (Grapheme grapheme in GraphemeClusterAlgorithm.GetGraphemes(text))
+            var enumerator = new GraphemeClusterAlgorithm(text.AsSpan());
+            while (enumerator.TryGetGrapheme(out Grapheme grapheme))
             {
                 Assert.Equal(1, grapheme.Text.Length);
-
                 count++;
             }
 
@@ -115,7 +115,8 @@ namespace SixLabors.Fonts.Tests.Unicode
                 var text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
 
                 // Run the algorithm
-                foreach (int boundary in GraphemeClusterAlgorithm.GetBoundaries(text))
+                var enumerator = new GraphemeClusterAlgorithm(text.AsSpan());
+                while (enumerator.TryGetBoundary(out int boundary))
                 {
                     foundBreaks.Add(boundary);
                 }

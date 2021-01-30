@@ -38,13 +38,10 @@ namespace SixLabors.Fonts.Unicode
             this.lb8a = false;
             this.lb21a = false;
             this.lb30a = 0;
-            this.Current = default;
         }
 
-        public LineBreak Current { get; private set; }
-
         /// <summary>
-        /// Returns the line break from the current text if one is found.
+        /// Returns the line break from the current source if one is found.
         /// </summary>
         /// <param name="lineBreak">
         /// When this method returns, contains the value associate with the break;

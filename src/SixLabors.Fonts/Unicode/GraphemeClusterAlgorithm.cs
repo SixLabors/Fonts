@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 
 namespace SixLabors.Fonts.Unicode
 {
@@ -10,7 +9,7 @@ namespace SixLabors.Fonts.Unicode
     /// Implementation of the Unicode Grapheme Cluster Algorithm. UAX:29
     /// <see href="https://www.unicode.org/reports/tr29/tr29-37.html"/>
     /// </summary>
-    internal static class GraphemeClusterAlgorithm
+    internal ref struct GraphemeClusterAlgorithm
     {
         // https://www.unicode.org/Public/13.0.0/ucd/auxiliary/GraphemeBreakTest.html
         private static readonly byte[][] PairTable = new byte[][]
@@ -36,93 +35,110 @@ namespace SixLabors.Fonts.Unicode
             new byte[] { 1,    1,   1,   1,        1,       1,                   0,        1,            1,  1,  1,  1,   1,    1,        1,    1,    1,    1,     },    // ExtPictZwg
         };
 
-        /// <summary>
-        /// Given a sequence of code points, return its grapheme cluster boundaries.
-        /// </summary>
-        /// <param name="text">The text to process.</param>
-        /// <returns>An enumerable of grapheme cluster boundaries.</returns>
-        public static IEnumerable<Grapheme> GetGraphemes(string text)
-        {
-            int codepoints = CodePoint.GetCodePointCount(text);
-            int charPosition = 0;
-            int i = 0;
+        private readonly ReadOnlySpan<char> source;
+        private int charPosition;
+        private readonly int pointsLength;
+        private int position;
 
-            while (i < codepoints)
+        public GraphemeClusterAlgorithm(ReadOnlySpan<char> source)
+            : this()
+        {
+            this.source = source;
+            this.pointsLength = CodePoint.GetCodePointCount(source);
+            this.charPosition = 0;
+            this.position = 0;
+        }
+
+        /// <summary>
+        /// Returns the grapheme cluster from the current source if one is found.
+        /// </summary>
+        /// <param name="grapheme">
+        /// When this method returns, contains the value associate with the grapheme cluster;
+        /// otherwise, the default value.
+        /// This parameter is passed uninitialized.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public bool TryGetGrapheme(out Grapheme grapheme)
+        {
+            while (this.position < this.pointsLength)
             {
-                if (IsBoundary(text, charPosition, out int charsConsumed))
+                if (this.IsBoundary(this.charPosition, out int charsConsumed))
                 {
-                    int start = charPosition;
-                    while (!IsBoundary(text, start + charsConsumed, out int count))
+                    int start = this.charPosition;
+                    while (!this.IsBoundary(start + charsConsumed, out int count))
                     {
                         charsConsumed += count;
                     }
 
-                    ReadOnlyMemory<char> slice = text.AsMemory().Slice(start, charsConsumed);
-                    yield return new Grapheme(CodePoint.ReadAt(text, start), i, start, slice);
+                    ReadOnlySpan<char> slice = this.source.Slice(start, charsConsumed);
+
+                    grapheme = new Grapheme(CodePoint.DecodeFromUtf16At(this.source, start), this.position, start, slice);
+                    this.position++;
+                    this.charPosition += charsConsumed;
+                    return true;
                 }
 
-                i++;
-                charPosition += charsConsumed;
+                this.position++;
+                this.charPosition += charsConsumed;
             }
+
+            grapheme = default;
+            return false;
         }
 
         /// <summary>
-        /// Given a sequence of code points, return its grapheme cluster boundaries.
+        /// Returns the index of the grapheme cluster boundary from the current source if one is found.
         /// </summary>
-        /// <param name="text">The text to process.</param>
-        /// <returns>An enumerable of grapheme cluster boundaries.</returns>
-        public static IEnumerable<int> GetBoundaries(string text)
+        /// <param name="boundary">
+        /// When this method returns, contains the value associate with the boundary;
+        /// otherwise, -1.
+        /// This parameter is passed uninitialized.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public bool TryGetBoundary(out int boundary)
         {
-            int codepoints = CodePoint.GetCodePointCount(text);
-            int charPosition = 0;
-            int i = 0;
-
             // Count past the last codepoint index to ensure SOT and EOT are counted.
             // See GraphemeBreakTests.txt. ÷ = boundary.
             // ÷ 0020 ÷ 0020 ÷ // ÷ [0.2] SPACE (Other) ÷ [999.0] SPACE (Other) ÷ [0.3]
-            while (i <= codepoints)
+            while (this.position <= this.pointsLength)
             {
-                if (IsBoundary(text, charPosition, out int charsConsumed))
+                if (this.IsBoundary(this.charPosition, out int charsConsumed))
                 {
-                    yield return i;
+                    boundary = this.position;
+                    this.position++;
+                    this.charPosition += charsConsumed;
+                    return true;
                 }
 
-                i++;
-                charPosition += charsConsumed;
+                this.position++;
+                this.charPosition += charsConsumed;
             }
+
+            boundary = -1;
+            return false;
         }
 
-        /// <summary>
-        /// Check if a position in a code point buffer is a grapheme cluster boundary.
-        /// </summary>
-        /// <param name="text">The text to process.</param>
-        /// <param name="position">The position to check.</param>
-        /// <param name="charsConsumed">The count of chars consumed reading the text.</param>
-        /// <returns>The <see cref="bool"/>.</returns>
-        public static bool IsBoundary(string text, int position, out int charsConsumed)
+        private bool IsBoundary(int position, out int charsConsumed)
         {
             charsConsumed = 0;
-            if (text.Length == 0)
+            if (this.source.Length == 0)
             {
                 return false;
             }
 
-            ReadOnlySpan<char> chars = text.AsMemory().Span;
             int prevCharCount = 0;
 
             // Get the grapheme cluster class of the character on each side
             GraphemeClusterClass a = (position <= 0)
                 ? GraphemeClusterClass.SOT
-                : CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFromUtf16(chars.Slice(0, position), out prevCharCount));
+                : CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFromUtf16(this.source.Slice(0, position), out prevCharCount));
 
-            GraphemeClusterClass b = (position < text.Length)
-                ? CodePoint.GetGraphemeClusterClass(CodePoint.ReadAt(text, position, out charsConsumed))
+            GraphemeClusterClass b = (position < this.source.Length)
+                ? CodePoint.GetGraphemeClusterClass(CodePoint.DecodeFromUtf16At(this.source, position, out charsConsumed))
                 : GraphemeClusterClass.EOT;
 
             // Rule 11 - Special handling for ZWJ in extended pictograph
             if (a == GraphemeClusterClass.ZWJ)
             {
-                ReadOnlySpan<char> slice = chars.Slice(0, position - prevCharCount);
+                ReadOnlySpan<char> slice = this.source.Slice(0, position - prevCharCount);
                 int i = slice.Length;
                 while (slice.Length >= 0 && CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFromUtf16(slice, out int o)) == GraphemeClusterClass.Extend)
                 {
@@ -141,7 +157,7 @@ namespace SixLabors.Fonts.Unicode
             {
                 // Count how many
                 int count = 0;
-                ReadOnlySpan<char> slice = chars.Slice(0, position - prevCharCount);
+                ReadOnlySpan<char> slice = this.source.Slice(0, position - prevCharCount);
                 while (slice.Length > 0)
                 {
                     if (CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFromUtf16(slice, out int o)) != GraphemeClusterClass.Regional_Indicator)
