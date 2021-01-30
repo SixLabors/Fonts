@@ -139,7 +139,7 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Gets the <see cref="GraphemeClusterClass"/> for the given codepoint.
         /// </summary>
-        public static GraphemeClusterClass GraphemeClusterClass(CodePoint codePoint)
+        public static GraphemeClusterClass GetGraphemeClusterClass(CodePoint codePoint)
             => UnicodeData.GetGraphemeClusterClass(codePoint.Value);
 
         /// <summary>
@@ -168,13 +168,13 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="text">The buffer to read from.</param>
         /// <param name="index">The index to read at.</param>
-        /// <param name="count">The count of character that were read.</param>
+        /// <param name="charsConsumed">The count of chars consumed reading the buffer.</param>
         /// <returns>The <see cref="CodePoint"/>.</returns>
-        public static CodePoint ReadAt(string text, int index, out int count)
+        public static CodePoint ReadAt(string text, int index, out int charsConsumed)
         {
-            count = 1;
+            charsConsumed = 1;
 
-            if (index > text.Length)
+            if (index >= text.Length)
             {
                 return ReplacementCodePoint;
             }
@@ -182,50 +182,87 @@ namespace SixLabors.Fonts.Unicode
             // Optimistically assume input is within BMP.
             uint code = text[index];
 
-            if (UnicodeUtility.IsSurrogateCodePoint(code))
+            // High surrogate
+            if (UnicodeUtility.IsHighSurrogateCodePoint(code))
             {
                 uint hi, low;
 
-                // High surrogate
-                if (UnicodeUtility.IsHighSurrogateCodePoint(code))
+                hi = code;
+                index++;
+
+                if (index == text.Length)
                 {
-                    hi = code;
-
-                    if (index + 1 == text.Length)
-                    {
-                        return ReplacementCodePoint;
-                    }
-
-                    low = text[index + 1];
-
-                    if (UnicodeUtility.IsLowSurrogateCodePoint(low))
-                    {
-                        count = 2;
-                        return new CodePoint(UnicodeUtility.GetScalarFromUtf16SurrogatePair(hi, low));
-                    }
-
                     return ReplacementCodePoint;
                 }
 
-                // Low surrogate
-                if (UnicodeUtility.IsLowSurrogateCodePoint(code))
+                low = text[index];
+
+                if (UnicodeUtility.IsLowSurrogateCodePoint(low))
                 {
-                    if (index == 0)
-                    {
-                        return ReplacementCodePoint;
-                    }
+                    charsConsumed = 2;
+                    return new CodePoint(UnicodeUtility.GetScalarFromUtf16SurrogatePair(hi, low));
+                }
 
-                    hi = text[index - 1];
-                    low = code;
+                return ReplacementCodePoint;
+            }
 
-                    if (UnicodeUtility.IsHighSurrogateCodePoint(hi))
-                    {
-                        count = 2;
-                        return new CodePoint(UnicodeUtility.GetScalarFromUtf16SurrogatePair(hi, low));
-                    }
+            return new CodePoint(code);
+        }
 
+        /// <summary>
+        /// Decodes the <see cref="CodePoint"/> at the end of the provided UTF-16 source buffer.
+        /// </summary>
+        /// <remarks>
+        /// This method is very similar to <see cref="ReadAt(string, int)"/>, but it allows
+        /// the caller to loop backward instead of forward.
+        /// </remarks>
+        /// <param name="source">The buffer to read from.</param>
+        /// <returns>The <see cref="CodePoint"/>.</returns>
+        public static CodePoint DecodeLastFrom(ReadOnlySpan<char> source) => DecodeLastFrom(source, out int _);
+
+        /// <summary>
+        /// Decodes the <see cref="CodePoint"/> at the end of the provided UTF-16 source buffer.
+        /// </summary>
+        /// <remarks>
+        /// This method is very similar to <see cref="ReadAt(string, int, out int)"/>, but it allows
+        /// the caller to loop backward instead of forward. The typical calling convention is that on each iteration
+        /// of the loop, the caller should slice off the final <paramref name="charsConsumed"/> elements of
+        /// the <paramref name="source"/> buffer.
+        /// </remarks>
+        /// <param name="source">The buffer to read from.</param>
+        /// <param name="charsConsumed">The count of chars consumed reading the buffer.</param>
+        /// <returns>The <see cref="CodePoint"/>.</returns>
+        public static CodePoint DecodeLastFrom(ReadOnlySpan<char> source, out int charsConsumed)
+        {
+            charsConsumed = 1;
+
+            int index = source.Length - 1;
+            if (index < 0)
+            {
+                return ReplacementCodePoint;
+            }
+
+            // Optimistically assume input is within BMP.
+            uint code = source[index];
+
+            // Low surrogate
+            if (UnicodeUtility.IsLowSurrogateCodePoint(code))
+            {
+                if (index == 0)
+                {
                     return ReplacementCodePoint;
                 }
+
+                uint hi = source[index - 1];
+                uint low = code;
+
+                if (UnicodeUtility.IsHighSurrogateCodePoint(hi))
+                {
+                    charsConsumed = 2;
+                    return new CodePoint(UnicodeUtility.GetScalarFromUtf16SurrogatePair(hi, low));
+                }
+
+                return ReplacementCodePoint;
             }
 
             return new CodePoint(code);

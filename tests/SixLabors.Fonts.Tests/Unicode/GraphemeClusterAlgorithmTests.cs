@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using SixLabors.Fonts.Unicode;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,6 +18,22 @@ namespace SixLabors.Fonts.Tests.Unicode
         private readonly ITestOutputHelper output;
 
         public GraphemeClusterAlgorithmTests(ITestOutputHelper output) => this.output = output;
+
+        [Fact]
+        public void Should_Enumerate_Other()
+        {
+            const string text = "ABCDEFGHIJ";
+
+            int count = 0;
+            foreach (Grapheme grapheme in GraphemeClusterAlgorithm.GetGraphemes(text))
+            {
+                Assert.Equal(1, grapheme.Text.Length);
+
+                count++;
+            }
+
+            Assert.Equal(10, count);
+        }
 
         [Fact]
         public void ICUTests() => Assert.True(this.ICUTestsImpl());
@@ -83,9 +101,6 @@ namespace SixLabors.Fonts.Tests.Unicode
                 tests.Add(new Test(lineNumber, codePoints.ToArray(), breakPoints.ToArray()));
             }
 
-            // Preload
-            GraphemeClusterAlgorithm.IsBoundary(new ArraySlice<int>(new int[10]), 0);
-
             var foundBreaks = new List<int>
             {
                 Capacity = 100
@@ -97,15 +112,12 @@ namespace SixLabors.Fonts.Tests.Unicode
 
                 foundBreaks.Clear();
 
-                var codePointsSlice = new ArraySlice<int>(t.CodePoints.ToArray());
+                var text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
 
                 // Run the algorithm
-                for (int i = 0; i < codePointsSlice.Length + 1; i++)
+                foreach (int boundary in GraphemeClusterAlgorithm.GetBoundaries(text))
                 {
-                    if (GraphemeClusterAlgorithm.IsBoundary(codePointsSlice, i))
-                    {
-                        foundBreaks.Add(i);
-                    }
+                    foundBreaks.Add(boundary);
                 }
 
                 // Check the same
