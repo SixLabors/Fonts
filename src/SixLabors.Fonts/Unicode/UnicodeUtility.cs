@@ -94,7 +94,6 @@ namespace SixLabors.Fonts.Unicode
             }
         }
 
-
         /// <summary>
         /// Returns a Unicode scalar value from two code points representing a UTF-16 surrogate pair.
         /// </summary>
