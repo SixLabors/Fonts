@@ -27,7 +27,8 @@ namespace SixLabors.Fonts.Unicode
         /// Reset this line breaker.
         /// </summary>
         /// <param name="value">The string to be broken.</param>
-        public void Reset(string value) => this.Reset(ToUtf32(value.AsSpan()));
+        public void Reset(string value)
+            => this.Reset(UnicodeUtility.ToUtf32(value.AsSpan()));
 
         /// <summary>
         /// Reset this line breaker.
@@ -102,7 +103,7 @@ namespace SixLabors.Fonts.Unicode
 
         // Get the next character class
         private LineBreakClass NextCharClass()
-            => this.MapClass(UnicodeData.GetLineBreakClass(this.codePoints.Span[this.position++]));
+            => this.MapClass(CodePoint.GetLineBreakClass(new CodePoint(this.codePoints.Span[this.position++])));
 
         private bool? GetSimpleBreak()
         {
@@ -271,14 +272,16 @@ namespace SixLabors.Fonts.Unicode
         {
             for (int i = 0; i < this.codePoints.Span.Length; i++)
             {
-                switch (UnicodeData.GetLineBreakClass(this.codePoints.Span[i]))
+                var codePoint = new CodePoint(this.codePoints.Span[i]);
+
+                switch (CodePoint.GetLineBreakClass(codePoint))
                 {
                     case LineBreakClass.BK:
                         yield return new LineBreak(i, i + 1, true);
                         break;
 
                     case LineBreakClass.CR:
-                        if (i + 1 < this.codePoints.Length && UnicodeData.GetLineBreakClass(this.codePoints.Span[i + 1]) == LineBreakClass.LF)
+                        if (i + 1 < this.codePoints.Length && CodePoint.GetLineBreakClass(new CodePoint(this.codePoints.Span[i + 1])) == LineBreakClass.LF)
                         {
                             yield return new LineBreak(i, i + 2, true);
                         }
@@ -298,10 +301,10 @@ namespace SixLabors.Fonts.Unicode
 
         private int FindPriorNonWhitespace(int from)
         {
-            ReadOnlySpan<int> codePointSpan = this.codePoints.Span;
+            ReadOnlySpan<int> points = this.codePoints.Span;
             if (from > 0)
             {
-                LineBreakClass cls = UnicodeData.GetLineBreakClass(codePointSpan[from - 1]);
+                LineBreakClass cls = CodePoint.GetLineBreakClass(new CodePoint(points[from - 1]));
                 if (cls == LineBreakClass.BK || cls == LineBreakClass.LF || cls == LineBreakClass.CR)
                 {
                     from--;
@@ -310,7 +313,7 @@ namespace SixLabors.Fonts.Unicode
 
             while (from > 0)
             {
-                LineBreakClass cls = UnicodeData.GetLineBreakClass(codePointSpan[from - 1]);
+                LineBreakClass cls = CodePoint.GetLineBreakClass(new CodePoint(points[from - 1]));
                 if (cls == LineBreakClass.SP)
                 {
                     from--;
@@ -322,29 +325,6 @@ namespace SixLabors.Fonts.Unicode
             }
 
             return from;
-        }
-
-        public static Memory<int> ToUtf32(ReadOnlySpan<char> text)
-        {
-            unsafe
-            {
-                fixed (char* pstr = text)
-                {
-                    // Get required byte count
-                    int byteCount = Encoding.UTF32.GetByteCount(pstr, text.Length);
-
-                    // Allocate buffer
-                    int[] utf32 = new int[byteCount / sizeof(int)];
-                    fixed (int* putf32 = utf32)
-                    {
-                        // Convert
-                        Encoding.UTF32.GetBytes(pstr, text.Length, (byte*)putf32, byteCount);
-
-                        // Done
-                        return utf32;
-                    }
-                }
-            }
         }
     }
 }

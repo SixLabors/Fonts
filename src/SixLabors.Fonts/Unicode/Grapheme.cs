@@ -10,22 +10,28 @@ namespace SixLabors.Fonts.Unicode
     /// </summary>
     internal readonly struct Grapheme
     {
-        public Grapheme(CodePoint firstCodePoint, int offset, ReadOnlyMemory<char> text)
+        public Grapheme(CodePoint codePoint, int index, int offset, ReadOnlyMemory<char> text)
         {
-            this.FirstCodePoint = firstCodePoint;
-            this.Offset = offset;
+            this.LeadingCodePoint = codePoint;
+            this.CodePointIndex = index;
+            this.CharOffset = offset;
             this.Text = text;
         }
 
         /// <summary>
         /// Gets the first <see cref="CodePoint"/> of the grapheme cluster.
         /// </summary>
-        public CodePoint FirstCodePoint { get; }
+        public CodePoint LeadingCodePoint { get; }
 
         /// <summary>
-        /// Gets the index of the grapheme cluster withing the parent text block.
+        /// Gets the index of the grapheme cluster within the parent text block.
         /// </summary>
-        public int Offset { get; }
+        public int CharOffset { get; }
+
+        /// <summary>
+        /// Gets the codepoint index within the parent text block.
+        /// </summary>
+        public int CodePointIndex { get; }
 
         /// <summary>
         /// Gets the text that is represented by the grapheme cluster..

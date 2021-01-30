@@ -57,7 +57,7 @@ namespace SixLabors.Fonts
             }
 
             // lets convert the text into codepoints
-            Memory<int> codePointsMemory = LineBreakAlgorithm.ToUtf32(text);
+            Memory<int> codePointsMemory = UnicodeUtility.ToUtf32(text);
             if (codePointsMemory.IsEmpty)
             {
                 return Array.Empty<GlyphLayout>();

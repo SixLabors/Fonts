@@ -158,29 +158,40 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Reads the <see cref="CodePoint"/> at specified position.
         /// </summary>
-        /// <param name="text">The buffer to read from.</param>
+        /// <param name="text">The text to read from.</param>
         /// <param name="index">The index to read at.</param>
         /// <returns>The <see cref="CodePoint"/>.</returns>
-        public static CodePoint ReadAt(string text, int index) => ReadAt(text, index, out int _);
+        public static CodePoint ReadAt(string text, int index)
+            => ReadAt(text, index, out int _);
 
         /// <summary>
         /// Reads the <see cref="CodePoint"/> at specified position.
         /// </summary>
-        /// <param name="text">The buffer to read from.</param>
+        /// <param name="text">The text to read from.</param>
         /// <param name="index">The index to read at.</param>
         /// <param name="charsConsumed">The count of chars consumed reading the buffer.</param>
         /// <returns>The <see cref="CodePoint"/>.</returns>
         public static CodePoint ReadAt(string text, int index, out int charsConsumed)
+            => DecodeFromUtf16At(text.AsMemory().Span, index, out charsConsumed);
+
+        /// <summary>
+        /// Decodes the <see cref="CodePoint"/> from the provided UTF-16 source buffer at the specified position.
+        /// </summary>
+        /// <param name="source">The buffer to read from.</param>
+        /// <param name="index">The index to read at.</param>
+        /// <param name="charsConsumed">The count of chars consumed reading the buffer.</param>
+        /// <returns>The <see cref="CodePoint"/>.</returns>
+        public static CodePoint DecodeFromUtf16At(ReadOnlySpan<char> source, int index, out int charsConsumed)
         {
             charsConsumed = 1;
 
-            if (index >= text.Length)
+            if (index >= source.Length)
             {
                 return ReplacementCodePoint;
             }
 
             // Optimistically assume input is within BMP.
-            uint code = text[index];
+            uint code = source[index];
 
             // High surrogate
             if (UnicodeUtility.IsHighSurrogateCodePoint(code))
@@ -190,12 +201,12 @@ namespace SixLabors.Fonts.Unicode
                 hi = code;
                 index++;
 
-                if (index == text.Length)
+                if (index == source.Length)
                 {
                     return ReplacementCodePoint;
                 }
 
-                low = text[index];
+                low = source[index];
 
                 if (UnicodeUtility.IsLowSurrogateCodePoint(low))
                 {
@@ -213,17 +224,6 @@ namespace SixLabors.Fonts.Unicode
         /// Decodes the <see cref="CodePoint"/> at the end of the provided UTF-16 source buffer.
         /// </summary>
         /// <remarks>
-        /// This method is very similar to <see cref="ReadAt(string, int)"/>, but it allows
-        /// the caller to loop backward instead of forward.
-        /// </remarks>
-        /// <param name="source">The buffer to read from.</param>
-        /// <returns>The <see cref="CodePoint"/>.</returns>
-        public static CodePoint DecodeLastFrom(ReadOnlySpan<char> source) => DecodeLastFrom(source, out int _);
-
-        /// <summary>
-        /// Decodes the <see cref="CodePoint"/> at the end of the provided UTF-16 source buffer.
-        /// </summary>
-        /// <remarks>
         /// This method is very similar to <see cref="ReadAt(string, int, out int)"/>, but it allows
         /// the caller to loop backward instead of forward. The typical calling convention is that on each iteration
         /// of the loop, the caller should slice off the final <paramref name="charsConsumed"/> elements of
@@ -232,7 +232,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="source">The buffer to read from.</param>
         /// <param name="charsConsumed">The count of chars consumed reading the buffer.</param>
         /// <returns>The <see cref="CodePoint"/>.</returns>
-        public static CodePoint DecodeLastFrom(ReadOnlySpan<char> source, out int charsConsumed)
+        public static CodePoint DecodeLastFromUtf16(ReadOnlySpan<char> source, out int charsConsumed)
         {
             charsConsumed = 1;
 

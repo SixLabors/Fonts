@@ -58,7 +58,7 @@ namespace SixLabors.Fonts.Unicode
                     }
 
                     ReadOnlyMemory<char> slice = text.AsMemory().Slice(start, charsConsumed);
-                    yield return new Grapheme(CodePoint.ReadAt(text, start), start, slice);
+                    yield return new Grapheme(CodePoint.ReadAt(text, start), i, start, slice);
                 }
 
                 i++;
@@ -113,7 +113,7 @@ namespace SixLabors.Fonts.Unicode
             // Get the grapheme cluster class of the character on each side
             GraphemeClusterClass a = (position <= 0)
                 ? GraphemeClusterClass.SOT
-                : CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFrom(chars.Slice(0, position), out prevCharCount));
+                : CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFromUtf16(chars.Slice(0, position), out prevCharCount));
 
             GraphemeClusterClass b = (position < text.Length)
                 ? CodePoint.GetGraphemeClusterClass(CodePoint.ReadAt(text, position, out charsConsumed))
@@ -124,12 +124,12 @@ namespace SixLabors.Fonts.Unicode
             {
                 ReadOnlySpan<char> slice = chars.Slice(0, position - prevCharCount);
                 int i = slice.Length;
-                while (slice.Length >= 0 && CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFrom(slice, out int o)) == GraphemeClusterClass.Extend)
+                while (slice.Length >= 0 && CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFromUtf16(slice, out int o)) == GraphemeClusterClass.Extend)
                 {
                     slice = slice.Slice(0, slice.Length - o);
                 }
 
-                if (i >= 0 && CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFrom(slice, out int _)) == GraphemeClusterClass.ExtPict)
+                if (i >= 0 && CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFromUtf16(slice, out int _)) == GraphemeClusterClass.ExtPict)
                 {
                     a = GraphemeClusterClass.ExtPictZwg;
                 }
@@ -144,7 +144,7 @@ namespace SixLabors.Fonts.Unicode
                 ReadOnlySpan<char> slice = chars.Slice(0, position - prevCharCount);
                 while (slice.Length > 0)
                 {
-                    if (CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFrom(slice, out int o)) != GraphemeClusterClass.Regional_Indicator)
+                    if (CodePoint.GetGraphemeClusterClass(CodePoint.DecodeLastFromUtf16(slice, out int o)) != GraphemeClusterClass.Regional_Indicator)
                     {
                         break;
                     }
