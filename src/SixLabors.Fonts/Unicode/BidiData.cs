@@ -63,6 +63,7 @@ namespace SixLabors.Fonts.Unicode
         public void Init(string text, sbyte paragraphEmbeddingLevel)
         {
             // Set working buffer sizes
+            // TODO: This allocates more than it should for some arrays.
             int length = CodePoint.GetCodePointCount(text);
             this.types.Length = length;
             this.pairedBracketTypes.Length = length;

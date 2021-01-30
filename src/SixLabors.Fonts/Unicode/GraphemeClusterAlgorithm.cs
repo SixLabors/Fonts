@@ -78,13 +78,12 @@ namespace SixLabors.Fonts.Unicode
             int i = 0;
 
             // Count past the last codepoint index to ensure SOT and EOT are counted.
-            // See GraphemeBreakTests.txt.
-            // ๗ 0020 ๗ 0020 ๗  #  ๗ [0.2] SPACE (Other) ๗ [999.0] SPACE (Other) ๗ [0.3]
+            // See GraphemeBreakTests.txt. รท = boundary.
+            // รท 0020 รท 0020 รท // รท [0.2] SPACE (Other) รท [999.0] SPACE (Other) รท [0.3]
             while (i <= codepoints)
             {
                 if (IsBoundary(text, charPosition, out int charsConsumed))
                 {
-                    // TODO: Return Grapheme struct containing further info.
                     yield return i;
                 }
 
