@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace SixLabors.Fonts.Unicode
 {
@@ -67,10 +68,11 @@ namespace SixLabors.Fonts.Unicode
                 LineBreakClass lastClass = this.nextClass;
                 this.nextClass = this.NextCharClass();
 
-                // explicit newline
-                if ((this.currentClass == LineBreakClass.BK) || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF)))
+                // Explicit newline
+                if ((this.currentClass == LineBreakClass.BK)
+                    || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF)))
                 {
-                    this.currentClass = this.MapFirst(this.MapClass(this.nextClass));
+                    this.currentClass = this.MapFirst(this.nextClass);
                     lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, true);
                     return true;
                 }
@@ -94,22 +96,33 @@ namespace SixLabors.Fonts.Unicode
                 lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.pointsLength), this.lastPosition, required);
                 return true;
             }
-            else
-            {
-                lineBreak = default;
-                return false;
-            }
+
+            lineBreak = default;
+            return false;
         }
 
-        private LineBreakClass MapClass(LineBreakClass c)
+        private LineBreakClass MapClass(CodePoint cp, LineBreakClass c)
         {
+            // LB 1
+            // ==========================================
+            // Resolved Original    General_Category
+            // ==========================================
+            // AL       AI, SG, XX  Any
+            // CM       SA          Only Mn or Mc
+            // AL       SA          Any except Mn and Mc
+            // NS       CJ          Any
             switch (c)
             {
                 case LineBreakClass.AI:
-                case LineBreakClass.SA:
                 case LineBreakClass.SG:
                 case LineBreakClass.XX:
                     return LineBreakClass.AL;
+
+                case LineBreakClass.SA:
+                    UnicodeCategory category = CodePoint.GetGeneralCategory(cp);
+                    return (category == UnicodeCategory.NonSpacingMark || category == UnicodeCategory.SpacingCombiningMark)
+                        ? LineBreakClass.CM
+                        : LineBreakClass.AL;
 
                 case LineBreakClass.CJ:
                     return LineBreakClass.NS;
@@ -142,7 +155,7 @@ namespace SixLabors.Fonts.Unicode
             this.charPosition += count;
             this.position++;
 
-            return this.MapClass(CodePoint.GetLineBreakClass(cp));
+            return this.MapClass(cp, CodePoint.GetLineBreakClass(cp));
         }
 
         private bool? GetSimpleBreak()
