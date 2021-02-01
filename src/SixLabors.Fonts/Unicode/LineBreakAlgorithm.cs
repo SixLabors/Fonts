@@ -21,9 +21,15 @@ namespace SixLabors.Fonts.Unicode
         private LineBreakClass currentClass;
         private LineBreakClass nextClass;
         private bool first;
+        private int alphaNumericCount;
         private bool lb8a;
         private bool lb21a;
+        private bool lb22ex;
+        private bool lb24ex;
+        private bool lb25ex;
+        private bool lb30;
         private int lb30a;
+        private bool lb31;
 
         public LineBreakAlgorithm(ReadOnlySpan<char> source)
             : this()
@@ -38,6 +44,12 @@ namespace SixLabors.Fonts.Unicode
             this.first = true;
             this.lb8a = false;
             this.lb21a = false;
+            this.lb22ex = false;
+            this.lb24ex = false;
+            this.lb25ex = false;
+            this.alphaNumericCount = 0;
+            this.lb31 = false;
+            this.lb30 = false;
             this.lb30a = 0;
         }
 
@@ -54,8 +66,8 @@ namespace SixLabors.Fonts.Unicode
             // Get the first char if we're at the beginning of the string.
             if (this.first)
             {
-                this.first = false;
                 LineBreakClass firstClass = this.NextCharClass();
+                this.first = false;
                 this.currentClass = this.MapFirst(firstClass);
                 this.nextClass = firstClass;
                 this.lb8a = firstClass == LineBreakClass.ZWJ;
@@ -89,12 +101,15 @@ namespace SixLabors.Fonts.Unicode
                 }
             }
 
-            if (this.lastPosition < this.pointsLength)
+            if (this.position >= this.pointsLength)
             {
-                this.lastPosition = this.pointsLength;
-                bool required = (this.currentClass == LineBreakClass.BK) || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF));
-                lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.pointsLength), this.lastPosition, required);
-                return true;
+                if (this.lastPosition < this.pointsLength)
+                {
+                    this.lastPosition = this.pointsLength;
+                    bool required = (this.currentClass == LineBreakClass.BK) || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF));
+                    lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.pointsLength), this.lastPosition, required);
+                    return true;
+                }
             }
 
             lineBreak = default;
@@ -148,14 +163,130 @@ namespace SixLabors.Fonts.Unicode
             }
         }
 
+        private bool IsAlphaNumeric(LineBreakClass cls)
+            => cls == LineBreakClass.AL
+            || cls == LineBreakClass.HL
+            || cls == LineBreakClass.NU;
+
+        private LineBreakClass PeekNextCharClass()
+        {
+            var cp = CodePoint.DecodeFromUtf16At(this.source, this.charPosition);
+            return this.MapClass(cp, CodePoint.GetLineBreakClass(cp));
+        }
+
         // Get the next character class
         private LineBreakClass NextCharClass()
         {
             var cp = CodePoint.DecodeFromUtf16At(this.source, this.charPosition, out int count);
+            LineBreakClass cls = this.MapClass(cp, CodePoint.GetLineBreakClass(cp));
             this.charPosition += count;
             this.position++;
 
-            return this.MapClass(cp, CodePoint.GetLineBreakClass(cp));
+            // Keep track of alphanumeric + any combining marks.
+            // This is used for LB22 and LB30.
+            if (this.IsAlphaNumeric(this.currentClass) || (this.alphaNumericCount > 0 && cls == LineBreakClass.CM))
+            {
+                this.alphaNumericCount++;
+            }
+
+            // Track combining mark exceptions. LB22
+            if (cls == LineBreakClass.CM)
+            {
+                switch (this.currentClass)
+                {
+                    case LineBreakClass.BK:
+                    case LineBreakClass.CB:
+                    case LineBreakClass.EX:
+                    case LineBreakClass.LF:
+                    case LineBreakClass.NL:
+                    case LineBreakClass.SP:
+                    case LineBreakClass.ZW:
+                    case LineBreakClass.CR:
+                        this.lb22ex = true;
+                        break;
+                }
+            }
+
+            // Track combining mark exceptions. LB31
+            if (this.first && cls == LineBreakClass.CM)
+            {
+                this.lb31 = true;
+            }
+
+            if (cls == LineBreakClass.CM)
+            {
+                switch (this.currentClass)
+                {
+                    case LineBreakClass.BK:
+                    case LineBreakClass.CB:
+                    case LineBreakClass.EX:
+                    case LineBreakClass.LF:
+                    case LineBreakClass.NL:
+                    case LineBreakClass.SP:
+                    case LineBreakClass.ZW:
+                    case LineBreakClass.CR:
+                    case LineBreakClass.ZWJ:
+                        this.lb31 = true;
+                        break;
+                }
+            }
+
+            if (this.first
+                && (cls == LineBreakClass.PO || cls == LineBreakClass.PR || cls == LineBreakClass.SP))
+            {
+                this.lb31 = true;
+            }
+
+            if (this.currentClass == LineBreakClass.AL
+                && (cls == LineBreakClass.PO || cls == LineBreakClass.PR || cls == LineBreakClass.SP))
+            {
+                this.lb31 = true;
+            }
+
+            // Reset LB31 if next is U+0028 (Left Opening Parenthesis)
+            if (this.lb31
+                && this.currentClass != LineBreakClass.PO
+                && this.currentClass != LineBreakClass.PR
+                && cls == LineBreakClass.OP && cp.Value == 0x0028)
+            {
+                this.lb31 = false;
+            }
+
+            // Rule LB24
+            if (this.first && (cls == LineBreakClass.CL || cls == LineBreakClass.CP))
+            {
+                this.lb24ex = true;
+            }
+
+            // Rule LB25
+            if (this.first
+                && (cls == LineBreakClass.CL || cls == LineBreakClass.IS || cls == LineBreakClass.SY))
+            {
+                this.lb25ex = true;
+            }
+
+            if (cls == LineBreakClass.SP || cls == LineBreakClass.WJ || cls == LineBreakClass.AL)
+            {
+                LineBreakClass next = this.PeekNextCharClass();
+                if (next == LineBreakClass.CL || next == LineBreakClass.IS || next == LineBreakClass.SY)
+                {
+                    this.lb25ex = true;
+                }
+            }
+
+            // AlphaNumeric + and combining marks can break for OP except.
+            // - U+0028 (Left Opening Parenthesis)
+            // - U+005B (Opening Square Bracket)
+            // - U+007B (Left Curly Bracket)
+            // See custom colums|rules in the text pair table.
+            // https://www.unicode.org/Public/13.0.0/ucd/auxiliary/LineBreakTest.html
+            this.lb30 = this.alphaNumericCount > 0
+                && cls == LineBreakClass.OP
+                && cp.Value != 0x0028
+                && cp.Value != 0x005B
+                && cp.Value != 0x007B;
+
+            return cls;
         }
 
         private bool? GetSimpleBreak()
@@ -182,7 +313,7 @@ namespace SixLabors.Fonts.Unicode
 
         private bool GetPairTableBreak(LineBreakClass lastClass)
         {
-            // if not handled already, use the pair table
+            // If not handled already, use the pair table
             bool shouldBreak = false;
             switch (LineBreakPairTable.Table[(int)this.currentClass][(int)this.nextClass])
             {
@@ -190,7 +321,43 @@ namespace SixLabors.Fonts.Unicode
                     shouldBreak = true;
                     break;
 
-                case LineBreakPairTable.INBRK: // possible indirect break
+                // TODO: Rewrite this so that it defaults to true and rules are set as exceptions.
+                case LineBreakPairTable.INBRK: // Possible indirect break
+
+                    // LB31
+                    if (this.lb31 && this.nextClass == LineBreakClass.OP)
+                    {
+                        shouldBreak = true;
+                        this.lb31 = false;
+                        break;
+                    }
+
+                    // LB30
+                    if (this.lb30)
+                    {
+                        shouldBreak = true;
+                        this.lb30 = false;
+                        this.alphaNumericCount = 0;
+                        break;
+                    }
+
+                    // LB25
+                    if (this.lb25ex && (this.nextClass == LineBreakClass.PR || this.nextClass == LineBreakClass.NU))
+                    {
+                        shouldBreak = true;
+                        this.lb25ex = false;
+                        break;
+                    }
+
+                    // LB24
+                    if (this.lb24ex && (this.nextClass == LineBreakClass.PO || this.nextClass == LineBreakClass.PR))
+                    {
+                        shouldBreak = true;
+                        this.lb24ex = false;
+                        break;
+                    }
+
+                    // LB18
                     shouldBreak = lastClass == LineBreakClass.SP;
                     break;
 
@@ -206,13 +373,44 @@ namespace SixLabors.Fonts.Unicode
                 case LineBreakPairTable.CPBRK: // prohibited for combining marks
                     if (lastClass != LineBreakClass.SP)
                     {
-                        return shouldBreak;
+                        return false;
                     }
 
                     break;
 
                 case LineBreakPairTable.PRBRK:
                     break;
+            }
+
+            // Rule LB22
+            if (this.nextClass == LineBreakClass.IN)
+            {
+                switch (lastClass)
+                {
+                    case LineBreakClass.BK:
+                    case LineBreakClass.CB:
+                    case LineBreakClass.EX:
+                    case LineBreakClass.LF:
+                    case LineBreakClass.NL:
+                    case LineBreakClass.SP:
+                    case LineBreakClass.ZW:
+
+                        // Allow break
+                        break;
+                    case LineBreakClass.CM:
+                        if (this.lb22ex)
+                        {
+                            // Allow break
+                            this.lb22ex = false;
+                            break;
+                        }
+
+                        shouldBreak = false;
+                        break;
+                    default:
+                        shouldBreak = false;
+                        break;
+                }
             }
 
             if (this.lb8a)

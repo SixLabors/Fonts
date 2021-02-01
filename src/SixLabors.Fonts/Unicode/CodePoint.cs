@@ -112,7 +112,7 @@ namespace SixLabors.Fonts.Unicode
                 return (AsciiCharInfo[codePoint.Value] & IsWhiteSpaceFlag) != 0;
             }
 
-            // Only BMP code points can be white space, so only call into CharUnicodeInfo
+            // Only BMP code points can be white space, so only call into GetBidiType
             // if the incoming value is within the BMP.
             return codePoint.IsBmp && GetBidiType(codePoint).CharacterType == BidiCharacterType.WS;
         }
