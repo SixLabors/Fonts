@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 
 namespace SixLabors.Fonts.Unicode
@@ -81,12 +80,13 @@ namespace SixLabors.Fonts.Unicode
                 this.nextClass = this.NextCharClass();
 
                 // Explicit newline
-                if ((this.currentClass == LineBreakClass.BK)
-                    || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF)))
+                switch (this.currentClass)
                 {
-                    this.currentClass = this.MapFirst(this.nextClass);
-                    lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, true);
-                    return true;
+                    case LineBreakClass.BK:
+                    case LineBreakClass.CR when this.nextClass != LineBreakClass.LF:
+                        this.currentClass = this.MapFirst(this.nextClass);
+                        lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, true);
+                        return true;
                 }
 
                 bool? shouldBreak = this.GetSimpleBreak() ?? (bool?)this.GetPairTableBreak(lastClass);
@@ -101,15 +101,20 @@ namespace SixLabors.Fonts.Unicode
                 }
             }
 
-            if (this.position >= this.pointsLength)
+            if (this.position >= this.pointsLength && this.lastPosition < this.pointsLength)
             {
-                if (this.lastPosition < this.pointsLength)
+                this.lastPosition = this.pointsLength;
+                bool required = false;
+                switch (this.currentClass)
                 {
-                    this.lastPosition = this.pointsLength;
-                    bool required = (this.currentClass == LineBreakClass.BK) || ((this.currentClass == LineBreakClass.CR) && (this.nextClass != LineBreakClass.LF));
-                    lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.pointsLength), this.lastPosition, required);
-                    return true;
+                    case LineBreakClass.BK:
+                    case LineBreakClass.CR when this.nextClass != LineBreakClass.LF:
+                        required = true;
+                        break;
                 }
+
+                lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.pointsLength), this.lastPosition, required);
+                return true;
             }
 
             lineBreak = default;
