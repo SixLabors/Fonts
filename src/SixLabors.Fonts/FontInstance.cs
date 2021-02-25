@@ -35,12 +35,23 @@ namespace SixLabors.Fonts
         /// <param name="cmap">The cmap.</param>
         /// <param name="glyphs">The glyphs.</param>
         /// <param name="os2">The os2.</param>
+        /// <param name="horizontalHeadTable">The horizontal head table.</param>
         /// <param name="horizontalMetrics">The horizontal metrics.</param>
         /// <param name="head">The head.</param>
         /// <param name="kern">The kern.</param>
         /// <param name="colrTable">The COLR table</param>
         /// <param name="cpalTable">The CPAL table</param>
-        internal FontInstance(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern, ColrTable? colrTable, CpalTable? cpalTable)
+        internal FontInstance(
+            NameTable nameTable,
+            CMapTable cmap,
+            GlyphTable glyphs,
+            OS2Table os2,
+            HorizontalHeadTable horizontalHeadTable,
+            HorizontalMetricsTable horizontalMetrics,
+            HeadTable head,
+            KerningTable kern,
+            ColrTable? colrTable,
+            CpalTable? cpalTable)
         {
             this.cmap = cmap;
             this.os2 = os2;
@@ -53,11 +64,13 @@ namespace SixLabors.Fonts
                 this.colorGlyphCache = new GlyphInstance[this.glyphs.GlyphCount][];
             }
 
+            bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
+
             // https://www.microsoft.com/typography/otspec/recom.htm#tad
-            this.LineHeight = os2.TypoAscender - os2.TypoDescender + os2.TypoLineGap;
-            this.Ascender = os2.TypoAscender;
-            this.Descender = os2.TypoDescender;
-            this.LineGap = os2.TypoLineGap;
+            this.Ascender = useTypoMetrics ? os2.TypoAscender : horizontalHeadTable.Ascender;
+            this.Descender = useTypoMetrics ? os2.TypoDescender : horizontalHeadTable.Descender;
+            this.LineGap = useTypoMetrics ? os2.TypoLineGap : horizontalHeadTable.LineGap;
+            this.LineHeight = this.Ascender - this.Descender + this.LineGap;
             this.EmSize = this.head.UnitsPerEm;
             this.kerning = kern;
             this.colrTable = colrTable;
@@ -234,7 +247,7 @@ namespace SixLabors.Fonts
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // recomended order
             HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
-            reader.GetTable<HorizontalHeadTable>(); // hhea
+            HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>(); // hhea
             reader.GetTable<MaximumProfileTable>(); // maxp
             OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
             HorizontalMetricsTable horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
@@ -267,7 +280,17 @@ namespace SixLabors.Fonts
             // gasp - Grid-fitting/Scan-conversion (optional table)
             // PCLT - PCL 5 data
             // DSIG - Digital signature
-            return new FontInstance(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern, colrTable, cpalTable);
+            return new FontInstance(
+                nameTable,
+                cmap,
+                glyphs,
+                os2,
+                hhea,
+                horizontalMetrics,
+                head,
+                kern,
+                colrTable,
+                cpalTable);
         }
 
         /// <summary>
