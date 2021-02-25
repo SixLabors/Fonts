@@ -50,7 +50,6 @@ namespace SixLabors.Fonts
                         originX = 0.5f * maxWidth;
                         break;
                     case HorizontalAlignment.Left:
-                    default:
                         originX = 0;
                         break;
                 }
@@ -131,26 +130,34 @@ namespace SixLabors.Fonts
                     lineMaxAscender = unscaledLineMaxAscender * spanStyle.PointSize / scale;
                 }
 
-                if (glyph.Font.Descender > unscaledLineMaxDescender)
+                if (Math.Abs(glyph.Font.Descender) > unscaledLineMaxDescender)
                 {
-                    unscaledLineMaxDescender = glyph.Font.Descender;
+                    unscaledLineMaxDescender = Math.Abs(glyph.Font.Descender);
                     scale = glyph.Font.EmSize * 72;
                     lineMaxDescender = unscaledLineMaxDescender * spanStyle.PointSize / scale;
                 }
 
                 if (firstLine)
                 {
-                    // Reset the line height for the first line to prevent
-                    // initial lead.
+                    // Reset the line height for the first line to prevent initial lead.
                     float unspacedLineHeight = lineHeight / options.LineSpacing;
                     if (unspacedLineHeight > lineHeightOfFirstLine)
                     {
                         lineHeightOfFirstLine = unspacedLineHeight;
                     }
 
-                    float lineGap = lineHeightOfFirstLine - lineMaxAscender - lineMaxDescender;
-
-                    top = lineHeightOfFirstLine - lineMaxAscender - (lineGap / 2);
+                    switch (options.VerticalAlignment)
+                    {
+                        case VerticalAlignment.Top:
+                            top = lineMaxAscender;
+                            break;
+                        case VerticalAlignment.Center:
+                            top = (lineMaxAscender / 2F) - (lineMaxDescender / 2F);
+                            break;
+                        case VerticalAlignment.Bottom:
+                            top = -lineMaxDescender;
+                            break;
+                    }
                 }
 
                 if ((options.WrappingWidth > 0 && nextWrappableLocation == i) || nextWrappableRequired)
@@ -236,15 +243,10 @@ namespace SixLabors.Fonts
                             }
 
                             location.Y += lineHeight;
+                            totalHeight += lineHeight;
                             firstLine = false;
                             lastWrappableLocation = -1;
                         }
-                    }
-
-                    float bottom = location.Y + lineHeight;
-                    if (bottom > totalHeight)
-                    {
-                        totalHeight = bottom;
                     }
 
                     previousGlyph = glyph;
@@ -265,6 +267,7 @@ namespace SixLabors.Fonts
                     layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
                     location.X = 0;
                     location.Y += lineHeight;
+                    totalHeight += lineHeight;
                     unscaledLineHeight = 0;
                     unscaledLineMaxAscender = 0;
                     previousGlyph = null;
@@ -305,20 +308,14 @@ namespace SixLabors.Fonts
                 }
             }
 
-            totalHeight -= top;
-            var offset = new Vector2(0, lineHeightOfFirstLine - top);
-
+            var offset = new Vector2(0, top);
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Center:
-                    offset += new Vector2(0, -0.5f * totalHeight);
+                    offset += new Vector2(0, -(totalHeight / 2F));
                     break;
                 case VerticalAlignment.Bottom:
                     offset += new Vector2(0, -totalHeight);
-                    break;
-                case VerticalAlignment.Top:
-                default:
-                    // no change
                     break;
             }
 
@@ -349,7 +346,6 @@ namespace SixLabors.Fonts
                             lineOffset = new Vector2(originX - (width / 2f), 0) + offset;
                             break;
                         case HorizontalAlignment.Left:
-                        default:
                             lineOffset = new Vector2(originX, 0) + offset;
                             break;
                     }
