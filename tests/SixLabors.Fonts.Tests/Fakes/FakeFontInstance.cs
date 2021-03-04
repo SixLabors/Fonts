@@ -21,6 +21,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                   GenerateCMapTable(glyphs),
                   new FakeGlyphTable(glyphs),
                   GenerateOS2Table(),
+                  GenerateHorizontalHeadTable(),
                   GenerateHorizontalMetricsTable(glyphs),
                   GenerateHeadTable(),
                   new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]),
@@ -29,8 +30,16 @@ namespace SixLabors.Fonts.Tests.Fakes
         {
         }
 
-        internal FakeFontInstance(NameTable nameTable, CMapTable cmap, GlyphTable glyphs, OS2Table os2, HorizontalMetricsTable horizontalMetrics, HeadTable head, KerningTable kern)
-            : base(nameTable, cmap, glyphs, os2, horizontalMetrics, head, kern, null, null)
+        internal FakeFontInstance(
+            NameTable nameTable,
+            CMapTable cmap,
+            GlyphTable glyphs,
+            OS2Table os2,
+            HorizontalHeadTable horizontalHeadTable,
+            HorizontalMetricsTable horizontalMetrics,
+            HeadTable head,
+            KerningTable kern)
+            : base(nameTable, cmap, glyphs, os2, horizontalHeadTable, horizontalMetrics, head, kern, null, null)
         {
         }
 
@@ -40,23 +49,20 @@ namespace SixLabors.Fonts.Tests.Fakes
         public static FakeFontInstance CreateFontWithVaryingVerticalFontMetrics(string text)
         {
             List<FakeGlyphSource> glyphs = GetGlyphs(text);
-            var result = new FakeFontInstance(
+
+            return new FakeFontInstance(
                 GenerateNameTable(),
                 GenerateCMapTable(glyphs),
                 new FakeGlyphTable(glyphs),
                 GenerateOS2TableWithVaryingVerticalFontMetrics(),
+                GenerateHorizontalHeadTable(),
                 GenerateHorizontalMetricsTable(glyphs),
                 GenerateHeadTable(),
                 new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]));
-
-            return result;
         }
 
         private static List<FakeGlyphSource> GetGlyphs(string text)
-        {
-            var glyphs = text.Distinct().Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
-            return glyphs;
-        }
+            => text.Distinct().Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
 
         private static NameTable GenerateNameTable()
             => new NameTable(
@@ -70,14 +76,17 @@ namespace SixLabors.Fonts.Tests.Fakes
         private static CMapTable GenerateCMapTable(List<FakeGlyphSource> glyphs)
             => new CMapTable(new[] { new FakeCmapSubtable(glyphs) });
 
+        private static HorizontalHeadTable GenerateHorizontalHeadTable()
+            => new HorizontalHeadTable(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+
         private static OS2Table GenerateOS2Table()
-            => new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.ITALIC, 1, 1, 20, 10, 20, 1, 1);
+            => new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.USE_TYPO_METRICS, 1, 1, 20, 10, 20, 1, 1);
 
         private static OS2Table GenerateOS2TableWithVaryingVerticalFontMetrics()
-            => new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.ITALIC, 1, 1, 35, 8, 12, 33, 11);
+            => new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.USE_TYPO_METRICS, 1, 1, 35, 8, 12, 33, 11);
 
         private static HorizontalMetricsTable GenerateHorizontalMetricsTable(List<FakeGlyphSource> glyphs)
-            => new HorizontalMetricsTable(glyphs.Select(x => (ushort)30).ToArray(), glyphs.Select(x => (short)10).ToArray());
+            => new HorizontalMetricsTable(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
 
         private static HeadTable GenerateHeadTable()
             => new HeadTable(

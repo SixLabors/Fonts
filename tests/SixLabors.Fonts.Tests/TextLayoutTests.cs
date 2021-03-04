@@ -39,32 +39,32 @@ namespace SixLabors.Fonts.Tests
         [InlineData(
             VerticalAlignment.Bottom,
             HorizontalAlignment.Left,
-            -50,
+            -60,
             10)]
         [InlineData(
             VerticalAlignment.Bottom,
             HorizontalAlignment.Right,
-            -50,
+            -60,
             -320)]
         [InlineData(
             VerticalAlignment.Bottom,
             HorizontalAlignment.Center,
-            -50,
+            -60,
             -155)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Left,
-            -25,
+            -30,
             10)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Right,
-            -25,
+            -30,
             -320)]
         [InlineData(
             VerticalAlignment.Center,
             HorizontalAlignment.Center,
-            -25,
+            -30,
             -155)]
         public void VerticalAlignmentTests(
             VerticalAlignment vertical,
@@ -210,7 +210,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Theory]
-        [InlineData("a", 100, 100, 125, 640)]
+        [InlineData("a", 100, 100, 125, 452)]
         public void LayoutWithLocation(string text, float x, float y, float expectedX, float expectedY)
         {
             var c = new FontCollection();
