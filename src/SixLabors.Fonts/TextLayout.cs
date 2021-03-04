@@ -55,19 +55,14 @@ namespace SixLabors.Fonts
                 }
             }
 
-            // lets convert the text into codepoints
-            // TODO: This shouldn't be required. We can read the individual code points at an incremental offset.
-            Memory<int> codePointsMemory = UnicodeUtility.ToUtf32(text);
-            if (codePointsMemory.IsEmpty)
+            int codePointCount = CodePoint.GetCodePointCount(text);
+            if (codePointCount == 0)
             {
                 return Array.Empty<GlyphLayout>();
             }
 
-            Span<int> codepoints = codePointsMemory.Span;
-            var lineBreaker = new LineBreakEnumerator(text);
-
-            AppliedFontStyle spanStyle = options.GetStyle(0, codepoints.Length);
-            var layout = new List<GlyphLayout>(codepoints.Length);
+            AppliedFontStyle spanStyle = options.GetStyle(0, codePointCount);
+            var layout = new List<GlyphLayout>(codePointCount);
 
             float unscaledLineHeight = 0f;
             float lineHeight = 0f;
@@ -86,11 +81,12 @@ namespace SixLabors.Fonts
             GlyphInstance? previousGlyph = null;
             float scale = 0;
             int lastWrappableLocation = -1;
-            int nextWrappableLocation = codepoints.Length;
+            int nextWrappableLocation = codePointCount;
             bool nextWrappableRequired = false;
             bool startOfLine = true;
             float totalHeight = 0;
 
+            var lineBreaker = new LineBreakEnumerator(text);
             if (lineBreaker.MoveNext())
             {
                 LineBreak b = lineBreaker.Current;
@@ -98,20 +94,22 @@ namespace SixLabors.Fonts
                 nextWrappableRequired = b.Required;
             }
 
-            for (int i = 0; i < codepoints.Length; i++)
+            var enumerator = new CodePointEnumerator(text);
+            int index = 0;
+            while (enumerator.MoveNext())
             {
-                if (spanStyle.End < i)
+                CodePoint codePoint = enumerator.Current;
+
+                if (spanStyle.End < index)
                 {
-                    spanStyle = options.GetStyle(i, codepoints.Length);
+                    spanStyle = options.GetStyle(index, codePointCount);
                     previousGlyph = null;
                 }
 
-                int codePoint = codepoints[i];
-
-                GlyphInstance[] glyphs = spanStyle.GetGlyphLayers(codePoint, options.ColorFontSupport);
+                GlyphInstance[] glyphs = spanStyle.GetGlyphLayers(codePoint.Value, options.ColorFontSupport);
                 if (glyphs.Length == 0)
                 {
-                    return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint);
+                    return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint.Value);
                 }
 
                 GlyphInstance? glyph = glyphs[0];
@@ -161,12 +159,12 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                if ((options.WrappingWidth > 0 && nextWrappableLocation == i) || nextWrappableRequired)
+                if ((options.WrappingWidth > 0 && nextWrappableLocation == index) || nextWrappableRequired)
                 {
                     // keep a record of where to wrap text and ensure that no line starts with white space
                     for (int j = layout.Count - 1; j >= 0; j--)
                     {
-                        if (!layout[j].IsWhiteSpace)
+                        if (!layout[j].IsWhiteSpace())
                         {
                             lastWrappableLocation = j + 1;
                             break;
@@ -174,20 +172,18 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                if (nextWrappableLocation == i)
+                if (nextWrappableLocation == index && lineBreaker.MoveNext())
                 {
-                    if (lineBreaker.MoveNext())
-                    {
-                        LineBreak b = lineBreaker.Current;
-                        nextWrappableLocation = b.PositionWrap - 1;
-                        nextWrappableRequired = b.Required;
-                    }
+                    LineBreak b = lineBreaker.Current;
+                    nextWrappableLocation = b.PositionWrap - 1;
+                    nextWrappableRequired = b.Required;
                 }
 
                 float glyphWidth = glyph.AdvanceWidth * spanStyle.PointSize / scale;
                 float glyphHeight = glyph.Height * spanStyle.PointSize / scale;
 
-                if (codepoints[i] != '\r' && codepoints[i] != '\n' && codepoints[i] != '\t' && codepoints[i] != ' ')
+                // TODO: !CodePoint.IsWhitespace(codePoint) && ! CodePoint.IsBreak(codePoint) ??
+                if (codePoint.Value != '\r' && codePoint.Value != '\n' && codePoint.Value != '\t' && codePoint.Value != ' ')
                 {
                     Vector2 glyphLocation = location;
                     if (spanStyle.ApplyKerning && previousGlyph != null)
@@ -205,7 +201,7 @@ namespace SixLabors.Fonts
                     {
                         float w = g.AdvanceWidth * spanStyle.PointSize / scale;
                         float h = g.Height * spanStyle.PointSize / scale;
-                        layout.Add(new GlyphLayout(codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine, false, false));
+                        layout.Add(new GlyphLayout(codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine));
 
                         if (w > glyphWidth)
                         {
@@ -229,7 +225,7 @@ namespace SixLabors.Fonts
                             // move the characters to the next line
                             for (int j = lastWrappableLocation; j < layout.Count; j++)
                             {
-                                if (layout[j].IsWhiteSpace)
+                                if (layout[j].IsWhiteSpace())
                                 {
                                     wrappingOffset += layout[j].Width;
                                     layout.RemoveAt(j);
@@ -238,7 +234,16 @@ namespace SixLabors.Fonts
                                 }
 
                                 Vector2 current = layout[j].Location;
-                                layout[j] = new GlyphLayout(layout[j].CodePoint, layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height, layout[j].LineHeight, startOfLine, layout[j].IsWhiteSpace, layout[j].IsControlCharacter);
+
+                                layout[j] = new GlyphLayout(
+                                    layout[j].CodePoint,
+                                    layout[j].Glyph,
+                                    new Vector2(current.X - wrappingOffset, current.Y + lineHeight),
+                                    layout[j].Width,
+                                    layout[j].Height,
+                                    layout[j].LineHeight,
+                                    startOfLine);
+
                                 startOfLine = false;
 
                                 location.X = layout[j].Location.X + layout[j].Width;
@@ -253,20 +258,21 @@ namespace SixLabors.Fonts
 
                     previousGlyph = glyph;
                 }
-                else if (codepoints[i] == '\r')
+                else if (codePoint.Value == '\r')
                 {
                     // carriage return resets the XX coordinate to 0
                     location.X = 0;
                     previousGlyph = null;
                     startOfLine = true;
 
-                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
+                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine));
                     startOfLine = false;
                 }
-                else if (codepoints[i] == '\n')
+                else if (codePoint.Value == '\n')
                 {
+                    // TODO: Use CodePoint.IsBreak(codePoint) and handle other types
                     // carriage return resets the XX coordinate to 0
-                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
+                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine));
                     location.X = 0;
                     location.Y += lineHeight;
                     totalHeight += lineHeight;
@@ -277,7 +283,7 @@ namespace SixLabors.Fonts
                     lastWrappableLocation = -1;
                     startOfLine = true;
                 }
-                else if (codepoints[i] == '\t')
+                else if (codePoint.Value == '\t')
                 {
                     float tabStop = glyphWidth * spanStyle.TabWidth;
                     float finalWidth = 0;
@@ -294,20 +300,22 @@ namespace SixLabors.Fonts
                         finalWidth += tabStop;
                     }
 
-                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, finalWidth, glyphHeight, lineHeight, startOfLine, true, false));
+                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, finalWidth, glyphHeight, lineHeight, startOfLine));
                     startOfLine = false;
 
                     // advance to a position > width away that
                     location.X += finalWidth;
                     previousGlyph = null;
                 }
-                else if (codepoints[i] == ' ')
+                else if (CodePoint.IsWhiteSpace(codePoint))
                 {
-                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, glyphWidth, glyphHeight, lineHeight, startOfLine, true, false));
+                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, glyphWidth, glyphHeight, lineHeight, startOfLine));
                     startOfLine = false;
                     location.X += glyphWidth;
                     previousGlyph = null;
                 }
+
+                index++;
             }
 
             var offset = new Vector2(0, top);
@@ -354,7 +362,14 @@ namespace SixLabors.Fonts
                 }
 
                 // TODO calculate an offset from the 'origin' based on TextAlignment for each line
-                layout[i] = new GlyphLayout(glyphLayout.CodePoint, glyphLayout.Glyph, glyphLayout.Location + lineOffset + origin, glyphLayout.Width, glyphLayout.Height, glyphLayout.LineHeight, glyphLayout.StartOfLine, glyphLayout.IsWhiteSpace, glyphLayout.IsControlCharacter);
+                layout[i] = new GlyphLayout(
+                    glyphLayout.CodePoint,
+                    glyphLayout.Glyph,
+                    glyphLayout.Location + lineOffset + origin,
+                    glyphLayout.Width,
+                    glyphLayout.Height,
+                    glyphLayout.LineHeight,
+                    glyphLayout.StartOfLine);
             }
 
             return layout;

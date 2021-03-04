@@ -99,7 +99,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
                 GlyphLayout c = glyphLayouts[i];
-                if (!c.IsControlCharacter)
+                if (!c.IsControlCharacter())
                 {
                     hasSize = true;
                     FontRectangle box = c.BoundingBox(dpi);
@@ -152,12 +152,13 @@ namespace SixLabors.Fonts
                 GlyphLayout c = glyphLayouts[i];
 
                 // TODO: This sets the hasSize value to the last layout... is this correct?
-                if (!c.IsControlCharacter)
+                if (!c.IsControlCharacter())
                 {
                     hasSize = true;
                 }
 
-                characterBoundsList[i] = new GlyphMetric(c.CodePoint, c.BoundingBox(dpi), c.IsControlCharacter);
+                // TODO: Make CodePoint public and use over int.
+                characterBoundsList[i] = new GlyphMetric(c.CodePoint.Value, c.BoundingBox(dpi), c.IsControlCharacter());
             }
 
             characterBounds = characterBoundsList;

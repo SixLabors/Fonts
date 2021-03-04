@@ -73,31 +73,6 @@ namespace SixLabors.Fonts.Unicode
         public bool IsAscii => UnicodeUtility.IsAsciiCodePoint(this.value);
 
         /// <summary>
-        /// Gets a value indicating whether this <see cref="CodePoint"/> is a break char.
-        /// </summary>
-        public bool IsBreakChar
-        {
-            // Copied from Avalonia.
-            // TODO: How do we confirm this?
-            get
-            {
-                switch (this.value)
-                {
-                    case 0x000A: // LINE FEED (LF)
-                    case 0x000B: // LINE TABULATION
-                    case 0x000C: // FORM FEED (FF)
-                    case 0x000D: // CARRIAGE RETURN (CR)
-                    case 0x0085: // NEXT LINE (NEL)
-                    case 0x2028: // LINE SEPARATOR
-                    case 0x2029: // PARAGRAPH SEPARATOR
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets the Unicode value as an integer.
         /// </summary>
         public readonly int Value { get; }
@@ -132,6 +107,43 @@ namespace SixLabors.Fonts.Unicode
             // Only BMP code points can be white space, so only call into GetBidiType
             // if the incoming value is within the BMP.
             return codePoint.IsBmp && GetBidiType(codePoint).CharacterType == BidiCharacterType.WS;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the given codepoint is a control.
+        /// </summary>
+        public static bool IsControl(CodePoint value) =>
+
+            // Per the Unicode stability policy, the set of control characters
+            // is forever fixed at [ U+0000..U+001F ], [ U+007F..U+009F ]. No
+            // characters will ever be added to or removed from the "control characters"
+            // group. See https://www.unicode.org/policies/stability_policy.html.
+            //
+            // Logic below depends on CodePoint.Value never being -1 (since CodePoint is a validating type)
+            // 00..1F (+1) => 01..20 (&~80) => 01..20
+            // 7F..9F (+1) => 80..A0 (&~80) => 00..20
+            ((value.value + 1) & ~0x80u) <= 0x20u;
+
+        /// <summary>
+        /// Gets a value indicating whether the given codepoint is a break.
+        /// </summary>
+        public static bool IsBreak(CodePoint value)
+        {
+            // Copied from Avalonia.
+            // TODO: How do we confirm this?
+            switch (value.Value)
+            {
+                case 0x000A: // LINE FEED (LF)
+                case 0x000B: // LINE TABULATION
+                case 0x000C: // FORM FEED (FF)
+                case 0x000D: // CARRIAGE RETURN (CR)
+                case 0x0085: // NEXT LINE (NEL)
+                case 0x2028: // LINE SEPARATOR
+                case 0x2029: // PARAGRAPH SEPARATOR
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>

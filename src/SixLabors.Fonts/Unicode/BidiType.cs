@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="codePoint">The codepoint.</param>
         public BidiType(CodePoint codePoint)
-            => this.Value = UnicodeData.GetBidiData(codePoint.Value);
+            => this.Value = (int)UnicodeData.GetBidiData(codePoint.Value);
 
         /// <summary>
         /// Gets the <see cref="BidiCharacterType"/>.
@@ -29,8 +29,8 @@ namespace SixLabors.Fonts.Unicode
             => (BidiPairedBracketType)((this.Value >> 16) & 0xFF);
 
         /// <summary>
-        /// Gets the value of the Bidi type as an unsigned integer.
+        /// Gets the Unicode value of the Bidi type as an integer.
         /// </summary>
-        public uint Value { get; }
+        public int Value { get; }
     }
 }

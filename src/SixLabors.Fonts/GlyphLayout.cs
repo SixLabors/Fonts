@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using System.Text;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
@@ -11,7 +12,14 @@ namespace SixLabors.Fonts
     /// </summary>
     internal readonly struct GlyphLayout
     {
-        internal GlyphLayout(int codePoint, Glyph glyph, Vector2 location, float width, float height, float lineHeight, bool startOfLine, bool isWhiteSpace, bool isControlCharacter)
+        internal GlyphLayout(
+            CodePoint codePoint,
+            Glyph glyph,
+            Vector2 location,
+            float width,
+            float height,
+            float lineHeight,
+            bool startOfLine)
         {
             this.LineHeight = lineHeight;
             this.CodePoint = codePoint;
@@ -20,17 +28,7 @@ namespace SixLabors.Fonts
             this.Width = width;
             this.Height = height;
             this.StartOfLine = startOfLine;
-            this.IsWhiteSpace = isWhiteSpace;
-            this.IsControlCharacter = isControlCharacter;
         }
-
-        /// <summary>
-        /// Gets a value indicating whether gets the glyphe represents a whitespace character.
-        /// </summary>
-        /// <value>
-        /// The bounds.
-        /// </value>
-        public bool IsWhiteSpace { get; }
 
         /// <summary>
         /// Gets the glyph.
@@ -72,17 +70,27 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the Unicode code point of the character.
         /// </summary>
-        public int CodePoint { get; }
+        public CodePoint CodePoint { get; }
 
         public float LineHeight { get; }
 
-        public bool IsControlCharacter { get; }
+        /// <summary>
+        /// Gets a value indicating whether gets the glyphe represents a whitespace character.
+        /// </summary>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.CodePoint);
+
+        /// <summary>
+        /// Gets a value indicating whether gets the glyphe represents a control character.
+        /// </summary>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public bool IsControlCharacter() => CodePoint.IsControl(this.CodePoint);
 
         internal FontRectangle BoundingBox(Vector2 dpi)
         {
             FontRectangle box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
 
-            if (this.IsWhiteSpace)
+            if (this.IsWhiteSpace())
             {
                 box = new FontRectangle(box.X, box.Y, this.Width * dpi.X, box.Height);
             }
@@ -99,20 +107,28 @@ namespace SixLabors.Fonts
                 sb.Append(' ');
             }
 
-            if (this.IsWhiteSpace)
+            if (this.IsWhiteSpace())
             {
                 sb.Append('!');
             }
 
             sb.Append('\'');
-            switch (this.CodePoint)
+            switch (this.CodePoint.Value)
             {
-                case '\t': sb.Append("\\t"); break;
-                case '\n': sb.Append("\\n"); break;
-                case '\r': sb.Append("\\r"); break;
-                case ' ': sb.Append(" "); break;
+                case '\t':
+                    sb.Append("\\t");
+                    break;
+                case '\n':
+                    sb.Append("\\n");
+                    break;
+                case '\r':
+                    sb.Append("\\r");
+                    break;
+                case ' ':
+                    sb.Append(" ");
+                    break;
                 default:
-                    sb.Append(char.ConvertFromUtf32(this.CodePoint));
+                    sb.Append(char.ConvertFromUtf32(this.CodePoint.Value));
                     break;
             }
 

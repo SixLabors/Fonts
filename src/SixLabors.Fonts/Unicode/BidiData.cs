@@ -114,7 +114,7 @@ namespace SixLabors.Fonts.Unicode
                 switch (pbt)
                 {
                     case BidiPairedBracketType.O:
-                        this.pairedBracketValues[i] = MapCanon((int)(bidi.Value & 0xFFFF));
+                        this.pairedBracketValues[i] = MapCanon(bidi.Value & 0xFFFF);
                         this.HasBrackets = true;
                         break;
 
