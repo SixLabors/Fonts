@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Unicode
     /// <summary>
     /// Represents a Unicode value ([ U+0000..U+10FFFF ], inclusive).
     /// </summary>
-    internal readonly struct CodePoint
+    internal readonly struct CodePoint : IComparable<CodePoint>, IEquatable<CodePoint>
     {
         private const byte IsWhiteSpaceFlag = 0x80;
         private const byte UnicodeCategoryMask = 0x1F;
@@ -101,6 +101,23 @@ namespace SixLabors.Fonts.Unicode
         /// Gets the Unicode value as an integer.
         /// </summary>
         public readonly int Value { get; }
+
+        // Operators below are explicit because they may throw.
+        public static explicit operator CodePoint(uint value) => new CodePoint(value);
+
+        public static explicit operator CodePoint(int value) => new CodePoint(value);
+
+        public static bool operator ==(CodePoint left, CodePoint right) => left.value == right.value;
+
+        public static bool operator !=(CodePoint left, CodePoint right) => left.value != right.value;
+
+        public static bool operator <(CodePoint left, CodePoint right) => left.value < right.value;
+
+        public static bool operator <=(CodePoint left, CodePoint right) => left.value <= right.value;
+
+        public static bool operator >(CodePoint left, CodePoint right) => left.value > right.value;
+
+        public static bool operator >=(CodePoint left, CodePoint right) => left.value >= right.value;
 
         /// <summary>
         /// Gets a value indicating whether the given codepoint is white space.
@@ -293,5 +310,20 @@ namespace SixLabors.Fonts.Unicode
 
             return new CodePoint(code);
         }
+
+        /// <inheritdoc/>
+        public int CompareTo(CodePoint other)
+
+            // Values don't span entire 32-bit domain so won't integer overflow.
+            => this.Value - other.Value;
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) => obj is CodePoint point && this.Equals(point);
+
+        /// <inheritdoc/>
+        public bool Equals(CodePoint other) => this.value == other.value;
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => HashCode.Combine(this.value);
     }
 }
