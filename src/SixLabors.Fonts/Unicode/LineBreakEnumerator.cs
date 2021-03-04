@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Unicode
     /// Implementation of the Unicode Line Break Algorithm. UAX:14
     /// <see href="https://www.unicode.org/reports/tr14/tr14-37.html"/>
     /// </summary>
-    internal ref struct LineBreakAlgorithm
+    internal ref struct LineBreakEnumerator
     {
         private readonly ReadOnlySpan<char> source;
         private int charPosition;
@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Unicode
         private int lb30a;
         private bool lb31;
 
-        public LineBreakAlgorithm(ReadOnlySpan<char> source)
+        public LineBreakEnumerator(ReadOnlySpan<char> source)
             : this()
         {
             this.source = source;
@@ -52,15 +52,16 @@ namespace SixLabors.Fonts.Unicode
             this.lb30a = 0;
         }
 
+        public LineBreak Current { get; private set; }
+
         /// <summary>
-        /// Returns the line break from the current source if one is found.
+        /// Advances the enumerator to the next element of the collection.
         /// </summary>
-        /// <param name="lineBreak">
-        /// When this method returns, contains the value associate with the break;
-        /// otherwise, the default value.
-        /// This parameter is passed uninitialized.</param>
-        /// <returns>The <see cref="bool"/>.</returns>
-        public bool TryGetNextBreak(out LineBreak lineBreak)
+        /// <returns>
+        /// <see langword="true"/> if the enumerator was successfully advanced to the next element;
+        /// <see langword="false"/> if the enumerator has passed the end of the collection.
+        /// </returns>
+        public bool MoveNext()
         {
             // Get the first char if we're at the beginning of the string.
             if (this.first)
@@ -85,7 +86,7 @@ namespace SixLabors.Fonts.Unicode
                     case LineBreakClass.BK:
                     case LineBreakClass.CR when this.nextClass != LineBreakClass.LF:
                         this.currentClass = this.MapFirst(this.nextClass);
-                        lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, true);
+                        this.Current = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, true);
                         return true;
                 }
 
@@ -96,7 +97,7 @@ namespace SixLabors.Fonts.Unicode
 
                 if (shouldBreak.Value)
                 {
-                    lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, false);
+                    this.Current = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, false);
                     return true;
                 }
             }
@@ -113,11 +114,11 @@ namespace SixLabors.Fonts.Unicode
                         break;
                 }
 
-                lineBreak = new LineBreak(this.FindPriorNonWhitespace(this.pointsLength), this.lastPosition, required);
+                this.Current = new LineBreak(this.FindPriorNonWhitespace(this.pointsLength), this.lastPosition, required);
                 return true;
             }
 
-            lineBreak = default;
+            this.Current = default;
             return false;
         }
 

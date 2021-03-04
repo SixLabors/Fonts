@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -64,7 +65,7 @@ namespace SixLabors.Fonts.Unicode
         {
             // Set working buffer sizes
             // TODO: This allocates more than it should for some arrays.
-            int length = CodePoint.GetCodePointCount(text);
+            int length = CodePoint.GetCodePointCount(text.AsSpan());
             this.types.Length = length;
             this.pairedBracketTypes.Length = length;
             this.pairedBracketValues.Length = length;

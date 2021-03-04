@@ -64,7 +64,7 @@ namespace SixLabors.Fonts
             }
 
             Span<int> codepoints = codePointsMemory.Span;
-            var lineBreaker = new LineBreakAlgorithm(text);
+            var lineBreaker = new LineBreakEnumerator(text);
 
             AppliedFontStyle spanStyle = options.GetStyle(0, codepoints.Length);
             var layout = new List<GlyphLayout>(codepoints.Length);
@@ -91,8 +91,9 @@ namespace SixLabors.Fonts
             bool startOfLine = true;
             float totalHeight = 0;
 
-            if (lineBreaker.TryGetNextBreak(out LineBreak b))
+            if (lineBreaker.MoveNext())
             {
+                LineBreak b = lineBreaker.Current;
                 nextWrappableLocation = b.PositionWrap - 1;
                 nextWrappableRequired = b.Required;
             }
@@ -175,8 +176,9 @@ namespace SixLabors.Fonts
 
                 if (nextWrappableLocation == i)
                 {
-                    if (lineBreaker.TryGetNextBreak(out b))
+                    if (lineBreaker.MoveNext())
                     {
+                        LineBreak b = lineBreaker.Current;
                         nextWrappableLocation = b.PositionWrap - 1;
                         nextWrappableRequired = b.Required;
                     }

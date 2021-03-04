@@ -13,53 +13,53 @@ using Xunit.Abstractions;
 
 namespace SixLabors.Fonts.Tests.Unicode
 {
-    public class LineBreakAlgorithmTests
+    public class LineBreakEnumeratorTests
     {
         private readonly ITestOutputHelper output;
 
-        public LineBreakAlgorithmTests(ITestOutputHelper output) => this.output = output;
+        public LineBreakEnumeratorTests(ITestOutputHelper output) => this.output = output;
 
         [Fact]
         public void BasicLatinTest()
         {
-            var lineBreaker = new LineBreakAlgorithm("Hello World\r\nThis is a test.".AsSpan());
+            var lineBreaker = new LineBreakEnumerator("Hello World\r\nThis is a test.".AsSpan());
 
-            Assert.True(lineBreaker.TryGetNextBreak(out LineBreak b));
-            Assert.Equal(6, b.PositionWrap);
-            Assert.False(b.Required);
+            Assert.True(lineBreaker.MoveNext());
+            Assert.Equal(6, lineBreaker.Current.PositionWrap);
+            Assert.False(lineBreaker.Current.Required);
 
-            Assert.True(lineBreaker.TryGetNextBreak(out b));
-            Assert.Equal(13, b.PositionWrap);
-            Assert.True(b.Required);
+            Assert.True(lineBreaker.MoveNext());
+            Assert.Equal(13, lineBreaker.Current.PositionWrap);
+            Assert.True(lineBreaker.Current.Required);
 
-            Assert.True(lineBreaker.TryGetNextBreak(out b));
-            Assert.Equal(18, b.PositionWrap);
-            Assert.False(b.Required);
+            Assert.True(lineBreaker.MoveNext());
+            Assert.Equal(18, lineBreaker.Current.PositionWrap);
+            Assert.False(lineBreaker.Current.Required);
 
-            Assert.True(lineBreaker.TryGetNextBreak(out b));
-            Assert.Equal(21, b.PositionWrap);
-            Assert.False(b.Required);
+            Assert.True(lineBreaker.MoveNext());
+            Assert.Equal(21, lineBreaker.Current.PositionWrap);
+            Assert.False(lineBreaker.Current.Required);
 
-            Assert.True(lineBreaker.TryGetNextBreak(out b));
-            Assert.Equal(23, b.PositionWrap);
-            Assert.False(b.Required);
+            Assert.True(lineBreaker.MoveNext());
+            Assert.Equal(23, lineBreaker.Current.PositionWrap);
+            Assert.False(lineBreaker.Current.Required);
 
-            Assert.True(lineBreaker.TryGetNextBreak(out b));
-            Assert.Equal(28, b.PositionWrap);
-            Assert.False(b.Required);
+            Assert.True(lineBreaker.MoveNext());
+            Assert.Equal(28, lineBreaker.Current.PositionWrap);
+            Assert.False(lineBreaker.Current.Required);
 
-            Assert.False(lineBreaker.TryGetNextBreak(out b));
+            Assert.False(lineBreaker.MoveNext());
         }
 
         [Fact]
         public void ForwardTextWithOuterWhitespace()
         {
-            var lineBreaker = new LineBreakAlgorithm(" Apples Pears Bananas   ".AsSpan());
+            var lineBreaker = new LineBreakEnumerator(" Apples Pears Bananas   ".AsSpan());
             var breaks = new List<LineBreak>();
 
-            while (lineBreaker.TryGetNextBreak(out LineBreak lineBreak))
+            while (lineBreaker.MoveNext())
             {
-                breaks.Add(lineBreak);
+                breaks.Add(lineBreaker.Current);
             }
 
             Assert.Equal(1, breaks[0].PositionWrap);
@@ -75,12 +75,12 @@ namespace SixLabors.Fonts.Tests.Unicode
         [Fact]
         public void ForwardTest()
         {
-            var lineBreaker = new LineBreakAlgorithm("Apples Pears Bananas".AsSpan());
+            var lineBreaker = new LineBreakEnumerator("Apples Pears Bananas".AsSpan());
             var breaks = new List<LineBreak>();
 
-            while (lineBreaker.TryGetNextBreak(out LineBreak lineBreak))
+            while (lineBreaker.MoveNext())
             {
-                breaks.Add(lineBreak);
+                breaks.Add(lineBreaker.Current);
             }
 
             Assert.Equal(7, breaks[0].PositionWrap);
@@ -177,10 +177,10 @@ namespace SixLabors.Fonts.Tests.Unicode
                 // Run the line breaker and build a list of break points
                 var text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
 
-                var enumerator = new LineBreakAlgorithm(text.AsSpan());
-                while (enumerator.TryGetNextBreak(out LineBreak b))
+                var enumerator = new LineBreakEnumerator(text.AsSpan());
+                while (enumerator.MoveNext())
                 {
-                    foundBreaks.Add(b.PositionWrap);
+                    foundBreaks.Add(enumerator.Current.PositionWrap);
                 }
 
                 // Check the same

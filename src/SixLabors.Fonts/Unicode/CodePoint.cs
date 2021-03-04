@@ -135,12 +135,17 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Returns the number of codepoints in a given string.
+        /// Returns the number of codepoints in a given string buffer.
         /// </summary>
         /// <param name="source">The source buffer to parse.</param>
         /// <returns>The <see cref="int"/>.</returns>
         public static int GetCodePointCount(ReadOnlySpan<char> source)
         {
+            if (source.IsEmpty)
+            {
+                return 0;
+            }
+
             unsafe
             {
                 fixed (char* c = source)
@@ -149,14 +154,6 @@ namespace SixLabors.Fonts.Unicode
                 }
             }
         }
-
-        /// <summary>
-        /// Returns the number of codepoints in a given string.
-        /// </summary>
-        /// <param name="text">The text to parse.</param>
-        /// <returns>The <see cref="int"/>.</returns>
-        public static int GetCodePointCount(string text)
-            => Encoding.UTF32.GetByteCount(text) / sizeof(uint);
 
         /// <summary>
         /// Gets the <see cref="BidiType"/> for the given codepoint.
