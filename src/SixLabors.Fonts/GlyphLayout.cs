@@ -113,24 +113,7 @@ namespace SixLabors.Fonts
             }
 
             sb.Append('\'');
-            switch (this.CodePoint.Value)
-            {
-                case '\t':
-                    sb.Append("\\t");
-                    break;
-                case '\n':
-                    sb.Append("\\n");
-                    break;
-                case '\r':
-                    sb.Append("\\r");
-                    break;
-                case ' ':
-                    sb.Append(" ");
-                    break;
-                default:
-                    sb.Append(char.ConvertFromUtf32(this.CodePoint.Value));
-                    break;
-            }
+            sb.Append(this.CodePoint.DebuggerDisplay);
 
             sb.Append('\'');
             sb.Append(' ');

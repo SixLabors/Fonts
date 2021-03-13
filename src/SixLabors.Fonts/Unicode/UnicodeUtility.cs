@@ -99,7 +99,8 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         public static uint GetScalarFromUtf16SurrogatePair(uint highSurrogateCodePoint, uint lowSurrogateCodePoint)
         {
-            DebugAssertSurrogateCodePoint(highSurrogateCodePoint, lowSurrogateCodePoint);
+            AssertIsHighSurrogateCodePoint(highSurrogateCodePoint);
+            AssertIsLowSurrogateCodePoint(lowSurrogateCodePoint);
 
             // This calculation comes from the Unicode specification, Table 3-5.
             // Need to remove the D800 marker from the high surrogate and the DC00 marker from the low surrogate,
@@ -108,11 +109,61 @@ namespace SixLabors.Fonts.Unicode
             return (highSurrogateCodePoint << 10) + lowSurrogateCodePoint - ((0xD800U << 10) + 0xDC00U - (1 << 16));
         }
 
-        [Conditional("DEBUG")]
-        private static void DebugAssertSurrogateCodePoint(uint highSurrogateCodePoint, uint lowSurrogateCodePoint)
+        /// <summary>
+        /// Decomposes an astral Unicode code point into UTF-16 high and low surrogate code units.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void GetUtf16SurrogatesFromSupplementaryPlaneCodePoint(uint value, out char highSurrogateCodePoint, out char lowSurrogateCodePoint)
         {
-            DebugGuard.IsTrue(IsHighSurrogateCodePoint(highSurrogateCodePoint), nameof(highSurrogateCodePoint), "Must be in [ U+D800..U+DBFF ], inclusive.");
-            DebugGuard.IsTrue(IsLowSurrogateCodePoint(lowSurrogateCodePoint), nameof(lowSurrogateCodePoint), "Must be in [ U+DC00..U+DFFF ], inclusive.");
+            AssertIsValidSupplementaryPlaneCodePoint(value);
+
+            // This calculation comes from the Unicode specification, Table 3-5.
+            highSurrogateCodePoint = (char)((value + ((0xD800u - 0x40u) << 10)) >> 10);
+            lowSurrogateCodePoint = (char)((value & 0x3FFu) + 0xDC00u);
         }
+
+        [Conditional("DEBUG")]
+        internal static void AssertIsHighSurrogateCodePoint(uint codePoint)
+        {
+            if (!IsHighSurrogateCodePoint(codePoint))
+            {
+                Debug.Fail($"The value {ToHexString(codePoint)} is not a valid UTF-16 high surrogate code point.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        internal static void AssertIsLowSurrogateCodePoint(uint codePoint)
+        {
+            if (!IsLowSurrogateCodePoint(codePoint))
+            {
+                Debug.Fail($"The value {ToHexString(codePoint)} is not a valid UTF-16 low surrogate code point.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        internal static void AssertIsValidCodePoint(uint codePoint)
+        {
+            if (!IsValidCodePoint(codePoint))
+            {
+                Debug.Fail($"The value {ToHexString(codePoint)} is not a valid Unicode code point value.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        internal static void AssertIsValidSupplementaryPlaneCodePoint(uint codePoint)
+        {
+            if (!IsValidCodePoint(codePoint) || IsBmpCodePoint(codePoint))
+            {
+                Debug.Fail($"The value {ToHexString(codePoint)} is not a valid supplementary plane Unicode code point value.");
+            }
+        }
+
+        /// <summary>
+        /// Formats a code point as the hex string "U+XXXX".
+        /// </summary>
+        /// <remarks>
+        /// The input value doesn't have to be a real code point in the Unicode codespace. It can be any integer.
+        /// </remarks>
+        private static string ToHexString(uint codePoint) => FormattableString.Invariant($"U+{codePoint:X4}");
     }
 }

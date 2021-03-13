@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
@@ -10,8 +11,15 @@ namespace SixLabors.Fonts.Unicode
     /// <summary>
     /// Represents a Unicode value ([ U+0000..U+10FFFF ], inclusive).
     /// </summary>
+    /// <remarks>
+    /// This type's constructors and conversion operators validate the input, so consumers can call the APIs
+    /// assuming that the underlying <see cref="CodePoint"/> instance is well-formed.
+    /// </remarks>
+    [DebuggerDisplay("{DebuggerDisplay,nq}")]
     internal readonly struct CodePoint : IComparable<CodePoint>, IEquatable<CodePoint>
     {
+        // Supplementary plane code points are encoded as 2 UTF-16 code units
+        private const int MaxUtf16CharsPerRune = 2;
         private const byte IsWhiteSpaceFlag = 0x80;
         private const byte UnicodeCategoryMask = 0x1F;
 
@@ -32,7 +40,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="value">The value to create the codepoint.</param>
         public CodePoint(uint value)
         {
-            Guard.IsTrue(UnicodeUtility.IsValidCodePoint(value), nameof(value), "Must be in [ U+0000..U+10FFFF ], inclusive.");
+            Guard.IsTrue(IsValid(value), nameof(value), "Must be in [ U+0000..U+10FFFF ], inclusive.");
 
             this.value = value;
             this.Value = (int)value;
@@ -72,6 +80,9 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         public bool IsAscii => UnicodeUtility.IsAsciiCodePoint(this.value);
 
+        // Displayed as "'<char>' (U+XXXX)"; e.g., "'e' (U+0065)"
+        internal string DebuggerDisplay => FormattableString.Invariant($"U+{this.value:X4} '{(IsValid(this.value) ? this.ToString() : "\uFFFD")}'");
+
         /// <summary>
         /// Gets the Unicode value as an integer.
         /// </summary>
@@ -93,6 +104,18 @@ namespace SixLabors.Fonts.Unicode
         public static bool operator >(CodePoint left, CodePoint right) => left.value > right.value;
 
         public static bool operator >=(CodePoint left, CodePoint right) => left.value >= right.value;
+
+        /// <summary>
+        /// Returns <see langword="true"/> if <paramref name="value"/> is a valid Unicode code
+        /// point, i.e., is in [ U+0000..U+10FFFF ], inclusive.
+        /// </summary>
+        public static bool IsValid(int value) => IsValid((uint)value);
+
+        /// <summary>
+        /// Returns <see langword="true"/> if <paramref name="value"/> is a valid Unicode code
+        /// point, i.e., is in [ U+0000..U+10FFFF ], inclusive.
+        /// </summary>
+        public static bool IsValid(uint value) => UnicodeUtility.IsValidCodePoint(value);
 
         /// <summary>
         /// Gets a value indicating whether the given codepoint is white space.
@@ -334,5 +357,20 @@ namespace SixLabors.Fonts.Unicode
 
         /// <inheritdoc/>
         public override int GetHashCode() => HashCode.Combine(this.value);
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            if (this.IsBmp)
+            {
+                return ((char)this.value).ToString();
+            }
+            else
+            {
+                Span<char> buffer = stackalloc char[MaxUtf16CharsPerRune];
+                UnicodeUtility.GetUtf16SurrogatesFromSupplementaryPlaneCodePoint(this.value, out buffer[0], out buffer[1]);
+                return buffer.ToString();
+            }
+        }
     }
 }
