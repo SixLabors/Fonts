@@ -258,14 +258,14 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="CodePoint"/>.</returns>
         public static CodePoint DecodeFromUtf16At(ReadOnlySpan<char> source, int index, out int charsConsumed)
         {
-            charsConsumed = 1;
-
             if (index >= source.Length)
             {
+                charsConsumed = 0;
                 return ReplacementCodePoint;
             }
 
             // Optimistically assume input is within BMP.
+            charsConsumed = 1;
             uint code = source[index];
 
             // High surrogate
@@ -309,15 +309,15 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="CodePoint"/>.</returns>
         public static CodePoint DecodeLastFromUtf16(ReadOnlySpan<char> source, out int charsConsumed)
         {
-            charsConsumed = 1;
-
             int index = source.Length - 1;
             if (index < 0)
             {
+                charsConsumed = 0;
                 return ReplacementCodePoint;
             }
 
             // Optimistically assume input is within BMP.
+            charsConsumed = 1;
             uint code = source[index];
 
             // Low surrogate

@@ -32,15 +32,9 @@ namespace SixLabors.Fonts.Unicode
         /// </returns>
         public bool MoveNext()
         {
-            if (this.source.IsEmpty)
-            {
-                this.Current = CodePoint.ReplacementCodePoint;
-                return false;
-            }
-
             this.Current = CodePoint.DecodeFromUtf16At(this.source, 0, out int consumed);
             this.source = this.source.Slice(consumed);
-            return true;
+            return consumed > 0;
         }
     }
 }

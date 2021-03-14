@@ -108,12 +108,6 @@ namespace SixLabors.Fonts.Tests.Unicode
             var tests = new List<Test>();
             for (int lineNumber = 1; lineNumber < lines.Length + 1; lineNumber++)
             {
-                // Ignore deliberately skipped test?
-                if (SkipLines.Contains(lineNumber))
-                {
-                    continue;
-                }
-
                 // Get the line, remove comments
                 string line = lines[lineNumber - 1].Split('#')[0].Trim();
 
@@ -218,13 +212,6 @@ namespace SixLabors.Fonts.Tests.Unicode
         }
 
         private static bool IsHexDigit(char ch) => char.IsDigit(ch) || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
-
-        // The following test lines have been investigated and appear to be
-        // expecting an incorrect result when compared to the default rules and
-        // pair tables.
-        private static readonly HashSet<int> SkipLines = new HashSet<int>()
-        {
-        };
 
         private readonly struct Test
         {
