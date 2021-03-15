@@ -47,7 +47,7 @@ namespace SixLabors.Fonts
                         originX = maxWidth;
                         break;
                     case HorizontalAlignment.Center:
-                        originX = 0.5f * maxWidth;
+                        originX = maxWidth / 2F;
                         break;
                     case HorizontalAlignment.Left:
                         originX = 0;
@@ -326,14 +326,9 @@ namespace SixLabors.Fonts
                 if (glyphLayout.StartOfLine)
                 {
                     // scan ahead measuring width
-                    float width = glyphLayout.Width;
-                    for (int j = i + 1; j < layout.Count; j++)
+                    float width = 0;
+                    for (int j = i; j < layout.Count; j++)
                     {
-                        if (layout[j].StartOfLine)
-                        {
-                            break;
-                        }
-
                         width = layout[j].Location.X + layout[j].Width; // rhs
                     }
 
@@ -343,7 +338,7 @@ namespace SixLabors.Fonts
                             lineOffset = new Vector2(originX - width, 0) + offset;
                             break;
                         case HorizontalAlignment.Center:
-                            lineOffset = new Vector2(originX - (width / 2f), 0) + offset;
+                            lineOffset = new Vector2(originX - (width / 2F), 0) + offset;
                             break;
                         case HorizontalAlignment.Left:
                             lineOffset = new Vector2(originX, 0) + offset;
