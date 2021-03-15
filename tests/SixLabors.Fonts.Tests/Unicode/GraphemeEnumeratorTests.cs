@@ -13,22 +13,41 @@ using Xunit.Abstractions;
 
 namespace SixLabors.Fonts.Tests.Unicode
 {
-    public class GraphemeClusterAlgorithmTests
+    public class GraphemeEnumeratorTests
     {
         private readonly ITestOutputHelper output;
 
-        public GraphemeClusterAlgorithmTests(ITestOutputHelper output) => this.output = output;
+        public GraphemeEnumeratorTests(ITestOutputHelper output) => this.output = output;
 
         [Fact]
-        public void Should_Enumerate_Other()
+        public void Should_Enumerate_Emoji()
+        {
+            // https://gist.github.com/GrabYourPitchforks/b9dbd348b448c938497cff37a3526725#whats-the-relationship-between-a-net-rune-and-a-character
+            const string text = "👩🏽‍🚒";
+            var enumerator = new GraphemeEnumerator(text.AsSpan());
+            int count = 0;
+
+            while (enumerator.MoveNext())
+            {
+                Assert.Equal(4, enumerator.Current.CodePointCount);
+                Assert.Equal(7, enumerator.Current.Text.Length);
+                count++;
+            }
+
+            Assert.Equal(1, count);
+        }
+
+        [Fact]
+        public void Should_Enumerate_Alpha()
         {
             const string text = "ABCDEFGHIJ";
-
+            var enumerator = new GraphemeEnumerator(text.AsSpan());
             int count = 0;
-            var enumerator = new GraphemeClusterAlgorithm(text.AsSpan());
-            while (enumerator.TryGetGrapheme(out Grapheme grapheme))
+
+            while (enumerator.MoveNext())
             {
-                Assert.Equal(1, grapheme.Text.Length);
+                Assert.Equal(1, enumerator.Current.CodePointCount);
+                Assert.Equal(1, enumerator.Current.Text.Length);
                 count++;
             }
 
@@ -115,9 +134,20 @@ namespace SixLabors.Fonts.Tests.Unicode
                 var text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
 
                 // Run the algorithm
-                var enumerator = new GraphemeClusterAlgorithm(text.AsSpan());
-                while (enumerator.TryGetBoundary(out int boundary))
+                int charsConsumed = 0;
+                var enumerator = new GraphemeEnumerator(text.AsSpan());
+                int boundary = 0;
+
+                // Always a leading boundary
+                foundBreaks.Add(boundary);
+                while (charsConsumed < text.Length)
                 {
+                    if (enumerator.MoveNext())
+                    {
+                        charsConsumed += enumerator.Current.Text.Length;
+                        boundary += enumerator.Current.CodePointCount;
+                    }
+
                     foundBreaks.Add(boundary);
                 }
 

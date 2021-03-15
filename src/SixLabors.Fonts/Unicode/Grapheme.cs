@@ -10,31 +10,31 @@ namespace SixLabors.Fonts.Unicode
     /// </summary>
     internal readonly ref struct Grapheme
     {
-        public Grapheme(CodePoint codePoint, int index, int offset, ReadOnlySpan<char> text)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grapheme"/> struct.
+        /// </summary>
+        /// <param name="leadingCodePoint">The leading codepoint.</param>
+        /// <param name="codePointCount">The total number of codepoints.</param>
+        /// <param name="source">The buffer represented by the grapheme cluster.</param>
+        public Grapheme(CodePoint leadingCodePoint, int codePointCount, ReadOnlySpan<char> source)
         {
-            this.LeadingCodePoint = codePoint;
-            this.CodePointIndex = index;
-            this.CharOffset = offset;
-            this.Text = text;
+            this.LeadingCodePoint = leadingCodePoint;
+            this.CodePointCount = codePointCount;
+            this.Text = source;
         }
 
         /// <summary>
-        /// Gets the first <see cref="CodePoint"/> of the grapheme cluster.
+        /// Gets the leading <see cref="CodePoint"/> of the grapheme cluster.
         /// </summary>
         public CodePoint LeadingCodePoint { get; }
 
         /// <summary>
-        /// Gets the index of the grapheme cluster within the parent text block.
+        /// Gets the number of code points within the grapheme cluster.
         /// </summary>
-        public int CharOffset { get; }
+        public int CodePointCount { get; }
 
         /// <summary>
-        /// Gets the codepoint index within the parent text block.
-        /// </summary>
-        public int CodePointIndex { get; }
-
-        /// <summary>
-        /// Gets the text that is represented by the grapheme cluster..
+        /// Gets the text that is represented by the grapheme cluster.
         /// </summary>
         public ReadOnlySpan<char> Text { get; }
     }

@@ -12,6 +12,10 @@ namespace SixLabors.Fonts.Unicode
     {
         private ReadOnlySpan<char> source;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodePointEnumerator"/> struct.
+        /// </summary>
+        /// <param name="source">The buffer to read from.</param>
         public CodePointEnumerator(ReadOnlySpan<char> source)
         {
             this.source = source;

@@ -24,11 +24,6 @@ namespace SixLabors.Fonts.Unicode
         LV = 11,
         LVT = 12,
         ExtPict = 13,
-        ZWJ = 14,
-
-        // Pseudo classes, not generated from character data but used by pair table
-        SOT = 15,
-        EOT = 16,
-        ExtPictZwg = 17,
+        ZWJ = 14
     }
 }
