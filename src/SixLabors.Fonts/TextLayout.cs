@@ -39,22 +39,7 @@ namespace SixLabors.Fonts
             {
                 // trim trailing white spaces from the text
                 text = text.TrimEnd(null);
-
                 maxWidth = options.WrappingWidth / options.DpiX;
-
-                switch (options.HorizontalAlignment)
-                {
-                    // TODO: Check this.
-                    case HorizontalAlignment.Right:
-                        originX = maxWidth;
-                        break;
-                    case HorizontalAlignment.Center:
-                        originX = maxWidth / 2F;
-                        break;
-                    case HorizontalAlignment.Left:
-                        originX = 0;
-                        break;
-                }
             }
 
             // lets convert the text into codepoints
@@ -336,15 +321,16 @@ namespace SixLabors.Fonts
                     float width = 0;
                     for (int j = i; j < layout.Count; j++)
                     {
-                        GlyphLayout nextLayout = layout[j];
-                        if (nextLayout.StartOfLine && (nextLayout.GraphemeIndex != graphemeIndex || nextLayout.GraphemeIndex == -1))
+                        GlyphLayout current = layout[j];
+                        int currentGraphemeIndex = current.GraphemeIndex;
+                        if (current.StartOfLine && (currentGraphemeIndex != graphemeIndex))
                         {
                             // Leading graphemes are made up of multiple glyphs all marked as 'StartOfLine so we only
                             // break when we are sure we have entered a new cluster or previously defined break.
                             break;
                         }
 
-                        width = nextLayout.Location.X + nextLayout.Width;
+                        width = current.Location.X + current.Width;
                     }
 
                     switch (options.HorizontalAlignment)

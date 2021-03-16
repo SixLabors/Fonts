@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
@@ -60,10 +61,10 @@ namespace DrawWithImageSharp
                     location.X = 0;
                     break;
                 case HorizontalAlignment.Right:
-                    location.X = img.Width - wrappingWidth;
+                    location.X = img.Width;
                     break;
                 case HorizontalAlignment.Center:
-                    location.X = (img.Width - wrappingWidth) / 2F;
+                    location.X = img.Width / 2F;
                     break;
                 default:
                     break;
@@ -85,7 +86,7 @@ namespace DrawWithImageSharp
             string text = $"    {horiz}     {vert}         {horiz}     {vert}         {horiz}     {vert}     ";
             renderer.RenderText(text, style);
 
-            System.Collections.Generic.IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
+            IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
             img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
 
             Rgba32 f = Color.Fuchsia;
