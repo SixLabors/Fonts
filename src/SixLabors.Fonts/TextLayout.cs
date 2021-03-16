@@ -324,13 +324,13 @@ namespace SixLabors.Fonts
                     break;
             }
 
-            Vector2 offsetX = offsetY;
+            Vector2 offsetX = Vector2.Zero;
             for (int i = 0; i < layout.Count; i++)
             {
                 GlyphLayout glyphLayout = layout[i];
                 graphemeIndex = glyphLayout.GraphemeIndex;
 
-                // Scan ahead getting the total width of each line.
+                // Scan ahead getting the width.
                 if (glyphLayout.StartOfLine)
                 {
                     float width = 0;
@@ -340,7 +340,7 @@ namespace SixLabors.Fonts
                         if (nextLayout.StartOfLine && (nextLayout.GraphemeIndex != graphemeIndex || nextLayout.GraphemeIndex == -1))
                         {
                             // Leading graphemes are made up of multiple glyphs all marked as 'StartOfLine so we only
-                            // break when we are sure we have entered a cluster or when we have hit a previously defined break.
+                            // break when we are sure we have entered a new cluster or previously defined break.
                             break;
                         }
 
