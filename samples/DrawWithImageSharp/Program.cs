@@ -29,6 +29,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily colorEmoji = fonts.Install(@"Fonts\Twemoji Mozilla.ttf");
             FontFamily font2 = fonts.Install(@"Fonts\OpenSans-Regular.ttf");
             FontFamily emojiFont = SystemFonts.Find("Segoe UI Emoji");
+            FontFamily uiFont = SystemFonts.Find("Segoe UI");
+
+            RenderTextProcessorWithAlignment(emojiFont, "😀A😀", pointSize: 20, fallbackFonts: new[] { colorEmoji });
+            RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { font2 });
+            RenderTextProcessorWithAlignment(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
 
             // fallback font tests
             RenderTextProcessor(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
@@ -191,14 +196,81 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
         }
 
+        public static void RenderTextProcessorWithAlignment(
+            FontFamily fontFamily,
+            string text,
+            float pointSize = 12,
+            IEnumerable<FontFamily> fallbackFonts = null)
+        {
+            foreach (VerticalAlignment va in (VerticalAlignment[])Enum.GetValues(typeof(VerticalAlignment)))
+            {
+                if (va != VerticalAlignment.Center)
+                {
+                    //continue;
+                }
+
+                foreach (HorizontalAlignment ha in (HorizontalAlignment[])Enum.GetValues(typeof(HorizontalAlignment)))
+                {
+                    if (ha != HorizontalAlignment.Center)
+                    {
+                       // continue;
+                    }
+
+                    var textOptions = new TextGraphicsOptionsCopy
+                    {
+                        ApplyKerning = true,
+                        DpiX = 96,
+                        DpiY = 96,
+                        RenderColorFonts = true,
+                        VerticalAlignment = va,
+                        HorizontalAlignment = ha
+                    };
+
+                    if (fallbackFonts != null)
+                    {
+                        textOptions.FallbackFonts.AddRange(fallbackFonts);
+                    }
+
+                    var font = new Font(fontFamily, pointSize);
+                    var renderOptions = new RendererOptions(font, textOptions.DpiX, textOptions.DpiY)
+                    {
+                        ApplyKerning = true,
+                        ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
+                        FallbackFontFamilies = textOptions.FallbackFonts?.ToArray(),
+                        VerticalAlignment = va,
+                        HorizontalAlignment = ha
+                    };
+
+                    FontRectangle textSize = TextMeasurer.Measure(text, renderOptions);
+                    using var img = new Image<Rgba32>(((int)textSize.Width * 2) + 20, ((int)textSize.Height * 2) + 20);
+
+                    Size size = img.Size();
+                    img.Mutate(x => x.Fill(Color.White).ApplyProcessor(
+                        new DrawTextProcessorCopy(
+                            textOptions,
+                            text,
+                            font,
+                            new SolidBrushCopy(Color.Black),
+                            null,
+                            new PointF(size.Width / 2F, size.Height / 2F))));
+
+                    string h = ha.ToString().Replace(nameof(HorizontalAlignment), string.Empty).ToLower();
+                    string v = va.ToString().Replace(nameof(VerticalAlignment), string.Empty).ToLower();
+
+                    string fullPath = CreatePath(font.Name, text + "-" + h + "-" + v + ".png");
+                    Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+                    img.Save(fullPath);
+                }
+            }
+        }
+
         public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)
             => shapes.SaveImage(new Color?[shapes.Count()], width, height, path);
 
         private static string CreatePath(params string[] path)
         {
             path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
-            string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
-            return fullPath;
+            return System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
         }
 
         public static void SaveImage(this IEnumerable<IPath> shapes, IEnumerable<Color?> colors, int width, int height, params string[] path)

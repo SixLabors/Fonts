@@ -43,7 +43,7 @@ namespace DrawWithImageSharp
                     location.Y = 0;
                     break;
                 case VerticalAlignment.Center:
-                    location.Y = img.Height / 2;
+                    location.Y = img.Height / 2F;
                     break;
                 case VerticalAlignment.Bottom:
                     location.Y = img.Height;
@@ -55,14 +55,13 @@ namespace DrawWithImageSharp
             switch (horiz)
             {
                 case HorizontalAlignment.Left:
-
                     location.X = 0;
                     break;
                 case HorizontalAlignment.Right:
                     location.X = img.Width;
                     break;
                 case HorizontalAlignment.Center:
-                    location.X = img.Width / 2;
+                    location.X = img.Width / 2F;
                     break;
                 default:
                     break;

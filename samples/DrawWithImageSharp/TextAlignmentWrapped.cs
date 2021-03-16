@@ -44,7 +44,7 @@ namespace DrawWithImageSharp
                     location.Y = 0;
                     break;
                 case VerticalAlignment.Center:
-                    location.Y = img.Height / 2;
+                    location.Y = img.Height / 2F;
                     break;
                 case VerticalAlignment.Bottom:
                     location.Y = img.Height;
@@ -63,7 +63,7 @@ namespace DrawWithImageSharp
                     location.X = img.Width - wrappingWidth;
                     break;
                 case HorizontalAlignment.Center:
-                    location.X = (img.Width - wrappingWidth) / 2;
+                    location.X = (img.Width - wrappingWidth) / 2F;
                     break;
                 default:
                     break;
