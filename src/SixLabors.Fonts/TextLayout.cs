@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Unicode;
@@ -38,21 +39,7 @@ namespace SixLabors.Fonts
             {
                 // trim trailing white spaces from the text
                 text = text.TrimEnd(null);
-
                 maxWidth = options.WrappingWidth / options.DpiX;
-
-                switch (options.HorizontalAlignment)
-                {
-                    case HorizontalAlignment.Right:
-                        originX = maxWidth;
-                        break;
-                    case HorizontalAlignment.Center:
-                        originX = 0.5f * maxWidth;
-                        break;
-                    case HorizontalAlignment.Left:
-                        originX = 0;
-                        break;
-                }
             }
 
             // lets convert the text into codepoints
@@ -90,6 +77,7 @@ namespace SixLabors.Fonts
             bool nextWrappableRequired = false;
             bool startOfLine = true;
             float totalHeight = 0;
+            int graphemeIndex = 0;
 
             if (lineBreaker.TryGetNextBreak(out LineBreak b))
             {
@@ -203,7 +191,7 @@ namespace SixLabors.Fonts
                     {
                         float w = g.AdvanceWidth * spanStyle.PointSize / scale;
                         float h = g.Height * spanStyle.PointSize / scale;
-                        layout.Add(new GlyphLayout(codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine, false, false));
+                        layout.Add(new GlyphLayout(graphemeIndex, codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine, false, false));
 
                         if (w > glyphWidth)
                         {
@@ -211,6 +199,8 @@ namespace SixLabors.Fonts
                         }
                     }
 
+                    // Increment the index to signify we have moved on the a new cluster.
+                    graphemeIndex++;
                     startOfLine = false;
 
                     // move forward the actual width of the glyph, we are retaining the baseline
@@ -236,7 +226,7 @@ namespace SixLabors.Fonts
                                 }
 
                                 Vector2 current = layout[j].Location;
-                                layout[j] = new GlyphLayout(layout[j].CodePoint, layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height, layout[j].LineHeight, startOfLine, layout[j].IsWhiteSpace, layout[j].IsControlCharacter);
+                                layout[j] = new GlyphLayout(layout[j].GraphemeIndex, layout[j].CodePoint, layout[j].Glyph, new Vector2(current.X - wrappingOffset, current.Y + lineHeight), layout[j].Width, layout[j].Height, layout[j].LineHeight, startOfLine, layout[j].IsWhiteSpace, layout[j].IsControlCharacter);
                                 startOfLine = false;
 
                                 location.X = layout[j].Location.X + layout[j].Width;
@@ -258,13 +248,13 @@ namespace SixLabors.Fonts
                     previousGlyph = null;
                     startOfLine = true;
 
-                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
+                    layout.Add(new GlyphLayout(-1, codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
                     startOfLine = false;
                 }
                 else if (codepoints[i] == '\n')
                 {
                     // carriage return resets the XX coordinate to 0
-                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
+                    layout.Add(new GlyphLayout(-1, codePoint, new Glyph(glyph, spanStyle.PointSize), location, 0, glyphHeight, lineHeight, startOfLine, true, true));
                     location.X = 0;
                     location.Y += lineHeight;
                     totalHeight += lineHeight;
@@ -292,7 +282,7 @@ namespace SixLabors.Fonts
                         finalWidth += tabStop;
                     }
 
-                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, finalWidth, glyphHeight, lineHeight, startOfLine, true, false));
+                    layout.Add(new GlyphLayout(-1, codePoint, new Glyph(glyph, spanStyle.PointSize), location, finalWidth, glyphHeight, lineHeight, startOfLine, true, false));
                     startOfLine = false;
 
                     // advance to a position > width away that
@@ -301,58 +291,74 @@ namespace SixLabors.Fonts
                 }
                 else if (codepoints[i] == ' ')
                 {
-                    layout.Add(new GlyphLayout(codePoint, new Glyph(glyph, spanStyle.PointSize), location, glyphWidth, glyphHeight, lineHeight, startOfLine, true, false));
+                    layout.Add(new GlyphLayout(-1, codePoint, new Glyph(glyph, spanStyle.PointSize), location, glyphWidth, glyphHeight, lineHeight, startOfLine, true, false));
                     startOfLine = false;
                     location.X += glyphWidth;
                     previousGlyph = null;
                 }
             }
 
-            var offset = new Vector2(0, top);
+            var offsetY = new Vector2(0, top);
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Center:
-                    offset += new Vector2(0, -(totalHeight / 2F));
+                    offsetY += new Vector2(0, -(totalHeight / 2F));
                     break;
                 case VerticalAlignment.Bottom:
-                    offset += new Vector2(0, -totalHeight);
+                    offsetY += new Vector2(0, -totalHeight);
                     break;
             }
 
-            Vector2 lineOffset = offset;
+            Vector2 offsetX = Vector2.Zero;
             for (int i = 0; i < layout.Count; i++)
             {
                 GlyphLayout glyphLayout = layout[i];
+                graphemeIndex = glyphLayout.GraphemeIndex;
+
+                // Scan ahead getting the width.
                 if (glyphLayout.StartOfLine)
                 {
-                    // scan ahead measuring width
-                    float width = glyphLayout.Width;
-                    for (int j = i + 1; j < layout.Count; j++)
+                    float width = 0;
+                    for (int j = i; j < layout.Count; j++)
                     {
-                        if (layout[j].StartOfLine)
+                        GlyphLayout current = layout[j];
+                        int currentGraphemeIndex = current.GraphemeIndex;
+                        if (current.StartOfLine && (currentGraphemeIndex != graphemeIndex))
                         {
+                            // Leading graphemes are made up of multiple glyphs all marked as 'StartOfLine so we only
+                            // break when we are sure we have entered a new cluster or previously defined break.
                             break;
                         }
 
-                        width = layout[j].Location.X + layout[j].Width; // rhs
+                        width = current.Location.X + current.Width;
                     }
 
                     switch (options.HorizontalAlignment)
                     {
+                        case HorizontalAlignment.Left:
+                            offsetX = new Vector2(originX, 0) + offsetY;
+                            break;
                         case HorizontalAlignment.Right:
-                            lineOffset = new Vector2(originX - width, 0) + offset;
+                            offsetX = new Vector2(originX - width, 0) + offsetY;
                             break;
                         case HorizontalAlignment.Center:
-                            lineOffset = new Vector2(originX - (width / 2f), 0) + offset;
-                            break;
-                        case HorizontalAlignment.Left:
-                            lineOffset = new Vector2(originX, 0) + offset;
+                            offsetX = new Vector2(originX - (width / 2F), 0) + offsetY;
                             break;
                     }
                 }
 
                 // TODO calculate an offset from the 'origin' based on TextAlignment for each line
-                layout[i] = new GlyphLayout(glyphLayout.CodePoint, glyphLayout.Glyph, glyphLayout.Location + lineOffset + origin, glyphLayout.Width, glyphLayout.Height, glyphLayout.LineHeight, glyphLayout.StartOfLine, glyphLayout.IsWhiteSpace, glyphLayout.IsControlCharacter);
+                layout[i] = new GlyphLayout(
+                    glyphLayout.GraphemeIndex,
+                    glyphLayout.CodePoint,
+                    glyphLayout.Glyph,
+                    glyphLayout.Location + offsetX + origin,
+                    glyphLayout.Width,
+                    glyphLayout.Height,
+                    glyphLayout.LineHeight,
+                    glyphLayout.StartOfLine,
+                    glyphLayout.IsWhiteSpace,
+                    glyphLayout.IsControlCharacter);
             }
 
             return layout;

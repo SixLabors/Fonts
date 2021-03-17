@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors.
+// Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
 using System.Numerics;
@@ -11,8 +11,9 @@ namespace SixLabors.Fonts
     /// </summary>
     internal readonly struct GlyphLayout
     {
-        internal GlyphLayout(int codePoint, Glyph glyph, Vector2 location, float width, float height, float lineHeight, bool startOfLine, bool isWhiteSpace, bool isControlCharacter)
+        internal GlyphLayout(int grapheme, int codePoint, Glyph glyph, Vector2 location, float width, float height, float lineHeight, bool startOfLine, bool isWhiteSpace, bool isControlCharacter)
         {
+            this.GraphemeIndex = grapheme;
             this.LineHeight = lineHeight;
             this.CodePoint = codePoint;
             this.Glyph = glyph;
@@ -23,6 +24,11 @@ namespace SixLabors.Fonts
             this.IsWhiteSpace = isWhiteSpace;
             this.IsControlCharacter = isControlCharacter;
         }
+
+        /// <summary>
+        /// Gets the index of the grapheme in the combined text that the glyph is a member of.
+        /// </summary>
+        public int GraphemeIndex { get; }
 
         /// <summary>
         /// Gets a value indicating whether gets the glyphe represents a whitespace character.
@@ -107,10 +113,18 @@ namespace SixLabors.Fonts
             sb.Append('\'');
             switch (this.CodePoint)
             {
-                case '\t': sb.Append("\\t"); break;
-                case '\n': sb.Append("\\n"); break;
-                case '\r': sb.Append("\\r"); break;
-                case ' ': sb.Append(" "); break;
+                case '\t':
+                    sb.Append("\\t");
+                    break;
+                case '\n':
+                    sb.Append("\\n");
+                    break;
+                case '\r':
+                    sb.Append("\\r");
+                    break;
+                case ' ':
+                    sb.Append(" ");
+                    break;
                 default:
                     sb.Append(char.ConvertFromUtf32(this.CodePoint));
                     break;
