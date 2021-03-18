@@ -13,6 +13,7 @@ namespace SixLabors.Fonts
     internal readonly struct GlyphLayout
     {
         internal GlyphLayout(
+            int grapheme,
             CodePoint codePoint,
             Glyph glyph,
             Vector2 location,
@@ -21,6 +22,7 @@ namespace SixLabors.Fonts
             float lineHeight,
             bool startOfLine)
         {
+            this.GraphemeIndex = grapheme;
             this.LineHeight = lineHeight;
             this.CodePoint = codePoint;
             this.Glyph = glyph;
@@ -29,6 +31,11 @@ namespace SixLabors.Fonts
             this.Height = height;
             this.StartOfLine = startOfLine;
         }
+
+        /// <summary>
+        /// Gets the index of the grapheme in the combined text that the glyph is a member of.
+        /// </summary>
+        public int GraphemeIndex { get; }
 
         /// <summary>
         /// Gets the glyph.
