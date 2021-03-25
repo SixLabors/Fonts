@@ -29,7 +29,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Calculates the bounding box
         /// </summary>
-        /// <param name="location">location to calualte from.</param>
+        /// <param name="location">location to calculate from.</param>
         /// <param name="dpi">dpi to calualtes in relation to</param>
         /// <returns>The bounding box</returns>
         public FontRectangle BoundingBox(Vector2 location, Vector2 dpi)
