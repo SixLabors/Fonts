@@ -22,8 +22,15 @@ SixLabors.Fonts
 ## License
   
 - Fonts is licensed under the [Apache License, Version 2.0](https://opensource.org/licenses/Apache-2.0)  
-- An alternative Commercial License can be purchased for projects and applications requiring support.
+- An alternative Commercial Support License can be purchased **for projects and applications requiring support**.
 Please visit https://sixlabors.com/pricing for details.
+
+## Support Six Labors
+
+Support the efforts of the development of the Six Labors projects. 
+ - [Purchase a Commercial Support License :heart:](https://sixlabors.com/pricing/)
+ - [Become a sponsor via GitHub Sponsors :heart:]( https://github.com/sponsors/SixLabors)
+ - [Become a sponsor via Open Collective :heart:](https://opencollective.com/sixlabors)
 
 ## Documentation
 
@@ -84,10 +91,10 @@ git submodule update --init --recursive
 - Reading font description (name, family, subname etc plus other string metadata)
 - Loading True type fonts
 - Loading WOFF fonts
-- Load all compatible fonts from local machine store (windows only at the moment)
+- Load all compatible fonts from local machine store (Windows only at the moment)
 
 #### Limitations
-we currently only support otf and woff fonts with True Type outlines.
+We currently only support otf and woff fonts with True Type outlines.
 
 ## API Examples
 
@@ -127,41 +134,3 @@ Please... Spread the word, contribute algorithms, submit performance improvement
 - [Anton Firsov](https://github.com/antonfirsov)
 - [James Jackson-South](https://github.com/jimbobsquarepants)
 - [Brian Popow](https://github.com/brianpopow)
-
-## Sponsor Six Labors
-
-Support the efforts of the development of the Six Labors projects. [[Become a sponsor :heart:](https://opencollective.com/sixlabors#sponsor)]
-
-### Platinum Sponsors
-Become a platinum sponsor with a monthly donation of $2000 (providing 32 hours of maintenance and development) and get 2 hours of dedicated support (remote support available through chat or screen-sharing) per month.
-
-In addition you get your logo (large) on our README on GitHub and the home page (large) of sixlabors.com
-
-<a href="https://opencollective.com/sixlabors/tiers/platinum-sponsors/0/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/platinum-sponsors/0/avatar.svg?avatarHeight=192"></a>
-
-### Gold Sponsors
-Become a gold sponsor with a monthly donation of $1000 (providing 16 hours of maintenance and development) and get 1 hour of dedicated support (remote support available through chat or screen-sharing) per month.
-
-In addition you get your logo (large) on our README on GitHub and the home page (medium) of sixlabors.com
-
-<a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/0/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/0/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/1/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/1/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/2/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/2/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/3/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/3/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/4/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/4/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/5/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/5/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/6/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/6/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/7/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/7/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/8/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/8/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/9/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/9/avatar.svg?avatarHeight=156"></a><a href="https://opencollective.com/sixlabors/tiers/gold-sponsors/10/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/gold-sponsors/10/avatar.svg?avatarHeight=156"></a>
-
-### Silver Sponsors
-Become a silver sponsor with a monthly donation of $500 (providing 8 hours of maintenance and development) and get your logo (medium) on our README on GitHub and the product pages of sixlabors.com
-
-<a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/0/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/0/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/1/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/1/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/2/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/2/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/3/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/3/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/4/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/4/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/5/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/5/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/6/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/6/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/7/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/7/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/8/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/8/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/9/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/9/avatar.svg?avatarHeight=128"></a><a href="https://opencollective.com/sixlabors/tiers/silver-sponsors/10/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/silver-sponsors/10/avatar.svg?avatarHeight=128"></a>
-
-### Bronze Sponsors
-Become a bronze sponsor with a monthly donation of $100 and get your logo (small) on our README on GitHub.
-
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/0/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/0/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/1/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/1/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/2/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/2/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/3/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/3/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/4/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/4/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/5/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/5/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/6/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/6/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/7/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/7/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/8/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/8/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/9/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/9/avatar.svg?avatarHeight=96"></a>
-<a href="https://opencollective.com/sixlabors/tiers/bronze-sponsors/10/website" target="_blank"><img src="https://opencollective.com/sixlabors/tiers/bronze-sponsors/10/avatar.svg?avatarHeight=96"></a>
