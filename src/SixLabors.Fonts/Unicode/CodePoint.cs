@@ -127,9 +127,9 @@ namespace SixLabors.Fonts.Unicode
                 return (AsciiCharInfo[codePoint.Value] & IsWhiteSpaceFlag) != 0;
             }
 
-            // Only BMP code points can be white space, so only call into GetBidiType
+            // Only BMP code points can be white space, so only call into char
             // if the incoming value is within the BMP.
-            return codePoint.IsBmp && GetBidiType(codePoint).CharacterType == BidiCharacterType.WS;
+            return codePoint.IsBmp && char.IsWhiteSpace((char)codePoint.Value);
         }
 
         /// <summary>
@@ -148,21 +148,17 @@ namespace SixLabors.Fonts.Unicode
             ((value.value + 1) & ~0x80u) <= 0x20u;
 
         /// <summary>
-        /// Gets a value indicating whether the given codepoint is a break.
+        /// Gets a value indicating whether the given codepoint is a mandaory break.
         /// </summary>
         public static bool IsBreak(CodePoint value)
         {
-            // Copied from Avalonia.
-            // TODO: How do we confirm this?
-            switch (value.Value)
+            // See https://www.unicode.org/standard/reports/tr13/tr13-5.html
+            switch (UnicodeData.GetLineBreakClass(value.Value))
             {
-                case 0x000A: // LINE FEED (LF)
-                case 0x000B: // LINE TABULATION
-                case 0x000C: // FORM FEED (FF)
-                case 0x000D: // CARRIAGE RETURN (CR)
-                case 0x0085: // NEXT LINE (NEL)
-                case 0x2028: // LINE SEPARATOR
-                case 0x2029: // PARAGRAPH SEPARATOR
+                case LineBreakClass.BK:
+                case LineBreakClass.CR:
+                case LineBreakClass.LF:
+                case LineBreakClass.NL:
                     return true;
                 default:
                     return false;

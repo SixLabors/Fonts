@@ -169,8 +169,7 @@ namespace SixLabors.Fonts
                 float glyphWidth = glyph.AdvanceWidth * spanStyle.PointSize / scale;
                 float glyphHeight = glyph.Height * spanStyle.PointSize / scale;
 
-                // TODO: !CodePoint.IsWhitespace(codePoint) && ! CodePoint.IsBreak(codePoint) ??
-                if (codePoint.Value != '\r' && codePoint.Value != '\n' && codePoint.Value != '\t' && codePoint.Value != ' ')
+                if (!CodePoint.IsBreak(codePoint) && !CodePoint.IsWhiteSpace(codePoint))
                 {
                     Vector2 glyphLocation = location;
                     if (spanStyle.ApplyKerning && previousGlyph != null)
