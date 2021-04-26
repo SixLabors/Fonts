@@ -148,17 +148,20 @@ namespace SixLabors.Fonts.Unicode
             ((value.value + 1) & ~0x80u) <= 0x20u;
 
         /// <summary>
-        /// Gets a value indicating whether the given codepoint is a mandaory break.
+        /// Gets a value indicating whether the given codepoint is a new line indicator.
         /// </summary>
-        public static bool IsBreak(CodePoint value)
+        public static bool IsNewLine(CodePoint value)
         {
             // See https://www.unicode.org/standard/reports/tr13/tr13-5.html
-            switch (UnicodeData.GetLineBreakClass(value.Value))
+            switch (value.Value)
             {
-                case LineBreakClass.BK:
-                case LineBreakClass.CR:
-                case LineBreakClass.LF:
-                case LineBreakClass.NL:
+                case 0x000A: // LINE FEED (LF)
+                case 0x000B: // LINE TABULATION (VT)
+                case 0x000C: // FORM FEED (FF)
+                case 0x000D: // CARRIAGE RETURN (CR)
+                case 0x0085: // NEXT LINE (NEL)
+                case 0x2028: // LINE SEPARATOR (LS)
+                case 0x2029: // PARAGRAPH SEPARATOR (PS)
                     return true;
                 default:
                     return false;

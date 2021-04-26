@@ -100,7 +100,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
                 GlyphLayout c = glyphLayouts[i];
-                if (!CodePoint.IsBreak(c.CodePoint))
+                if (!CodePoint.IsNewLine(c.CodePoint))
                 {
                     hasSize = true;
                     FontRectangle box = c.BoundingBox(dpi);
@@ -153,7 +153,7 @@ namespace SixLabors.Fonts
                 GlyphLayout c = glyphLayouts[i];
 
                 // TODO: This sets the hasSize value to the last layout... is this correct?
-                if (!CodePoint.IsBreak(c.CodePoint))
+                if (!CodePoint.IsNewLine(c.CodePoint))
                 {
                     hasSize = true;
                 }

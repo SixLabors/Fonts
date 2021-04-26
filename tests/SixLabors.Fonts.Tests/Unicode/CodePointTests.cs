@@ -68,12 +68,15 @@ namespace SixLabors.Fonts.Tests.Unicode
             static bool IsLineBreakClassBreak(uint value)
             {
                 // See https://www.unicode.org/standard/reports/tr13/tr13-5.html
-                switch (UnicodeData.GetLineBreakClass((int)value))
+                switch (value)
                 {
-                    case LineBreakClass.BK:
-                    case LineBreakClass.CR:
-                    case LineBreakClass.LF:
-                    case LineBreakClass.NL:
+                    case 0x000A: // LINE FEED (LF)
+                    case 0x000B: // LINE TABULATION (VT)
+                    case 0x000C: // FORM FEED (FF)
+                    case 0x000D: // CARRIAGE RETURN (CR)
+                    case 0x0085: // NEXT LINE (NEL)
+                    case 0x2028: // LINE SEPARATOR (LS)
+                    case 0x2029: // PARAGRAPH SEPARATOR (PS)
                         return true;
                     default:
                         return false;
@@ -82,7 +85,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
             for (uint i = 0; i <= 0x10FFFFu; i++)
             {
-                Assert.Equal(CodePoint.IsBreak(new CodePoint(i)), IsLineBreakClassBreak(i));
+                Assert.Equal(CodePoint.IsNewLine(new CodePoint(i)), IsLineBreakClassBreak(i));
             }
         }
 
@@ -90,7 +93,7 @@ namespace SixLabors.Fonts.Tests.Unicode
         public void Tab()
         {
             Assert.True(CodePoint.IsWhiteSpace(new CodePoint('\t')));
-            Assert.False(CodePoint.IsBreak(new CodePoint('\t')));
+            Assert.False(CodePoint.IsNewLine(new CodePoint('\t')));
         }
     }
 }

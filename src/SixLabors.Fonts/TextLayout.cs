@@ -169,7 +169,7 @@ namespace SixLabors.Fonts
                 float glyphWidth = glyph.AdvanceWidth * spanStyle.PointSize / scale;
                 float glyphHeight = glyph.Height * spanStyle.PointSize / scale;
 
-                if (!CodePoint.IsBreak(codePoint) && !CodePoint.IsWhiteSpace(codePoint))
+                if (!CodePoint.IsNewLine(codePoint) && !CodePoint.IsWhiteSpace(codePoint))
                 {
                     Vector2 glyphLocation = location;
                     if (spanStyle.ApplyKerning && previousGlyph != null)
@@ -247,7 +247,7 @@ namespace SixLabors.Fonts
                 }
                 else if (codePoint.Value == '\r')
                 {
-                    // carriage return resets the XX coordinate to 0
+                    // Carriage Return resets the XX coordinate to 0
                     location.X = 0;
                     previousGlyph = null;
                     startOfLine = true;
@@ -264,10 +264,9 @@ namespace SixLabors.Fonts
 
                     startOfLine = false;
                 }
-                else if (codePoint.Value == '\n')
+                else if (CodePoint.IsNewLine(codePoint))
                 {
-                    // TODO: Use CodePoint.IsBreak(codePoint) and handle other types
-                    // carriage return resets the XX coordinate to 0
+                    // New Line resets the XX coordinate to 0 and offsets vertically to a new line.
                     layout.Add(new GlyphLayout(
                         -1,
                         codePoint,
@@ -300,7 +299,7 @@ namespace SixLabors.Fonts
 
                     if (finalWidth < glyphWidth)
                     {
-                        // if we are not going to tab atleast a glyph width add another tabstop to it ???
+                        // if we are not going to tab at least a glyph width add another tabstop to it ???
                         // should I be doing this?
                         finalWidth += tabStop;
                     }
