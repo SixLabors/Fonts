@@ -25,6 +25,8 @@ namespace SixLabors.Fonts
             {
                 // windows directories
                 "%SYSTEMROOT%\\Fonts",
+                "%APPDATA%\\Microsoft\\Windows\\Fonts",
+                "%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts",
 
                 // linux directories
                 "~/.fonts/",
