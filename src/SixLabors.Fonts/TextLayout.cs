@@ -65,7 +65,6 @@ namespace SixLabors.Fonts
 
             bool firstLine = true;
             GlyphInstance? previousGlyph = null;
-            float scale = 0;
             int lastWrappableLocation = -1;
             int nextWrappableLocation = codePointCount;
             bool nextWrappableRequired = false;
@@ -82,8 +81,7 @@ namespace SixLabors.Fonts
             }
 
             var enumerator = new CodePointEnumerator(text);
-            int index = 0;
-            while (enumerator.MoveNext())
+            for (int index = 0; enumerator.MoveNext(); index++)
             {
                 CodePoint codePoint = enumerator.Current;
 
@@ -100,26 +98,24 @@ namespace SixLabors.Fonts
                 }
 
                 GlyphInstance? glyph = glyphs[0];
+                float scale = glyph.Font.EmSize * 72;
                 float fontHeight = glyph.Font.LineHeight * options.LineSpacing;
                 if (fontHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
                     unscaledLineHeight = fontHeight;
-                    scale = glyph.Font.EmSize * 72;
                     lineHeight = unscaledLineHeight * spanStyle.PointSize / scale;
                 }
 
                 if (glyph.Font.Ascender > unscaledLineMaxAscender)
                 {
                     unscaledLineMaxAscender = glyph.Font.Ascender;
-                    scale = glyph.Font.EmSize * 72;
                     lineMaxAscender = unscaledLineMaxAscender * spanStyle.PointSize / scale;
                 }
 
                 if (Math.Abs(glyph.Font.Descender) > unscaledLineMaxDescender)
                 {
                     unscaledLineMaxDescender = Math.Abs(glyph.Font.Descender);
-                    scale = glyph.Font.EmSize * 72;
                     lineMaxDescender = unscaledLineMaxDescender * spanStyle.PointSize / scale;
                 }
 
@@ -336,8 +332,6 @@ namespace SixLabors.Fonts
                     location.X += glyphWidth;
                     previousGlyph = null;
                 }
-
-                index++;
             }
 
             var offsetY = new Vector2(0, top);
