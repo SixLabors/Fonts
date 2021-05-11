@@ -65,6 +65,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{249327CF
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnicodeTrieGenerator", "src\UnicodeTrieGenerator\UnicodeTrieGenerator.csproj", "{ABB6E111-672F-4846-88D6-C49C6CD01606}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnicodeTestData", "UnicodeTestData", "{654DD381-B93D-4459-B669-296F5D9172ED}"
+	ProjectSection(SolutionItems) = preProject
+		tests\UnicodeTestData\BidiCharacterTest.txt = tests\UnicodeTestData\BidiCharacterTest.txt
+		tests\UnicodeTestData\BidiTest.txt = tests\UnicodeTestData\BidiTest.txt
+		tests\UnicodeTestData\GraphemeBreakTest.txt = tests\UnicodeTestData\GraphemeBreakTest.txt
+		tests\UnicodeTestData\LineBreakTest.txt = tests\UnicodeTestData\LineBreakTest.txt
+		tests\UnicodeTestData\README.md = tests\UnicodeTestData\README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems*{09e744ec-4852-4fc7-be78-c1b399f17967}*SharedItemsImports = 5
@@ -107,6 +116,7 @@ Global
 		{EC0F1812-C6AF-48D8-882B-5637730D2DB1} = {7CDD4908-7CCD-4945-860C-D2F1732D3AE6}
 		{CFCC940C-DEA3-42CC-9626-0B7D09289FF4} = {7CDD4908-7CCD-4945-860C-D2F1732D3AE6}
 		{ABB6E111-672F-4846-88D6-C49C6CD01606} = {249327CF-1415-428B-8EEA-8C7705B1DE8F}
+		{654DD381-B93D-4459-B669-296F5D9172ED} = {56801022-D71A-4FBE-BC5B-CBA08E2284EC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {38F4B47F-4F74-40F5-8707-C0EF1D0BDF92}

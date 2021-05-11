@@ -73,7 +73,7 @@ namespace SixLabors.Fonts
 
             foreach (GlyphLayout g in glyphsToRender)
             {
-                if (g.IsWhiteSpace)
+                if (g.IsWhiteSpace())
                 {
                     continue;
                 }

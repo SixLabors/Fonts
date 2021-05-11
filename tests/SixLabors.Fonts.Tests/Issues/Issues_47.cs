@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tests.Issues
             {
                 if (lineYPos != glyph.Location.Y)
                 {
-                    Assert.False(glyph.IsWhiteSpace);
+                    Assert.False(glyph.IsWhiteSpace());
                     lineYPos = glyph.Location.Y;
                 }
             }
@@ -59,8 +59,8 @@ namespace SixLabors.Fonts.Tests.Issues
                 GlyphLayout glyph = layout[i];
                 if (lineYPos != glyph.Location.Y)
                 {
-                    Assert.False(glyph.IsWhiteSpace);
-                    Assert.False(layout[i - 1].IsWhiteSpace);
+                    Assert.False(glyph.IsWhiteSpace());
+                    Assert.False(layout[i - 1].IsWhiteSpace());
                     lineYPos = glyph.Location.Y;
                 }
             }
@@ -79,9 +79,9 @@ namespace SixLabors.Fonts.Tests.Issues
                 WrappingWidth = 350
             });
 
-            Assert.True(layout[0].IsWhiteSpace);
-            Assert.True(layout[1].IsWhiteSpace);
-            Assert.True(layout[2].IsWhiteSpace);
+            Assert.True(layout[0].IsWhiteSpace());
+            Assert.True(layout[1].IsWhiteSpace());
+            Assert.True(layout[2].IsWhiteSpace());
         }
 
         [Fact]
@@ -97,9 +97,9 @@ namespace SixLabors.Fonts.Tests.Issues
                 WrappingWidth = 350
             });
 
-            Assert.False(layout[layout.Count - 1].IsWhiteSpace);
-            Assert.False(layout[layout.Count - 2].IsWhiteSpace);
-            Assert.False(layout[layout.Count - 3].IsWhiteSpace);
+            Assert.False(layout[layout.Count - 1].IsWhiteSpace());
+            Assert.False(layout[layout.Count - 2].IsWhiteSpace());
+            Assert.False(layout[layout.Count - 3].IsWhiteSpace());
         }
 
         public static Font CreateFont(string text)

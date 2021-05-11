@@ -3,6 +3,7 @@
 
 using System.Globalization;
 using SixLabors.Fonts.Tests.Fakes;
+using SixLabors.Fonts.Unicode;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
