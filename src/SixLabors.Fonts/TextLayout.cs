@@ -36,9 +36,19 @@ namespace SixLabors.Fonts
             float originX = 0;
             if (options.WrappingWidth > 0)
             {
-                // trim trailing white spaces from the text
+                // Trim trailing white spaces from the text
                 text = text.TrimEnd(null);
                 maxWidth = options.WrappingWidth / options.DpiX;
+
+                switch (options.HorizontalAlignment)
+                {
+                    case HorizontalAlignment.Right:
+                        originX = maxWidth;
+                        break;
+                    case HorizontalAlignment.Center:
+                        originX = maxWidth * .5F;
+                        break;
+                }
             }
 
             int codePointCount = CodePoint.GetCodePointCount(text);
@@ -134,7 +144,7 @@ namespace SixLabors.Fonts
                             top = lineMaxAscender;
                             break;
                         case VerticalAlignment.Center:
-                            top = (lineMaxAscender / 2F) - (lineMaxDescender / 2F);
+                            top = (lineMaxAscender * .5F) - (lineMaxDescender * .5F);
                             break;
                         case VerticalAlignment.Bottom:
                             top = -lineMaxDescender;
@@ -338,7 +348,7 @@ namespace SixLabors.Fonts
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Center:
-                    offsetY += new Vector2(0, -(totalHeight / 2F));
+                    offsetY += new Vector2(0, -(totalHeight * .5F));
                     break;
                 case VerticalAlignment.Bottom:
                     offsetY += new Vector2(0, -totalHeight);
@@ -378,7 +388,7 @@ namespace SixLabors.Fonts
                             offsetX = new Vector2(originX - width, 0) + offsetY;
                             break;
                         case HorizontalAlignment.Center:
-                            offsetX = new Vector2(originX - (width / 2F), 0) + offsetY;
+                            offsetX = new Vector2(originX - (width * .5F), 0) + offsetY;
                             break;
                     }
                 }
