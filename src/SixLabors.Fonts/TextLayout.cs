@@ -72,7 +72,7 @@ namespace SixLabors.Fonts
             // Remember where the top of the layouted text is for accurate vertical alignment.
             // This is important because there is considerable space between the lineHeight at the glyph's ascender.
             float top = 0;
-
+            float scale = 0;
             bool firstLine = true;
             GlyphInstance? previousGlyph = null;
             int lastWrappableLocation = -1;
@@ -108,24 +108,31 @@ namespace SixLabors.Fonts
                 }
 
                 GlyphInstance? glyph = glyphs[0];
-                float scale = glyph.Font.EmSize * 72;
+                if (previousGlyph != null && glyph.Font != previousGlyph.Font)
+                {
+                    scale = glyph.Font.EmSize * 72;
+                }
+
                 float fontHeight = glyph.Font.LineHeight * options.LineSpacing;
                 if (fontHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
                     unscaledLineHeight = fontHeight;
+                    scale = glyph.Font.EmSize * 72;
                     lineHeight = unscaledLineHeight * spanStyle.PointSize / scale;
                 }
 
                 if (glyph.Font.Ascender > unscaledLineMaxAscender)
                 {
                     unscaledLineMaxAscender = glyph.Font.Ascender;
+                    scale = glyph.Font.EmSize * 72;
                     lineMaxAscender = unscaledLineMaxAscender * spanStyle.PointSize / scale;
                 }
 
                 if (Math.Abs(glyph.Font.Descender) > unscaledLineMaxDescender)
                 {
                     unscaledLineMaxDescender = Math.Abs(glyph.Font.Descender);
+                    scale = glyph.Font.EmSize * 72;
                     lineMaxDescender = unscaledLineMaxDescender * spanStyle.PointSize / scale;
                 }
 
