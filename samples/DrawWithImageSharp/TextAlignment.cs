@@ -2,14 +2,16 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Drawing.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.Shapes.Temp;
 
 namespace DrawWithImageSharp
 {
@@ -17,20 +19,18 @@ namespace DrawWithImageSharp
     {
         public static void Generate(Font font)
         {
-            using (var img = new Image<Rgba32>(1000, 1000))
+            using var img = new Image<Rgba32>(1000, 1000);
+            img.Mutate(x => x.Fill(Color.White));
+
+            foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
             {
-                img.Mutate(x => x.Fill(Color.White));
-
-                foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
+                foreach (HorizontalAlignment h in Enum.GetValues(typeof(HorizontalAlignment)))
                 {
-                    foreach (HorizontalAlignment h in Enum.GetValues(typeof(HorizontalAlignment)))
-                    {
-                        Draw(img, font, v, h);
-                    }
+                    Draw(img, font, v, h);
                 }
-
-                img.Save("Output/Alignment.png");
             }
+
+            img.Save("Output/Alignment.png");
         }
 
         public static void Draw(Image<Rgba32> img, Font font, VerticalAlignment vert, HorizontalAlignment horiz)
@@ -83,15 +83,24 @@ namespace DrawWithImageSharp
             string text = $"{horiz} x y z\n{vert} x y z";
             renderer.RenderText(text, style);
 
-            System.Collections.Generic.IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
+            IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
             img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
 
             Rgba32 f = Color.Fuchsia;
             f.A = 128;
             img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
-            img.Mutate(x => x.Draw(f, 1, glyphBuilder.Boxes));
 
-            img.Mutate(x => x.Draw(Color.Lime, 1, glyphBuilder.TextBox));
+            // TODO: This isn't correct. GlyphBuilder.Boxes does not exist.
+            IEnumerable<RectangleF> bounds = glyphBuilder.Paths.Select(x => x.Bounds);
+            var boxes = new PathCollection(bounds.Select(x => new RectangularPolygon(x.Location, x.Size)));
+
+            FontRectangle box = TextMeasurer.MeasureBounds(text, new RendererOptions(font));
+            img.Mutate(x =>
+                x.Draw(f, 1, boxes)
+                 .Draw(Color.Lime, 1, new RectangularPolygon(location, box.Size)));
+
+            // TODO: This property does not exist in the real GlyphBuilder?
+            // img.Mutate(x => x.Draw(Color.Lime, 1, glyphBuilder.TextBox));
         }
     }
 }

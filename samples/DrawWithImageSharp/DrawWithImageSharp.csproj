@@ -6,6 +6,9 @@
     <OutputType>Exe</OutputType>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 
+    <!--Make drawing internals visible-->
+    <AssemblyName>SixLabors.ImageSharp.Tests</AssemblyName>
+    <RootNamespace>DrawWithImageSharp</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta11" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta13" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 

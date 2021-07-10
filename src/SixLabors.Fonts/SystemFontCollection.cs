@@ -4,7 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+#if SUPPORTS_CULTUREINFO_LCID
 using System.Globalization;
+#endif
 using System.IO;
 using System.Linq;
 

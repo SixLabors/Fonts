@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using SixLabors.Fonts.Tables;
@@ -14,7 +13,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public class FontDescription
     {
-        private NameTable nameTable;
+        private readonly NameTable nameTable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontDescription" /> class.
@@ -88,11 +87,9 @@ namespace SixLabors.Fonts
         {
             Guard.NotNullOrWhiteSpace(path, nameof(path));
 
-            using (FileStream fs = File.OpenRead(path))
-            {
-                var reader = new FontReader(fs);
-                return LoadDescription(reader);
-            }
+            using FileStream fs = File.OpenRead(path);
+            var reader = new FontReader(fs);
+            return LoadDescription(reader);
         }
 
         /// <summary>
