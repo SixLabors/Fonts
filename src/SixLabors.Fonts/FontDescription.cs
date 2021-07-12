@@ -135,10 +135,8 @@ namespace SixLabors.Fonts
         {
             Guard.NotNullOrWhiteSpace(path, nameof(path));
 
-            using (FileStream fs = File.OpenRead(path))
-            {
-                return LoadFontCollectionDescriptions(fs);
-            }
+            using FileStream fs = File.OpenRead(path);
+            return LoadFontCollectionDescriptions(fs);
         }
 
         /// <summary>

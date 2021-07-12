@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
@@ -80,7 +81,7 @@ namespace DrawWithImageSharp
             string text = $"{horiz} x y z\n{vert} x y z";
             renderer.RenderText(text, style);
 
-            System.Collections.Generic.IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
+            IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
             img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
 
             Rgba32 f = Color.Fuchsia;

@@ -14,6 +14,7 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Drawing.Processing.Processors.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using IOPath = System.IO.Path;
 
 namespace SixLabors.Fonts.DrawWithImageSharp
 {
@@ -123,8 +124,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderText(Font font, string text, int width, int height)
         {
-            string path = System.IO.Path.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
-            string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            string path = IOPath.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
+            string fullPath = IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
 
             using var img = new Image<Rgba32>(width, height);
             img.Mutate(x => x.Fill(Color.White));
@@ -132,7 +133,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new RendererOptions(font, 72));
             img.Mutate(x => x.Fill(Color.Black, shapes));
 
-            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
 
             using FileStream fs = File.Create(fullPath + ".png");
             img.SaveAsPng(fs);
@@ -213,7 +214,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             img.Mutate(x => x.Fill(Color.White).ApplyProcessor(new DrawTextProcessor(options, text, font, new SolidBrush(Color.Black), null, new PointF(5, 5))));
 
             string fullPath = CreatePath(font.Name, text + ".caching.png");
-            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
             img.Save(fullPath);
         }
 
@@ -284,7 +285,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     string v = va.ToString().Replace(nameof(VerticalAlignment), string.Empty).ToLower();
 
                     string fullPath = CreatePath(font.Name, text + "-" + h + "-" + v + ".png");
-                    Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+                    Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
                     img.Save(fullPath);
                 }
             }
@@ -292,8 +293,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         private static string CreatePath(params string[] path)
         {
-            path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
-            return System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            path = path.Select(p => IOPath.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
+            return IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
         }
 
         private static void SaveImage(
@@ -313,7 +314,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             img.Mutate(x => x.DrawText(options, text, font, Color.HotPink, origin));
 
             // Ensure directory exists
-            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
 
             using FileStream fs = File.Create(fullPath);
             img.SaveAsPng(fs);
@@ -345,8 +346,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             string str = sb.ToString();
             shape = new ComplexPolygon(converted.Select(x => new Polygon(new LinearLineSegment(x.Points.ToArray()))).ToArray());
 
-            path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
-            string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            path = path.Select(p => IOPath.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
+            string fullPath = IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
 
             // pad even amount around shape
             int width = (int)(shape.Bounds.Left + shape.Bounds.Right);
@@ -368,7 +369,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             // img.Draw(Color.LawnGreen, 1, shape);
 
             // Ensure directory exists
-            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
 
             using FileStream fs = File.Create(fullPath);
             img.SaveAsPng(fs);
