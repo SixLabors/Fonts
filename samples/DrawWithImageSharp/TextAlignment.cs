@@ -2,14 +2,11 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.Drawing.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
@@ -67,7 +64,7 @@ namespace DrawWithImageSharp
                     break;
             }
 
-            var glyphBuilder = new GlyphBuilder();
+            var glyphBuilder = new CustomGlyphBuilder();
 
             var renderer = new TextRenderer(glyphBuilder);
 
@@ -83,24 +80,14 @@ namespace DrawWithImageSharp
             string text = $"{horiz} x y z\n{vert} x y z";
             renderer.RenderText(text, style);
 
-            IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
+            System.Collections.Generic.IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
             img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
 
             Rgba32 f = Color.Fuchsia;
             f.A = 128;
             img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
-
-            // TODO: This isn't correct. GlyphBuilder.Boxes does not exist.
-            IEnumerable<RectangleF> bounds = glyphBuilder.Paths.Select(x => x.Bounds);
-            var boxes = new PathCollection(bounds.Select(x => new RectangularPolygon(x.Location, x.Size)));
-
-            FontRectangle box = TextMeasurer.MeasureBounds(text, new RendererOptions(font));
-            img.Mutate(x =>
-                x.Draw(f, 1, boxes)
-                 .Draw(Color.Lime, 1, new RectangularPolygon(location, box.Size)));
-
-            // TODO: This property does not exist in the real GlyphBuilder?
-            // img.Mutate(x => x.Draw(Color.Lime, 1, glyphBuilder.TextBox));
+            img.Mutate(x => x.Draw(f, 1, glyphBuilder.Boxes));
+            img.Mutate(x => x.Draw(Color.Lime, 1, glyphBuilder.TextBox));
         }
     }
 }

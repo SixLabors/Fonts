@@ -1,14 +1,11 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.Drawing.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
@@ -42,17 +39,13 @@ namespace DrawWithImageSharp
         /// <returns>The paths, boxes, and text box.</returns>
         private static (IPathCollection paths, IPathCollection boxes) GenerateGlyphsWithBox(string text, RendererOptions style)
         {
-            var glyphBuilder = new GlyphBuilder(Vector2.Zero);
+            var glyphBuilder = new CustomGlyphBuilder(Vector2.Zero);
 
             var renderer = new TextRenderer(glyphBuilder);
 
             renderer.RenderText(text, style);
 
-            // TODO: This isn't correct. GlyphBuilder.Boxes does not exist.
-            IEnumerable<RectangleF> bounds = glyphBuilder.Paths.Select(x => x.Bounds);
-            var boxes = new PathCollection(bounds.Select(x => new RectangularPolygon(x.Location, x.Size)));
-
-            return (glyphBuilder.Paths, boxes);
+            return (glyphBuilder.Paths, glyphBuilder.Boxes);
         }
     }
 }
