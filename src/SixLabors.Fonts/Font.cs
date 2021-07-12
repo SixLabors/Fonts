@@ -159,15 +159,9 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="codePoint">The code point of the character.</param>
         /// <returns>Returns the glyph</returns>
-        public Glyph GetGlyph(int codePoint)
-        {
-            return new Glyph(this.Instance.GetGlyph(codePoint), this.Size);
-        }
+        public Glyph GetGlyph(int codePoint) => new Glyph(this.Instance.GetGlyph(codePoint), this.Size);
 
-        private string LoadFontName()
-        {
-            return this.instance.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;
-        }
+        private string LoadFontName() => this.instance.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;
 
         private IFontInstance? LoadInstanceInternal()
         {

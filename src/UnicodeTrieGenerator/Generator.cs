@@ -79,7 +79,7 @@ namespace UnicodeTrieGenerator
             string line;
             while ((line = sr.ReadLine()) != null)
             {
-                var parts = line.Split(';');
+                string[] parts = line.Split(';');
 
                 if (parts.Length > 4)
                 {
@@ -108,9 +108,9 @@ namespace UnicodeTrieGenerator
 
                     if (match.Success)
                     {
-                        var start = match.Groups[1].Value;
-                        var end = match.Groups[2].Value;
-                        var point = match.Groups[3].Value;
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string point = match.Groups[3].Value;
 
                         if (end?.Length == 0)
                         {
@@ -131,9 +131,9 @@ namespace UnicodeTrieGenerator
 
                     if (match.Success)
                     {
-                        var start = match.Groups[1].Value;
-                        var end = match.Groups[2].Value;
-                        var prop = match.Groups[3].Value;
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string prop = match.Groups[3].Value;
 
                         if (end?.Length == 0)
                         {
@@ -210,9 +210,9 @@ namespace UnicodeTrieGenerator
 
                     if (match.Success)
                     {
-                        var start = match.Groups[1].Value;
-                        var end = match.Groups[2].Value;
-                        var point = match.Groups[3].Value;
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string point = match.Groups[3].Value;
 
                         if (end?.Length == 0)
                         {
@@ -247,9 +247,9 @@ namespace UnicodeTrieGenerator
 
                     if (match.Success)
                     {
-                        var start = match.Groups[1].Value;
-                        var end = match.Groups[2].Value;
-                        var point = match.Groups[3].Value;
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string point = match.Groups[3].Value;
 
                         if (end?.Length == 0)
                         {
@@ -269,13 +269,13 @@ namespace UnicodeTrieGenerator
 
         private static StreamReader GetStreamReader(string path)
         {
-            var filename = GetFullPath(Path.Combine(InputRulesRelativePath, path));
+            string filename = GetFullPath(Path.Combine(InputRulesRelativePath, path));
             return File.OpenText(filename);
         }
 
         private static FileStream GetStreamWriter(string path)
         {
-            var filename = GetFullPath(Path.Combine(OutputResourcesRelativePath, path));
+            string filename = GetFullPath(Path.Combine(OutputResourcesRelativePath, path));
             return File.OpenWrite(filename);
         }
 
