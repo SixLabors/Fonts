@@ -64,12 +64,46 @@ namespace SixLabors.Fonts
                 this.colorGlyphCache = new GlyphInstance[this.glyphs.GlyphCount][];
             }
 
-            bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
-
             // https://www.microsoft.com/typography/otspec/recom.htm#tad
-            this.Ascender = useTypoMetrics ? os2.TypoAscender : horizontalHeadTable.Ascender;
-            this.Descender = useTypoMetrics ? os2.TypoDescender : horizontalHeadTable.Descender;
-            this.LineGap = useTypoMetrics ? os2.TypoLineGap : horizontalHeadTable.LineGap;
+            // We use the same approach as FreeType for calculating the the global  ascender, descender,  and
+            // height of  OpenType fonts for consistency.
+            //
+            // 1.If the OS/ 2 table exists and the fsSelection bit 7 is set (USE_TYPO_METRICS), trust the font
+            //   and use the Typo* metrics.
+            // 2.Otherwise, use the HorizontalHeadTable "hhea" table's metrics.
+            // 3.If they are zero and the OS/ 2 table exists,
+            //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
+            //    - Otherwise, use the OS / 2 table's usWin* metrics.
+            bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
+            if (useTypoMetrics)
+            {
+                this.Ascender = os2.TypoAscender;
+                this.Descender = os2.TypoDescender;
+                this.LineGap = os2.TypoLineGap;
+            }
+            else
+            {
+                this.Ascender = horizontalHeadTable.Ascender;
+                this.Descender = horizontalHeadTable.Descender;
+                this.LineGap = horizontalHeadTable.LineGap;
+            }
+
+            if (this.Ascender == 0 || this.Descender == 0)
+            {
+                if (os2.TypoAscender != 0 || os2.TypoDescender != 0)
+                {
+                    this.Ascender = os2.TypoAscender;
+                    this.Descender = os2.TypoDescender;
+                }
+                else
+                {
+                    this.Ascender = (short)os2.WinAscent;
+                    this.Descender = (short)os2.WinAscent;
+                }
+
+                this.LineGap = os2.TypoLineGap;
+            }
+
             this.LineHeight = this.Ascender - this.Descender + this.LineGap;
             this.EmSize = this.head.UnitsPerEm;
             this.kerning = kern;

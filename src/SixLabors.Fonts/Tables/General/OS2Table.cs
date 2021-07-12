@@ -29,8 +29,6 @@ namespace SixLabors.Fonts.Tables.General
         private readonly ushort upperOpticalPointSize;
         private ushort weightClass;
         private ushort widthClass;
-        private ushort winAscent;
-        private ushort winDescent;
         private short averageCharWidth;
         private short strikeoutPosition;
         private short strikeoutSize;
@@ -72,8 +70,8 @@ namespace SixLabors.Fonts.Tables.General
             this.TypoAscender = typoAscender;
             this.TypoDescender = typoDescender;
             this.TypoLineGap = typoLineGap;
-            this.winAscent = winAscent;
-            this.winDescent = winDescent;
+            this.WinAscent = winAscent;
+            this.WinDescent = winDescent;
         }
 
         public OS2Table(OS2Table version0Table, ushort codePageRange1, ushort codePageRange2, short heightX, short capHeight, ushort defaultChar, ushort breakChar, ushort maxContext)
@@ -105,8 +103,8 @@ namespace SixLabors.Fonts.Tables.General
                 version0Table.TypoAscender,
                 version0Table.TypoDescender,
                 version0Table.TypoLineGap,
-                version0Table.winAscent,
-                version0Table.winDescent)
+                version0Table.WinAscent,
+                version0Table.WinDescent)
         {
             this.codePageRange1 = codePageRange1;
             this.codePageRange2 = codePageRange2;
@@ -159,10 +157,10 @@ namespace SixLabors.Fonts.Tables.General
             USE_TYPO_METRICS = 1 << 7,
 
             // 8        WWS The font has ‘name’ table strings consistent with a weight/width/slope family without requiring use of ‘name’ IDs 21 and 22. (Please see more detailed description below.)
-            WWS = 1 << 7,
+            WWS = 1 << 8,
 
             // 9        OBLIQUE Font contains oblique characters.
-            OBLIQUE = 1 << 7,
+            OBLIQUE = 1 << 9,
 
             // 10–15        <reserved>  Reserved; set to 0.
         }
@@ -174,6 +172,10 @@ namespace SixLabors.Fonts.Tables.General
         public short TypoDescender { get; }
 
         public short TypoLineGap { get; }
+
+        public ushort WinAscent { get; }
+
+        public ushort WinDescent { get; }
 
         public static OS2Table? Load(FontReader reader)
         {
