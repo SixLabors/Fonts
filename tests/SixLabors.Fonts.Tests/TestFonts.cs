@@ -28,6 +28,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
+        public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
+
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
         public static Stream WendyOneFileData() => OpenStream(WendyOneFile);
