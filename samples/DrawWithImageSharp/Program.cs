@@ -226,18 +226,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         {
             foreach (VerticalAlignment va in (VerticalAlignment[])Enum.GetValues(typeof(VerticalAlignment)))
             {
-                if (va != VerticalAlignment.Center)
-                {
-                    // Continue;
-                }
-
                 foreach (HorizontalAlignment ha in (HorizontalAlignment[])Enum.GetValues(typeof(HorizontalAlignment)))
                 {
-                    if (ha != HorizontalAlignment.Center)
-                    {
-                        // Continue;
-                    }
-
                     var textOptions = new TextOptions
                     {
                         ApplyKerning = true,
