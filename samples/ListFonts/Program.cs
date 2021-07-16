@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -9,11 +10,11 @@ using SixLabors.Fonts;
 
 namespace ListFonts
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
-            System.Collections.Generic.IEnumerable<FontFamily> families = SystemFonts.Families;
+            IEnumerable<FontFamily> families = SystemFonts.Families;
             IOrderedEnumerable<FontFamily> orderd = families.OrderBy(x => x.Name);
             int len = families.Max(x => x.Name.Length);
             foreach (FontFamily f in orderd)

@@ -355,7 +355,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < ttcHeader.NumFonts; ++i)
             {
                 stream.Position = startPos + ttcHeader.OffsetTable[i];
-                fonts[i] = FontInstance.LoadFont(stream);
+                fonts[i] = LoadFont(stream);
             }
 
             return fonts;

@@ -10,7 +10,6 @@ using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.Shapes.Temp;
 
 namespace DrawWithImageSharp
 {
@@ -18,22 +17,21 @@ namespace DrawWithImageSharp
     {
         public static void Generate(Font font)
         {
-            int wrappingWidth = 400;
-            int size = (wrappingWidth + (wrappingWidth / 3)) * 3;
-            using (var img = new Image<Rgba32>(size, size))
+            const int wrappingWidth = 400;
+            const int size = (wrappingWidth + (wrappingWidth / 3)) * 3;
+
+            using var img = new Image<Rgba32>(size, size);
+            img.Mutate(x => x.Fill(Color.White));
+
+            foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
             {
-                img.Mutate(x => x.Fill(Color.White));
-
-                foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
+                foreach (HorizontalAlignment h in Enum.GetValues(typeof(HorizontalAlignment)))
                 {
-                    foreach (HorizontalAlignment h in Enum.GetValues(typeof(HorizontalAlignment)))
-                    {
-                        Draw(img, font, v, h, wrappingWidth);
-                    }
+                    Draw(img, font, v, h, wrappingWidth);
                 }
-
-                img.Save("Output/AlignmentWrapped.png");
             }
+
+            img.Save("Output/AlignmentWrapped.png");
         }
 
         public static void Draw(Image<Rgba32> img, Font font, VerticalAlignment vert, HorizontalAlignment horiz, float wrappingWidth)
@@ -70,7 +68,7 @@ namespace DrawWithImageSharp
                     break;
             }
 
-            var glyphBuilder = new GlyphBuilder();
+            var glyphBuilder = new CustomGlyphBuilder();
 
             var renderer = new TextRenderer(glyphBuilder);
 
@@ -93,7 +91,6 @@ namespace DrawWithImageSharp
             f.A = 128;
             img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
             img.Mutate(x => x.Draw(f, 1, glyphBuilder.Boxes));
-
             img.Mutate(x => x.Draw(Color.Lime, 1, glyphBuilder.TextBox));
         }
     }

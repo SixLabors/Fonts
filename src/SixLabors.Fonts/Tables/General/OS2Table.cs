@@ -8,38 +8,38 @@ namespace SixLabors.Fonts.Tables.General
     {
         private const string TableName = "OS/2";
 
-        private ushort styleType;
-        private byte[] panose;
-        private short capHeight;
-        private short familyClass;
-        private short heightX;
-        private string tag;
-        private ushort codePageRange1;
-        private ushort codePageRange2;
-        private uint unicodeRange1;
-        private uint unicodeRange2;
-        private uint unicodeRange3;
-        private uint unicodeRange4;
-        private ushort breakChar;
-        private ushort defaultChar;
-        private ushort firstCharIndex;
-        private ushort lastCharIndex;
+        private readonly ushort styleType;
+        private readonly byte[] panose;
+        private readonly short capHeight;
+        private readonly short familyClass;
+        private readonly short heightX;
+        private readonly string tag;
+        private readonly ushort codePageRange1;
+        private readonly ushort codePageRange2;
+        private readonly uint unicodeRange1;
+        private readonly uint unicodeRange2;
+        private readonly uint unicodeRange3;
+        private readonly uint unicodeRange4;
+        private readonly ushort breakChar;
+        private readonly ushort defaultChar;
+        private readonly ushort firstCharIndex;
+        private readonly ushort lastCharIndex;
         private readonly ushort lowerOpticalPointSize;
-        private ushort maxContext;
+        private readonly ushort maxContext;
         private readonly ushort upperOpticalPointSize;
-        private ushort weightClass;
-        private ushort widthClass;
-        private short averageCharWidth;
-        private short strikeoutPosition;
-        private short strikeoutSize;
-        private short subscriptXOffset;
-        private short subscriptXSize;
-        private short subscriptYOffset;
-        private short subscriptYSize;
-        private short superscriptXOffset;
-        private short superscriptXSize;
-        private short superscriptYOffset;
-        private short superscriptYSize;
+        private readonly ushort weightClass;
+        private readonly ushort widthClass;
+        private readonly short averageCharWidth;
+        private readonly short strikeoutPosition;
+        private readonly short strikeoutSize;
+        private readonly short subscriptXOffset;
+        private readonly short subscriptXSize;
+        private readonly short subscriptYOffset;
+        private readonly short subscriptYSize;
+        private readonly short superscriptXOffset;
+        private readonly short superscriptXSize;
+        private readonly short superscriptYOffset;
+        private readonly short superscriptYSize;
 
         public OS2Table(short averageCharWidth, ushort weightClass, ushort widthClass, ushort styleType, short subscriptXSize, short subscriptYSize, short subscriptXOffset, short subscriptYOffset, short superscriptXSize, short superscriptYSize, short superscriptXOffset, short superscriptYOffset, short strikeoutSize, short strikeoutPosition, short familyClass, byte[] panose, uint unicodeRange1, uint unicodeRange2, uint unicodeRange3, uint unicodeRange4, string tag, FontStyleSelection fontStyle, ushort firstCharIndex, ushort lastCharIndex, short typoAscender, short typoDescender, short typoLineGap, ushort winAscent, ushort winDescent)
         {

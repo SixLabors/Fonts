@@ -7,13 +7,14 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using global::DrawWithImageSharp;
+using DrawWithImageSharp;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Drawing.Processing.Processors.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.Shapes.Temp;
+using IOPath = System.IO.Path;
 
 namespace SixLabors.Fonts.DrawWithImageSharp
 {
@@ -25,7 +26,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily font = fonts.Install(@"Fonts\SixLaborsSampleAB.ttf");
             FontFamily fontWoff = fonts.Install(@"Fonts\SixLaborsSampleAB.woff");
             FontFamily carter = fonts.Install(@"Fonts\CarterOne.ttf");
-            FontFamily wendy_One = fonts.Install(@"Fonts\WendyOne-Regular.ttf");
+            FontFamily wendyOne = fonts.Install(@"Fonts\WendyOne-Regular.ttf");
+            FontFamily whitneyBook = fonts.Install(@"Fonts\whitney-book.ttf");
             FontFamily colorEmoji = fonts.Install(@"Fonts\Twemoji Mozilla.ttf");
             FontFamily font2 = fonts.Install(@"Fonts\OpenSans-Regular.ttf");
             FontFamily emojiFont = SystemFonts.Find("Segoe UI Emoji");
@@ -58,7 +60,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, "aaaaaa\ta", 72);
             RenderText(font2, "Hello\nWorld", 72);
             RenderText(carter, "Hello\0World", 72);
-            RenderText(wendy_One, "Hello\0World", 72);
+            RenderText(wendyOne, "Hello\0World", 72);
+            RenderText(whitneyBook, "Hello\0World", 72);
 
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
@@ -112,41 +115,56 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily simsum = SystemFonts.Find("SimSun");
             RenderText(simsum, "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 16);
 
+            FontFamily jhengHei = SystemFonts.Find("Microsoft JhengHei");
+            RenderText(jhengHei, " ，；：！￥（）？｛｝－＝＋＼｜～！＠＃％＆", 16);
+
             FontFamily arial = SystemFonts.Find("Arial");
             RenderText(arial, "ìíîï", 72);
         }
 
         public static void RenderText(Font font, string text, int width, int height)
         {
-            string path = System.IO.Path.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
-            string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            string path = IOPath.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
+            string fullPath = IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
 
-            using (var img = new Image<Rgba32>(width, height))
-            {
-                img.Mutate(x => x.Fill(Color.White));
+            using var img = new Image<Rgba32>(width, height);
+            img.Mutate(x => x.Fill(Color.White));
 
-                IPathCollection shapes = Shapes.Temp.TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new RendererOptions(font, 72));
-                img.Mutate(x => x.Fill(Color.Black, shapes));
+            IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new RendererOptions(font, 72));
+            img.Mutate(x => x.Fill(Color.Black, shapes));
 
-                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
 
-                using (FileStream fs = File.Create(fullPath + ".png"))
-                {
-                    img.SaveAsPng(fs);
-                }
-            }
+            using FileStream fs = File.Create(fullPath + ".png");
+            img.SaveAsPng(fs);
         }
 
         public static void RenderText(RendererOptions font, string text)
         {
-            var builder = new GlyphBuilder();
-            var renderer = new TextRenderer(builder);
             FontRectangle size = TextMeasurer.Measure(text, font);
-            font.ColorFontSupport = ColorFontSupport.MicrosoftColrFormat;
-            renderer.RenderText(text, font);
 
-            builder.Paths
-                .SaveImage(builder.PathColors, (int)size.Width + 20, (int)size.Height + 20, font.Font.Name, text + ".png");
+            var options = new DrawingOptions
+            {
+                TextOptions = new TextOptions()
+                {
+                    ApplyKerning = font.ApplyKerning,
+                    DpiX = font.DpiX,
+                    DpiY = font.DpiY,
+                    TabWidth = font.TabWidth,
+                    LineSpacing = font.LineSpacing,
+                    HorizontalAlignment = font.HorizontalAlignment,
+                    VerticalAlignment = font.VerticalAlignment,
+                    WrapTextWidth = font.WrappingWidth,
+                    RenderColorFonts = font.ColorFontSupport != ColorFontSupport.None
+                }
+            };
+
+            if (font.FallbackFontFamilies != null)
+            {
+                options.TextOptions.FallbackFonts.AddRange(font.FallbackFontFamilies);
+            }
+
+            SaveImage(options, text, font.Font, (int)size.Width + 20, (int)size.Height + 20, font.Origin, font.Font.Name, text + ".png");
         }
 
         public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
@@ -165,13 +183,14 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             float pointSize = 12,
             IEnumerable<FontFamily> fallbackFonts = null)
         {
-            var textOptions = new TextGraphicsOptionsCopy
+            var textOptions = new TextOptions
             {
                 ApplyKerning = true,
                 DpiX = 96,
                 DpiY = 96,
                 RenderColorFonts = true,
             };
+
             if (fallbackFonts != null)
             {
                 textOptions.FallbackFonts.AddRange(fallbackFonts);
@@ -185,15 +204,18 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 FallbackFontFamilies = textOptions.FallbackFonts?.ToArray()
             };
 
-            FontRectangle textSize = TextMeasurer.Measure(text, renderOptions);
-            using (var img = new Image<Rgba32>((int)Math.Ceiling(textSize.Width) + 20, (int)Math.Ceiling(textSize.Height) + 20))
+            var options = new DrawingOptions
             {
-                img.Mutate(x => x.Fill(Color.White).ApplyProcessor(new DrawTextProcessorCopy(textOptions, text, font, new SolidBrushCopy(Color.Black), null, new PointF(5, 5))));
+                TextOptions = textOptions
+            };
 
-                string fullPath = CreatePath(font.Name, text + ".caching.png");
-                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
-                img.Save(fullPath);
-            }
+            FontRectangle textSize = TextMeasurer.Measure(text, renderOptions);
+            using var img = new Image<Rgba32>((int)Math.Ceiling(textSize.Width) + 20, (int)Math.Ceiling(textSize.Height) + 20);
+            img.Mutate(x => x.Fill(Color.White).ApplyProcessor(new DrawTextProcessor(options, text, font, new SolidBrush(Color.Black), null, new PointF(5, 5))));
+
+            string fullPath = CreatePath(font.Name, text + ".caching.png");
+            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
+            img.Save(fullPath);
         }
 
         public static void RenderTextProcessorWithAlignment(
@@ -204,19 +226,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         {
             foreach (VerticalAlignment va in (VerticalAlignment[])Enum.GetValues(typeof(VerticalAlignment)))
             {
-                if (va != VerticalAlignment.Center)
-                {
-                    //continue;
-                }
-
                 foreach (HorizontalAlignment ha in (HorizontalAlignment[])Enum.GetValues(typeof(HorizontalAlignment)))
                 {
-                    if (ha != HorizontalAlignment.Center)
-                    {
-                       // continue;
-                    }
-
-                    var textOptions = new TextGraphicsOptionsCopy
+                    var textOptions = new TextOptions
                     {
                         ApplyKerning = true,
                         DpiX = 96,
@@ -244,13 +256,18 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     FontRectangle textSize = TextMeasurer.Measure(text, renderOptions);
                     using var img = new Image<Rgba32>(((int)textSize.Width * 2) + 20, ((int)textSize.Height * 2) + 20);
 
+                    var options = new DrawingOptions
+                    {
+                        TextOptions = textOptions
+                    };
+
                     Size size = img.Size();
                     img.Mutate(x => x.Fill(Color.White).ApplyProcessor(
-                        new DrawTextProcessorCopy(
-                            textOptions,
+                        new DrawTextProcessor(
+                            options,
                             text,
                             font,
-                            new SolidBrushCopy(Color.Black),
+                            new SolidBrush(Color.Black),
                             null,
                             new PointF(size.Width / 2F, size.Height / 2F))));
 
@@ -258,58 +275,39 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     string v = va.ToString().Replace(nameof(VerticalAlignment), string.Empty).ToLower();
 
                     string fullPath = CreatePath(font.Name, text + "-" + h + "-" + v + ".png");
-                    Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
+                    Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
                     img.Save(fullPath);
                 }
             }
         }
 
-        public static void SaveImage(this IEnumerable<IPath> shapes, int width, int height, params string[] path)
-            => shapes.SaveImage(new Color?[shapes.Count()], width, height, path);
-
         private static string CreatePath(params string[] path)
         {
-            path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
-            return System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            path = path.Select(p => IOPath.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
+            return IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
         }
 
-        public static void SaveImage(this IEnumerable<IPath> shapes, IEnumerable<Color?> colors, int width, int height, params string[] path)
+        private static void SaveImage(
+            DrawingOptions options,
+            string text,
+            Font font,
+            int width,
+            int height,
+            Vector2 origin,
+            params string[] path)
         {
             string fullPath = CreatePath(path);
-            using (var img = new Image<Rgba32>(width, height))
-            {
-                img.Mutate(x => x.Fill(Color.White));
-                IPath[] shapesArray = shapes.ToArray();
-                Color?[] colorsArray = colors.ToArray();
 
-                for (int i = 0; i < shapesArray.Length; i++)
-                {
-                    IPath s = shapesArray[i];
-                    Color c = colorsArray[i] ?? Color.HotPink;
+            using var img = new Image<Rgba32>(width, height);
+            img.Mutate(x => x.Fill(Color.White));
 
-                    // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
-                    img.Mutate(x => x.Fill(
-                        new ShapeGraphicsOptions
-                        {
-                            ShapeOptions =
-                            {
-                                IntersectionRule = IntersectionRule.Nonzero
-                            }
-                        },
-                        c,
-                        s.Translate(new Vector2(0, 0))));
-                }
+            img.Mutate(x => x.DrawText(options, text, font, Color.HotPink, origin));
 
-                // img.Draw(Color.LawnGreen, 1, shape);
+            // Ensure directory exists
+            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
 
-                // Ensure directory exists
-                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
-
-                using (FileStream fs = File.Create(fullPath))
-                {
-                    img.SaveAsPng(fs);
-                }
-            }
+            using FileStream fs = File.Create(fullPath);
+            img.SaveAsPng(fs);
         }
 
         public static void SaveImage(this IEnumerable<IPath> shapes, params string[] path)
@@ -338,8 +336,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             string str = sb.ToString();
             shape = new ComplexPolygon(converted.Select(x => new Polygon(new LinearLineSegment(x.Points.ToArray()))).ToArray());
 
-            path = path.Select(p => System.IO.Path.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
-            string fullPath = System.IO.Path.GetFullPath(System.IO.Path.Combine("Output", System.IO.Path.Combine(path)));
+            path = path.Select(p => IOPath.GetInvalidFileNameChars().Aggregate(p, (x, c) => x.Replace($"{c}", "-"))).ToArray();
+            string fullPath = IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
 
             // pad even amount around shape
             int width = (int)(shape.Bounds.Left + shape.Bounds.Right);
@@ -354,23 +352,17 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 height = 1;
             }
 
-            using (var img = new Image<Rgba32>(width, height))
-            {
-                img.Mutate(x => x.Fill(Color.DarkBlue));
+            using var img = new Image<Rgba32>(width, height);
+            img.Mutate(x => x.Fill(Color.DarkBlue));
+            img.Mutate(x => x.Fill(Color.HotPink, shape));
 
-                // In ImageSharp.Drawing.Paths there is an extension method that takes in an IShape directly.
-                img.Mutate(x => x.Fill(Color.HotPink, shape));
+            // img.Draw(Color.LawnGreen, 1, shape);
 
-                // img.Draw(Color.LawnGreen, 1, shape);
+            // Ensure directory exists
+            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
 
-                // Ensure directory exists
-                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fullPath));
-
-                using (FileStream fs = File.Create(fullPath))
-                {
-                    img.SaveAsPng(fs);
-                }
-            }
+            using FileStream fs = File.Create(fullPath);
+            img.SaveAsPng(fs);
         }
     }
 }

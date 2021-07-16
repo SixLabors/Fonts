@@ -2,8 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
@@ -31,7 +29,7 @@ namespace SixLabors.Fonts
         {
             this.Description = description;
             this.Path = path;
-            this.font = new Lazy<Fonts.IFontInstance>(() => FontInstance.LoadFont(path, offset));
+            this.font = new Lazy<IFontInstance>(() => FontInstance.LoadFont(path, offset));
         }
 
         public FontDescription Description { get; }
@@ -72,7 +70,7 @@ namespace SixLabors.Fonts
                 {
                     fs.Position = startPos + ttcHeader.OffsetTable[i];
                     var description = FontDescription.LoadDescription(fs);
-                    fonts[i] = new FileFontInstance(description, path, (long)ttcHeader.OffsetTable[i]);
+                    fonts[i] = new FileFontInstance(description, path, ttcHeader.OffsetTable[i]);
                 }
 
                 return fonts;

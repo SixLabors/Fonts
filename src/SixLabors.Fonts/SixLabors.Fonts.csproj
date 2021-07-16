@@ -13,6 +13,9 @@
     <Description>A cross-platform library for loading and laying out fonts for processing and measuring; written in C#</Description>
     <TargetFrameworks>netstandard2.1;netstandard2.0;netstandard1.3</TargetFrameworks>
     <Nullable>enable</Nullable>
+
+    <!--Prevent version conflicts in DrawWithImageSharp-->
+    <AssemblyVersion Condition="'$(IsContinuousIntegration)'==''">1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,12 +44,12 @@
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
-  
+
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
     <PackageReference Include="System.Buffers" Version="4.5.1" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Resource Include="Unicode\Resources\Grapheme.trie" />
     <Resource Include="Unicode\Resources\UnicodeCategory.trie" />
