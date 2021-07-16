@@ -16,11 +16,12 @@ namespace SixLabors.Fonts.Unicode
     /// assuming that the underlying <see cref="CodePoint"/> instance is well-formed.
     /// </remarks>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    internal readonly struct CodePoint : IComparable<CodePoint>, IEquatable<CodePoint>
+    public readonly struct CodePoint : IComparable<CodePoint>, IEquatable<CodePoint>
     {
         // Supplementary plane code points are encoded as 2 UTF-16 code units
         private const int MaxUtf16CharsPerRune = 2;
         private const byte IsWhiteSpaceFlag = 0x80;
+        private const byte IsLetterOrDigitFlag = 0x40;
         private const byte UnicodeCategoryMask = 0x1F;
 
         private readonly uint value;
@@ -43,7 +44,6 @@ namespace SixLabors.Fonts.Unicode
             Guard.IsTrue(IsValid(value), nameof(value), "Must be in [ U+0000..U+10FFFF ], inclusive.");
 
             this.value = value;
-            this.Value = (int)value;
         }
 
         // Contains information about the ASCII character range [ U+0000..U+007F ], with:
@@ -64,11 +64,6 @@ namespace SixLabors.Fonts.Unicode
         };
 
         /// <summary>
-        /// Gets the Unicode replacement character U+FFFD.
-        /// </summary>
-        public static CodePoint ReplacementCodePoint { get; } = new CodePoint(0xFFFD);
-
-        /// <summary>
         /// Gets a value indicating whether this value is within the BMP ([ U+0000..U+FFFF ])
         /// and therefore representable by a single UTF-16 code unit.
         /// </summary>
@@ -81,14 +76,20 @@ namespace SixLabors.Fonts.Unicode
         public bool IsAscii => UnicodeUtility.IsAsciiCodePoint(this.value);
 
         // Displayed as "'<char>' (U+XXXX)"; e.g., "'e' (U+0065)"
-        internal string DebuggerDisplay => FormattableString.Invariant($"U+{this.value:X4} '{(IsValid(this.value) ? this.ToString() : "\uFFFD")}'");
+        private string DebuggerDisplay => FormattableString.Invariant($"U+{this.value:X4} '{(IsValid(this.value) ? this.ToString() : "\uFFFD")}'");
 
         /// <summary>
         /// Gets the Unicode value as an integer.
         /// </summary>
-        public readonly int Value { get; }
+        public int Value => (int)this.value;
+
+        /// <summary>
+        /// Gets the Unicode replacement character U+FFFD.
+        /// </summary>
+        public static CodePoint ReplacementCodePoint { get; } = new CodePoint(0xFFFD);
 
         // Operators below are explicit because they may throw.
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public static explicit operator CodePoint(uint value) => new CodePoint(value);
 
         public static explicit operator CodePoint(int value) => new CodePoint(value);
@@ -104,22 +105,29 @@ namespace SixLabors.Fonts.Unicode
         public static bool operator >(CodePoint left, CodePoint right) => left.value > right.value;
 
         public static bool operator >=(CodePoint left, CodePoint right) => left.value >= right.value;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
         /// <summary>
         /// Returns <see langword="true"/> if <paramref name="value"/> is a valid Unicode code
         /// point, i.e., is in [ U+0000..U+10FFFF ], inclusive.
         /// </summary>
+        /// <param name="value">The value to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="value"/> represents a valid codepoint; otherwise, <see langword="false"/></returns>
         public static bool IsValid(int value) => IsValid((uint)value);
 
         /// <summary>
         /// Returns <see langword="true"/> if <paramref name="value"/> is a valid Unicode code
         /// point, i.e., is in [ U+0000..U+10FFFF ], inclusive.
         /// </summary>
+        /// <param name="value">The value to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="value"/> represents a valid codepoint; otherwise, <see langword="false"/></returns>
         public static bool IsValid(uint value) => UnicodeUtility.IsValidCodePoint(value);
 
         /// <summary>
         /// Gets a value indicating whether the given codepoint is white space.
         /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a whitespace character; otherwise, <see langword="false"/></returns>
         public static bool IsWhiteSpace(CodePoint codePoint)
         {
             if (codePoint.IsAscii)
@@ -133,9 +141,11 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Gets a value indicating whether the given codepoint is a control.
+        /// Gets a value indicating whether the given codepoint is a control character.
         /// </summary>
-        public static bool IsControl(CodePoint value) =>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a control character; otherwise, <see langword="false"/></returns>
+        public static bool IsControl(CodePoint codePoint) =>
 
             // Per the Unicode stability policy, the set of control characters
             // is forever fixed at [ U+0000..U+001F ], [ U+007F..U+009F ]. No
@@ -145,15 +155,85 @@ namespace SixLabors.Fonts.Unicode
             // Logic below depends on CodePoint.Value never being -1 (since CodePoint is a validating type)
             // 00..1F (+1) => 01..20 (&~80) => 01..20
             // 7F..9F (+1) => 80..A0 (&~80) => 00..20
-            ((value.value + 1) & ~0x80u) <= 0x20u;
+            ((codePoint.value + 1) & ~0x80u) <= 0x20u;
+
+        /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a decimal digit.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a decimal digit; otherwise, <see langword="false"/></returns>
+        public static bool IsDigit(CodePoint codePoint)
+        {
+            if (codePoint.IsAscii)
+            {
+                return UnicodeUtility.IsInRangeInclusive(codePoint.value, '0', '9');
+            }
+            else
+            {
+                return GetGeneralCategory(codePoint) == UnicodeCategory.DecimalDigitNumber;
+            }
+        }
+
+        /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a letter.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a letter; otherwise, <see langword="false"/></returns>
+        public static bool IsLetter(CodePoint codePoint)
+        {
+            if (codePoint.IsAscii)
+            {
+                return ((codePoint.value - 'A') & ~0x20u) <= 'Z' - 'A'; // [A-Za-z]
+            }
+            else
+            {
+                return IsCategoryLetter(GetGeneralCategory(codePoint));
+            }
+        }
+
+        /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a letter or decimal digit.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a letter or decimal digit; otherwise, <see langword="false"/></returns>
+        public static bool IsLetterOrDigit(CodePoint codePoint)
+        {
+            if (codePoint.IsAscii)
+            {
+                return (AsciiCharInfo[codePoint.Value] & IsLetterOrDigitFlag) != 0;
+            }
+            else
+            {
+                return IsCategoryLetterOrDecimalDigit(GetGeneralCategory(codePoint));
+            }
+        }
+
+        /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a lowercase letter.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a lowercase letter; otherwise, <see langword="false"/></returns>
+        public static bool IsLower(CodePoint codePoint)
+        {
+            if (codePoint.IsAscii)
+            {
+                return UnicodeUtility.IsInRangeInclusive(codePoint.value, 'a', 'z');
+            }
+            else
+            {
+                return GetGeneralCategory(codePoint) == UnicodeCategory.LowercaseLetter;
+            }
+        }
 
         /// <summary>
         /// Gets a value indicating whether the given codepoint is a new line indicator.
         /// </summary>
-        public static bool IsNewLine(CodePoint value)
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a new line indicator; otherwise, <see langword="false"/></returns>
+        public static bool IsNewLine(CodePoint codePoint)
         {
             // See https://www.unicode.org/standard/reports/tr13/tr13-5.html
-            switch (value.Value)
+            switch (codePoint.Value)
             {
                 case 0x000A: // LINE FEED (LF)
                 case 0x000B: // LINE TABULATION (VT)
@@ -192,24 +272,32 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Gets the <see cref="BidiType"/> for the given codepoint.
         /// </summary>
-        public static BidiType GetBidiType(CodePoint codePoint)
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="BidiType"/>.</returns>
+        internal static BidiType GetBidiType(CodePoint codePoint)
             => new BidiType(codePoint);
 
         /// <summary>
         /// Gets the <see cref="LineBreakClass"/> for the given codepoint.
         /// </summary>
-        public static LineBreakClass GetLineBreakClass(CodePoint codePoint)
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="LineBreakClass"/>.</returns>
+        internal static LineBreakClass GetLineBreakClass(CodePoint codePoint)
             => UnicodeData.GetLineBreakClass(codePoint.Value);
 
         /// <summary>
         /// Gets the <see cref="GraphemeClusterClass"/> for the given codepoint.
         /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="GraphemeClusterClass"/>.</returns>
         public static GraphemeClusterClass GetGraphemeClusterClass(CodePoint codePoint)
             => UnicodeData.GetGraphemeClusterClass(codePoint.Value);
 
         /// <summary>
         /// Gets the <see cref="UnicodeCategory"/> for the given codepoint.
         /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="UnicodeCategory"/>.</returns>
         public static UnicodeCategory GetGeneralCategory(CodePoint codePoint)
         {
             if (codePoint.IsAscii)
@@ -371,5 +459,20 @@ namespace SixLabors.Fonts.Unicode
                 return buffer.ToString();
             }
         }
+
+        /// <summary>
+        /// Returns this instance displayed as &quot;&apos;&lt;char&gt;&apos; (U+XXXX)&quot;; e.g., &quot;&apos;e&apos; (U+0065)&quot;
+        /// </summary>
+        /// <returns>The <see cref="string"/>.</returns>
+        internal string ToDebuggerDisplay() => this.DebuggerDisplay;
+
+        // Returns true iff this Unicode category represents a letter
+        private static bool IsCategoryLetter(UnicodeCategory category)
+            => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.UppercaseLetter, (uint)UnicodeCategory.OtherLetter);
+
+        // Returns true iff this Unicode category represents a letter or a decimal digit
+        private static bool IsCategoryLetterOrDecimalDigit(UnicodeCategory category)
+            => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.UppercaseLetter, (uint)UnicodeCategory.OtherLetter)
+            || (category == UnicodeCategory.DecimalDigitNumber);
     }
 }

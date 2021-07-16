@@ -120,7 +120,7 @@ namespace SixLabors.Fonts
             }
 
             sb.Append('\'');
-            sb.Append(this.CodePoint.DebuggerDisplay);
+            sb.Append(this.CodePoint.ToDebuggerDisplay());
 
             sb.Append('\'');
             sb.Append(' ');

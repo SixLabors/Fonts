@@ -112,6 +112,11 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
+                        if (point.Equals("Regional_Indicator"))
+                        {
+                            point = nameof(GraphemeClusterClass.RegionalIndicator);
+                        }
+
                         if (end?.Length == 0)
                         {
                             end = start;

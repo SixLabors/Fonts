@@ -6,7 +6,7 @@ using Xunit;
 
 namespace SixLabors.Fonts.Tests.Unicode
 {
-    public class CodePointTests
+    public partial class CodePointTests
     {
         [Fact]
         public void CodePointIsValid()
@@ -20,6 +20,26 @@ namespace SixLabors.Fonts.Tests.Unicode
             i++;
             Assert.False(CodePoint.IsValid(i));
         }
+
+        [Theory]
+        [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
+        public static void CodePointIsDigit(UnicodeInfoTestData testData)
+            => Assert.Equal(testData.IsDigit, CodePoint.IsDigit(testData.ScalarValue));
+
+        [Theory]
+        [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
+        public static void CodePointIsLetter(UnicodeInfoTestData testData)
+            => Assert.Equal(testData.IsLetter, CodePoint.IsLetter(testData.ScalarValue));
+
+        [Theory]
+        [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
+        public static void CodePointIsLetterOrDigit(UnicodeInfoTestData testData)
+            => Assert.Equal(testData.IsLetterOrDigit, CodePoint.IsLetterOrDigit(testData.ScalarValue));
+
+        [Theory]
+        [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
+        public static void CodePointIsLower(UnicodeInfoTestData testData)
+            => Assert.Equal(testData.IsLower, CodePoint.IsLower(testData.ScalarValue));
 
         [Fact]
         public void CodePointIsWhiteSpaceAscii()

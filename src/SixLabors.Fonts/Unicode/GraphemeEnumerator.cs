@@ -165,9 +165,9 @@ namespace SixLabors.Fonts.Unicode
                     processor.MoveNext();
                     goto case GraphemeClusterClass.ExtPict;
 
-                case GraphemeClusterClass.Regional_Indicator:
+                case GraphemeClusterClass.RegionalIndicator:
                     // We've consumed a single RI scalar. Try to consume another (to make it a pair).
-                    if (processor.CurrentType == GraphemeClusterClass.Regional_Indicator)
+                    if (processor.CurrentType == GraphemeClusterClass.RegionalIndicator)
                     {
                         processor.MoveNext();
                     }
