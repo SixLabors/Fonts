@@ -7,11 +7,11 @@ using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Unicode
 {
-    public static class UnicodeTypeMaps
+    internal static class UnicodeTypeMaps
     {
         public static readonly Dictionary<string, BidiCharacterType> BidiCharacterTypeMap
             = new Dictionary<string, BidiCharacterType>(StringComparer.OrdinalIgnoreCase)
-{
+        {
                 { "L", BidiCharacterType.LeftToRight },
                 { "R", BidiCharacterType.RightToLeft },
                 { "AL", BidiCharacterType.ArabicLetter },
@@ -35,6 +35,6 @@ namespace SixLabors.Fonts.Tests.Unicode
                 { "RLI", BidiCharacterType.RightToLeftIsolate },
                 { "FSI", BidiCharacterType.FirstStrongIsolate },
                 { "PDI", BidiCharacterType.PopDirectionalIsolate },
-};
+        };
     }
 }
