@@ -29,7 +29,26 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Initializes a new instance of the <see cref="CodePoint"/> struct.
         /// </summary>
+        /// <param name="value">The char representing the UTF-16 code unit</param>
+        /// <exception cref="ArgumentException">
+        /// If <paramref name="value"/> represents a UTF-16 surrogate code point
+        /// U+D800..U+DFFF, inclusive.
+        /// </exception>
+        public CodePoint(char value)
+        {
+            uint expanded = value;
+            Guard.IsFalse(UnicodeUtility.IsSurrogateCodePoint(expanded), nameof(value), "Must not be in [ U+D800..U+DFFF ], inclusive.");
+
+            this.value = expanded;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodePoint"/> struct.
+        /// </summary>
         /// <param name="value">The value to create the codepoint.</param>
+        /// <exception cref="ArgumentException">
+        /// If <paramref name="value"/> does not represent a value Unicode scalar value.
+        /// </exception>
         public CodePoint(int value)
             : this((uint)value)
         {
@@ -39,6 +58,9 @@ namespace SixLabors.Fonts.Unicode
         /// Initializes a new instance of the <see cref="CodePoint"/> struct.
         /// </summary>
         /// <param name="value">The value to create the codepoint.</param>
+        /// <exception cref="ArgumentException">
+        /// If <paramref name="value"/> does not represent a value Unicode scalar value.
+        /// </exception>
         public CodePoint(uint value)
         {
             Guard.IsTrue(IsValid(value), nameof(value), "Must be in [ U+0000..U+10FFFF ], inclusive.");
@@ -88,8 +110,9 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         public static CodePoint ReplacementCodePoint { get; } = new CodePoint(0xFFFD);
 
-        // Operators below are explicit because they may throw.
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        // Operators below are explicit because they may throw.
         public static explicit operator CodePoint(uint value) => new CodePoint(value);
 
         public static explicit operator CodePoint(int value) => new CodePoint(value);

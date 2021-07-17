@@ -75,10 +75,13 @@ namespace SixLabors.Fonts
         public bool StartOfLine { get; }
 
         /// <summary>
-        /// Gets the Unicode code point of the character.
+        /// Gets the Unicode code point of the glyph.
         /// </summary>
         public CodePoint CodePoint { get; }
 
+        /// <summary>
+        /// Gets te line heright of the glyph.
+        /// </summary>
         public float LineHeight { get; }
 
         /// <summary>
@@ -86,12 +89,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <returns>The <see cref="bool"/>.</returns>
         public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.CodePoint);
-
-        /// <summary>
-        /// Gets a value indicating whether gets the glyphe represents a control character.
-        /// </summary>
-        /// <returns>The <see cref="bool"/>.</returns>
-        public bool IsControlCharacter() => CodePoint.IsControl(this.CodePoint);
 
         internal FontRectangle BoundingBox(Vector2 dpi)
         {
@@ -105,6 +102,7 @@ namespace SixLabors.Fonts
             return box;
         }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             var sb = new StringBuilder();
