@@ -363,7 +363,7 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="LineBreakClass"/>.</returns>
-        internal static LineBreakClass GetLineBreakClass(CodePoint codePoint)
+        public static LineBreakClass GetLineBreakClass(CodePoint codePoint)
             => UnicodeData.GetLineBreakClass(codePoint.Value);
 
         /// <summary>
