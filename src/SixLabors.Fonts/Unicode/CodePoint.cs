@@ -4,7 +4,6 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
-using System.Text;
 
 namespace SixLabors.Fonts.Unicode
 {
@@ -341,22 +340,23 @@ namespace SixLabors.Fonts.Unicode
                 return 0;
             }
 
-            unsafe
+            int count = 0;
+            var enumerator = new CodePointEnumerator(source);
+            while (enumerator.MoveNext())
             {
-                fixed (char* c = source)
-                {
-                    return Encoding.UTF32.GetByteCount(c, source.Length) / sizeof(uint);
-                }
+                count++;
             }
+
+            return count;
         }
 
         /// <summary>
-        /// Gets the <see cref="BidiType"/> for the given codepoint.
+        /// Gets the <see cref="BidiClass"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
-        /// <returns>The <see cref="BidiType"/>.</returns>
-        internal static BidiType GetBidiType(CodePoint codePoint)
-            => new BidiType(codePoint);
+        /// <returns>The <see cref="BidiClass"/>.</returns>
+        internal static BidiClass GetBidiClass(CodePoint codePoint)
+            => new BidiClass(codePoint);
 
         /// <summary>
         /// Gets the <see cref="LineBreakClass"/> for the given codepoint.

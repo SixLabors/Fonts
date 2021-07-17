@@ -37,7 +37,7 @@ namespace SixLabors.Fonts.Tests.Unicode
             for (int lineNumber = 1; lineNumber < lines.Length + 1; lineNumber++)
             {
                 // Get the line, remove comments
-                var line = lines[lineNumber - 1].Split('#')[0].Trim();
+                string line = lines[lineNumber - 1].Split('#')[0].Trim();
 
                 // Ignore blank/comment only lines
                 if (string.IsNullOrWhiteSpace(line))
@@ -67,16 +67,20 @@ namespace SixLabors.Fonts.Tests.Unicode
                 }
 
                 // Split data line
-                var parts = line.Split(';');
+                string[] parts = line.Split(';');
 
                 // Get the directions
-                BidiCharacterType[] directions = parts[0].Split(' ').Select(x => (BidiCharacterType)Enum.Parse(typeof(BidiCharacterType), x)).ToArray();
+                BidiCharacterType[] directions = parts[0].Split(' ').Select(x =>
+                {
+                    UnicodeTypeMaps.BidiCharacterTypeMap.TryGetValue(x, out BidiCharacterType cls);
+                    return cls;
+                }).ToArray();
 
                 // Get the bit set
-                var bitset = Convert.ToInt32(parts[1].Trim(), 16);
+                int bitset = Convert.ToInt32(parts[1].Trim(), 16);
 
-                BidiPairedBracketType[] pairTypes = Enumerable.Repeat(BidiPairedBracketType.N, directions.Length).ToArray();
-                var pairValues = Enumerable.Repeat(0, directions.Length).ToArray();
+                BidiPairedBracketType[] pairTypes = Enumerable.Repeat(BidiPairedBracketType.None, directions.Length).ToArray();
+                int[] pairValues = Enumerable.Repeat(0, directions.Length).ToArray();
 
                 for (int bit = 1; bit < 8; bit <<= 1)
                 {

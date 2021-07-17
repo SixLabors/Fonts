@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using SixLabors.Fonts.Tests.Unicode;
 using SixLabors.Fonts.Unicode;
 
 namespace UnicodeTrieGenerator
@@ -52,6 +53,14 @@ namespace UnicodeTrieGenerator
             { "Cn", UnicodeCategory.OtherNotAssigned }
         };
 
+        private static readonly Dictionary<string, BidiPairedBracketType> BidiPairedBracketTypeMap
+            = new Dictionary<string, BidiPairedBracketType>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "N", BidiPairedBracketType.None },
+            { "O", BidiPairedBracketType.Open },
+            { "C", BidiPairedBracketType.Close }
+        };
+
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
@@ -85,7 +94,8 @@ namespace UnicodeTrieGenerator
                 {
                     // Get the directionality.
                     int codePoint = ParseHexInt(parts[0]);
-                    BidiCharacterType cls = Enum.Parse<BidiCharacterType>(parts[4]);
+
+                    UnicodeTypeMaps.BidiCharacterTypeMap.TryGetValue(parts[4], out BidiCharacterType cls);
                     Bidi[codePoint] = (int)cls << 24;
                 }
             }
@@ -177,7 +187,8 @@ namespace UnicodeTrieGenerator
                     {
                         int point = ParseHexInt(match.Groups[1].Value);
                         int otherPoint = ParseHexInt(match.Groups[2].Value);
-                        BidiPairedBracketType kind = Enum.Parse<BidiPairedBracketType>(match.Groups[3].Value, true);
+
+                        BidiPairedBracketTypeMap.TryGetValue(match.Groups[3].Value, out BidiPairedBracketType kind);
 
                         Bidi[point] |= otherPoint | ((int)kind << 16);
                     }

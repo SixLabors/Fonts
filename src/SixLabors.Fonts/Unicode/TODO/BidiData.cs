@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Unicode
             while (position < text.Length)
             {
                 var codePoint = CodePoint.ReadAt(text, position, out int count);
-                BidiType bidi = CodePoint.GetBidiType(codePoint);
+                BidiClass bidi = CodePoint.GetBidiClass(codePoint);
 
                 // Look up BidiCharacterType
                 BidiCharacterType dir = bidi.CharacterType;
@@ -92,18 +92,18 @@ namespace SixLabors.Fonts.Unicode
 
                 switch (dir)
                 {
-                    case BidiCharacterType.LRE:
-                    case BidiCharacterType.LRO:
-                    case BidiCharacterType.RLE:
-                    case BidiCharacterType.RLO:
-                    case BidiCharacterType.PDF:
+                    case BidiCharacterType.LeftToRightEmbedding:
+                    case BidiCharacterType.LeftToRightOverride:
+                    case BidiCharacterType.RightToLeftEmbedding:
+                    case BidiCharacterType.RightToLeftOverride:
+                    case BidiCharacterType.PopDirectinoalFormat:
                         this.HasEmbeddings = true;
                         break;
 
-                    case BidiCharacterType.LRI:
-                    case BidiCharacterType.RLI:
-                    case BidiCharacterType.FSI:
-                    case BidiCharacterType.PDI:
+                    case BidiCharacterType.LeftToRightIsolate:
+                    case BidiCharacterType.RightToLeftIsolate:
+                    case BidiCharacterType.FirstStrongIsolate:
+                    case BidiCharacterType.PopDirectionalIsolate:
                         this.HasIsolates = true;
                         break;
                 }
@@ -111,17 +111,19 @@ namespace SixLabors.Fonts.Unicode
                 // Lookup paired bracket types
                 BidiPairedBracketType pbt = bidi.PairedBracketType;
                 this.pairedBracketTypes[i] = pbt;
-                switch (pbt)
-                {
-                    case BidiPairedBracketType.O:
-                        this.pairedBracketValues[i] = MapCanon(bidi.Value & 0xFFFF);
-                        this.HasBrackets = true;
-                        break;
 
-                    case BidiPairedBracketType.C:
-                        this.pairedBracketValues[i] = MapCanon(codePoint.Value);
-                        this.HasBrackets = true;
-                        break;
+                if (pbt == BidiPairedBracketType.Open)
+                {
+                    // Opening bracket types can never have a null pairing.
+                    bidi.TryGetPairedBracket(out CodePoint paired);
+                    this.pairedBracketValues[i] = BidiClass.MapCanonicalType(paired).Value;
+
+                    this.HasBrackets = true;
+                }
+                else if (pbt == BidiPairedBracketType.Close)
+                {
+                    this.pairedBracketValues[i] = BidiClass.MapCanonicalType(codePoint).Value;
+                    this.HasBrackets = true;
                 }
 
                 i++;
@@ -132,29 +134,6 @@ namespace SixLabors.Fonts.Unicode
             this.Types = this.types.AsSlice();
             this.PairedBracketTypes = this.pairedBracketTypes.AsSlice();
             this.PairedBracketValues = this.pairedBracketValues.AsSlice();
-        }
-
-        /// <summary>
-        /// Map bracket types U+3008 and U+3009 to their canonical equivalents.
-        /// </summary>
-        /// <param name="codePoint">The code point to be mapped</param>
-        /// <returns>The mapped canonical code point, or the passed code point</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int MapCanon(int codePoint)
-        {
-            if (codePoint == 0x3008)
-            {
-                return 0x2329;
-            }
-
-            if (codePoint == 0x3009)
-            {
-                return 0x232A;
-            }
-            else
-            {
-                return codePoint;
-            }
         }
 
         /// <summary>
