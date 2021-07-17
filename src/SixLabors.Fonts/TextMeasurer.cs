@@ -158,8 +158,7 @@ namespace SixLabors.Fonts
                     hasSize = true;
                 }
 
-                // TODO: Make CodePoint public and use over int.
-                characterBoundsList[i] = new GlyphMetric(c.CodePoint.Value, c.BoundingBox(dpi), c.IsControlCharacter());
+                characterBoundsList[i] = new GlyphMetric(c.CodePoint, c.BoundingBox(dpi));
             }
 
             characterBounds = characterBoundsList;

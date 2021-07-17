@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using SixLabors.Fonts.Unicode;
+
 namespace SixLabors.Fonts
 {
     /// <summary>
@@ -11,39 +13,36 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphMetric"/> struct.
         /// </summary>
-        /// <param name="codePoint">Unicode codepoint of the character.</param>
+        /// <param name="codePoint">Unicode codepoint for the glyph.</param>
         /// <param name="bounds">The bounds.</param>
-        /// <param name="isControlCharacter">Whether the character is a control character.</param>
-        public GlyphMetric(int codePoint, FontRectangle bounds, bool isControlCharacter)
+        public GlyphMetric(char codePoint, FontRectangle bounds)
+            : this(new CodePoint(codePoint), bounds)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GlyphMetric"/> struct.
+        /// </summary>
+        /// <param name="codePoint">Unicode codepoint for the glyph.</param>
+        /// <param name="bounds">The glyph bounds.</param>
+        public GlyphMetric(CodePoint codePoint, FontRectangle bounds)
         {
             this.Codepoint = codePoint;
-            this.Character = char.ConvertFromUtf32(codePoint);
             this.Bounds = bounds;
-            this.IsControlCharacter = isControlCharacter;
         }
 
         /// <summary>
         /// Gets the Unicode codepoint of the character.
         /// </summary>
-        public int Codepoint { get; }
+        public CodePoint Codepoint { get; }
 
         /// <summary>
-        /// Gets the UTF-16 encoded character.
-        /// </summary>
-        public string Character { get; }
-
-        /// <summary>
-        /// Gets the character bounds.
+        /// Gets the glyph bounds.
         /// </summary>
         public FontRectangle Bounds { get; }
 
-        /// <summary>
-        /// Gets a value indicating whether the character is a control character.
-        /// </summary>
-        public bool IsControlCharacter { get; }
-
         /// <inheritdoc/>
         public override string ToString()
-            => $"Character: {this.Character}, bounds: {this.Bounds}, is control char: {this.IsControlCharacter}";
+            => $"Codepoint: {this.Codepoint}, Bounds: {this.Bounds}.";
     }
 }

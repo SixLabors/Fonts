@@ -43,7 +43,7 @@ namespace SixLabors.Fonts.Unicode
             => IsInRangeInclusive(value, 0xD800u, 0xDBFFu);
 
         /// <summary>
-        /// Returns <see langword="true"/> iff <paramref name="value"/> is a UTF-16 low surrogate code point,
+        /// Returns <see langword="true"/> if <paramref name="value"/> is a UTF-16 low surrogate code point,
         /// i.e., is in [ U+DC00..U+DFFF ], inclusive.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -51,7 +51,7 @@ namespace SixLabors.Fonts.Unicode
             => IsInRangeInclusive(value, 0xDC00u, 0xDFFFu);
 
         /// <summary>
-        /// Returns <see langword="true"/> iff <paramref name="value"/> is a UTF-16 surrogate code point,
+        /// Returns <see langword="true"/> if <paramref name="value"/> is a UTF-16 surrogate code point,
         /// i.e., is in [ U+D800..U+DFFF ], inclusive.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

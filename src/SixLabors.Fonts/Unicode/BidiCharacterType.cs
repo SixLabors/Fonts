@@ -7,131 +7,131 @@ namespace SixLabors.Fonts.Unicode
     /// Provides enumeration for the Unicode Bidirectional character types.
     /// <see href="https://unicode.org/reports/tr9/#Table Bidirectional Character Types"/>.
     /// </summary>
-    internal enum BidiCharacterType : byte
+    public enum BidiCharacterType : byte
     {
         // Strong Types
 
         /// <summary>
-        /// Left To Right.
+        /// Left-to-right.
         /// </summary>
-        L = 0,
+        LeftToRight = 0,
 
         /// <summary>
-        /// Right To Left.
+        /// Right-to-left.
         /// </summary>
-        R = 1,
+        RightToLeft = 1,
 
         /// <summary>
         /// Arabic Letter.
         /// </summary>
-        AL = 2,
+        ArabicLetter = 2,
 
         // Weak Types
 
         /// <summary>
         /// European Number
         /// </summary>
-        EN = 3,
+        EuropeanNumber = 3,
 
         /// <summary>
         /// European Separator
         /// </summary>
-        ES = 4,
+        EuropeanSeparator = 4,
 
         /// <summary>
         /// European Terminator
         /// </summary>
-        ET = 5,
+        EuropeanTerminator = 5,
 
         /// <summary>
         /// Arabic Number.
         /// </summary>
-        AN = 6,
+        ArabicNumber = 6,
 
         /// <summary>
         /// Common Separator
         /// </summary>
-        CS = 7,
+        CommonSeparator = 7,
 
         /// <summary>
         /// Nonspacing Mark.
         /// </summary>
-        NSM = 8,
+        NonspacingMark = 8,
 
         /// <summary>
         /// Boundary Neutral.
         /// </summary>
-        BN = 9,
+        BoundaryNeutral = 9,
 
         // Neutral Types
 
         /// <summary>
         /// Paragraph Separator
         /// </summary>
-        B = 10,
+        ParagraphSeparator = 10,
 
         /// <summary>
         /// Segment Separator
         /// </summary>
-        S = 11,
+        SegmentSeparator = 11,
 
         /// <summary>
         /// White Space.
         /// </summary>
-        WS = 12,
+        Whitespace = 12,
 
         /// <summary>
         /// Other Neutral.
         /// </summary>
-        ON = 13,
+        OtherNeutral = 13,
 
         // Explicit Formatting Types - Embed
 
         /// <summary>
-        /// Left To Right Embedding.
+        /// Left-to-right Embedding.
         /// </summary>
-        LRE = 14,
+        LeftToRightEmbedding = 14,
 
         /// <summary>
-        /// Left To Right Override
+        /// Left-to-right Override
         /// </summary>
-        LRO = 15,
+        LeftToRightOverride = 15,
 
         /// <summary>
-        /// Right To Left Embedding
+        /// Right-to-left Embedding
         /// </summary>
-        RLE = 16,
+        RightToLeftEmbedding = 16,
 
         /// <summary>
-        /// Right To Left Override.
+        /// Right-to-left Override.
         /// </summary>
-        RLO = 17,
+        RightToLeftOverride = 17,
 
         /// <summary>
         /// Pop Directional Format
         /// </summary>
-        PDF = 18,
+        PopDirectinoalFormat = 18,
 
         // Explicit Formatting Types - Isolate
 
         /// <summary>
-        /// Left To Right Isolate
+        /// Left-to-right Isolate
         /// </summary>
-        LRI = 19,
+        LeftToRightIsolate = 19,
 
         /// <summary>
-        /// Right To Left Isolate.
+        /// Right-to-left Isolate.
         /// </summary>
-        RLI = 20,
+        RightToLeftIsolate = 20,
 
         /// <summary>
         /// First Strong Isolate
         /// </summary>
-        FSI = 21,
+        FirstStrongIsolate = 21,
 
         /// <summary>
         /// Pop Directional Isolate.
         /// </summary>
-        PDI = 22,
+        PopDirectionalIsolate = 22,
     }
 }

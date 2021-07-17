@@ -141,24 +141,23 @@ namespace SixLabors.Fonts.Tests
             string text = "a b\nc";
             var expectedGlyphMetrics = new GlyphMetric[]
             {
-                new GlyphMetric('a', new FontRectangle(10, 0, 10, 10), false),
-                new GlyphMetric(' ', new FontRectangle(40, 0, 30, 10), false),
-                new GlyphMetric('b', new FontRectangle(70, 0, 10, 10), false),
-                new GlyphMetric('\n', new FontRectangle(100, 0, 0, 10), true),
-                new GlyphMetric('c', new FontRectangle(10, 30, 10, 10), false),
+                new GlyphMetric('a', new FontRectangle(10, 0, 10, 10)),
+                new GlyphMetric(' ', new FontRectangle(40, 0, 30, 10)),
+                new GlyphMetric('b', new FontRectangle(70, 0, 10, 10)),
+                new GlyphMetric('\n', new FontRectangle(100, 0, 0, 10)),
+                new GlyphMetric('c', new FontRectangle(10, 30, 10, 10)),
             };
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px
-            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text.AsSpan(), new RendererOptions(font, 72 * font.EmSize), out GlyphMetric[] glyphMetrics));
+            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text.AsSpan(), new RendererOptions(font, scaleFactor), out GlyphMetric[] glyphMetrics));
 
             Assert.Equal(text.Length, glyphMetrics.Length);
             for (int i = 0; i < glyphMetrics.Length; i++)
             {
                 GlyphMetric expected = expectedGlyphMetrics[i];
                 GlyphMetric actual = glyphMetrics[i];
-                Assert.Equal(expected.Character, actual.Character);
-                Assert.Equal(expected.IsControlCharacter, actual.IsControlCharacter);
+                Assert.Equal(expected.Codepoint, actual.Codepoint);
 
                 // 4 dp as there is minor offset difference in the float values
                 Assert.Equal(expected.Bounds.X, actual.Bounds.X, 4);

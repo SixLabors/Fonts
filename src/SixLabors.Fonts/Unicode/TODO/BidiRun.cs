@@ -42,7 +42,7 @@ namespace SixLabors.Fonts.Unicode
                 }
 
                 // End of this run
-                direction = (runLevel & 0x01) == 0 ? BidiCharacterType.L : BidiCharacterType.R;
+                direction = (runLevel & 0x01) == 0 ? BidiCharacterType.LeftToRight : BidiCharacterType.RightToLeft;
                 yield return new BidiRun(direction, startRun, i - startRun);
 
                 // Move to next run
@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Unicode
                 runLevel = levels[i];
             }
 
-            direction = (runLevel & 0x01) == 0 ? BidiCharacterType.L : BidiCharacterType.R;
+            direction = (runLevel & 0x01) == 0 ? BidiCharacterType.LeftToRight : BidiCharacterType.RightToLeft;
             yield return new BidiRun(direction, startRun, levels.Length - startRun);
         }
     }

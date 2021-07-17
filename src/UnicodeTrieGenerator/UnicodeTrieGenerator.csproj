@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\tests\SixLabors.Fonts.Tests\Unicode\UnicodeTypeMaps.cs" Link="UnicodeTypeMaps.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiCharacterType.cs" Link="BidiCharacterType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiPairedBracketType.cs" Link="BidiPairedBracketType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\GraphemeClusterClass.cs" Link="GraphemeClusterClass.cs" />
