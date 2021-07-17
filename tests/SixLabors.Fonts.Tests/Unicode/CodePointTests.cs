@@ -41,6 +41,31 @@ namespace SixLabors.Fonts.Tests.Unicode
         public static void CodePointIsLower(UnicodeInfoTestData testData)
             => Assert.Equal(testData.IsLower, CodePoint.IsLower(testData.ScalarValue));
 
+        [Theory]
+        [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
+        public static void CodePointIsNumber(UnicodeInfoTestData testData)
+            => Assert.Equal(testData.IsNumber, CodePoint.IsNumber(testData.ScalarValue));
+
+        [Theory]
+        [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
+        public static void CodePointIsPunctuation(UnicodeInfoTestData testData)
+            => Assert.Equal(testData.IsPunctuation, CodePoint.IsPunctuation(testData.ScalarValue));
+
+        [Theory]
+        [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
+        public static void CodePointIsSeparator(UnicodeInfoTestData testData)
+            => Assert.Equal(testData.IsSeparator, CodePoint.IsSeparator(testData.ScalarValue));
+
+        [Theory]
+        [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
+        public static void CodePointIsSymbol(UnicodeInfoTestData testData)
+            => Assert.Equal(testData.IsSymbol, CodePoint.IsSymbol(testData.ScalarValue));
+
+        [Theory]
+        [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
+        public static void CodePointIsUpper(UnicodeInfoTestData testData)
+            => Assert.Equal(testData.IsUpper, CodePoint.IsUpper(testData.ScalarValue));
+
         [Fact]
         public void CodePointIsWhiteSpaceAscii()
         {

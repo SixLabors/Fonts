@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Unicode
     public readonly struct CodePoint : IComparable<CodePoint>, IEquatable<CodePoint>
     {
         // Supplementary plane code points are encoded as 2 UTF-16 code units
-        private const int MaxUtf16CharsPerRune = 2;
+        private const int MaxUtf16CharsPerCodePoint = 2;
         private const byte IsWhiteSpaceFlag = 0x80;
         private const byte IsLetterOrDigitFlag = 0x40;
         private const byte UnicodeCategoryMask = 0x1F;
@@ -222,6 +222,64 @@ namespace SixLabors.Fonts.Unicode
             else
             {
                 return GetGeneralCategory(codePoint) == UnicodeCategory.LowercaseLetter;
+            }
+        }
+
+        /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a number.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a number; otherwise, <see langword="false"/></returns>
+        public static bool IsNumber(CodePoint codePoint)
+        {
+            if (codePoint.IsAscii)
+            {
+                return UnicodeUtility.IsInRangeInclusive(codePoint.value, '0', '9');
+            }
+            else
+            {
+                return IsCategoryNumber(GetGeneralCategory(codePoint));
+            }
+        }
+
+        /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as punctuation.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is punctuation; otherwise, <see langword="false"/></returns>
+        public static bool IsPunctuation(CodePoint codePoint)
+            => IsCategoryPunctuation(GetGeneralCategory(codePoint));
+
+        /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a separator.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a separator; otherwise, <see langword="false"/></returns>
+        public static bool IsSeparator(CodePoint codePoint)
+            => IsCategorySeparator(GetGeneralCategory(codePoint));
+
+        /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a symbol.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a symbol; otherwise, <see langword="false"/></returns>
+        public static bool IsSymbol(CodePoint codePoint)
+            => IsCategorySymbol(GetGeneralCategory(codePoint));
+
+        /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a number.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a number; otherwise, <see langword="false"/></returns>
+        public static bool IsUpper(CodePoint codePoint)
+        {
+            if (codePoint.IsAscii)
+            {
+                return UnicodeUtility.IsInRangeInclusive(codePoint.value, 'A', 'Z');
+            }
+            else
+            {
+                return GetGeneralCategory(codePoint) == UnicodeCategory.UppercaseLetter;
             }
         }
 
@@ -454,7 +512,7 @@ namespace SixLabors.Fonts.Unicode
             }
             else
             {
-                Span<char> buffer = stackalloc char[MaxUtf16CharsPerRune];
+                Span<char> buffer = stackalloc char[MaxUtf16CharsPerCodePoint];
                 UnicodeUtility.GetUtf16SurrogatesFromSupplementaryPlaneCodePoint(this.value, out buffer[0], out buffer[1]);
                 return buffer.ToString();
             }
@@ -466,13 +524,29 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="string"/>.</returns>
         internal string ToDebuggerDisplay() => this.DebuggerDisplay;
 
-        // Returns true iff this Unicode category represents a letter
+        // Returns true if this Unicode category represents a letter
         private static bool IsCategoryLetter(UnicodeCategory category)
             => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.UppercaseLetter, (uint)UnicodeCategory.OtherLetter);
 
-        // Returns true iff this Unicode category represents a letter or a decimal digit
+        // Returns true if this Unicode category represents a letter or a decimal digit
         private static bool IsCategoryLetterOrDecimalDigit(UnicodeCategory category)
             => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.UppercaseLetter, (uint)UnicodeCategory.OtherLetter)
             || (category == UnicodeCategory.DecimalDigitNumber);
+
+        // Returns true if this Unicode category represents a number
+        private static bool IsCategoryNumber(UnicodeCategory category)
+            => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.DecimalDigitNumber, (uint)UnicodeCategory.OtherNumber);
+
+        // Returns true if this Unicode category represents a punctuation mark
+        private static bool IsCategoryPunctuation(UnicodeCategory category)
+            => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.ConnectorPunctuation, (uint)UnicodeCategory.OtherPunctuation);
+
+        // Returns true if this Unicode category represents a separator
+        private static bool IsCategorySeparator(UnicodeCategory category)
+            => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.SpaceSeparator, (uint)UnicodeCategory.ParagraphSeparator);
+
+        // Returns true if this Unicode category represents a symbol
+        private static bool IsCategorySymbol(UnicodeCategory category)
+            => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.MathSymbol, (uint)UnicodeCategory.OtherSymbol);
     }
 }
