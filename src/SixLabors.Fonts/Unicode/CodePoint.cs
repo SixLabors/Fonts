@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Unicode
     /// assuming that the underlying <see cref="CodePoint"/> instance is well-formed.
     /// </remarks>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public readonly struct CodePoint : IComparable<CodePoint>, IEquatable<CodePoint>
+    public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatable<CodePoint>
     {
         // Supplementary plane code points are encoded as 2 UTF-16 code units
         private const int MaxUtf16CharsPerCodePoint = 2;
@@ -394,18 +394,9 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="text">The text to read from.</param>
         /// <param name="index">The index to read at.</param>
-        /// <returns>The <see cref="CodePoint"/>.</returns>
-        public static CodePoint ReadAt(string text, int index)
-            => ReadAt(text, index, out int _);
-
-        /// <summary>
-        /// Reads the <see cref="CodePoint"/> at specified position.
-        /// </summary>
-        /// <param name="text">The text to read from.</param>
-        /// <param name="index">The index to read at.</param>
         /// <param name="charsConsumed">The count of chars consumed reading the buffer.</param>
         /// <returns>The <see cref="CodePoint"/>.</returns>
-        public static CodePoint ReadAt(string text, int index, out int charsConsumed)
+        internal static CodePoint ReadAt(string text, int index, out int charsConsumed)
             => DecodeFromUtf16At(text.AsMemory().Span, index, out charsConsumed);
 
         /// <summary>
@@ -414,7 +405,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="source">The buffer to read from.</param>
         /// <param name="index">The index to read at.</param>
         /// <returns>The <see cref="CodePoint"/>.</returns>
-        public static CodePoint DecodeFromUtf16At(ReadOnlySpan<char> source, int index)
+        internal static CodePoint DecodeFromUtf16At(ReadOnlySpan<char> source, int index)
             => DecodeFromUtf16At(source, index, out int _);
 
         /// <summary>
@@ -424,7 +415,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="index">The index to read at.</param>
         /// <param name="charsConsumed">The count of chars consumed reading the buffer.</param>
         /// <returns>The <see cref="CodePoint"/>.</returns>
-        public static CodePoint DecodeFromUtf16At(ReadOnlySpan<char> source, int index, out int charsConsumed)
+        internal static CodePoint DecodeFromUtf16At(ReadOnlySpan<char> source, int index, out int charsConsumed)
         {
             if (index >= source.Length)
             {
@@ -463,52 +454,20 @@ namespace SixLabors.Fonts.Unicode
             return new CodePoint(code);
         }
 
-        /// <summary>
-        /// Decodes the <see cref="CodePoint"/> at the end of the provided UTF-16 source buffer.
-        /// </summary>
-        /// <remarks>
-        /// This method is very similar to <see cref="ReadAt(string, int, out int)"/>, but it allows
-        /// the caller to loop backward instead of forward. The typical calling convention is that on each iteration
-        /// of the loop, the caller should slice off the final <paramref name="charsConsumed"/> elements of
-        /// the <paramref name="source"/> buffer.
-        /// </remarks>
-        /// <param name="source">The buffer to read from.</param>
-        /// <param name="charsConsumed">The count of chars consumed reading the buffer.</param>
-        /// <returns>The <see cref="CodePoint"/>.</returns>
-        public static CodePoint DecodeLastFromUtf16(ReadOnlySpan<char> source, out int charsConsumed)
+        /// <inheritdoc cref="IComparable.CompareTo" />
+        int IComparable.CompareTo(object? obj)
         {
-            int index = source.Length - 1;
-            if (index < 0)
+            if (obj is null)
             {
-                charsConsumed = 0;
-                return ReplacementCodePoint;
+                return 1; // non-null ("this") always sorts after null
             }
 
-            // Optimistically assume input is within BMP.
-            charsConsumed = 1;
-            uint code = source[index];
-
-            // Low surrogate
-            if (UnicodeUtility.IsLowSurrogateCodePoint(code))
+            if (obj is CodePoint other)
             {
-                if (index == 0)
-                {
-                    return ReplacementCodePoint;
-                }
-
-                uint hi = source[index - 1];
-                uint low = code;
-
-                if (UnicodeUtility.IsHighSurrogateCodePoint(hi))
-                {
-                    charsConsumed = 2;
-                    return new CodePoint(UnicodeUtility.GetScalarFromUtf16SurrogatePair(hi, low));
-                }
-
-                return ReplacementCodePoint;
+                return this.CompareTo(other);
             }
 
-            return new CodePoint(code);
+            throw new ArgumentException("Object must be of type CodePoint.");
         }
 
         /// <inheritdoc/>
