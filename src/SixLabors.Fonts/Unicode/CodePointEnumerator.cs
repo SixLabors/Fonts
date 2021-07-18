@@ -7,6 +7,7 @@ namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
     /// Supports a simple iteration over a codepoint collection.
+    /// Methods are pattern-matched by compiler to allow using foreach pattern.
     /// </summary>
     internal ref struct CodePointEnumerator
     {
@@ -26,6 +27,12 @@ namespace SixLabors.Fonts.Unicode
         /// Gets the element in the collection at the current position of the enumerator.
         /// </summary>
         public CodePoint Current { get; private set; }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator that iterates through the collection.</returns>
+        public CodePointEnumerator GetEnumerator() => this;
 
         /// <summary>
         /// Advances the enumerator to the next element of the collection.

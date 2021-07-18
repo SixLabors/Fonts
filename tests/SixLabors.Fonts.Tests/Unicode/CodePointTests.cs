@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using SixLabors.Fonts.Unicode;
 using Xunit;
 
@@ -8,6 +9,25 @@ namespace SixLabors.Fonts.Tests.Unicode
 {
     public partial class CodePointTests
     {
+        [Fact]
+        public void CanEnumerateSpan()
+        {
+            // Test example taken from.
+            // https://docs.microsoft.com/en-us/dotnet/api/system.text.rune?view=net-5.0#when-to-use-the-rune-type
+            const string text = "𐓏𐓘𐓻𐓘𐓻𐓟 𐒻𐓟";
+            int letterCount = 0;
+
+            foreach (CodePoint codePoint in new CodePointEnumerator(text.AsSpan()))
+            {
+                if (CodePoint.IsLetter(codePoint))
+                {
+                    letterCount++;
+                }
+            }
+
+            Assert.Equal(8, letterCount);
+        }
+
         [Fact]
         public void CodePointIsValid()
         {
@@ -134,8 +154,46 @@ namespace SixLabors.Fonts.Tests.Unicode
             }
         }
 
+        [Theory]
+        [InlineData(0, 0)]
+        [InlineData(0x80, 0x80)]
+        [InlineData(0x80, 0x100)]
+        [InlineData(0x100, 0x80)]
+        public static void Operators_And_CompareTo(uint scalarValueLeft, uint scalarValueRight)
+        {
+            var left = new CodePoint(scalarValueLeft);
+            var right = new CodePoint(scalarValueRight);
+
+            Assert.Equal(scalarValueLeft == scalarValueRight, left == right);
+            Assert.Equal(scalarValueLeft != scalarValueRight, left != right);
+            Assert.Equal(scalarValueLeft < scalarValueRight, left < right);
+            Assert.Equal(scalarValueLeft <= scalarValueRight, left <= right);
+            Assert.Equal(scalarValueLeft > scalarValueRight, left > right);
+            Assert.Equal(scalarValueLeft >= scalarValueRight, left >= right);
+            Assert.Equal(Math.Sign(scalarValueLeft.CompareTo(scalarValueRight)), Math.Sign(left.CompareTo(right)));
+            Assert.Equal(Math.Sign(((IComparable)scalarValueLeft).CompareTo(scalarValueRight)), Math.Sign(((IComparable)left).CompareTo(right)));
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(0x10FFFF)]
+        public static void NonGenericCompareTo_NonNullAlwaysGreaterThanNull(uint scalarValue)
+            => Assert.Equal(1, Math.Sign(((IComparable)new CodePoint(scalarValue)).CompareTo(null)));
+
         [Fact]
-        public void Tab()
+        public static void NonGenericCompareTo_GivenNonCodePointArgument_ThrowsArgumentException()
+        {
+            IComparable codePoint = new CodePoint(0);
+
+            Assert.Throws<ArgumentException>(() => codePoint.CompareTo(0 /* int32 */));
+        }
+
+        [Fact]
+        public static void ReplacementChar()
+            => Assert.Equal(0xFFFD, CodePoint.ReplacementCodePoint.Value);
+
+        [Fact]
+        public void CorrectlyIdentifiesTab()
         {
             Assert.True(CodePoint.IsWhiteSpace(new CodePoint('\t')));
             Assert.False(CodePoint.IsNewLine(new CodePoint('\t')));

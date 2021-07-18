@@ -24,13 +24,12 @@ namespace SixLabors.Fonts.Tests.Unicode
         {
             // https://gist.github.com/GrabYourPitchforks/b9dbd348b448c938497cff37a3526725#whats-the-relationship-between-a-net-rune-and-a-character
             const string text = "👩🏽‍🚒";
-            var enumerator = new GraphemeEnumerator(text.AsSpan());
-            int count = 0;
 
-            while (enumerator.MoveNext())
+            int count = 0;
+            foreach (Grapheme grapheme in new GraphemeEnumerator(text.AsSpan()))
             {
-                Assert.Equal(4, enumerator.Current.CodePointCount);
-                Assert.Equal(7, enumerator.Current.Text.Length);
+                Assert.Equal(4, grapheme.CodePointCount);
+                Assert.Equal(7, grapheme.Text.Length);
                 count++;
             }
 
@@ -41,13 +40,12 @@ namespace SixLabors.Fonts.Tests.Unicode
         public void Should_Enumerate_Alpha()
         {
             const string text = "ABCDEFGHIJ";
-            var enumerator = new GraphemeEnumerator(text.AsSpan());
             int count = 0;
 
-            while (enumerator.MoveNext())
+            foreach (Grapheme grapheme in new GraphemeEnumerator(text.AsSpan()))
             {
-                Assert.Equal(1, enumerator.Current.CodePointCount);
-                Assert.Equal(1, enumerator.Current.Text.Length);
+                Assert.Equal(1, grapheme.CodePointCount);
+                Assert.Equal(1, grapheme.Text.Length);
                 count++;
             }
 

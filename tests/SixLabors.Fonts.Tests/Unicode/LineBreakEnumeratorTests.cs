@@ -54,12 +54,12 @@ namespace SixLabors.Fonts.Tests.Unicode
         [Fact]
         public void ForwardTextWithOuterWhitespace()
         {
-            var lineBreaker = new LineBreakEnumerator(" Apples Pears Bananas   ".AsSpan());
+            string text = " Apples Pears Bananas   ";
             var breaks = new List<LineBreak>();
 
-            while (lineBreaker.MoveNext())
+            foreach (LineBreak lineBreak in new LineBreakEnumerator(text.AsSpan()))
             {
-                breaks.Add(lineBreaker.Current);
+                breaks.Add(lineBreak);
             }
 
             Assert.Equal(1, breaks[0].PositionWrap);
@@ -75,12 +75,12 @@ namespace SixLabors.Fonts.Tests.Unicode
         [Fact]
         public void ForwardTest()
         {
-            var lineBreaker = new LineBreakEnumerator("Apples Pears Bananas".AsSpan());
+            string text = "Apples Pears Bananas";
             var breaks = new List<LineBreak>();
 
-            while (lineBreaker.MoveNext())
+            foreach (LineBreak lineBreak in new LineBreakEnumerator(text.AsSpan()))
             {
-                breaks.Add(lineBreaker.Current);
+                breaks.Add(lineBreak);
             }
 
             Assert.Equal(7, breaks[0].PositionWrap);

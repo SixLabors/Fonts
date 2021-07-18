@@ -9,6 +9,7 @@ namespace SixLabors.Fonts.Unicode
     /// Supports a simple iteration over a grapheme collection.
     /// Implementsthe Unicode Grapheme Cluster Algorithm. UAX:29
     /// <see href="https://www.unicode.org/reports/tr29/tr29-37.html"/>
+    /// Methods are pattern-matched by compiler to allow using foreach pattern.
     /// </summary>
     internal ref struct GraphemeEnumerator
     {
@@ -28,6 +29,12 @@ namespace SixLabors.Fonts.Unicode
         /// Gets the element in the collection at the current position of the enumerator.
         /// </summary>
         public Grapheme Current { get; private set; }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator that iterates through the collection.</returns>
+        public GraphemeEnumerator GetEnumerator() => this;
 
         /// <summary>
         /// Advances the enumerator to the next element of the collection.
