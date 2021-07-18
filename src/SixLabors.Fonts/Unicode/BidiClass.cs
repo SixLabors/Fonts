@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Map bracket types U+3008 and U+3009 to their canonical equivalents.
+        /// Map bracket types to their canonical equivalents.
         /// <see href="http://www.unicode.org/L2/L2013/13123-norm-and-bpa.pdf"/>
         /// </summary>
         /// <param name="codePoint">The code point to be mapped.</param>
@@ -72,10 +72,8 @@ namespace SixLabors.Fonts.Unicode
             {
                 return new CodePoint(0x232A);
             }
-            else
-            {
-                return codePoint;
-            }
+
+            return codePoint;
         }
     }
 }
