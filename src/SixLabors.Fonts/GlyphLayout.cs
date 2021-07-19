@@ -80,7 +80,7 @@ namespace SixLabors.Fonts
         public CodePoint CodePoint { get; }
 
         /// <summary>
-        /// Gets te line heright of the glyph.
+        /// Gets te line height of the glyph.
         /// </summary>
         public float LineHeight { get; }
 

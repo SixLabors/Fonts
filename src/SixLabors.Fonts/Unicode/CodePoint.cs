@@ -289,10 +289,10 @@ namespace SixLabors.Fonts.Unicode
             => IsCategorySymbol(GetGeneralCategory(codePoint));
 
         /// <summary>
-        /// Returns a value that indicates whether the specified codepoint is categorized as a number.
+        /// Returns a value that indicates whether the specified codepoint is categorized as an uppercase letter.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
-        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a number; otherwise, <see langword="false"/></returns>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a uppercase letter; otherwise, <see langword="false"/></returns>
         public static bool IsUpper(CodePoint codePoint)
         {
             if (codePoint.IsAscii)

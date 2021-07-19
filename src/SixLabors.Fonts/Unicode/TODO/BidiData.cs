@@ -96,7 +96,7 @@ namespace SixLabors.Fonts.Unicode
                     case BidiCharacterType.LeftToRightOverride:
                     case BidiCharacterType.RightToLeftEmbedding:
                     case BidiCharacterType.RightToLeftOverride:
-                    case BidiCharacterType.PopDirectinoalFormat:
+                    case BidiCharacterType.PopDirectionalFormat:
                         this.HasEmbeddings = true;
                         break;
 

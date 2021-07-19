@@ -587,7 +587,7 @@ namespace SixLabors.Fonts.Unicode
                         break;
                     }
 
-                    case BidiCharacterType.PopDirectinoalFormat:
+                    case BidiCharacterType.PopDirectionalFormat:
                     {
                         // Rule X7
                         if (overflowIsolateCount == 0)
@@ -1443,7 +1443,7 @@ namespace SixLabors.Fonts.Unicode
                 case BidiCharacterType.RightToLeftEmbedding:
                 case BidiCharacterType.LeftToRightOverride:
                 case BidiCharacterType.RightToLeftOverride:
-                case BidiCharacterType.PopDirectinoalFormat:
+                case BidiCharacterType.PopDirectionalFormat:
                 case BidiCharacterType.LeftToRightIsolate:
                 case BidiCharacterType.RightToLeftIsolate:
                 case BidiCharacterType.FirstStrongIsolate:
@@ -1480,7 +1480,7 @@ namespace SixLabors.Fonts.Unicode
                 case BidiCharacterType.RightToLeftEmbedding:
                 case BidiCharacterType.LeftToRightOverride:
                 case BidiCharacterType.RightToLeftOverride:
-                case BidiCharacterType.PopDirectinoalFormat:
+                case BidiCharacterType.PopDirectionalFormat:
                 case BidiCharacterType.BoundaryNeutral:
                     return true;
 

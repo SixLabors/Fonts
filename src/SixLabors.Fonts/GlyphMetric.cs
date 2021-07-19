@@ -32,7 +32,7 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Gets the Unicode codepoint of the character.
+        /// Gets the Unicode codepoint of the glyph.
         /// </summary>
         public CodePoint Codepoint { get; }
 

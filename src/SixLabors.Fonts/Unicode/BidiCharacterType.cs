@@ -110,7 +110,7 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Pop Directional Format
         /// </summary>
-        PopDirectinoalFormat = 18,
+        PopDirectionalFormat = 18,
 
         // Explicit Formatting Types - Isolate
 

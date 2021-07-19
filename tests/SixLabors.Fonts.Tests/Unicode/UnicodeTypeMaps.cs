@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                 { "LRO", BidiCharacterType.LeftToRightOverride },
                 { "RLE", BidiCharacterType.RightToLeftEmbedding },
                 { "RLO", BidiCharacterType.RightToLeftOverride },
-                { "PDF", BidiCharacterType.PopDirectinoalFormat },
+                { "PDF", BidiCharacterType.PopDirectionalFormat },
                 { "LRI", BidiCharacterType.LeftToRightIsolate },
                 { "RLI", BidiCharacterType.RightToLeftIsolate },
                 { "FSI", BidiCharacterType.FirstStrongIsolate },
