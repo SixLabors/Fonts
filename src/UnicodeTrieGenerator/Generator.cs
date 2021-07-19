@@ -61,6 +61,26 @@ namespace UnicodeTrieGenerator
             { "C", BidiPairedBracketType.Close }
         };
 
+        private static readonly Dictionary<string, GraphemeClusterClass> GraphemeClusterClassMap
+            = new Dictionary<string, GraphemeClusterClass>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Any", GraphemeClusterClass.Any },
+                { "CR", GraphemeClusterClass.CarriageReturn },
+                { "LF", GraphemeClusterClass.LineFeed },
+                { "Control", GraphemeClusterClass.Control },
+                { "Extend", GraphemeClusterClass.Extend },
+                { "Regional_Indicator", GraphemeClusterClass.RegionalIndicator },
+                { "Prepend", GraphemeClusterClass.Prepend },
+                { "SpacingMark", GraphemeClusterClass.SpacingMark },
+                { "L", GraphemeClusterClass.HangulLead },
+                { "V", GraphemeClusterClass.HangulVowel },
+                { "T", GraphemeClusterClass.HangulTail },
+                { "LV", GraphemeClusterClass.HangulLeadVowel },
+                { "LVT", GraphemeClusterClass.HangulLeadVowelTail },
+                { "ExtPict", GraphemeClusterClass.ExtendedPictographic },
+                { "ZWJ", GraphemeClusterClass.ZeroWidthJoiner }
+            };
+
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
@@ -122,17 +142,13 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
-                        if (point.Equals("Regional_Indicator"))
-                        {
-                            point = nameof(GraphemeClusterClass.RegionalIndicator);
-                        }
-
                         if (end?.Length == 0)
                         {
                             end = start;
                         }
 
-                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)Enum.Parse<GraphemeClusterClass>(point), true);
+                        GraphemeClusterClassMap.TryGetValue(point, out GraphemeClusterClass kind);
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)kind, true);
                     }
                 }
             }
@@ -157,7 +173,7 @@ namespace UnicodeTrieGenerator
 
                         if (prop == "Extended_Pictographic")
                         {
-                            builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)GraphemeClusterClass.ExtPict, true);
+                            builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)GraphemeClusterClass.ExtendedPictographic, true);
                         }
                     }
                 }

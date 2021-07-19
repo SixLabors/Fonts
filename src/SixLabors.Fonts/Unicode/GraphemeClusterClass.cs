@@ -18,12 +18,12 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// U+000D CARRIAGE RETURN (CR)
         /// </summary>
-        CR = 1,
+        CarriageReturn = 1,
 
         /// <summary>
         /// U+000A LINE FEED (LF)
         /// </summary>
-        LF = 2,
+        LineFeed = 2,
 
         /// <summary>
         /// General_Category = Line_Separator, or<br/>
@@ -81,7 +81,7 @@ namespace SixLabors.Fonts.Unicode
         /// U+A960 ( ꥠ ) HANGUL CHOSEONG TIKEUT-MIEUM<br/>
         /// U+A97C ( ꥼ ) HANGUL CHOSEONG SSANGYEORINHIEUH
         /// </summary>
-        L = 8,
+        HangulLead = 8,
 
         /// <summary>
         /// Hangul_Syllable_Type=V, such as:<br/>
@@ -90,7 +90,7 @@ namespace SixLabors.Fonts.Unicode
         /// U+D7B0 ( ힰ ) HANGUL JUNGSEONG O-YEO<br/>
         /// U+D7C6 ( ퟆ ) HANGUL JUNGSEONG ARAEA-E
         /// </summary>
-        V = 9,
+        HangulVowel = 9,
 
         /// <summary>
         /// Hangul_Syllable_Type = T, such as:<br/>
@@ -99,7 +99,7 @@ namespace SixLabors.Fonts.Unicode
         /// U+D7CB ( ퟋ ) HANGUL JONGSEONG NIEUN-RIEUL<br/>
         /// U+D7FB ( ퟻ ) HANGUL JONGSEONG PHIEUPH-THIEUTH
         /// </summary>
-        T = 10,
+        HangulTail = 10,
 
         /// <summary>
         /// Hangul_Syllable_Type=LV, that is:<br/>
@@ -107,7 +107,7 @@ namespace SixLabors.Fonts.Unicode
         /// U+AC1C ( 개 ) HANGUL SYLLABLE GAE<br/>
         /// U+AC38 ( 갸 ) HANGUL SYLLABLE GYA
         /// </summary>
-        LV = 11,
+        HangulLeadVowel = 11,
 
         /// <summary>
         /// Hangul_Syllable_Type=LVT, that is:<br/>
@@ -116,16 +116,16 @@ namespace SixLabors.Fonts.Unicode
         /// U+AC03 ( 갃 ) HANGUL SYLLABLE GAGS<br/>
         /// U+AC04 ( 간 ) HANGUL SYLLABLE GAN
         /// </summary>
-        LVT = 12,
+        HangulLeadVowelTail = 12,
 
         /// <summary>
         /// Extended Pictographic
         /// </summary>
-        ExtPict = 13,
+        ExtendedPictographic = 13,
 
         /// <summary>
         /// U+200D ZERO WIDTH JOINER
         /// </summary>
-        ZWJ = 14
+        ZeroWidthJoiner = 14
     }
 }

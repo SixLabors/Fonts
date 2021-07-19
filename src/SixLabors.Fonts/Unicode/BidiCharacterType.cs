@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Unicode
     /// Provides enumeration for the Unicode Bidirectional character types.
     /// <see href="https://unicode.org/reports/tr9/#Table Bidirectional Character Types"/>.
     /// </summary>
-    public enum BidiCharacterType : byte
+    public enum BidiCharacterType
     {
         // Strong Types
 

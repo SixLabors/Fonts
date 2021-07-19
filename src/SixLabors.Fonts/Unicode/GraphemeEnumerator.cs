@@ -68,8 +68,8 @@ namespace SixLabors.Fonts.Unicode
             if (processor.CharsConsumed > 0)
             {
                 if (processor.CurrentType == GraphemeClusterClass.Control
-                    || processor.CurrentType == GraphemeClusterClass.CR
-                    || processor.CurrentType == GraphemeClusterClass.LF)
+                    || processor.CurrentType == GraphemeClusterClass.CarriageReturn
+                    || processor.CurrentType == GraphemeClusterClass.LineFeed)
                 {
                     goto Return;
                 }
@@ -81,75 +81,75 @@ namespace SixLabors.Fonts.Unicode
 
             switch (previousClusterBreakType)
             {
-                case GraphemeClusterClass.CR:
-                    if (processor.CurrentType != GraphemeClusterClass.LF)
+                case GraphemeClusterClass.CarriageReturn:
+                    if (processor.CurrentType != GraphemeClusterClass.LineFeed)
                     {
                         goto Return; // rules GB3 & GB4 (only <LF> can follow <CR>)
                     }
 
                     processor.MoveNext();
-                    goto case GraphemeClusterClass.LF;
+                    goto case GraphemeClusterClass.LineFeed;
 
                 case GraphemeClusterClass.Control:
-                case GraphemeClusterClass.LF:
+                case GraphemeClusterClass.LineFeed:
                     goto Return; // rule GB4 (no data after Control | LF)
 
-                case GraphemeClusterClass.L:
-                    if (processor.CurrentType == GraphemeClusterClass.L)
+                case GraphemeClusterClass.HangulLead:
+                    if (processor.CurrentType == GraphemeClusterClass.HangulLead)
                     {
                         processor.MoveNext(); // rule GB6 (L x L)
-                        goto case GraphemeClusterClass.L;
+                        goto case GraphemeClusterClass.HangulLead;
                     }
-                    else if (processor.CurrentType == GraphemeClusterClass.V)
+                    else if (processor.CurrentType == GraphemeClusterClass.HangulVowel)
                     {
                         processor.MoveNext(); // rule GB6 (L x V)
-                        goto case GraphemeClusterClass.V;
+                        goto case GraphemeClusterClass.HangulVowel;
                     }
-                    else if (processor.CurrentType == GraphemeClusterClass.LV)
+                    else if (processor.CurrentType == GraphemeClusterClass.HangulLeadVowel)
                     {
                         processor.MoveNext(); // rule GB6 (L x LV)
-                        goto case GraphemeClusterClass.LV;
+                        goto case GraphemeClusterClass.HangulLeadVowel;
                     }
-                    else if (processor.CurrentType == GraphemeClusterClass.LVT)
+                    else if (processor.CurrentType == GraphemeClusterClass.HangulLeadVowelTail)
                     {
                         processor.MoveNext(); // rule GB6 (L x LVT)
-                        goto case GraphemeClusterClass.LVT;
+                        goto case GraphemeClusterClass.HangulLeadVowelTail;
                     }
                     else
                     {
                         break;
                     }
 
-                case GraphemeClusterClass.LV:
-                case GraphemeClusterClass.V:
-                    if (processor.CurrentType == GraphemeClusterClass.V)
+                case GraphemeClusterClass.HangulLeadVowel:
+                case GraphemeClusterClass.HangulVowel:
+                    if (processor.CurrentType == GraphemeClusterClass.HangulVowel)
                     {
                         processor.MoveNext(); // rule GB7 (LV | V x V)
-                        goto case GraphemeClusterClass.V;
+                        goto case GraphemeClusterClass.HangulVowel;
                     }
-                    else if (processor.CurrentType == GraphemeClusterClass.T)
+                    else if (processor.CurrentType == GraphemeClusterClass.HangulTail)
                     {
                         processor.MoveNext(); // rule GB7 (LV | V x T)
-                        goto case GraphemeClusterClass.T;
+                        goto case GraphemeClusterClass.HangulTail;
                     }
                     else
                     {
                         break;
                     }
 
-                case GraphemeClusterClass.LVT:
-                case GraphemeClusterClass.T:
-                    if (processor.CurrentType == GraphemeClusterClass.T)
+                case GraphemeClusterClass.HangulLeadVowelTail:
+                case GraphemeClusterClass.HangulTail:
+                    if (processor.CurrentType == GraphemeClusterClass.HangulTail)
                     {
                         processor.MoveNext(); // rule GB8 (LVT | T x T)
-                        goto case GraphemeClusterClass.T;
+                        goto case GraphemeClusterClass.HangulTail;
                     }
                     else
                     {
                         break;
                     }
 
-                case GraphemeClusterClass.ExtPict:
+                case GraphemeClusterClass.ExtendedPictographic:
                     // Attempt processing extended pictographic (rules GB11, GB9).
                     // First, drain any Extend scalars that might exist
                     while (processor.CurrentType == GraphemeClusterClass.Extend)
@@ -158,19 +158,19 @@ namespace SixLabors.Fonts.Unicode
                     }
 
                     // Now see if there's a ZWJ + extended pictograph again.
-                    if (processor.CurrentType != GraphemeClusterClass.ZWJ)
+                    if (processor.CurrentType != GraphemeClusterClass.ZeroWidthJoiner)
                     {
                         break;
                     }
 
                     processor.MoveNext();
-                    if (processor.CurrentType != GraphemeClusterClass.ExtPict)
+                    if (processor.CurrentType != GraphemeClusterClass.ExtendedPictographic)
                     {
                         break;
                     }
 
                     processor.MoveNext();
-                    goto case GraphemeClusterClass.ExtPict;
+                    goto case GraphemeClusterClass.ExtendedPictographic;
 
                 case GraphemeClusterClass.RegionalIndicator:
                     // We've consumed a single RI scalar. Try to consume another (to make it a pair).
@@ -188,7 +188,7 @@ namespace SixLabors.Fonts.Unicode
 
             // rules GB9, GB9a
             while (processor.CurrentType == GraphemeClusterClass.Extend
-                || processor.CurrentType == GraphemeClusterClass.ZWJ
+                || processor.CurrentType == GraphemeClusterClass.ZeroWidthJoiner
                 || processor.CurrentType == GraphemeClusterClass.SpacingMark)
             {
                 processor.MoveNext();
