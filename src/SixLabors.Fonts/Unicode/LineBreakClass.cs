@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Unicode
     /// Unicode line break classes.
     /// <see href="https://www.unicode.org/reports/tr14/tr14-37.html#Table1"/>
     /// </summary>
-    internal enum LineBreakClass : uint
+    public enum LineBreakClass : uint
     {
         /// <summary>
         /// Open punctuation

@@ -7,8 +7,10 @@ using System.Globalization;
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
+    /// Supports a simple iteration over a linebreak collection.
     /// Implementation of the Unicode Line Break Algorithm. UAX:14
     /// <see href="https://www.unicode.org/reports/tr14/tr14-37.html"/>
+    /// Methods are pattern-matched by compiler to allow using foreach pattern.
     /// </summary>
     internal ref struct LineBreakEnumerator
     {
@@ -53,6 +55,12 @@ namespace SixLabors.Fonts.Unicode
         }
 
         public LineBreak Current { get; private set; }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator that iterates through the collection.</returns>
+        public LineBreakEnumerator GetEnumerator() => this;
 
         /// <summary>
         /// Advances the enumerator to the next element of the collection.

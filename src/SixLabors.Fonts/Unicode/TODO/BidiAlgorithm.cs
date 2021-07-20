@@ -307,18 +307,18 @@ namespace SixLabors.Fonts.Unicode
             {
                 switch (data[i])
                 {
-                    case BidiCharacterType.L:
+                    case BidiCharacterType.LeftToRight:
                         // P3
                         return 0;
 
-                    case BidiCharacterType.AL:
-                    case BidiCharacterType.R:
+                    case BidiCharacterType.ArabicLetter:
+                    case BidiCharacterType.RightToLeft:
                         // P3
                         return 1;
 
-                    case BidiCharacterType.FSI:
-                    case BidiCharacterType.LRI:
-                    case BidiCharacterType.RLI:
+                    case BidiCharacterType.FirstStrongIsolate:
+                    case BidiCharacterType.LeftToRightIsolate:
+                    case BidiCharacterType.RightToLeftIsolate:
                         // Skip isolate pairs
                         // (Because we're working with a slice, we need to adjust the indicies
                         //  we're using for the isolatePairs map)
@@ -361,12 +361,12 @@ namespace SixLabors.Fonts.Unicode
             for (int i = 0; i < this.originalTypes.Length; i++)
             {
                 BidiCharacterType t = this.originalTypes[i];
-                if (t == BidiCharacterType.LRI || t == BidiCharacterType.RLI || t == BidiCharacterType.FSI)
+                if (t == BidiCharacterType.LeftToRightIsolate || t == BidiCharacterType.RightToLeftIsolate || t == BidiCharacterType.FirstStrongIsolate)
                 {
                     this.pendingIsolateOpenings.Push(i);
                     this.hasIsolates = true;
                 }
-                else if (t == BidiCharacterType.PDI)
+                else if (t == BidiCharacterType.PopDirectionalIsolate)
                 {
                     if (this.pendingIsolateOpenings.Count > 0)
                     {
@@ -403,20 +403,20 @@ namespace SixLabors.Fonts.Unicode
             this.statusStack.Clear();
 
             // Neutral
-            this.statusStack.Push(new Status(this.paragraphEmbeddingLevel, BidiCharacterType.ON, false));
+            this.statusStack.Push(new Status(this.paragraphEmbeddingLevel, BidiCharacterType.OtherNeutral, false));
 
             // Process all characters
             for (int i = 0; i < this.originalTypes.Length; i++)
             {
                 switch (this.originalTypes[i])
                 {
-                    case BidiCharacterType.RLE:
+                    case BidiCharacterType.RightToLeftEmbedding:
                     {
                         // Rule X2
                         sbyte newLevel = (sbyte)((this.statusStack.Peek().EmbeddingLevel + 1) | 1);
                         if (newLevel <= maxStackDepth && overflowIsolateCount == 0 && overflowEmbeddingCount == 0)
                         {
-                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.ON, false));
+                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.OtherNeutral, false));
                             this.resolvedLevels[i] = newLevel;
                         }
                         else if (overflowIsolateCount == 0)
@@ -427,13 +427,13 @@ namespace SixLabors.Fonts.Unicode
                         break;
                     }
 
-                    case BidiCharacterType.LRE:
+                    case BidiCharacterType.LeftToRightEmbedding:
                     {
                         // Rule X3
                         sbyte newLevel = (sbyte)((this.statusStack.Peek().EmbeddingLevel + 2) & ~1);
                         if (newLevel < maxStackDepth && overflowIsolateCount == 0 && overflowEmbeddingCount == 0)
                         {
-                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.ON, false));
+                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.OtherNeutral, false));
                             this.resolvedLevels[i] = newLevel;
                         }
                         else if (overflowIsolateCount == 0)
@@ -444,13 +444,13 @@ namespace SixLabors.Fonts.Unicode
                         break;
                     }
 
-                    case BidiCharacterType.RLO:
+                    case BidiCharacterType.RightToLeftOverride:
                     {
                         // Rule X4
                         sbyte newLevel = (sbyte)((this.statusStack.Peek().EmbeddingLevel + 1) | 1);
                         if (newLevel <= maxStackDepth && overflowIsolateCount == 0 && overflowEmbeddingCount == 0)
                         {
-                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.R, false));
+                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.RightToLeft, false));
                             this.resolvedLevels[i] = newLevel;
                         }
                         else if (overflowIsolateCount == 0)
@@ -461,13 +461,13 @@ namespace SixLabors.Fonts.Unicode
                         break;
                     }
 
-                    case BidiCharacterType.LRO:
+                    case BidiCharacterType.LeftToRightOverride:
                     {
                         // Rule X5
                         sbyte newLevel = (sbyte)((this.statusStack.Peek().EmbeddingLevel + 2) & ~1);
                         if (newLevel <= maxStackDepth && overflowIsolateCount == 0 && overflowEmbeddingCount == 0)
                         {
-                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.L, false));
+                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.LeftToRight, false));
                             this.resolvedLevels[i] = newLevel;
                         }
                         else if (overflowIsolateCount == 0)
@@ -478,14 +478,14 @@ namespace SixLabors.Fonts.Unicode
                         break;
                     }
 
-                    case BidiCharacterType.RLI:
-                    case BidiCharacterType.LRI:
-                    case BidiCharacterType.FSI:
+                    case BidiCharacterType.RightToLeftIsolate:
+                    case BidiCharacterType.LeftToRightIsolate:
+                    case BidiCharacterType.FirstStrongIsolate:
                     {
                         // Rule X5a, X5b and X5c
                         BidiCharacterType resolvedIsolate = this.originalTypes[i];
 
-                        if (resolvedIsolate == BidiCharacterType.FSI)
+                        if (resolvedIsolate == BidiCharacterType.FirstStrongIsolate)
                         {
                             if (!this.isolatePairs.TryGetValue(i, out int endOfIsolate))
                             {
@@ -495,11 +495,11 @@ namespace SixLabors.Fonts.Unicode
                             // Rule X5c
                             if (this.ResolveEmbeddingLevel(this.originalTypes.Slice(i + 1, endOfIsolate - (i + 1))) == 1)
                             {
-                                resolvedIsolate = BidiCharacterType.RLI;
+                                resolvedIsolate = BidiCharacterType.RightToLeftIsolate;
                             }
                             else
                             {
-                                resolvedIsolate = BidiCharacterType.LRI;
+                                resolvedIsolate = BidiCharacterType.LeftToRightIsolate;
                             }
                         }
 
@@ -508,14 +508,14 @@ namespace SixLabors.Fonts.Unicode
                         this.resolvedLevels[i] = tos.EmbeddingLevel;
 
                         // Apply override
-                        if (tos.OverrideStatus != BidiCharacterType.ON)
+                        if (tos.OverrideStatus != BidiCharacterType.OtherNeutral)
                         {
                             this.workingTypes[i] = tos.OverrideStatus;
                         }
 
                         // Work out new level
                         sbyte newLevel;
-                        if (resolvedIsolate == BidiCharacterType.RLI)
+                        if (resolvedIsolate == BidiCharacterType.RightToLeftIsolate)
                         {
                             newLevel = (sbyte)((tos.EmbeddingLevel + 1) | 1);
                         }
@@ -528,7 +528,7 @@ namespace SixLabors.Fonts.Unicode
                         if (newLevel <= maxStackDepth && overflowIsolateCount == 0 && overflowEmbeddingCount == 0)
                         {
                             validIsolateCount++;
-                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.ON, true));
+                            this.statusStack.Push(new Status(newLevel, BidiCharacterType.OtherNeutral, true));
                         }
                         else
                         {
@@ -538,7 +538,7 @@ namespace SixLabors.Fonts.Unicode
                         break;
                     }
 
-                    case BidiCharacterType.BN:
+                    case BidiCharacterType.BoundaryNeutral:
                     {
                         // Mentioned in rule X6 - "for all types besides ..., BN, ..."
                         // no-op
@@ -550,7 +550,7 @@ namespace SixLabors.Fonts.Unicode
                         // Rule X6
                         Status tos = this.statusStack.Peek();
                         this.resolvedLevels[i] = tos.EmbeddingLevel;
-                        if (tos.OverrideStatus != BidiCharacterType.ON)
+                        if (tos.OverrideStatus != BidiCharacterType.OtherNeutral)
                         {
                             this.workingTypes[i] = tos.OverrideStatus;
                         }
@@ -558,7 +558,7 @@ namespace SixLabors.Fonts.Unicode
                         break;
                     }
 
-                    case BidiCharacterType.PDI:
+                    case BidiCharacterType.PopDirectionalIsolate:
                     {
                         // Rule X6a
                         if (overflowIsolateCount > 0)
@@ -579,7 +579,7 @@ namespace SixLabors.Fonts.Unicode
 
                         Status tos = this.statusStack.Peek();
                         this.resolvedLevels[i] = tos.EmbeddingLevel;
-                        if (tos.OverrideStatus != BidiCharacterType.ON)
+                        if (tos.OverrideStatus != BidiCharacterType.OtherNeutral)
                         {
                             this.workingTypes[i] = tos.OverrideStatus;
                         }
@@ -587,7 +587,7 @@ namespace SixLabors.Fonts.Unicode
                         break;
                     }
 
-                    case BidiCharacterType.PDF:
+                    case BidiCharacterType.PopDirectionalFormat:
                     {
                         // Rule X7
                         if (overflowIsolateCount == 0)
@@ -605,7 +605,7 @@ namespace SixLabors.Fonts.Unicode
                         break;
                     }
 
-                    case BidiCharacterType.B:
+                    case BidiCharacterType.ParagraphSeparator:
                     {
                         // Rule X8
                         this.resolvedLevels[i] = this.paragraphEmbeddingLevel;
@@ -685,7 +685,7 @@ namespace SixLabors.Fonts.Unicode
             // Work out eos
             BidiCharacterType lastType = this.workingTypes[lastCharIndex];
             int nextLevel;
-            if (lastType == BidiCharacterType.LRI || lastType == BidiCharacterType.RLI || lastType == BidiCharacterType.FSI)
+            if (lastType == BidiCharacterType.LeftToRightIsolate || lastType == BidiCharacterType.RightToLeftIsolate || lastType == BidiCharacterType.FirstStrongIsolate)
             {
                 nextLevel = this.paragraphEmbeddingLevel;
             }
@@ -801,7 +801,7 @@ namespace SixLabors.Fonts.Unicode
                     // PDI and concatenate that run to this one
                     int lastCharacterIndex = this.isolatedRunMapping[this.isolatedRunMapping.Length - 1];
                     BidiCharacterType lastType = this.originalTypes[lastCharacterIndex];
-                    if ((lastType == BidiCharacterType.LRI || lastType == BidiCharacterType.RLI || lastType == BidiCharacterType.FSI) &&
+                    if ((lastType == BidiCharacterType.LeftToRightIsolate || lastType == BidiCharacterType.RightToLeftIsolate || lastType == BidiCharacterType.FirstStrongIsolate) &&
                             this.isolatePairs.TryGetValue(lastCharacterIndex, out int nextRunIndex))
                     {
                         // Find the continuing run index
@@ -857,43 +857,43 @@ namespace SixLabors.Fonts.Unicode
                 BidiCharacterType t = this.runResolvedTypes[i];
                 switch (t)
                 {
-                    case BidiCharacterType.NSM:
+                    case BidiCharacterType.NonspacingMark:
                         this.runResolvedTypes[i] = prevType;
                         break;
 
-                    case BidiCharacterType.LRI:
-                    case BidiCharacterType.RLI:
-                    case BidiCharacterType.FSI:
-                    case BidiCharacterType.PDI:
-                        prevType = BidiCharacterType.ON;
+                    case BidiCharacterType.LeftToRightIsolate:
+                    case BidiCharacterType.RightToLeftIsolate:
+                    case BidiCharacterType.FirstStrongIsolate:
+                    case BidiCharacterType.PopDirectionalIsolate:
+                        prevType = BidiCharacterType.OtherNeutral;
                         break;
 
-                    case BidiCharacterType.EN:
+                    case BidiCharacterType.EuropeanNumber:
                         hasEN = true;
                         prevType = t;
                         break;
 
-                    case BidiCharacterType.AL:
+                    case BidiCharacterType.ArabicLetter:
                         hasAL = true;
                         prevType = t;
                         break;
 
-                    case BidiCharacterType.ES:
+                    case BidiCharacterType.EuropeanSeparator:
                         hasES = true;
                         prevType = t;
                         break;
 
-                    case BidiCharacterType.CS:
+                    case BidiCharacterType.CommonSeparator:
                         hasCS = true;
                         prevType = t;
                         break;
 
-                    case BidiCharacterType.AN:
+                    case BidiCharacterType.ArabicNumber:
                         hasAN = true;
                         prevType = t;
                         break;
 
-                    case BidiCharacterType.ET:
+                    case BidiCharacterType.EuropeanTerminator:
                         hasET = true;
                         prevType = t;
                         break;
@@ -909,16 +909,16 @@ namespace SixLabors.Fonts.Unicode
             {
                 for (i = 0; i < this.runLength; i++)
                 {
-                    if (this.runResolvedTypes[i] == BidiCharacterType.EN)
+                    if (this.runResolvedTypes[i] == BidiCharacterType.EuropeanNumber)
                     {
                         for (int j = i - 1; j >= 0; j--)
                         {
                             BidiCharacterType t = this.runResolvedTypes[j];
-                            if (t == BidiCharacterType.L || t == BidiCharacterType.R || t == BidiCharacterType.AL)
+                            if (t == BidiCharacterType.LeftToRight || t == BidiCharacterType.RightToLeft || t == BidiCharacterType.ArabicLetter)
                             {
-                                if (t == BidiCharacterType.AL)
+                                if (t == BidiCharacterType.ArabicLetter)
                                 {
-                                    this.runResolvedTypes[i] = BidiCharacterType.AN;
+                                    this.runResolvedTypes[i] = BidiCharacterType.ArabicNumber;
                                     hasAN = true;
                                 }
 
@@ -934,9 +934,9 @@ namespace SixLabors.Fonts.Unicode
             {
                 for (i = 0; i < this.runLength; i++)
                 {
-                    if (this.runResolvedTypes[i] == BidiCharacterType.AL)
+                    if (this.runResolvedTypes[i] == BidiCharacterType.ArabicLetter)
                     {
-                        this.runResolvedTypes[i] = BidiCharacterType.R;
+                        this.runResolvedTypes[i] = BidiCharacterType.RightToLeft;
                     }
                 }
             }
@@ -947,24 +947,24 @@ namespace SixLabors.Fonts.Unicode
                 for (i = 1; i < this.runLength - 1; ++i)
                 {
                     ref BidiCharacterType rt = ref this.runResolvedTypes[i];
-                    if (rt == BidiCharacterType.ES)
+                    if (rt == BidiCharacterType.EuropeanSeparator)
                     {
                         BidiCharacterType prevSepType = this.runResolvedTypes[i - 1];
                         BidiCharacterType succSepType = this.runResolvedTypes[i + 1];
 
-                        if (prevSepType == BidiCharacterType.EN && succSepType == BidiCharacterType.EN)
+                        if (prevSepType == BidiCharacterType.EuropeanNumber && succSepType == BidiCharacterType.EuropeanNumber)
                         {
                             // ES between EN and EN
-                            rt = BidiCharacterType.EN;
+                            rt = BidiCharacterType.EuropeanNumber;
                         }
                     }
-                    else if (rt == BidiCharacterType.CS)
+                    else if (rt == BidiCharacterType.CommonSeparator)
                     {
                         BidiCharacterType prevSepType = this.runResolvedTypes[i - 1];
                         BidiCharacterType succSepType = this.runResolvedTypes[i + 1];
 
-                        if ((prevSepType == BidiCharacterType.AN && succSepType == BidiCharacterType.AN) ||
-                             (prevSepType == BidiCharacterType.EN && succSepType == BidiCharacterType.EN))
+                        if ((prevSepType == BidiCharacterType.ArabicNumber && succSepType == BidiCharacterType.ArabicNumber) ||
+                             (prevSepType == BidiCharacterType.EuropeanNumber && succSepType == BidiCharacterType.EuropeanNumber))
                         {
                             // CS between (AN and AN) or (EN and EN)
                             rt = prevSepType;
@@ -978,24 +978,24 @@ namespace SixLabors.Fonts.Unicode
             {
                 for (i = 0; i < this.runLength; ++i)
                 {
-                    if (this.runResolvedTypes[i] == BidiCharacterType.ET)
+                    if (this.runResolvedTypes[i] == BidiCharacterType.EuropeanTerminator)
                     {
                         // Locate end of sequence
                         int seqStart = i;
                         int seqEnd = i;
-                        while (seqEnd < this.runLength && this.runResolvedTypes[seqEnd] == BidiCharacterType.ET)
+                        while (seqEnd < this.runLength && this.runResolvedTypes[seqEnd] == BidiCharacterType.EuropeanTerminator)
                         {
                             seqEnd++;
                         }
 
                         // Preceeded by, or followed by EN?
-                        if ((seqStart == 0 ? sos : this.runResolvedTypes[seqStart - 1]) == BidiCharacterType.EN
-                            || (seqEnd == this.runLength ? eos : this.runResolvedTypes[seqEnd]) == BidiCharacterType.EN)
+                        if ((seqStart == 0 ? sos : this.runResolvedTypes[seqStart - 1]) == BidiCharacterType.EuropeanNumber
+                            || (seqEnd == this.runLength ? eos : this.runResolvedTypes[seqEnd]) == BidiCharacterType.EuropeanNumber)
                         {
                             // Change the entire range
                             for (int j = seqStart; i < seqEnd; ++i)
                             {
-                                this.runResolvedTypes[i] = BidiCharacterType.EN;
+                                this.runResolvedTypes[i] = BidiCharacterType.EuropeanNumber;
                             }
                         }
 
@@ -1011,9 +1011,9 @@ namespace SixLabors.Fonts.Unicode
                 for (i = 0; i < this.runLength; ++i)
                 {
                     ref BidiCharacterType t = ref this.runResolvedTypes[i];
-                    if (t == BidiCharacterType.ES || t == BidiCharacterType.ET || t == BidiCharacterType.CS)
+                    if (t == BidiCharacterType.EuropeanSeparator || t == BidiCharacterType.EuropeanTerminator || t == BidiCharacterType.CommonSeparator)
                     {
-                        t = BidiCharacterType.ON;
+                        t = BidiCharacterType.OtherNeutral;
                     }
                 }
             }
@@ -1025,17 +1025,17 @@ namespace SixLabors.Fonts.Unicode
                 for (i = 0; i < this.runLength; ++i)
                 {
                     ref BidiCharacterType rt = ref this.runResolvedTypes[i];
-                    if (rt == BidiCharacterType.EN)
+                    if (rt == BidiCharacterType.EuropeanNumber)
                     {
                         // If prev strong type was an L change this to L too
-                        if (prevStrongType == BidiCharacterType.L)
+                        if (prevStrongType == BidiCharacterType.LeftToRight)
                         {
-                            this.runResolvedTypes[i] = BidiCharacterType.L;
+                            this.runResolvedTypes[i] = BidiCharacterType.LeftToRight;
                         }
                     }
 
                     // Remember previous strong type (NB: AL should already be changed to R)
-                    if (rt == BidiCharacterType.L || rt == BidiCharacterType.R)
+                    if (rt == BidiCharacterType.LeftToRight || rt == BidiCharacterType.RightToLeft)
                     {
                         prevStrongType = rt;
                     }
@@ -1053,13 +1053,13 @@ namespace SixLabors.Fonts.Unicode
                     BidiCharacterType dir = this.InspectPairedBracket(pb);
 
                     // Case "d" - no strong types in the brackets, ignore
-                    if (dir == BidiCharacterType.ON)
+                    if (dir == BidiCharacterType.OtherNeutral)
                     {
                         continue;
                     }
 
                     // Case "b" - strong type found that matches the embedding direction
-                    if ((dir == BidiCharacterType.L || dir == BidiCharacterType.R) && dir == this.runDirection)
+                    if ((dir == BidiCharacterType.LeftToRight || dir == BidiCharacterType.RightToLeft) && dir == this.runDirection)
                     {
                         this.SetPairedBracketDirection(pb, dir);
                         continue;
@@ -1067,7 +1067,7 @@ namespace SixLabors.Fonts.Unicode
 
                     // Case "c" - found opposite strong type found, look before to establish context
                     dir = this.InspectBeforePairedBracket(pb, sos);
-                    if (dir == this.runDirection || dir == BidiCharacterType.ON)
+                    if (dir == this.runDirection || dir == BidiCharacterType.OtherNeutral)
                     {
                         dir = this.runDirection;
                     }
@@ -1099,9 +1099,9 @@ namespace SixLabors.Fonts.Unicode
                     else
                     {
                         typeBefore = this.runResolvedTypes[seqStart - 1];
-                        if (typeBefore == BidiCharacterType.AN || typeBefore == BidiCharacterType.EN)
+                        if (typeBefore == BidiCharacterType.ArabicNumber || typeBefore == BidiCharacterType.EuropeanNumber)
                         {
-                            typeBefore = BidiCharacterType.R;
+                            typeBefore = BidiCharacterType.RightToLeft;
                         }
                     }
 
@@ -1114,9 +1114,9 @@ namespace SixLabors.Fonts.Unicode
                     else
                     {
                         typeAfter = this.runResolvedTypes[seqEnd];
-                        if (typeAfter == BidiCharacterType.AN || typeAfter == BidiCharacterType.EN)
+                        if (typeAfter == BidiCharacterType.ArabicNumber || typeAfter == BidiCharacterType.EuropeanNumber)
                         {
-                            typeAfter = BidiCharacterType.R;
+                            typeAfter = BidiCharacterType.RightToLeft;
                         }
                     }
 
@@ -1152,11 +1152,11 @@ namespace SixLabors.Fonts.Unicode
                 {
                     BidiCharacterType t = this.runResolvedTypes[i];
                     ref sbyte l = ref this.runLevels[i];
-                    if (t == BidiCharacterType.R)
+                    if (t == BidiCharacterType.RightToLeft)
                     {
                         l++;
                     }
-                    else if (t == BidiCharacterType.AN || t == BidiCharacterType.EN)
+                    else if (t == BidiCharacterType.ArabicNumber || t == BidiCharacterType.EuropeanNumber)
                     {
                         l += 2;
                     }
@@ -1169,7 +1169,7 @@ namespace SixLabors.Fonts.Unicode
                 {
                     BidiCharacterType t = this.runResolvedTypes[i];
                     ref sbyte l = ref this.runLevels[i];
-                    if (t != BidiCharacterType.R)
+                    if (t != BidiCharacterType.RightToLeft)
                     {
                         l++;
                     }
@@ -1199,14 +1199,14 @@ namespace SixLabors.Fonts.Unicode
             for (int ich = 0, length = this.runLength; ich < length; ich++)
             {
                 // Ignore non-neutral characters
-                if (this.runResolvedTypes[ich] != BidiCharacterType.ON)
+                if (this.runResolvedTypes[ich] != BidiCharacterType.OtherNeutral)
                 {
                     continue;
                 }
 
                 switch (this.runBidiPairedBracketTypes[ich])
                 {
-                    case BidiPairedBracketType.O:
+                    case BidiPairedBracketType.Open:
                         if (this.pendingOpeningBrackets.Count == MaxPairedBracketDepth)
                         {
                             goto exit;
@@ -1215,7 +1215,7 @@ namespace SixLabors.Fonts.Unicode
                         this.pendingOpeningBrackets.Insert(0, ich);
                         break;
 
-                    case BidiPairedBracketType.C:
+                    case BidiPairedBracketType.Close:
                         // see if there is a match
                         for (int i = 0; i < this.pendingOpeningBrackets.Count; i++)
                         {
@@ -1267,11 +1267,11 @@ namespace SixLabors.Fonts.Unicode
         private BidiCharacterType InspectPairedBracket(in BracketPair pb)
         {
             BidiCharacterType dirEmbed = DirectionFromLevel(this.runLevel);
-            BidiCharacterType dirOpposite = BidiCharacterType.ON;
+            BidiCharacterType dirOpposite = BidiCharacterType.OtherNeutral;
             for (int ich = pb.OpeningIndex + 1; ich < pb.ClosingIndex; ich++)
             {
                 BidiCharacterType dir = this.GetStrongTypeN0(this.runResolvedTypes[ich]);
-                if (dir == BidiCharacterType.ON)
+                if (dir == BidiCharacterType.OtherNeutral)
                 {
                     continue;
                 }
@@ -1298,7 +1298,7 @@ namespace SixLabors.Fonts.Unicode
             for (int ich = pb.OpeningIndex - 1; ich >= 0; --ich)
             {
                 BidiCharacterType dir = this.GetStrongTypeN0(this.runResolvedTypes[ich]);
-                if (dir != BidiCharacterType.ON)
+                if (dir != BidiCharacterType.OtherNeutral)
                 {
                     return dir;
                 }
@@ -1322,7 +1322,7 @@ namespace SixLabors.Fonts.Unicode
             // Set the directionality of NSM's inside the brackets
             for (int i = pb.OpeningIndex + 1; i < pb.ClosingIndex; i++)
             {
-                if (this.runOriginalTypes[i] == BidiCharacterType.NSM)
+                if (this.runOriginalTypes[i] == BidiCharacterType.NonspacingMark)
                 {
                     this.runOriginalTypes[i] = dir;
                 }
@@ -1335,7 +1335,7 @@ namespace SixLabors.Fonts.Unicode
             // Set the directionality of NSM's following the brackets
             for (int i = pb.ClosingIndex + 1; i < this.runLength; i++)
             {
-                if (this.runOriginalTypes[i] == BidiCharacterType.NSM)
+                if (this.runOriginalTypes[i] == BidiCharacterType.NonspacingMark)
                 {
                     this.runResolvedTypes[i] = dir;
                 }
@@ -1354,7 +1354,7 @@ namespace SixLabors.Fonts.Unicode
             for (int i = 0; i < this.resolvedLevels.Length; i++)
             {
                 BidiCharacterType t = this.originalTypes[i];
-                if (t == BidiCharacterType.B || t == BidiCharacterType.S)
+                if (t == BidiCharacterType.ParagraphSeparator || t == BidiCharacterType.SegmentSeparator)
                 {
                     // Rule L1, clauses one and two.
                     this.resolvedLevels[i] = this.paragraphEmbeddingLevel;
@@ -1439,17 +1439,17 @@ namespace SixLabors.Fonts.Unicode
         {
             switch (biditype)
             {
-                case BidiCharacterType.LRE:
-                case BidiCharacterType.RLE:
-                case BidiCharacterType.LRO:
-                case BidiCharacterType.RLO:
-                case BidiCharacterType.PDF:
-                case BidiCharacterType.LRI:
-                case BidiCharacterType.RLI:
-                case BidiCharacterType.FSI:
-                case BidiCharacterType.PDI:
-                case BidiCharacterType.BN:
-                case BidiCharacterType.WS:
+                case BidiCharacterType.LeftToRightEmbedding:
+                case BidiCharacterType.RightToLeftEmbedding:
+                case BidiCharacterType.LeftToRightOverride:
+                case BidiCharacterType.RightToLeftOverride:
+                case BidiCharacterType.PopDirectionalFormat:
+                case BidiCharacterType.LeftToRightIsolate:
+                case BidiCharacterType.RightToLeftIsolate:
+                case BidiCharacterType.FirstStrongIsolate:
+                case BidiCharacterType.PopDirectionalIsolate:
+                case BidiCharacterType.BoundaryNeutral:
+                case BidiCharacterType.Whitespace:
                     return true;
                 default:
                     return false;
@@ -1464,7 +1464,7 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>A directionality</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static BidiCharacterType DirectionFromLevel(int level)
-            => ((level & 0x1) == 0) ? BidiCharacterType.L : BidiCharacterType.R;
+            => ((level & 0x1) == 0) ? BidiCharacterType.LeftToRight : BidiCharacterType.RightToLeft;
 
         /// <summary>
         /// Helper to check if a directionality is removed by rule X9
@@ -1476,12 +1476,12 @@ namespace SixLabors.Fonts.Unicode
         {
             switch (biditype)
             {
-                case BidiCharacterType.LRE:
-                case BidiCharacterType.RLE:
-                case BidiCharacterType.LRO:
-                case BidiCharacterType.RLO:
-                case BidiCharacterType.PDF:
-                case BidiCharacterType.BN:
+                case BidiCharacterType.LeftToRightEmbedding:
+                case BidiCharacterType.RightToLeftEmbedding:
+                case BidiCharacterType.LeftToRightOverride:
+                case BidiCharacterType.RightToLeftOverride:
+                case BidiCharacterType.PopDirectionalFormat:
+                case BidiCharacterType.BoundaryNeutral:
                     return true;
 
                 default:
@@ -1497,14 +1497,14 @@ namespace SixLabors.Fonts.Unicode
         {
             switch (dir)
             {
-                case BidiCharacterType.B:
-                case BidiCharacterType.S:
-                case BidiCharacterType.WS:
-                case BidiCharacterType.ON:
-                case BidiCharacterType.RLI:
-                case BidiCharacterType.LRI:
-                case BidiCharacterType.FSI:
-                case BidiCharacterType.PDI:
+                case BidiCharacterType.ParagraphSeparator:
+                case BidiCharacterType.SegmentSeparator:
+                case BidiCharacterType.Whitespace:
+                case BidiCharacterType.OtherNeutral:
+                case BidiCharacterType.RightToLeftIsolate:
+                case BidiCharacterType.LeftToRightIsolate:
+                case BidiCharacterType.FirstStrongIsolate:
+                case BidiCharacterType.PopDirectionalIsolate:
                     return true;
             }
 
@@ -1521,15 +1521,15 @@ namespace SixLabors.Fonts.Unicode
         {
             switch (dir)
             {
-                case BidiCharacterType.EN:
-                case BidiCharacterType.AN:
-                case BidiCharacterType.AL:
-                case BidiCharacterType.R:
-                    return BidiCharacterType.R;
-                case BidiCharacterType.L:
-                    return BidiCharacterType.L;
+                case BidiCharacterType.EuropeanNumber:
+                case BidiCharacterType.ArabicNumber:
+                case BidiCharacterType.ArabicLetter:
+                case BidiCharacterType.RightToLeft:
+                    return BidiCharacterType.RightToLeft;
+                case BidiCharacterType.LeftToRight:
+                    return BidiCharacterType.LeftToRight;
                 default:
-                    return BidiCharacterType.ON;
+                    return BidiCharacterType.OtherNeutral;
             }
         }
 
