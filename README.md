@@ -102,11 +102,11 @@ We currently only support otf and woff fonts with True Type outlines.
 
 ```c#
 FontDescription description = null;
-using(var fs = File.OpenReader("Font.ttf")){
+using(var fs = File.OpenRead("Font.ttf")){
     description = FontDescription.Load(fs); // once it has loaded the data the stream is no longer required and can be disposed of
 }
 
-string name = description.FontName;
+string name = description.FontName(CultureInfo.InvariantCulture);
 
 ```
 
