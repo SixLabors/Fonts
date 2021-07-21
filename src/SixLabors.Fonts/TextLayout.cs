@@ -104,14 +104,14 @@ namespace SixLabors.Fonts
                 GlyphMetrics[] glyphs = spanStyle.GetGlyphLayers(codePoint, options.ColorFontSupport);
                 if (glyphs.Length == 0)
                 {
-                    // TODO: SHould we try to return the replacement glyph first?
+                    // TODO: Should we try to return the replacement glyph first?
                     return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint);
                 }
 
                 GlyphMetrics? glyph = glyphs[0];
                 if (previousGlyph != null && glyph.Metrics != previousGlyph.Metrics)
                 {
-                    scale = glyph.Metrics.UnitsPerEm * 72;
+                    scale = glyph.ScaleFactor;
                 }
 
                 float fontHeight = glyph.Metrics.LineHeight * options.LineSpacing;
@@ -119,21 +119,21 @@ namespace SixLabors.Fonts
                 {
                     // get the larget lineheight thus far
                     unscaledLineHeight = fontHeight;
-                    scale = glyph.Metrics.UnitsPerEm * 72;
+                    scale = glyph.ScaleFactor;
                     lineHeight = unscaledLineHeight * spanStyle.PointSize / scale;
                 }
 
                 if (glyph.Metrics.Ascender > unscaledLineMaxAscender)
                 {
                     unscaledLineMaxAscender = glyph.Metrics.Ascender;
-                    scale = glyph.Metrics.UnitsPerEm * 72;
+                    scale = glyph.ScaleFactor;
                     lineMaxAscender = unscaledLineMaxAscender * spanStyle.PointSize / scale;
                 }
 
                 if (Math.Abs(glyph.Metrics.Descender) > unscaledLineMaxDescender)
                 {
                     unscaledLineMaxDescender = Math.Abs(glyph.Metrics.Descender);
-                    scale = glyph.Metrics.UnitsPerEm * 72;
+                    scale = glyph.ScaleFactor;
                     lineMaxDescender = unscaledLineMaxDescender * spanStyle.PointSize / scale;
                 }
 
