@@ -40,7 +40,7 @@ namespace SixLabors.Fonts
 
             if (colorFontOptions == ColorFontSupport.MicrosoftColrFormat)
             {
-                if (glyph.Metrics.TryGetColoredVectors(codePoint, glyph.Index, out GlyphMetrics[]? layers))
+                if (glyph.FontMetrics.TryGetColoredVectors(codePoint, glyph.Index, out GlyphMetrics[]? layers))
                 {
                     return layers;
                 }
@@ -51,12 +51,12 @@ namespace SixLabors.Fonts
 
         public Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
         {
-            if (glyph.Metrics != previousGlyph?.Metrics)
+            if (glyph.FontMetrics != previousGlyph?.FontMetrics)
             {
                 return Vector2.Zero;
             }
 
-            return ((IFontMetrics)glyph.Metrics).GetOffset(glyph, previousGlyph);
+            return ((IFontMetrics)glyph.FontMetrics).GetOffset(glyph, previousGlyph);
         }
     }
 }

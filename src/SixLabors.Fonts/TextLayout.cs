@@ -109,12 +109,12 @@ namespace SixLabors.Fonts
                 }
 
                 GlyphMetrics? glyph = glyphs[0];
-                if (previousGlyph != null && glyph.Metrics != previousGlyph.Metrics)
+                if (previousGlyph != null && glyph.FontMetrics != previousGlyph.FontMetrics)
                 {
                     scale = glyph.ScaleFactor;
                 }
 
-                float fontHeight = glyph.Metrics.LineHeight * options.LineSpacing;
+                float fontHeight = glyph.FontMetrics.LineHeight * options.LineSpacing;
                 if (fontHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
@@ -123,16 +123,16 @@ namespace SixLabors.Fonts
                     lineHeight = unscaledLineHeight * spanStyle.PointSize / scale;
                 }
 
-                if (glyph.Metrics.Ascender > unscaledLineMaxAscender)
+                if (glyph.FontMetrics.Ascender > unscaledLineMaxAscender)
                 {
-                    unscaledLineMaxAscender = glyph.Metrics.Ascender;
+                    unscaledLineMaxAscender = glyph.FontMetrics.Ascender;
                     scale = glyph.ScaleFactor;
                     lineMaxAscender = unscaledLineMaxAscender * spanStyle.PointSize / scale;
                 }
 
-                if (Math.Abs(glyph.Metrics.Descender) > unscaledLineMaxDescender)
+                if (Math.Abs(glyph.FontMetrics.Descender) > unscaledLineMaxDescender)
                 {
-                    unscaledLineMaxDescender = Math.Abs(glyph.Metrics.Descender);
+                    unscaledLineMaxDescender = Math.Abs(glyph.FontMetrics.Descender);
                     scale = glyph.ScaleFactor;
                     lineMaxDescender = unscaledLineMaxDescender * spanStyle.PointSize / scale;
                 }

@@ -25,7 +25,7 @@ namespace ListFonts
                 Console.Write(string.Join(",", f.AvailableStyles.OrderBy(x => x).Select(x => x.ToString())));
                 Console.WriteLine();
 
-                GlyphMetrics g = f.CreateFont(10).Metrics.GetGlyphMetrics(new CodePoint(1));
+                GlyphMetrics g = f.CreateFont(10).FontMetrics.GetGlyphMetrics(new CodePoint(1));
             }
 
             if (Debugger.IsAttached)

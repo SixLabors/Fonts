@@ -29,7 +29,7 @@ namespace SixLabors.Fonts
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
         {
-            this.Metrics = font;
+            this.FontMetrics = font;
             this.Codepoint = codePoint;
             this.UnitsPerEm = unitsPerEM;
             this.vector = vector;
@@ -46,7 +46,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the font metrics.
         /// </summary>
-        internal FontMetrics Metrics { get; }
+        internal FontMetrics FontMetrics { get; }
 
         /// <summary>
         /// Gets the Unicode codepoint of the glyph.

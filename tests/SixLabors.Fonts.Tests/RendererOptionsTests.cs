@@ -309,7 +309,7 @@ namespace SixLabors.Fonts.Tests
 
             GlyphMetrics glyph = Assert.Single(style.GetGlyphLayers(new CodePoint('Z'), ColorFontSupport.None));
             Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
-            Assert.Equal(abcFontInstance, glyph.Metrics);
+            Assert.Equal(abcFontInstance, glyph.FontMetrics);
         }
 
         [Theory]
@@ -342,7 +342,7 @@ namespace SixLabors.Fonts.Tests
                 _ => throw new Exception("does not match")
             };
 
-            Assert.Equal(expectedInstance, glyph.Metrics);
+            Assert.Equal(expectedInstance, glyph.FontMetrics);
         }
     }
 }

@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = new FontCollection().Install(TestFonts.CarterOneFileData()).CreateFont(12);
 
-            GlyphMetrics g = font.Metrics.GetGlyphMetrics(new CodePoint('\0'));
+            GlyphMetrics g = font.FontMetrics.GetGlyphMetrics(new CodePoint('\0'));
         }
 
         [Fact]
