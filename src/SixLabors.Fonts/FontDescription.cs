@@ -9,7 +9,7 @@ using SixLabors.Fonts.Tables.General;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// provide metadata about a font.
+    /// Provides basic descriptive metadata for the font.
     /// </summary>
     public class FontDescription
     {

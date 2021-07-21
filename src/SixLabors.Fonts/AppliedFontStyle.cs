@@ -9,8 +9,8 @@ namespace SixLabors.Fonts
 {
     internal struct AppliedFontStyle
     {
-        public IFontInstance[] FallbackFonts;
-        public IFontInstance MainFont;
+        public IFontMetrics[] FallbackFonts;
+        public IFontMetrics MainFont;
         public float PointSize;
         public float TabWidth;
         public int Start;
@@ -19,12 +19,12 @@ namespace SixLabors.Fonts
 
         public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint, ColorFontSupport colorFontOptions)
         {
-            GlyphMetrics glyph = this.MainFont.GetGlyph(codePoint);
+            GlyphMetrics glyph = this.MainFont.GetGlyphMetrics(codePoint);
             if (glyph.GlyphType == GlyphType.Fallback)
             {
-                foreach (IFontInstance? f in this.FallbackFonts)
+                foreach (IFontMetrics? f in this.FallbackFonts)
                 {
-                    GlyphMetrics? g = f.GetGlyph(codePoint);
+                    GlyphMetrics? g = f.GetGlyphMetrics(codePoint);
                     if (g.GlyphType != GlyphType.Fallback)
                     {
                         glyph = g;
@@ -40,7 +40,7 @@ namespace SixLabors.Fonts
 
             if (colorFontOptions == ColorFontSupport.MicrosoftColrFormat)
             {
-                if (glyph.Font.TryGetColoredVectors(codePoint, glyph.Index, out GlyphMetrics[]? layers))
+                if (glyph.Metrics.TryGetColoredVectors(codePoint, glyph.Index, out GlyphMetrics[]? layers))
                 {
                     return layers;
                 }
@@ -51,12 +51,12 @@ namespace SixLabors.Fonts
 
         public Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
         {
-            if (glyph.Font != previousGlyph?.Font)
+            if (glyph.Metrics != previousGlyph?.Metrics)
             {
                 return Vector2.Zero;
             }
 
-            return ((IFontInstance)glyph.Font).GetOffset(glyph, previousGlyph);
+            return ((IFontMetrics)glyph.Metrics).GetOffset(glyph, previousGlyph);
         }
     }
 }

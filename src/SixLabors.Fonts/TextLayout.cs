@@ -109,31 +109,31 @@ namespace SixLabors.Fonts
                 }
 
                 GlyphMetrics? glyph = glyphs[0];
-                if (previousGlyph != null && glyph.Font != previousGlyph.Font)
+                if (previousGlyph != null && glyph.Metrics != previousGlyph.Metrics)
                 {
-                    scale = glyph.Font.EmSize * 72;
+                    scale = glyph.Metrics.UnitsPerEm * 72;
                 }
 
-                float fontHeight = glyph.Font.LineHeight * options.LineSpacing;
+                float fontHeight = glyph.Metrics.LineHeight * options.LineSpacing;
                 if (fontHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
                     unscaledLineHeight = fontHeight;
-                    scale = glyph.Font.EmSize * 72;
+                    scale = glyph.Metrics.UnitsPerEm * 72;
                     lineHeight = unscaledLineHeight * spanStyle.PointSize / scale;
                 }
 
-                if (glyph.Font.Ascender > unscaledLineMaxAscender)
+                if (glyph.Metrics.Ascender > unscaledLineMaxAscender)
                 {
-                    unscaledLineMaxAscender = glyph.Font.Ascender;
-                    scale = glyph.Font.EmSize * 72;
+                    unscaledLineMaxAscender = glyph.Metrics.Ascender;
+                    scale = glyph.Metrics.UnitsPerEm * 72;
                     lineMaxAscender = unscaledLineMaxAscender * spanStyle.PointSize / scale;
                 }
 
-                if (Math.Abs(glyph.Font.Descender) > unscaledLineMaxDescender)
+                if (Math.Abs(glyph.Metrics.Descender) > unscaledLineMaxDescender)
                 {
-                    unscaledLineMaxDescender = Math.Abs(glyph.Font.Descender);
-                    scale = glyph.Font.EmSize * 72;
+                    unscaledLineMaxDescender = Math.Abs(glyph.Metrics.Descender);
+                    scale = glyph.Metrics.UnitsPerEm * 72;
                     lineMaxDescender = unscaledLineMaxDescender * spanStyle.PointSize / scale;
                 }
 

@@ -53,7 +53,7 @@ namespace SixLabors.Fonts
             string[] expanded = probPaths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
             string[] foundDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
 
-            // we do this to provide a consistent experience with case sensitive file systems.
+            // We do this to provide a consistent experience with case sensitive file systems.
             IEnumerable<string> files = foundDirectories
                                 .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
                                 .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase) || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase));
@@ -73,7 +73,7 @@ namespace SixLabors.Fonts
                 }
                 catch
                 {
-                    // we swollow exceptions installing system fonts as we hold no garantees about permissions etc.
+                    // We swallow exceptions installing system fonts as we hold no garantees about permissions etc.
                 }
             }
         }

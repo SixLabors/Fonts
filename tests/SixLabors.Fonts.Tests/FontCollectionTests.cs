@@ -27,11 +27,11 @@ namespace SixLabors.Fonts.Tests
             var sut = new FontCollection();
             FontFamily family = sut.Install(TestFonts.CarterOneFile, out FontDescription descriptions);
 
-            IEnumerable<IFontInstance> allInstances = sut.FindAll(family.Name, CultureInfo.InvariantCulture);
+            IEnumerable<IFontMetrics> allInstances = sut.FindAll(family.Name, CultureInfo.InvariantCulture);
 
             Assert.All(allInstances, i =>
             {
-                FileFontInstance font = Assert.IsType<FileFontInstance>(i);
+                FileFontMetrics font = Assert.IsType<FileFontMetrics>(i);
             });
         }
 

@@ -7,46 +7,48 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Represents a font instance, which is a set of glyphs with a specific style (regular, italic, bold etc).
+    /// Represents a font face with metrics, which is a set of glyphs with a specific style (regular, italic, bold etc).
     /// </summary>
-    public interface IFontInstance
+    public interface IFontMetrics
     {
         /// <summary>
-        /// Gets the basic descripton of the font instance type.
+        /// Gets the basic descripton of the face.
         /// </summary>
         FontDescription Description { get; }
 
         /// <summary>
-        /// Gets the EM size of the font
+        /// Gets the number of font units per EM square for this face.
         /// </summary>
-        ushort EmSize { get; }
+        ushort UnitsPerEm { get; }
 
         /// <summary>
-        /// Gets the line height
+        /// Gets the typographic line spacing of the face, expressed in font units.
         /// </summary>
         int LineHeight { get; }
 
         /// <summary>
-        /// Gets the ascender
+        /// Gets the typographic ascender of the face, expressed in font units.
         /// </summary>
         short Ascender { get; }
 
         /// <summary>
-        /// Gets the descender
+        /// Gets the typographic descender of the face, expressed in font units.
         /// </summary>
         short Descender { get; }
 
         /// <summary>
-        /// Gets the line gap
+        /// Gets the typographic line gap of the face, expressed in font units.
+        /// This field should be combined with the <see cref="Ascender"/> and <see cref="Descender"/>
+        /// values to determine default line spacing.
         /// </summary>
         short LineGap { get; }
 
         /// <summary>
-        /// Gets a specific glyph
+        /// Gets the glyph metrics for a given code point.
         /// </summary>
-        /// <param name="codePoint">The code point to get the glyph for.</param>
-        /// <returns>The glyph to find.</returns>
-        GlyphMetrics GetGlyph(CodePoint codePoint);
+        /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
+        /// <returns>The glyph metrics to find.</returns>
+        GlyphMetrics GetGlyphMetrics(CodePoint codePoint);
 
         /// <summary>
         /// Get the kerning offset that should be applied between 2 glyphs.

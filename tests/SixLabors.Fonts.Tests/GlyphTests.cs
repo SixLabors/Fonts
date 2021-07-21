@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tests
         {
             const string text = "A";
             CodePoint codePoint = this.AsCodePoint(text);
-            var font = (FontInstance)CreateFont(text).Instance;
+            var font = (FontMetrics)CreateFont(text).Metrics;
             var glyph = new Glyph(
                 new GlyphMetrics(
                 font,
@@ -90,7 +90,7 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter A
             Glyph g = font.GetGlyph(new CodePoint(41));
-            GlyphMetrics instance = g.Instance;
+            GlyphMetrics instance = g.Metrics;
 
             Assert.Equal(20, instance.ControlPoints.Length);
             Assert.Equal(20, instance.OnCurves.Length);
@@ -102,7 +102,7 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Install(TestFonts.TwemojiMozillaData()).CreateFont(12);
 
             // Get letter Grinning Face emoji
-            var instance = font.Instance as FontInstance;
+            var instance = font.Metrics as FontMetrics;
             CodePoint codePoint = this.AsCodePoint("😀");
             Assert.True(instance.TryGetGlyphIndex(codePoint, out ushort idx));
             Assert.True(instance.TryGetColoredVectors(codePoint, idx, out GlyphMetrics[] vectors));

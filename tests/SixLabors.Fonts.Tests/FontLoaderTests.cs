@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = new FontCollection().Install(TestFonts.CarterOneFileData()).CreateFont(12);
 
-            GlyphMetrics g = font.Instance.GetGlyph(new CodePoint('\0'));
+            GlyphMetrics g = font.Metrics.GetGlyphMetrics(new CodePoint('\0'));
         }
 
         [Fact]
@@ -38,12 +38,12 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFont()
         {
-            IFontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileData());
+            IFontMetrics font = FontMetrics.LoadFont(TestFonts.SimpleFontFileData());
 
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
 
-            GlyphMetrics glyph = font.GetGlyph(new CodePoint('a'));
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'));
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
 
@@ -54,12 +54,12 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontWoff()
         {
-            IFontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileWoffData());
+            IFontMetrics font = FontMetrics.LoadFont(TestFonts.SimpleFontFileWoffData());
 
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
 
-            GlyphMetrics glyph = font.GetGlyph(new CodePoint('a'));
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'));
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
 

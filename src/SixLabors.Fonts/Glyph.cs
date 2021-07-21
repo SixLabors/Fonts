@@ -14,29 +14,26 @@ namespace SixLabors.Fonts
 
         internal Glyph(GlyphMetrics instance, float pointSize)
         {
-            this.Instance = instance;
+            this.Metrics = instance;
             this.pointSize = pointSize;
         }
 
         /// <summary>
-        /// Gets the glyph instance.
+        /// Gets the glyph metrics.
         /// </summary>
-        /// <value>
-        /// The glyph instance.
-        /// </value>
-        public GlyphMetrics Instance { get; }
+        public GlyphMetrics Metrics { get; }
 
         /// <summary>
         /// Calculates the bounding box
         /// </summary>
-        /// <param name="location">location to calculate from.</param>
-        /// <param name="dpi">dpi to calualtes in relation to</param>
+        /// <param name="location">The location to calculate from.</param>
+        /// <param name="dpi">The dpi scale the bounds in relation to.</param>
         /// <returns>The bounding box</returns>
         public FontRectangle BoundingBox(Vector2 location, Vector2 dpi)
-            => this.Instance.BoundingBox(location, this.pointSize * dpi);
+            => this.Metrics.BoundingBox(location, this.pointSize * dpi);
 
         /// <summary>
-        /// Renders to.
+        /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
         /// </summary>
         /// <param name="surface">The surface.</param>
         /// <param name="location">The location.</param>
@@ -55,6 +52,6 @@ namespace SixLabors.Fonts
         /// <param name="lineHeight">The line height.</param>
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
         internal void RenderTo(IGlyphRenderer surface, Vector2 location, float dpiX, float dpiY, float lineHeight)
-            => this.Instance.RenderTo(surface, this.pointSize, location, new Vector2(dpiX, dpiY), lineHeight);
+            => this.Metrics.RenderTo(surface, this.pointSize, location, new Vector2(dpiX, dpiY), lineHeight);
     }
 }

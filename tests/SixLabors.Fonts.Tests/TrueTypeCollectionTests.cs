@@ -31,11 +31,11 @@ namespace SixLabors.Fonts.Tests
             var sut = new FontCollection();
             IEnumerable<FontFamily> collectionFromPath = sut.InstallCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
 
-            IEnumerable<IFontInstance> allInstances = sut.Families.SelectMany(x => sut.FindAll(x.Name, CultureInfo.InvariantCulture));
+            IEnumerable<IFontMetrics> allInstances = sut.Families.SelectMany(x => sut.FindAll(x.Name, CultureInfo.InvariantCulture));
 
             Assert.All(allInstances, i =>
             {
-                FileFontInstance font = Assert.IsType<FileFontInstance>(i);
+                FileFontMetrics font = Assert.IsType<FileFontMetrics>(i);
             });
         }
 

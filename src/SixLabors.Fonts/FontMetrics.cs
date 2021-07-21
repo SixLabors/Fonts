@@ -14,9 +14,9 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// provide metadata about a font.
+    /// Represents a font face with metrics, which is a set of glyphs with a specific style (regular, italic, bold etc).
     /// </summary>
-    public class FontInstance : IFontInstance
+    public class FontMetrics : IFontMetrics
     {
         private readonly CMapTable cmap;
         private readonly GlyphTable glyphs;
@@ -30,19 +30,19 @@ namespace SixLabors.Fonts
         private readonly CpalTable? cpalTable;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontInstance"/> class.
+        /// Initializes a new instance of the <see cref="FontMetrics"/> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
-        /// <param name="cmap">The cmap.</param>
-        /// <param name="glyphs">The glyphs.</param>
-        /// <param name="os2">The os2.</param>
+        /// <param name="cmap">The cmap table.</param>
+        /// <param name="glyphs">The glyph table.</param>
+        /// <param name="os2">The os2 table.</param>
         /// <param name="horizontalHeadTable">The horizontal head table.</param>
-        /// <param name="horizontalMetrics">The horizontal metrics.</param>
-        /// <param name="head">The head.</param>
-        /// <param name="kern">The kern.</param>
+        /// <param name="horizontalMetrics">The horizontal metrics table.</param>
+        /// <param name="head">The head table.</param>
+        /// <param name="kern">The kerning table.</param>
         /// <param name="colrTable">The COLR table</param>
         /// <param name="cpalTable">The CPAL table</param>
-        internal FontInstance(
+        internal FontMetrics(
             NameTable nameTable,
             CMapTable cmap,
             GlyphTable glyphs,
@@ -106,51 +106,36 @@ namespace SixLabors.Fonts
             }
 
             this.LineHeight = this.Ascender - this.Descender + this.LineGap;
-            this.EmSize = this.head.UnitsPerEm;
+            this.UnitsPerEm = this.head.UnitsPerEm;
             this.kerning = kern;
             this.colrTable = colrTable;
             this.cpalTable = cpalTable;
             this.Description = new FontDescription(nameTable, os2, head);
         }
 
-        /// <summary>
-        /// Gets the height of the line.
-        /// </summary>
-        public int LineHeight { get; }
-
-        /// <summary>
-        /// Gets the ascender.
-        /// </summary>
-        public short Ascender { get; }
-
-        /// <summary>
-        /// Gets the descender.
-        /// </summary>
-        public short Descender { get; }
-
-        /// <summary>
-        /// Gets the line gap.
-        /// </summary>
-        public short LineGap { get; }
-
-        /// <summary>
-        /// Gets the size of the em.
-        /// </summary>
-        public ushort EmSize { get; }
-
         /// <inheritdoc/>
         public FontDescription Description { get; }
 
-        internal bool TryGetGlyphIndex(CodePoint codePoint, out ushort glyphId)
-            => this.cmap.TryGetGlyphId(codePoint, out glyphId);
+        /// <inheritdoc/>
+        public ushort UnitsPerEm { get; }
 
-        /// <summary>
-        /// Gets the glyph metrics for the codepoint.
-        /// </summary>
-        /// <param name="codePoint">The code point of the character.</param>
-        /// <returns>The glyph metrics for a known character.</returns>
-        GlyphMetrics IFontInstance.GetGlyph(CodePoint codePoint)
+        /// <inheritdoc/>
+        public short Ascender { get; }
+
+        /// <inheritdoc/>
+        public short Descender { get; }
+
+        /// <inheritdoc/>
+        public short LineGap { get; }
+
+        /// <inheritdoc/>
+        public int LineHeight { get; }
+
+        /// <inheritdoc/>
+        public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
         {
+            // TODO: Check this. It looks like we could potentially return the metrics
+            // for the glyph at position zero when a matching codepoint cannot be found.
             bool foundGlyph = this.TryGetGlyphIndex(codePoint, out ushort idx);
             if (!foundGlyph)
             {
@@ -165,23 +150,143 @@ namespace SixLabors.Fonts
             return this.glyphCache[idx];
         }
 
-        private GlyphMetrics CreateGlyphMetrics(CodePoint codePoint, ushort idx, GlyphType glyphType, ushort palleteIndex = 0)
+        /// <inheritdoc/>
+        Vector2 IFontMetrics.GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
         {
-            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
-            short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
-            GlyphVector vector = this.glyphs.GetGlyph(idx);
-            GlyphColor? color = null;
-            if (glyphType == GlyphType.ColrLayer)
+            // We also want to wire int sub/super script offsetting into here too
+            if (previousGlyph is null)
             {
-                // 0xFFFF is special index meaning use foreground color and thus leave unset
-                if (palleteIndex != 0xFFFF)
-                {
-                    color = this.cpalTable?.GetGlyphColor(0, palleteIndex);
-                }
+                return Vector2.Zero;
             }
 
-            return new GlyphMetrics(this, codePoint, vector, advanceWidth, lsb, this.EmSize, idx, glyphType, color);
+            // Once we wire in the kerning calculations this will return real data
+            return this.kerning.GetOffset(previousGlyph.Index, glyph.Index);
         }
+
+        /// <summary>
+        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <returns>a <see cref="FontMetrics"/>.</returns>
+        public static FontMetrics LoadFont(string path)
+        {
+            using FileStream fs = File.OpenRead(path);
+            var reader = new FontReader(fs);
+            return LoadFont(reader);
+        }
+
+        /// <summary>
+        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <param name="offset">Position in the stream to read the font from.</param>
+        /// <returns>a <see cref="FontMetrics"/>.</returns>
+        public static FontMetrics LoadFont(string path, long offset)
+        {
+            using FileStream fs = File.OpenRead(path);
+            fs.Position = offset;
+            return LoadFont(fs);
+        }
+
+        /// <summary>
+        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>a <see cref="FontMetrics"/>.</returns>
+        public static FontMetrics LoadFont(Stream stream)
+        {
+            var reader = new FontReader(stream);
+            return LoadFont(reader);
+        }
+
+        internal static FontMetrics LoadFont(FontReader reader)
+        {
+            // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
+            // recomended order
+            HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
+            HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>(); // hhea
+            reader.GetTable<MaximumProfileTable>(); // maxp
+            OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
+
+            // LTSH - Linear threshold data
+            // VDMX - Vertical device metrics
+            // hdmx - Horizontal device metrics
+            HorizontalMetricsTable horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
+
+            CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
+
+            // fpgm - Font Program
+            // prep - Control Value Program
+            // cvt  - Control Value Table
+            reader.GetTable<IndexLocationTable>(); // loca
+            GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
+            KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
+            NameTable nameTable = reader.GetTable<NameTable>(); // name
+
+            ColrTable? colrTable = reader.TryGetTable<ColrTable>(); // colr
+            CpalTable? cpalTable;
+            if (colrTable != null)
+            {
+                cpalTable = reader.GetTable<CpalTable>(); // CPAL - required if COLR is provided
+            }
+            else
+            {
+                cpalTable = reader.TryGetTable<CpalTable>(); // colr
+            }
+
+            // post - PostScript information
+            // gasp - Grid-fitting/Scan-conversion (optional table)
+            // PCLT - PCL 5 data
+            // DSIG - Digital signature
+            return new FontMetrics(
+                nameTable,
+                cmap,
+                glyphs,
+                os2,
+                hhea,
+                horizontalMetrics,
+                head,
+                kern,
+                colrTable,
+                cpalTable);
+        }
+
+        /// <summary>
+        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <returns>a <see cref="FontMetrics"/>.</returns>
+        public static FontMetrics[] LoadFontCollection(string path)
+        {
+            using (FileStream fs = File.OpenRead(path))
+            {
+                return LoadFontCollection(fs);
+            }
+        }
+
+        /// <summary>
+        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>a <see cref="FontMetrics"/>.</returns>
+        public static FontMetrics[] LoadFontCollection(Stream stream)
+        {
+            long startPos = stream.Position;
+            var reader = new BigEndianBinaryReader(stream, true);
+            var ttcHeader = TtcHeader.Read(reader);
+            var fonts = new FontMetrics[(int)ttcHeader.NumFonts];
+
+            for (int i = 0; i < ttcHeader.NumFonts; ++i)
+            {
+                stream.Position = startPos + ttcHeader.OffsetTable[i];
+                fonts[i] = LoadFont(stream);
+            }
+
+            return fonts;
+        }
+
+        internal bool TryGetGlyphIndex(CodePoint codePoint, out ushort glyphId)
+            => this.cmap.TryGetGlyphId(codePoint, out glyphId);
 
         internal bool TryGetColoredVectors(CodePoint codePoint, ushort idx, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
         {
@@ -213,147 +318,22 @@ namespace SixLabors.Fonts
             return vectors.Length > 0;
         }
 
-        /// <summary>
-        /// Gets the amount the <paramref name="glyph"/> should be ofset if it was proceeded by the <paramref name="previousGlyph"/>.
-        /// </summary>
-        /// <param name="glyph">The glyph.</param>
-        /// <param name="previousGlyph">The previous glyph.</param>
-        /// <returns>A <see cref="Vector2"/> represting the offset that should be applied to the <paramref name="glyph"/>. </returns>
-        Vector2 IFontInstance.GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
+        private GlyphMetrics CreateGlyphMetrics(CodePoint codePoint, ushort idx, GlyphType glyphType, ushort palleteIndex = 0)
         {
-            // we also want to wire int sub/super script offsetting into here too
-            if (previousGlyph is null)
+            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
+            short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
+            GlyphVector vector = this.glyphs.GetGlyph(idx);
+            GlyphColor? color = null;
+            if (glyphType == GlyphType.ColrLayer)
             {
-                return Vector2.Zero;
+                // 0xFFFF is special index meaning use foreground color and thus leave unset
+                if (palleteIndex != 0xFFFF)
+                {
+                    color = this.cpalTable?.GetGlyphColor(0, palleteIndex);
+                }
             }
 
-            // once we wire in the kerning calculations this will return real data
-            return this.kerning.GetOffset(previousGlyph.Index, glyph.Index);
-        }
-
-        /// <summary>
-        /// Reads a <see cref="FontInstance"/> from the specified stream.
-        /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <returns>a <see cref="FontInstance"/>.</returns>
-        public static FontInstance LoadFont(string path)
-        {
-            using (FileStream fs = File.OpenRead(path))
-            {
-                var reader = new FontReader(fs);
-                return LoadFont(reader);
-            }
-        }
-
-        /// <summary>
-        /// Reads a <see cref="FontInstance"/> from the specified stream.
-        /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <param name="offset">Position in the stream to read the font from.</param>
-        /// <returns>a <see cref="FontInstance"/>.</returns>
-        public static FontInstance LoadFont(string path, long offset)
-        {
-            using (FileStream fs = File.OpenRead(path))
-            {
-                fs.Position = offset;
-                return LoadFont(fs);
-            }
-        }
-
-        /// <summary>
-        /// Reads a <see cref="FontInstance"/> from the specified stream.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>a <see cref="FontInstance"/>.</returns>
-        public static FontInstance LoadFont(Stream stream)
-        {
-            var reader = new FontReader(stream);
-            return LoadFont(reader);
-        }
-
-        internal static FontInstance LoadFont(FontReader reader)
-        {
-            // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
-            // recomended order
-            HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
-            HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>(); // hhea
-            reader.GetTable<MaximumProfileTable>(); // maxp
-            OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
-            HorizontalMetricsTable horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
-
-            // LTSH - Linear threshold data
-            // VDMX - Vertical device metrics
-            // hdmx - Horizontal device metrics
-            CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
-
-            // fpgm - Font Program
-            // prep - Control Value Program
-            // cvt  - Control Value Table
-            reader.GetTable<IndexLocationTable>(); // loca
-            GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
-            KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
-            NameTable nameTable = reader.GetTable<NameTable>(); // name
-
-            ColrTable? colrTable = reader.TryGetTable<ColrTable>(); // colr
-            CpalTable? cpalTable;
-            if (colrTable != null)
-            {
-                cpalTable = reader.GetTable<CpalTable>(); // CPAL - required if COLR is provided
-            }
-            else
-            {
-                cpalTable = reader.TryGetTable<CpalTable>(); // colr
-            }
-
-            // post - PostScript information
-            // gasp - Grid-fitting/Scan-conversion (optional table)
-            // PCLT - PCL 5 data
-            // DSIG - Digital signature
-            return new FontInstance(
-                nameTable,
-                cmap,
-                glyphs,
-                os2,
-                hhea,
-                horizontalMetrics,
-                head,
-                kern,
-                colrTable,
-                cpalTable);
-        }
-
-        /// <summary>
-        /// Reads a <see cref="FontInstance"/> from the specified stream.
-        /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <returns>a <see cref="FontInstance"/>.</returns>
-        public static FontInstance[] LoadFontCollection(string path)
-        {
-            using (FileStream fs = File.OpenRead(path))
-            {
-                return LoadFontCollection(fs);
-            }
-        }
-
-        /// <summary>
-        /// Reads a <see cref="FontInstance"/> from the specified stream.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>a <see cref="FontInstance"/>.</returns>
-        public static FontInstance[] LoadFontCollection(Stream stream)
-        {
-            long startPos = stream.Position;
-            var reader = new BigEndianBinaryReader(stream, true);
-            var ttcHeader = TtcHeader.Read(reader);
-            var fonts = new FontInstance[(int)ttcHeader.NumFonts];
-
-            for (int i = 0; i < ttcHeader.NumFonts; ++i)
-            {
-                stream.Position = startPos + ttcHeader.OffsetTable[i];
-                fonts[i] = LoadFont(stream);
-            }
-
-            return fonts;
+            return new GlyphMetrics(this, codePoint, vector, advanceWidth, lsb, this.UnitsPerEm, idx, glyphType, color);
         }
     }
 }
