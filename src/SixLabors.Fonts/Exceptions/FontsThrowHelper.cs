@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Exceptions
 {
@@ -14,7 +15,7 @@ namespace SixLabors.Fonts.Exceptions
         /// Throws an <see cref="GlyphMissingException"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
-        public static T ThrowGlyphMissingException<T>(int codePoint)
+        public static T ThrowGlyphMissingException<T>(CodePoint codePoint)
             => throw new GlyphMissingException(codePoint);
     }
 }

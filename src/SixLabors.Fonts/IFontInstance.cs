@@ -2,11 +2,12 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Numerics;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Represents a font instance, which is a set of glyphs under a specific style (regular, italic, bold etc)
+    /// Represents a font instance, which is a set of glyphs with a specific style (regular, italic, bold etc).
     /// </summary>
     public interface IFontInstance
     {
@@ -43,16 +44,16 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets a specific glyph
         /// </summary>
-        /// <param name="codePoint">the code point to get the glyph from</param>
+        /// <param name="codePoint">The code point to get the glyph for.</param>
         /// <returns>The glyph to find.</returns>
-        GlyphInstance GetGlyph(int codePoint);
+        GlyphMetrics GetGlyph(CodePoint codePoint);
 
         /// <summary>
         /// Get the kerning offset that should be applied between 2 glyphs.
         /// </summary>
-        /// <param name="glyph">the new glyph</param>
-        /// <param name="previousGlyph">the previous glyph in the rendered font</param>
-        /// <returns>Returns the offset that should be offset between the 2 glyphs</returns>
-        Vector2 GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph);
+        /// <param name="glyph">The current glyph.</param>
+        /// <param name="previousGlyph">The previous glyph in the rendered font.</param>
+        /// <returns>The <see cref="Vector2"/> representing the offset between the 2 glyphs.</returns>
+        Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph);
     }
 }

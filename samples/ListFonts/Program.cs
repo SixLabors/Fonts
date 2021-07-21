@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using SixLabors.Fonts;
+using SixLabors.Fonts.Unicode;
 
 namespace ListFonts
 {
@@ -24,7 +25,7 @@ namespace ListFonts
                 Console.Write(string.Join(",", f.AvailableStyles.OrderBy(x => x).Select(x => x.ToString())));
                 Console.WriteLine();
 
-                GlyphInstance g = f.CreateFont(10).Instance.GetGlyph(1);
+                GlyphMetrics g = f.CreateFont(10).Instance.GetGlyph(new CodePoint(1));
             }
 
             if (Debugger.IsAttached)

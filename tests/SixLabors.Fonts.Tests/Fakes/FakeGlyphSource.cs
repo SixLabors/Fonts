@@ -3,12 +3,13 @@
 
 using System.Numerics;
 using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Fakes
 {
     internal class FakeGlyphSource
     {
-        public FakeGlyphSource(int codePoint, ushort index)
+        public FakeGlyphSource(CodePoint codePoint, ushort index)
             : this(
                   codePoint,
                   index,
@@ -20,14 +21,14 @@ namespace SixLabors.Fonts.Tests.Fakes
         {
         }
 
-        public FakeGlyphSource(int codePoint, ushort index, GlyphVector vector)
+        public FakeGlyphSource(CodePoint codePoint, ushort index, GlyphVector vector)
         {
             this.CodePoint = codePoint;
             this.Vector = vector;
             this.Index = index;
         }
 
-        public int CodePoint { get; }
+        public CodePoint CodePoint { get; }
 
         public ushort Index { get; }
 

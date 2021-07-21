@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Fakes
 {
@@ -62,7 +63,16 @@ namespace SixLabors.Fonts.Tests.Fakes
         }
 
         private static List<FakeGlyphSource> GetGlyphs(string text)
-            => text.Distinct().Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
+        {
+            var codePoints = new HashSet<CodePoint>();
+
+            foreach (CodePoint codePoint in new CodePointEnumerator(text.AsSpan()))
+            {
+                codePoints.Add(codePoint);
+            }
+
+            return codePoints.Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
+        }
 
         private static NameTable GenerateNameTable()
             => new NameTable(

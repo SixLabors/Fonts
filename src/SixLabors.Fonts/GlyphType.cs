@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Represents the various version of a glyph records.
+    /// Represents the various versions of a glyph records.
     /// </summary>
     public enum GlyphType
     {

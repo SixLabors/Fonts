@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Tests.Fakes;
+using SixLabors.Fonts.Unicode;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -16,7 +17,7 @@ namespace SixLabors.Fonts.Tests
         public void FakeFontGetGlyph()
         {
             Font font = CreateFont("hello world");
-            Glyph glyph = font.GetGlyph('h');
+            Glyph glyph = font.GetGlyph(new CodePoint('h'));
             Assert.NotEqual(default, glyph);
         }
 
@@ -139,24 +140,24 @@ namespace SixLabors.Fonts.Tests
         public void TryMeasureCharacterBounds()
         {
             string text = "a b\nc";
-            var expectedGlyphMetrics = new GlyphMetric[]
+            var expectedGlyphMetrics = new GlyphBounds[]
             {
-                new GlyphMetric('a', new FontRectangle(10, 0, 10, 10)),
-                new GlyphMetric(' ', new FontRectangle(40, 0, 30, 10)),
-                new GlyphMetric('b', new FontRectangle(70, 0, 10, 10)),
-                new GlyphMetric('\n', new FontRectangle(100, 0, 0, 10)),
-                new GlyphMetric('c', new FontRectangle(10, 30, 10, 10)),
+                new GlyphBounds('a', new FontRectangle(10, 0, 10, 10)),
+                new GlyphBounds(' ', new FontRectangle(40, 0, 30, 10)),
+                new GlyphBounds('b', new FontRectangle(70, 0, 10, 10)),
+                new GlyphBounds('\n', new FontRectangle(100, 0, 0, 10)),
+                new GlyphBounds('c', new FontRectangle(10, 30, 10, 10)),
             };
             Font font = CreateFont(text);
 
             int scaleFactor = 72 * font.EmSize; // 72 * emSize means 1 point = 1px
-            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text.AsSpan(), new RendererOptions(font, scaleFactor), out GlyphMetric[] glyphMetrics));
+            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text.AsSpan(), new RendererOptions(font, scaleFactor), out GlyphBounds[] glyphMetrics));
 
             Assert.Equal(text.Length, glyphMetrics.Length);
             for (int i = 0; i < glyphMetrics.Length; i++)
             {
-                GlyphMetric expected = expectedGlyphMetrics[i];
-                GlyphMetric actual = glyphMetrics[i];
+                GlyphBounds expected = expectedGlyphMetrics[i];
+                GlyphBounds actual = glyphMetrics[i];
                 Assert.Equal(expected.Codepoint, actual.Codepoint);
 
                 // 4 dp as there is minor offset difference in the float values

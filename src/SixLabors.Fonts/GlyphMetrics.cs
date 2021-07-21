@@ -5,20 +5,31 @@ using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// A glyph from a particular font face.
+    /// Represents a glyph metric from a particular font face.
     /// </summary>
-    public partial class GlyphInstance
+    public class GlyphMetrics
     {
         private static readonly Vector2 Scale = new Vector2(1, -1);
         private readonly GlyphVector vector;
 
-        internal GlyphInstance(FontInstance font, GlyphVector vector, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index, GlyphType glyphType = GlyphType.Standard, GlyphColor? glyphColor = null)
+        internal GlyphMetrics(
+            FontInstance font,
+            CodePoint codePoint,
+            GlyphVector vector,
+            ushort advanceWidth,
+            short leftSideBearing,
+            ushort sizeOfEm,
+            ushort index,
+            GlyphType glyphType = GlyphType.Standard,
+            GlyphColor? glyphColor = null)
         {
             this.Font = font;
+            this.Codepoint = codePoint;
             this.SizeOfEm = sizeOfEm;
             this.vector = vector;
 
@@ -34,57 +45,41 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the Font.
         /// </summary>
-        /// <value>
-        /// The Font.
-        /// </value>
         internal FontInstance Font { get; }
+
+        /// <summary>
+        /// Gets the Unicode codepoint of the glyph.
+        /// </summary>
+        public CodePoint Codepoint { get; }
 
         /// <summary>
         /// Gets the bounds.
         /// </summary>
-        /// <value>
-        /// The bounds.
-        /// </value>
         internal Bounds Bounds => this.vector.Bounds;
 
         /// <summary>
         /// Gets the width of the advance.
         /// </summary>
-        /// <value>
-        /// The width of the advance.
-        /// </value>
         public ushort AdvanceWidth { get; }
 
         /// <summary>
         /// Gets the height.
         /// </summary>
-        /// <value>
-        /// The height.
-        /// </value>
         public float Height { get; }
 
         /// <summary>
         /// Gets a value indicating the type of glyph instance this is.
         /// </summary>
-        /// <value>
-        /// The type of this glyph
-        /// </value>
         public GlyphType GlyphType { get; }
 
         /// <summary>
-        /// Gets the color of this glyph
+        /// Gets the color of this glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
         /// </summary>
-        /// <value>
-        /// The color of the glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
-        /// </value>
         public GlyphColor? GlyphColor { get; }
 
         /// <summary>
         /// Gets the index.
         /// </summary>
-        /// <value>
-        /// The index.
-        /// </value>
         internal ushort Index { get; }
 
         /// <summary>
@@ -134,7 +129,7 @@ namespace SixLabors.Fonts
         /// <param name="pointSize">Size of the point.</param>
         /// <param name="location">The location.</param>
         /// <param name="dpi">The dpi.</param>
-        /// <param name="lineHeight">The lineHeight the current glyph was draw agains to offset topLeft while calling out to IGlyphRenderer.</param>
+        /// <param name="lineHeight">The lineHeight the current glyph was draw against to offset topLeft while calling out to IGlyphRenderer.</param>
         /// <exception cref="NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, float lineHeight)
         {

@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     {
         private readonly float pointSize;
 
-        internal Glyph(GlyphInstance instance, float pointSize)
+        internal Glyph(GlyphMetrics instance, float pointSize)
         {
             this.Instance = instance;
             this.pointSize = pointSize;
@@ -24,7 +24,7 @@ namespace SixLabors.Fonts
         /// <value>
         /// The glyph instance.
         /// </value>
-        public GlyphInstance Instance { get; }
+        public GlyphMetrics Instance { get; }
 
         /// <summary>
         /// Calculates the bounding box

@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParameters>
     {
-        internal GlyphRendererParameters(GlyphInstance glyph, float pointSize, Vector2 dpi)
+        internal GlyphRendererParameters(GlyphMetrics glyph, float pointSize, Vector2 dpi)
         {
             this.Font = glyph.Font.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
             this.FontStyle = glyph.Font.Description.Style;

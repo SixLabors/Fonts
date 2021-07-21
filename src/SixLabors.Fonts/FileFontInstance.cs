@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
@@ -46,10 +47,10 @@ namespace SixLabors.Fonts
 
         public int LineHeight => this.font.Value.LineHeight;
 
-        GlyphInstance IFontInstance.GetGlyph(int codePoint)
+        GlyphMetrics IFontInstance.GetGlyph(CodePoint codePoint)
             => this.font.Value.GetGlyph(codePoint);
 
-        Vector2 IFontInstance.GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
+        Vector2 IFontInstance.GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
             => this.font.Value.GetOffset(glyph, previousGlyph);
 
         /// <summary>

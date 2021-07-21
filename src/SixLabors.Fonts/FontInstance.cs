@@ -9,6 +9,7 @@ using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
@@ -22,8 +23,8 @@ namespace SixLabors.Fonts
         private readonly HeadTable head;
         private readonly OS2Table os2;
         private readonly HorizontalMetricsTable horizontalMetrics;
-        private readonly GlyphInstance[] glyphCache;
-        private readonly GlyphInstance[][]? colorGlyphCache;
+        private readonly GlyphMetrics[] glyphCache;
+        private readonly GlyphMetrics[][]? colorGlyphCache;
         private readonly KerningTable kerning;
         private readonly ColrTable? colrTable;
         private readonly CpalTable? cpalTable;
@@ -58,10 +59,10 @@ namespace SixLabors.Fonts
             this.glyphs = glyphs;
             this.horizontalMetrics = horizontalMetrics;
             this.head = head;
-            this.glyphCache = new GlyphInstance[this.glyphs.GlyphCount];
+            this.glyphCache = new GlyphMetrics[this.glyphs.GlyphCount];
             if (!(colrTable is null))
             {
-                this.colorGlyphCache = new GlyphInstance[this.glyphs.GlyphCount][];
+                this.colorGlyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
             }
 
             // https://www.microsoft.com/typography/otspec/recom.htm#tad
@@ -115,9 +116,6 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the height of the line.
         /// </summary>
-        /// <value>
-        /// The height of the line.
-        /// </value>
         public int LineHeight { get; }
 
         /// <summary>
@@ -138,23 +136,20 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the size of the em.
         /// </summary>
-        /// <value>
-        /// The size of the em.
-        /// </value>
         public ushort EmSize { get; }
 
         /// <inheritdoc/>
         public FontDescription Description { get; }
 
-        internal bool TryGetGlyphIndex(int codePoint, out ushort glyphId)
+        internal bool TryGetGlyphIndex(CodePoint codePoint, out ushort glyphId)
             => this.cmap.TryGetGlyphId(codePoint, out glyphId);
 
         /// <summary>
-        /// Gets the glyph.
+        /// Gets the glyph metrics for the codepoint.
         /// </summary>
         /// <param name="codePoint">The code point of the character.</param>
-        /// <returns>the glyph for a known character.</returns>
-        GlyphInstance IFontInstance.GetGlyph(int codePoint)
+        /// <returns>The glyph metrics for a known character.</returns>
+        GlyphMetrics IFontInstance.GetGlyph(CodePoint codePoint)
         {
             bool foundGlyph = this.TryGetGlyphIndex(codePoint, out ushort idx);
             if (!foundGlyph)
@@ -164,13 +159,13 @@ namespace SixLabors.Fonts
 
             if (this.glyphCache[idx] is null)
             {
-                this.glyphCache[idx] = this.CreateInstance(idx, foundGlyph ? GlyphType.Standard : GlyphType.Fallback);
+                this.glyphCache[idx] = this.CreateGlyphMetrics(codePoint, idx, foundGlyph ? GlyphType.Standard : GlyphType.Fallback);
             }
 
             return this.glyphCache[idx];
         }
 
-        private GlyphInstance CreateInstance(ushort idx, GlyphType glyphType, ushort palleteIndex = 0)
+        private GlyphMetrics CreateGlyphMetrics(CodePoint codePoint, ushort idx, GlyphType glyphType, ushort palleteIndex = 0)
         {
             ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
             short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
@@ -185,10 +180,10 @@ namespace SixLabors.Fonts
                 }
             }
 
-            return new GlyphInstance(this, vector, advanceWidth, lsb, this.EmSize, idx, glyphType, color);
+            return new GlyphMetrics(this, codePoint, vector, advanceWidth, lsb, this.EmSize, idx, glyphType, color);
         }
 
-        internal bool TryGetColoredVectors(ushort idx, [NotNullWhen(true)] out GlyphInstance[]? vectors)
+        internal bool TryGetColoredVectors(CodePoint codePoint, ushort idx, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
         {
             if (this.colrTable == null || this.colorGlyphCache == null)
             {
@@ -202,16 +197,16 @@ namespace SixLabors.Fonts
                 Span<LayerRecord> indexes = this.colrTable.GetLayers(idx);
                 if (indexes.Length > 0)
                 {
-                    vectors = new GlyphInstance[indexes.Length];
+                    vectors = new GlyphMetrics[indexes.Length];
                     for (int i = 0; i < indexes.Length; i++)
                     {
                         LayerRecord? layer = indexes[i];
 
-                        vectors[i] = this.CreateInstance(layer.GlyphId, GlyphType.ColrLayer, layer.PalletteIndex);
+                        vectors[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PalletteIndex);
                     }
                 }
 
-                vectors ??= Array.Empty<GlyphInstance>();
+                vectors ??= Array.Empty<GlyphMetrics>();
                 this.colorGlyphCache[idx] = vectors;
             }
 
@@ -224,7 +219,7 @@ namespace SixLabors.Fonts
         /// <param name="glyph">The glyph.</param>
         /// <param name="previousGlyph">The previous glyph.</param>
         /// <returns>A <see cref="Vector2"/> represting the offset that should be applied to the <paramref name="glyph"/>. </returns>
-        Vector2 IFontInstance.GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
+        Vector2 IFontInstance.GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
         {
             // we also want to wire int sub/super script offsetting into here too
             if (previousGlyph is null)

@@ -7,12 +7,12 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Represents a <see cref="Glyph"/> metric.
+    /// Represents the bounds of a <see cref="Glyph"/> for a given <see cref="CodePoint"/>.
     /// </summary>
-    public readonly struct GlyphMetric
+    public readonly struct GlyphBounds
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlyphMetric"/> struct.
+        /// Initializes a new instance of the <see cref="GlyphBounds"/> struct.
         /// </summary>
         /// <param name="value">The char representing the UTF-16 code unit for the glyph.</param>
         /// <param name="bounds">The glyph bounds.</param>
@@ -20,17 +20,17 @@ namespace SixLabors.Fonts
         /// If <paramref name="value"/> represents a UTF-16 surrogate code point
         /// U+D800..U+DFFF, inclusive.
         /// </exception>
-        public GlyphMetric(char value, FontRectangle bounds)
+        public GlyphBounds(char value, FontRectangle bounds)
             : this(new CodePoint(value), bounds)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlyphMetric"/> struct.
+        /// Initializes a new instance of the <see cref="GlyphBounds"/> struct.
         /// </summary>
         /// <param name="codePoint">The Unicode codepoint for the glyph.</param>
         /// <param name="bounds">The glyph bounds.</param>
-        public GlyphMetric(CodePoint codePoint, FontRectangle bounds)
+        public GlyphBounds(CodePoint codePoint, FontRectangle bounds)
         {
             this.Codepoint = codePoint;
             this.Bounds = bounds;

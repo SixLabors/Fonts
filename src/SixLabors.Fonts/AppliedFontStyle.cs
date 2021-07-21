@@ -3,6 +3,7 @@
 
 using System;
 using System.Numerics;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
@@ -16,14 +17,14 @@ namespace SixLabors.Fonts
         public int End;
         public bool ApplyKerning;
 
-        public GlyphInstance[] GetGlyphLayers(int codePoint, ColorFontSupport colorFontOptions)
+        public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint, ColorFontSupport colorFontOptions)
         {
-            GlyphInstance glyph = this.MainFont.GetGlyph(codePoint);
+            GlyphMetrics glyph = this.MainFont.GetGlyph(codePoint);
             if (glyph.GlyphType == GlyphType.Fallback)
             {
                 foreach (IFontInstance? f in this.FallbackFonts)
                 {
-                    GlyphInstance? g = f.GetGlyph(codePoint);
+                    GlyphMetrics? g = f.GetGlyph(codePoint);
                     if (g.GlyphType != GlyphType.Fallback)
                     {
                         glyph = g;
@@ -34,12 +35,12 @@ namespace SixLabors.Fonts
 
             if (glyph == null)
             {
-                return Array.Empty<GlyphInstance>();
+                return Array.Empty<GlyphMetrics>();
             }
 
             if (colorFontOptions == ColorFontSupport.MicrosoftColrFormat)
             {
-                if (glyph.Font.TryGetColoredVectors(glyph.Index, out GlyphInstance[]? layers))
+                if (glyph.Font.TryGetColoredVectors(codePoint, glyph.Index, out GlyphMetrics[]? layers))
                 {
                     return layers;
                 }
@@ -48,7 +49,7 @@ namespace SixLabors.Fonts
             return new[] { glyph };
         }
 
-        public Vector2 GetOffset(GlyphInstance glyph, GlyphInstance previousGlyph)
+        public Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
         {
             if (glyph.Font != previousGlyph?.Font)
             {

@@ -74,7 +74,7 @@ namespace SixLabors.Fonts
             float top = 0;
             float scale = 0;
             bool firstLine = true;
-            GlyphInstance? previousGlyph = null;
+            GlyphMetrics? previousGlyph = null;
             int lastWrappableLocation = -1;
             int nextWrappableLocation = codePointCount;
             bool nextWrappableRequired = false;
@@ -101,13 +101,14 @@ namespace SixLabors.Fonts
                     previousGlyph = null;
                 }
 
-                GlyphInstance[] glyphs = spanStyle.GetGlyphLayers(codePoint.Value, options.ColorFontSupport);
+                GlyphMetrics[] glyphs = spanStyle.GetGlyphLayers(codePoint, options.ColorFontSupport);
                 if (glyphs.Length == 0)
                 {
-                    return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint.Value);
+                    // TODO: SHould we try to return the replacement glyph first?
+                    return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint);
                 }
 
-                GlyphInstance? glyph = glyphs[0];
+                GlyphMetrics? glyph = glyphs[0];
                 if (previousGlyph != null && glyph.Font != previousGlyph.Font)
                 {
                     scale = glyph.Font.EmSize * 72;
@@ -196,7 +197,7 @@ namespace SixLabors.Fonts
                         location.X = glyphLocation.X;
                     }
 
-                    foreach (GlyphInstance? g in glyphs)
+                    foreach (GlyphMetrics? g in glyphs)
                     {
                         float w = g.AdvanceWidth * spanStyle.PointSize / scale;
                         float h = g.Height * spanStyle.PointSize / scale;
