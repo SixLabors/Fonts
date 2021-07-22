@@ -10,7 +10,18 @@ namespace SixLabors.Fonts.Tables.General
     {
         private const string TableName = "hhea";
 
-        public HorizontalHeadTable(short ascender, short descender, short lineGap, ushort advanceWidthMax, short minLeftSideBearing, short minRightSideBearing, short xMaxExtent, short caretSlopeRise, short caretSlopeRun, short caretOffset, ushort numberOfHMetrics)
+        public HorizontalHeadTable(
+            short ascender,
+            short descender,
+            short lineGap,
+            ushort advanceWidthMax,
+            short minLeftSideBearing,
+            short minRightSideBearing,
+            short xMaxExtent,
+            short caretSlopeRise,
+            short caretSlopeRun,
+            short caretOffset,
+            ushort numberOfHMetrics)
         {
             this.Ascender = ascender;
             this.Descender = descender;

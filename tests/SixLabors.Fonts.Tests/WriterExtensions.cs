@@ -447,6 +447,75 @@ namespace SixLabors.Fonts.Tests
             writer.WriteInt16(0);
         }
 
+        public static void WriteVerticalHeadTable(this BigEndianBinaryWriter writer, VerticalHeadTable table)
+        {
+            // Type      | Name                 | Description
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // fixed32   | version              | Version number of the Vertical Header Table (0x00011000 for the current version).
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | vertTypoAscender     | The vertical typographic ascender for this font. It is the distance in FUnits from the vertical center
+            //           |                      | baseline to the right of the design space. This will usually be set to half the horizontal advance of
+            //           |                      | full-width glyphs. For example, if the full width is 1000 FUnits, this field will be set to 500.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | vertTypoDescender    | The vertical typographic descender for this font. It is the distance in FUnits from the vertical center
+            //           |                      | baseline to the left of the design space. This will usually be set to half the horizontal advance of
+            //           |                      | full-width glyphs. For example, if the full width is 1000 FUnits, this field will be set to -500.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | vertTypoLineGap      | The vertical typographic line gap for this font.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | advanceHeightMax     | The maximum advance height measurement in FUnits found in the font.
+            //                                  | This value must be consistent with the entries in the vertical metrics table.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | minTopSideBearing    | The minimum top side bearing measurement in FUnits found in the font, in FUnits.
+            // ----------|----------------------| This value must be consistent with the entries in the vertical metrics table.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | minBottomSideBearing | The minimum bottom side bearing measurement in FUnits found in the font, in FUnits.
+            // ----------|----------------------| This value must be consistent with the entries in the vertical metrics table.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | yMaxExtent           | This is defined as the value of the minTopSideBearing field added to the result of the value of the
+            //           |                      |  yMin field subtracted from the value of the yMax field.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | caretSlopeRise       | The value of the caretSlopeRise field divided by the value of the caretSlopeRun field determines the
+            //           |                      | slope of the caret.
+            //           |                      | A value of 0 for the rise and a value of 1 for the run specifies a horizontal caret.
+            //           |                      | A value of 1 for the rise and a value of 0 for the run specifies a vertical caret.
+            //           |                      | A value between 0 for the rise and 1 for the run is desirable for fonts whose glyphs are oblique or
+            //           |                      | italic. For a vertical font, a horizontal caret is best.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | caretSlopeRun        | See the caretSlopeRise field. Value = 0 for non-slanted fonts.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | caretOffset          | The amount by which the highlight on a slanted glyph needs to be shifted away from the glyph in
+            //           |                      | order to produce the best appearance. Set value equal to 0 for non-slanted fonts.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | reserved             | Set to 0.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | reserved             | Set to 0.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | reserved             | Set to 0.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | metricDataFormat     | Set to 0.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // uint16    | numOfLongVerMetrics  | Number of advance heights in the Vertical Metrics table.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            writer.WriteUInt16(1);
+            writer.WriteUInt16(1);
+            writer.WriteInt16(table.Ascender);
+            writer.WriteInt16(table.Descender);
+            writer.WriteInt16(table.LineGap);
+            writer.WriteInt16(table.AdvanceHeightMax);
+            writer.WriteInt16(table.MinTopSideBearing);
+            writer.WriteInt16(table.MinBottomSideBearing);
+            writer.WriteInt16(table.YMaxExtent);
+            writer.WriteInt16(table.CaretSlopeRise);
+            writer.WriteInt16(table.CaretSlopeRun);
+            writer.WriteInt16(table.CaretOffset);
+            writer.WriteInt16(0); // reserved
+            writer.WriteInt16(0); // reserved
+            writer.WriteInt16(0); // reserved
+            writer.WriteInt16(0); // metricDataFormat should be 0
+            writer.WriteUInt16(table.NumberOfVMetrics);
+        }
+
         public static void WriteColrTable(this BigEndianBinaryWriter writer, ColrGlyphRecord[] data)
         {
             var formatted = data.ToList();
