@@ -12,9 +12,9 @@ namespace SixLabors.Fonts
     {
         private readonly float pointSize;
 
-        internal Glyph(GlyphMetrics instance, float pointSize)
+        internal Glyph(GlyphMetrics glyphMetrics, float pointSize)
         {
-            this.Metrics = instance;
+            this.Metrics = glyphMetrics;
             this.pointSize = pointSize;
         }
 

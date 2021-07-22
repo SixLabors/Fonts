@@ -40,11 +40,8 @@ namespace SixLabors.Fonts
             this.AdvanceHeight = advanceHeight;
             this.Index = index;
 
-            // TODO: FreeType lists the following calculations as the following?
-            // this.Width = this.Bounds.Max.X - this.Bounds.Min.X;
-            // this.Height = this.Bounds.Max.Y - this.Bounds.Min.Y;
-            this.Width = this.UnitsPerEm - this.Bounds.Min.X;
-            this.Height = this.UnitsPerEm - this.Bounds.Min.Y;
+            this.Width = this.Bounds.Max.X - this.Bounds.Min.X;
+            this.Height = this.Bounds.Max.Y - this.Bounds.Min.Y;
             this.GlyphType = glyphType;
             this.LeftSideBearing = leftSideBearing;
             this.TopSideBearing = topSideBearing;

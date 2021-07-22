@@ -117,7 +117,7 @@ namespace SixLabors.Fonts
         public IFontMetrics FontMetrics => this.metrics.Value ?? throw new FontException("Font instance not found.");
 
         /// <summary>
-        /// Gets the requested size.
+        /// Gets the requested style.
         /// </summary>
         internal FontStyle RequestedStyle { get; }
 
