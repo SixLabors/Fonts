@@ -24,6 +24,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                   GenerateOS2Table(),
                   GenerateHorizontalHeadTable(),
                   GenerateHorizontalMetricsTable(glyphs),
+                  GenerateVerticalMetricsTable(glyphs),
                   GenerateHeadTable(),
                   new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]),
                   null,
@@ -38,9 +39,10 @@ namespace SixLabors.Fonts.Tests.Fakes
             OS2Table os2,
             HorizontalHeadTable horizontalHeadTable,
             HorizontalMetricsTable horizontalMetrics,
+            VerticalMetricsTable verticalMetrics,
             HeadTable head,
             KerningTable kern)
-            : base(nameTable, cmap, glyphs, os2, horizontalHeadTable, horizontalMetrics, head, kern, null, null)
+            : base(nameTable, cmap, glyphs, os2, horizontalHeadTable, horizontalMetrics, verticalMetrics, head, kern, null, null)
         {
         }
 
@@ -58,6 +60,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                 GenerateOS2TableWithVaryingVerticalFontMetrics(),
                 GenerateHorizontalHeadTable(),
                 GenerateHorizontalMetricsTable(glyphs),
+                GenerateVerticalMetricsTable(glyphs),
                 GenerateHeadTable(),
                 new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]));
         }
@@ -97,6 +100,9 @@ namespace SixLabors.Fonts.Tests.Fakes
 
         private static HorizontalMetricsTable GenerateHorizontalMetricsTable(List<FakeGlyphSource> glyphs)
             => new HorizontalMetricsTable(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
+
+        private static VerticalMetricsTable GenerateVerticalMetricsTable(List<FakeGlyphSource> glyphs)
+            => new VerticalMetricsTable(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
 
         private static HeadTable GenerateHeadTable()
             => new HeadTable(

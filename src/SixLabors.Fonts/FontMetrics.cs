@@ -23,6 +23,7 @@ namespace SixLabors.Fonts
         private readonly HeadTable head;
         private readonly OS2Table os2;
         private readonly HorizontalMetricsTable horizontalMetrics;
+        private readonly VerticalMetricsTable? verticalMetricsTable;
         private readonly GlyphMetrics[] glyphCache;
         private readonly GlyphMetrics[][]? colorGlyphCache;
         private readonly KerningTable kerning;
@@ -38,6 +39,7 @@ namespace SixLabors.Fonts
         /// <param name="os2">The os2 table.</param>
         /// <param name="horizontalHeadTable">The horizontal head table.</param>
         /// <param name="horizontalMetrics">The horizontal metrics table.</param>
+        /// <param name="verticalMetrics">The vertical metrics table.</param>
         /// <param name="head">The head table.</param>
         /// <param name="kern">The kerning table.</param>
         /// <param name="colrTable">The COLR table</param>
@@ -49,6 +51,7 @@ namespace SixLabors.Fonts
             OS2Table os2,
             HorizontalHeadTable horizontalHeadTable,
             HorizontalMetricsTable horizontalMetrics,
+            VerticalMetricsTable? verticalMetrics,
             HeadTable head,
             KerningTable kern,
             ColrTable? colrTable,
@@ -58,6 +61,7 @@ namespace SixLabors.Fonts
             this.os2 = os2;
             this.glyphs = glyphs;
             this.horizontalMetrics = horizontalMetrics;
+            this.verticalMetricsTable = verticalMetrics;
             this.head = head;
             this.glyphCache = new GlyphMetrics[this.glyphs.GlyphCount];
             if (!(colrTable is null))
@@ -81,12 +85,14 @@ namespace SixLabors.Fonts
                 this.Ascender = os2.TypoAscender;
                 this.Descender = os2.TypoDescender;
                 this.LineGap = os2.TypoLineGap;
+                this.LineHeight = this.Ascender - this.Descender + this.LineGap;
             }
             else
             {
                 this.Ascender = horizontalHeadTable.Ascender;
                 this.Descender = horizontalHeadTable.Descender;
                 this.LineGap = horizontalHeadTable.LineGap;
+                this.LineHeight = this.Ascender - this.Descender + this.LineGap;
             }
 
             if (this.Ascender == 0 || this.Descender == 0)
@@ -95,17 +101,17 @@ namespace SixLabors.Fonts
                 {
                     this.Ascender = os2.TypoAscender;
                     this.Descender = os2.TypoDescender;
+                    this.LineGap = os2.TypoLineGap;
+                    this.LineHeight = this.Ascender - this.Descender + this.LineGap;
                 }
                 else
                 {
                     this.Ascender = (short)os2.WinAscent;
-                    this.Descender = (short)os2.WinAscent;
+                    this.Descender = (short)-os2.WinDescent;
+                    this.LineHeight = this.Ascender - this.Descender;
                 }
-
-                this.LineGap = os2.TypoLineGap;
             }
 
-            this.LineHeight = this.Ascender - this.Descender + this.LineGap;
             this.UnitsPerEm = this.head.UnitsPerEm;
             this.kerning = kern;
             this.colrTable = colrTable;
@@ -213,6 +219,15 @@ namespace SixLabors.Fonts
             // hdmx - Horizontal device metrics
             HorizontalMetricsTable horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
 
+            VerticalHeadTable? vhea = reader.TryGetTable<VerticalHeadTable>();
+
+            // Vertical metrics are optional. Supported by AAF fonts.
+            VerticalMetricsTable? verticalMetrics = null;
+            if (vhea != null)
+            {
+                verticalMetrics = reader.GetTable<VerticalMetricsTable>();
+            }
+
             CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
 
             // fpgm - Font Program
@@ -245,6 +260,7 @@ namespace SixLabors.Fonts
                 os2,
                 hhea,
                 horizontalMetrics,
+                verticalMetrics,
                 head,
                 kern,
                 colrTable,
@@ -258,10 +274,8 @@ namespace SixLabors.Fonts
         /// <returns>a <see cref="FontMetrics"/>.</returns>
         public static FontMetrics[] LoadFontCollection(string path)
         {
-            using (FileStream fs = File.OpenRead(path))
-            {
-                return LoadFontCollection(fs);
-            }
+            using FileStream fs = File.OpenRead(path);
+            return LoadFontCollection(fs);
         }
 
         /// <summary>
@@ -322,6 +336,15 @@ namespace SixLabors.Fonts
         {
             ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
             short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
+
+            ushort advancedHeight = 0;
+            short tsb = 0;
+            if (this.verticalMetricsTable != null)
+            {
+                advancedHeight = this.verticalMetricsTable.GetAdvancedHeight(idx);
+                tsb = this.verticalMetricsTable.GetTopSideBearing(idx);
+            }
+
             GlyphVector vector = this.glyphs.GetGlyph(idx);
             GlyphColor? color = null;
             if (glyphType == GlyphType.ColrLayer)
@@ -333,7 +356,18 @@ namespace SixLabors.Fonts
                 }
             }
 
-            return new GlyphMetrics(this, codePoint, vector, advanceWidth, lsb, this.UnitsPerEm, idx, glyphType, color);
+            return new GlyphMetrics(
+                this,
+                codePoint,
+                vector,
+                advanceWidth,
+                advancedHeight,
+                lsb,
+                tsb,
+                this.UnitsPerEm,
+                idx,
+                glyphType,
+                color);
         }
     }
 }

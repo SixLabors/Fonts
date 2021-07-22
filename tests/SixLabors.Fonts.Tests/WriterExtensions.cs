@@ -493,6 +493,8 @@ namespace SixLabors.Fonts.Tests
             // ----------|----------------------|----------------------------------------------------------------------------------------------------
             // int16     | reserved             | Set to 0.
             // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | reserved             | Set to 0.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
             // int16     | metricDataFormat     | Set to 0.
             // ----------|----------------------|----------------------------------------------------------------------------------------------------
             // uint16    | numOfLongVerMetrics  | Number of advance heights in the Vertical Metrics table.
@@ -509,6 +511,7 @@ namespace SixLabors.Fonts.Tests
             writer.WriteInt16(table.CaretSlopeRise);
             writer.WriteInt16(table.CaretSlopeRun);
             writer.WriteInt16(table.CaretOffset);
+            writer.WriteInt16(0); // reserved
             writer.WriteInt16(0); // reserved
             writer.WriteInt16(0); // reserved
             writer.WriteInt16(0); // reserved

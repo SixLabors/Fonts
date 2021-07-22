@@ -6,7 +6,7 @@ using SixLabors.Fonts.Exceptions;
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
-    internal class VerticalHeadTable : Table
+    internal sealed class VerticalHeadTable : Table
     {
         private const string TableName = "vhea";
 
@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.General
             short caretSlopeRise,
             short caretSlopeRun,
             short caretOffset,
-            ushort numberOfYMetrics)
+            ushort numberOfVMetrics)
         {
             this.Ascender = ascender;
             this.Descender = descender;
@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tables.General
             this.CaretSlopeRise = caretSlopeRise;
             this.CaretSlopeRun = caretSlopeRun;
             this.CaretOffset = caretOffset;
-            this.NumberOfVMetrics = numberOfYMetrics;
+            this.NumberOfVMetrics = numberOfVMetrics;
         }
 
         public short Ascender { get; }
@@ -115,6 +115,8 @@ namespace SixLabors.Fonts.Tables.General
             // ----------|----------------------|----------------------------------------------------------------------------------------------------
             // int16     | reserved             | Set to 0.
             // ----------|----------------------|----------------------------------------------------------------------------------------------------
+            // int16     | reserved             | Set to 0.
+            // ----------|----------------------|----------------------------------------------------------------------------------------------------
             // int16     | metricDataFormat     | Set to 0.
             // ----------|----------------------|----------------------------------------------------------------------------------------------------
             // uint16    | numOfLongVerMetrics  | Number of advance heights in the Vertical Metrics table.
@@ -131,6 +133,7 @@ namespace SixLabors.Fonts.Tables.General
             short caretSlopeRise = reader.ReadInt16();
             short caretSlopeRun = reader.ReadInt16();
             short caretOffset = reader.ReadInt16();
+            reader.ReadInt16(); // reserved
             reader.ReadInt16(); // reserved
             reader.ReadInt16(); // reserved
             reader.ReadInt16(); // reserved

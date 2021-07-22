@@ -110,7 +110,7 @@ namespace SixLabors.Fonts.Tables.General
             short metricDataFormat = reader.ReadInt16(); // 0
             if (metricDataFormat != 0)
             {
-                throw new InvalidFontTableException($"Expected metricDataFormat = 0 found {metricDataFormat}", "hhea");
+                throw new InvalidFontTableException($"Expected metricDataFormat = 0 found {metricDataFormat}", TableName);
             }
 
             ushort numberOfHMetrics = reader.ReadUInt16();

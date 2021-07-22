@@ -199,6 +199,7 @@ namespace SixLabors.Fonts
 
                     foreach (GlyphMetrics? g in glyphs)
                     {
+                        // TODO: We now have Advance(Width/Height).
                         float w = g.AdvanceWidth * spanStyle.PointSize / scale;
                         float h = g.Height * spanStyle.PointSize / scale;
                         layout.Add(new GlyphLayout(graphemeIndex, codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine));

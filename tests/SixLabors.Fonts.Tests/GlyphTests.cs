@@ -30,6 +30,8 @@ namespace SixLabors.Fonts.Tests
                 new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1)),
                 0,
                 0,
+                0,
+                0,
                 1,
                 0),
                 10);

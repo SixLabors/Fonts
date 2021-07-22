@@ -23,7 +23,9 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             GlyphVector vector,
             ushort advanceWidth,
+            ushort advanceHeight,
             short leftSideBearing,
+            short topSideBearing,
             ushort unitsPerEM,
             ushort index,
             GlyphType glyphType = GlyphType.Standard,
@@ -35,10 +37,17 @@ namespace SixLabors.Fonts
             this.vector = vector;
 
             this.AdvanceWidth = advanceWidth;
+            this.AdvanceHeight = advanceHeight;
             this.Index = index;
-            this.Height = unitsPerEM - this.Bounds.Min.Y;
+
+            // TODO: FreeType lists the following calculations as the following?
+            // this.Width = this.Bounds.Max.X - this.Bounds.Min.X;
+            // this.Height = this.Bounds.Max.Y - this.Bounds.Min.Y;
+            this.Width = this.UnitsPerEm - this.Bounds.Min.X;
+            this.Height = this.UnitsPerEm - this.Bounds.Min.Y;
             this.GlyphType = glyphType;
             this.LeftSideBearing = leftSideBearing;
+            this.TopSideBearing = topSideBearing;
             this.ScaleFactor = this.UnitsPerEm * 72F;
             this.GlyphColor = glyphColor;
         }
@@ -59,9 +68,24 @@ namespace SixLabors.Fonts
         public ushort AdvanceWidth { get; }
 
         /// <summary>
+        /// Gets the advance height for vertical layout.
+        /// </summary>
+        public ushort AdvanceHeight { get; }
+
+        /// <summary>
         /// Gets the left side bearing for horizontal layout.
         /// </summary>
         public short LeftSideBearing { get; }
+
+        /// <summary>
+        /// Gets the top side bearing for vertical layout.
+        /// </summary>
+        public short TopSideBearing { get; }
+
+        /// <summary>
+        /// Gets the width, expressed in font units.
+        /// </summary>
+        public float Width { get; }
 
         /// <summary>
         /// Gets the height, expressed in font units.
