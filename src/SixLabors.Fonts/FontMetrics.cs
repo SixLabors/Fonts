@@ -115,6 +115,9 @@ namespace SixLabors.Fonts
             }
 
             this.UnitsPerEm = this.head.UnitsPerEm;
+
+            // 72 * UnitsPerEm means 1pt = 1px
+            this.ScaleFactor = this.UnitsPerEm * 72F;
             this.AdvanceWidthMax = (short)horizontalHeadTable.AdvanceWidthMax;
             this.AdvanceHeightMax = verticalHeadTable == null ? this.LineHeight : verticalHeadTable.AdvanceHeightMax;
 
@@ -131,22 +134,25 @@ namespace SixLabors.Fonts
         public ushort UnitsPerEm { get; }
 
         /// <inheritdoc/>
+        public float ScaleFactor { get; }
+
+        /// <inheritdoc/>
         public short Ascender { get; }
 
         /// <inheritdoc/>
         public short Descender { get; }
 
         /// <inheritdoc/>
-        public short AdvanceWidthMax { get; }
-
-        /// <inheritdoc/>
-        public short AdvanceHeightMax { get; }
-
-        /// <inheritdoc/>
         public short LineGap { get; }
 
         /// <inheritdoc/>
         public short LineHeight { get; }
+
+        /// <inheritdoc/>
+        public short AdvanceWidthMax { get; }
+
+        /// <inheritdoc/>
+        public short AdvanceHeightMax { get; }
 
         /// <inheritdoc/>
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
@@ -344,7 +350,11 @@ namespace SixLabors.Fonts
             return vectors.Length > 0;
         }
 
-        private GlyphMetrics CreateGlyphMetrics(CodePoint codePoint, ushort idx, GlyphType glyphType, ushort palleteIndex = 0)
+        private GlyphMetrics CreateGlyphMetrics(
+            CodePoint codePoint,
+            ushort idx,
+            GlyphType glyphType,
+            ushort palleteIndex = 0)
         {
             ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
             short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);

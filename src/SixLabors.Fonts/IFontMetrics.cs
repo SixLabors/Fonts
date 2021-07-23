@@ -22,6 +22,12 @@ namespace SixLabors.Fonts
         ushort UnitsPerEm { get; }
 
         /// <summary>
+        /// Gets the scale factor that is applied to all glyphs in this face.
+        /// Calculated as 72 * <see cref="UnitsPerEm"/> so that 1pt = 1px.
+        /// </summary>
+        float ScaleFactor { get; }
+
+        /// <summary>
         /// Gets the typographic ascender of the face, expressed in font units.
         /// </summary>
         short Ascender { get; }
@@ -30,18 +36,6 @@ namespace SixLabors.Fonts
         /// Gets the typographic descender of the face, expressed in font units.
         /// </summary>
         short Descender { get; }
-
-        /// <summary>
-        /// Gets the maximum advance width, in font units, for all glyphs in this face.
-        /// </summary>
-        short AdvanceWidthMax { get; }
-
-        /// <summary>
-        /// Gets the maximum advance height, in font units, for all glyphs in this
-        /// face.This is only relevant for vertical layouts, and is set to <see cref="LineHeight"/> for
-        /// fonts that do not provide vertical metrics.
-        /// </summary>
-        short AdvanceHeightMax { get; }
 
         /// <summary>
         /// Gets the typographic line gap of the face, expressed in font units.
@@ -54,6 +48,18 @@ namespace SixLabors.Fonts
         /// Gets the typographic line spacing of the face, expressed in font units.
         /// </summary>
         short LineHeight { get; }
+
+        /// <summary>
+        /// Gets the maximum advance width, in font units, for all glyphs in this face.
+        /// </summary>
+        short AdvanceWidthMax { get; }
+
+        /// <summary>
+        /// Gets the maximum advance height, in font units, for all glyphs in this
+        /// face.This is only relevant for vertical layouts, and is set to <see cref="LineHeight"/> for
+        /// fonts that do not provide vertical metrics.
+        /// </summary>
+        short AdvanceHeightMax { get; }
 
         /// <summary>
         /// Gets the glyph metrics for a given code point.

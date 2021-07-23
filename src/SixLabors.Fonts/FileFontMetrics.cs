@@ -49,22 +49,25 @@ namespace SixLabors.Fonts
         public ushort UnitsPerEm => this.metrics.Value.UnitsPerEm;
 
         /// <inheritdoc />
+        public float ScaleFactor => this.metrics.Value.ScaleFactor;
+
+        /// <inheritdoc />
         public short Ascender => this.metrics.Value.Ascender;
 
         /// <inheritdoc />
         public short Descender => this.metrics.Value.Descender;
-
-        /// <inheritdoc/>
-        public short AdvanceWidthMax => this.metrics.Value.AdvanceWidthMax;
-
-        /// <inheritdoc/>
-        public short AdvanceHeightMax => this.metrics.Value.AdvanceHeightMax;
 
         /// <inheritdoc />
         public short LineGap => this.metrics.Value.LineGap;
 
         /// <inheritdoc />
         public short LineHeight => this.metrics.Value.LineHeight;
+
+        /// <inheritdoc/>
+        public short AdvanceWidthMax => this.metrics.Value.AdvanceWidthMax;
+
+        /// <inheritdoc/>
+        public short AdvanceHeightMax => this.metrics.Value.AdvanceHeightMax;
 
         /// <inheritdoc />
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)

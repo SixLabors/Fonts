@@ -101,6 +101,9 @@ namespace SixLabors.Fonts
         /// <inheritdoc cref="IFontMetrics.UnitsPerEm"/>
         public ushort UnitsPerEm { get; }
 
+        /// <inheritdoc cref="IFontMetrics.ScaleFactor"/>
+        public float ScaleFactor { get; }
+
         /// <summary>
         /// Gets the points defining the shape of this glyph
         /// </summary>
@@ -115,11 +118,6 @@ namespace SixLabors.Fonts
         /// Gets the end points
         /// </summary>
         public ushort[] EndPoints => this.vector.EndPoints;
-
-        /// <summary>
-        /// Gets the scale factor that is applied to the glyph.
-        /// </summary>
-        public float ScaleFactor { get; }
 
         /// <summary>
         /// Gets the bounds.

@@ -76,17 +76,13 @@ namespace SixLabors.Fonts.Tests
             string text = "hello world\nhello";
             Font font = CreateFont(text);
 
-            int scaleFactor = 72 * font.UnitsPerEm; // 72 * emSize means 1 point = 1px
-            var span = new RendererOptions(font, scaleFactor)
+            var span = new RendererOptions(font, font.FontMetrics.ScaleFactor)
             {
                 HorizontalAlignment = horizental,
                 VerticalAlignment = vertical
             };
 
             IReadOnlyList<GlyphLayout> glyphsToRender = new TextLayout().GenerateLayout(text.AsSpan(), span);
-            IFontMetrics fontInst = span.Font.FontMetrics;
-            float lineHeight = fontInst.LineHeight * span.Font.Size / (fontInst.UnitsPerEm * 72);
-            lineHeight *= scaleFactor;
             FontRectangle bound = TextMeasurer.GetBounds(glyphsToRender, new Vector2(span.DpiX, span.DpiY));
 
             Assert.Equal(310, bound.Width, 3);
@@ -109,9 +105,8 @@ namespace SixLabors.Fonts.Tests
                 'o'
             };
 
-            int scaleFactor = 72 * font.UnitsPerEm; // 72 * emSize means 1 point = 1px
-
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, 72 * font.UnitsPerEm));
+            // 72 * emSize means 1pt = 1px
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor));
 
             Assert.Equal(10, size.Height, 4);
             Assert.Equal(130, size.Width, 4);
@@ -128,9 +123,7 @@ namespace SixLabors.Fonts.Tests
         public void MeasureText(string text, float height, float width)
         {
             Font font = CreateFont(text);
-
-            int scaleFactor = 72 * font.UnitsPerEm; // 72 * emSize means 1 point = 1px
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, scaleFactor));
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor));
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
@@ -150,8 +143,10 @@ namespace SixLabors.Fonts.Tests
             };
             Font font = CreateFont(text);
 
-            int scaleFactor = 72 * font.UnitsPerEm; // 72 * emSize means 1 point = 1px
-            Assert.True(TextMeasurer.TryMeasureCharacterBounds(text.AsSpan(), new RendererOptions(font, scaleFactor), out GlyphBounds[] glyphMetrics));
+            Assert.True(TextMeasurer.TryMeasureCharacterBounds(
+                text.AsSpan(),
+                new RendererOptions(font, font.FontMetrics.ScaleFactor),
+                out GlyphBounds[] glyphMetrics));
 
             Assert.Equal(text.Length, glyphMetrics.Length);
             for (int i = 0; i < glyphMetrics.Length; i++)
@@ -181,9 +176,7 @@ namespace SixLabors.Fonts.Tests
         public void MeasureTextWordWrapping(string text, float height, float width)
         {
             Font font = CreateFont(text);
-
-            int scaleFactor = 72 * font.UnitsPerEm; // 72 * emSize means 1 point = 1px
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, 72 * font.UnitsPerEm)
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
             {
                 WrappingWidth = 350
             });
@@ -201,9 +194,9 @@ namespace SixLabors.Fonts.Tests
         {
             var c = new FontCollection();
             Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
-
-            int scaleFactor = 72 * font.UnitsPerEm; // 72 * emSize means 1 point = 1px
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(new Font(font, 1), 72 * font.UnitsPerEm) { ApplyKerning = enableKerning });
+            FontRectangle size = TextMeasurer.MeasureBounds(
+                text,
+                new RendererOptions(new Font(font, 1), font.FontMetrics.ScaleFactor) { ApplyKerning = enableKerning });
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
@@ -216,10 +209,11 @@ namespace SixLabors.Fonts.Tests
             var c = new FontCollection();
             Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
 
-            int scaleFactor = 72 * font.UnitsPerEm; // 72 * emSize means 1 point = 1px
             var glyphRenderer = new GlyphRenderer();
             var renderer = new TextRenderer(glyphRenderer);
-            renderer.RenderText(text, new RendererOptions(new Font(font, 1), scaleFactor, new Vector2(x, y)));
+            renderer.RenderText(
+                text,
+                new RendererOptions(new Font(font, 1), font.FontMetrics.ScaleFactor, new Vector2(x, y)));
 
             Assert.Equal(expectedX, glyphRenderer.GlyphRects[0].Location.X, 2);
             Assert.Equal(expectedY, glyphRenderer.GlyphRects[0].Location.Y, 2);

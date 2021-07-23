@@ -86,35 +86,20 @@ namespace SixLabors.Fonts
         /// </summary>
         public float Size { get; }
 
-        /// <inheritdoc cref="IFontMetrics.UnitsPerEm"/>
-        public ushort UnitsPerEm => this.FontMetrics.UnitsPerEm;
-
-        /// <inheritdoc cref="IFontMetrics.Ascender"/>
-        public short Ascender => this.FontMetrics.Ascender;
-
-        /// <inheritdoc cref="IFontMetrics.Descender"/>
-        public short Descender => this.FontMetrics.Descender;
-
-        /// <inheritdoc cref="IFontMetrics.LineGap"/>
-        public short LineGap => this.FontMetrics.LineGap;
-
-        /// <inheritdoc cref="IFontMetrics.LineHeight"/>
-        public int LineHeight => this.FontMetrics.LineHeight;
-
-        /// <summary>
-        /// Gets a value indicating whether this <see cref="Font"/> is bold.
-        /// </summary>
-        public bool Bold => (this.FontMetrics.Description.Style & FontStyle.Bold) == FontStyle.Bold;
-
-        /// <summary>
-        /// Gets a value indicating whether this <see cref="Font"/> is italic.
-        /// </summary>
-        public bool Italic => (this.FontMetrics.Description.Style & FontStyle.Italic) == FontStyle.Italic;
-
         /// <summary>
         /// Gets the font metrics.
         /// </summary>
         public IFontMetrics FontMetrics => this.metrics.Value ?? throw new FontException("Font instance not found.");
+
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="Font"/> is bold.
+        /// </summary>
+        public bool IsBold => (this.FontMetrics.Description.Style & FontStyle.Bold) == FontStyle.Bold;
+
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="Font"/> is italic.
+        /// </summary>
+        public bool IsItalic => (this.FontMetrics.Description.Style & FontStyle.Italic) == FontStyle.Italic;
 
         /// <summary>
         /// Gets the requested style.
