@@ -108,7 +108,7 @@ namespace SixLabors.Fonts
         public Vector2[] ControlPoints => this.vector.ControlPoints;
 
         /// <summary>
-        /// Gets wether or not the corresponding control point is on a curve
+        /// Gets at value indicating whether the corresponding <see cref="ControlPoints"/> item is on a curve.
         /// </summary>
         public bool[] OnCurves => this.vector.OnCurves;
 
