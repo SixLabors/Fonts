@@ -349,7 +349,8 @@ namespace SixLabors.Fonts
             ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
             short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
 
-            ushort advancedHeight = 0;
+            // Provide a default for the advance height. This is overwritten for vertical fonts.
+            ushort advancedHeight = (ushort)(this.Ascender - this.Descender);
             short tsb = 0;
             if (this.verticalMetricsTable != null)
             {

@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter A
             Glyph g = font.GetGlyph(new CodePoint(41));
-            GlyphMetrics instance = g.Metrics;
+            GlyphMetrics instance = g.GlyphMetrics;
 
             Assert.Equal(20, instance.ControlPoints.Length);
             Assert.Equal(20, instance.OnCurves.Length);

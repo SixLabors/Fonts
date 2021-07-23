@@ -59,22 +59,22 @@ namespace SixLabors.Fonts
         public CodePoint Codepoint { get; }
 
         /// <summary>
-        /// Gets the advance width for horizontal layout.
+        /// Gets the advance width for horizontal layout, expressed in font units.
         /// </summary>
         public ushort AdvanceWidth { get; }
 
         /// <summary>
-        /// Gets the advance height for vertical layout.
+        /// Gets the advance height for vertical layout, expressed in font units.
         /// </summary>
         public ushort AdvanceHeight { get; }
 
         /// <summary>
-        /// Gets the left side bearing for horizontal layout.
+        /// Gets the left side bearing for horizontal layout, expressed in font units.
         /// </summary>
         public short LeftSideBearing { get; }
 
         /// <summary>
-        /// Gets the top side bearing for vertical layout.
+        /// Gets the top side bearing for vertical layout, expressed in font units.
         /// </summary>
         public short TopSideBearing { get; }
 
@@ -89,7 +89,7 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets the type of glyph.
+        /// Gets the glyph type.
         /// </summary>
         public GlyphType GlyphType { get; }
 

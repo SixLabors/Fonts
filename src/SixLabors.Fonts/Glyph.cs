@@ -14,14 +14,14 @@ namespace SixLabors.Fonts
 
         internal Glyph(GlyphMetrics glyphMetrics, float pointSize)
         {
-            this.Metrics = glyphMetrics;
+            this.GlyphMetrics = glyphMetrics;
             this.pointSize = pointSize;
         }
 
         /// <summary>
         /// Gets the glyph metrics.
         /// </summary>
-        public GlyphMetrics Metrics { get; }
+        public GlyphMetrics GlyphMetrics { get; }
 
         /// <summary>
         /// Calculates the bounding box
@@ -30,7 +30,7 @@ namespace SixLabors.Fonts
         /// <param name="dpi">The dpi scale the bounds in relation to.</param>
         /// <returns>The bounding box</returns>
         public FontRectangle BoundingBox(Vector2 location, Vector2 dpi)
-            => this.Metrics.BoundingBox(location, this.pointSize * dpi);
+            => this.GlyphMetrics.BoundingBox(location, this.pointSize * dpi);
 
         /// <summary>
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
@@ -52,6 +52,6 @@ namespace SixLabors.Fonts
         /// <param name="lineHeight">The line height.</param>
         /// <exception cref="System.NotSupportedException">Too many control points</exception>
         internal void RenderTo(IGlyphRenderer surface, Vector2 location, float dpiX, float dpiY, float lineHeight)
-            => this.Metrics.RenderTo(surface, this.pointSize, location, new Vector2(dpiX, dpiY), lineHeight);
+            => this.GlyphMetrics.RenderTo(surface, this.pointSize, location, new Vector2(dpiX, dpiY), lineHeight);
     }
 }
