@@ -52,7 +52,7 @@ namespace SixLabors.Fonts
             OS2Table os2,
             HorizontalHeadTable horizontalHeadTable,
             HorizontalMetricsTable horizontalMetrics,
-            VerticalHeadTable verticalHeadTable,
+            VerticalHeadTable? verticalHeadTable,
             VerticalMetricsTable? verticalMetrics,
             HeadTable head,
             KerningTable kern,
