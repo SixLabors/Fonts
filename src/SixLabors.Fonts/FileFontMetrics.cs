@@ -54,11 +54,17 @@ namespace SixLabors.Fonts
         /// <inheritdoc />
         public short Descender => this.metrics.Value.Descender;
 
+        /// <inheritdoc/>
+        public short AdvanceWidthMax => this.metrics.Value.AdvanceWidthMax;
+
+        /// <inheritdoc/>
+        public short AdvanceHeightMax => this.metrics.Value.AdvanceHeightMax;
+
         /// <inheritdoc />
         public short LineGap => this.metrics.Value.LineGap;
 
         /// <inheritdoc />
-        public int LineHeight => this.metrics.Value.LineHeight;
+        public short LineHeight => this.metrics.Value.LineHeight;
 
         /// <inheritdoc />
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)

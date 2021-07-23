@@ -39,6 +39,7 @@ namespace SixLabors.Fonts
         /// <param name="os2">The os2 table.</param>
         /// <param name="horizontalHeadTable">The horizontal head table.</param>
         /// <param name="horizontalMetrics">The horizontal metrics table.</param>
+        /// <param name="verticalHeadTable">The vertical head table.</param>
         /// <param name="verticalMetrics">The vertical metrics table.</param>
         /// <param name="head">The head table.</param>
         /// <param name="kern">The kerning table.</param>
@@ -51,6 +52,7 @@ namespace SixLabors.Fonts
             OS2Table os2,
             HorizontalHeadTable horizontalHeadTable,
             HorizontalMetricsTable horizontalMetrics,
+            VerticalHeadTable verticalHeadTable,
             VerticalMetricsTable? verticalMetrics,
             HeadTable head,
             KerningTable kern,
@@ -85,14 +87,14 @@ namespace SixLabors.Fonts
                 this.Ascender = os2.TypoAscender;
                 this.Descender = os2.TypoDescender;
                 this.LineGap = os2.TypoLineGap;
-                this.LineHeight = this.Ascender - this.Descender + this.LineGap;
+                this.LineHeight = (short)(this.Ascender - this.Descender + this.LineGap);
             }
             else
             {
                 this.Ascender = horizontalHeadTable.Ascender;
                 this.Descender = horizontalHeadTable.Descender;
                 this.LineGap = horizontalHeadTable.LineGap;
-                this.LineHeight = this.Ascender - this.Descender + this.LineGap;
+                this.LineHeight = (short)(this.Ascender - this.Descender + this.LineGap);
             }
 
             if (this.Ascender == 0 || this.Descender == 0)
@@ -102,17 +104,20 @@ namespace SixLabors.Fonts
                     this.Ascender = os2.TypoAscender;
                     this.Descender = os2.TypoDescender;
                     this.LineGap = os2.TypoLineGap;
-                    this.LineHeight = this.Ascender - this.Descender + this.LineGap;
+                    this.LineHeight = (short)(this.Ascender - this.Descender + this.LineGap);
                 }
                 else
                 {
                     this.Ascender = (short)os2.WinAscent;
                     this.Descender = (short)-os2.WinDescent;
-                    this.LineHeight = this.Ascender - this.Descender;
+                    this.LineHeight = (short)(this.Ascender - this.Descender);
                 }
             }
 
             this.UnitsPerEm = this.head.UnitsPerEm;
+            this.AdvanceWidthMax = (short)horizontalHeadTable.AdvanceWidthMax;
+            this.AdvanceHeightMax = verticalHeadTable == null ? this.LineHeight : verticalHeadTable.AdvanceHeightMax;
+
             this.kerning = kern;
             this.colrTable = colrTable;
             this.cpalTable = cpalTable;
@@ -132,10 +137,16 @@ namespace SixLabors.Fonts
         public short Descender { get; }
 
         /// <inheritdoc/>
+        public short AdvanceWidthMax { get; }
+
+        /// <inheritdoc/>
+        public short AdvanceHeightMax { get; }
+
+        /// <inheritdoc/>
         public short LineGap { get; }
 
         /// <inheritdoc/>
-        public int LineHeight { get; }
+        public short LineHeight { get; }
 
         /// <inheritdoc/>
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
@@ -260,6 +271,7 @@ namespace SixLabors.Fonts
                 os2,
                 hhea,
                 horizontalMetrics,
+                vhea,
                 verticalMetrics,
                 head,
                 kern,

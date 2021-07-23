@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Unicode;
 
-// TODO: This should support both horizontal and vertical metrics via vmtx table.
 namespace SixLabors.Fonts
 {
     /// <summary>

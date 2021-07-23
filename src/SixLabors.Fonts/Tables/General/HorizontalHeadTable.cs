@@ -71,26 +71,43 @@ namespace SixLabors.Fonts.Tables.General
 
         public static HorizontalHeadTable Load(BigEndianBinaryReader reader)
         {
-            // Type      | Name                 | Description
-            // ----------|----------------------|----------------------------------------------------------------------------------------------------
-            // uint16    | majorVersion         | Major version number of the horizontal header table — set to 1.
-            // uint16    | minorVersion         | Minor version number of the horizontal header table — set to 0.
-            // FWORD     | Ascender             | Typographic ascent (Distance from baseline of highest ascender).
-            // FWORD     | Descender            | Typographic descent (Distance from baseline of lowest descender).
-            // FWORD     | LineGap              | Typographic line gap. - Negative  LineGap values are treated as zero in Windows 3.1, and in Mac OS System 6 and System 7.
-            // UFWORD    | advanceWidthMax      | Maximum advance width value in 'hmtx' table.
-            // FWORD     | minLeftSideBearing   | Minimum left sidebearing value in 'hmtx' table.
-            // FWORD     | minRightSideBearing  | Minimum right sidebearing value; calculated as Min(aw - lsb - (xMax - xMin)).
-            // FWORD     | xMaxExtent           | Max(lsb + (xMax - xMin)).
-            // int16     | caretSlopeRise       | Used to calculate the slope of the cursor (rise/run); 1 for vertical.
-            // int16     | caretSlopeRun        | 0 for vertical.
-            // int16     | caretOffset          | The amount by which a slanted highlight on a glyph needs to be shifted to produce the best appearance. Set to 0 for non-slanted fonts
-            // int16     | (reserved)           | set to 0
-            // int16     | (reserved)           | set to 0
-            // int16     | (reserved)           | set to 0
-            // int16     | (reserved)           | set to 0
-            // int16     | metricDataFormat     | 0 for current format.
-            // uint16    | numberOfHMetrics     | Number of hMetric entries in 'hmtx' table
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | Type   | Name                | Description                                                                     |
+            // +========+=====================+=================================================================================+
+            // | Fixed  | version             | 0x00010000 (1.0)                                                                |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | FWord  | ascent              | Distance from baseline of highest ascender                                      |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | FWord  | descent             | Distance from baseline of lowest descender                                      |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | FWord  | lineGap             | typographic line gap                                                            |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | uFWord | advanceWidthMax     | must be consistent with horizontal metrics                                      |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | FWord  | minLeftSideBearing  | must be consistent with horizontal metrics                                      |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | FWord  | minRightSideBearing | must be consistent with horizontal metrics                                      |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | FWord  | xMaxExtent          | max(lsb + (xMax-xMin))                                                          |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | int16  | caretSlopeRise      | used to calculate the slope of the caret (rise/run) set to 1 for vertical caret |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | int16  | caretSlopeRun       | 0 for vertical                                                                  |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | FWord  | caretOffset         | set value to 0 for non-slanted fonts                                            |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | int16  | reserved            | set value to 0                                                                  |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | int16  | reserved            | set value to 0                                                                  |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | int16  | reserved            | set value to 0                                                                  |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | int16  | reserved            | set value to 0                                                                  |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | int16  | metricDataFormat    | 0 for current format                                                            |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
+            // | uint16 | numOfLongHorMetrics | number of advance widths in metrics table                                       |
+            // +--------+---------------------+---------------------------------------------------------------------------------+
             ushort majorVersion = reader.ReadUInt16();
             ushort minorVersion = reader.ReadUInt16();
             short ascender = reader.ReadFWORD();
