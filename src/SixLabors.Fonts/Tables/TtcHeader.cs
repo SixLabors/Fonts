@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts.Tables
 {
     /// <summary>
-    /// Represents a font collection header (for .ttc font follections).
+    /// Represents a font collection header (for .ttc font collections).
     /// A font collection contains one or more fonts where typically the glyf table is shared by multiple fonts to save space,
     /// but other tables are not.
     /// Each font in the collection has its own set of tables.

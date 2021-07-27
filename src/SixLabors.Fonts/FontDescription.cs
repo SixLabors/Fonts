@@ -9,7 +9,7 @@ using SixLabors.Fonts.Tables.General;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// provide metadata about a font.
+    /// Provide metadata about a font.
     /// </summary>
     public class FontDescription
     {
@@ -19,8 +19,8 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="FontDescription" /> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
-        /// <param name="os2">The os2.</param>
-        /// <param name="head">The head.</param>
+        /// <param name="os2">The os2 table.</param>
+        /// <param name="head">The head table.</param>
         internal FontDescription(NameTable nameTable, OS2Table? os2, HeadTable? head)
         {
             this.nameTable = nameTable;
@@ -42,40 +42,40 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the name of the font in the invariant culture.
         /// </summary>
-        /// <returns>The font name</returns>
+        /// <returns>The font name.</returns>
         public string FontNameInvariantCulture { get; }
 
         /// <summary>
         /// Gets the name of the font family in the invariant culture.
         /// </summary>
-        /// <returns>The font name</returns>
+        /// <returns>The font name.</returns>
         public string FontFamilyInvariantCulture { get; }
 
         /// <summary>
         /// Gets the font sub family in the invariant culture.
         /// </summary>
-        /// <returns>The font sub family name</returns>
+        /// <returns>The font sub family name.</returns>
         public string FontSubFamilyNameInvariantCulture { get; }
 
         /// <summary>
         /// Gets the name of the font.
         /// </summary>
         /// <param name="culture">The culture to load metadata in.</param>
-        /// <returns>The font name</returns>
+        /// <returns>The font name.</returns>
         public string FontName(CultureInfo culture) => this.nameTable.FontName(culture);
 
         /// <summary>
-        /// Gets the name of the font family .
+        /// Gets the name of the font family.
         /// </summary>
         /// <param name="culture">The culture to load metadata in.</param>
-        /// <returns>The font family name</returns>
+        /// <returns>The font family name.</returns>
         public string FontFamily(CultureInfo culture) => this.nameTable.FontFamilyName(culture);
 
         /// <summary>
         /// Gets the font sub family.
         /// </summary>
         /// <param name="culture">The culture to load metadata in.</param>
-        /// <returns>The font sub family name</returns>
+        /// <returns>The font sub family name.</returns>
         public string FontSubFamilyName(CultureInfo culture) => this.nameTable.FontSubFamilyName(culture);
 
         /// <summary>
@@ -101,8 +101,9 @@ namespace SixLabors.Fonts
         {
             Guard.NotNull(stream, nameof(stream));
 
-            // only read the name table
+            // Only read the name tables.
             var reader = new FontReader(stream);
+
             return LoadDescription(reader);
         }
 

@@ -22,6 +22,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string OpenSansFile => GetFullPath("OpenSans-Regular.ttf");
 
+        public static string OpenSansFileWoff2 => GetFullPath("OpenSans-Regular.woff2");
+
         public static string SimpleFontFile => GetFullPath("SixLaborsSampleAB.ttf");
 
         public static string SimpleFontFileWoff => GetFullPath("SixLaborsSampleAB.woff");
@@ -43,6 +45,8 @@ namespace SixLabors.Fonts.Tests
         public static Stream SimpleFontFileWoffData() => OpenStream(SimpleFontFileWoff);
 
         public static Stream SSimpleTrueTypeCollectionData() => OpenStream(SimpleTrueTypeCollection);
+
+        public static Stream FontFileWoff2Data() => OpenStream(OpenSansFileWoff2);
 
         public static class Issues
         {

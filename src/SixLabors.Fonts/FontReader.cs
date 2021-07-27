@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.IO.Compression;
 using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables;
 
@@ -12,8 +13,8 @@ namespace SixLabors.Fonts
 {
     internal sealed class FontReader
     {
-        private readonly Dictionary<Type, Table> loadedTables = new Dictionary<Type, Table>();
         private readonly Stream stream;
+        private readonly Dictionary<Type, Table> loadedTables = new Dictionary<Type, Table>();
         private readonly TableLoader loader;
 
         internal FontReader(Stream stream, TableLoader loader)
@@ -28,10 +29,12 @@ namespace SixLabors.Fonts
 
             // we should immediately read the table header to learn which tables we have and what order they are in
             uint version = reader.ReadUInt32();
-            ushort tableCount = 0;
+            ushort tableCount;
             if (version == 0x774F4646)
             {
-                // this is a woff file
+                // This is a woff file.
+                this.TableFormat = TableFormat.Woff;
+
                 // WOFFHeader
                 // UInt32 | signature      | 0x774F4646 'wOFF'
                 // UInt32 | flavor         | The "sfnt version" of the input font.
@@ -62,9 +65,48 @@ namespace SixLabors.Fonts
                 this.CompressedTableData = true;
                 loadHeader = WoffTableHeader.Read;
             }
+            else if (version == 0x774F4632)
+            {
+                // This is a woff2 file.
+                this.TableFormat = TableFormat.Woff2;
+
+#if NETSTANDARD2_0 || NETSTANDARD1_3
+                throw new NotSupportedException("Brotli compression is not available and is required for decoding woff2");
+#else
+
+                uint flavor = reader.ReadUInt32();
+                this.OutlineType = (OutlineTypes)flavor;
+                uint length = reader.ReadUInt32();
+                tableCount = reader.ReadUInt16();
+                ushort reserved = reader.ReadUInt16();
+                uint totalSfntSize = reader.ReadUInt32();
+                uint totalCompressedSize = reader.ReadUInt32();
+                ushort majorVersion = reader.ReadUInt16();
+                ushort minorVersion = reader.ReadUInt16();
+                uint metaOffset = reader.ReadUInt32();
+                uint metaLength = reader.ReadUInt32();
+                uint metaOrigLength = reader.ReadUInt32();
+                uint privOffset = reader.ReadUInt32();
+                uint privLength = reader.ReadUInt32();
+                this.CompressedTableData = true;
+                this.Headers = Woff2Utils.ReadWoff2Headers(reader, tableCount);
+
+                byte[] compressedBuffer = reader.ReadBytes((int)totalCompressedSize);
+                var decompressedStream = new MemoryStream();
+                using var input = new MemoryStream(compressedBuffer);
+                using var decompressor = new BrotliStream(input, CompressionMode.Decompress);
+                decompressor.CopyTo(decompressedStream);
+                decompressedStream.Position = 0;
+                this.stream.Dispose();
+                this.stream = decompressedStream;
+                return;
+#endif
+            }
             else
             {
-                // this is a standard *.otf file (this is named the Offset Table).
+                // This is a standard *.otf file (this is named the Offset Table).
+                this.TableFormat = TableFormat.Otf;
+
                 this.OutlineType = (OutlineTypes)version;
                 tableCount = reader.ReadUInt16();
                 ushort searchRange = reader.ReadUInt16();
@@ -75,7 +117,7 @@ namespace SixLabors.Fonts
 
             if (this.OutlineType != OutlineTypes.TrueType)
             {
-                throw new Exceptions.InvalidFontFileException("Invalid glyph format, only TTF glyph outlines supported.");
+                throw new InvalidFontFileException("Invalid glyph format, only TTF glyph outlines supported.");
             }
 
             var headers = new Dictionary<string, TableHeader>(tableCount);
@@ -98,6 +140,8 @@ namespace SixLabors.Fonts
             TrueType = 0x00010000,
             CFF = 0x4F54544F
         }
+
+        public TableFormat TableFormat { get; }
 
         public IReadOnlyDictionary<string, TableHeader> Headers { get; }
 

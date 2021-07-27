@@ -219,7 +219,7 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Gets the amount the <paramref name="glyph"/> should be ofset if it was proceeded by the <paramref name="previousGlyph"/>.
+        /// Gets the amount the <paramref name="glyph"/> should be offset if it was proceeded by the <paramref name="previousGlyph"/>.
         /// </summary>
         /// <param name="glyph">The glyph.</param>
         /// <param name="previousGlyph">The previous glyph.</param>

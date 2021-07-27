@@ -25,9 +25,9 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public SimpleGlyphLoader(Bounds bounds)
         {
-            this.ys = this.xs = new short[0];
-            this.onCurves = new bool[0];
-            this.endPoints = new ushort[0];
+            this.ys = this.xs = Array.Empty<short>();
+            this.onCurves = Array.Empty<bool>();
+            this.endPoints = Array.Empty<ushort>();
             this.bounds = bounds;
         }
 
@@ -51,7 +51,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         private static Vector2[] Convert(short[] xs, short[] ys)
         {
             var vectors = new Vector2[xs.Length];
-            Vector2 current = Vector2.Zero;
             for (int i = 0; i < xs.Length; i++)
             {
                 vectors[i] = new Vector2(xs[i], ys[i]);

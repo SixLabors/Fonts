@@ -40,7 +40,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the underlying stream of the EndianBinaryReader.
         /// </summary>
-        private Stream BaseStream { get; }
+        public Stream BaseStream { get; }
 
         /// <summary>
         /// Closes the reader, including the underlying stream.

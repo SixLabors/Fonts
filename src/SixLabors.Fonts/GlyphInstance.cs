@@ -80,12 +80,12 @@ namespace SixLabors.Fonts
         public GlyphColor? GlyphColor { get; }
 
         /// <summary>
-        /// Gets the index.
+        /// Gets or sets the index.
         /// </summary>
         /// <value>
         /// The index.
         /// </value>
-        internal ushort Index { get; }
+        internal ushort Index { get; set; }
 
         /// <summary>
         /// Gets the size of the EM
@@ -93,27 +93,27 @@ namespace SixLabors.Fonts
         public ushort SizeOfEm { get; }
 
         /// <summary>
-        /// Gets the points defining the shape of this glyph
+        /// Gets the points defining the shape of this glyph.
         /// </summary>
         public Vector2[] ControlPoints => this.vector.ControlPoints;
 
         /// <summary>
-        /// Gets wether or not the corresponding control point is on a curve
+        /// Gets whether or not the corresponding control point is on a curve.
         /// </summary>
         public bool[] OnCurves => this.vector.OnCurves;
 
         /// <summary>
-        /// Gets the end points
+        /// Gets the end points.
         /// </summary>
         public ushort[] EndPoints => this.vector.EndPoints;
 
         /// <summary>
-        /// Gets the distance from the bounding box start
+        /// Gets the distance from the bounding box start.
         /// </summary>
         public short LeftSideBearing { get; }
 
         /// <summary>
-        /// Gets the scale factor that is applied to the glyph
+        /// Gets the scale factor that is applied to the glyph.
         /// </summary>
         public float ScaleFactor { get; }
 
@@ -134,7 +134,7 @@ namespace SixLabors.Fonts
         /// <param name="pointSize">Size of the point.</param>
         /// <param name="location">The location.</param>
         /// <param name="dpi">The dpi.</param>
-        /// <param name="lineHeight">The lineHeight the current glyph was draw agains to offset topLeft while calling out to IGlyphRenderer.</param>
+        /// <param name="lineHeight">The lineHeight the current glyph was draw against to offset topLeft while calling out to IGlyphRenderer.</param>
         /// <exception cref="NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, float lineHeight)
         {
@@ -146,33 +146,33 @@ namespace SixLabors.Fonts
 
             FontRectangle box = this.BoundingBox(location, scaledPoint);
 
-            var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
+            var parameters = new GlyphRendererParameters(this, pointSize, dpi);
 
-            if (surface.BeginGlyph(box, paramaters))
+            if (surface.BeginGlyph(box, parameters))
             {
                 if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
                 {
                     colorSurface.SetColor(this.GlyphColor.Value);
                 }
 
-                int endOfContor = -1;
+                int endOfContour = -1;
                 for (int i = 0; i < this.vector.EndPoints.Length; i++)
                 {
                     surface.BeginFigure();
-                    int startOfContor = endOfContor + 1;
-                    endOfContor = this.vector.EndPoints[i];
+                    int startOfContour = endOfContour + 1;
+                    endOfContour = this.vector.EndPoints[i];
 
                     Vector2 prev = Vector2.Zero;
-                    Vector2 curr = this.GetPoint(ref scaledPoint, endOfContor) + location;
-                    Vector2 next = this.GetPoint(ref scaledPoint, startOfContor) + location;
+                    Vector2 curr = this.GetPoint(ref scaledPoint, endOfContour) + location;
+                    Vector2 next = this.GetPoint(ref scaledPoint, startOfContour) + location;
 
-                    if (this.vector.OnCurves[endOfContor])
+                    if (this.vector.OnCurves[endOfContour])
                     {
                         surface.MoveTo(curr);
                     }
                     else
                     {
-                        if (this.vector.OnCurves[startOfContor])
+                        if (this.vector.OnCurves[startOfContour])
                         {
                             surface.MoveTo(next);
                         }
@@ -184,14 +184,14 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    int length = endOfContor - startOfContor + 1;
+                    int length = endOfContour - startOfContour + 1;
                     for (int p = 0; p < length; p++)
                     {
                         prev = curr;
                         curr = next;
-                        int currentIndex = startOfContor + p;
-                        int nextIndex = startOfContor + ((p + 1) % length);
-                        int prevIndex = startOfContor + ((length + p - 1) % length);
+                        int currentIndex = startOfContour + p;
+                        int nextIndex = startOfContour + ((p + 1) % length);
+                        int prevIndex = startOfContour + ((length + p - 1) % length);
                         next = this.GetPoint(ref scaledPoint, nextIndex) + location;
 
                         if (this.vector.OnCurves[currentIndex])

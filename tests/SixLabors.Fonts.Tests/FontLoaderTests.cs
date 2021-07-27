@@ -35,6 +35,15 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
+        public void LoadFontMetadataWoff2()
+        {
+            var description = FontDescription.LoadDescription(TestFonts.FontFileWoff2Data());
+
+            Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
+            Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
+        }
+
+        [Fact]
         public void LoadFont()
         {
             IFontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileData());

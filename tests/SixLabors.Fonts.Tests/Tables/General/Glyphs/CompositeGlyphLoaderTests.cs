@@ -5,7 +5,6 @@ using System.Numerics;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using Xunit;
-using static SixLabors.Fonts.Tables.General.Glyphs.CompositeGlyphLoader;
 
 namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
 {
@@ -15,7 +14,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void LoadSingleGlyphWithUInt16Offset_unsignd_short()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteUInt16((ushort)CompositeFlags.ArgsAreWords); // 16bit unsigned
+            writer.WriteUInt16((ushort)CompositeGlyphFlags.ArgsAreWords); // 16bit unsigned
             writer.WriteUInt16(1); // glyph id
 
             writer.WriteUInt16(short.MaxValue + 1); // dx
@@ -41,7 +40,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void LoadSingleGlyphWithInt16Offset_signed_short()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteUInt16((ushort)(CompositeFlags.ArgsAreWords /* 16bit */ | CompositeFlags.ArgsAreXYValues /* signed */)); // flags
+            writer.WriteUInt16((ushort)(CompositeGlyphFlags.ArgsAreWords /* 16bit */ | CompositeGlyphFlags.ArgsAreXYValues /* signed */)); // flags
             writer.WriteUInt16(1); // glyph id
 
             writer.WriteInt16(short.MinValue + 1); // dx
@@ -93,7 +92,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void LoadSingleGlyphWithInt8Offset_signed_byte()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteUInt16((ushort)CompositeFlags.ArgsAreXYValues); // signed byte
+            writer.WriteUInt16((ushort)CompositeGlyphFlags.ArgsAreXYValues); // signed byte
             writer.WriteUInt16(1); // glyph id
 
             writer.WriteInt8(sbyte.MinValue + 1); // dx

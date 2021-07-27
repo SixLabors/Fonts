@@ -49,7 +49,7 @@ namespace SixLabors.Fonts.Tests
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
-            // unknown culture shoudl prioritise US, but missing so will return first
+            // unknown culture shoud prioritise US, but missing so will return first
             Assert.Equal("name_c1", description.FontNameInvariantCulture);
             Assert.Equal("sub_c1", description.FontSubFamilyNameInvariantCulture);
             Assert.Equal("fam_c1", description.FontFamilyInvariantCulture);

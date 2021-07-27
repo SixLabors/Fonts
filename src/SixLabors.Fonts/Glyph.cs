@@ -27,11 +27,11 @@ namespace SixLabors.Fonts
         public GlyphInstance Instance { get; }
 
         /// <summary>
-        /// Calculates the bounding box
+        /// Calculates the bounding box.
         /// </summary>
         /// <param name="location">location to calculate from.</param>
-        /// <param name="dpi">dpi to calualtes in relation to</param>
-        /// <returns>The bounding box</returns>
+        /// <param name="dpi">dpi to calculates in relation to.</param>
+        /// <returns>The bounding box.</returns>
         public FontRectangle BoundingBox(Vector2 location, Vector2 dpi)
             => this.Instance.BoundingBox(location, this.pointSize * dpi);
 
@@ -53,7 +53,7 @@ namespace SixLabors.Fonts
         /// <param name="dpiX">The dpi along the X axis.</param>
         /// <param name="dpiY">The dpi along the Y axis.</param>
         /// <param name="lineHeight">The line height.</param>
-        /// <exception cref="System.NotSupportedException">Too many control points</exception>
+        /// <exception cref="System.NotSupportedException">Too many control points.</exception>
         internal void RenderTo(IGlyphRenderer surface, Vector2 location, float dpiX, float dpiY, float lineHeight)
             => this.Instance.RenderTo(surface, this.pointSize, location, new Vector2(dpiX, dpiY), lineHeight);
     }

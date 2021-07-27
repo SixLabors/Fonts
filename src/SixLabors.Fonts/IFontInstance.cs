@@ -11,7 +11,7 @@ namespace SixLabors.Fonts
     public interface IFontInstance
     {
         /// <summary>
-        /// Gets the basic descripton of the font instance type.
+        /// Gets the basic description of the font instance type.
         /// </summary>
         FontDescription Description { get; }
 

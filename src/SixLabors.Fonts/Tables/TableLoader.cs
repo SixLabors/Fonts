@@ -88,7 +88,7 @@ namespace SixLabors.Fonts.Tables
         internal TTable? Load<TTable>(FontReader reader)
             where TTable : Table
         {
-            // loader missing register an unknow type loader and carry on
+            // loader missing register an unknown type loader and carry on
             if (this.typesLoaders.TryGetValue(typeof(TTable), out Func<FontReader, Table?> func))
             {
                 return (TTable?)func.Invoke(reader);
