@@ -42,11 +42,9 @@ namespace SixLabors.Fonts.Tables.General
             HorizontalHeadTable headTable = reader.GetTable<HorizontalHeadTable>();
             MaximumProfileTable profileTable = reader.GetTable<MaximumProfileTable>();
 
-            // move to start of table
-            using (BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
-            {
-                return Load(binaryReader, headTable.NumberOfHMetrics, profileTable.GlyphCount);
-            }
+            // Move to start of table
+            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
+            return Load(binaryReader, headTable.NumberOfHMetrics, profileTable.GlyphCount);
         }
 
         public static HorizontalMetricsTable Load(BigEndianBinaryReader reader, int metricCount, int glyphCount)

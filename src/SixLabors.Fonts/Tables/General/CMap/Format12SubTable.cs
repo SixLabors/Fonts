@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General.CMap
@@ -19,9 +20,9 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public uint Language { get; }
 
-        public override bool TryGetGlyphId(int codePoint, out ushort glyphId)
+        public override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
         {
-            uint charAsInt = (uint)codePoint;
+            int charAsInt = codePoint.Value;
 
             for (int i = 0; i < this.SequentialMapGroups.Length; i++)
             {

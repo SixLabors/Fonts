@@ -9,7 +9,7 @@ using SixLabors.Fonts.Tables.General;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Provide metadata about a font.
+    /// Provides basic descriptive metadata for the font.
     /// </summary>
     public class FontDescription
     {
@@ -34,27 +34,21 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the style.
         /// </summary>
-        /// <value>
-        /// The style.
-        /// </value>
         public FontStyle Style { get; }
 
         /// <summary>
         /// Gets the name of the font in the invariant culture.
         /// </summary>
-        /// <returns>The font name.</returns>
         public string FontNameInvariantCulture { get; }
 
         /// <summary>
         /// Gets the name of the font family in the invariant culture.
         /// </summary>
-        /// <returns>The font name.</returns>
         public string FontFamilyInvariantCulture { get; }
 
         /// <summary>
         /// Gets the font sub family in the invariant culture.
         /// </summary>
-        /// <returns>The font sub family name.</returns>
         public string FontSubFamilyNameInvariantCulture { get; }
 
         /// <summary>

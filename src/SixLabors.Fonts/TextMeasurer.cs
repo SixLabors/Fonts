@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public static class TextMeasurer
     {
-        private static readonly GlyphMetric[] EmptyGlyphMetricArray = new GlyphMetric[0];
+        private static readonly GlyphBounds[] EmptyGlyphMetricArray = new GlyphBounds[0];
 
         /// <summary>
         /// Measures the text.
@@ -59,7 +59,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The style.</param>
         /// <param name="characterBounds">The list of character bounds of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty bounds.</returns>
-        public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphMetric[] characterBounds)
+        public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphBounds[] characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
 
         internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
@@ -137,7 +137,7 @@ namespace SixLabors.Fonts
             return new FontRectangle(left, top, width, height);
         }
 
-        internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi, out GlyphMetric[] characterBounds)
+        internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi, out GlyphBounds[] characterBounds)
         {
             bool hasSize = false;
             if (glyphLayouts.Count == 0)
@@ -146,7 +146,7 @@ namespace SixLabors.Fonts
                 return hasSize;
             }
 
-            var characterBoundsList = new GlyphMetric[glyphLayouts.Count];
+            var characterBoundsList = new GlyphBounds[glyphLayouts.Count];
 
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
@@ -158,7 +158,7 @@ namespace SixLabors.Fonts
                     hasSize = true;
                 }
 
-                characterBoundsList[i] = new GlyphMetric(c.CodePoint, c.BoundingBox(dpi));
+                characterBoundsList[i] = new GlyphBounds(c.CodePoint, c.BoundingBox(dpi));
             }
 
             characterBounds = characterBoundsList;
@@ -202,7 +202,7 @@ namespace SixLabors.Fonts
             /// <param name="options">The style.</param>
             /// <param name="characterBounds">The character bounds list.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphMetric[] characterBounds)
+            internal bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphBounds[] characterBounds)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 

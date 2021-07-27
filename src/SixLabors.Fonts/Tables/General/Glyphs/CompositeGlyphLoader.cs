@@ -23,6 +23,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             var controlPoints = new List<Vector2>();
             var onCurves = new List<bool>();
             var endPoints = new List<ushort>();
+            var minBounds = new List<Vector2>();
+            var maxBounds = new List<Vector2>();
+            var parts = new List<GlyphMetrics>();
+
             for (int resultIndex = 0; resultIndex < this.result.Length; resultIndex++)
             {
                 ref Composite composite = ref this.result[resultIndex];

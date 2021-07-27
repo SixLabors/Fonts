@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
+using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General
@@ -36,7 +37,7 @@ namespace SixLabors.Fonts.Tables.General
 
         internal CMapSubTable[] Tables { get; }
 
-        public bool TryGetGlyphId(int codePoint, out ushort glyphId)
+        public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
         {
             // use the best match only
             foreach (CMapSubTable t in this.platformTables)

@@ -5,117 +5,129 @@ using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// A glyph from a particular font face.
+    /// Represents a glyph metric from a particular font face.
     /// </summary>
-    public partial class GlyphInstance
+    public class GlyphMetrics
     {
         private static readonly Vector2 Scale = new Vector2(1, -1);
         private readonly GlyphVector vector;
 
-        internal GlyphInstance(FontInstance font, GlyphVector vector, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index, GlyphType glyphType = GlyphType.Standard, GlyphColor? glyphColor = null)
+        internal GlyphMetrics(
+            FontMetrics font,
+            CodePoint codePoint,
+            GlyphVector vector,
+            ushort advanceWidth,
+            ushort advanceHeight,
+            short leftSideBearing,
+            short topSideBearing,
+            ushort unitsPerEM,
+            ushort index,
+            GlyphType glyphType = GlyphType.Standard,
+            GlyphColor? glyphColor = null)
         {
-            this.Font = font;
-            this.SizeOfEm = sizeOfEm;
+            this.FontMetrics = font;
+            this.Codepoint = codePoint;
+            this.UnitsPerEm = unitsPerEM;
             this.vector = vector;
 
             this.AdvanceWidth = advanceWidth;
+            this.AdvanceHeight = advanceHeight;
             this.Index = index;
-            this.Height = sizeOfEm - this.Bounds.Min.Y;
+
+            this.Width = this.Bounds.Max.X - this.Bounds.Min.X;
+            this.Height = this.Bounds.Max.Y - this.Bounds.Min.Y;
             this.GlyphType = glyphType;
             this.LeftSideBearing = leftSideBearing;
-            this.ScaleFactor = this.SizeOfEm * 72F;
+            this.TopSideBearing = topSideBearing;
+            this.ScaleFactor = this.UnitsPerEm * 72F;
             this.GlyphColor = glyphColor;
         }
 
         /// <summary>
-        /// Gets the Font.
+        /// Gets the font metrics.
         /// </summary>
-        /// <value>
-        /// The Font.
-        /// </value>
-        internal FontInstance Font { get; }
+        internal FontMetrics FontMetrics { get; }
 
         /// <summary>
-        /// Gets the bounds.
+        /// Gets the Unicode codepoint of the glyph.
         /// </summary>
-        /// <value>
-        /// The bounds.
-        /// </value>
-        internal Bounds Bounds => this.vector.Bounds;
+        public CodePoint Codepoint { get; }
 
         /// <summary>
-        /// Gets the width of the advance.
+        /// Gets the advance width for horizontal layout, expressed in font units.
         /// </summary>
-        /// <value>
-        /// The width of the advance.
-        /// </value>
         public ushort AdvanceWidth { get; }
 
         /// <summary>
-        /// Gets the height.
+        /// Gets the advance height for vertical layout, expressed in font units.
         /// </summary>
-        /// <value>
-        /// The height.
-        /// </value>
-        public float Height { get; }
+        public ushort AdvanceHeight { get; }
 
         /// <summary>
-        /// Gets a value indicating the type of glyph instance this is.
-        /// </summary>
-        /// <value>
-        /// The type of this glyph
-        /// </value>
-        public GlyphType GlyphType { get; }
-
-        /// <summary>
-        /// Gets the color of this glyph
-        /// </summary>
-        /// <value>
-        /// The color of the glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
-        /// </value>
-        public GlyphColor? GlyphColor { get; }
-
-        /// <summary>
-        /// Gets or sets the index.
-        /// </summary>
-        /// <value>
-        /// The index.
-        /// </value>
-        internal ushort Index { get; set; }
-
-        /// <summary>
-        /// Gets the size of the EM
-        /// </summary>
-        public ushort SizeOfEm { get; }
-
-        /// <summary>
-        /// Gets the points defining the shape of this glyph.
-        /// </summary>
-        public Vector2[] ControlPoints => this.vector.ControlPoints;
-
-        /// <summary>
-        /// Gets whether or not the corresponding control point is on a curve.
-        /// </summary>
-        public bool[] OnCurves => this.vector.OnCurves;
-
-        /// <summary>
-        /// Gets the end points.
-        /// </summary>
-        public ushort[] EndPoints => this.vector.EndPoints;
-
-        /// <summary>
-        /// Gets the distance from the bounding box start.
+        /// Gets the left side bearing for horizontal layout, expressed in font units.
         /// </summary>
         public short LeftSideBearing { get; }
 
         /// <summary>
-        /// Gets the scale factor that is applied to the glyph.
+        /// Gets the top side bearing for vertical layout, expressed in font units.
         /// </summary>
+        public short TopSideBearing { get; }
+
+        /// <summary>
+        /// Gets the width, expressed in font units.
+        /// </summary>
+        public float Width { get; }
+
+        /// <summary>
+        /// Gets the height, expressed in font units.
+        /// </summary>
+        public float Height { get; }
+
+        /// <summary>
+        /// Gets the glyph type.
+        /// </summary>
+        public GlyphType GlyphType { get; }
+
+        /// <summary>
+        /// Gets the color of this glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
+        /// </summary>
+        public GlyphColor? GlyphColor { get; }
+
+        /// <inheritdoc cref="IFontMetrics.UnitsPerEm"/>
+        public ushort UnitsPerEm { get; }
+
+        /// <inheritdoc cref="IFontMetrics.ScaleFactor"/>
         public float ScaleFactor { get; }
+
+        /// <summary>
+        /// Gets the points defining the shape of this glyph
+        /// </summary>
+        public Vector2[] ControlPoints => this.vector.ControlPoints;
+
+        /// <summary>
+        /// Gets at value indicating whether the corresponding <see cref="ControlPoints"/> item is on a curve.
+        /// </summary>
+        public bool[] OnCurves => this.vector.OnCurves;
+
+        /// <summary>
+        /// Gets the end points
+        /// </summary>
+        public ushort[] EndPoints => this.vector.EndPoints;
+
+        /// <summary>
+        /// Gets the bounds.
+        /// </summary>
+        internal Bounds Bounds => this.vector.Bounds;
+
+        /// <summary>
+        /// Gets the index.
+        /// </summary>
+        internal ushort Index { get; }
 
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
@@ -146,33 +158,33 @@ namespace SixLabors.Fonts
 
             FontRectangle box = this.BoundingBox(location, scaledPoint);
 
-            var parameters = new GlyphRendererParameters(this, pointSize, dpi);
+            var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
 
-            if (surface.BeginGlyph(box, parameters))
+            if (surface.BeginGlyph(box, paramaters))
             {
                 if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
                 {
                     colorSurface.SetColor(this.GlyphColor.Value);
                 }
 
-                int endOfContour = -1;
+                int endOfContor = -1;
                 for (int i = 0; i < this.vector.EndPoints.Length; i++)
                 {
                     surface.BeginFigure();
-                    int startOfContour = endOfContour + 1;
-                    endOfContour = this.vector.EndPoints[i];
+                    int startOfContor = endOfContor + 1;
+                    endOfContor = this.vector.EndPoints[i];
 
                     Vector2 prev = Vector2.Zero;
-                    Vector2 curr = this.GetPoint(ref scaledPoint, endOfContour) + location;
-                    Vector2 next = this.GetPoint(ref scaledPoint, startOfContour) + location;
+                    Vector2 curr = this.GetPoint(ref scaledPoint, endOfContor) + location;
+                    Vector2 next = this.GetPoint(ref scaledPoint, startOfContor) + location;
 
-                    if (this.vector.OnCurves[endOfContour])
+                    if (this.vector.OnCurves[endOfContor])
                     {
                         surface.MoveTo(curr);
                     }
                     else
                     {
-                        if (this.vector.OnCurves[startOfContour])
+                        if (this.vector.OnCurves[startOfContor])
                         {
                             surface.MoveTo(next);
                         }
@@ -184,14 +196,14 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    int length = endOfContour - startOfContour + 1;
+                    int length = endOfContor - startOfContor + 1;
                     for (int p = 0; p < length; p++)
                     {
                         prev = curr;
                         curr = next;
-                        int currentIndex = startOfContour + p;
-                        int nextIndex = startOfContour + ((p + 1) % length);
-                        int prevIndex = startOfContour + ((length + p - 1) % length);
+                        int currentIndex = startOfContor + p;
+                        int nextIndex = startOfContor + ((p + 1) % length);
+                        int prevIndex = startOfContor + ((length + p - 1) % length);
                         next = this.GetPoint(ref scaledPoint, nextIndex) + location;
 
                         if (this.vector.OnCurves[currentIndex])

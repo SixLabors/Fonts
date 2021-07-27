@@ -161,14 +161,14 @@ namespace SixLabors.Fonts
         /// </returns>
         internal AppliedFontStyle GetStyle(int index, int length)
         {
-            IFontInstance[] fallbackFontInstances;
+            IFontMetrics[] fallbackFontInstances;
             if (this.FallbackFontFamilies == null)
             {
-                fallbackFontInstances = Array.Empty<IFontInstance>();
+                fallbackFontInstances = Array.Empty<IFontMetrics>();
             }
             else
             {
-                fallbackFontInstances = this.FallbackFontFamilies.Select(x => new Font(x, this.Font.Size, this.Font.RequestedStyle).Instance).ToArray();
+                fallbackFontInstances = this.FallbackFontFamilies.Select(x => new Font(x, this.Font.Size, this.Font.RequestedStyle).FontMetrics).ToArray();
             }
 
             return new AppliedFontStyle
@@ -176,7 +176,7 @@ namespace SixLabors.Fonts
                 Start = 0,
                 End = length - 1,
                 PointSize = this.Font.Size,
-                MainFont = this.Font.Instance,
+                MainFont = this.Font.FontMetrics,
                 FallbackFonts = fallbackFontInstances,
                 TabWidth = this.TabWidth,
                 ApplyKerning = this.ApplyKerning

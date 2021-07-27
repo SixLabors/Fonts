@@ -3,6 +3,7 @@
 
 using System;
 using SixLabors.Fonts.Exceptions;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
@@ -11,29 +12,29 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class Font
     {
-        private readonly Lazy<IFontInstance?> instance;
+        private readonly Lazy<IFontMetrics?> metrics;
         private readonly Lazy<string> fontName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Font"/> class.
         /// </summary>
-        /// <param name="family">The family.</param>
-        /// <param name="size">The size.</param>
-        /// <param name="style">The style.</param>
+        /// <param name="family">The font family.</param>
+        /// <param name="size">The size of the font in PT units.</param>
+        /// <param name="style">The font style.</param>
         public Font(FontFamily family, float size, FontStyle style)
         {
             this.Family = family ?? throw new ArgumentNullException(nameof(family));
             this.RequestedStyle = style;
             this.Size = size;
-            this.instance = new Lazy<IFontInstance?>(this.LoadInstanceInternal);
+            this.metrics = new Lazy<IFontMetrics?>(this.LoadInstanceInternal);
             this.fontName = new Lazy<string>(this.LoadFontName);
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Font"/> class.
         /// </summary>
-        /// <param name="family">The family.</param>
-        /// <param name="size">The size.</param>
+        /// <param name="family">The font family.</param>
+        /// <param name="size">The size of the font in PT units.</param>
         public Font(FontFamily family, float size)
             : this(family, size, FontStyle.Regular)
         {
@@ -43,7 +44,7 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="Font"/> class.
         /// </summary>
         /// <param name="prototype">The prototype.</param>
-        /// <param name="style">The style.</param>
+        /// <param name="style">The font style.</param>
         public Font(Font prototype, FontStyle style)
             : this(prototype?.Family ?? throw new ArgumentNullException(nameof(prototype)), prototype.Size, style)
         {
@@ -53,8 +54,8 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="Font"/> class.
         /// </summary>
         /// <param name="prototype">The prototype.</param>
-        /// <param name="size">The size.</param>
-        /// <param name="style">The style.</param>
+        /// <param name="size">The size of the font in PT units.</param>
+        /// <param name="style">The font style.</param>
         public Font(Font prototype, float size, FontStyle style)
             : this(prototype?.Family ?? throw new ArgumentNullException(nameof(prototype)), size, style)
         {
@@ -64,7 +65,7 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="Font"/> class.
         /// </summary>
         /// <param name="prototype">The prototype.</param>
-        /// <param name="size">The size.</param>
+        /// <param name="size">The size of the font in PT units.</param>
         public Font(Font prototype, float size)
             : this(prototype.Family, size, prototype.RequestedStyle)
         {
@@ -73,99 +74,50 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the family.
         /// </summary>
-        /// <value>
-        /// The family.
-        /// </value>
-        internal FontStyle RequestedStyle { get; }
-
-        /// <summary>
-        /// Gets the family.
-        /// </summary>
-        /// <value>
-        /// The family.
-        /// </value>
         public FontFamily Family { get; }
 
         /// <summary>
         /// Gets the name.
         /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
         public string Name => this.fontName.Value;
 
         /// <summary>
-        /// Gets the size.
+        /// Gets the size of the font in PT units.
         /// </summary>
-        /// <value>
-        /// The size.
-        /// </value>
         public float Size { get; }
+
+        /// <summary>
+        /// Gets the font metrics.
+        /// </summary>
+        public IFontMetrics FontMetrics => this.metrics.Value ?? throw new FontException("Font instance not found.");
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="Font"/> is bold.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if bold; otherwise, <c>false</c>.
-        /// </value>
-        public bool Bold => (this.Instance.Description.Style & FontStyle.Bold) == FontStyle.Bold;
+        public bool IsBold => (this.FontMetrics.Description.Style & FontStyle.Bold) == FontStyle.Bold;
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="Font"/> is italic.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if italic; otherwise, <c>false</c>.
-        /// </value>
-        public bool Italic => (this.Instance.Description.Style & FontStyle.Italic) == FontStyle.Italic;
+        public bool IsItalic => (this.FontMetrics.Description.Style & FontStyle.Italic) == FontStyle.Italic;
 
         /// <summary>
-        /// Gets the size of the em.
+        /// Gets the requested style.
         /// </summary>
-        /// <value>
-        /// The size of the em.
-        /// </value>
-        public ushort EmSize => this.Instance.EmSize;
-
-        /// <summary>
-        /// Gets the ascender (from the OS/2 table field <c>TypoAscender</c>).
-        /// </summary>
-        public short Ascender => this.Instance.Ascender;
-
-        /// <summary>
-        /// Gets the descender (from the OS/2 table field <c>TypoDescender</c>).
-        /// </summary>
-        public short Descender => this.Instance.Descender;
-
-        /// <summary>
-        /// Gets the line gap (from the OS/2 table field <c>TypoLineGap</c>).
-        /// </summary>
-        public short LineGap => this.Instance.LineGap;
-
-        /// <summary>
-        /// Gets the line height.
-        /// </summary>
-        public int LineHeight => this.Instance.LineHeight;
-
-        /// <summary>
-        /// Gets the font instance.
-        /// </summary>
-        /// <value>
-        /// The font instance.
-        /// </value>
-        public IFontInstance Instance => this.instance.Value ?? throw new FontException("Font instance not found");
+        internal FontStyle RequestedStyle { get; }
 
         /// <summary>
         /// Gets the glyph.
         /// </summary>
         /// <param name="codePoint">The code point of the character.</param>
         /// <returns>Returns the glyph</returns>
-        public Glyph GetGlyph(int codePoint) => new Glyph(this.Instance.GetGlyph(codePoint), this.Size);
+        public Glyph GetGlyph(CodePoint codePoint) => new Glyph(this.FontMetrics.GetGlyphMetrics(codePoint), this.Size);
 
-        private string LoadFontName() => this.instance.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;
+        private string LoadFontName() => this.metrics.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;
 
-        private IFontInstance? LoadInstanceInternal()
+        private IFontMetrics? LoadInstanceInternal()
         {
-            IFontInstance? instance = this.Family.Find(this.RequestedStyle);
+            IFontMetrics? instance = this.Family.Find(this.RequestedStyle);
 
             if (instance is null && this.RequestedStyle.HasFlag(FontStyle.Italic))
             {

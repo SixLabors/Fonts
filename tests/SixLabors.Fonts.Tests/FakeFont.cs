@@ -13,11 +13,12 @@ namespace SixLabors.Fonts.Tests
         public void TestFontMetricProperties()
         {
             Font fakeFont = CreateFont("A");
-            Assert.Equal(30, fakeFont.EmSize);
-            Assert.Equal(35, fakeFont.Ascender);
-            Assert.Equal(8, fakeFont.Descender);
-            Assert.Equal(12, fakeFont.LineGap);
-            Assert.Equal(35 - 8 + 12, fakeFont.LineHeight);
+            IFontMetrics metrics = fakeFont.FontMetrics;
+            Assert.Equal(30, metrics.UnitsPerEm);
+            Assert.Equal(35, metrics.Ascender);
+            Assert.Equal(8, metrics.Descender);
+            Assert.Equal(12, metrics.LineGap);
+            Assert.Equal(35 - 8 + 12, metrics.LineHeight);
         }
 
         public static Font CreateFont(string text)

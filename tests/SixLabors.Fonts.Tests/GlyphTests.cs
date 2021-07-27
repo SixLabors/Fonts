@@ -1,11 +1,14 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using Moq;
+using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Tests.Fakes;
+using SixLabors.Fonts.Unicode;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -17,9 +20,23 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void RenderToPointAndSingleDPI()
         {
-            var glyph = new Glyph(new GlyphInstance((FontInstance)CreateFont("A").Instance, new Fonts.Tables.General.Glyphs.GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1)), 0, 0, 1, 0), 10);
+            const string text = "A";
+            CodePoint codePoint = this.AsCodePoint(text);
+            var font = (FontMetrics)CreateFont(text).FontMetrics;
+            var glyph = new Glyph(
+                new GlyphMetrics(
+                font,
+                codePoint,
+                new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1)),
+                0,
+                0,
+                0,
+                0,
+                1,
+                0),
+                10);
 
-            Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyp ends up 10px over due to offset in fake glyph
+            Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offiset in fake glyph
             glyph.RenderTo(this.renderer, locationInFontSpace, 72, 0);
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
@@ -74,8 +91,8 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Install(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             // Get letter A
-            Glyph g = font.GetGlyph(41);
-            GlyphInstance instance = g.Instance;
+            Glyph g = font.GetGlyph(new CodePoint(41));
+            GlyphMetrics instance = g.GlyphMetrics;
 
             Assert.Equal(20, instance.ControlPoints.Length);
             Assert.Equal(20, instance.OnCurves.Length);
@@ -87,9 +104,10 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Install(TestFonts.TwemojiMozillaData()).CreateFont(12);
 
             // Get letter Grinning Face emoji
-            var instance = font.Instance as FontInstance;
-            Assert.True(instance.TryGetGlyphIndex(this.AsCodePoint("😀"), out ushort idx));
-            Assert.True(instance.TryGetColoredVectors(idx, out GlyphInstance[] vectors));
+            var instance = font.FontMetrics as FontMetrics;
+            CodePoint codePoint = this.AsCodePoint("😀");
+            Assert.True(instance.TryGetGlyphIndex(codePoint, out ushort idx));
+            Assert.True(instance.TryGetColoredVectors(codePoint, idx, out GlyphMetrics[] vectors));
 
             Assert.Equal(3, vectors.Length);
         }
@@ -108,21 +126,6 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(3, renderer.Colors.Count);
         }
 
-        private int AsCodePoint(string text)
-        {
-            for (int i = 0; i < text.Length; i++)
-            {
-                if (char.IsLowSurrogate(text[i]))
-                {
-                    continue;
-                }
-
-                bool hasFourBytes = char.IsHighSurrogate(text[i]);
-                int codePoint = hasFourBytes ? char.ConvertToUtf32(text[i], text[i + 1]) : text[i];
-                return codePoint;
-            }
-
-            return 0;
-        }
+        private CodePoint AsCodePoint(string text) => CodePoint.DecodeFromUtf16At(text.AsSpan(), 0);
     }
 }

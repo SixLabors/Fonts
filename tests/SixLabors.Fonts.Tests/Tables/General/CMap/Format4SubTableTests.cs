@@ -3,6 +3,7 @@
 
 using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
+using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.WellKnownIds;
 
 using Xunit;
@@ -81,7 +82,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
                 glyphs);
 
             // ushort id = table.GetGlyphId(src);
-            var found = table.TryGetGlyphId(src, out var id);
+            bool found = table.TryGetGlyphId(new CodePoint(src), out ushort id);
 
             Assert.Equal(expected, id);
             Assert.Equal(expectedFound, found);

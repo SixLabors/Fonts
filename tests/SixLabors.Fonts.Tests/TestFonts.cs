@@ -32,6 +32,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
 
+        public static string NotoSansSCThinFile => GetFullPath("NotoSansSC-Thin.ttf");
+
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
         public static Stream WendyOneFileData() => OpenStream(WendyOneFile);

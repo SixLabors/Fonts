@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using SixLabors.Fonts.Tables.General.CMap;
+using SixLabors.Fonts.Unicode;
 using Xunit;
 using static SixLabors.Fonts.Tables.General.CMap.Format4SubTable;
 
@@ -31,7 +32,7 @@ namespace SixLabors.Fonts.Tests.Issues
             const int delta = short.MaxValue + 2; // extra 2 to handle the difference between ushort and short when offsettings
 
             const int codePoint = delta + 5;
-            Assert.True(tbl.TryGetGlyphId(codePoint, out ushort gid));
+            Assert.True(tbl.TryGetGlyphId(new CodePoint(codePoint), out ushort gid));
 
             Assert.Equal(5, gid);
         }

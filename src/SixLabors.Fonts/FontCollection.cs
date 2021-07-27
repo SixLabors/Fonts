@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection
     {
-        private readonly HashSet<IFontInstance> instances = new HashSet<IFontInstance>();
+        private readonly HashSet<IFontMetrics> instances = new HashSet<IFontMetrics>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontCollection"/> class.
@@ -175,7 +175,7 @@ namespace SixLabors.Fonts
 
         private FontFamily InstallInternal(string path, CultureInfo culture, out FontDescription fontDescription)
         {
-            var instance = new FileFontInstance(path);
+            var instance = new FileFontMetrics(path);
             fontDescription = instance.Description;
             return this.Install(instance, culture);
         }
@@ -185,7 +185,7 @@ namespace SixLabors.Fonts
 
         private FontFamily InstallInternal(Stream fontStream, CultureInfo culture, out FontDescription fontDescription)
         {
-            var instance = FontInstance.LoadFont(fontStream);
+            var instance = FontMetrics.LoadFont(fontStream);
             fontDescription = instance.Description;
 
             return this.Install(instance, culture);
@@ -196,7 +196,7 @@ namespace SixLabors.Fonts
 
         private IEnumerable<FontFamily> InstallCollectionInternal(string fontCollectionPath, CultureInfo culture, out IEnumerable<FontDescription> fontDescriptions)
         {
-            FileFontInstance[] fonts = FileFontInstance.LoadFontCollection(fontCollectionPath);
+            FileFontMetrics[] fonts = FileFontMetrics.LoadFontCollection(fontCollectionPath);
 
             var description = new FontDescription[fonts.Length];
             var families = new HashSet<FontFamily>();
@@ -221,7 +221,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < ttcHeader.NumFonts; ++i)
             {
                 fontCollectionStream.Position = startPos + ttcHeader.OffsetTable[i];
-                var instance = FontInstance.LoadFont(fontCollectionStream);
+                var instance = FontMetrics.LoadFont(fontCollectionStream);
                 installedFamilies.Add(this.Install(instance, culture));
                 FontDescription fontDescription = instance.Description;
                 result.Add(fontDescription);
@@ -279,7 +279,7 @@ namespace SixLabors.Fonts
         internal IEnumerable<FontStyle> AvailableStyles(string fontFamily, CultureInfo culture)
             => this.FindAll(fontFamily, culture).Select(x => x.Description.Style).ToArray();
 
-        internal FontFamily Install(IFontInstance instance, CultureInfo culture)
+        internal FontFamily Install(IFontMetrics instance, CultureInfo culture)
         {
             if (instance == null)
             {
@@ -299,11 +299,11 @@ namespace SixLabors.Fonts
             return new FontFamily(instance.Description.FontFamily(culture), this, culture);
         }
 
-        internal IFontInstance? Find(string fontFamily, CultureInfo culture, FontStyle style)
+        internal IFontMetrics? Find(string fontFamily, CultureInfo culture, FontStyle style)
             => this.FindAll(fontFamily, culture)
             .FirstOrDefault(x => x.Description.Style == style);
 
-        internal IEnumerable<IFontInstance> FindAll(string name, CultureInfo culture)
+        internal IEnumerable<IFontMetrics> FindAll(string name, CultureInfo culture)
         {
             StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(culture);
 
