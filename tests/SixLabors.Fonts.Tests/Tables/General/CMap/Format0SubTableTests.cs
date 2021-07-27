@@ -3,6 +3,7 @@
 
 using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
+using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.WellKnownIds;
 using Xunit;
 
@@ -42,7 +43,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         {
             var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
-            var found = format.TryGetGlyphId(4, out ushort id);
+            bool found = format.TryGetGlyphId(new CodePoint(4), out ushort id);
 
             Assert.True(found);
             Assert.Equal(5, id);
@@ -53,7 +54,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
         {
             var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
-            var found = format.TryGetGlyphId(99, out ushort id);
+            bool found = format.TryGetGlyphId(new CodePoint(99), out ushort id);
 
             Assert.False(found);
             Assert.Equal(0, id);

@@ -33,6 +33,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily emojiFont = SystemFonts.Find("Segoe UI Emoji");
             FontFamily uiFont = SystemFonts.Find("Segoe UI");
 
+            FontFamily sunflower = fonts.Install(@"Fonts\Sunflower-Medium.ttf");
+
             RenderTextProcessorWithAlignment(emojiFont, "😀A😀", pointSize: 20, fallbackFonts: new[] { colorEmoji });
             RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { font2 });
             RenderTextProcessorWithAlignment(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
@@ -62,6 +64,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(carter, "Hello\0World", 72);
             RenderText(wendyOne, "Hello\0World", 72);
             RenderText(whitneyBook, "Hello\0World", 72);
+            RenderText(sunflower, "í", 30);
 
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");

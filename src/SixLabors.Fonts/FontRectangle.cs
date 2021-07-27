@@ -46,7 +46,7 @@ namespace SixLabors.Fonts
         /// <param name="size">
         /// The <see cref="Vector2"/> which specifies the rectangles height and width.
         /// </param>
-        private FontRectangle(Vector2 point, Vector2 size)
+        public FontRectangle(Vector2 point, Vector2 size)
             : this(point.X, point.Y, size.X, size.Y)
         {
         }
@@ -191,7 +191,8 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Creates a <see cref="FontRectangle"/> that is inflated by the specified amount.
+        /// Creates a new <see cref="FontRectangle"/> from the given <paramref name="rectangle"/>
+        /// that is inflated by the specified amount.
         /// </summary>
         /// <param name="rectangle">The rectangle.</param>
         /// <param name="x">The amount to inflate the width by.</param>
@@ -199,14 +200,10 @@ namespace SixLabors.Fonts
         /// <returns>A new <see cref="FontRectangle"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static FontRectangle Inflate(FontRectangle rectangle, float x, float y)
-        {
-            FontRectangle r = rectangle;
-            r.Inflate(x, y);
-            return r;
-        }
+            => rectangle.Inflate(x, y);
 
         /// <summary>
-        /// Transforms a rectangle by the given matrix.
+        /// Creates a new <see cref="FontRectangle"/> by transforming the given rectangle by the given matrix.
         /// </summary>
         /// <param name="rectangle">The source rectangle.</param>
         /// <param name="matrix">The transformation matrix.</param>
@@ -262,7 +259,7 @@ namespace SixLabors.Fonts
             => Intersect(rectangle, this);
 
         /// <summary>
-        /// Inflates this <see cref="FontRectangle"/> by the specified amount.
+        /// Creates a new <see cref="FontRectangle"/> inflated by the specified amount.
         /// </summary>
         /// <param name="width">The width.</param>
         /// <param name="height">The height.</param>
@@ -276,7 +273,7 @@ namespace SixLabors.Fonts
                 this.Height + (2 * height));
 
         /// <summary>
-        /// Inflates this <see cref="FontRectangle"/> by the specified amount.
+        /// Creates a new <see cref="FontRectangle"/> inflated by the specified amount.
         /// </summary>
         /// <param name="size">The size.</param>
         /// <returns>New <see cref="FontRectangle"/> representing the inflated rectrangle</returns>

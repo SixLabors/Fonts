@@ -5,92 +5,104 @@ using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// A glyph from a particular font face.
+    /// Represents a glyph metric from a particular font face.
     /// </summary>
-    public partial class GlyphInstance
+    public class GlyphMetrics
     {
         private static readonly Vector2 Scale = new Vector2(1, -1);
         private readonly GlyphVector vector;
 
-        internal GlyphInstance(FontInstance font, GlyphVector vector, ushort advanceWidth, short leftSideBearing, ushort sizeOfEm, ushort index, GlyphType glyphType = GlyphType.Standard, GlyphColor? glyphColor = null)
+        internal GlyphMetrics(
+            FontMetrics font,
+            CodePoint codePoint,
+            GlyphVector vector,
+            ushort advanceWidth,
+            ushort advanceHeight,
+            short leftSideBearing,
+            short topSideBearing,
+            ushort unitsPerEM,
+            ushort index,
+            GlyphType glyphType = GlyphType.Standard,
+            GlyphColor? glyphColor = null)
         {
-            this.Font = font;
-            this.SizeOfEm = sizeOfEm;
+            this.FontMetrics = font;
+            this.Codepoint = codePoint;
+            this.UnitsPerEm = unitsPerEM;
             this.vector = vector;
 
             this.AdvanceWidth = advanceWidth;
+            this.AdvanceHeight = advanceHeight;
             this.Index = index;
-            this.Height = sizeOfEm - this.Bounds.Min.Y;
+
+            this.Width = this.Bounds.Max.X - this.Bounds.Min.X;
+            this.Height = this.Bounds.Max.Y - this.Bounds.Min.Y;
             this.GlyphType = glyphType;
             this.LeftSideBearing = leftSideBearing;
-            this.ScaleFactor = this.SizeOfEm * 72F;
+            this.TopSideBearing = topSideBearing;
+            this.ScaleFactor = this.UnitsPerEm * 72F;
             this.GlyphColor = glyphColor;
         }
 
         /// <summary>
-        /// Gets the Font.
+        /// Gets the font metrics.
         /// </summary>
-        /// <value>
-        /// The Font.
-        /// </value>
-        internal FontInstance Font { get; }
+        internal FontMetrics FontMetrics { get; }
 
         /// <summary>
-        /// Gets the bounds.
+        /// Gets the Unicode codepoint of the glyph.
         /// </summary>
-        /// <value>
-        /// The bounds.
-        /// </value>
-        internal Bounds Bounds => this.vector.Bounds;
+        public CodePoint Codepoint { get; }
 
         /// <summary>
-        /// Gets the width of the advance.
+        /// Gets the advance width for horizontal layout, expressed in font units.
         /// </summary>
-        /// <value>
-        /// The width of the advance.
-        /// </value>
         public ushort AdvanceWidth { get; }
 
         /// <summary>
-        /// Gets the height.
+        /// Gets the advance height for vertical layout, expressed in font units.
         /// </summary>
-        /// <value>
-        /// The height.
-        /// </value>
+        public ushort AdvanceHeight { get; }
+
+        /// <summary>
+        /// Gets the left side bearing for horizontal layout, expressed in font units.
+        /// </summary>
+        public short LeftSideBearing { get; }
+
+        /// <summary>
+        /// Gets the top side bearing for vertical layout, expressed in font units.
+        /// </summary>
+        public short TopSideBearing { get; }
+
+        /// <summary>
+        /// Gets the width, expressed in font units.
+        /// </summary>
+        public float Width { get; }
+
+        /// <summary>
+        /// Gets the height, expressed in font units.
+        /// </summary>
         public float Height { get; }
 
         /// <summary>
-        /// Gets a value indicating the type of glyph instance this is.
+        /// Gets the glyph type.
         /// </summary>
-        /// <value>
-        /// The type of this glyph
-        /// </value>
         public GlyphType GlyphType { get; }
 
         /// <summary>
-        /// Gets the color of this glyph
+        /// Gets the color of this glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
         /// </summary>
-        /// <value>
-        /// The color of the glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
-        /// </value>
         public GlyphColor? GlyphColor { get; }
 
-        /// <summary>
-        /// Gets the index.
-        /// </summary>
-        /// <value>
-        /// The index.
-        /// </value>
-        internal ushort Index { get; }
+        /// <inheritdoc cref="IFontMetrics.UnitsPerEm"/>
+        public ushort UnitsPerEm { get; }
 
-        /// <summary>
-        /// Gets the size of the EM
-        /// </summary>
-        public ushort SizeOfEm { get; }
+        /// <inheritdoc cref="IFontMetrics.ScaleFactor"/>
+        public float ScaleFactor { get; }
 
         /// <summary>
         /// Gets the points defining the shape of this glyph
@@ -98,7 +110,7 @@ namespace SixLabors.Fonts
         public Vector2[] ControlPoints => this.vector.ControlPoints;
 
         /// <summary>
-        /// Gets wether or not the corresponding control point is on a curve
+        /// Gets at value indicating whether the corresponding <see cref="ControlPoints"/> item is on a curve.
         /// </summary>
         public bool[] OnCurves => this.vector.OnCurves;
 
@@ -108,14 +120,14 @@ namespace SixLabors.Fonts
         public ushort[] EndPoints => this.vector.EndPoints;
 
         /// <summary>
-        /// Gets the distance from the bounding box start
+        /// Gets the bounds.
         /// </summary>
-        public short LeftSideBearing { get; }
+        internal Bounds Bounds => this.vector.Bounds;
 
         /// <summary>
-        /// Gets the scale factor that is applied to the glyph
+        /// Gets the index.
         /// </summary>
-        public float ScaleFactor { get; }
+        internal ushort Index { get; }
 
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
@@ -134,7 +146,7 @@ namespace SixLabors.Fonts
         /// <param name="pointSize">Size of the point.</param>
         /// <param name="location">The location.</param>
         /// <param name="dpi">The dpi.</param>
-        /// <param name="lineHeight">The lineHeight the current glyph was draw agains to offset topLeft while calling out to IGlyphRenderer.</param>
+        /// <param name="lineHeight">The lineHeight the current glyph was draw against to offset topLeft while calling out to IGlyphRenderer.</param>
         /// <exception cref="NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, float lineHeight)
         {

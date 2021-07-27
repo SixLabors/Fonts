@@ -82,7 +82,7 @@ namespace SixLabors.Fonts
         public static bool operator !=(FontFamily? left, FontFamily? right)
             => !(left == right);
 
-        internal IFontInstance? Find(FontStyle style)
+        internal IFontMetrics? Find(FontStyle style)
             => this.collection.Find(this.Name, this.Culture, style);
 
         /// <summary>

@@ -74,7 +74,7 @@ namespace SixLabors.Fonts
             float top = 0;
             float scale = 0;
             bool firstLine = true;
-            GlyphInstance? previousGlyph = null;
+            GlyphMetrics? previousGlyph = null;
             int lastWrappableLocation = -1;
             int nextWrappableLocation = codePointCount;
             bool nextWrappableRequired = false;
@@ -101,38 +101,39 @@ namespace SixLabors.Fonts
                     previousGlyph = null;
                 }
 
-                GlyphInstance[] glyphs = spanStyle.GetGlyphLayers(codePoint.Value, options.ColorFontSupport);
+                GlyphMetrics[] glyphs = spanStyle.GetGlyphLayers(codePoint, options.ColorFontSupport);
                 if (glyphs.Length == 0)
                 {
-                    return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint.Value);
+                    // TODO: Should we try to return the replacement glyph first?
+                    return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint);
                 }
 
-                GlyphInstance? glyph = glyphs[0];
-                if (previousGlyph != null && glyph.Font != previousGlyph.Font)
+                GlyphMetrics? glyph = glyphs[0];
+                if (previousGlyph != null && glyph.FontMetrics != previousGlyph.FontMetrics)
                 {
-                    scale = glyph.Font.EmSize * 72;
+                    scale = glyph.ScaleFactor;
                 }
 
-                float fontHeight = glyph.Font.LineHeight * options.LineSpacing;
+                float fontHeight = glyph.FontMetrics.LineHeight * options.LineSpacing;
                 if (fontHeight > unscaledLineHeight)
                 {
                     // get the larget lineheight thus far
                     unscaledLineHeight = fontHeight;
-                    scale = glyph.Font.EmSize * 72;
+                    scale = glyph.ScaleFactor;
                     lineHeight = unscaledLineHeight * spanStyle.PointSize / scale;
                 }
 
-                if (glyph.Font.Ascender > unscaledLineMaxAscender)
+                if (glyph.FontMetrics.Ascender > unscaledLineMaxAscender)
                 {
-                    unscaledLineMaxAscender = glyph.Font.Ascender;
-                    scale = glyph.Font.EmSize * 72;
+                    unscaledLineMaxAscender = glyph.FontMetrics.Ascender;
+                    scale = glyph.ScaleFactor;
                     lineMaxAscender = unscaledLineMaxAscender * spanStyle.PointSize / scale;
                 }
 
-                if (Math.Abs(glyph.Font.Descender) > unscaledLineMaxDescender)
+                if (Math.Abs(glyph.FontMetrics.Descender) > unscaledLineMaxDescender)
                 {
-                    unscaledLineMaxDescender = Math.Abs(glyph.Font.Descender);
-                    scale = glyph.Font.EmSize * 72;
+                    unscaledLineMaxDescender = Math.Abs(glyph.FontMetrics.Descender);
+                    scale = glyph.ScaleFactor;
                     lineMaxDescender = unscaledLineMaxDescender * spanStyle.PointSize / scale;
                 }
 
@@ -180,7 +181,7 @@ namespace SixLabors.Fonts
                 }
 
                 float glyphWidth = glyph.AdvanceWidth * spanStyle.PointSize / scale;
-                float glyphHeight = glyph.Height * spanStyle.PointSize / scale;
+                float glyphHeight = (glyph.UnitsPerEm - glyph.Bounds.Min.Y) * spanStyle.PointSize / scale;
 
                 if (!CodePoint.IsNewLine(codePoint) && !CodePoint.IsWhiteSpace(codePoint))
                 {
@@ -196,10 +197,11 @@ namespace SixLabors.Fonts
                         location.X = glyphLocation.X;
                     }
 
-                    foreach (GlyphInstance? g in glyphs)
+                    foreach (GlyphMetrics? g in glyphs)
                     {
+                        // TODO: We now have Advance(Width/Height).
                         float w = g.AdvanceWidth * spanStyle.PointSize / scale;
-                        float h = g.Height * spanStyle.PointSize / scale;
+                        float h = (g.UnitsPerEm - g.Bounds.Min.Y) * spanStyle.PointSize / scale;
                         layout.Add(new GlyphLayout(graphemeIndex, codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine));
 
                         if (w > glyphWidth)

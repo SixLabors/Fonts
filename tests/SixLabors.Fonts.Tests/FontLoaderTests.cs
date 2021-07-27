@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Linq;
+using SixLabors.Fonts.Unicode;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -13,7 +14,7 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = new FontCollection().Install(TestFonts.CarterOneFileData()).CreateFont(12);
 
-            GlyphInstance g = font.Instance.GetGlyph('\0');
+            GlyphMetrics g = font.FontMetrics.GetGlyphMetrics(new CodePoint('\0'));
         }
 
         [Fact]
@@ -37,12 +38,12 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFont()
         {
-            IFontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileData());
+            IFontMetrics font = FontMetrics.LoadFont(TestFonts.SimpleFontFileData());
 
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
 
-            GlyphInstance glyph = font.GetGlyph('a');
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'));
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
 
@@ -53,12 +54,12 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontWoff()
         {
-            IFontInstance font = FontInstance.LoadFont(TestFonts.SimpleFontFileWoffData());
+            IFontMetrics font = FontMetrics.LoadFont(TestFonts.SimpleFontFileWoffData());
 
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
 
-            GlyphInstance glyph = font.GetGlyph('a');
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'));
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
 

@@ -9,6 +9,89 @@ namespace SixLabors.Fonts.Tests.Unicode
 {
     public partial class CodePointTests
     {
+        [Theory]
+        [MemberData(nameof(GeneralTestData_BmpCodePoints_NoSurrogates))]
+        public static void Ctor_Cast_Char_Valid(GeneralTestData testData)
+        {
+            var codePoint = new CodePoint(checked((char)testData.ScalarValue));
+            var codePointFromCast = (CodePoint)(char)testData.ScalarValue;
+
+            Assert.Equal(codePoint, codePointFromCast);
+            Assert.Equal(testData.ScalarValue, codePoint.Value);
+            Assert.Equal(testData.IsAscii, codePoint.IsAscii);
+            Assert.Equal(testData.IsBmp, codePoint.IsBmp);
+            Assert.Equal(testData.Plane, codePoint.Plane);
+        }
+
+        [Theory]
+        [MemberData(nameof(BmpCodePoints_SurrogatesOnly))]
+        public static void Ctor_Cast_Char_Invalid_Throws(char value)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(nameof(value), () => new CodePoint(value));
+            Assert.Throws<ArgumentOutOfRangeException>(nameof(value), () => (CodePoint)value);
+        }
+
+        [Theory]
+        [MemberData(nameof(GeneralTestData_BmpCodePoints_NoSurrogates))]
+        [MemberData(nameof(GeneralTestData_SupplementaryCodePoints_ValidOnly))]
+        public static void Ctor_Cast_Int32_Valid(GeneralTestData testData)
+        {
+            var codePoint = new CodePoint((int)testData.ScalarValue);
+            var codePointFromCast = (CodePoint)(int)testData.ScalarValue;
+
+            Assert.Equal(codePoint, codePointFromCast);
+            Assert.Equal(testData.ScalarValue, codePoint.Value);
+            Assert.Equal(testData.IsAscii, codePoint.IsAscii);
+            Assert.Equal(testData.IsBmp, codePoint.IsBmp);
+            Assert.Equal(testData.Plane, codePoint.Plane);
+        }
+
+        [Theory]
+        [MemberData(nameof(SupplementaryCodePoints_InvalidOnly))]
+        public static void Ctor_Cast_Int32_Invalid_Throws(int value)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(nameof(value), () => new CodePoint(value));
+            Assert.Throws<ArgumentOutOfRangeException>(nameof(value), () => (CodePoint)value);
+        }
+
+        [Theory]
+        [MemberData(nameof(GeneralTestData_BmpCodePoints_NoSurrogates))]
+        [MemberData(nameof(GeneralTestData_SupplementaryCodePoints_ValidOnly))]
+        public static void Ctor_Cast_UInt32_Valid(GeneralTestData testData)
+        {
+            var codePoint = new CodePoint((uint)testData.ScalarValue);
+            var codePointFromCast = (CodePoint)(uint)testData.ScalarValue;
+
+            Assert.Equal(codePoint, codePointFromCast);
+            Assert.Equal(testData.ScalarValue, codePoint.Value);
+            Assert.Equal(testData.IsAscii, codePoint.IsAscii);
+            Assert.Equal(testData.IsBmp, codePoint.IsBmp);
+            Assert.Equal(testData.Plane, codePoint.Plane);
+        }
+
+        [Theory]
+        [MemberData(nameof(SupplementaryCodePoints_InvalidOnly))]
+        public static void Ctor_Cast_UInt32_Invalid_Throws(int value)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(nameof(value), () => new CodePoint((uint)value));
+            Assert.Throws<ArgumentOutOfRangeException>(nameof(value), () => (CodePoint)(uint)value);
+        }
+
+        [Theory]
+        [MemberData(nameof(SurrogatePairTestData_ValidOnly))]
+        public static void Ctor_SurrogatePair_Valid(char highSurrogate, char lowSurrogate, int expectedValue)
+        {
+            Assert.Equal(expectedValue, new CodePoint(highSurrogate, lowSurrogate).Value);
+        }
+
+        [Theory]
+        [MemberData(nameof(SurrogatePairTestData_InvalidOnly))]
+        public static void Ctor_SurrogatePair_Invalid(char highSurrogate, char lowSurrogate)
+        {
+            string expectedParamName = !char.IsHighSurrogate(highSurrogate) ? nameof(highSurrogate) : nameof(lowSurrogate);
+            Assert.Throws<ArgumentOutOfRangeException>(expectedParamName, () => new CodePoint(highSurrogate, lowSurrogate));
+        }
+
         [Fact]
         public void CanEnumerateSpan()
         {

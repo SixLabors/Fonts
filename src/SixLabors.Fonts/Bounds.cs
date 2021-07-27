@@ -22,10 +22,7 @@ namespace SixLabors.Fonts
 
         public Vector2 Max { get; }
 
-        public Vector2 Size()
-        {
-            return new Vector2(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
-        }
+        public Vector2 Size() => new Vector2(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
 
         internal static Bounds Load(BigEndianBinaryReader reader)
         {

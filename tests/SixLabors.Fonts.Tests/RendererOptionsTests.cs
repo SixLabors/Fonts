@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using SixLabors.Fonts.Unicode;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -306,9 +307,9 @@ namespace SixLabors.Fonts.Tests
 
             AppliedFontStyle style = options.GetStyle(4, 10);
 
-            GlyphInstance glyph = Assert.Single(style.GetGlyphLayers('Z', ColorFontSupport.None));
+            GlyphMetrics glyph = Assert.Single(style.GetGlyphLayers(new CodePoint('Z'), ColorFontSupport.None));
             Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
-            Assert.Equal(abcFontInstance, glyph.Font);
+            Assert.Equal(abcFontInstance, glyph.FontMetrics);
         }
 
         [Theory]
@@ -331,7 +332,7 @@ namespace SixLabors.Fonts.Tests
 
             AppliedFontStyle style = options.GetStyle(4, 10);
 
-            GlyphInstance glyph = Assert.Single(style.GetGlyphLayers(character, ColorFontSupport.None));
+            GlyphMetrics glyph = Assert.Single(style.GetGlyphLayers(new CodePoint(character), ColorFontSupport.None));
             Assert.Equal(GlyphType.Standard, glyph.GlyphType);
             Fakes.FakeFontInstance expectedInstance = instance switch
             {
@@ -341,7 +342,7 @@ namespace SixLabors.Fonts.Tests
                 _ => throw new Exception("does not match")
             };
 
-            Assert.Equal(expectedInstance, glyph.Font);
+            Assert.Equal(expectedInstance, glyph.FontMetrics);
         }
     }
 }

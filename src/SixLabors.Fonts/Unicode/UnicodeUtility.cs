@@ -28,6 +28,17 @@ namespace SixLabors.Fonts.Unicode
         public static bool IsBmpCodePoint(uint value) => value <= 0xFFFFu;
 
         /// <summary>
+        /// Returns the Unicode plane (0 through 16, inclusive) which contains this code point.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetPlane(uint codePoint)
+        {
+            DebugAssertIsValidCodePoint(codePoint);
+
+            return (int)(codePoint >> 16);
+        }
+
+        /// <summary>
         /// Returns <see langword="true"/> if <paramref name="codePoint"/> is a valid Unicode code
         /// point, i.e., is in [ U+0000..U+10FFFF ], inclusive.
         /// </summary>
@@ -99,8 +110,8 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         public static uint GetScalarFromUtf16SurrogatePair(uint highSurrogateCodePoint, uint lowSurrogateCodePoint)
         {
-            AssertIsHighSurrogateCodePoint(highSurrogateCodePoint);
-            AssertIsLowSurrogateCodePoint(lowSurrogateCodePoint);
+            DebugAssertIsHighSurrogateCodePoint(highSurrogateCodePoint);
+            DebugAssertIsLowSurrogateCodePoint(lowSurrogateCodePoint);
 
             // This calculation comes from the Unicode specification, Table 3-5.
             // Need to remove the D800 marker from the high surrogate and the DC00 marker from the low surrogate,
@@ -115,7 +126,7 @@ namespace SixLabors.Fonts.Unicode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void GetUtf16SurrogatesFromSupplementaryPlaneCodePoint(uint value, out char highSurrogateCodePoint, out char lowSurrogateCodePoint)
         {
-            AssertIsValidSupplementaryPlaneCodePoint(value);
+            DebugAssertIsValidSupplementaryPlaneCodePoint(value);
 
             // This calculation comes from the Unicode specification, Table 3-5.
             highSurrogateCodePoint = (char)((value + ((0xD800u - 0x40u) << 10)) >> 10);
@@ -123,7 +134,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         [Conditional("DEBUG")]
-        internal static void AssertIsHighSurrogateCodePoint(uint codePoint)
+        internal static void DebugAssertIsHighSurrogateCodePoint(uint codePoint)
         {
             if (!IsHighSurrogateCodePoint(codePoint))
             {
@@ -132,7 +143,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         [Conditional("DEBUG")]
-        internal static void AssertIsLowSurrogateCodePoint(uint codePoint)
+        internal static void DebugAssertIsLowSurrogateCodePoint(uint codePoint)
         {
             if (!IsLowSurrogateCodePoint(codePoint))
             {
@@ -141,7 +152,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         [Conditional("DEBUG")]
-        internal static void AssertIsValidCodePoint(uint codePoint)
+        internal static void DebugAssertIsValidCodePoint(uint codePoint)
         {
             if (!IsValidCodePoint(codePoint))
             {
@@ -150,7 +161,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         [Conditional("DEBUG")]
-        internal static void AssertIsValidSupplementaryPlaneCodePoint(uint codePoint)
+        internal static void DebugAssertIsValidSupplementaryPlaneCodePoint(uint codePoint)
         {
             if (!IsValidCodePoint(codePoint) || IsBmpCodePoint(codePoint))
             {
@@ -164,6 +175,6 @@ namespace SixLabors.Fonts.Unicode
         /// <remarks>
         /// The input value doesn't have to be a real code point in the Unicode codespace. It can be any integer.
         /// </remarks>
-        private static string ToHexString(uint codePoint) => FormattableString.Invariant($"U+{codePoint:X4}");
+        internal static string ToHexString(uint codePoint) => FormattableString.Invariant($"U+{codePoint:X4}");
     }
 }

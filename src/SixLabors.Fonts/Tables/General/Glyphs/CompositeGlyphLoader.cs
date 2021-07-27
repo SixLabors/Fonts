@@ -63,7 +63,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             var endPoints = new List<ushort>();
             var minBounds = new List<Vector2>();
             var maxBounds = new List<Vector2>();
-            var parts = new List<GlyphInstance>();
+            var parts = new List<GlyphMetrics>();
 
             for (int resultIndex = 0; resultIndex < this.result.Length; resultIndex++)
             {

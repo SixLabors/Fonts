@@ -5,10 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Fakes
 {
-    internal class FakeFontInstance : FontInstance
+    internal class FakeFontInstance : FontMetrics
     {
         internal FakeFontInstance(string text)
             : this(GetGlyphs(text))
@@ -23,6 +24,8 @@ namespace SixLabors.Fonts.Tests.Fakes
                   GenerateOS2Table(),
                   GenerateHorizontalHeadTable(),
                   GenerateHorizontalMetricsTable(glyphs),
+                  GenerateVerticalHeadTable(),
+                  GenerateVerticalMetricsTable(glyphs),
                   GenerateHeadTable(),
                   new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]),
                   null,
@@ -37,9 +40,11 @@ namespace SixLabors.Fonts.Tests.Fakes
             OS2Table os2,
             HorizontalHeadTable horizontalHeadTable,
             HorizontalMetricsTable horizontalMetrics,
+            VerticalHeadTable verticalHeadTable,
+            VerticalMetricsTable verticalMetrics,
             HeadTable head,
             KerningTable kern)
-            : base(nameTable, cmap, glyphs, os2, horizontalHeadTable, horizontalMetrics, head, kern, null, null)
+            : base(nameTable, cmap, glyphs, os2, horizontalHeadTable, horizontalMetrics, verticalHeadTable, verticalMetrics, head, kern, null, null)
         {
         }
 
@@ -57,12 +62,23 @@ namespace SixLabors.Fonts.Tests.Fakes
                 GenerateOS2TableWithVaryingVerticalFontMetrics(),
                 GenerateHorizontalHeadTable(),
                 GenerateHorizontalMetricsTable(glyphs),
+                GenerateVerticalHeadTable(),
+                GenerateVerticalMetricsTable(glyphs),
                 GenerateHeadTable(),
                 new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]));
         }
 
         private static List<FakeGlyphSource> GetGlyphs(string text)
-            => text.Distinct().Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
+        {
+            var codePoints = new HashSet<CodePoint>();
+
+            foreach (CodePoint codePoint in new CodePointEnumerator(text.AsSpan()))
+            {
+                codePoints.Add(codePoint);
+            }
+
+            return codePoints.Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
+        }
 
         private static NameTable GenerateNameTable()
             => new NameTable(
@@ -79,6 +95,9 @@ namespace SixLabors.Fonts.Tests.Fakes
         private static HorizontalHeadTable GenerateHorizontalHeadTable()
             => new HorizontalHeadTable(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
+        private static VerticalHeadTable GenerateVerticalHeadTable()
+            => new VerticalHeadTable(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+
         private static OS2Table GenerateOS2Table()
             => new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.USE_TYPO_METRICS, 1, 1, 20, 10, 20, 1, 1);
 
@@ -87,6 +106,9 @@ namespace SixLabors.Fonts.Tests.Fakes
 
         private static HorizontalMetricsTable GenerateHorizontalMetricsTable(List<FakeGlyphSource> glyphs)
             => new HorizontalMetricsTable(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
+
+        private static VerticalMetricsTable GenerateVerticalMetricsTable(List<FakeGlyphSource> glyphs)
+            => new VerticalMetricsTable(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
 
         private static HeadTable GenerateHeadTable()
             => new HeadTable(

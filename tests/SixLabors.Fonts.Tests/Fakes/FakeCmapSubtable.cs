@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using SixLabors.Fonts.Tables.General.CMap;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Fakes
 {
@@ -13,7 +14,7 @@ namespace SixLabors.Fonts.Tests.Fakes
         public FakeCmapSubtable(List<FakeGlyphSource> glyphs)
             => this.glyphs = glyphs;
 
-        public override bool TryGetGlyphId(int codePoint, out ushort glyphId)
+        public override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
         {
             foreach (FakeGlyphSource c in this.glyphs)
             {

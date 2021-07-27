@@ -4,6 +4,7 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Unicode
 {
@@ -29,14 +30,18 @@ namespace SixLabors.Fonts.Unicode
         /// Initializes a new instance of the <see cref="CodePoint"/> struct.
         /// </summary>
         /// <param name="value">The char representing the UTF-16 code unit</param>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="ArgumentOutOfRangeException">
         /// If <paramref name="value"/> represents a UTF-16 surrogate code point
         /// U+D800..U+DFFF, inclusive.
         /// </exception>
         public CodePoint(char value)
         {
             uint expanded = value;
-            Guard.IsFalse(UnicodeUtility.IsSurrogateCodePoint(expanded), nameof(value), "Must not be in [ U+D800..U+DFFF ], inclusive.");
+
+            if (UnicodeUtility.IsSurrogateCodePoint(expanded))
+            {
+                ThrowArgumentOutOfRange(expanded, nameof(value), "Must not be in [ U+D800..U+DFFF ], inclusive.");
+            }
 
             this.value = expanded;
         }
@@ -44,8 +49,22 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Initializes a new instance of the <see cref="CodePoint"/> struct.
         /// </summary>
+        /// <param name="highSurrogate">A char representing a UTF-16 high surrogate code unit.</param>
+        /// <param name="lowSurrogate">A char representing a UTF-16 low surrogate code unit.</param>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// If <paramref name="highSurrogate"/> does not represent a UTF-16 high surrogate code unit
+        /// or <paramref name="lowSurrogate"/> does not represent a UTF-16 low surrogate code unit.
+        /// </exception>
+        public CodePoint(char highSurrogate, char lowSurrogate)
+            : this((uint)char.ConvertToUtf32(highSurrogate, lowSurrogate), false)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodePoint"/> struct.
+        /// </summary>
         /// <param name="value">The value to create the codepoint.</param>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="ArgumentOutOfRangeException">
         /// If <paramref name="value"/> does not represent a value Unicode scalar value.
         /// </exception>
         public CodePoint(int value)
@@ -57,15 +76,27 @@ namespace SixLabors.Fonts.Unicode
         /// Initializes a new instance of the <see cref="CodePoint"/> struct.
         /// </summary>
         /// <param name="value">The value to create the codepoint.</param>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="ArgumentOutOfRangeException">
         /// If <paramref name="value"/> does not represent a value Unicode scalar value.
         /// </exception>
         public CodePoint(uint value)
         {
-            Guard.IsTrue(IsValid(value), nameof(value), "Must be in [ U+0000..U+10FFFF ], inclusive.");
+            if (!IsValid(value))
+            {
+                ThrowArgumentOutOfRange(value, nameof(value), "Must be in [ U+0000..U+10FFFF ], inclusive.");
+            }
 
             this.value = value;
         }
+
+        // Non-validating ctor
+#pragma warning disable IDE0060 // Remove unused parameter
+        private CodePoint(uint scalarValue, bool unused)
+        {
+            UnicodeUtility.DebugAssertIsValidCodePoint(scalarValue);
+            this.value = scalarValue;
+        }
+#pragma warning restore IDE0060 // Remove unused parameter
 
         // Contains information about the ASCII character range [ U+0000..U+007F ], with:
         // - 0x80 bit if set means 'is whitespace'
@@ -85,16 +116,21 @@ namespace SixLabors.Fonts.Unicode
         };
 
         /// <summary>
+        /// Gets a value indicating whether this value is ASCII ([ U+0000..U+007F ])
+        /// and therefore representable by a single UTF-8 code unit.
+        /// </summary>
+        public bool IsAscii => UnicodeUtility.IsAsciiCodePoint(this.value);
+
+        /// <summary>
         /// Gets a value indicating whether this value is within the BMP ([ U+0000..U+FFFF ])
         /// and therefore representable by a single UTF-16 code unit.
         /// </summary>
         public bool IsBmp => UnicodeUtility.IsBmpCodePoint(this.value);
 
         /// <summary>
-        /// Gets a value indicating whether this value is ASCII ([ U+0000..U+007F ])
-        /// and therefore representable by a single UTF-8 code unit.
+        /// Gets the Unicode plane (0 to 16, inclusive) which contains this scalar.
         /// </summary>
-        public bool IsAscii => UnicodeUtility.IsAsciiCodePoint(this.value);
+        public int Plane => UnicodeUtility.GetPlane(this.value);
 
         // Displayed as "'<char>' (U+XXXX)"; e.g., "'e' (U+0065)"
         private string DebuggerDisplay => FormattableString.Invariant($"U+{this.value:X4} '{(IsValid(this.value) ? this.ToString() : "\uFFFD")}'");
@@ -112,6 +148,8 @@ namespace SixLabors.Fonts.Unicode
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
         // Operators below are explicit because they may throw.
+        public static explicit operator CodePoint(char ch) => new CodePoint(ch);
+
         public static explicit operator CodePoint(uint value) => new CodePoint(value);
 
         public static explicit operator CodePoint(int value) => new CodePoint(value);
@@ -530,5 +568,9 @@ namespace SixLabors.Fonts.Unicode
         // Returns true if this Unicode category represents a symbol
         private static bool IsCategorySymbol(UnicodeCategory category)
             => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.MathSymbol, (uint)UnicodeCategory.OtherSymbol);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentOutOfRange(uint value, string paramName, string message)
+            => throw new ArgumentOutOfRangeException(paramName, $"The value {UnicodeUtility.ToHexString(value)} is not a valid Unicode code point value. {message}");
     }
 }
