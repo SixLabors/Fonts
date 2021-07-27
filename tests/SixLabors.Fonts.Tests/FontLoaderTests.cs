@@ -34,6 +34,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         }
 
+#if NETCOREAPP3_0_OR_GREATER
         [Fact]
         public void LoadFontMetadataWoff2()
         {
@@ -42,6 +43,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         }
+#endif
 
         [Fact]
         public void LoadFont()
