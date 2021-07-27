@@ -90,7 +90,8 @@ git submodule update --init --recursive
 ### Features
 - Reading font description (name, family, subname etc plus other string metadata)
 - Loading True type fonts
-- Loading WOFF fonts
+- Loading [WOFF fonts](https://www.w3.org/Submission/WOFF/)
+- Loading [WOFF2 fonts](https://www.w3.org/TR/WOFF2)
 - Load all compatible fonts from local machine store (Windows only at the moment)
 
 #### Limitations
