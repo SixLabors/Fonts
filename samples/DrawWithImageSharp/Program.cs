@@ -25,6 +25,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var fonts = new FontCollection();
             FontFamily font = fonts.Install(@"Fonts\SixLaborsSampleAB.ttf");
             FontFamily fontWoff = fonts.Install(@"Fonts\SixLaborsSampleAB.woff");
+            FontFamily fontWoff2 = fonts.Install(@"Fonts\OpenSans-Regular.woff2");
             FontFamily carter = fonts.Install(@"Fonts\CarterOne.ttf");
             FontFamily wendyOne = fonts.Install(@"Fonts\WendyOne-Regular.ttf");
             FontFamily whitneyBook = fonts.Install(@"Fonts\whitney-book.ttf");
@@ -51,6 +52,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font, "ABd", 72);
             RenderText(fontWoff, "abe", 72);
             RenderText(fontWoff, "ABf", 72);
+            RenderText(fontWoff2, "woff2", 72);
             RenderText(font2, "ov", 72);
             RenderText(font2, "a\ta", 72);
             RenderText(font2, "aa\ta", 72);
