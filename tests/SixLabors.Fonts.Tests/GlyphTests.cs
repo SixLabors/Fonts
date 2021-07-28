@@ -43,7 +43,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void IdenticalGlyphsInDiferentPalcesCreateIdenticalKeys()
+        public void IdenticalGlyphsInDifferentPalcesCreateIdenticalKeys()
         {
             Font fakeFont = CreateFont("AB");
             var textRenderer = new TextRenderer(this.renderer);
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void BeginGLyph_returnsfalse_skiprenderingfigures()
+        public void BeginGlyph_returnsfalse_skiprenderingfigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
             renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(false);
@@ -67,7 +67,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void BeginGLyph_returnstrue_rendersfigures()
+        public void BeginGlyph_returnstrue_rendersfigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
             renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(true);

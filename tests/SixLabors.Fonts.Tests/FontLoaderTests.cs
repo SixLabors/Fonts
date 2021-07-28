@@ -37,12 +37,24 @@ namespace SixLabors.Fonts.Tests
 
 #if NETCOREAPP3_0_OR_GREATER
         [Fact]
-        public void LoadFontMetadataWoff2()
+        public void LoadFontMetadata_WithWoff2Format()
         {
             var description = FontDescription.LoadDescription(TestFonts.FontFileWoff2Data());
 
             Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
+        }
+
+        [Fact]
+        public void LoadFont_WithWoff2Format()
+        {
+            IFontMetrics font = FontMetrics.LoadFont(TestFonts.FontFileWoff2Data());
+
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'));
+            var r = new GlyphRenderer();
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
+
+            Assert.Equal(15, r.ControlPoints.Distinct().Count());
         }
 #endif
 

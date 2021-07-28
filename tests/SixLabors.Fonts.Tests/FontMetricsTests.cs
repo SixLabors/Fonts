@@ -75,6 +75,35 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
         }
 
+#if NETCOREAPP3_0_OR_GREATER
+        [Fact]
+        public void GlyphMetricsMatchesReference_WithWoff2format()
+        {
+            // Compared to EveryFonts TTFDump metrics
+            // https://everythingfonts.com/ttfdump
+            var collection = new FontCollection();
+            FontFamily family = collection.Install(TestFonts.OpenSansFileWoff2);
+            Font font = family.CreateFont(12);
+
+            var codePoint = new CodePoint('A');
+            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint);
+            GlyphMetrics glyphMetrics1 = font.GetGlyph(codePoint).GlyphMetrics;
+
+            Assert.Equal(glyphMetrics, glyphMetrics1);
+
+            Assert.Equal(codePoint, glyphMetrics.Codepoint);
+            Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
+            Assert.Equal(glyphMetrics.UnitsPerEm * 72F, glyphMetrics.ScaleFactor);
+            Assert.Equal(1296, glyphMetrics.AdvanceWidth);
+            Assert.Equal(2789, glyphMetrics.AdvanceHeight);
+            Assert.Equal(1296, glyphMetrics.Width);
+            Assert.Equal(1468, glyphMetrics.Height);
+            Assert.Equal(0, glyphMetrics.LeftSideBearing);
+            Assert.Equal(0, glyphMetrics.TopSideBearing);
+            Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
+        }
+#endif
+
         [Fact]
         public void GlyphMetricsVerticalMatchesReference()
         {

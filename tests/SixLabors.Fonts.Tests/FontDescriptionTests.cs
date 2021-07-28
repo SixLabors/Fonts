@@ -78,7 +78,7 @@ namespace SixLabors.Fonts.Tests
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
-            // unknown culture shoudl prioritise US, but missing so will return first
+            // unknown culture shoud prioritise US, but missing so will return first
             Assert.Equal("name_us", description.FontNameInvariantCulture);
             Assert.Equal("sub_us", description.FontSubFamilyNameInvariantCulture);
             Assert.Equal("fam_us", description.FontFamilyInvariantCulture);
@@ -107,7 +107,7 @@ namespace SixLabors.Fonts.Tests
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
-            // unknown culture shoudl prioritise US, but missing so will return first
+            // unknown culture shoud prioritise US, but missing so will return first
             Assert.Equal("name_c2", description.FontName(c2));
             Assert.Equal("sub_c2", description.FontSubFamilyName(c2));
             Assert.Equal("fam_c2", description.FontFamily(c2));
