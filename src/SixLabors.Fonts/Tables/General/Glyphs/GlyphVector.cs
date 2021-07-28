@@ -8,9 +8,11 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 {
     internal struct GlyphVector : IDeepCloneable
     {
+        private Vector2[] controlPoints;
+
         internal GlyphVector(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds)
         {
-            this.ControlPoints = controlPoints;
+            this.controlPoints = controlPoints;
             this.OnCurves = onCurves;
             this.EndPoints = endPoints;
             this.Bounds = bounds;
@@ -18,8 +20,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         private GlyphVector(GlyphVector other)
         {
-            this.ControlPoints = new Vector2[other.ControlPoints.Length];
-            other.ControlPoints.CopyTo(this.ControlPoints.AsSpan());
+            this.controlPoints = new Vector2[other.ControlPoints.Length];
+            other.ControlPoints.CopyTo(this.controlPoints.AsSpan());
             this.OnCurves = new bool[other.OnCurves.Length];
             other.OnCurves.CopyTo(this.OnCurves.AsSpan());
             this.EndPoints = new ushort[other.EndPoints.Length];
@@ -30,7 +32,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public int PointCount => this.ControlPoints.Length;
 
-        public Vector2[] ControlPoints { get; }
+        public Vector2[] ControlPoints => this.controlPoints;
 
         public ushort[] EndPoints { get; }
 
@@ -69,11 +71,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         /// <param name="src">The source glyph which points will be appended.</param>
         public void TtfAppendGlyph(GlyphVector src)
         {
-            Vector2[] destPoints = this.ControlPoints;
-            int destPointsCount = destPoints.Length;
+            int destPointsCount = this.controlPoints.Length;
             Vector2[] srcPoints = src.ControlPoints;
-            Array.Resize(ref destPoints, destPoints.Length + srcPoints.Length);
-            srcPoints.CopyTo(destPoints.AsSpan(destPointsCount));
+            Array.Resize(ref this.controlPoints, this.controlPoints.Length + srcPoints.Length);
+            srcPoints.CopyTo(this.controlPoints.AsSpan(destPointsCount));
         }
 
         public void TtfTransformWith2x2Matrix(float m00, float m01, float m10, float m11)
@@ -93,10 +94,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 float x = p.X;
                 float y = p.Y;
 
-                glyphPoints[i] = new Vector2((float)Math.Round((x * m00) + (y * m10)), (float)Math.Round((x * m01) + (y * m11)));
+                float newX = (float)Math.Round((x * m00) + (y * m10));
+                float newY = (float)Math.Round((x * m01) + (y * m11));
+                glyphPoints[i] = new Vector2(newX, newY);
 
-                float newX = 0.0f;
-                float newY = 0.0f;
                 if (newX < newXmin)
                 {
                     newXmin = newX;
