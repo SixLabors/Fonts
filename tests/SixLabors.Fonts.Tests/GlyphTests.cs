@@ -126,6 +126,29 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(3, renderer.Colors.Count);
         }
 
+#if NETCOREAPP3_0_OR_GREATER
+        [Fact]
+        public void RenderWoff2Glyphs_EqualToTtfGlyphs()
+        {
+            Font fontTtf = new FontCollection().Install(TestFonts.OpenSansFile).CreateFont(12);
+            Font fontWoff2 = new FontCollection().Install(TestFonts.OpenSansFileWoff2).CreateFont(12);
+            string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+            var rendererTtf = new ColorGlyphRenderer();
+            TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
+            {
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+            });
+            var rendererWoff2 = new ColorGlyphRenderer();
+            TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
+            {
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+            });
+
+            Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff2.ControlPoints));
+        }
+#endif
+
         private CodePoint AsCodePoint(string text) => CodePoint.DecodeFromUtf16At(text.AsSpan(), 0);
     }
 }
