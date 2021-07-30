@@ -59,10 +59,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
             Bounds orgBounds = this.Bounds;
             this.Bounds = new Bounds(
-                (short)(orgBounds.Min.X + dx),
-                (short)(orgBounds.Min.Y + dy),
-                (short)(orgBounds.Max.X + dx),
-                (short)(orgBounds.Max.Y + dy));
+                orgBounds.Min.X + dx,
+                orgBounds.Min.Y + dy,
+                orgBounds.Max.X + dx,
+                orgBounds.Max.Y + dy);
         }
 
         /// <summary>
