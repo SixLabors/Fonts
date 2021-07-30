@@ -19,15 +19,15 @@ namespace SixLabors.Fonts.Tables.General
             this.layers = layers;
         }
 
-        public static ColrTable? Load(FontReader reader)
+        public static ColrTable? Load(FontReader fontReader)
         {
-            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                if (binaryReader == null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
+            using (binaryReader)
+            {
                 return Load(binaryReader);
             }
         }

@@ -96,15 +96,15 @@ namespace SixLabors.Fonts.Tables.General
 
         public ushort UnitsPerEm { get; }
 
-        public static HeadTable? Load(FontReader reader)
+        public static HeadTable? Load(FontReader fontReader)
         {
-            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                if (binaryReader is null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
+            using (binaryReader)
+            {
                 return Load(binaryReader);
             }
         }
@@ -158,8 +158,8 @@ namespace SixLabors.Fonts.Tables.General
             ushort minorVersion = reader.ReadUInt16();
             uint fontRevision = reader.ReadUInt32();
             uint checkSumAdjustment = reader.ReadUInt32();
-            uint magincnumber = reader.ReadUInt32();
-            if (magincnumber != 0x5F0F3CF5)
+            uint magicNumber = reader.ReadUInt32();
+            if (magicNumber != 0x5F0F3CF5)
             {
                 throw new InvalidFontFileException("invalid magic number in 'head'");
             }

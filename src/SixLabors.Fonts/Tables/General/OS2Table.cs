@@ -177,16 +177,16 @@ namespace SixLabors.Fonts.Tables.General
 
         public ushort WinDescent { get; }
 
-        public static OS2Table? Load(FontReader reader)
+        public static OS2Table? Load(FontReader fontReader)
         {
-            using (BigEndianBinaryReader? r = reader.TryGetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                if (r is null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
-                return Load(r);
+            using (binaryReader)
+            {
+                return Load(binaryReader);
             }
         }
 

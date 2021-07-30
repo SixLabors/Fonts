@@ -58,15 +58,17 @@ namespace SixLabors.Fonts.Tables.General
 
         public ushort NumberOfVMetrics { get; }
 
-        public static VerticalHeadTable? Load(FontReader reader)
+        public static VerticalHeadTable? Load(FontReader fontReader)
         {
-            using BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName);
-            if (binaryReader is null)
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
                 return null;
             }
 
-            return Load(binaryReader);
+            using (binaryReader)
+            {
+                return Load(binaryReader);
+            }
         }
 
         public static VerticalHeadTable Load(BigEndianBinaryReader reader)

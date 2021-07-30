@@ -192,8 +192,7 @@ namespace SixLabors.Fonts
 
         public BigEndianBinaryReader GetReaderAtTablePosition(string tableName)
         {
-            BigEndianBinaryReader? reader = this.TryGetReaderAtTablePosition(tableName);
-            if (reader == null)
+            if (this.TryGetReaderAtTablePosition(tableName, out BigEndianBinaryReader? reader))
             {
                 throw new InvalidFontTableException("Unable to find table", tableName);
             }
@@ -201,10 +200,22 @@ namespace SixLabors.Fonts
             return reader;
         }
 
-        public BigEndianBinaryReader? TryGetReaderAtTablePosition(string tableName)
+        public bool TryGetReaderAtTablePosition(string tableName, out BigEndianBinaryReader? reader)
         {
             TableHeader? header = this.GetHeader(tableName);
-            return header?.CreateReader(this.stream);
+            if (header == null)
+            {
+                reader = null;
+                return false;
+            }
+
+            reader = header?.CreateReader(this.stream);
+            if (reader == null)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

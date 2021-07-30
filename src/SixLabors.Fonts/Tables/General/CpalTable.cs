@@ -19,15 +19,15 @@ namespace SixLabors.Fonts.Tables.General
         public GlyphColor GetGlyphColor(int palletteIndex, int palletteEntryIndex)
             => this.palletteEntries[this.palletteOffsets[palletteIndex] + palletteEntryIndex];
 
-        public static CpalTable? Load(FontReader reader)
+        public static CpalTable? Load(FontReader fontReader)
         {
-            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                if (binaryReader == null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
+            using (binaryReader)
+            {
                 return Load(binaryReader);
             }
         }
@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tables.General
 
             reader.Seek(offsetFirstColorRecord, System.IO.SeekOrigin.Begin);
             var pallettes = new GlyphColor[numColorRecords];
-            for (var n = 0; n < numColorRecords; n++)
+            for (int n = 0; n < numColorRecords; n++)
             {
                 byte blue = reader.ReadByte();
                 byte green = reader.ReadByte();

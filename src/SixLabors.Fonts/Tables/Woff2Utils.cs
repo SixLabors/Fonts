@@ -133,15 +133,15 @@ namespace SixLabors.Fonts.Tables
             uint bboxStreamSize = reader.ReadUInt32();
             uint instructionStreamSize = reader.ReadUInt32();
 
-            long expected_nCountStartAt = reader.BaseStream.Position;
-            long expected_nPointStartAt = expected_nCountStartAt + nContourStreamSize;
-            long expected_FlagStreamStartAt = expected_nPointStartAt + nPointsStreamSize;
-            long expected_GlyphStreamStartAt = expected_FlagStreamStartAt + flagStreamSize;
-            long expected_CompositeStreamStartAt = expected_GlyphStreamStartAt + glyphStreamSize;
+            long expectedNCountStartAt = reader.BaseStream.Position;
+            long expectedNPointStartAt = expectedNCountStartAt + nContourStreamSize;
+            long expectedFlagStreamStartAt = expectedNPointStartAt + nPointsStreamSize;
+            long expectedGlyphStreamStartAt = expectedFlagStreamStartAt + flagStreamSize;
+            long expectedCompositeStreamStartAt = expectedGlyphStreamStartAt + glyphStreamSize;
 
-            long expected_BboxStreamStartAt = expected_CompositeStreamStartAt + compositeStreamSize;
-            long expected_InstructionStreamStartAt = expected_BboxStreamStartAt + bboxStreamSize;
-            long expected_EndAt = expected_InstructionStreamStartAt + instructionStreamSize;
+            long expectedBboxStreamStartAt = expectedCompositeStreamStartAt + compositeStreamSize;
+            long expectedInstructionStreamStartAt = expectedBboxStreamStartAt + bboxStreamSize;
+            long expectedEndAt = expectedInstructionStreamStartAt + instructionStreamSize;
 
             var glyphs = new GlyphVector[numGlyphs];
             var allGlyphs = new TempGlyph[numGlyphs];
@@ -179,13 +179,13 @@ namespace SixLabors.Fonts.Tables
             byte[] flagStream = reader.ReadBytes((int)flagStreamSize);
 
             // Some composite glyphs have instructions=> so we must check all composite glyphs before read the glyph stream.
-            using (var compositeMS = new MemoryStream())
+            using (var compositeMemoryStream = new MemoryStream())
             {
-                reader.BaseStream.Position = expected_CompositeStreamStartAt;
-                compositeMS.Write(reader.ReadBytes((int)compositeStreamSize), 0, (int)compositeStreamSize);
-                compositeMS.Position = 0;
+                reader.BaseStream.Position = expectedCompositeStreamStartAt;
+                compositeMemoryStream.Write(reader.ReadBytes((int)compositeStreamSize), 0, (int)compositeStreamSize);
+                compositeMemoryStream.Position = 0;
 
-                using (var compositeReader = new BigEndianBinaryReader(compositeMS, false))
+                using (var compositeReader = new BigEndianBinaryReader(compositeMemoryStream, false))
                 {
                     for (ushort i = 0; i < compositeGlyphs.Count; ++i)
                     {
@@ -194,7 +194,7 @@ namespace SixLabors.Fonts.Tables
                     }
                 }
 
-                reader.BaseStream.Position = expected_GlyphStreamStartAt;
+                reader.BaseStream.Position = expectedGlyphStreamStartAt;
             }
 
             int curFlagsIndex = 0;
@@ -244,7 +244,7 @@ namespace SixLabors.Fonts.Tables
                 }
             }
 
-            reader.BaseStream.Position = expected_InstructionStreamStartAt;
+            reader.BaseStream.Position = expectedInstructionStreamStartAt;
 
             for (ushort i = 0; i < numGlyphs; ++i)
             {
@@ -277,40 +277,40 @@ namespace SixLabors.Fonts.Tables
             Vector2[] glyphPoints = glyph.ControlPoints;
 
             int j = glyphPoints.Length;
-            float xmin = float.MaxValue;
-            float ymin = float.MaxValue;
-            float xmax = float.MinValue;
-            float ymax = float.MinValue;
+            float xMin = float.MaxValue;
+            float yMin = float.MaxValue;
+            float xMax = float.MinValue;
+            float yMax = float.MinValue;
 
             for (int i = 0; i < j; ++i)
             {
                 Vector2 p = glyphPoints[i];
-                if (p.X < xmin)
+                if (p.X < xMin)
                 {
-                    xmin = p.X;
+                    xMin = p.X;
                 }
 
-                if (p.X > xmax)
+                if (p.X > xMax)
                 {
-                    xmax = p.X;
+                    xMax = p.X;
                 }
 
-                if (p.Y < ymin)
+                if (p.Y < yMin)
                 {
-                    ymin = p.Y;
+                    yMin = p.Y;
                 }
 
-                if (p.Y > ymax)
+                if (p.Y > yMax)
                 {
-                    ymax = p.Y;
+                    yMax = p.Y;
                 }
             }
 
             return new Bounds(
-                (short)Math.Round(xmin),
-                (short)Math.Round(ymin),
-                (short)Math.Round(xmax),
-                (short)Math.Round(ymax));
+                (short)Math.Round(xMin),
+                (short)Math.Round(yMin),
+                (short)Math.Round(xMax),
+                (short)Math.Round(yMax));
         }
 
         private static GlyphVector BuildSimpleGlyphStructure(

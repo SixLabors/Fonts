@@ -16,17 +16,17 @@ namespace SixLabors.Fonts.Tables.General
         public KerningTable(KerningSubTable[] kerningSubTable)
             => this.kerningSubTable = kerningSubTable;
 
-        public static KerningTable Load(FontReader reader)
+        public static KerningTable Load(FontReader fontReader)
         {
-            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                if (binaryReader is null)
-                {
-                    // this table is optional.
-                    return new KerningTable(new KerningSubTable[0]);
-                }
+                // this table is optional.
+                return new KerningTable(new KerningSubTable[0]);
+            }
 
-                // move to start of table
+            using (binaryReader)
+            {
+                // Move to start of table.
                 return Load(binaryReader);
             }
         }

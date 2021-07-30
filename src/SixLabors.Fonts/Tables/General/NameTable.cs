@@ -59,9 +59,9 @@ namespace SixLabors.Fonts.Tables.General
         public string GetNameById(CultureInfo culture, NameIds nameId)
         {
 #if SUPPORTS_CULTUREINFO_LCID
-            var languageId = culture.LCID;
+            int languageId = culture.LCID;
 #else
-            var languageId = 0x0409;
+            int languageId = 0x0409;
 #endif
             NameRecord? usaVersion = null;
             NameRecord? firstWindows = null;
