@@ -100,12 +100,17 @@ namespace SixLabors.Fonts.Tables.General
         public string GetNameById(CultureInfo culture, ushort nameId)
             => this.GetNameById(culture, (NameIds)nameId);
 
-        public static NameTable Load(FontReader reader)
+        public static NameTable? Load(FontReader fontReader)
         {
-            using (BigEndianBinaryReader r = reader.GetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                // move to start of table
-                return Load(r);
+                return null;
+            }
+
+            using (binaryReader)
+            {
+                // Move to start of table.
+                return Load(binaryReader!);
             }
         }
 
