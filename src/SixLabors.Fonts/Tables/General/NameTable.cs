@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Utilities;
 using SixLabors.Fonts.WellKnownIds;
@@ -104,7 +105,7 @@ namespace SixLabors.Fonts.Tables.General
         {
             if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                return null;
+                throw new InvalidFontTableException($"Table '{TableName}' is missing", TableName);
             }
 
             using (binaryReader)
