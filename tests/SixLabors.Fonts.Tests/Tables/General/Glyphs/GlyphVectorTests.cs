@@ -96,11 +96,11 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             bool[] onCurves = { true, false };
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(16130.0f, 260.0f, 26624.0f, 28928.0f);
-            var expectedBounds = new Bounds(0.0f, 0.0f, 1278.0f, 1219.0f);
+            var expectedBounds = new Bounds(0.0f, 0.0f, 3222.0f, 4179.0f);
             var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
 
             // act
-            glyphVector.TtfTransformWith2x2Matrix(1.2f, 0.0f, 0.0f, 1.0f);
+            glyphVector.TtfTransformWithMatrix(1.2f, 0.8f, 2.0f, 3.0f);
 
             // assert
             Assert.Equal(expectedBounds, glyphVector.Bounds);

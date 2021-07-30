@@ -77,7 +77,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             srcPoints.CopyTo(this.controlPoints.AsSpan(destPointsCount));
         }
 
-        public void TtfTransformWith2x2Matrix(float m00, float m01, float m10, float m11)
+        public void TtfTransformWithMatrix(float m00, float m01, float m10, float m11)
         {
             // Change data on current glyph.
             // http://stackoverflow.com/questions/13188156/whats-the-different-between-vector2-transform-and-vector2-transformnormal-i
@@ -86,18 +86,14 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             float newYmin = 0;
             float newXmax = 0;
             float newYmax = 0;
+            var m = new Matrix4x4(m00, m01, 0.0f, 0.0f, m10, m11, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 
             Vector2[] glyphPoints = this.ControlPoints;
             for (int i = 0; i < glyphPoints.Length; ++i)
             {
-                Vector2 p = glyphPoints[i];
-                float x = p.X;
-                float y = p.Y;
-
-                float newX = (float)Math.Round((x * m00) + (y * m10));
-                float newY = (float)Math.Round((x * m01) + (y * m11));
-                glyphPoints[i] = new Vector2(newX, newY);
-
+                glyphPoints[i] = Vector2.TransformNormal(glyphPoints[i], m);
+                float newX = (float)Math.Round(glyphPoints[i].X);
+                float newY = (float)Math.Round(glyphPoints[i].Y);
                 if (newX < newXmin)
                 {
                     newXmin = newX;

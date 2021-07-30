@@ -585,7 +585,7 @@ namespace SixLabors.Fonts.Tables
                     // X and Y offsets are described in FUnits.
                     if (useMatrix)
                     {
-                        newGlyph.TtfTransformWith2x2Matrix(xscale, scale01, scale10, yscale);
+                        newGlyph.TtfTransformWithMatrix(xscale, scale01, scale10, yscale);
                         newGlyph.TtfOffsetXy(arg1, arg2);
                     }
                     else
@@ -594,7 +594,7 @@ namespace SixLabors.Fonts.Tables
                         {
                             if (!(xscale == 1.0 && yscale == 1.0))
                             {
-                                newGlyph.TtfTransformWith2x2Matrix(xscale, 0, 0, yscale);
+                                newGlyph.TtfTransformWithMatrix(xscale, 0, 0, yscale);
                             }
 
                             newGlyph.TtfOffsetXy(arg1, arg2);
