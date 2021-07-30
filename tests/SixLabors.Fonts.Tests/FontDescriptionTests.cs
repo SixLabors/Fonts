@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Globalization;
+using SixLabors.Fonts.Tables;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -14,7 +15,7 @@ namespace SixLabors.Fonts.Tests
         {
             var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
-            writer.WriteTableHeader("name", 0, 28, 999);
+            writer.WriteTableHeader(TableNames.Name, 0, 28, 999);
             writer.WriteNameTable(
                 new Dictionary<WellKnownIds.NameIds, string>
                 {
@@ -38,7 +39,7 @@ namespace SixLabors.Fonts.Tests
 
             var writer = new BigEndianBinaryWriter();
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
-            writer.WriteTableHeader("name", 0, 28, 999);
+            writer.WriteTableHeader(TableNames.Name, 0, 28, 999);
             writer.WriteNameTable(
                 (WellKnownIds.NameIds.FullFontName, "name_c1", c1),
                 (WellKnownIds.NameIds.FontSubfamilyName, "sub_c1", c1),

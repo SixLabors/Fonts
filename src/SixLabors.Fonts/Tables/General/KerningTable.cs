@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class KerningTable : Table
     {
-        private const string TableName = "kern";
+        private const string TableName = TableNames.Kern;
         private readonly KerningSubTable[] kerningSubTable;
 
         public KerningTable(KerningSubTable[] kerningSubTable)

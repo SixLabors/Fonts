@@ -3,6 +3,7 @@
 
 using System.Linq;
 using SixLabors.Fonts.Exceptions;
+using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.WellKnownIds;
@@ -41,7 +42,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
             {
                 InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() => CMapTable.Load(new FontReader(stream)));
 
-                Assert.Equal("cmap", exception.Table);
+                Assert.Equal(TableNames.Cmap, exception.Table);
             }
         }
     }

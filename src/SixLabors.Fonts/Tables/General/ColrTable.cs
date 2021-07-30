@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class ColrTable : Table
     {
-        private const string TableName = "COLR";
+        private const string TableName = TableNames.Colr;
         private readonly BaseGlyphRecord[] glyphRecords;
         private readonly LayerRecord[] layers;
 

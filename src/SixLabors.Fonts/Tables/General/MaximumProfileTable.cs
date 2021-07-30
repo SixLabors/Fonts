@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class MaximumProfileTable : Table
     {
-        private const string TableName = "maxp";
+        private const string TableName = TableNames.Maxp;
 
         public MaximumProfileTable(ushort numGlyphs)
             => this.GlyphCount = numGlyphs;

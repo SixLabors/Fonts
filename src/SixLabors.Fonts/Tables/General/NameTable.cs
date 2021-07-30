@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class NameTable : Table
     {
-        private const string TableName = "name";
+        private const string TableName = TableNames.Name;
         private readonly NameRecord[] names;
 
         internal NameTable(NameRecord[] names, string[] languages)
