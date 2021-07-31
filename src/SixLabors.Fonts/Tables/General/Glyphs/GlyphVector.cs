@@ -91,9 +91,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             Vector2[] glyphPoints = this.ControlPoints;
             for (int i = 0; i < glyphPoints.Length; ++i)
             {
-                glyphPoints[i] = Vector2.TransformNormal(glyphPoints[i], m);
-                float newX = (float)Math.Round(glyphPoints[i].X);
-                float newY = (float)Math.Round(glyphPoints[i].Y);
+                var transformedGlyphPoint = Vector2.TransformNormal(glyphPoints[i], m);
+                float newX = (float)Math.Round(transformedGlyphPoint.X);
+                float newY = (float)Math.Round(transformedGlyphPoint.Y);
+                glyphPoints[i] = transformedGlyphPoint;
                 if (newX < newXmin)
                 {
                     newXmin = newX;
