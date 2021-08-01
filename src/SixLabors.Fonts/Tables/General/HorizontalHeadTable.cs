@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class HorizontalHeadTable : Table
     {
-        private const string TableName = "hhea";
+        public const string TableName = "hhea";
 
         public HorizontalHeadTable(
             short ascender,

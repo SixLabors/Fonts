@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class OS2Table : Table
     {
-        private const string TableName = "OS/2";
+        public const string TableName = "OS/2";
 
         private readonly ushort styleType;
         private readonly byte[] panose;

@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class VerticalHeadTable : Table
     {
-        private const string TableName = "vhea";
+        public const string TableName = "vhea";
 
         public VerticalHeadTable(
             short ascender,
