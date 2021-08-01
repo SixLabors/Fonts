@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class CpalTable : Table
     {
-        public const string TableName = "CPAL";
+        internal const string TableName = "CPAL";
         private readonly ushort[] palletteOffsets;
         private readonly GlyphColor[] palletteEntries;
 

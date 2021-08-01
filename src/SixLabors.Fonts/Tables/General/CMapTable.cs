@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class CMapTable : Table
     {
-        public const string TableName = "cmap";
+        internal const string TableName = "cmap";
         private readonly CMapSubTable[] platformTables;
 
         public CMapTable(CMapSubTable[] tables)

@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class HeadTable : Table
     {
-        public const string TableName = "head";
+        internal const string TableName = "head";
 
         public HeadTable(HeadFlags flags, HeadMacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Bounds bounds, ushort lowestRecPPEM, IndexLocationFormats indexToLocFormat)
         {
