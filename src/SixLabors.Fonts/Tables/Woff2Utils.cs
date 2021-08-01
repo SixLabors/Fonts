@@ -17,15 +17,11 @@ namespace SixLabors.Fonts.Tables
     {
         private static readonly string[] KnownTableTags =
         {
-            TableNames.Cmap, TableNames.Head, TableNames.Hhea, TableNames.Hmtx, TableNames.Maxp, TableNames.Name, TableNames.Os2,
-            TableNames.Post, TableNames.Cvt, TableNames.Fpgm, TableNames.Glyph, TableNames.Loca, TableNames.Prep, TableNames.Cff,
-            TableNames.Vorg, TableNames.Ebdt, TableNames.Eblc, TableNames.Gasp, TableNames.Hdmx, TableNames.Kern, TableNames.Ltsh,
-            TableNames.Pclt, TableNames.Vdmx, TableNames.Vhea, TableNames.Vmtx, TableNames.Base, TableNames.Gdef, TableNames.Gpos,
-            TableNames.Gsub, TableNames.Ebsc, TableNames.Jstf, TableNames.Math, TableNames.Cbdt, TableNames.Cblc, TableNames.Colr,
-            TableNames.Cpal, TableNames.Svg, TableNames.Sbix, TableNames.Acnt, TableNames.Avar, TableNames.Bdat, TableNames.Bloc,
-            TableNames.Blsn, TableNames.Cvar, TableNames.Fdsc, TableNames.Feat, TableNames.Fmtx, TableNames.Fvar, TableNames.Gvar,
-            TableNames.Hsty, TableNames.Just, TableNames.Lcar, TableNames.Mort, TableNames.Morx, TableNames.Opbd, TableNames.Prop,
-            TableNames.Trak, TableNames.Zapf, TableNames.Silf, TableNames.Glat, TableNames.Gloc,  TableNames.FEAT, TableNames.Sill,
+            "cmap", "head", "hhea", "hmtx", "maxp", "name", "OS/2", "post", "cvt ", "fpgm", "glyf", "loca", "prep",
+            "CFF ", "VORG", "EBDT", "EBLC", "gasp", "hdmx", "kern", "LTSH", "PCLT", "VDMX", "vhea", "vmtx", "BASE",
+            "GDEF", "GPOS", "GSUB", "EBSC", "JSTF", "MATH", "CBDT", "CBLC", "COLR", "CPAL", "SVG ", "sbix", "acnt",
+            "avar", "bdat", "bloc", "bsln", "cvar", "fdsc", "feat", "fmtx", "fvar", "gvar", "hsty", "just", "lcar",
+            "mort", "morx", "opbd", "prop", "trak", "Zapf", "Silf", "Glat", "Gloc", "Feat", "Sill",
             "...." // Arbitrary tag follows.
         };
 
@@ -68,7 +64,7 @@ namespace SixLabors.Fonts.Tables
                 default:
                     break;
                 case 0:
-                    if (tableName == TableNames.Glyph)
+                    if (tableName == "glyf")
                     {
                         if (!ReadUIntBase128(reader, out tableTransformLength))
                         {
@@ -77,7 +73,7 @@ namespace SixLabors.Fonts.Tables
 
                         nextExpectedTableStartAt += tableTransformLength;
                     }
-                    else if (tableName == TableNames.Loca)
+                    else if (tableName == "loca")
                     {
                         if (!ReadUIntBase128(reader, out tableTransformLength))
                         {
@@ -106,12 +102,12 @@ namespace SixLabors.Fonts.Tables
                     break;
             }
 
-            if (tableName == TableNames.Glyph && preprocessingTransformation == 0)
+            if (tableName == "glyf" && preprocessingTransformation == 0)
             {
                 woffTableHeader = new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableTransformLength);
             }
 
-            if (tableName == TableNames.Loca && preprocessingTransformation == 0)
+            if (tableName == "loca" && preprocessingTransformation == 0)
             {
                 woffTableHeader = new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableTransformLength);
             }

@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class IndexLocationTable : Table
     {
-        private const string TableName = TableNames.Loca;
+        private const string TableName = "loca";
 
         public IndexLocationTable(uint[] convertedData)
             => this.GlyphOffsets = convertedData;
@@ -62,7 +62,7 @@ namespace SixLabors.Fonts.Tables.General
             }
             else
             {
-                throw new InvalidFontTableException("indexToLocFormat an invalid value", TableNames.Head);
+                throw new InvalidFontTableException("indexToLocFormat an invalid value", "head");
             }
         }
     }

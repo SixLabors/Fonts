@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class VerticalMetricsTable : Table
     {
-        private const string TableName = TableNames.Vmtx;
+        private const string TableName = "vmtx";
         private readonly short[] topSideBearings;
         private readonly ushort[] advancedHeights;
 

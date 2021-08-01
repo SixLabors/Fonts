@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class HorizontalMetricsTable : Table
     {
-        private const string TableName = TableNames.Hmtx;
+        private const string TableName = "hmtx";
         private readonly short[] leftSideBearings;
         private readonly ushort[] advancedWidths;
 

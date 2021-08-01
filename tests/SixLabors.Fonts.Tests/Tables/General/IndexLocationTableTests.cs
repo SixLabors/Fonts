@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 MissingFontTableException exception = Assert.Throws<MissingFontTableException>(
                         () => IndexLocationTable.Load(new FontReader(stream)));
 
-                Assert.Equal(TableNames.Head, exception.Table);
+                Assert.Equal("head", exception.Table);
             }
         }
 
@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         public void ShouldThrowExceptionWhenMaximumProfileTableCouldNotBeFound()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteTrueTypeFileHeader(new TableHeader(TableNames.Head, 0, 0, 0));
+            writer.WriteTrueTypeFileHeader(new TableHeader("head", 0, 0, 0));
 
             writer.WriteHeadTable(new HeadTable(
                 HeadTable.HeadFlags.None,
@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(
                     () => IndexLocationTable.Load(new FontReader(stream)));
 
-                Assert.Equal(TableNames.Maxp, exception.Table);
+                Assert.Equal("maxp", exception.Table);
             }
         }
 
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
         public void ShouldReturnNullWhenTableCouldNotBeFound()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteTrueTypeFileHeader(new TableHeader(TableNames.Head, 0, 0, 0), new TableHeader(TableNames.Maxp, 0, 0, 0));
+            writer.WriteTrueTypeFileHeader(new TableHeader("head", 0, 0, 0), new TableHeader("maxp", 0, 0, 0));
 
             writer.WriteHeadTable(new HeadTable(
                 HeadTable.HeadFlags.None,

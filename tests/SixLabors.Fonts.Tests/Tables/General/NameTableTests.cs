@@ -4,7 +4,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using SixLabors.Fonts.Exceptions;
-using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.WellKnownIds;
 using Xunit;
@@ -82,8 +81,10 @@ namespace SixLabors.Fonts.Tests.Tables.General
 
             using (System.IO.MemoryStream stream = writer.GetStream())
             {
-                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() => NameTable.Load(new FontReader(stream)));
-                Assert.Equal(TableNames.Name, exception.Table);
+                InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(
+                    () => NameTable.Load(new FontReader(stream)));
+
+                Assert.Equal("name", exception.Table);
             }
         }
     }
