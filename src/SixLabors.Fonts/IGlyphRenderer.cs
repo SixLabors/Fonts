@@ -6,7 +6,7 @@ using System.Numerics;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// A surface that can have a glyph renered to it as a series of actions.
+    /// A surface that can have a glyph rendered to it as a series of actions.
     /// </summary>
     public interface IGlyphRenderer
     {
@@ -16,7 +16,7 @@ namespace SixLabors.Fonts
         void BeginFigure();
 
         /// <summary>
-        /// Sets a new start point to draw lines from
+        /// Sets a new start point to draw lines from.
         /// </summary>
         /// <param name="point">The point.</param>
         void MoveTo(Vector2 point);
@@ -56,12 +56,12 @@ namespace SixLabors.Fonts
         /// Begins the glyph.
         /// </summary>
         /// <param name="bounds">The bounds the glyph will be rendered at and at what size.</param>
-        /// <param name="paramaters">The set of paramaters that uniquely represents a version of a glyph in at particular font size, font family, font style and DPI.</param>
-        /// <returns>Returns true if the glyph should be rendered othersie it returns false.</returns>
-        bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters paramaters);
+        /// <param name="parameters">The set of parameters that uniquely represents a version of a glyph in at particular font size, font family, font style and DPI.</param>
+        /// <returns>Returns true if the glyph should be rendered otherwise it returns false.</returns>
+        bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters);
 
         /// <summary>
-        /// Called once all glyphs have completed rendering
+        /// Called once all glyphs have completed rendering.
         /// </summary>
         void EndText();
 
