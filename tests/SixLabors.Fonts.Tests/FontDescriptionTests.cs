@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Globalization;
+using SixLabors.Fonts.Exceptions;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -49,7 +50,7 @@ namespace SixLabors.Fonts.Tests
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
-            // unknown culture shoud prioritise US, but missing so will return first
+            // unknown culture should prioritise US, but missing so will return first
             Assert.Equal("name_c1", description.FontNameInvariantCulture);
             Assert.Equal("sub_c1", description.FontSubFamilyNameInvariantCulture);
             Assert.Equal("fam_c1", description.FontFamilyInvariantCulture);
@@ -78,7 +79,7 @@ namespace SixLabors.Fonts.Tests
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
-            // unknown culture shoud prioritise US, but missing so will return first
+            // unknown culture should prioritise US, but missing so will return first
             Assert.Equal("name_us", description.FontNameInvariantCulture);
             Assert.Equal("sub_us", description.FontSubFamilyNameInvariantCulture);
             Assert.Equal("fam_us", description.FontFamilyInvariantCulture);
@@ -107,10 +108,34 @@ namespace SixLabors.Fonts.Tests
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
-            // unknown culture shoud prioritise US, but missing so will return first
+            // unknown culture should prioritise US, but missing so will return first
             Assert.Equal("name_c2", description.FontName(c2));
             Assert.Equal("sub_c2", description.FontSubFamilyName(c2));
             Assert.Equal("fam_c2", description.FontFamily(c2));
         }
+
+        [Fact]
+        public void CanLoadFontCollectionDescriptionsFromPath()
+        {
+            FontDescription[] descriptions = FontDescription.LoadFontCollectionDescriptions(TestFonts.SimpleTrueTypeCollection);
+            Assert.NotNull(descriptions);
+            Assert.Equal(2, descriptions.Length);
+
+            FontDescription description = descriptions[0];
+            Assert.Equal("SixLaborsSampleAB", description.FontFamilyInvariantCulture);
+            Assert.Equal("SixLaborsSampleAB regular", description.FontNameInvariantCulture);
+            Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
+            Assert.Equal(FontStyle.Regular, description.Style);
+
+            description = descriptions[1];
+            Assert.Equal("Open Sans", description.FontFamilyInvariantCulture);
+            Assert.Equal("Open Sans", description.FontNameInvariantCulture);
+            Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
+            Assert.Equal(FontStyle.Regular, description.Style);
+        }
+
+        [Fact]
+        public void ThrowsCorrectExceptionWhenDecodingCollectionFromNonTTCFiles()
+            => Assert.Throws<InvalidFontTableException>(() => FontDescription.LoadFontCollectionDescriptions(TestFonts.TwemojiMozillaFile));
     }
 }
