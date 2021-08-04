@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using SixLabors.Fonts.Exceptions;
@@ -200,7 +201,7 @@ namespace SixLabors.Fonts
             return reader!;
         }
 
-        public bool TryGetReaderAtTablePosition(string tableName, out BigEndianBinaryReader? reader)
+        public bool TryGetReaderAtTablePosition(string tableName, [NotNullWhen(returnValue: true)] out BigEndianBinaryReader? reader)
         {
             TableHeader? header = this.GetHeader(tableName);
             if (header == null)
@@ -210,12 +211,7 @@ namespace SixLabors.Fonts
             }
 
             reader = header?.CreateReader(this.stream);
-            if (reader == null)
-            {
-                return false;
-            }
-
-            return true;
+            return reader != null;
         }
     }
 }

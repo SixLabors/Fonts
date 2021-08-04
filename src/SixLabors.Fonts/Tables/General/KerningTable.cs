@@ -27,7 +27,7 @@ namespace SixLabors.Fonts.Tables.General
             using (binaryReader)
             {
                 // Move to start of table.
-                return Load(binaryReader!);
+                return Load(binaryReader);
             }
         }
 

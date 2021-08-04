@@ -29,7 +29,7 @@ namespace SixLabors.Fonts.Tables.General
 
             using (binaryReader)
             {
-                return Load(binaryReader!, maxp.GlyphCount, head.IndexLocationFormat);
+                return Load(binaryReader, maxp.GlyphCount, head.IndexLocationFormat);
             }
         }
 
