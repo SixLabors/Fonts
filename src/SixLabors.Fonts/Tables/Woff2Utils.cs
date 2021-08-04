@@ -305,10 +305,10 @@ namespace SixLabors.Fonts.Tables
             }
 
             return new Bounds(
-                (short)Math.Round(xMin),
-                (short)Math.Round(yMin),
-                (short)Math.Round(xMax),
-                (short)Math.Round(yMax));
+                (float)Math.Round(xMin),
+                (float)Math.Round(yMin),
+                (float)Math.Round(xMax),
+                (float)Math.Round(yMax));
         }
 
         private static GlyphVector BuildSimpleGlyphStructure(
@@ -408,9 +408,8 @@ namespace SixLabors.Fonts.Tables
             Read255UInt16(glyphStreamReader);
 
             // Calculate bounds later.
-            var bounds = default(Bounds);
-            var glyphVector = new GlyphVector(glyphPoints, onCurves, endContours, bounds);
-            return glyphVector;
+            Bounds bounds = default;
+            return new GlyphVector(glyphPoints, onCurves, endContours, bounds);
         }
 
         private static bool CompositeHasInstructions(BigEndianBinaryReader reader)
