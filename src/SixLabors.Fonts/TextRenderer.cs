@@ -8,7 +8,7 @@ using System.Numerics;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Encapulated logic for laying out and then rendering text to a <see cref="IGlyphRenderer"/> surface.
+    /// Encapsulated logic for laying out and then rendering text to a <see cref="IGlyphRenderer"/> surface.
     /// </summary>
     public class TextRenderer
     {

@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Linq;
+using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
 
@@ -66,5 +68,33 @@ namespace SixLabors.Fonts.Tests
             CMapTable cmap = reader.GetTable<CMapTable>();
             Assert.NotNull(cmap);
         }
+
+#if NETCOREAPP3_0_OR_GREATER
+        [Fact]
+        public void ReadGlyphsTable_WithWoff2Format()
+        {
+            bool[] expectedOnCurves = { true, true, true, true, true, true, true, true };
+            ushort[] expectedEndPoints = { 3, 7 };
+            var expectedBounds = new Bounds(193.0f, 0.0f, 1034.0f, 1462.0f);
+            var expectedControlPoints = new Vector2[]
+            {
+                new Vector2(193.0f, 1462.0f), new Vector2(1034.0f, 1462.0f), new Vector2(1034.0f, 0.0f), new Vector2(193.0f, 0.0f),
+                new Vector2(297.0f, 104.0f), new Vector2(930.0f, 104.0f), new Vector2(930.0f, 1358.0f), new Vector2(297.0f, 1358.0f)
+            };
+            var reader = new FontReader(TestFonts.FontFileWoff2Data());
+            GlyphTable glyphs = reader.GetTable<GlyphTable>();
+            Fonts.Tables.General.Glyphs.GlyphVector glyph = glyphs.GetGlyph(0);
+
+            Assert.Equal(231, glyphs.GlyphCount);
+            Assert.Equal(8, glyph.PointCount);
+            Assert.Equal(8, glyph.ControlPoints.Length);
+            Assert.Equal(2, glyph.EndPoints.Length);
+            Assert.Equal(8, glyph.OnCurves.Length);
+            Assert.Equal(expectedBounds, glyph.Bounds);
+            Assert.True(expectedOnCurves.SequenceEqual(glyph.OnCurves));
+            Assert.True(expectedEndPoints.SequenceEqual(glyph.EndPoints));
+            Assert.True(expectedControlPoints.SequenceEqual(glyph.ControlPoints));
+        }
+#endif
     }
 }

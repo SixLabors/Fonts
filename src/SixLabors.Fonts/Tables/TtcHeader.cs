@@ -1,16 +1,20 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using SixLabors.Fonts.Exceptions;
+
 namespace SixLabors.Fonts.Tables
 {
     /// <summary>
-    /// Represents a font collection header (for .ttc font follections).
+    /// Represents a font collection header (for .ttc font collections).
     /// A font collection contains one or more fonts where typically the glyf table is shared by multiple fonts to save space,
     /// but other tables are not.
     /// Each font in the collection has its own set of tables.
     /// </summary>
     internal class TtcHeader
     {
+        internal const string TableName = "ttcf";
+
         public TtcHeader(string ttcTag, ushort majorVersion, ushort minorVersion, uint numFonts, uint[] offsetTable, uint dsigTag, uint dsigLength, uint dsigOffset)
         {
             this.TtcTag = ttcTag;
@@ -48,6 +52,12 @@ namespace SixLabors.Fonts.Tables
         public static TtcHeader Read(BigEndianBinaryReader reader)
         {
             string tag = reader.ReadTag();
+
+            if (tag != TableName)
+            {
+                throw new InvalidFontTableException($"Expected tag = {TableName} found {tag}", TableName);
+            }
+
             ushort majorVersion = reader.ReadUInt16();
             ushort minorVersion = reader.ReadUInt16();
             uint numFonts = reader.ReadUInt32();

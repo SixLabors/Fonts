@@ -85,7 +85,7 @@ namespace SixLabors.Fonts
         public float LineHeight { get; }
 
         /// <summary>
-        /// Gets a value indicating whether gets the glyphe represents a whitespace character.
+        /// Gets a value indicating whether the glyph represents a whitespace character.
         /// </summary>
         /// <returns>The <see cref="bool"/>.</returns>
         public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.CodePoint);

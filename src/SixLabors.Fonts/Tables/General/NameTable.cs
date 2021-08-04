@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Utilities;
 using SixLabors.Fonts.WellKnownIds;
@@ -14,7 +15,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class NameTable : Table
     {
-        private const string TableName = "name";
+        internal const string TableName = "name";
         private readonly NameRecord[] names;
 
         internal NameTable(NameRecord[] names, string[] languages)
@@ -59,9 +60,9 @@ namespace SixLabors.Fonts.Tables.General
         public string GetNameById(CultureInfo culture, NameIds nameId)
         {
 #if SUPPORTS_CULTUREINFO_LCID
-            var languageId = culture.LCID;
+            int languageId = culture.LCID;
 #else
-            var languageId = 0x0409;
+            int languageId = 0x0409;
 #endif
             NameRecord? usaVersion = null;
             NameRecord? firstWindows = null;
@@ -100,12 +101,17 @@ namespace SixLabors.Fonts.Tables.General
         public string GetNameById(CultureInfo culture, ushort nameId)
             => this.GetNameById(culture, (NameIds)nameId);
 
-        public static NameTable Load(FontReader reader)
+        public static NameTable? Load(FontReader fontReader)
         {
-            using (BigEndianBinaryReader r = reader.GetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                // move to start of table
-                return Load(r);
+                throw new InvalidFontTableException($"Table '{TableName}' is missing", TableName);
+            }
+
+            using (binaryReader)
+            {
+                // Move to start of table.
+                return Load(binaryReader);
             }
         }
 

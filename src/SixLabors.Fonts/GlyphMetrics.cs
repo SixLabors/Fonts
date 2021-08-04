@@ -158,33 +158,33 @@ namespace SixLabors.Fonts
 
             FontRectangle box = this.BoundingBox(location, scaledPoint);
 
-            var paramaters = new GlyphRendererParameters(this, pointSize, dpi);
+            var parameters = new GlyphRendererParameters(this, pointSize, dpi);
 
-            if (surface.BeginGlyph(box, paramaters))
+            if (surface.BeginGlyph(box, parameters))
             {
                 if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
                 {
                     colorSurface.SetColor(this.GlyphColor.Value);
                 }
 
-                int endOfContor = -1;
+                int endOfContour = -1;
                 for (int i = 0; i < this.vector.EndPoints.Length; i++)
                 {
                     surface.BeginFigure();
-                    int startOfContor = endOfContor + 1;
-                    endOfContor = this.vector.EndPoints[i];
+                    int startOfContour = endOfContour + 1;
+                    endOfContour = this.vector.EndPoints[i];
 
                     Vector2 prev = Vector2.Zero;
-                    Vector2 curr = this.GetPoint(ref scaledPoint, endOfContor) + location;
-                    Vector2 next = this.GetPoint(ref scaledPoint, startOfContor) + location;
+                    Vector2 curr = this.GetPoint(ref scaledPoint, endOfContour) + location;
+                    Vector2 next = this.GetPoint(ref scaledPoint, startOfContour) + location;
 
-                    if (this.vector.OnCurves[endOfContor])
+                    if (this.vector.OnCurves[endOfContour])
                     {
                         surface.MoveTo(curr);
                     }
                     else
                     {
-                        if (this.vector.OnCurves[startOfContor])
+                        if (this.vector.OnCurves[startOfContour])
                         {
                             surface.MoveTo(next);
                         }
@@ -196,14 +196,14 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    int length = endOfContor - startOfContor + 1;
+                    int length = endOfContour - startOfContour + 1;
                     for (int p = 0; p < length; p++)
                     {
                         prev = curr;
                         curr = next;
-                        int currentIndex = startOfContor + p;
-                        int nextIndex = startOfContor + ((p + 1) % length);
-                        int prevIndex = startOfContor + ((length + p - 1) % length);
+                        int currentIndex = startOfContour + p;
+                        int nextIndex = startOfContour + ((p + 1) % length);
+                        int prevIndex = startOfContour + ((length + p - 1) % length);
                         next = this.GetPoint(ref scaledPoint, nextIndex) + location;
 
                         if (this.vector.OnCurves[currentIndex])

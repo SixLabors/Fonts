@@ -43,7 +43,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void IdenticalGlyphsInDiferentPalcesCreateIdenticalKeys()
+        public void IdenticalGlyphsInDifferentPalcesCreateIdenticalKeys()
         {
             Font fakeFont = CreateFont("AB");
             var textRenderer = new TextRenderer(this.renderer);
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void BeginGLyph_returnsfalse_skiprenderingfigures()
+        public void BeginGlyph_returnsfalse_skiprenderingfigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
             renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(false);
@@ -67,7 +67,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void BeginGLyph_returnstrue_rendersfigures()
+        public void BeginGlyph_returnstrue_rendersfigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
             renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(true);
@@ -125,6 +125,29 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(3, renderer.Colors.Count);
         }
+
+#if NETCOREAPP3_0_OR_GREATER
+        [Fact]
+        public void RenderWoff2Glyphs_EqualToTtfGlyphs()
+        {
+            Font fontTtf = new FontCollection().Install(TestFonts.OpenSansFile).CreateFont(12);
+            Font fontWoff2 = new FontCollection().Install(TestFonts.OpenSansFileWoff2).CreateFont(12);
+            string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+            var rendererTtf = new ColorGlyphRenderer();
+            TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
+            {
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+            });
+            var rendererWoff2 = new ColorGlyphRenderer();
+            TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
+            {
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+            });
+
+            Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff2.ControlPoints));
+        }
+#endif
 
         private CodePoint AsCodePoint(string text) => CodePoint.DecodeFromUtf16At(text.AsSpan(), 0);
     }

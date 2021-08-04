@@ -8,27 +8,27 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class IndexLocationTable : Table
     {
-        private const string TableName = "loca";
+        internal const string TableName = "loca";
 
         public IndexLocationTable(uint[] convertedData)
             => this.GlyphOffsets = convertedData;
 
         public uint[] GlyphOffsets { get; }
 
-        public static IndexLocationTable? Load(FontReader reader)
+        public static IndexLocationTable? Load(FontReader fontReader)
         {
-            HeadTable head = reader.GetTable<HeadTable>();
+            HeadTable head = fontReader.GetTable<HeadTable>();
 
-            MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>();
+            MaximumProfileTable maxp = fontReader.GetTable<MaximumProfileTable>();
 
-            // must not get a binary reader untill all depended data is retrieved in case they need to use the stream
-            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            // Must not get a binary reader until all depended data is retrieved in case they need to use the stream.
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                if (binaryReader == null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
+            using (binaryReader)
+            {
                 return Load(binaryReader, maxp.GlyphCount, head.IndexLocationFormat);
             }
         }

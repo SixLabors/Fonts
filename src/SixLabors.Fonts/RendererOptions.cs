@@ -9,7 +9,7 @@ using System.Numerics;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// The font style to render onto a peice of text.
+    /// The font style to render onto a piece of text.
     /// </summary>
     public sealed class RendererOptions
     {
@@ -114,7 +114,7 @@ namespace SixLabors.Fonts
         public float DpiY { get; set; }
 
         /// <summary>
-        /// Gets or sets the collection of Fallback fontfamiles to try and use when enspecific glyph is missing.
+        /// Gets or sets the collection of Fallback fontfamiles to try and use when a specific glyph is missing.
         /// </summary>
         public IEnumerable<FontFamily> FallbackFontFamilies { get; set; } = Array.Empty<FontFamily>();
 
@@ -152,7 +152,7 @@ namespace SixLabors.Fonts
         public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.None;
 
         /// <summary>
-        /// Gets the style. In derived classes this could switchout to different fonts mid stream
+        /// Gets the style. In derived classes this could switch out to different fonts mid stream
         /// </summary>
         /// <param name="index">The index.</param>
         /// <param name="length">The length.</param>

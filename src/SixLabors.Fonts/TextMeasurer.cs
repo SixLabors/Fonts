@@ -10,7 +10,7 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Encapulated logic for laying out and measuring text.
+    /// Encapsulated logic for laying out and measuring text.
     /// </summary>
     public static class TextMeasurer
     {

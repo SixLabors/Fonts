@@ -23,14 +23,11 @@ namespace SixLabors.Fonts.Tables
 
         public uint Length { get; }
 
-        public static TableHeader Read(BigEndianBinaryReader reader)
-        {
-            return new TableHeader(
+        public static TableHeader Read(BigEndianBinaryReader reader) => new TableHeader(
                 reader.ReadTag(),
                 reader.ReadUInt32(),
                 reader.ReadOffset32(),
                 reader.ReadUInt32());
-        }
 
         public virtual BigEndianBinaryReader CreateReader(Stream stream)
         {

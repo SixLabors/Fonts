@@ -24,7 +24,7 @@ namespace SixLabors.Fonts
         public GlyphMetrics GlyphMetrics { get; }
 
         /// <summary>
-        /// Calculates the bounding box
+        /// Calculates the bounding box.
         /// </summary>
         /// <param name="location">The location to calculate from.</param>
         /// <param name="dpi">The dpi scale the bounds in relation to.</param>
@@ -50,7 +50,7 @@ namespace SixLabors.Fonts
         /// <param name="dpiX">The dpi along the X axis.</param>
         /// <param name="dpiY">The dpi along the Y axis.</param>
         /// <param name="lineHeight">The line height.</param>
-        /// <exception cref="System.NotSupportedException">Too many control points</exception>
+        /// <exception cref="System.NotSupportedException">Too many control points.</exception>
         internal void RenderTo(IGlyphRenderer surface, Vector2 location, float dpiX, float dpiY, float lineHeight)
             => this.GlyphMetrics.RenderTo(surface, this.pointSize, location, new Vector2(dpiX, dpiY), lineHeight);
     }

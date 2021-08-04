@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class OS2Table : Table
     {
-        private const string TableName = "OS/2";
+        internal const string TableName = "OS/2";
 
         private readonly ushort styleType;
         private readonly byte[] panose;
@@ -177,16 +177,16 @@ namespace SixLabors.Fonts.Tables.General
 
         public ushort WinDescent { get; }
 
-        public static OS2Table? Load(FontReader reader)
+        public static OS2Table? Load(FontReader fontReader)
         {
-            using (BigEndianBinaryReader? r = reader.TryGetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                if (r is null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
-                return Load(r);
+            using (binaryReader)
+            {
+                return Load(binaryReader);
             }
         }
 

@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class CpalTable : Table
     {
-        private const string TableName = "CPAL";
+        internal const string TableName = "CPAL";
         private readonly ushort[] palletteOffsets;
         private readonly GlyphColor[] palletteEntries;
 
@@ -19,15 +19,15 @@ namespace SixLabors.Fonts.Tables.General
         public GlyphColor GetGlyphColor(int palletteIndex, int palletteEntryIndex)
             => this.palletteEntries[this.palletteOffsets[palletteIndex] + palletteEntryIndex];
 
-        public static CpalTable? Load(FontReader reader)
+        public static CpalTable? Load(FontReader fontReader)
         {
-            using (BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                if (binaryReader == null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
+            using (binaryReader)
+            {
                 return Load(binaryReader);
             }
         }
@@ -45,17 +45,17 @@ namespace SixLabors.Fonts.Tables.General
             // Offset32  | offsetFirstColorRecord          | Offset from the beginning of CPAL table to the first ColorRecord.
             // uint16    | colorRecordIndices[numPalettes] | Index of each palette’s first color record in the combined color record array.
 
-            // addtional format 1 fields
+            // additional format 1 fields
             // Offset32  | offsetPaletteTypeArray          | Offset from the beginning of CPAL table to the Palette Type Array. Set to 0 if no array is provided.
             // Offset32  | offsetPaletteLabelArray         | Offset from the beginning of CPAL table to the Palette Labels Array. Set to 0 if no array is provided.
             // Offset32  | offsetPaletteEntryLabelArray    | Offset from the beginning of CPAL table to the Palette Entry Label Array.Set to 0 if no array is provided.
-            var version = reader.ReadUInt16();
-            var numPaletteEntries = reader.ReadUInt16();
-            var numPalettes = reader.ReadUInt16();
-            var numColorRecords = reader.ReadUInt16();
-            var offsetFirstColorRecord = reader.ReadOffset32();
+            ushort version = reader.ReadUInt16();
+            ushort numPaletteEntries = reader.ReadUInt16();
+            ushort numPalettes = reader.ReadUInt16();
+            ushort numColorRecords = reader.ReadUInt16();
+            uint offsetFirstColorRecord = reader.ReadOffset32();
 
-            var colorRecordIndices = reader.ReadUInt16Array(numPalettes);
+            ushort[]? colorRecordIndices = reader.ReadUInt16Array(numPalettes);
 
             uint offsetPaletteTypeArray = 0;
             uint offsetPaletteLabelArray = 0;
@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tables.General
 
             reader.Seek(offsetFirstColorRecord, System.IO.SeekOrigin.Begin);
             var pallettes = new GlyphColor[numColorRecords];
-            for (var n = 0; n < numColorRecords; n++)
+            for (int n = 0; n < numColorRecords; n++)
             {
                 var blue = reader.ReadByte();
                 var green = reader.ReadByte();

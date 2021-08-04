@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tests
     public class FontCollectionTests
     {
         [Fact]
-        public void InstallViaPathReturnsDecription()
+        public void InstallViaPathReturnsDescription()
         {
             var sut = new FontCollection();
 
@@ -36,7 +36,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void InstallViaStreamReturnsDecription()
+        public void InstallViaStreamReturnsDescription()
         {
             var sut = new FontCollection();
             using (System.IO.Stream s = TestFonts.CarterOneFileData())

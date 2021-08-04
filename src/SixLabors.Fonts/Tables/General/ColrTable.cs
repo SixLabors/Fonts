@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class ColrTable : Table
     {
-        private const string TableName = "COLR";
+        internal const string TableName = "COLR";
         private readonly BaseGlyphRecord[] glyphRecords;
         private readonly LayerRecord[] layers;
 
@@ -19,22 +19,22 @@ namespace SixLabors.Fonts.Tables.General
             this.layers = layers;
         }
 
-        public static ColrTable? Load(FontReader reader)
+        public static ColrTable? Load(FontReader fontReader)
         {
-            using (var binaryReader = reader.TryGetReaderAtTablePosition(TableName))
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
-                if (binaryReader == null)
-                {
-                    return null;
-                }
+                return null;
+            }
 
+            using (binaryReader)
+            {
                 return Load(binaryReader);
             }
         }
 
         internal Span<LayerRecord> GetLayers(ushort glyph)
         {
-            foreach (var g in this.glyphRecords)
+            foreach (BaseGlyphRecord? g in this.glyphRecords)
             {
                 if (g.GlyphId == glyph)
                 {
@@ -72,30 +72,30 @@ namespace SixLabors.Fonts.Tables.General
             //           |                        | > the CPAL table. A palette entry index value of 0xFFFF is a special case indicating that the text
             //           |                        | > foreground color (defined by a higher-level client) should be used and shall not be treated as
             //           |                        | > actual index into CPAL ColorRecord array.
-            var version = reader.ReadUInt16();
-            var numBaseGlyphRecords = reader.ReadUInt16();
-            var baseGlyphRecordsOffset = reader.ReadOffset32();
-            var layerRecordsOffset = reader.ReadOffset32();
-            var numLayerRecords = reader.ReadUInt16();
+            ushort version = reader.ReadUInt16();
+            ushort numBaseGlyphRecords = reader.ReadUInt16();
+            uint baseGlyphRecordsOffset = reader.ReadOffset32();
+            uint layerRecordsOffset = reader.ReadOffset32();
+            ushort numLayerRecords = reader.ReadUInt16();
 
             reader.Seek(baseGlyphRecordsOffset, System.IO.SeekOrigin.Begin);
 
             var glyphs = new BaseGlyphRecord[numBaseGlyphRecords];
             var layers = new LayerRecord[numLayerRecords];
-            for (var i = 0; i < numBaseGlyphRecords; i++)
+            for (int i = 0; i < numBaseGlyphRecords; i++)
             {
-                var gi = reader.ReadUInt16();
-                var idx = reader.ReadUInt16();
-                var num = reader.ReadUInt16();
+                ushort gi = reader.ReadUInt16();
+                ushort idx = reader.ReadUInt16();
+                ushort num = reader.ReadUInt16();
                 glyphs[i] = new BaseGlyphRecord(gi, idx, num);
             }
 
             reader.Seek(layerRecordsOffset, System.IO.SeekOrigin.Begin);
 
-            for (var i = 0; i < numLayerRecords; i++)
+            for (int i = 0; i < numLayerRecords; i++)
             {
-                var gi = reader.ReadUInt16();
-                var pi = reader.ReadUInt16();
+                ushort gi = reader.ReadUInt16();
+                ushort pi = reader.ReadUInt16();
                 layers[i] = new LayerRecord(gi, pi);
             }
 

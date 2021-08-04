@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal class HorizontalHeadTable : Table
     {
-        private const string TableName = "hhea";
+        internal const string TableName = "hhea";
 
         public HorizontalHeadTable(
             short ascender,
@@ -58,15 +58,17 @@ namespace SixLabors.Fonts.Tables.General
 
         public short XMaxExtent { get; }
 
-        public static HorizontalHeadTable? Load(FontReader reader)
+        public static HorizontalHeadTable? Load(FontReader fontReader)
         {
-            using BigEndianBinaryReader? binaryReader = reader.TryGetReaderAtTablePosition(TableName);
-            if (binaryReader is null)
+            if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
                 return null;
             }
 
-            return Load(binaryReader);
+            using (binaryReader)
+            {
+                return Load(binaryReader);
+            }
         }
 
         public static HorizontalHeadTable Load(BigEndianBinaryReader reader)

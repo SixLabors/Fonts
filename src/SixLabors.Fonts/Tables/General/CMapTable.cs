@@ -12,14 +12,14 @@ namespace SixLabors.Fonts.Tables.General
     [TableName(TableName)]
     internal sealed class CMapTable : Table
     {
-        private const string TableName = "cmap";
+        internal const string TableName = "cmap";
         private readonly CMapSubTable[] platformTables;
 
         public CMapTable(CMapSubTable[] tables)
         {
             this.Tables = tables;
 
-            // lets just pick the best table for us.. lets jsut treat everything as windows and get the format 4 if possible
+            // lets just pick the best table for us.. lets just treat everything as windows and get the format 4 if possible
             var tbls = new List<CMapSubTable>();
             foreach (CMapSubTable t in this.Tables)
             {
