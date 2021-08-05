@@ -212,7 +212,7 @@ namespace SixLabors.Fonts.Unicode
             public Processor(ReadOnlySpan<char> source)
             {
                 this.source = source;
-                this.CurrentCodePoint = CodePoint.ReplacementCodePoint;
+                this.CurrentCodePoint = CodePoint.ReplacementChar;
                 this.CurrentType = GraphemeClusterClass.Any;
                 this.charsConsumed = 0;
                 this.CharsConsumed = 0;

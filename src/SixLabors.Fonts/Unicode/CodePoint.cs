@@ -141,9 +141,9 @@ namespace SixLabors.Fonts.Unicode
         public int Value => (int)this.value;
 
         /// <summary>
-        /// Gets the Unicode replacement character U+FFFD.
+        /// Gets a <see cref="CodePoint"/> instance that represents the Unicode replacement character U+FFFD.
         /// </summary>
-        public static CodePoint ReplacementCodePoint { get; } = new CodePoint(0xFFFD);
+        public static CodePoint ReplacementChar { get; } = new CodePoint(0xFFFD);
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
@@ -379,7 +379,7 @@ namespace SixLabors.Fonts.Unicode
             }
 
             int count = 0;
-            var enumerator = new CodePointEnumerator(source);
+            var enumerator = new SpanCodePointEnumerator(source);
             while (enumerator.MoveNext())
             {
                 count++;
@@ -458,7 +458,7 @@ namespace SixLabors.Fonts.Unicode
             if (index >= source.Length)
             {
                 charsConsumed = 0;
-                return ReplacementCodePoint;
+                return ReplacementChar;
             }
 
             // Optimistically assume input is within BMP.
@@ -475,7 +475,8 @@ namespace SixLabors.Fonts.Unicode
 
                 if (index == source.Length)
                 {
-                    return ReplacementCodePoint;
+                    charsConsumed = 0;
+                    return ReplacementChar;
                 }
 
                 low = source[index];
@@ -486,7 +487,8 @@ namespace SixLabors.Fonts.Unicode
                     return new CodePoint(UnicodeUtility.GetScalarFromUtf16SurrogatePair(hi, low));
                 }
 
-                return ReplacementCodePoint;
+                charsConsumed = 0;
+                return ReplacementChar;
             }
 
             return new CodePoint(code);

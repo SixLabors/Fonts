@@ -90,7 +90,7 @@ namespace SixLabors.Fonts
                 nextWrappableRequired = b.Required;
             }
 
-            var enumerator = new CodePointEnumerator(text);
+            var enumerator = new SpanCodePointEnumerator(text);
             for (int index = 0; enumerator.MoveNext(); index++)
             {
                 CodePoint codePoint = enumerator.Current;

@@ -100,7 +100,27 @@ namespace SixLabors.Fonts.Tests.Unicode
             const string text = "𐓏𐓘𐓻𐓘𐓻𐓟 𐒻𐓟";
             int letterCount = 0;
 
-            foreach (CodePoint codePoint in new CodePointEnumerator(text.AsSpan()))
+            Span<char> span = text.ToCharArray();
+            foreach (CodePoint codePoint in span.EnumerateCodePoints())
+            {
+                if (CodePoint.IsLetter(codePoint))
+                {
+                    letterCount++;
+                }
+            }
+
+            Assert.Equal(8, letterCount);
+        }
+
+        [Fact]
+        public void CanEnumerateReadonlySpan()
+        {
+            // Test example taken from.
+            // https://docs.microsoft.com/en-us/dotnet/api/system.text.rune?view=net-5.0#when-to-use-the-rune-type
+            const string text = "𐓏𐓘𐓻𐓘𐓻𐓟 𐒻𐓟";
+            int letterCount = 0;
+
+            foreach (CodePoint codePoint in text.AsSpan().EnumerateCodePoints())
             {
                 if (CodePoint.IsLetter(codePoint))
                 {
@@ -273,7 +293,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
         [Fact]
         public static void ReplacementChar()
-            => Assert.Equal(0xFFFD, CodePoint.ReplacementCodePoint.Value);
+            => Assert.Equal(0xFFFD, CodePoint.ReplacementChar.Value);
 
         [Fact]
         public void CorrectlyIdentifiesTab()
