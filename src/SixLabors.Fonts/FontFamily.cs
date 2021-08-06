@@ -31,27 +31,18 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the name of the <see cref="FontFamily"/>.
         /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
         public string Name { get; }
 
         /// <summary>
         /// Gets the culture this <see cref="FontFamily"/> was created against.
         /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
         public CultureInfo Culture { get; }
 
         /// <summary>
-        /// Gets the available <see cref="FontStyle"/> that are currently available.
+        /// Gets the collection of <see cref="FontStyle"/> that are currently available.
         /// </summary>
-        /// <value>
-        /// The available styles.
-        /// </value>
         public IEnumerable<FontStyle> AvailableStyles
-            => this.collection.AvailableStyles(this.Name, this.Culture);
+           => this.collection.AvailableStyles(this.Name, this.Culture);
 
         internal FontStyle DefaultStyle
             => this.IsStyleAvailable(FontStyle.Regular)

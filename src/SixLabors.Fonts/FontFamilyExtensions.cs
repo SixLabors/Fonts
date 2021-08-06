@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Linq;
+
 namespace SixLabors.Fonts
 {
     /// <summary>
@@ -34,5 +36,16 @@ namespace SixLabors.Fonts
 
             return new Font(fontFamily, size);
         }
+
+        /// <summary>
+        /// Returns a value indicating whether the specified <see cref="FontStyle"/> is available.
+        /// </summary>
+        /// <param name="family">The font family.</param>
+        /// <param name="style">The style.</param>
+        /// <returns>
+        /// <see langword="true"/> if the specified <see cref="FontStyle"/> is available; otherwise, <see langword="false"/>.
+        /// </returns>
+        public static bool IsStyleAvailable(this IFontFamily family, FontStyle style)
+            => family.AvailableStyles().Contains(style);
     }
 }
