@@ -20,6 +20,9 @@ namespace SixLabors.Fonts.Unicode
     {
         // Supplementary plane code points are encoded as 2 UTF-16 code units
         private const int MaxUtf16CharsPerCodePoint = 2;
+
+        // Supplementary plane code points are encoded as 4 UTF-8 code units
+        internal const int MaxUtf8BytesPerCodePoint = 4;
         private const byte IsWhiteSpaceFlag = 0x80;
         private const byte IsLetterOrDigitFlag = 0x40;
         private const byte UnicodeCategoryMask = 0x1F;
@@ -139,6 +142,40 @@ namespace SixLabors.Fonts.Unicode
         /// Gets the Unicode value as an integer.
         /// </summary>
         public int Value => (int)this.value;
+
+        /// <summary>
+        /// Gets the length in code units (<see cref="char"/>) of the
+        /// UTF-16 sequence required to represent this scalar value.
+        /// </summary>
+        /// <remarks>
+        /// The return value will be 1 or 2.
+        /// </remarks>
+        public int Utf16SequenceLength
+        {
+            get
+            {
+                int codeUnitCount = UnicodeUtility.GetUtf16SequenceLength(this.value);
+                Debug.Assert(codeUnitCount > 0 && codeUnitCount <= MaxUtf16CharsPerCodePoint, $"Invalid Utf16SequenceLength {codeUnitCount}.");
+                return codeUnitCount;
+            }
+        }
+
+        /// <summary>
+        /// Gets the length in code units of the
+        /// UTF-8 sequence required to represent this scalar value.
+        /// </summary>
+        /// <remarks>
+        /// The return value will be 1 through 4, inclusive.
+        /// </remarks>
+        public int Utf8SequenceLength
+        {
+            get
+            {
+                int codeUnitCount = UnicodeUtility.GetUtf8SequenceLength(this.value);
+                Debug.Assert(codeUnitCount > 0 && codeUnitCount <= MaxUtf8BytesPerCodePoint, $"Invalid Utf8SequenceLength {codeUnitCount}.");
+                return codeUnitCount;
+            }
+        }
 
         /// <summary>
         /// Gets a <see cref="CodePoint"/> instance that represents the Unicode replacement character U+FFFD.
@@ -458,7 +495,7 @@ namespace SixLabors.Fonts.Unicode
             if (index >= source.Length)
             {
                 charsConsumed = 0;
-                return ReplacementChar;
+                return default;
             }
 
             // Optimistically assume input is within BMP.
@@ -475,7 +512,6 @@ namespace SixLabors.Fonts.Unicode
 
                 if (index == source.Length)
                 {
-                    charsConsumed = 0;
                     return ReplacementChar;
                 }
 
@@ -487,7 +523,6 @@ namespace SixLabors.Fonts.Unicode
                     return new CodePoint(UnicodeUtility.GetScalarFromUtf16SurrogatePair(hi, low));
                 }
 
-                charsConsumed = 0;
                 return ReplacementChar;
             }
 
