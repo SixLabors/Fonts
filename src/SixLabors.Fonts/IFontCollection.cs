@@ -12,10 +12,10 @@ namespace SixLabors.Fonts
     public interface IFontCollection : IReadOnlyFontCollection
     {
         /// <summary>
-        /// Installs the specified font stream.
+        /// Adds a font to the collection.
         /// </summary>
         /// <param name="fontStream">The font stream.</param>
-        /// <returns>the description of the font just loaded.</returns>
-        FontFamily Install(Stream fontStream);
+        /// <returns>The newly added <see cref="FontFamily"/>.</returns>
+        FontFamily Add(Stream fontStream);
     }
 }

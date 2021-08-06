@@ -23,18 +23,18 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         public static void Main(string[] args)
         {
             var fonts = new FontCollection();
-            FontFamily font = fonts.Install(@"Fonts\SixLaborsSampleAB.ttf");
-            FontFamily fontWoff = fonts.Install(@"Fonts\SixLaborsSampleAB.woff");
-            FontFamily fontWoff2 = fonts.Install(@"Fonts\OpenSans-Regular.woff2");
-            FontFamily carter = fonts.Install(@"Fonts\CarterOne.ttf");
-            FontFamily wendyOne = fonts.Install(@"Fonts\WendyOne-Regular.ttf");
-            FontFamily whitneyBook = fonts.Install(@"Fonts\whitney-book.ttf");
-            FontFamily colorEmoji = fonts.Install(@"Fonts\Twemoji Mozilla.ttf");
-            FontFamily font2 = fonts.Install(@"Fonts\OpenSans-Regular.ttf");
+            FontFamily font = fonts.Add(@"Fonts\SixLaborsSampleAB.ttf");
+            FontFamily fontWoff = fonts.Add(@"Fonts\SixLaborsSampleAB.woff");
+            FontFamily fontWoff2 = fonts.Add(@"Fonts\OpenSans-Regular.woff2");
+            FontFamily carter = fonts.Add(@"Fonts\CarterOne.ttf");
+            FontFamily wendyOne = fonts.Add(@"Fonts\WendyOne-Regular.ttf");
+            FontFamily whitneyBook = fonts.Add(@"Fonts\whitney-book.ttf");
+            FontFamily colorEmoji = fonts.Add(@"Fonts\Twemoji Mozilla.ttf");
+            FontFamily font2 = fonts.Add(@"Fonts\OpenSans-Regular.ttf");
             FontFamily emojiFont = SystemFonts.Find("Segoe UI Emoji");
             FontFamily uiFont = SystemFonts.Find("Segoe UI");
 
-            FontFamily sunflower = fonts.Install(@"Fonts\Sunflower-Medium.ttf");
+            FontFamily sunflower = fonts.Add(@"Fonts\Sunflower-Medium.ttf");
 
             RenderTextProcessorWithAlignment(emojiFont, "😀A😀", pointSize: 20, fallbackFonts: new[] { colorEmoji });
             RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { font2 });

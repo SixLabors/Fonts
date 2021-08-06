@@ -64,11 +64,11 @@ namespace SixLabors.Fonts
                 {
                     if (path.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase))
                     {
-                        this.collection.InstallCollection(path);
+                        this.collection.AddCollection(path);
                     }
                     else
                     {
-                        this.collection.Install(path);
+                        this.collection.Add(path);
                     }
                 }
                 catch

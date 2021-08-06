@@ -11,10 +11,10 @@ namespace SixLabors.Fonts.Tests
     public class TrueTypeCollectionTests
     {
         [Fact]
-        public void InstallViaPathReturnsDecription()
+        public void AddViaPathReturnsDecription()
         {
             var suit = new FontCollection();
-            IEnumerable<FontFamily> collectionFromPath = suit.InstallCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
+            IEnumerable<FontFamily> collectionFromPath = suit.AddCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
 
             Assert.Equal(2, descriptions.Count());
             FontFamily openSans = Assert.Single(collectionFromPath, x => x.Name == "Open Sans");
@@ -26,10 +26,10 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void InstallViaPathInstallFontFileInstances()
+        public void AddViaPathAddFontFileInstances()
         {
             var sut = new FontCollection();
-            IEnumerable<FontFamily> collectionFromPath = sut.InstallCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
+            IEnumerable<FontFamily> collectionFromPath = sut.AddCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
 
             IEnumerable<IFontMetrics> allInstances = sut.Families.SelectMany(x => sut.FindAll(x.Name, CultureInfo.InvariantCulture));
 
@@ -40,10 +40,10 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void InstallViaStreamhReturnsDecription()
+        public void AddViaStreamhReturnsDecription()
         {
             var suit = new FontCollection();
-            IEnumerable<FontFamily> collectionFromPath = suit.InstallCollection(TestFonts.SSimpleTrueTypeCollectionData(), out IEnumerable<FontDescription> descriptions);
+            IEnumerable<FontFamily> collectionFromPath = suit.AddCollection(TestFonts.SSimpleTrueTypeCollectionData(), out IEnumerable<FontDescription> descriptions);
 
             Assert.Equal(2, collectionFromPath.Count());
             FontFamily openSans = Assert.Single(collectionFromPath, x => x.Name == "Open Sans");

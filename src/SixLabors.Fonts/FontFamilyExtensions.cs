@@ -4,9 +4,9 @@
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// A readonly collection of fonts.
+    /// Extensions for <see cref="FontFamily"/>.
     /// </summary>
-    public static class FontFamilyCollectionExtensions
+    public static class FontFamilyExtensions
     {
         /// <summary>
         /// Create a new instance of the <see cref="Font"/> for the named font family.

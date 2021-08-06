@@ -42,159 +42,165 @@ namespace SixLabors.Fonts
                         .ToArray();
 
         /// <summary>
-        /// Installs a font from the specified path.
+        /// Adds a font from the specified path.
         /// </summary>
         /// <param name="path">The path.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(string path)
-            => this.InstallInternal(path, CultureInfo.CurrentCulture);
+        public FontFamily Add(string path)
+            => this.AddInternal(path, CultureInfo.CurrentCulture);
 
         /// <summary>
-        /// Installs a font from the specified path.
+        /// Adds a font from the specified path.
         /// </summary>
         /// <param name="path">The path.</param>
         /// <param name="fontDescription">The font description of the installed font.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(string path, out FontDescription fontDescription)
-            => this.InstallInternal(path, CultureInfo.CurrentCulture, out fontDescription);
+        public FontFamily Add(string path, out FontDescription fontDescription)
+            => this.AddInternal(path, CultureInfo.CurrentCulture, out fontDescription);
 
         /// <summary>
-        /// Installs the specified font stream.
+        /// Adds the specified font stream.
         /// </summary>
         /// <param name="fontStream">The font stream.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(Stream fontStream)
-            => this.InstallInternal(fontStream, CultureInfo.InvariantCulture);
+        public FontFamily Add(Stream fontStream)
+            => this.AddInternal(fontStream, CultureInfo.InvariantCulture);
 
         /// <summary>
-        /// Installs the specified font stream.
+        /// Adds the specified font stream.
         /// </summary>
         /// <param name="fontStream">The font stream.</param>
         /// <param name="fontDescription">The font description of the installed font.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(Stream fontStream, out FontDescription fontDescription)
-            => this.InstallInternal(fontStream, CultureInfo.InvariantCulture, out fontDescription);
+        public FontFamily Add(Stream fontStream, out FontDescription fontDescription)
+            => this.AddInternal(fontStream, CultureInfo.InvariantCulture, out fontDescription);
 
         /// <summary>
-        /// Installs a true type font collection (.ttc) from the specified font collection stream.
+        /// Adds a true type font collection (.ttc) from the specified font collection stream.
         /// </summary>
         /// <param name="fontCollectionPath">The font collection path (should be typically a .ttc file like simsun.ttc).</param>
         /// <returns>The font descriptions of the installed fonts.</returns>
-        public IEnumerable<FontFamily> InstallCollection(string fontCollectionPath)
-            => this.InstallCollectionInternal(fontCollectionPath, CultureInfo.InvariantCulture);
+        public IEnumerable<FontFamily> AddCollection(string fontCollectionPath)
+            => this.AddCollectionInternal(fontCollectionPath, CultureInfo.InvariantCulture);
 
         /// <summary>
-        /// Installs a true type font collection (.ttc) from the specified font collection stream.
+        /// Adds a true type font collection (.ttc) from the specified font collection stream.
         /// </summary>
         /// <param name="fontCollectionPath">The font collection path (should be typically a .ttc file like simsun.ttc).</param>
         /// <param name="fontDescriptions">The descriptions of fonts installed from the collection.</param>
         /// <returns>The font descriptions of the installed fonts.</returns>
-        public IEnumerable<FontFamily> InstallCollection(string fontCollectionPath, out IEnumerable<FontDescription> fontDescriptions)
-            => this.InstallCollectionInternal(fontCollectionPath, CultureInfo.InvariantCulture, out fontDescriptions);
+        public IEnumerable<FontFamily> AddCollection(string fontCollectionPath, out IEnumerable<FontDescription> fontDescriptions)
+            => this.AddCollectionInternal(fontCollectionPath, CultureInfo.InvariantCulture, out fontDescriptions);
 
         /// <summary>
-        /// Installs a true type font collection (.ttc) from the specified font collection stream.
+        /// Adds a true type font collection (.ttc) from the specified font collection stream.
         /// </summary>
         /// <param name="fontCollectionStream">The font stream.</param>
         /// <param name="fontDescriptions">The descriptions of fonts installed from the collection.</param>
         /// <returns>The font descriptions of the installed fonts.</returns>
-        public IEnumerable<FontFamily> InstallCollection(Stream fontCollectionStream, out IEnumerable<FontDescription> fontDescriptions)
-            => this.InstallCollectionInternal(fontCollectionStream, CultureInfo.InvariantCulture, out fontDescriptions);
+        public IEnumerable<FontFamily> AddCollection(Stream fontCollectionStream, out IEnumerable<FontDescription> fontDescriptions)
+            => this.AddCollectionInternal(fontCollectionStream, CultureInfo.InvariantCulture, out fontDescriptions);
 
 #if SUPPORTS_CULTUREINFO_LCID
         /// <summary>
-        /// Installs a font from the specified path.
+        /// Adds a font from the specified path.
         /// </summary>
         /// <param name="path">The path.</param>
         /// <param name="culture">The culture of the retuend font family</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(string path, CultureInfo culture)
-            => this.InstallInternal(path, culture);
+        public FontFamily Add(string path, CultureInfo culture)
+            => this.AddInternal(path, culture);
 
         /// <summary>
-        /// Installs a font from the specified path.
+        /// Adds a font from the specified path.
         /// </summary>
         /// <param name="path">The path.</param>
         /// <param name="culture">The culture of the retuend font family</param>
         /// <param name="fontDescription">The font description of the installed font.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(string path, CultureInfo culture, out FontDescription fontDescription)
-            => this.InstallInternal(path, culture, out fontDescription);
+        public FontFamily Add(string path, CultureInfo culture, out FontDescription fontDescription)
+            => this.AddInternal(path, culture, out fontDescription);
 
         /// <summary>
-        /// Installs the specified font stream.
+        /// Adds the specified font stream.
         /// </summary>
         /// <param name="fontStream">The font stream.</param>
         /// <param name="culture">The culture of the retuend font family</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(Stream fontStream, CultureInfo culture)
-            => this.InstallInternal(fontStream, culture);
+        public FontFamily Add(Stream fontStream, CultureInfo culture)
+            => this.AddInternal(fontStream, culture);
 
         /// <summary>
-        /// Installs the specified font stream.
+        /// Adds the specified font stream.
         /// </summary>
         /// <param name="fontStream">The font stream.</param>
         /// <param name="culture">The culture of the retuend font family</param>
         /// <param name="fontDescription">The font description of the installed font.</param>
         /// <returns>the description of the font just loaded.</returns>
-        public FontFamily Install(Stream fontStream, CultureInfo culture, out FontDescription fontDescription)
-            => this.InstallInternal(fontStream, culture, out fontDescription);
+        public FontFamily Add(Stream fontStream, CultureInfo culture, out FontDescription fontDescription)
+            => this.AddInternal(fontStream, culture, out fontDescription);
 
         /// <summary>
-        /// Installs a true type font collection (.ttc) from the specified font collection stream.
+        /// Adds a true type font collection (.ttc) from the specified font collection stream.
         /// </summary>
         /// <param name="fontCollectionPath">The font collection path (should be typically a .ttc file like simsun.ttc).</param>
         /// <returns>The font descriptions of the installed fonts.</returns>
         /// <param name="culture">The culture of the retuend font families</param>
-        public IEnumerable<FontFamily> InstallCollection(string fontCollectionPath, CultureInfo culture)
-            => this.InstallCollectionInternal(fontCollectionPath, culture);
+        public IEnumerable<FontFamily> AddCollection(string fontCollectionPath, CultureInfo culture)
+            => this.AddCollectionInternal(fontCollectionPath, culture);
 
         /// <summary>
-        /// Installs a true type font collection (.ttc) from the specified font collection stream.
+        /// Adds a true type font collection (.ttc) from the specified font collection stream.
         /// </summary>
         /// <param name="fontCollectionPath">The font collection path (should be typically a .ttc file like simsun.ttc).</param>
         /// <param name="culture">The culture of the retuend font families</param>
         /// <param name="fontDescriptions">The descriptions of fonts installed from the collection.</param>
-        /// <returns>The font descriptions of the installed fonts.</returns>
-        public IEnumerable<FontFamily> InstallCollection(string fontCollectionPath, CultureInfo culture, out IEnumerable<FontDescription> fontDescriptions)
-            => this.InstallCollectionInternal(fontCollectionPath, culture, out fontDescriptions);
+        /// <returns>The new collection of <see cref="FontFamily"/> items.</returns>
+        public IEnumerable<FontFamily> AddCollection(
+            string fontCollectionPath,
+            CultureInfo culture,
+            out IEnumerable<FontDescription> fontDescriptions)
+            => this.AddCollectionInternal(fontCollectionPath, culture, out fontDescriptions);
 
         /// <summary>
-        /// Installs a true type font collection (.ttc) from the specified font collection stream.
+        /// Adds a true type font collection (.ttc) from the specified font collection stream.
         /// </summary>
         /// <param name="fontCollectionStream">The font stream.</param>
         /// <param name="culture">The culture of the retuend font families</param>
         /// <param name="fontDescriptions">The descriptions of fonts installed from the collection.</param>
-        /// <returns>The font descriptions of the installed fonts.</returns>
-        public IEnumerable<FontFamily> InstallCollection(Stream fontCollectionStream, CultureInfo culture, out IEnumerable<FontDescription> fontDescriptions)
-            => this.InstallCollectionInternal(fontCollectionStream, culture, out fontDescriptions);
+        /// <returns>The new collection of <see cref="FontFamily"/> items.</returns>
+        public IEnumerable<FontFamily> AddCollection(
+            Stream fontCollectionStream,
+            CultureInfo culture,
+            out IEnumerable<FontDescription> fontDescriptions)
+            => this.AddCollectionInternal(fontCollectionStream, culture, out fontDescriptions);
 #endif
 
-        private FontFamily InstallInternal(string path, CultureInfo culture)
-            => this.InstallInternal(path, culture, out _);
+        private FontFamily AddInternal(string path, CultureInfo culture)
+            => this.AddInternal(path, culture, out _);
 
-        private FontFamily InstallInternal(string path, CultureInfo culture, out FontDescription fontDescription)
+        private FontFamily AddInternal(string path, CultureInfo culture, out FontDescription fontDescription)
         {
             var instance = new FileFontMetrics(path);
             fontDescription = instance.Description;
-            return this.Install(instance, culture);
+            return this.Add(instance, culture);
         }
 
-        private FontFamily InstallInternal(Stream fontStream, CultureInfo culture)
-            => this.InstallInternal(fontStream, culture, out _);
+        private FontFamily AddInternal(Stream fontStream, CultureInfo culture)
+            => this.AddInternal(fontStream, culture, out _);
 
-        private FontFamily InstallInternal(Stream fontStream, CultureInfo culture, out FontDescription fontDescription)
+        private FontFamily AddInternal(Stream fontStream, CultureInfo culture, out FontDescription fontDescription)
         {
             var instance = FontMetrics.LoadFont(fontStream);
             fontDescription = instance.Description;
 
-            return this.Install(instance, culture);
+            return this.Add(instance, culture);
         }
 
-        private IEnumerable<FontFamily> InstallCollectionInternal(string fontCollectionPath, CultureInfo culture)
-            => this.InstallCollectionInternal(fontCollectionPath, culture, out _);
+        private IEnumerable<FontFamily> AddCollectionInternal(string fontCollectionPath, CultureInfo culture)
+            => this.AddCollectionInternal(fontCollectionPath, culture, out _);
 
-        private IEnumerable<FontFamily> InstallCollectionInternal(string fontCollectionPath, CultureInfo culture, out IEnumerable<FontDescription> fontDescriptions)
+        private IEnumerable<FontFamily> AddCollectionInternal(string fontCollectionPath, CultureInfo culture, out IEnumerable<FontDescription> fontDescriptions)
         {
             FileFontMetrics[] fonts = FileFontMetrics.LoadFontCollection(fontCollectionPath);
 
@@ -203,7 +209,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < fonts.Length; i++)
             {
                 description[i] = fonts[i].Description;
-                FontFamily family = this.Install(fonts[i], culture);
+                FontFamily family = this.Add(fonts[i], culture);
                 families.Add(family);
             }
 
@@ -211,7 +217,7 @@ namespace SixLabors.Fonts
             return families;
         }
 
-        private IEnumerable<FontFamily> InstallCollectionInternal(Stream fontCollectionStream, CultureInfo culture, out IEnumerable<FontDescription> fontDescriptions)
+        private IEnumerable<FontFamily> AddCollectionInternal(Stream fontCollectionStream, CultureInfo culture, out IEnumerable<FontDescription> fontDescriptions)
         {
             long startPos = fontCollectionStream.Position;
             var reader = new BigEndianBinaryReader(fontCollectionStream, true);
@@ -222,7 +228,7 @@ namespace SixLabors.Fonts
             {
                 fontCollectionStream.Position = startPos + ttcHeader.OffsetTable[i];
                 var instance = FontMetrics.LoadFont(fontCollectionStream);
-                installedFamilies.Add(this.Install(instance, culture));
+                installedFamilies.Add(this.Add(instance, culture));
                 FontDescription fontDescription = instance.Description;
                 result.Add(fontDescription);
             }
@@ -279,12 +285,9 @@ namespace SixLabors.Fonts
         internal IEnumerable<FontStyle> AvailableStyles(string fontFamily, CultureInfo culture)
             => this.FindAll(fontFamily, culture).Select(x => x.Description.Style).ToArray();
 
-        internal FontFamily Install(IFontMetrics instance, CultureInfo culture)
+        internal FontFamily Add(IFontMetrics instance, CultureInfo culture)
         {
-            if (instance == null)
-            {
-                throw new ArgumentNullException(nameof(instance));
-            }
+            Guard.NotNull(instance, nameof(instance));
 
             if (instance.Description == null)
             {

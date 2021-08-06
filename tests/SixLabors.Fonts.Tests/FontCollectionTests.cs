@@ -10,11 +10,11 @@ namespace SixLabors.Fonts.Tests
     public class FontCollectionTests
     {
         [Fact]
-        public void InstallViaPathReturnsDescription()
+        public void AddViaPathReturnsDescription()
         {
             var sut = new FontCollection();
 
-            FontFamily family = sut.Install(TestFonts.CarterOneFile, out FontDescription description);
+            FontFamily family = sut.Add(TestFonts.CarterOneFile, out FontDescription description);
             Assert.NotNull(description);
             Assert.Equal("Carter One", description.FontFamilyInvariantCulture);
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
@@ -22,10 +22,10 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void InstallViaPathInstallFontFileInstances()
+        public void AddViaPathAddFontFileInstances()
         {
             var sut = new FontCollection();
-            FontFamily family = sut.Install(TestFonts.CarterOneFile, out FontDescription descriptions);
+            FontFamily family = sut.Add(TestFonts.CarterOneFile, out FontDescription descriptions);
 
             IEnumerable<IFontMetrics> allInstances = sut.FindAll(family.Name, CultureInfo.InvariantCulture);
 
@@ -36,12 +36,12 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void InstallViaStreamReturnsDescription()
+        public void AddViaStreamReturnsDescription()
         {
             var sut = new FontCollection();
             using (System.IO.Stream s = TestFonts.CarterOneFileData())
             {
-                FontFamily family = sut.Install(s, out FontDescription description);
+                FontFamily family = sut.Add(s, out FontDescription description);
                 Assert.NotNull(description);
                 Assert.Equal("Carter One", description.FontFamilyInvariantCulture);
                 Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
