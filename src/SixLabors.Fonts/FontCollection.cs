@@ -19,6 +19,9 @@ namespace SixLabors.Fonts
     {
         private readonly HashSet<IFontMetrics> instances = new HashSet<IFontMetrics>();
 
+        private readonly HashSet<FileFontMetrics> fileFontMetrics = new HashSet<FileFontMetrics>();
+        private readonly HashSet<FontMetrics> fontMetrics = new HashSet<FontMetrics>();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FontCollection"/> class.
         /// </summary>
@@ -27,7 +30,37 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc />
+        // TODO: Should be a method.
         public IEnumerable<FontFamily> Families => this.FamiliesByCultureInternal(CultureInfo.CurrentCulture);
+
+        internal ICollection<FontFamily2> FontFamilies { get; } = new HashSet<FontFamily2>();
+
+        internal ICollection<FileFontFamily> FileFontFamilies { get; } = new HashSet<FileFontFamily>();
+
+        /// <summary>
+        /// Adds a font family from the specified filesystem path.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns>The new <see cref="FileFontFamily"/>.</returns>
+        public FileFontFamily AddNouveau(string path)
+        {
+            var metrics = new FileFontMetrics(path);
+            this.AddFileFontMetrics(metrics);
+            var name = metrics.Description.FontFamily(culture);
+            var family = new FileFontFamily("TODO", path, this, CultureInfo.CurrentCulture);
+            this.FileFontFamilies.Add(family);
+            return family;
+        }
+
+        /// <summary>
+        /// Adds a font family from the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream containing the font data.</param>
+        /// <returns>The new <see cref="FontFamily"/>.</returns>
+        public FontFamily AddNouveau(Stream stream)
+        {
+            throw new NotImplementedException();
+        }
 
 #if SUPPORTS_CULTUREINFO_LCID
         /// <inheritdoc />
@@ -284,6 +317,22 @@ namespace SixLabors.Fonts
 
         internal IEnumerable<FontStyle> AvailableStyles(string fontFamily, CultureInfo culture)
             => this.FindAll(fontFamily, culture).Select(x => x.Description.Style).ToArray();
+
+        internal void AddFileFontMetrics(FileFontMetrics metrics)
+        {
+            lock (this.fileFontMetrics)
+            {
+                this.fileFontMetrics.Add(metrics);
+            }
+        }
+
+        internal void AddFontMetrics(FontMetrics metrics)
+        {
+            lock (this.fontMetrics)
+            {
+                this.fontMetrics.Add(metrics);
+            }
+        }
 
         internal FontFamily Add(IFontMetrics instance, CultureInfo culture)
         {

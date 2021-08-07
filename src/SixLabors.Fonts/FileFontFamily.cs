@@ -8,18 +8,18 @@ using System.Globalization;
 namespace SixLabors.Fonts
 {
     /// <inheritdoc/>
-    public class FileFontFamily : IFileFontFamily, IEquatable<FileFontFamily?>
+    public struct FileFontFamily : IFileFontFamily, IEquatable<FileFontFamily>
     {
-        private readonly FontCollection collection;
+        private readonly FontCollection2 collection;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileFontFamily"/> class.
+        /// Initializes a new instance of the <see cref="FileFontFamily"/> struct.
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="path">The filesystem path to the font family source.</param>
         /// <param name="collection">The collection.</param>
         /// <param name="culture">The culture the family was extracted against</param>
-        internal FileFontFamily(string name, string path, FontCollection collection, CultureInfo culture)
+        internal FileFontFamily(string name, string path, FontCollection2 collection, CultureInfo culture)
         {
             Guard.NotNull(collection, nameof(collection));
 
@@ -47,8 +47,8 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the current left is equal to the <paramref name="right"/>
         /// parameter; otherwise, <see langword="false"/>.
         /// </returns>
-        public static bool operator ==(FileFontFamily? left, FileFontFamily? right)
-            => EqualityComparer<FileFontFamily?>.Default.Equals(left, right);
+        public static bool operator ==(FileFontFamily left, FileFontFamily right)
+            => left.Equals(right);
 
         /// <summary>
         /// Compares two <see cref="FileFontFamily"/> objects for inequality.
@@ -59,7 +59,7 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the current left is unequal to the <paramref name="right"/>
         /// parameter; otherwise, <see langword="false"/>.
         /// </returns>
-        public static bool operator !=(FileFontFamily? left, FileFontFamily? right)
+        public static bool operator !=(FileFontFamily left, FileFontFamily right)
             => !(left == right);
 
         /// <inheritdoc/>
@@ -67,21 +67,17 @@ namespace SixLabors.Fonts
             => this.collection.AvailableStyles(this.Name, this.Culture);
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj) => this.Equals(obj as FileFontFamily);
+        public override bool Equals(object? obj)
+            => obj is FileFontFamily family && this.Equals(family);
 
         /// <inheritdoc/>
-        public bool Equals(FileFontFamily? other)
+        public bool Equals(FileFontFamily other)
         {
-            if (other is null)
-            {
-                return false;
-            }
-
-            StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
+            StringComparer comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
             return comparer.Equals(this.Path, other.Path)
                 && comparer.Equals(this.Name, other.Name)
                 && EqualityComparer<CultureInfo>.Default.Equals(this.Culture, other.Culture)
-                && EqualityComparer<FontCollection>.Default.Equals(this.collection, other.collection);
+                && EqualityComparer<FontCollection2>.Default.Equals(this.collection, other.collection);
         }
 
         /// <inheritdoc/>
