@@ -27,7 +27,7 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         public FontFamily Add(string path, out FontDescription description)
-            => this.AddImpl(path, CultureInfo.CurrentCulture, out description);
+            => this.AddImpl(path, CultureInfo.InvariantCulture, out description);
 
         /// <inheritdoc/>
         public FontFamily Add(Stream stream)
