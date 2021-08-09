@@ -4,7 +4,7 @@
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Unicode;
 
-namespace SixLabors.Fonts.Exceptions
+namespace SixLabors.Fonts
 {
     /// <summary>
     /// Helper methods to throw exceptions

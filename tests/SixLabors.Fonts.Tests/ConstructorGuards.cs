@@ -9,11 +9,9 @@ namespace SixLabors.Fonts.Tests
     public class ConstructorGuards
     {
         [Fact]
-        public void FontClass_NullFontFamilyThrowsException()
+        public void FontClass_DefaultFontFamilyThrowsException()
         {
-            ArgumentNullException ex = Assert.Throws<ArgumentNullException
-                >(
-                () => new Font((FontFamily)null, 0f, FontStyle.Regular));
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => new Font(default(FontFamily), 0f, FontStyle.Regular));
             Assert.Equal("family", ex.ParamName);
         }
 
@@ -21,7 +19,7 @@ namespace SixLabors.Fonts.Tests
         public void FontClass_NullFontThrowsException()
         {
             ArgumentNullException ex = Assert.Throws<ArgumentNullException>(
-                () => new Font((Font)null, 0f, FontStyle.Regular));
+                () => new Font(null, 0f, FontStyle.Regular));
 
             Assert.Equal("prototype", ex.ParamName);
         }

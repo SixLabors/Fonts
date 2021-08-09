@@ -6,7 +6,6 @@ using System.Collections.Generic;
 #if SUPPORTS_CULTUREINFO_LCID
 using System.Globalization;
 #endif
-using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts
 {

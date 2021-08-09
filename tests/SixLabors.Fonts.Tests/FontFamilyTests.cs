@@ -13,14 +13,14 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void EqualNullTests()
         {
-            FontFamily fontFamily = null;
-            Assert.True(fontFamily == null);
-            Assert.False(fontFamily != null);
+            FontFamily fontFamily = default;
+            Assert.True(fontFamily == default);
+            Assert.False(fontFamily != default);
 
             fontFamily = this.families[0];
-            Assert.True(fontFamily != null);
-            Assert.False(fontFamily == null);
-            Assert.False(fontFamily.Equals(null));
+            Assert.True(fontFamily != default);
+            Assert.False(fontFamily == default);
+            Assert.False(fontFamily.Equals(default));
         }
 
         [Fact]

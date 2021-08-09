@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts
 {
@@ -101,7 +100,7 @@ namespace SixLabors.Fonts
         /// Gets the collection of <see cref="FontStyle" /> that are currently available.
         /// </summary>
         /// <returns>The <see cref="IEnumerable{T}" />.</returns>
-        public IEnumerable<FontStyle> AvailableStyles()
+        public IEnumerable<FontStyle> GetAvailableStyles()
         {
             if (this == default)
             {

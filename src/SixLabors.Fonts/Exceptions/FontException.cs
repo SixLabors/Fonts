@@ -3,7 +3,7 @@
 
 using System;
 
-namespace SixLabors.Fonts.Exceptions
+namespace SixLabors.Fonts
 {
     /// <summary>
     /// Base class for exceptions thrown by this library.

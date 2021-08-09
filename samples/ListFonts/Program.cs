@@ -22,7 +22,7 @@ namespace ListFonts
             {
                 Console.Write(f.Name.PadRight(len));
                 Console.Write('\t');
-                Console.Write(string.Join(",", f.AvailableStyles.OrderBy(x => x).Select(x => x.ToString())));
+                Console.Write(string.Join(",", f.GetAvailableStyles().OrderBy(x => x).Select(x => x.ToString())));
                 Console.WriteLine();
 
                 GlyphMetrics g = f.CreateFont(10).FontMetrics.GetGlyphMetrics(new CodePoint(1));

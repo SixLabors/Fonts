@@ -7,7 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables;
 
 namespace SixLabors.Fonts
@@ -79,6 +78,33 @@ namespace SixLabors.Fonts
         public FontFamily Add(Stream stream, CultureInfo culture, out FontDescription description)
             => this.AddImpl(stream, culture, out description);
 
+        /// <summary>
+        /// Adds a font to the collection.
+        /// For testing purposes only.
+        /// </summary>
+        /// <param name="metrics">The font metrics.</param>
+        /// <param name="culture">The culture of the font to add.</param>
+        /// <returns>The new <see cref="FontFamily"/>.</returns>
+        internal FontFamily Add(IFontMetrics metrics, CultureInfo culture)
+        {
+            if (metrics == null)
+            {
+                throw new ArgumentNullException(nameof(metrics));
+            }
+
+            if (metrics.Description == null)
+            {
+                throw new ArgumentException("IFontInstance must have a Description.", nameof(metrics));
+            }
+
+            lock (this.metricsCollection)
+            {
+                this.metricsCollection.Add(metrics);
+            }
+
+            return new FontFamily(metrics.Description.FontFamily(culture), this, culture);
+        }
+
         /// <inheritdoc/>
         public IEnumerable<FontFamily> AddCollection(string path, CultureInfo culture)
             => this.AddCollection(path, culture, out _);
@@ -115,7 +141,7 @@ namespace SixLabors.Fonts
 #endif
 
         /// <inheritdoc/>
-        public bool TryGetMetrics(string name, CultureInfo culture, [NotNullWhen(true)] out IFontMetrics? metrics)
+        bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, [NotNullWhen(true)] out IFontMetrics? metrics)
         {
             metrics = ((IReadOnlyFontMetricsCollection)this).GetAllMetrics(name, culture).FirstOrDefault();
 

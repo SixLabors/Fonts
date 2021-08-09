@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+#if SUPPORTS_CULTUREINFO_LCID
 using System.Globalization;
+#endif
 using System.IO;
 using System.Linq;
 

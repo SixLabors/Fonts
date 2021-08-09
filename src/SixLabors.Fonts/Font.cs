@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -37,6 +36,11 @@ namespace SixLabors.Fonts
         /// <param name="style">The font style.</param>
         public Font(FontFamily family, float size, FontStyle style)
         {
+            if (family == default)
+            {
+                throw new ArgumentException("Cannot use the default value type instance to create a font.", nameof(family));
+            }
+
             this.Family = family;
             this.RequestedStyle = style;
             this.Size = size;
@@ -178,7 +182,7 @@ namespace SixLabors.Fonts
             }
 
             // Can't find style requested so let's just try returning the default.
-            IEnumerable<FontStyle>? styles = this.Family.AvailableStyles();
+            IEnumerable<FontStyle>? styles = this.Family.GetAvailableStyles();
             FontStyle defaultStyle = styles.Contains(FontStyle.Regular)
             ? FontStyle.Regular
             : styles.First();

@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -39,14 +40,12 @@ namespace SixLabors.Fonts.Tests
         public void AddViaStreamReturnsDescription()
         {
             var sut = new FontCollection();
-            using (System.IO.Stream s = TestFonts.CarterOneFileData())
-            {
-                FontFamily family = sut.Add(s, out FontDescription description);
-                Assert.NotNull(description);
-                Assert.Equal("Carter One", description.FontFamilyInvariantCulture);
-                Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
-                Assert.Equal(FontStyle.Regular, description.Style);
-            }
+            using Stream s = TestFonts.CarterOneFileData();
+            FontFamily family = sut.Add(s, out FontDescription description);
+            Assert.NotNull(description);
+            Assert.Equal("Carter One", description.FontFamilyInvariantCulture);
+            Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
+            Assert.Equal(FontStyle.Regular, description.Style);
         }
     }
 }
