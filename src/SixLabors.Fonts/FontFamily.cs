@@ -111,10 +111,10 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Gets the filesystem path to the font family source.
+        /// Gets the collection of filesystem paths to the font family sources.
         /// </summary>
         /// <param name="paths">
-        /// When this method returns, contains the filesystem path to the font family source,
+        /// When this method returns, contains the filesystem paths to the font family sources,
         /// if the path exists; otherwise, an empty value for the type of the paths parameter.
         /// This parameter is passed uninitialized.
         /// </param>
