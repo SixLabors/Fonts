@@ -119,7 +119,7 @@ namespace SixLabors.Fonts
         /// This parameter is passed uninitialized.
         /// </param>
         /// <returns>
-        /// <see langword="true" /> if the <see cref="FontFamily" /> was created via a filesystem path; otherwise, <see langword="false" />.
+        /// <see langword="true" /> if the <see cref="FontFamily" /> was created via filesystem paths; otherwise, <see langword="false" />.
         /// </returns>
         public bool TryGetPaths(out IEnumerable<string> paths)
         {
