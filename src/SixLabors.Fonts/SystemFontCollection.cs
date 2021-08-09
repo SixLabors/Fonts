@@ -3,10 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-#if SUPPORTS_CULTUREINFO_LCID
 using System.Globalization;
-#endif
 using System.IO;
 using System.Linq;
 
@@ -48,9 +45,9 @@ namespace SixLabors.Fonts
         {
         }
 
-        public SystemFontCollection(IEnumerable<string> probPaths)
+        public SystemFontCollection(IEnumerable<string> paths)
         {
-            string[] expanded = probPaths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
+            string[] expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
             string[] foundDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
 
             // We do this to provide a consistent experience with case sensitive file systems.
@@ -78,32 +75,28 @@ namespace SixLabors.Fonts
             }
         }
 
-        /// <summary>
-        /// Gets the collection of <see cref="FontFamily"/> objects associated with this <see cref="FontCollection"/>.
-        /// </summary>
-        /// <value>
-        /// The families.
-        /// </value>
+        /// <inheritdoc/>
         public IEnumerable<FontFamily> Families => this.collection.Families;
 
-        /// <inheritdoc />
-        public FontFamily Find(string fontFamily) => this.collection.Find(fontFamily);
+        /// <inheritdoc/>
+        public FontFamily Get(string name) => this.collection.Get(name);
 
-        /// <inheritdoc />
-        public bool TryFind(string fontFamily, [NotNullWhen(true)] out FontFamily? family) => this.collection.TryFind(fontFamily, out family);
+        /// <inheritdoc/>
+        public bool TryGet(string name, out FontFamily family)
+            => this.collection.TryGet(name, out family);
 
 #if SUPPORTS_CULTUREINFO_LCID
-        /// <inheritdoc />
-        public IEnumerable<FontFamily> FamiliesByCulture(CultureInfo culture)
-            => this.collection.FamiliesByCulture(culture);
+        /// <inheritdoc/>
+        public IEnumerable<FontFamily> GetByCulture(CultureInfo culture)
+            => this.collection.GetByCulture(culture);
 
-        /// <inheritdoc />
-        public FontFamily Find(string fontFamily, CultureInfo culture)
-            => this.collection.Find(fontFamily, culture);
+        /// <inheritdoc/>
+        public FontFamily Get(string name, CultureInfo culture)
+            => this.collection.Get(name, culture);
 
-        /// <inheritdoc />
-        public bool TryFind(string fontFamily, CultureInfo culture, [NotNullWhen(true)] out FontFamily? family)
-            => this.collection.TryFind(fontFamily, culture, out family);
+        /// <inheritdoc/>
+        public bool TryGet(string name, CultureInfo culture, out FontFamily family)
+            => this.collection.TryGet(name, culture, out family);
 #endif
     }
 }

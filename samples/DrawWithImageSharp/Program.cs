@@ -31,8 +31,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily whitneyBook = fonts.Add(@"Fonts\whitney-book.ttf");
             FontFamily colorEmoji = fonts.Add(@"Fonts\Twemoji Mozilla.ttf");
             FontFamily font2 = fonts.Add(@"Fonts\OpenSans-Regular.ttf");
-            FontFamily emojiFont = SystemFonts.Find("Segoe UI Emoji");
-            FontFamily uiFont = SystemFonts.Find("Segoe UI");
+            FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
+            FontFamily uiFont = SystemFonts.Get("Segoe UI");
 
             FontFamily sunflower = fonts.Add(@"Fonts\Sunflower-Medium.ttf");
 
@@ -84,8 +84,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
 
-            RenderText(new Font(SystemFonts.Find("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
-            RenderText(new Font(SystemFonts.Find("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
+            RenderText(new Font(SystemFonts.Get("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
+            RenderText(new Font(SystemFonts.Get("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
 
             RenderText(new RendererOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
 
@@ -117,13 +117,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 RenderText(f, text, 72);
             }
 
-            FontFamily simsum = SystemFonts.Find("SimSun");
+            FontFamily simsum = SystemFonts.Get("SimSun");
             RenderText(simsum, "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 16);
 
-            FontFamily jhengHei = SystemFonts.Find("Microsoft JhengHei");
+            FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
             RenderText(jhengHei, " ，；：！￥（）？｛｝－＝＋＼｜～！＠＃％＆", 16);
 
-            FontFamily arial = SystemFonts.Find("Arial");
+            FontFamily arial = SystemFonts.Get("Arial");
             RenderText(arial, "ìíîï", 72);
         }
 
