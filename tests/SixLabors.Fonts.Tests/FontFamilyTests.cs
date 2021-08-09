@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
@@ -43,6 +44,24 @@ namespace SixLabors.Fonts.Tests
             Assert.False(fontFamily == fontFamily2);
             Assert.True(fontFamily != fontFamily2);
             Assert.False(fontFamily.Equals(fontFamily2));
+        }
+
+        [Fact]
+        public void HasPathTests()
+        {
+            foreach (FontFamily family in this.families)
+            {
+                Assert.True(family.TryGetPaths(out IEnumerable<string> familyPaths));
+                Assert.NotNull(familyPaths);
+                Assert.True(familyPaths.Any());
+
+                foreach (FontStyle style in family.GetAvailableStyles())
+                {
+                    Font font = family.CreateFont(12, style);
+                    Assert.True(font.TryGetPath(out string fontPath));
+                    Assert.Contains(fontPath, familyPaths);
+                }
+            }
         }
     }
 }

@@ -113,30 +113,33 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the filesystem path to the font family source.
         /// </summary>
-        /// <param name="path">
+        /// <param name="paths">
         /// When this method returns, contains the filesystem path to the font family source,
-        /// if the path exists; otherwise, the default value for the type of the path parameter.
+        /// if the path exists; otherwise, an empty value for the type of the paths parameter.
         /// This parameter is passed uninitialized.
         /// </param>
         /// <returns>
         /// <see langword="true" /> if the <see cref="FontFamily" /> was created via a filesystem path; otherwise, <see langword="false" />.
         /// </returns>
-        public bool TryGetPath([NotNullWhen(true)] out string? path)
+        public bool TryGetPaths(out IEnumerable<string> paths)
         {
             if (this == default)
             {
                 FontsThrowHelper.ThrowDefaultInstance();
             }
 
-            if (this.collection.TryGetMetrics(this.Name, this.Culture, out IFontMetrics? metrics)
-                && metrics is FileFontMetrics fileMetrics)
+            var filePaths = new List<string>();
+            foreach (FontStyle style in this.GetAvailableStyles())
             {
-                path = fileMetrics.Path;
-                return true;
+                if (this.collection.TryGetMetrics(this.Name, this.Culture, style, out IFontMetrics? metrics)
+                    && metrics is FileFontMetrics fileMetrics)
+                {
+                    filePaths.Add(fileMetrics.Path);
+                }
             }
 
-            path = null;
-            return false;
+            paths = filePaths;
+            return filePaths.Count > 0;
         }
 
         /// <summary>

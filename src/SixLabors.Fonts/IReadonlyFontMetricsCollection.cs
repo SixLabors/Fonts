@@ -18,23 +18,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="name">The font family name.</param>
         /// <param name="culture">The culture to use when searching for a match.</param>
-        /// <param name="metrics">
-        /// When this method returns, contains the metrics associated with the specified name,
-        /// if the name is found; otherwise, the default value for the type of the family parameter.
-        /// This parameter is passed uninitialized.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> if the <see cref="IReadOnlyFontMetricsCollection"/> contains font metrics
-        /// with the specified name; otherwise, <see langword="false"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
-        bool TryGetMetrics(string name, CultureInfo culture, [NotNullWhen(true)] out IFontMetrics? metrics);
-
-        /// <summary>
-        /// Gets the specified font metrics matching the given culture and font family name.
-        /// </summary>
-        /// <param name="name">The font family name.</param>
-        /// <param name="culture">The culture to use when searching for a match.</param>
         /// <param name="style">The font style to use when searching for a match.</param>
         /// <param name="metrics">
         /// When this method returns, contains the metrics associated with the specified name,

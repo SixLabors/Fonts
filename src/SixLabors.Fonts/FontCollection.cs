@@ -141,14 +141,6 @@ namespace SixLabors.Fonts
 #endif
 
         /// <inheritdoc/>
-        bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, [NotNullWhen(true)] out IFontMetrics? metrics)
-        {
-            metrics = ((IReadOnlyFontMetricsCollection)this).GetAllMetrics(name, culture).FirstOrDefault();
-
-            return metrics != null;
-        }
-
-        /// <inheritdoc/>
         bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out IFontMetrics? metrics)
         {
             metrics = ((IReadOnlyFontMetricsCollection)this).GetAllMetrics(name, culture)

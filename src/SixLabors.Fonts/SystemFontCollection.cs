@@ -55,7 +55,8 @@ namespace SixLabors.Fonts
             // We do this to provide a consistent experience with case sensitive file systems.
             IEnumerable<string> files = foundDirectories
                                 .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
-                                .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase) || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase));
+                                .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase)
+                                || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase));
 
             foreach (string path in files)
             {
