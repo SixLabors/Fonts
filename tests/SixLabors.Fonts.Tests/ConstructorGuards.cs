@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests
         public void FontClass_DefaultFontFamilyThrowsException()
         {
             ArgumentException ex = Assert.Throws<ArgumentException>(
-                () => new Font(default(FontFamily), FontStyle.Regular));
+                () => new Font(default(FontFamily), 0F));
 
             Assert.Equal("family", ex.ParamName);
         }
@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tests
         public void FontClass_DefaultFontFamilyWithSizeThrowsException()
         {
             ArgumentException ex = Assert.Throws<ArgumentException>(
-                () => new Font(default(FontFamily), 0f, FontStyle.Regular));
+                () => new Font(default(FontFamily), 0F, FontStyle.Regular));
 
             Assert.Equal("family", ex.ParamName);
         }
