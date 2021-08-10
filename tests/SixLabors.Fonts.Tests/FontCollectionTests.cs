@@ -47,5 +47,15 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
             Assert.Equal(FontStyle.Regular, description.Style);
         }
+
+        [Fact]
+        public void NotFoundThrowsCorrectException()
+        {
+            const string invalid = "qwerty";
+            FontFamilyNotFoundException ex = Assert.Throws<FontFamilyNotFoundException>(
+                () => new FontCollection().Get(invalid));
+
+            Assert.Equal(invalid, ex.FontFamily);
+        }
     }
 }

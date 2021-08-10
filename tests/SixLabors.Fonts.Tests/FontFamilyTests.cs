@@ -63,5 +63,17 @@ namespace SixLabors.Fonts.Tests
                 }
             }
         }
+
+        [Fact]
+        public void Throws_FontException_CreateFont_WhenDefault()
+            => Assert.Throws<FontException>(() => default(FontFamily).CreateFont(12F));
+
+        [Fact]
+        public void Throws_FontException_TryGetPath_WhenDefault()
+            => Assert.Throws<FontException>(() => default(FontFamily).TryGetPaths(out IEnumerable<string> _));
+
+        [Fact]
+        public void Throws_FontException_TryGetMetrics_WhenDefault()
+            => Assert.Throws<FontException>(() => default(FontFamily).TryGetMetrics(FontStyle.Regular, out IFontMetrics _));
     }
 }
