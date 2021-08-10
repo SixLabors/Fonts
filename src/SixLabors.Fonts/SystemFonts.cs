@@ -57,7 +57,7 @@ namespace SixLabors.Fonts
         public static IEnumerable<FontFamily> GetByCulture(CultureInfo culture)
             => Collection.GetByCulture(culture);
 
-        /// <inheritdoc cref="IReadOnlyFontCollection.TryGet(string, CultureInfo, out FontFamily)" />
+        /// <inheritdoc cref="IReadOnlyFontCollection.Get(string, CultureInfo)" />
         public static FontFamily Get(string fontFamily, CultureInfo culture)
             => Collection.Get(fontFamily, culture);
 
