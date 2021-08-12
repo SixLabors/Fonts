@@ -13,46 +13,29 @@ namespace SixLabors.Fonts.Tables.General
     internal sealed class CMapTable : Table
     {
         internal const string TableName = "cmap";
-        private readonly CMapSubTable[] platformTables;
 
-        public CMapTable(CMapSubTable[] tables)
+        private static readonly Dictionary<PlatformIDs, int> PreferredPlatformOrder = new Dictionary<PlatformIDs, int>
+        {
+            [PlatformIDs.Windows] = 0,
+            [PlatformIDs.Unicode] = 1,
+            [PlatformIDs.Macintosh] = 2,
+        };
+
+        public CMapTable(IEnumerable<CMapSubTable> tables)
         {
             this.Tables = tables;
-
-            // lets just pick the best table for us.. lets just treat everything as windows and get the format 4 if possible
-            var tbls = new List<CMapSubTable>();
-            foreach (CMapSubTable t in this.Tables)
-            {
-                if (t != null)
-                {
-                    if (t.Platform == PlatformIDs.Windows)
-                    {
-                        tbls.Add(t);
-                    }
-                }
-            }
-
-            this.platformTables = tbls.ToArray();
         }
 
-        internal CMapSubTable[] Tables { get; }
+        internal IEnumerable<CMapSubTable> Tables { get; }
+
+        private static int GetPreferredPlatformOrder(PlatformIDs platform)
+            => PreferredPlatformOrder.TryGetValue(platform, out var order) ? order : int.MaxValue;
 
         public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
         {
-            // use the best match only
-            foreach (CMapSubTable t in this.platformTables)
+            foreach (CMapSubTable t in this.Tables.OrderBy(t => GetPreferredPlatformOrder(t.Platform)))
             {
-                // keep looking until we have an index thats not the fallback.
-                if (t.TryGetGlyphId(codePoint, out glyphId))
-                {
-                    return true;
-                }
-            }
-
-            // didn't have a windows match just use any and hope for the best
-            foreach (CMapSubTable t in this.Tables)
-            {
-                // keep looking until we have an index thats not the fallback.
+                // keep looking until we have an index that's not the fallback.
                 if (t.TryGetGlyphId(codePoint, out glyphId))
                 {
                     return true;
@@ -103,7 +86,7 @@ namespace SixLabors.Fonts.Tables.General
                 }
             }
 
-            return new CMapTable(tables.ToArray());
+            return new CMapTable(tables);
         }
     }
 }
