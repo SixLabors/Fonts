@@ -34,6 +34,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string NotoSansSCThinFile => GetFullPath("NotoSansSC-Thin.ttf");
 
+        public static string HelveticaTTCFile => GetFullPath("Helvetica.ttc");
+
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
         public static Stream WendyOneFileData() => OpenStream(WendyOneFile);

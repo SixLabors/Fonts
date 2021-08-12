@@ -276,6 +276,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                             null,
                             new PointF(size.Width / 2F, size.Height / 2F))));
 
+                    img[size.Width / 2, size.Height / 2] = Color.Black;
+
                     string h = ha.ToString().Replace(nameof(HorizontalAlignment), string.Empty).ToLower();
                     string v = va.ToString().Replace(nameof(VerticalAlignment), string.Empty).ToLower();
 

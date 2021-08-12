@@ -15,6 +15,9 @@
     <Content Include="..\..\tests\SixLabors.Fonts.Tests\Fonts\**\*.ttf" Link="Fonts\%(Filename)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\tests\SixLabors.Fonts.Tests\Fonts\**\*.ttc" Link="Fonts\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\tests\SixLabors.Fonts.Tests\Fonts\**\*.woff" Link="Fonts\%(Filename)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

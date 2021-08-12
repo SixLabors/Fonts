@@ -119,7 +119,7 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(glyphMetrics, glyphMetrics1);
 
-            // Fallback glyph at position 0.
+            // Position 0.
             Assert.Equal(codePoint, glyphMetrics.Codepoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
             Assert.Equal(glyphMetrics.UnitsPerEm * 72F, glyphMetrics.ScaleFactor);
@@ -129,7 +129,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(666, glyphMetrics.Height);
             Assert.Equal(33, glyphMetrics.LeftSideBearing);
             Assert.Equal(134, glyphMetrics.TopSideBearing);
-            Assert.Equal(GlyphType.Fallback, glyphMetrics.GlyphType);
+            Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
         }
     }
 }
