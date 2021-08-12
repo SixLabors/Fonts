@@ -31,23 +31,25 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily whitneyBook = fonts.Add(@"Fonts\whitney-book.ttf");
             FontFamily colorEmoji = fonts.Add(@"Fonts\Twemoji Mozilla.ttf");
             FontFamily font2 = fonts.Add(@"Fonts\OpenSans-Regular.ttf");
+            FontFamily sunflower = fonts.Add(@"Fonts\Sunflower-Medium.ttf");
+
+#if OS_WINDOWS
             FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
-
-            FontFamily sunflower = fonts.Add(@"Fonts\Sunflower-Medium.ttf");
 
             RenderTextProcessorWithAlignment(emojiFont, "😀A😀", pointSize: 20, fallbackFonts: new[] { colorEmoji });
             RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { font2 });
             RenderTextProcessorWithAlignment(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
 
+            RenderText(emojiFont, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
+            RenderText(font2, string.Empty, pointSize: 72, fallbackFonts: new[] { emojiFont });
+            RenderText(font2, "😀 Hello World! 😀", pointSize: 72, fallbackFonts: new[] { emojiFont });
+#endif
             // fallback font tests
             RenderTextProcessor(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
             RenderText(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
 
             RenderText(colorEmoji, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
-            RenderText(emojiFont, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
-            RenderText(font2, string.Empty, pointSize: 72, fallbackFonts: new[] { emojiFont });
-            RenderText(font2, "😀 Hello World! 😀", pointSize: 72, fallbackFonts: new[] { emojiFont });
 
             //// general
             RenderText(font, "abc", 72);
@@ -84,16 +86,23 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
             RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
 
+#if OS_WINDOWS
             RenderText(new Font(SystemFonts.Get("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
             RenderText(new Font(SystemFonts.Get("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
-
             RenderText(new RendererOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
-
             BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
-
             TextAlignment.Generate(SystemFonts.CreateFont("arial", 50f));
             TextAlignmentWrapped.Generate(SystemFonts.CreateFont("arial", 50f));
 
+            FontFamily simsum = SystemFonts.Get("SimSun");
+            RenderText(simsum, "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 16);
+
+            FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
+            RenderText(jhengHei, " ，；：！￥（）？｛｝－＝＋＼｜～！＠＃％＆", 16);
+
+            FontFamily arial = SystemFonts.Get("Arial");
+            RenderText(arial, "ìíîï", 72);
+#endif
             var sb = new StringBuilder();
             for (char c = 'a'; c <= 'z'; c++)
             {
@@ -116,15 +125,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 RenderText(f, text, 72);
             }
-
-            FontFamily simsum = SystemFonts.Get("SimSun");
-            RenderText(simsum, "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 16);
-
-            FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
-            RenderText(jhengHei, " ，；：！￥（）？｛｝－＝＋＼｜～！＠＃％＆", 16);
-
-            FontFamily arial = SystemFonts.Get("Arial");
-            RenderText(arial, "ìíîï", 72);
         }
 
         public static void RenderText(Font font, string text, int width, int height)
