@@ -84,13 +84,12 @@ namespace SixLabors.Fonts.Tables.General
 
             // foreach encoding we move forward looking for th subtables
             var tables = new List<CMapSubTable>(numTables);
-            foreach (IGrouping<uint, EncodingRecord> encoding in encodings.Where(x => x.PlatformID == PlatformIDs.Windows).GroupBy(x => x.Offset))
+            foreach (IGrouping<uint, EncodingRecord> encoding in encodings.GroupBy(x => x.Offset))
             {
                 reader.Seek(encoding.Key, System.IO.SeekOrigin.Begin);
 
-                ushort subTypeTableFormat = reader.ReadUInt16();
-
-                switch (subTypeTableFormat)
+                // Subtable format.
+                switch (reader.ReadUInt16())
                 {
                     case 0:
                         tables.AddRange(Format0SubTable.Load(encoding, reader));
