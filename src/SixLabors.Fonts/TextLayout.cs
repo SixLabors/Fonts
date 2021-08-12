@@ -181,9 +181,9 @@ namespace SixLabors.Fonts
                 }
 
                 float glyphWidth = glyph.AdvanceWidth * spanStyle.PointSize / scale;
-                float glyphHeight = (glyph.UnitsPerEm - glyph.Bounds.Min.Y) * spanStyle.PointSize / scale;
+                float glyphHeight = glyph.AdvanceHeight * spanStyle.PointSize / scale;
 
-                if (!CodePoint.IsNewLine(codePoint) && !CodePoint.IsWhiteSpace(codePoint))
+                if (glyphWidth > 0 && !CodePoint.IsNewLine(codePoint) && !CodePoint.IsWhiteSpace(codePoint))
                 {
                     Vector2 glyphLocation = location;
                     if (spanStyle.ApplyKerning && previousGlyph != null)
@@ -199,9 +199,8 @@ namespace SixLabors.Fonts
 
                     foreach (GlyphMetrics? g in glyphs)
                     {
-                        // TODO: We now have Advance(Width/Height).
                         float w = g.AdvanceWidth * spanStyle.PointSize / scale;
-                        float h = (g.UnitsPerEm - g.Bounds.Min.Y) * spanStyle.PointSize / scale;
+                        float h = g.AdvanceHeight * spanStyle.PointSize / scale;
                         layout.Add(new GlyphLayout(graphemeIndex, codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine));
 
                         if (w > glyphWidth)
