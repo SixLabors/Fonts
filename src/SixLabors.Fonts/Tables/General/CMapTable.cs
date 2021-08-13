@@ -23,17 +23,17 @@ namespace SixLabors.Fonts.Tables.General
 
         public CMapTable(IEnumerable<CMapSubTable> tables)
         {
-            this.Tables = tables;
+            this.Tables = tables.OrderBy(t => GetPreferredPlatformOrder(t.Platform)).ToArray();
         }
 
-        internal IEnumerable<CMapSubTable> Tables { get; }
+        internal CMapSubTable[] Tables { get; }
 
         private static int GetPreferredPlatformOrder(PlatformIDs platform)
             => PreferredPlatformOrder.TryGetValue(platform, out var order) ? order : int.MaxValue;
 
         public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
         {
-            foreach (CMapSubTable t in this.Tables.OrderBy(t => GetPreferredPlatformOrder(t.Platform)))
+            foreach (CMapSubTable t in this.Tables)
             {
                 // keep looking until we have an index that's not the fallback.
                 if (t.TryGetGlyphId(codePoint, out glyphId))
