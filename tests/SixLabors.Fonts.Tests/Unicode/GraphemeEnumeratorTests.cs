@@ -20,16 +20,67 @@ namespace SixLabors.Fonts.Tests.Unicode
         public GraphemeEnumeratorTests(ITestOutputHelper output) => this.output = output;
 
         [Fact]
+        public void CanEnumerateSpan()
+        {
+            // Test example taken from.
+            // https://docs.microsoft.com/en-us/dotnet/api/system.text.rune?view=net-5.0#when-to-use-the-rune-type
+            const string text = "𐓏𐓘𐓻𐓘𐓻𐓟 𐒻𐓟";
+            int count = 0;
+            Span<char> span = text.ToCharArray();
+            foreach (ReadOnlySpan<char> grapheme in span.EnumerateGraphemes())
+            {
+                Assert.True(grapheme.Length > 0);
+                count++;
+            }
+
+            Assert.Equal(9, count);
+        }
+
+        [Fact]
+        public void CanEnumerateReadonlySpan()
+        {
+            // Test example taken from.
+            // https://docs.microsoft.com/en-us/dotnet/api/system.text.rune?view=net-5.0#when-to-use-the-rune-type
+            const string text = "𐓏𐓘𐓻𐓘𐓻𐓟 𐒻𐓟";
+            int count = 0;
+
+            foreach (ReadOnlySpan<char> grapheme in text.AsSpan().EnumerateGraphemes())
+            {
+                Assert.True(grapheme.Length > 0);
+                count++;
+            }
+
+            Assert.Equal(9, count);
+        }
+
+        [Fact]
+        public void CanEnumerateInvalidReadonlySpan()
+        {
+            // The string below contains 2 combining characters then
+            // a single high surrogate code unit, then 2 more sets or combining characters.
+            // 'ā̈' 'b' '�' 'ç'
+            const string text = "a\u0304\u0308b\ud800c\u0327";
+            int count = 0;
+            foreach (ReadOnlySpan<char> grapheme in text.AsSpan().EnumerateGraphemes())
+            {
+                Assert.True(grapheme.Length > 0);
+                count++;
+            }
+
+            Assert.Equal(4, count);
+        }
+
+        [Fact]
         public void Should_Enumerate_Emoji()
         {
-            // https://gist.github.com/GrabYourPitchforks/b9dbd348b448c938497cff37a3526725#whats-the-relationship-between-a-net-rune-and-a-character
+            // https://docs.microsoft.com/en-us/dotnet/standard/base-types/character-encoding-introduction#example-count-char-rune-and-text-element-instances
             const string text = "👩🏽‍🚒";
 
             int count = 0;
-            foreach (Grapheme grapheme in new GraphemeEnumerator(text.AsSpan()))
+            foreach (ReadOnlySpan<char> grapheme in new SpanGraphemeEnumerator(text.AsSpan()))
             {
-                Assert.Equal(4, grapheme.CodePointCount);
-                Assert.Equal(7, grapheme.Text.Length);
+                Assert.Equal(4, CodePoint.GetCodePointCount(grapheme));
+                Assert.Equal(7, grapheme.Length);
                 count++;
             }
 
@@ -42,10 +93,10 @@ namespace SixLabors.Fonts.Tests.Unicode
             const string text = "ABCDEFGHIJ";
             int count = 0;
 
-            foreach (Grapheme grapheme in new GraphemeEnumerator(text.AsSpan()))
+            foreach (ReadOnlySpan<char> grapheme in new SpanGraphemeEnumerator(text.AsSpan()))
             {
-                Assert.Equal(1, grapheme.CodePointCount);
-                Assert.Equal(1, grapheme.Text.Length);
+                Assert.Equal(1, CodePoint.GetCodePointCount(grapheme));
+                Assert.Equal(1, grapheme.Length);
                 count++;
             }
 
@@ -68,7 +119,7 @@ namespace SixLabors.Fonts.Tests.Unicode
             for (int lineNumber = 1; lineNumber < lines.Length + 1; lineNumber++)
             {
                 // Get the line, remove comments
-                var line = lines[lineNumber - 1].Split('#')[0].Trim();
+                string line = lines[lineNumber - 1].Split('#')[0].Trim();
 
                 // Ignore blank/comment only lines
                 if (string.IsNullOrWhiteSpace(line))
@@ -80,7 +131,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                 var breakPoints = new List<int>();
 
                 // Parse the test
-                var p = 0;
+                int p = 0;
                 while (p < line.Length)
                 {
                     // Ignore white space
@@ -109,8 +160,8 @@ namespace SixLabors.Fonts.Tests.Unicode
                         p++;
                     }
 
-                    var codePointStr = line.Substring(codePointPos, p - codePointPos);
-                    var codePoint = Convert.ToInt32(codePointStr, 16);
+                    string codePointStr = line.Substring(codePointPos, p - codePointPos);
+                    int codePoint = Convert.ToInt32(codePointStr, 16);
                     codePoints.Add(codePoint);
                 }
 
@@ -129,23 +180,16 @@ namespace SixLabors.Fonts.Tests.Unicode
 
                 foundBreaks.Clear();
 
-                var text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
-
-                // Run the algorithm
-                int charsConsumed = 0;
-                var enumerator = new GraphemeEnumerator(text.AsSpan());
-                int boundary = 0;
+                string text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
 
                 // Always a leading boundary
+                int boundary = 0;
                 foundBreaks.Add(boundary);
-                while (charsConsumed < text.Length)
-                {
-                    if (enumerator.MoveNext())
-                    {
-                        charsConsumed += enumerator.Current.Text.Length;
-                        boundary += enumerator.Current.CodePointCount;
-                    }
 
+                // Run the algorithm
+                foreach (ReadOnlySpan<char> grapheme in text.AsSpan().EnumerateGraphemes())
+                {
+                    boundary += CodePoint.GetCodePointCount(grapheme);
                     foundBreaks.Add(boundary);
                 }
 

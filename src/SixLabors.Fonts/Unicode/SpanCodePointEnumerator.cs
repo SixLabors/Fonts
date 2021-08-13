@@ -6,21 +6,21 @@ using System;
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
-    /// Supports a simple iteration over a codepoint collection.
+    /// An enumerator for retrieving <see cref="CodePoint"/> instances from a <see cref="ReadOnlySpan{Char}"/>.
     /// Methods are pattern-matched by compiler to allow using foreach pattern.
     /// </summary>
-    internal ref struct CodePointEnumerator
+    public ref struct SpanCodePointEnumerator
     {
         private ReadOnlySpan<char> source;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CodePointEnumerator"/> struct.
+        /// Initializes a new instance of the <see cref="SpanCodePointEnumerator"/> struct.
         /// </summary>
         /// <param name="source">The buffer to read from.</param>
-        public CodePointEnumerator(ReadOnlySpan<char> source)
+        public SpanCodePointEnumerator(ReadOnlySpan<char> source)
         {
             this.source = source;
-            this.Current = CodePoint.ReplacementCodePoint;
+            this.Current = CodePoint.ReplacementChar;
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Unicode
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>An enumerator that iterates through the collection.</returns>
-        public CodePointEnumerator GetEnumerator() => this;
+        public SpanCodePointEnumerator GetEnumerator() => this;
 
         /// <summary>
         /// Advances the enumerator to the next element of the collection.

@@ -72,7 +72,7 @@ namespace SixLabors.Fonts.Tests.Fakes
         {
             var codePoints = new HashSet<CodePoint>();
 
-            foreach (CodePoint codePoint in new CodePointEnumerator(text.AsSpan()))
+            foreach (CodePoint codePoint in text.AsSpan().EnumerateCodePoints())
             {
                 codePoints.Add(codePoint);
             }
