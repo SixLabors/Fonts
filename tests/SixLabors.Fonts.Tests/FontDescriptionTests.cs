@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using System.Globalization;
-using SixLabors.Fonts.Exceptions;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests

@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
