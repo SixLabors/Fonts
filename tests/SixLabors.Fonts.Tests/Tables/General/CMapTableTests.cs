@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Linq;
-using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.WellKnownIds;

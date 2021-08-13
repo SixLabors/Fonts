@@ -92,10 +92,10 @@ git submodule update --init --recursive
 - Loading True type fonts
 - Loading [WOFF fonts](https://www.w3.org/Submission/WOFF/)
 - Loading [WOFF2 fonts](https://www.w3.org/TR/WOFF2)
-- Load all compatible fonts from local machine store (Windows only at the moment)
+- Load all compatible fonts from local machine store
 
 #### Limitations
-We currently only support otf and woff fonts with True Type outlines.
+We currently only support otf and woff/woff2 fonts with True Type outlines.
 
 ## API Examples
 
@@ -115,8 +115,8 @@ string name = description.FontName(CultureInfo.InvariantCulture);
 
 ```c#
 FontCollection fonts = new FontCollection();
-FontFamily font1 = fonts.Install("./path/to/font1.ttf");
-FontFamily font2 = fonts.Install("./path/to/font2.woff");
+FontFamily font1 = fonts.Add("./path/to/font1.ttf");
+FontFamily font2 = fonts.Add("./path/to/font2.woff");
 
 ```
 

@@ -4,7 +4,7 @@
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Unicode;
 
-namespace SixLabors.Fonts.Exceptions
+namespace SixLabors.Fonts
 {
     /// <summary>
     /// Helper methods to throw exceptions
@@ -17,5 +17,12 @@ namespace SixLabors.Fonts.Exceptions
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static T ThrowGlyphMissingException<T>(CodePoint codePoint)
             => throw new GlyphMissingException(codePoint);
+
+        /// <summary>
+        /// Throws an <see cref="FontException"/>.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void ThrowDefaultInstance()
+            => throw new FontException("Cannot use the default value type instance to create a font.");
     }
 }

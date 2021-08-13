@@ -3,7 +3,7 @@
 
 using System;
 
-namespace SixLabors.Fonts.Exceptions
+namespace SixLabors.Fonts
 {
     /// <summary>
     /// Exception font loading can throw if it finds a required table is missing during font loading.

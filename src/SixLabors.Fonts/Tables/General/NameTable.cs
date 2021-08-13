@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Utilities;
 using SixLabors.Fonts.WellKnownIds;

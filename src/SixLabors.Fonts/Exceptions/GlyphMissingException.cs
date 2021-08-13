@@ -3,10 +3,10 @@
 
 using SixLabors.Fonts.Unicode;
 
-namespace SixLabors.Fonts.Exceptions
+namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Execption for detailing missing font familys.
+    /// Execption for detailing missing font families.
     /// </summary>
     /// <seealso cref="FontException" />
     public class GlyphMissingException : FontException

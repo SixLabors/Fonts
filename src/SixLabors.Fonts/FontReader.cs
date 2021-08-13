@@ -7,7 +7,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
-using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables;
 
 namespace SixLabors.Fonts

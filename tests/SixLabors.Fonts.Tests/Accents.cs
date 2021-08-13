@@ -18,7 +18,7 @@ namespace SixLabors.Fonts.Tests
         [InlineData('õ')]
         public void MeasuringAccentedCharacterDoesNotThrow(char c)
         {
-            FontFamily arial = new FontCollection().Install(TestFonts.OpenSansFile);
+            FontFamily arial = new FontCollection().Add(TestFonts.OpenSansFile);
             var font = new Font(arial, 1f, FontStyle.Regular);
 
             FontRectangle size = TextMeasurer.Measure(c.ToString(), new RendererOptions(font, 72));
@@ -35,7 +35,7 @@ namespace SixLabors.Fonts.Tests
         [InlineData('õ')]
         public void MeasuringWordWithAccentedCharacterDoesNotThrow(char c)
         {
-            FontFamily arial = new FontCollection().Install(TestFonts.OpenSansFile);
+            FontFamily arial = new FontCollection().Add(TestFonts.OpenSansFile);
             var font = new Font(arial, 1f, FontStyle.Regular);
 
             FontRectangle size = TextMeasurer.Measure($"abc{c}def", new RendererOptions(font, 72));
