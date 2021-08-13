@@ -81,14 +81,14 @@ namespace SixLabors.Fonts.Tests
         public static Font CreateFont(string text)
         {
             var fc = new FontCollection();
-            Font d = fc.Install(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
+            Font d = fc.Add(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
         }
 
         [Fact]
         public void LoadGlyph()
         {
-            Font font = new FontCollection().Install(TestFonts.SimpleFontFileData()).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             // Get letter A
             Glyph g = font.GetGlyph(new CodePoint(41));
@@ -101,7 +101,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void RenderColrGlyph()
         {
-            Font font = new FontCollection().Install(TestFonts.TwemojiMozillaData()).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.TwemojiMozillaData()).CreateFont(12);
 
             // Get letter Grinning Face emoji
             var instance = font.FontMetrics as FontMetrics;
@@ -115,7 +115,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void RenderColrGlyphTextRenderer()
         {
-            Font font = new FontCollection().Install(TestFonts.TwemojiMozillaData()).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.TwemojiMozillaData()).CreateFont(12);
 
             var renderer = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(renderer, "😀", new RendererOptions(font)
@@ -130,8 +130,8 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void RenderWoff2Glyphs_EqualToTtfGlyphs()
         {
-            Font fontTtf = new FontCollection().Install(TestFonts.OpenSansFile).CreateFont(12);
-            Font fontWoff2 = new FontCollection().Install(TestFonts.OpenSansFileWoff2).CreateFont(12);
+            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
+            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
             string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
             var rendererTtf = new ColorGlyphRenderer();

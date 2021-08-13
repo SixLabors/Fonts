@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tests.Issues
         public static Font CreateFont(string text)
         {
             var fc = new FontCollection();
-            Font d = fc.Install(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
+            Font d = fc.Add(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
         }
     }

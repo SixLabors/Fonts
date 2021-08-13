@@ -36,8 +36,8 @@ namespace SixLabors.Fonts.Tests.Unicode
         [MemberData(nameof(GeneralTestData_SupplementaryCodePoints_ValidOnly))]
         public static void Ctor_Cast_Int32_Valid(GeneralTestData testData)
         {
-            var codePoint = new CodePoint((int)testData.ScalarValue);
-            var codePointFromCast = (CodePoint)(int)testData.ScalarValue;
+            var codePoint = new CodePoint(testData.ScalarValue);
+            var codePointFromCast = (CodePoint)testData.ScalarValue;
 
             Assert.Equal(codePoint, codePointFromCast);
             Assert.Equal(testData.ScalarValue, codePoint.Value);
@@ -80,9 +80,7 @@ namespace SixLabors.Fonts.Tests.Unicode
         [Theory]
         [MemberData(nameof(SurrogatePairTestData_ValidOnly))]
         public static void Ctor_SurrogatePair_Valid(char highSurrogate, char lowSurrogate, int expectedValue)
-        {
-            Assert.Equal(expectedValue, new CodePoint(highSurrogate, lowSurrogate).Value);
-        }
+            => Assert.Equal(expectedValue, new CodePoint(highSurrogate, lowSurrogate).Value);
 
         [Theory]
         [MemberData(nameof(SurrogatePairTestData_InvalidOnly))]
@@ -100,7 +98,8 @@ namespace SixLabors.Fonts.Tests.Unicode
             const string text = "𐓏𐓘𐓻𐓘𐓻𐓟 𐒻𐓟";
             int letterCount = 0;
 
-            foreach (CodePoint codePoint in new CodePointEnumerator(text.AsSpan()))
+            Span<char> span = text.ToCharArray();
+            foreach (CodePoint codePoint in span.EnumerateCodePoints())
             {
                 if (CodePoint.IsLetter(codePoint))
                 {
@@ -109,6 +108,48 @@ namespace SixLabors.Fonts.Tests.Unicode
             }
 
             Assert.Equal(8, letterCount);
+        }
+
+        [Fact]
+        public void CanEnumerateReadonlySpan()
+        {
+            // Test example taken from.
+            // https://docs.microsoft.com/en-us/dotnet/api/system.text.rune?view=net-5.0#when-to-use-the-rune-type
+            const string text = "𐓏𐓘𐓻𐓘𐓻𐓟 𐒻𐓟";
+            int letterCount = 0;
+
+            foreach (CodePoint codePoint in text.AsSpan().EnumerateCodePoints())
+            {
+                if (CodePoint.IsLetter(codePoint))
+                {
+                    letterCount++;
+                }
+            }
+
+            Assert.Equal(8, letterCount);
+        }
+
+        [Fact]
+        public void CanEnumerateInvalidReadonlySpan()
+        {
+            // The string below contains 2 combining characters then
+            // a single high surrogate code unit, then 2 more sets or combining characters.
+            // 'ā̈' 'b' '�' 'ç'
+            const string text = "a\u0304\u0308b\ud800c\u0327";
+            int letterCount = 0;
+            int codePointCount = 0;
+            foreach (CodePoint codePoint in text.AsSpan().EnumerateCodePoints())
+            {
+                if (CodePoint.IsLetter(codePoint))
+                {
+                    letterCount++;
+                }
+
+                codePointCount++;
+            }
+
+            Assert.Equal(3, letterCount);
+            Assert.Equal(7, codePointCount);
         }
 
         [Fact]
@@ -125,9 +166,27 @@ namespace SixLabors.Fonts.Tests.Unicode
         }
 
         [Theory]
+        [MemberData(nameof(GeneralTestData_BmpCodePoints_NoSurrogates))]
+        [MemberData(nameof(GeneralTestData_SupplementaryCodePoints_ValidOnly))]
+        public static void Utf16SequenceLengthIsCorrect(GeneralTestData testData)
+        {
+            var codePoint = new CodePoint(testData.ScalarValue);
+            Assert.Equal(testData.Utf16Sequence.Length, codePoint.Utf16SequenceLength);
+        }
+
+        [Theory]
+        [MemberData(nameof(GeneralTestData_BmpCodePoints_NoSurrogates))]
+        [MemberData(nameof(GeneralTestData_SupplementaryCodePoints_ValidOnly))]
+        public static void Utf8SequenceLengthIsCorrect(GeneralTestData testData)
+        {
+            var codePoint = new CodePoint(testData.ScalarValue);
+            Assert.Equal(testData.Utf8Sequence.Length, codePoint.Utf8SequenceLength);
+        }
+
+        [Theory]
         [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
         public static void CodePointIsDigit(UnicodeInfoTestData testData)
-            => Assert.Equal(testData.IsDigit, CodePoint.IsDigit(testData.ScalarValue));
+        => Assert.Equal(testData.IsDigit, CodePoint.IsDigit(testData.ScalarValue));
 
         [Theory]
         [MemberData(nameof(UnicodeInfoTestData_Latin1AndSelectOthers))]
@@ -273,7 +332,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
         [Fact]
         public static void ReplacementChar()
-            => Assert.Equal(0xFFFD, CodePoint.ReplacementCodePoint.Value);
+            => Assert.Equal(0xFFFD, CodePoint.ReplacementChar.Value);
 
         [Fact]
         public void CorrectlyIdentifiesTab()

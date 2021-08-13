@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tests
         {
             // Compared to FontForge metrics
             var collection = new FontCollection();
-            FontFamily family = collection.Install(TestFonts.OpenSansFile);
+            FontFamily family = collection.Add(TestFonts.OpenSansFile);
             Font font = family.CreateFont(12);
 
             Assert.Equal(2048, font.FontMetrics.UnitsPerEm);
@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Tests
             // Compared to EveryFonts TTFDump metrics
             // https://everythingfonts.com/ttfdump
             var collection = new FontCollection();
-            FontFamily family = collection.Install(TestFonts.NotoSansSCThinFile);
+            FontFamily family = collection.Add(TestFonts.NotoSansSCThinFile);
             Font font = family.CreateFont(12);
 
             Assert.Equal(1000, font.FontMetrics.UnitsPerEm);
@@ -54,7 +54,7 @@ namespace SixLabors.Fonts.Tests
         {
             // Compared to FontForge metrics
             var collection = new FontCollection();
-            FontFamily family = collection.Install(TestFonts.OpenSansFile);
+            FontFamily family = collection.Add(TestFonts.OpenSansFile);
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
@@ -82,7 +82,7 @@ namespace SixLabors.Fonts.Tests
             // Compared to EveryFonts TTFDump metrics
             // https://everythingfonts.com/ttfdump
             var collection = new FontCollection();
-            FontFamily family = collection.Install(TestFonts.OpenSansFileWoff2);
+            FontFamily family = collection.Add(TestFonts.OpenSansFileWoff2);
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
@@ -110,7 +110,7 @@ namespace SixLabors.Fonts.Tests
             // Compared to EveryFonts TTFDump metrics
             // https://everythingfonts.com/ttfdump
             var collection = new FontCollection();
-            FontFamily family = collection.Install(TestFonts.NotoSansSCThinFile);
+            FontFamily family = collection.Add(TestFonts.NotoSansSCThinFile);
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');

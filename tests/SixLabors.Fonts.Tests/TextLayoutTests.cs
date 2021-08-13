@@ -193,7 +193,7 @@ namespace SixLabors.Fonts.Tests
         public void MeasureTextWithKerning(string text, float height, float width, bool enableKerning)
         {
             var c = new FontCollection();
-            Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
+            Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
             FontRectangle size = TextMeasurer.MeasureBounds(
                 text,
                 new RendererOptions(new Font(font, 1), font.FontMetrics.ScaleFactor) { ApplyKerning = enableKerning });
@@ -207,7 +207,7 @@ namespace SixLabors.Fonts.Tests
         public void LayoutWithLocation(string text, float x, float y, float expectedX, float expectedY)
         {
             var c = new FontCollection();
-            Font font = c.Install(TestFonts.SimpleFontFileData()).CreateFont(12);
+            Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             var glyphRenderer = new GlyphRenderer();
             var renderer = new TextRenderer(glyphRenderer);
@@ -222,7 +222,7 @@ namespace SixLabors.Fonts.Tests
         public static Font CreateFont(string text)
         {
             var fc = new FontCollection();
-            Font d = fc.Install(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
+            Font d = fc.Add(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
         }
     }

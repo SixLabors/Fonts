@@ -13,8 +13,8 @@ namespace SixLabors.Fonts.Tests.Issues
         public void CanLoadMacintoshGlyphs()
         {
             Font font = new FontCollection()
-                .InstallCollection(TestFonts.HelveticaTTCFile)
-                .First(x => x.IsStyleAvailable(FontStyle.Regular)).CreateFont(12);
+                .AddCollection(TestFonts.HelveticaTTCFile)
+                .First(x => x.GetAvailableStyles().Contains(FontStyle.Regular)).CreateFont(12);
 
             Glyph a = font.GetGlyph(new CodePoint('A'));
             Glyph x = font.GetGlyph(new CodePoint('x'));

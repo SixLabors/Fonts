@@ -162,7 +162,7 @@ namespace SixLabors.Fonts
         internal AppliedFontStyle GetStyle(int index, int length)
         {
             IFontMetrics[] fallbackFontInstances;
-            if (this.FallbackFontFamilies == null)
+            if (this.FallbackFontFamilies is null)
             {
                 fallbackFontInstances = Array.Empty<IFontMetrics>();
             }

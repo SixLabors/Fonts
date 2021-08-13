@@ -6,20 +6,22 @@ using System;
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
-    /// Supports a simple iteration over a grapheme collection.
-    /// Implementsthe Unicode Grapheme Cluster Algorithm. UAX:29
+    /// An enumerator for retrieving Grapheme instances from a <see cref="ReadOnlySpan{Char}"/>.
+    /// <br/>
+    /// Implements the Unicode Grapheme Cluster Algorithm. UAX:29
     /// <see href="https://www.unicode.org/reports/tr29/tr29-37.html"/>
+    /// <br/>
     /// Methods are pattern-matched by compiler to allow using foreach pattern.
     /// </summary>
-    internal ref struct GraphemeEnumerator
+    public ref struct SpanGraphemeEnumerator
     {
         private ReadOnlySpan<char> source;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="GraphemeEnumerator"/> struct.
+        /// Initializes a new instance of the <see cref="SpanGraphemeEnumerator"/> struct.
         /// </summary>
         /// <param name="source">The buffer to read from.</param>
-        public GraphemeEnumerator(ReadOnlySpan<char> source)
+        public SpanGraphemeEnumerator(ReadOnlySpan<char> source)
         {
             this.source = source;
             this.Current = default;
@@ -28,13 +30,13 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Gets the element in the collection at the current position of the enumerator.
         /// </summary>
-        public Grapheme Current { get; private set; }
+        public ReadOnlySpan<char> Current { get; private set; }
 
         /// <summary>
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>An enumerator that iterates through the collection.</returns>
-        public GraphemeEnumerator GetEnumerator() => this;
+        public SpanGraphemeEnumerator GetEnumerator() => this;
 
         /// <summary>
         /// Advances the enumerator to the next element of the collection.
@@ -54,8 +56,6 @@ namespace SixLabors.Fonts.Unicode
             var processor = new Processor(this.source);
 
             processor.MoveNext();
-
-            CodePoint firstCodePoint = processor.CurrentCodePoint;
 
             // First, consume as many Prepend scalars as we can (rule GB9b).
             while (processor.CurrentType == GraphemeClusterClass.Prepend)
@@ -196,8 +196,7 @@ namespace SixLabors.Fonts.Unicode
 
             Return:
 
-            ReadOnlySpan<char> text = this.source.Slice(0, processor.CharsConsumed);
-            this.Current = new Grapheme(firstCodePoint, processor.CodePointsConsumed, text);
+            this.Current = this.source.Slice(0, processor.CharsConsumed);
             this.source = this.source.Slice(processor.CharsConsumed);
 
             return true; // rules GB2, GB999
@@ -207,34 +206,24 @@ namespace SixLabors.Fonts.Unicode
         {
             private readonly ReadOnlySpan<char> source;
             private int charsConsumed;
-            private int codePointsConsumed;
 
             public Processor(ReadOnlySpan<char> source)
             {
                 this.source = source;
-                this.CurrentCodePoint = CodePoint.ReplacementCodePoint;
                 this.CurrentType = GraphemeClusterClass.Any;
                 this.charsConsumed = 0;
                 this.CharsConsumed = 0;
-                this.codePointsConsumed = 0;
-                this.CodePointsConsumed = 0;
             }
 
             public GraphemeClusterClass CurrentType { get; private set; }
-
-            public CodePoint CurrentCodePoint { get; private set; }
-
-            public int CodePointsConsumed { get; private set; }
 
             public int CharsConsumed { get; private set; }
 
             public void MoveNext()
             {
                 this.CharsConsumed += this.charsConsumed;
-                this.CodePointsConsumed += this.codePointsConsumed;
-                this.CurrentCodePoint = CodePoint.DecodeFromUtf16At(this.source, this.CharsConsumed, out this.charsConsumed);
-                this.CurrentType = CodePoint.GetGraphemeClusterClass(this.CurrentCodePoint);
-                this.codePointsConsumed = this.charsConsumed > 0 ? 1 : 0;
+                var codePoint = CodePoint.DecodeFromUtf16At(this.source, this.CharsConsumed, out this.charsConsumed);
+                this.CurrentType = CodePoint.GetGraphemeClusterClass(codePoint);
             }
         }
     }

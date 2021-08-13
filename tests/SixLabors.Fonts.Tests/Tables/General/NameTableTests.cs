@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using System.Globalization;
-using SixLabors.Fonts.Exceptions;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.WellKnownIds;
 using Xunit;

@@ -3,60 +3,43 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
 
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Defines a group of type faces having a similar basic design and certain variations in styles. This class cannot be inherited.
+    /// Defines a group of type faces having a similar basic design and certain
+    /// variations in styles.
     /// </summary>
-    public sealed class FontFamily : IEquatable<FontFamily?>
+    public struct FontFamily : IEquatable<FontFamily>
     {
-        private readonly FontCollection collection;
+        private readonly IReadOnlyFontMetricsCollection collection;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontFamily"/> class.
+        /// Initializes a new instance of the <see cref="FontFamily"/> struct.
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="collection">The collection.</param>
         /// <param name="culture">The culture the family was extracted against</param>
-        internal FontFamily(string name, FontCollection collection, CultureInfo culture)
+        internal FontFamily(string name, IReadOnlyFontMetricsCollection collection, CultureInfo culture)
         {
-            this.collection = collection ?? throw new ArgumentNullException(nameof(collection));
+            Guard.NotNull(collection, nameof(collection));
+
+            this.collection = collection;
             this.Name = name;
             this.Culture = culture;
         }
 
         /// <summary>
-        /// Gets the name of the <see cref="FontFamily"/>.
+        /// Gets the name.
         /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
         public string Name { get; }
 
         /// <summary>
-        /// Gets the culture this <see cref="FontFamily"/> was created against.
+        /// Gets the culture this instance was extracted against.
         /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
         public CultureInfo Culture { get; }
-
-        /// <summary>
-        /// Gets the available <see cref="FontStyle"/> that are currently available.
-        /// </summary>
-        /// <value>
-        /// The available styles.
-        /// </value>
-        public IEnumerable<FontStyle> AvailableStyles
-            => this.collection.AvailableStyles(this.Name, this.Culture);
-
-        internal FontStyle DefaultStyle
-            => this.IsStyleAvailable(FontStyle.Regular)
-            ? FontStyle.Regular
-            : this.AvailableStyles.First();
 
         /// <summary>
         /// Compares two <see cref="FontFamily"/> objects for equality.
@@ -67,8 +50,8 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the current left is equal to the <paramref name="right"/>
         /// parameter; otherwise, <see langword="false"/>.
         /// </returns>
-        public static bool operator ==(FontFamily? left, FontFamily? right)
-            => EqualityComparer<FontFamily?>.Default.Equals(left, right);
+        public static bool operator ==(FontFamily left, FontFamily right)
+            => left.Equals(right);
 
         /// <summary>
         /// Compares two <see cref="FontFamily"/> objects for inequality.
@@ -79,54 +62,127 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the current left is unequal to the <paramref name="right"/>
         /// parameter; otherwise, <see langword="false"/>.
         /// </returns>
-        public static bool operator !=(FontFamily? left, FontFamily? right)
+        public static bool operator !=(FontFamily left, FontFamily right)
             => !(left == right);
 
-        internal IFontMetrics? Find(FontStyle style)
-            => this.collection.Find(this.Name, this.Culture, style);
-
         /// <summary>
-        /// Determines whether the specified <see cref="FontStyle"/> is available.
+        /// Create a new instance of the <see cref="Font" /> for the named font family with regular styling.
         /// </summary>
-        /// <param name="style">The style.</param>
-        /// <returns>
-        ///   <c>true</c> if the specified <see cref="FontStyle"/> is available; otherwise, <c>false</c>.
-        /// </returns>
-        public bool IsStyleAvailable(FontStyle style) => this.AvailableStyles.Contains(style);
-
-        /// <summary>
-        /// Returns a <see cref="string" /> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="string" /> that represents this instance.
-        /// </returns>
-        public override string ToString() => this.Name;
-
-        /// <inheritdoc />
-        public override int GetHashCode()
+        /// <param name="size">The size of the font in PT units.</param>
+        /// <returns>The new <see cref="Font" />.</returns>
+        public Font CreateFont(float size)
         {
-            StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
-            return HashCode.Combine(this.collection, this.Culture, this.DefaultStyle, this.AvailableStyles) ^ comparer.GetHashCode(this.Name);
+            if (this == default)
+            {
+                FontsThrowHelper.ThrowDefaultInstance();
+            }
+
+            return new Font(this, size);
+        }
+
+        /// <summary>
+        /// Create a new instance of the <see cref="Font" /> for the named font family.
+        /// </summary>
+        /// <param name="size">The size of the font in PT units.</param>
+        /// <param name="style">The font style.</param>
+        /// <returns>The new <see cref="Font" />.</returns>
+        public Font CreateFont(float size, FontStyle style)
+        {
+            if (this == default)
+            {
+                FontsThrowHelper.ThrowDefaultInstance();
+            }
+
+            return new Font(this, size, style);
+        }
+
+        /// <summary>
+        /// Gets the collection of <see cref="FontStyle" /> that are currently available.
+        /// </summary>
+        /// <returns>The <see cref="IEnumerable{T}" />.</returns>
+        public IEnumerable<FontStyle> GetAvailableStyles()
+        {
+            if (this == default)
+            {
+                FontsThrowHelper.ThrowDefaultInstance();
+            }
+
+            return this.collection.GetAllStyles(this.Name, this.Culture);
+        }
+
+        /// <summary>
+        /// Gets the collection of filesystem paths to the font family sources.
+        /// </summary>
+        /// <param name="paths">
+        /// When this method returns, contains the filesystem paths to the font family sources,
+        /// if the path exists; otherwise, an empty value for the type of the paths parameter.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true" /> if the <see cref="FontFamily" /> was created via filesystem paths; otherwise, <see langword="false" />.
+        /// </returns>
+        public bool TryGetPaths(out IEnumerable<string> paths)
+        {
+            if (this == default)
+            {
+                FontsThrowHelper.ThrowDefaultInstance();
+            }
+
+            var filePaths = new List<string>();
+            foreach (FontStyle style in this.GetAvailableStyles())
+            {
+                if (this.collection.TryGetMetrics(this.Name, this.Culture, style, out IFontMetrics? metrics)
+                    && metrics is FileFontMetrics fileMetrics)
+                {
+                    filePaths.Add(fileMetrics.Path);
+                }
+            }
+
+            paths = filePaths;
+            return filePaths.Count > 0;
+        }
+
+        /// <summary>
+        /// Gets the specified font metrics matching the given font style.
+        /// </summary>
+        /// <param name="style">The font style to use when searching for a match.</param>
+        /// <param name="metrics">
+        /// When this method returns, contains the metrics associated with the specified name,
+        /// if the name is found; otherwise, the default value for the type of the metrics parameter.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the <see cref="FontFamily"/> contains font metrics
+        /// with the specified name; otherwise, <see langword="false"/>.
+        /// </returns>
+        internal bool TryGetMetrics(FontStyle style, [NotNullWhen(true)] out IFontMetrics? metrics)
+        {
+            if (this == default)
+            {
+                FontsThrowHelper.ThrowDefaultInstance();
+            }
+
+            return this.collection.TryGetMetrics(this.Name, this.Culture, style, out metrics);
         }
 
         /// <inheritdoc/>
         public override bool Equals(object? obj)
-            => this.Equals(obj as FontFamily);
+            => obj is FontFamily family && this.Equals(family);
 
         /// <inheritdoc/>
-        public bool Equals(FontFamily? other)
+        public bool Equals(FontFamily other)
         {
-            if (other is null)
-            {
-                return false;
-            }
-
-            StringComparer? comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
-            return this.collection == other.collection
-                && this.Culture == other.Culture
-                && this.DefaultStyle == other.DefaultStyle
-                && this.AvailableStyles.SequenceEqual(other.AvailableStyles)
-                && comparer.Equals(this.Name, other.Name);
+            StringComparer comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
+            return comparer.Equals(this.Name, other.Name)
+                && EqualityComparer<CultureInfo>.Default.Equals(this.Culture, other.Culture)
+                && EqualityComparer<IReadOnlyFontMetricsCollection>.Default.Equals(this.collection, other.collection);
         }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+            => HashCode.Combine(this.collection, this.Name, this.Culture);
+
+        /// <inheritdoc/>
+        public override string ToString() => this.Name;
     }
 }

@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using SixLabors.Fonts.Exceptions;
 
 namespace SixLabors.Fonts.Tables.General
 {
@@ -11,7 +10,15 @@ namespace SixLabors.Fonts.Tables.General
     {
         internal const string TableName = "head";
 
-        public HeadTable(HeadFlags flags, HeadMacStyle macStyle, ushort unitsPerEm, DateTime created, DateTime modified, Bounds bounds, ushort lowestRecPPEM, IndexLocationFormats indexToLocFormat)
+        public HeadTable(
+            HeadFlags flags,
+            HeadMacStyle macStyle,
+            ushort unitsPerEm,
+            DateTime created,
+            DateTime modified,
+            Bounds bounds,
+            ushort lowestRecPPEM,
+            IndexLocationFormats indexToLocFormat)
         {
             this.Flags = flags;
             this.MacStyle = macStyle;

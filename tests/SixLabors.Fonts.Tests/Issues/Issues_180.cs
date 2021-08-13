@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tests.Issues
         public void CorrectlySetsHeightMetrics()
         {
             // Whitney-book has invalid hhea values.
-            Font font = new FontCollection().Install(TestFonts.WhitneyBookFile).CreateFont(25);
+            Font font = new FontCollection().Add(TestFonts.WhitneyBookFile).CreateFont(25);
 
             FontRectangle size = TextMeasurer.Measure("H", new RendererOptions(font));
 
