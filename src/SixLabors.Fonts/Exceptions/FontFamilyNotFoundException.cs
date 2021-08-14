@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Execption for detailing missing font familys.
+    /// Exception for detailing missing font families.
     /// </summary>
     /// <seealso cref="FontException" />
     public class FontFamilyNotFoundException : FontException
@@ -18,7 +18,7 @@ namespace SixLabors.Fonts
             => this.FontFamily = family;
 
         /// <summary>
-        /// Gets the name of the font familiy we failed to find.
+        /// Gets the name of the font family we failed to find.
         /// </summary>
         public string FontFamily { get; }
     }

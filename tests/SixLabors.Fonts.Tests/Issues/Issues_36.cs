@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [InlineData(3)]
         [InlineData(4)]
         [InlineData(5)]
-        public void TextWidthFroTabOnlyTextSouldBeSingleTabWidthMultipliedByTabCount(int tabCount)
+        public void TextWidthForTabOnlyTextShouldBeSingleTabWidthMultipliedByTabCount(int tabCount)
         {
             Font font = CreateFont("\t x");
 
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [InlineData(3)]
         [InlineData(4)]
         [InlineData(5)]
-        public void TextWidthFroTabOnlyTextSouldBeSingleTabWidthMultipliedByTabCountMinusX(int tabCount)
+        public void TextWidthForTabOnlyTextShouldBeSingleTabWidthMultipliedByTabCountMinusX(int tabCount)
         {
             Font font = CreateFont("\t x");
 

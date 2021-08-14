@@ -36,14 +36,14 @@ namespace SixLabors.Fonts.Tests
                 0),
                 10);
 
-            Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offiset in fake glyph
+            Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
             glyph.RenderTo(this.renderer, locationInFontSpace, 72, 0);
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
 
         [Fact]
-        public void IdenticalGlyphsInDifferentPalcesCreateIdenticalKeys()
+        public void IdenticalGlyphsInDifferentPlacesCreateIdenticalKeys()
         {
             Font fakeFont = CreateFont("AB");
             var textRenderer = new TextRenderer(this.renderer);
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void BeginGlyph_returnsfalse_skiprenderingfigures()
+        public void BeginGlyph_ReturnsFalse_SkipRenderingFigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
             renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(false);
@@ -67,7 +67,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void BeginGlyph_returnstrue_rendersfigures()
+        public void BeginGlyph_ReturnsTrue_RendersFigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
             renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(true);

@@ -34,12 +34,12 @@ namespace SixLabors.Fonts.Tests.Tables
         public void AllNamedTablesAreRegistered(Type type, string name)
         {
             var tl = new TableLoader();
-            Assert.Contains(type, tl.RegisterdTypes());
+            Assert.Contains(type, tl.RegisteredTypes());
             Assert.Equal(name, tl.GetTag(type));
         }
 
         [Fact]
-        public void DefaultIsnotNull() => Assert.NotNull(TableLoader.Default);
+        public void DefaultIsNotNull() => Assert.NotNull(TableLoader.Default);
 
         [Fact]
         public void TryingToLoadUnregisteredTagReturnsUnknownTable()

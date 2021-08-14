@@ -50,9 +50,9 @@ namespace SixLabors.Fonts.Tables
             return value;
         }
 
-        internal IEnumerable<Type> RegisterdTypes() => this.types.Keys;
+        internal IEnumerable<Type> RegisteredTypes() => this.types.Keys;
 
-        internal IEnumerable<string> RegisterdTags() => this.types.Values;
+        internal IEnumerable<string> RegisteredTags() => this.types.Values;
 
         private void Register<T>(string tag, Func<FontReader, T?> createFunc)
             where T : Table

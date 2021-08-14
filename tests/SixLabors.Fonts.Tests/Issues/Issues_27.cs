@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tests.Issues
     public class Issues_27
     {
         [Fact]
-        public void ThrowsMeasureingWhitespace()
+        public void ThrowsMeasuringWhitespace()
         {
             // wendy one returns wrong points for 'o'
             Font font = new FontCollection().Add(TestFonts.WendyOneFile).CreateFont(12);

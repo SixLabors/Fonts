@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
         None = 0,
 
         /// <summary>
-        /// Render using glyphs accessed via Micropsfts COLR/CPAL table extensions to OpenType
+        /// Render using glyphs accessed via Microsoft's COLR/CPAL table extensions to OpenType
         /// </summary>
         MicrosoftColrFormat = 1
     }

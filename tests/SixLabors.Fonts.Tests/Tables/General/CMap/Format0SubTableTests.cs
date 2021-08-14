@@ -25,7 +25,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.CMap
                     new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
 
             BigEndianBinaryReader reader = writer.GetReader();
-            ushort format = reader.ReadUInt16(); // read format before we pass along as thats whet the cmap table does
+            ushort format = reader.ReadUInt16(); // read format before we pass along as that's what the cmap table does
             Assert.Equal(0, format);
 
             Format0SubTable table = Format0SubTable.Load(

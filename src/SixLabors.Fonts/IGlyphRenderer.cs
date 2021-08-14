@@ -29,7 +29,7 @@ namespace SixLabors.Fonts
         void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point);
 
         /// <summary>
-        /// Draw a Cubics bezier curve connecting the previous point to <paramref name="point"/>.
+        /// Draw a cubic bezier curve connecting the previous point to <paramref name="point"/>.
         /// </summary>
         /// <param name="secondControlPoint">The second control point.</param>
         /// <param name="thirdControlPoint">The third control point.</param>

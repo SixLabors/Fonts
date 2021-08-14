@@ -169,7 +169,7 @@ namespace SixLabors.Fonts.Unicode
         private const int MaxPairedBracketDepth = 63;
 
         /// <summary>
-        /// Re-useable list of pending opening brackets used by the
+        /// Reusable list of pending opening brackets used by the
         /// LocatePairedBrackets method
         /// </summary>
         private readonly List<int> pendingOpeningBrackets = new List<int>();
@@ -320,7 +320,7 @@ namespace SixLabors.Fonts.Unicode
                     case BidiCharacterType.LeftToRightIsolate:
                     case BidiCharacterType.RightToLeftIsolate:
                         // Skip isolate pairs
-                        // (Because we're working with a slice, we need to adjust the indicies
+                        // (Because we're working with a slice, we need to adjust the indices
                         //  we're using for the isolatePairs map)
                         if (this.isolatePairs.TryGetValue(data.Start + i, out i))
                         {
@@ -668,7 +668,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="level">The level of the run</param>
         private void AddLevelRun(int start, int length, int level)
         {
-            // Get original indicies to first and last character in this run
+            // Get original indices to first and last character in this run
             int firstCharIndex = this.MapX9(start);
             int lastCharIndex = this.MapX9(start + length - 1);
 
@@ -793,7 +793,7 @@ namespace SixLabors.Fonts.Unicode
                     // Remove this run as we've now processed it
                     this.levelRuns.RemoveAt(runIndex);
 
-                    // Add the x9 map indicies for the run range to the mapping
+                    // Add the x9 map indices for the run range to the mapping
                     // for this isolated run
                     this.isolatedRunMapping.Add(this.x9Map.AsSlice(r.Start, r.Length));
 
@@ -988,7 +988,7 @@ namespace SixLabors.Fonts.Unicode
                             seqEnd++;
                         }
 
-                        // Preceeded by, or followed by EN?
+                        // Preceded by, or followed by EN?
                         if ((seqStart == 0 ? sos : this.runResolvedTypes[seqStart - 1]) == BidiCharacterType.EuropeanNumber
                             || (seqEnd == this.runLength ? eos : this.runResolvedTypes[seqEnd]) == BidiCharacterType.EuropeanNumber)
                         {
@@ -1262,7 +1262,7 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Inspect a paired bracket set and determine its strong direction
         /// </summary>
-        /// <param name="pb">The paired bracket to be inpected</param>
+        /// <param name="pb">The paired bracket to be inspected</param>
         /// <returns>The direction of the bracket set content</returns>
         private BidiCharacterType InspectPairedBracket(in BracketPair pb)
         {
@@ -1432,7 +1432,7 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Check if a directionality type represents whitepsace
+        /// Check if a directionality type represents whitespace
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsWhitespace(BidiCharacterType biditype)

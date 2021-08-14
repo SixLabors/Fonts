@@ -253,7 +253,7 @@ namespace SixLabors.Fonts
         /// Creates a FontRectangle that represents the intersection between this FontRectangle and the <paramref name="rectangle"/>.
         /// </summary>
         /// <param name="rectangle">The rectangle.</param>
-        /// <returns>New <see cref="FontRectangle"/> representing the intersections between the two rectrangles.</returns>
+        /// <returns>New <see cref="FontRectangle"/> representing the intersections between the two rectangles.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Intersect(FontRectangle rectangle)
             => Intersect(rectangle, this);
@@ -263,7 +263,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="width">The width.</param>
         /// <param name="height">The height.</param>
-        /// <returns>New <see cref="FontRectangle"/> representing the inflated rectrangle</returns>
+        /// <returns>New <see cref="FontRectangle"/> representing the inflated rectangle</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Inflate(float width, float height)
             => new FontRectangle(
@@ -276,12 +276,12 @@ namespace SixLabors.Fonts
         /// Creates a new <see cref="FontRectangle"/> inflated by the specified amount.
         /// </summary>
         /// <param name="size">The size.</param>
-        /// <returns>New <see cref="FontRectangle"/> representing the inflated rectrangle</returns>
+        /// <returns>New <see cref="FontRectangle"/> representing the inflated rectangle</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Inflate(Vector2 size) => this.Inflate(size.X, size.Y);
 
         /// <summary>
-        /// Determines if the specfied point is contained within the rectangular region defined by
+        /// Determines if the specified point is contained within the rectangular region defined by
         /// this <see cref="FontRectangle"/>.
         /// </summary>
         /// <param name="x">The x-coordinate of the given point.</param>
@@ -310,10 +310,10 @@ namespace SixLabors.Fonts
             (this.Y <= rectangle.Y) && (rectangle.Bottom <= this.Bottom);
 
         /// <summary>
-        /// Determines if the specfied <see cref="FontRectangle"/> intersects the rectangular region defined by
+        /// Determines if the specified <see cref="FontRectangle"/> intersects the rectangular region defined by
         /// this <see cref="FontRectangle"/>.
         /// </summary>
-        /// <param name="rectangle">The other Rectange. </param>
+        /// <param name="rectangle">The other rectangle.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IntersectsWith(FontRectangle rectangle) =>
@@ -324,7 +324,7 @@ namespace SixLabors.Fonts
         /// Adjusts the location of this rectangle by the specified amount.
         /// </summary>
         /// <param name="point">The point.</param>
-        /// <returns>New <see cref="FontRectangle"/> representing the offset rectrangle.</returns>
+        /// <returns>New <see cref="FontRectangle"/> representing the offset rectangle.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Offset(Vector2 point) => this.Offset(point.X, point.Y);
 
@@ -333,7 +333,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="dx">The amount to offset the x-coordinate.</param>
         /// <param name="dy">The amount to offset the y-coordinate.</param>
-        /// <returns>New <see cref="FontRectangle"/> representing the inflated rectrangle.</returns>
+        /// <returns>New <see cref="FontRectangle"/> representing the inflated rectangle.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Offset(float dx, float dy)
             => new FontRectangle(this.X + dx, this.Y + dy, this.Width, this.Height);

@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void ContructorTest_FontOnly()
+        public void ConstructorTest_FontOnly()
         {
             Font font = FakeFont.CreateFont("ABC");
             var options = new RendererOptions(font);
@@ -36,7 +36,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void ContructorTest_FontWithSingleDpi()
+        public void ConstructorTest_FontWithSingleDpi()
         {
             Font font = FakeFont.CreateFont("ABC");
             float dpi = 123;
@@ -51,7 +51,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void ContructorTest_FontWithXandYDpis()
+        public void ConstructorTest_FontWithXandYDpis()
         {
             Font font = FakeFont.CreateFont("ABC");
             float dpix = 123;
@@ -67,7 +67,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void ContructorTest_FontWithOrigin()
+        public void ConstructorTest_FontWithOrigin()
         {
             Font font = FakeFont.CreateFont("ABC");
             var origin = new Vector2(123, 345);
@@ -82,7 +82,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void ContructorTest_FontWithSingleDpiWithOrigin()
+        public void ConstructorTest_FontWithSingleDpiWithOrigin()
         {
             Font font = FakeFont.CreateFont("ABC");
             var origin = new Vector2(123, 345);
@@ -98,7 +98,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void ContructorTest_FontWithXandYDpisWithOrigin()
+        public void ConstructorTest_FontWithXandYDpisWithOrigin()
         {
             Font font = FakeFont.CreateFont("ABC");
             var origin = new Vector2(123, 345);
@@ -115,10 +115,10 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void ContructorTest_FontOnly_WithFallbackFonts()
+        public void ConstructorTest_FontOnly_WithFallbackFonts()
         {
             Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilys = new[]
+            FontFamily[] fontFamilies = new[]
             {
                 FakeFont.CreateFont("DEF").Family,
                 FakeFont.CreateFont("GHI").Family
@@ -126,22 +126,22 @@ namespace SixLabors.Fonts.Tests
 
             var options = new RendererOptions(font)
             {
-                FallbackFontFamilies = fontFamilys
+                FallbackFontFamilies = fontFamilies
             };
 
             Assert.Equal(72, options.DpiX);
             Assert.Equal(72, options.DpiY);
-            Assert.Equal(fontFamilys, options.FallbackFontFamilies);
+            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
             Assert.Equal(font, options.Font);
             Assert.Equal(Vector2.Zero, options.Origin);
             VerifyPropertyDefault(options);
         }
 
         [Fact]
-        public void ContructorTest_FontWithSingleDpi_WithFallbackFonts()
+        public void ConstructorTest_FontWithSingleDpi_WithFallbackFonts()
         {
             Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilys = new[]
+            FontFamily[] fontFamilies = new[]
             {
                 FakeFont.CreateFont("DEF").Family,
                 FakeFont.CreateFont("GHI").Family
@@ -150,22 +150,22 @@ namespace SixLabors.Fonts.Tests
             float dpi = 123;
             var options = new RendererOptions(font, dpi)
             {
-                FallbackFontFamilies = fontFamilys
+                FallbackFontFamilies = fontFamilies
             };
 
             Assert.Equal(dpi, options.DpiX);
             Assert.Equal(dpi, options.DpiY);
-            Assert.Equal(fontFamilys, options.FallbackFontFamilies);
+            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
             Assert.Equal(font, options.Font);
             Assert.Equal(Vector2.Zero, options.Origin);
             VerifyPropertyDefault(options);
         }
 
         [Fact]
-        public void ContructorTest_FontWithXandYDpis_WithFallbackFonts()
+        public void ConstructorTest_FontWithXandYDpis_WithFallbackFonts()
         {
             Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilys = new[]
+            FontFamily[] fontFamilies = new[]
             {
                 FakeFont.CreateFont("DEF").Family,
                 FakeFont.CreateFont("GHI").Family
@@ -175,22 +175,22 @@ namespace SixLabors.Fonts.Tests
             float dpiy = 456;
             var options = new RendererOptions(font, dpix, dpiy)
             {
-                FallbackFontFamilies = fontFamilys
+                FallbackFontFamilies = fontFamilies
             };
 
             Assert.Equal(dpix, options.DpiX);
             Assert.Equal(dpiy, options.DpiY);
-            Assert.Equal(fontFamilys, options.FallbackFontFamilies);
+            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
             Assert.Equal(font, options.Font);
             Assert.Equal(Vector2.Zero, options.Origin);
             VerifyPropertyDefault(options);
         }
 
         [Fact]
-        public void ContructorTest_FontWithOrigin_WithFallbackFonts()
+        public void ConstructorTest_FontWithOrigin_WithFallbackFonts()
         {
             Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilys = new[]
+            FontFamily[] fontFamilies = new[]
             {
                 FakeFont.CreateFont("DEF").Family,
                 FakeFont.CreateFont("GHI").Family
@@ -199,22 +199,22 @@ namespace SixLabors.Fonts.Tests
             var origin = new Vector2(123, 345);
             var options = new RendererOptions(font, origin)
             {
-                FallbackFontFamilies = fontFamilys
+                FallbackFontFamilies = fontFamilies
             };
 
             Assert.Equal(72, options.DpiX);
             Assert.Equal(72, options.DpiY);
-            Assert.Equal(fontFamilys, options.FallbackFontFamilies);
+            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
             Assert.Equal(font, options.Font);
             Assert.Equal(origin, options.Origin);
             VerifyPropertyDefault(options);
         }
 
         [Fact]
-        public void ContructorTest_FontWithSingleDpiWithOrigin_WithFallbackFonts()
+        public void ConstructorTest_FontWithSingleDpiWithOrigin_WithFallbackFonts()
         {
             Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilys = new[]
+            FontFamily[] fontFamilies = new[]
             {
                 FakeFont.CreateFont("DEF").Family,
                 FakeFont.CreateFont("GHI").Family
@@ -224,22 +224,22 @@ namespace SixLabors.Fonts.Tests
             float dpi = 123;
             var options = new RendererOptions(font, dpi, origin)
             {
-                FallbackFontFamilies = fontFamilys
+                FallbackFontFamilies = fontFamilies
             };
 
             Assert.Equal(dpi, options.DpiX);
             Assert.Equal(dpi, options.DpiY);
-            Assert.Equal(fontFamilys, options.FallbackFontFamilies);
+            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
             Assert.Equal(font, options.Font);
             Assert.Equal(origin, options.Origin);
             VerifyPropertyDefault(options);
         }
 
         [Fact]
-        public void ContructorTest_FontWithXandYDpisWithOrigin_WithFallbackFonts()
+        public void ConstructorTest_FontWithXandYDpisWithOrigin_WithFallbackFonts()
         {
             Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilys = new[]
+            FontFamily[] fontFamilies = new[]
             {
                 FakeFont.CreateFont("DEF").Family,
                 FakeFont.CreateFont("GHI").Family
@@ -250,12 +250,12 @@ namespace SixLabors.Fonts.Tests
             float dpiy = 456;
             var options = new RendererOptions(font, dpix, dpiy, origin)
             {
-                FallbackFontFamilies = fontFamilys
+                FallbackFontFamilies = fontFamilies
             };
 
             Assert.Equal(dpix, options.DpiX);
             Assert.Equal(dpiy, options.DpiY);
-            Assert.Equal(fontFamilys, options.FallbackFontFamilies);
+            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
             Assert.Equal(font, options.Font);
             Assert.Equal(origin, options.Origin);
             VerifyPropertyDefault(options);
@@ -265,7 +265,7 @@ namespace SixLabors.Fonts.Tests
         public void GetStylePassesCorrectValues()
         {
             Font font = FakeFont.CreateFontWithInstance("ABC", out Fakes.FakeFontInstance abcFontInstance);
-            FontFamily[] fontFamilys = new[]
+            FontFamily[] fontFamilies = new[]
             {
                 FakeFont.CreateFontWithInstance("DEF", out Fakes.FakeFontInstance defFontInstance).Family,
                 FakeFont.CreateFontWithInstance("GHI", out Fakes.FakeFontInstance ghiFontInstance).Family
@@ -273,7 +273,7 @@ namespace SixLabors.Fonts.Tests
 
             var options = new RendererOptions(font)
             {
-                FallbackFontFamilies = fontFamilys
+                FallbackFontFamilies = fontFamilies
             };
 
             AppliedFontStyle style = options.GetStyle(4, 10);
@@ -294,7 +294,7 @@ namespace SixLabors.Fonts.Tests
         public void GetMissingGlyphFromMainFont()
         {
             Font font = FakeFont.CreateFontWithInstance("ABC", out Fakes.FakeFontInstance abcFontInstance);
-            FontFamily[] fontFamilys = new[]
+            FontFamily[] fontFamilies = new[]
             {
                 FakeFont.CreateFontWithInstance("DEF", out Fakes.FakeFontInstance defFontInstance).Family,
                 FakeFont.CreateFontWithInstance("GHI", out Fakes.FakeFontInstance ghiFontInstance).Family
@@ -302,7 +302,7 @@ namespace SixLabors.Fonts.Tests
 
             var options = new RendererOptions(font)
             {
-                FallbackFontFamilies = fontFamilys
+                FallbackFontFamilies = fontFamilies
             };
 
             AppliedFontStyle style = options.GetStyle(4, 10);
@@ -319,7 +319,7 @@ namespace SixLabors.Fonts.Tests
         public void GetGlyphFromFirstAvailableInstance(char character, string instance)
         {
             Font font = FakeFont.CreateFontWithInstance("ABC", out Fakes.FakeFontInstance abcFontInstance);
-            FontFamily[] fontFamilys = new[]
+            FontFamily[] fontFamilies = new[]
             {
                 FakeFont.CreateFontWithInstance("DEF", out Fakes.FakeFontInstance defFontInstance).Family,
                 FakeFont.CreateFontWithInstance("EFGHI", out Fakes.FakeFontInstance efghiFontInstance).Family
@@ -327,7 +327,7 @@ namespace SixLabors.Fonts.Tests
 
             var options = new RendererOptions(font)
             {
-                FallbackFontFamilies = fontFamilys
+                FallbackFontFamilies = fontFamilies
             };
 
             AppliedFontStyle style = options.GetStyle(4, 10);

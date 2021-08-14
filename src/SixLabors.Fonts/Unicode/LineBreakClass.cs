@@ -1,7 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-// Redordering these enum properties will require the regeneration of the LineBreak.trie.
+// Reordering these enum properties will require the regeneration of the LineBreak.trie.
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>

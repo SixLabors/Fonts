@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tests.Issues
     public class Issues_33
     {
         [Theory]
-        [InlineData("\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs", 760, 70)] // newlines arn't directly measured but it is used for offseting
+        [InlineData("\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs", 760, 70)] // newlines aren't directly measured but it is used for offsetting
         [InlineData("\n\tHelloworld", 400, 10)]
         [InlineData("\tHelloworld", 400, 10)]
         [InlineData("  Helloworld", 340, 10)]

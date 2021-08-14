@@ -85,7 +85,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void LoadFontDescription_CultureNamePriority_Exactmatch()
+        public void LoadFontDescription_CultureNamePriority_ExactMatch()
         {
             var usCulture = new CultureInfo(0x0409);
             var c1 = new CultureInfo(1034); // spanish - international

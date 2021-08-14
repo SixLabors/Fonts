@@ -15,7 +15,6 @@ namespace SixLabors.Fonts.Tests.Issues
             Font font = CreateFont("\t x");
             FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, font.FontMetrics.ScaleFactor));
             FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new RendererOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle doublTabWidth = TextMeasurer.MeasureBounds("\t\t", new RendererOptions(font, font.FontMetrics.ScaleFactor));
             FontRectangle tabWithXWidth = TextMeasurer.MeasureBounds("\tx", new RendererOptions(font, font.FontMetrics.ScaleFactor));
 
             Assert.Equal(tabWidth.Width + xWidth.Width, tabWithXWidth.Width, 2);

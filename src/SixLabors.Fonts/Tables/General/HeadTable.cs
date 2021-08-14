@@ -52,7 +52,7 @@ namespace SixLabors.Fonts.Tables.General
             // Bit 14: Last Resort font.If set, indicates that the glyphs encoded in the cmap subtables are simply generic symbolic representations of code point ranges and don’t truly represent support for those code points.If unset, indicates that the glyphs encoded in the cmap subtables represent proper support for those code points.
             // Bit 15: Reserved, set to 0
             None = 0,
-            BaslineY0 = 1 << 0,
+            BaselineY0 = 1 << 0,
             LeftSidebearingPointAtX0 = 1 << 1,
             InstructionDependOnPointSize = 1 << 2,
             ForcePPEMToInt = 1 << 3,
@@ -82,7 +82,7 @@ namespace SixLabors.Fonts.Tables.General
             Italic = 1 << 1,
             Underline = 1 << 2,
             Outline = 1 << 3,
-            Shaddow = 1 << 4,
+            Shadow = 1 << 4,
             Condensed = 1 << 5,
             Extended = 1 << 6,
         }

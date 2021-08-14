@@ -7,9 +7,9 @@ namespace SixLabors.Fonts.Tables.General.Kern
 {
     internal sealed class Format0SubTable : KerningSubTable
     {
-        private readonly KearningPair[] pairs;
+        private readonly KerningPair[] pairs;
 
-        public Format0SubTable(KearningPair[] pairs, KerningCoverage coverage)
+        public Format0SubTable(KerningPair[] pairs, KerningCoverage coverage)
             : base(coverage)
             => this.pairs = pairs;
 
@@ -26,10 +26,10 @@ namespace SixLabors.Fonts.Tables.General.Kern
             ushort entrySelector = reader.ReadUInt16();
             ushort rangeShift = reader.ReadUInt16();
 
-            var pairs = new KearningPair[pairCount];
+            var pairs = new KerningPair[pairCount];
             for (int i = 0; i < pairCount; i++)
             {
-                pairs[i] = KearningPair.Read(reader);
+                pairs[i] = KerningPair.Read(reader);
             }
 
             return new Format0SubTable(pairs, coverage);
@@ -37,11 +37,11 @@ namespace SixLabors.Fonts.Tables.General.Kern
 
         protected override bool TryGetOffset(ushort index1, ushort index2, out short offset)
         {
-            int index = this.pairs.AsSpan().BinarySearch(new KearningPair(index1, index2, 0));
+            int index = this.pairs.AsSpan().BinarySearch(new KerningPair(index1, index2, 0));
 
             if (index >= 0)
             {
-                ref KearningPair pair = ref this.pairs[index];
+                ref KerningPair pair = ref this.pairs[index];
                 offset = pair.Offset;
                 return true;
             }

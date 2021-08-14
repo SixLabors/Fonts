@@ -7,17 +7,17 @@ namespace SixLabors.Fonts.Tables.General
     internal class CpalTable : Table
     {
         internal const string TableName = "CPAL";
-        private readonly ushort[] palletteOffsets;
-        private readonly GlyphColor[] palletteEntries;
+        private readonly ushort[] paletteOffsets;
+        private readonly GlyphColor[] paletteEntries;
 
-        public CpalTable(ushort[] palletteOffsets, GlyphColor[] palletteEntries)
+        public CpalTable(ushort[] paletteOffsets, GlyphColor[] paletteEntries)
         {
-            this.palletteEntries = palletteEntries;
-            this.palletteOffsets = palletteOffsets;
+            this.paletteEntries = paletteEntries;
+            this.paletteOffsets = paletteOffsets;
         }
 
-        public GlyphColor GetGlyphColor(int palletteIndex, int palletteEntryIndex)
-            => this.palletteEntries[this.palletteOffsets[palletteIndex] + palletteEntryIndex];
+        public GlyphColor GetGlyphColor(int paletteIndex, int paletteEntryIndex)
+            => this.paletteEntries[this.paletteOffsets[paletteIndex] + paletteEntryIndex];
 
         public static CpalTable? Load(FontReader fontReader)
         {
@@ -68,17 +68,17 @@ namespace SixLabors.Fonts.Tables.General
             }
 
             reader.Seek(offsetFirstColorRecord, System.IO.SeekOrigin.Begin);
-            var pallettes = new GlyphColor[numColorRecords];
+            var palettes = new GlyphColor[numColorRecords];
             for (int n = 0; n < numColorRecords; n++)
             {
                 var blue = reader.ReadByte();
                 var green = reader.ReadByte();
                 var red = reader.ReadByte();
                 var alpha = reader.ReadByte();
-                pallettes[n] = new GlyphColor(blue, green, red, alpha);
+                palettes[n] = new GlyphColor(blue, green, red, alpha);
             }
 
-            return new CpalTable(colorRecordIndices, pallettes);
+            return new CpalTable(colorRecordIndices, palettes);
         }
     }
 }

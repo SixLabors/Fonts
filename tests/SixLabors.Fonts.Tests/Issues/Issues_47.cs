@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.Tests.Issues
         [InlineData("hello world hello world hello world hello world", HorizontalAlignment.Right)]
         [InlineData("hello world hello world hello world hello world", HorizontalAlignment.Center)]
         [InlineData("hello   world   hello   world   hello   hello   world", HorizontalAlignment.Left)]
-        public void NewWrappedLinesShouldNotStartOrEndWithWhiteSpace(string text, HorizontalAlignment horiAlignment)
+        public void NewWrappedLinesShouldNotStartOrEndWithWhiteSpace(string text, HorizontalAlignment horizontalAlignment)
         {
             Font font = CreateFont("\t x");
 
@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tests.Issues
             IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new RendererOptions(new Font(font, 30), 72)
             {
                 WrappingWidth = 350,
-                HorizontalAlignment = horiAlignment
+                HorizontalAlignment = horizontalAlignment
             });
 
             float lineYPos = layout[0].Location.Y;

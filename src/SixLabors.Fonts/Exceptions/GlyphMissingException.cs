@@ -6,7 +6,7 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Execption for detailing missing font families.
+    /// Exception for detailing missing font families.
     /// </summary>
     /// <seealso cref="FontException" />
     public class GlyphMissingException : FontException

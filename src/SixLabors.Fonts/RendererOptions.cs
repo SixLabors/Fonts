@@ -114,7 +114,7 @@ namespace SixLabors.Fonts
         public float DpiY { get; set; }
 
         /// <summary>
-        /// Gets or sets the collection of Fallback fontfamiles to try and use when a specific glyph is missing.
+        /// Gets or sets the collection of fallback font families to try and use when a specific glyph is missing.
         /// </summary>
         public IEnumerable<FontFamily> FallbackFontFamilies { get; set; } = Array.Empty<FontFamily>();
 

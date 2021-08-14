@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tests
     public class TrueTypeCollectionTests
     {
         [Fact]
-        public void AddViaPathReturnsDecription()
+        public void AddViaPathReturnsDescription()
         {
             var suit = new FontCollection();
             IEnumerable<FontFamily> collectionFromPath = suit.AddCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
@@ -40,7 +40,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void AddViaStreamhReturnsDecription()
+        public void AddViaStreamReturnsDescription()
         {
             var suit = new FontCollection();
             IEnumerable<FontFamily> collectionFromPath = suit.AddCollection(TestFonts.SSimpleTrueTypeCollectionData(), out IEnumerable<FontDescription> descriptions);
