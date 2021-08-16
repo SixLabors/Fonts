@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -15,7 +14,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a collection of font families.
     /// </summary>
-    public sealed class FontCollection : IFontCollection, IFontMetricsCollection, IReadOnlyFontMetricsCollection
+    public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     {
         private readonly HashSet<IFontMetrics> metricsCollection = new HashSet<IFontMetrics>();
 
