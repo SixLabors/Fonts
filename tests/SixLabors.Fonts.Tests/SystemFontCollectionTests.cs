@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
@@ -8,6 +9,8 @@ namespace SixLabors.Fonts.Tests
 {
     public class SystemFontCollectionTests
     {
+        private static readonly SystemFontCollection SysFontCollection = new SystemFontCollection();
+
         [Fact]
         public void SystemFonts_IsPopulated()
         {
@@ -63,6 +66,36 @@ namespace SixLabors.Fonts.Tests
 
             font = SystemFonts.CreateFont(family.Name, family.Culture, 12F, FontStyle.Regular);
             Assert.NotNull(font);
+        }
+
+        [Fact]
+        public void CanEnumerateSystemFontMetrics()
+        {
+            IEnumerator<IFontMetrics> enumerator = ((IReadOnlyFontMetricsCollection)SysFontCollection).GetEnumerator();
+
+            int count = 0;
+            while (enumerator.MoveNext())
+            {
+                count++;
+                Assert.NotNull(enumerator.Current);
+            }
+
+            Assert.True(count > 0);
+        }
+
+        [Fact]
+        public void CanEnumerateNonGenericSystemFontMetrics()
+        {
+            System.Collections.IEnumerator enumerator = ((IReadOnlyFontMetricsCollection)SysFontCollection).GetEnumerator();
+
+            int count = 0;
+            while (enumerator.MoveNext())
+            {
+                count++;
+                Assert.NotNull(enumerator.Current);
+            }
+
+            Assert.True(count > 0);
         }
     }
 }

@@ -15,8 +15,8 @@ namespace SixLabors.Fonts.Tests
         public void AddViaPathReturnsDescription()
         {
             var sut = new FontCollection();
+            sut.Add(TestFonts.CarterOneFile, out FontDescription description);
 
-            FontFamily family = sut.Add(TestFonts.CarterOneFile, out FontDescription description);
             Assert.NotNull(description);
             Assert.Equal("Carter One", description.FontFamilyInvariantCulture);
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
