@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -115,11 +114,7 @@ namespace SixLabors.Fonts
             => ((IReadOnlyFontMetricsCollection)this.collection).GetAllStyles(name, culture);
 
         /// <inheritdoc/>
-        IEnumerator<IFontMetrics> IEnumerable<IFontMetrics>.GetEnumerator()
-            => ((IReadOnlyFontMetricsCollection)this.collection).GetEnumerator();
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator()
+        IEnumerator<IFontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
             => ((IReadOnlyFontMetricsCollection)this.collection).GetEnumerator();
     }
 }

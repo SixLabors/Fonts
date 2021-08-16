@@ -161,6 +161,10 @@ namespace SixLabors.Fonts
         IEnumerable<FontStyle> IReadOnlyFontMetricsCollection.GetAllStyles(string name, CultureInfo culture)
             => ((IReadOnlyFontMetricsCollection)this).GetAllMetrics(name, culture).Select(x => x.Description.Style).ToArray();
 
+        /// <inheritdoc/>
+        IEnumerator<IFontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
+            => this.metricsCollection.GetEnumerator();
+
         private FontFamily AddImpl(string path, CultureInfo culture, out FontDescription description)
         {
             var instance = new FileFontMetrics(path);
@@ -254,13 +258,5 @@ namespace SixLabors.Fonts
 
             throw new FontFamilyNotFoundException(name);
         }
-
-        /// <inheritdoc/>
-        IEnumerator<IFontMetrics> IEnumerable<IFontMetrics>.GetEnumerator()
-            => this.metricsCollection.GetEnumerator();
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator()
-            => this.metricsCollection.GetEnumerator();
     }
 }
