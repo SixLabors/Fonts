@@ -2,10 +2,10 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
-#if SUPPORTS_CULTUREINFO_LCID
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-#endif
 using System.IO;
 using System.Linq;
 
@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Provides a collection of fonts.
     /// </summary>
-    internal sealed class SystemFontCollection : IReadOnlyFontCollection
+    internal sealed class SystemFontCollection : IReadOnlyFontCollection, IReadOnlyFontMetricsCollection
     {
         private readonly FontCollection collection = new FontCollection();
 
@@ -101,5 +101,25 @@ namespace SixLabors.Fonts
         public bool TryGet(string name, CultureInfo culture, out FontFamily family)
             => this.collection.TryGet(name, culture, out family);
 #endif
+
+        /// <inheritdoc/>
+        bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out IFontMetrics? metrics)
+            => ((IReadOnlyFontMetricsCollection)this.collection).TryGetMetrics(name, culture, style, out metrics);
+
+        /// <inheritdoc/>
+        IEnumerable<IFontMetrics> IReadOnlyFontMetricsCollection.GetAllMetrics(string name, CultureInfo culture)
+            => ((IReadOnlyFontMetricsCollection)this.collection).GetAllMetrics(name, culture);
+
+        /// <inheritdoc/>
+        IEnumerable<FontStyle> IReadOnlyFontMetricsCollection.GetAllStyles(string name, CultureInfo culture)
+            => ((IReadOnlyFontMetricsCollection)this.collection).GetAllStyles(name, culture);
+
+        /// <inheritdoc/>
+        IEnumerator<IFontMetrics> IEnumerable<IFontMetrics>.GetEnumerator()
+            => ((IReadOnlyFontMetricsCollection)this.collection).GetEnumerator();
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator()
+            => ((IReadOnlyFontMetricsCollection)this.collection).GetEnumerator();
     }
 }

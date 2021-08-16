@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -56,6 +57,19 @@ namespace SixLabors.Fonts.Tests
                 () => new FontCollection().Get(invalid));
 
             Assert.Equal(invalid, ex.FontFamily);
+        }
+
+        [Fact]
+        public void CanAddSystemFonts()
+        {
+            var collection = new FontCollection();
+
+            Assert.False(collection.Families.Any());
+
+            collection.AddSystemFontCollection();
+
+            Assert.True(collection.Families.Any());
+            Assert.Equal(collection.Families.Count(), SystemFonts.Families.Count());
         }
     }
 }

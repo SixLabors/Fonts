@@ -11,7 +11,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a readonly collection of font metrics.
     /// </summary>
-    internal interface IReadOnlyFontMetricsCollection
+    internal interface IReadOnlyFontMetricsCollection : IEnumerable<IFontMetrics>
     {
         /// <summary>
         /// Gets the specified font metrics matching the given culture and font family name.
