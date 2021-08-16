@@ -29,16 +29,16 @@ namespace SixLabors.Fonts
             {
                 StandardFontLocations = new[]
                 {
-                    "%SYSTEMROOT%\\Fonts",
-                    "%APPDATA%\\Microsoft\\Windows\\Fonts",
-                    "%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts",
+                    @"%SYSTEMROOT%\Fonts",
+                    @"%APPDATA%\Microsoft\Windows\Fonts",
+                    @"%LOCALAPPDATA%\Microsoft\Windows\Fonts",
                 };
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 StandardFontLocations = new[]
                 {
-                    "~/.fonts/",
+                    "%HOME%/.fonts/",
                     "/usr/local/share/fonts/",
                     "/usr/share/fonts/",
                 };
@@ -47,11 +47,12 @@ namespace SixLabors.Fonts
             {
                 StandardFontLocations = new[]
                 {
-                    "~/Library/Fonts/",
+                    // As documented on "Mac OS X: Font locations and their purposes"
+                    // https://web.archive.org/web/20191015122508/https://support.apple.com/en-us/HT201722
+                    "%HOME%/Library/Fonts/",
                     "/Library/Fonts/",
-                    "/Network/Library/Fonts/",
                     "/System/Library/Fonts/",
-                    "/System Folder/Fonts/",
+                    "/Network/Library/Fonts/",
                 };
             }
             else
