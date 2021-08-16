@@ -97,5 +97,37 @@ namespace SixLabors.Fonts.Tests
 
             Assert.True(count > 0);
         }
+
+        [Fact]
+        public void CanGetAllMetricsByCulture()
+        {
+            var collection = (IReadOnlyFontMetricsCollection)SysFontCollection;
+            FontFamily family = SysFontCollection.Families.First();
+            IEnumerable<IFontMetrics> metrics = collection.GetAllMetrics(family.Name, family.Culture);
+
+            Assert.True(metrics.Any());
+
+            foreach (IFontMetrics item in metrics)
+            {
+                Assert.True(family.TryGetMetrics(item.Description.Style, out IFontMetrics familyMetrics));
+                Assert.True(collection.TryGetMetrics(
+                    family.Name,
+                    family.Culture,
+                    item.Description.Style,
+                    out IFontMetrics fontMetrics));
+
+                Assert.Equal(familyMetrics, fontMetrics);
+            }
+        }
+
+        [Fact]
+        public void CanGetAllStylesByCulture()
+        {
+            FontFamily family = SysFontCollection.Families.First();
+            IEnumerable<FontStyle> styles = ((IReadOnlyFontMetricsCollection)SysFontCollection).GetAllStyles(family.Name, family.Culture);
+
+            Assert.True(styles.Any());
+            Assert.Equal(family.GetAvailableStyles(), styles);
+        }
     }
 }
