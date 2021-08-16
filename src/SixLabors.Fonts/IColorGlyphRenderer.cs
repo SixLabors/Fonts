@@ -84,10 +84,10 @@ namespace SixLabors.Fonts
         public override bool Equals(object obj) => obj is GlyphColor p && this.Equals(p);
 
         /// <summary>
-        /// Compares the  <see cref="GlyphColor"/> for equality to this color.
+        /// Compares the <see cref="GlyphColor"/> for equality to this color.
         /// </summary>
         /// <param name="other">
-        /// The other <see cref="GlyphColor"/> to compair to.
+        /// The other <see cref="GlyphColor"/> to compare to.
         /// </param>
         /// <returns>
         /// True if the current color is equal to the <paramref name="other"/> parameter; otherwise, false.

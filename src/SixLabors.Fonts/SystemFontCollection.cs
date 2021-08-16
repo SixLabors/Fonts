@@ -73,7 +73,7 @@ namespace SixLabors.Fonts
                 }
                 catch
                 {
-                    // We swallow exceptions installing system fonts as we hold no garantees about permissions etc.
+                    // We swallow exceptions installing system fonts as we hold no guarantees about permissions etc.
                 }
             }
         }

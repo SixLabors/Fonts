@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
     public class CompositeGlyphLoaderTests
     {
         [Fact]
-        public void LoadSingleGlyphWithUInt16Offset_unsignd_short()
+        public void LoadSingleGlyphWithUInt16Offset_unsigned_short()
         {
             var writer = new BigEndianBinaryWriter();
             writer.WriteUInt16((ushort)CompositeGlyphFlags.ArgsAreWords); // 16bit unsigned
@@ -63,7 +63,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         }
 
         [Fact]
-        public void LoadSingleGlyphWithUInt8Offset_unsignd_byte()
+        public void LoadSingleGlyphWithUInt8Offset_unsigned_byte()
         {
             var writer = new BigEndianBinaryWriter();
             writer.WriteUInt16(0); // 8bit unsigned

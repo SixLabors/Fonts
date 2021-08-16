@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
-    /// Provides a mapped view of an underlying slice, selecting arbitrary indicies
+    /// Provides a mapped view of an underlying slice, selecting arbitrary indices
     /// from the source array.
     /// </summary>
     /// <typeparam name="T">The type of item contained in the underlying array.</typeparam>

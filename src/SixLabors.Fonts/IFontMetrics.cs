@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     public interface IFontMetrics
     {
         /// <summary>
-        /// Gets the basic descripton of the face.
+        /// Gets the basic description of the face.
         /// </summary>
         FontDescription Description { get; }
 

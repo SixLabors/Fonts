@@ -33,8 +33,8 @@ namespace SixLabors.Fonts.Tests.Tables.General
                     Glyph = 1,
                     Layers =
                     {
-                        new ColrLayerRecord { Glyph = 10, Pallete = 1 },
-                        new ColrLayerRecord { Glyph = 11, Pallete = 2 }
+                        new ColrLayerRecord { Glyph = 10, Palette = 1 },
+                        new ColrLayerRecord { Glyph = 11, Palette = 2 }
                     }
                 },
                 new ColrGlyphRecord
@@ -42,8 +42,8 @@ namespace SixLabors.Fonts.Tests.Tables.General
                     Glyph = 2,
                     Layers =
                     {
-                        new ColrLayerRecord { Glyph = 12, Pallete = 1 },
-                        new ColrLayerRecord { Glyph = 13, Pallete = 2 }
+                        new ColrLayerRecord { Glyph = 12, Palette = 1 },
+                        new ColrLayerRecord { Glyph = 13, Palette = 2 }
                     }
                 }
             });

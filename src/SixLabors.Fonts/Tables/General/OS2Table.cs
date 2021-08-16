@@ -115,16 +115,16 @@ namespace SixLabors.Fonts.Tables.General
             this.maxContext = maxContext;
         }
 
-        public OS2Table(OS2Table versionLessthan5Table, ushort lowerOpticalPointSize, ushort upperOpticalPointSize)
+        public OS2Table(OS2Table versionLessThan5Table, ushort lowerOpticalPointSize, ushort upperOpticalPointSize)
             : this(
-                versionLessthan5Table,
-                versionLessthan5Table.codePageRange1,
-                versionLessthan5Table.codePageRange2,
-                versionLessthan5Table.heightX,
-                versionLessthan5Table.capHeight,
-                versionLessthan5Table.defaultChar,
-                versionLessthan5Table.breakChar,
-                versionLessthan5Table.maxContext)
+                versionLessThan5Table,
+                versionLessThan5Table.codePageRange1,
+                versionLessThan5Table.codePageRange2,
+                versionLessThan5Table.heightX,
+                versionLessThan5Table.capHeight,
+                versionLessThan5Table.defaultChar,
+                versionLessThan5Table.breakChar,
+                versionLessThan5Table.maxContext)
         {
             this.lowerOpticalPointSize = lowerOpticalPointSize;
             this.upperOpticalPointSize = upperOpticalPointSize;
@@ -321,7 +321,7 @@ namespace SixLabors.Fonts.Tables.General
             breakChar = reader.ReadUInt16();
             maxContext = reader.ReadUInt16();
 
-            var versionLessthan5Table = new OS2Table(
+            var versionLessThan5Table = new OS2Table(
                     version0Table,
                     codePageRange1,
                     codePageRange2,
@@ -333,14 +333,14 @@ namespace SixLabors.Fonts.Tables.General
 
             if (version < 5)
             {
-                return versionLessthan5Table;
+                return versionLessThan5Table;
             }
 
             ushort lowerOpticalPointSize = reader.ReadUInt16();
             ushort upperOpticalPointSize = reader.ReadUInt16();
 
             return new OS2Table(
-                versionLessthan5Table,
+                versionLessThan5Table,
                 lowerOpticalPointSize,
                 upperOpticalPointSize);
         }

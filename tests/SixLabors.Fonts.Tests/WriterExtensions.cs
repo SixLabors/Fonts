@@ -556,7 +556,7 @@ namespace SixLabors.Fonts.Tests
                 foreach (ColrLayerRecord l in g.Layers)
                 {
                     writer.WriteUInt16(l.Glyph);
-                    writer.WriteUInt16(l.Pallete);
+                    writer.WriteUInt16(l.Palette);
                 }
             }
         }
@@ -576,7 +576,7 @@ namespace SixLabors.Fonts.Tests
         {
             public ushort Glyph { get; set; }
 
-            public ushort Pallete { get; set; }
+            public ushort Palette { get; set; }
 
             public int LayerSize => 4;
         }

@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.IO
         /// <summary>
         /// The read crc data.
         /// </summary>
-        private byte[]? crcread;
+        private byte[]? crcRead;
 
         /// <summary>
         /// The stream responsible for decompressing the input stream.
@@ -132,16 +132,16 @@ namespace SixLabors.Fonts.IO
                 throw new ObjectDisposedException("inner stream");
             }
 
-            // We dont't check CRC on reading
+            // We don't check CRC on reading
             int read = this.deflateStream.Read(buffer, offset, count);
-            if (read < 1 && this.crcread is null)
+            if (read < 1 && this.crcRead is null)
             {
                 // The deflater has ended. We try to read the next 4 bytes from raw stream (crc)
-                this.crcread = new byte[4];
+                this.crcRead = new byte[4];
                 for (int i = 0; i < 4; i++)
                 {
                     // we dont really check/use this
-                    this.crcread[i] = (byte)this.rawStream.ReadByte();
+                    this.crcRead[i] = (byte)this.rawStream.ReadByte();
                 }
             }
 
@@ -196,13 +196,13 @@ namespace SixLabors.Fonts.IO
                     this.deflateStream.Dispose();
                     this.deflateStream = null;
 
-                    if (this.crcread is null)
+                    if (this.crcRead is null)
                     {
                         // Consume the trailing 4 bytes
-                        this.crcread = new byte[4];
+                        this.crcRead = new byte[4];
                         for (int i = 0; i < 4; i++)
                         {
-                            this.crcread[i] = (byte)this.rawStream.ReadByte();
+                            this.crcRead[i] = (byte)this.rawStream.ReadByte();
                         }
                     }
                 }

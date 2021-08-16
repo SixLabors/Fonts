@@ -10,7 +10,7 @@ using System.Text;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// BinaryReader using bigendian encoding.
+    /// BinaryReader using big-endian encoding.
     /// </summary>
     internal class BigEndianBinaryReader : IDisposable
     {
@@ -56,7 +56,7 @@ namespace SixLabors.Fonts
         /// <param name="origin">Origin of seek operation.</param>
         public void Seek(long offset, SeekOrigin origin)
         {
-            // if begin offsert the offset by the start of stream postion
+            // if begin offset the offset by the start of stream position
             if (origin == SeekOrigin.Begin)
             {
                 offset += this.StartOfStream;

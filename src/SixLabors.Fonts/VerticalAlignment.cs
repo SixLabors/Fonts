@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Vertial alignment modes.
+    /// Vertical alignment modes.
     /// </summary>
     public enum VerticalAlignment
     {

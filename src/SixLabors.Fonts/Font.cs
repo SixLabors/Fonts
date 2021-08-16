@@ -163,8 +163,8 @@ namespace SixLabors.Fonts
 
             if (this.RequestedStyle.HasFlag(FontStyle.Italic))
             {
-                // Can't find style requested and they want one thats at least partial itallic.
-                // Try the regual italic.
+                // Can't find style requested and they want one that's at least partial italic.
+                // Try the regular italic.
                 if (this.Family.TryGetMetrics(FontStyle.Italic, out metrics))
                 {
                     return metrics;
@@ -173,7 +173,7 @@ namespace SixLabors.Fonts
 
             if (this.RequestedStyle.HasFlag(FontStyle.Bold))
             {
-                // Can't find style requested and they want one thats at least partial bold.
+                // Can't find style requested and they want one that's at least partial bold.
                 // Try the regular bold.
                 if (this.Family.TryGetMetrics(FontStyle.Bold, out metrics))
                 {

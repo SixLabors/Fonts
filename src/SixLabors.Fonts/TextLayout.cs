@@ -20,7 +20,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
-        /// <returns>A collection of layout that describe all thats needed to measure or render a series of glyphs.</returns>
+        /// <returns>A collection of layout that describe all that's needed to measure or render a series of glyphs.</returns>
         public IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, RendererOptions options)
         {
             if (text.IsEmpty)
@@ -82,7 +82,7 @@ namespace SixLabors.Fonts
             bool startOfLine = true;
             float totalHeight = 0;
 
-            // Calculate the intitial position of potential line breaks.
+            // Calculate the initial position of potential line breaks.
             var lineBreakEnumerator = new LineBreakEnumerator(text);
             if (lineBreakEnumerator.MoveNext())
             {
@@ -127,7 +127,7 @@ namespace SixLabors.Fonts
                     float fontHeight = glyph.FontMetrics.LineHeight * options.LineSpacing;
                     if (fontHeight > unscaledLineHeight)
                     {
-                        // Get the largest lineheight thus far
+                        // Get the largest line height thus far
                         unscaledLineHeight = fontHeight;
                         scale = glyph.ScaleFactor;
                         lineHeight = unscaledLineHeight * spanStyle.PointSize / scale;

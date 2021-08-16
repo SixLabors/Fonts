@@ -25,14 +25,14 @@ namespace SixLabors.Fonts.Tables.General.Colr
 
     internal sealed class LayerRecord
     {
-        public LayerRecord(ushort glyphId, ushort palletteIndex)
+        public LayerRecord(ushort glyphId, ushort paletteIndex)
         {
             this.GlyphId = glyphId;
-            this.PalletteIndex = palletteIndex;
+            this.PaletteIndex = paletteIndex;
         }
 
         public ushort GlyphId { get; }
 
-        public ushort PalletteIndex { get; }
+        public ushort PaletteIndex { get; }
     }
 }

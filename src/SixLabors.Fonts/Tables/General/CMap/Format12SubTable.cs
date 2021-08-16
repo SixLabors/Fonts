@@ -52,7 +52,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             // SequentialMapGroup | groups[numGroups] | Array of SequentialMapGroup records.
 
             // format has already been read by this point skip it
-            ushort reserver = reader.ReadUInt16();
+            ushort reserved = reader.ReadUInt16();
             uint length = reader.ReadUInt32();
             uint language = reader.ReadUInt32();
             uint numGroups = reader.ReadUInt32();

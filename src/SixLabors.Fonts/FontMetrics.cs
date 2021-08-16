@@ -225,7 +225,7 @@ namespace SixLabors.Fonts
         internal static FontMetrics LoadFont(FontReader reader)
         {
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
-            // recomended order
+            // recommended order
             HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
             HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>(); // hhea
             reader.GetTable<MaximumProfileTable>(); // maxp
@@ -339,7 +339,7 @@ namespace SixLabors.Fonts
                     {
                         LayerRecord? layer = indexes[i];
 
-                        vectors[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PalletteIndex);
+                        vectors[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PaletteIndex);
                     }
                 }
 

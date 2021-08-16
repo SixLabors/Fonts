@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tests
             -155)]
         public void VerticalAlignmentTests(
             VerticalAlignment vertical,
-            HorizontalAlignment horizental,
+            HorizontalAlignment horizontal,
             float top,
             float left)
         {
@@ -78,7 +78,7 @@ namespace SixLabors.Fonts.Tests
 
             var span = new RendererOptions(font, font.FontMetrics.ScaleFactor)
             {
-                HorizontalAlignment = horizental,
+                HorizontalAlignment = horizontal,
                 VerticalAlignment = vertical
             };
 

@@ -70,7 +70,7 @@ namespace SixLabors.Fonts.Tables.General
             {
                 if (name.NameID == nameId)
                 {
-                    // get just the first one, just incase.
+                    // get just the first one, just in case.
                     first ??= name;
                     if (name.Platform == PlatformIDs.Windows)
                     {

@@ -56,7 +56,7 @@ namespace SixLabors.Fonts
         /// Adds a true type font collection (.ttc).
         /// </summary>
         /// <param name="path">The font collection path.</param>
-        /// <param name="descriptions">The descriptions of the added fonst.</param>
+        /// <param name="descriptions">The descriptions of the added fonts.</param>
         /// <returns>The new <see cref="IEnumerable{T}"/>.</returns>
         public IEnumerable<FontFamily> AddCollection(string path, out IEnumerable<FontDescription> descriptions);
 
@@ -123,7 +123,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="path">The font collection path.</param>
         /// <param name="culture">The culture of the fonts to add.</param>
-        /// <param name="descriptions">The descriptions of the added fonst.</param>
+        /// <param name="descriptions">The descriptions of the added fonts.</param>
         /// <returns>The new <see cref="IEnumerable{FontFamily}"/>.</returns>
         public IEnumerable<FontFamily> AddCollection(
             string path,
