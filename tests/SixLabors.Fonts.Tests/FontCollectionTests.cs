@@ -66,7 +66,7 @@ namespace SixLabors.Fonts.Tests
 
             Assert.False(collection.Families.Any());
 
-            collection.AddSystemFontCollection();
+            collection.AddSystemFonts();
 
             Assert.True(collection.Families.Any());
             Assert.Equal(collection.Families.Count(), SystemFonts.Families.Count());

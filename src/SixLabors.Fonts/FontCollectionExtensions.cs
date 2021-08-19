@@ -13,7 +13,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="collection">The font collection.</param>
         /// <returns>The <see cref="FontCollection"/> containing the system fonts.</returns>
-        public static FontCollection AddSystemFontCollection(this FontCollection collection)
+        public static FontCollection AddSystemFonts(this FontCollection collection)
         {
             // This cast is safe because our underlying SystemFontCollection implements
             // both interfaces separately.
