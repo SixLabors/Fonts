@@ -10,6 +10,7 @@ namespace SixLabors.Fonts
 {
     /// <summary>
     /// Represents a readonly collection of font metrics.
+    /// The interface uses compiler pattern matching to provide enumeration capabilities.
     /// </summary>
     internal interface IReadOnlyFontMetricsCollection
     {
@@ -48,5 +49,8 @@ namespace SixLabors.Fonts
         /// <returns>The <see cref="IEnumerable{FontStyle}"/>.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
         IEnumerable<FontStyle> GetAllStyles(string name, CultureInfo culture);
+
+        /// <inheritdoc cref="IEnumerable{T}.GetEnumerator"/>
+        IEnumerator<IFontMetrics> GetEnumerator();
     }
 }

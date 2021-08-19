@@ -26,9 +26,9 @@ namespace SixLabors.Fonts.Tests
 
         internal static Font CreateFontWithInstance(string text, out FakeFontInstance instance)
         {
-            var fc = new FontCollection();
+            var fc = (IFontMetricsCollection)new FontCollection();
             instance = FakeFontInstance.CreateFontWithVaryingVerticalFontMetrics(text);
-            Font d = fc.Add(instance, CultureInfo.InvariantCulture).CreateFont(12);
+            Font d = fc.AddMetrics(instance, CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
         }
     }

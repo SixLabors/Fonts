@@ -221,8 +221,8 @@ namespace SixLabors.Fonts.Tests
 
         public static Font CreateFont(string text)
         {
-            var fc = new FontCollection();
-            Font d = fc.Add(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
+            var fc = (IFontMetricsCollection)new FontCollection();
+            Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
         }
     }
