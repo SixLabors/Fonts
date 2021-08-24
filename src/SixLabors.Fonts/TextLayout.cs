@@ -79,6 +79,7 @@ namespace SixLabors.Fonts
             int lastWrappableLocation = -1;
             int nextWrappableLocation = codePointCount;
             bool nextWrappableRequired = false;
+            bool autoWrap = options.WordBreaking == WordBreaking.Auto;
             bool startOfLine = true;
             float totalHeight = 0;
 
@@ -95,11 +96,11 @@ namespace SixLabors.Fonts
             int codePointIndex = 0;
 
             // Enumerate through each grapheme in the text.
-            // TODO: In the future we can use word-break settings to split graphemes when required.
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
             for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
             {
                 // Now enumerate through each codepoint in the grapheme.
+                int graphemeCodePointIndex = 0;
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
@@ -170,15 +171,21 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    if ((options.WrappingWidth > 0 && nextWrappableLocation == codePointIndex) || nextWrappableRequired)
+                    // Keep a record of where to wrap text and ensure that no line starts with white space
+                    if ((options.WrappingWidth > 0 && (autoWrap || nextWrappableLocation == codePointIndex))
+                        || nextWrappableRequired)
                     {
-                        // Keep a record of where to wrap text and ensure that no line starts with white space
-                        for (int j = layout.Count - 1; j >= 0; j--)
+                        // We don't want to ever break between codepoints within a grapheme.
+                        if (graphemeCodePointIndex == 0)
                         {
-                            if (!layout[j].IsWhiteSpace())
+                            for (int j = layout.Count - 1; j >= 0; j--)
                             {
-                                lastWrappableLocation = j + 1;
-                                break;
+                                GlyphLayout item = layout[j];
+                                if (!item.IsWhiteSpace())
+                                {
+                                    lastWrappableLocation = j + 1;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -211,7 +218,15 @@ namespace SixLabors.Fonts
                         {
                             float w = g.AdvanceWidth * spanStyle.PointSize / scale;
                             float h = g.AdvanceHeight * spanStyle.PointSize / scale;
-                            layout.Add(new GlyphLayout(graphemeIndex, codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine));
+                            layout.Add(new GlyphLayout(
+                                graphemeIndex,
+                                codePoint,
+                                new Glyph(g, spanStyle.PointSize),
+                                glyphLocation,
+                                w,
+                                h,
+                                lineHeight,
+                                startOfLine));
 
                             if (w > glyphWidth)
                             {
@@ -224,9 +239,12 @@ namespace SixLabors.Fonts
                         // Move forward the actual width of the glyph, we are retaining the baseline
                         location.X += glyphWidth;
 
-                        // If the word extended pass the end of the box, wrap it
-                        if (location.X >= maxWidth && lastWrappableLocation > 0
-                            && lastWrappableLocation < layout.Count)
+                        // If the word extended pass the end of the box, wrap it.
+                        // We don't want to ever break between codepoints within a grapheme.
+                        if (location.X >= maxWidth
+                            && lastWrappableLocation > 0
+                            && lastWrappableLocation < layout.Count
+                            && graphemeCodePointIndex == 0)
                         {
                             float wrappingOffset = layout[lastWrappableLocation].Location.X;
                             startOfLine = true;
@@ -360,6 +378,7 @@ namespace SixLabors.Fonts
                     }
 
                     codePointIndex++;
+                    graphemeCodePointIndex++;
                 }
             }
 
@@ -395,7 +414,7 @@ namespace SixLabors.Fonts
                             break;
                         }
 
-                        width = current.Location.X + current.Width;
+                        width = Math.Max(width, current.Location.X + current.Width);
                     }
 
                     switch (options.HorizontalAlignment)
