@@ -31,7 +31,7 @@ namespace SixLabors.Fonts
             GlyphColor? glyphColor = null)
         {
             this.FontMetrics = font;
-            this.Codepoint = codePoint;
+            this.CodePoint = codePoint;
             this.UnitsPerEm = unitsPerEM;
             this.vector = vector;
 
@@ -56,7 +56,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the Unicode codepoint of the glyph.
         /// </summary>
-        public CodePoint Codepoint { get; }
+        public CodePoint CodePoint { get; }
 
         /// <summary>
         /// Gets the advance width for horizontal layout, expressed in font units.

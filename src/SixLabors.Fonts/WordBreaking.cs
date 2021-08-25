@@ -10,13 +10,20 @@ namespace SixLabors.Fonts
     public enum WordBreaking
     {
         /// <summary>
-        /// No word breaking.
+        /// Use the default line break rule.
         /// </summary>
-        None,
+        Normal,
 
         /// <summary>
-        /// The word is broken based upon grapheme boundaries.
+        /// To prevent overflow, word breaks should be inserted between any two
+        /// characters (excluding Chinese/Japanese/Korean text).
         /// </summary>
-        Auto
+        BreakAll,
+
+        /// <summary>
+        /// Word breaks should not be used for Chinese/Japanese/Korean (CJK) text.
+        /// Non-CJK text behavior is the same as for <see cref="Normal"/>
+        /// </summary>
+        KeepAll
     }
 }
