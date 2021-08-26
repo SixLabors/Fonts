@@ -167,6 +167,13 @@ namespace SixLabors.Fonts
             return BinaryPrimitives.ReadUInt16BigEndian(this.buffer);
         }
 
+        /// <summary>
+        /// Reads a 16-bit unsigned integer from the stream representing an offset position.
+        /// 2 bytes are read.
+        /// </summary>
+        /// <returns>The 16-bit unsigned integer read</returns>
+        public ushort ReadOffset16() => this.ReadUInt16();
+
         public TEnum ReadUInt16<TEnum>() => CastTo<TEnum>.From(this.ReadUInt16());
 
         /// <summary>
@@ -290,6 +297,11 @@ namespace SixLabors.Fonts
             return BinaryPrimitives.ReadUInt32BigEndian(this.buffer);
         }
 
+        /// <summary>
+        /// Reads a 32-bit unsigned integer from the stream representing an offset position.
+        /// 4 bytes are read.
+        /// </summary>
+        /// <returns>The 32-bit unsigned integer read</returns>
         public uint ReadOffset32() => this.ReadUInt32();
 
         /// <summary>
