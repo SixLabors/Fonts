@@ -13,14 +13,14 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/featurelist"/>
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#feature-list-table"/>
     /// </summary>
-    internal class FeatureList
+    internal class FeatureListTable
     {
-        private FeatureList(FeatureListTable[] featureListTables)
-            => this.FeatureListTables = featureListTables;
+        private FeatureListTable(FeatureTable[] featureTables)
+            => this.FeatureTables = featureTables;
 
-        public FeatureListTable[] FeatureListTables { get; }
+        public FeatureTable[] FeatureTables { get; }
 
-        public static FeatureList Load(BigEndianBinaryReader reader, long offset)
+        public static FeatureListTable Load(BigEndianBinaryReader reader, long offset)
         {
             // FeatureList
             // +---------------+------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -51,14 +51,14 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
             // Load the other table features.
             // We do this last to avoid excessive seeking.
-            var featureListTables = new FeatureListTable[featureCount];
-            for (int i = 0; i < featureListTables.Length; i++)
+            var featureTables = new FeatureTable[featureCount];
+            for (int i = 0; i < featureTables.Length; i++)
             {
                 FeatureRecord featureRecord = featureRecords[i];
-                featureListTables[i] = FeatureListTable.Load(featureRecord.FeatureTag, reader, offset + featureRecord.FeatureOffset);
+                featureTables[i] = FeatureTable.Load(featureRecord.FeatureTag, reader, offset + featureRecord.FeatureOffset);
             }
 
-            return new FeatureList(featureListTables);
+            return new FeatureListTable(featureTables);
         }
 
         private readonly struct FeatureRecord
@@ -75,9 +75,9 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         }
     }
 
-    internal sealed class FeatureListTable
+    internal sealed class FeatureTable
     {
-        private FeatureListTable(uint featureTag, ushort[] lookupListIndices)
+        private FeatureTable(uint featureTag, ushort[] lookupListIndices)
         {
             this.FeatureTag = featureTag;
             this.LookupListIndices = lookupListIndices;
@@ -87,7 +87,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public ushort[] LookupListIndices { get; }
 
-        public static FeatureListTable Load(uint featureTag, BigEndianBinaryReader reader, long offset)
+        public static FeatureTable Load(uint featureTag, BigEndianBinaryReader reader, long offset)
         {
             // FeatureListTable
             // +----------+-------------------------------------+--------------------------------------------------------------------------------------------------------------+
@@ -106,7 +106,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             ushort lookupIndexCount = reader.ReadUInt16();
 
             ushort[] lookupListIndices = reader.ReadUInt16Array(lookupIndexCount);
-            return new FeatureListTable(featureTag, lookupListIndices);
+            return new FeatureTable(featureTag, lookupListIndices);
         }
     }
 }

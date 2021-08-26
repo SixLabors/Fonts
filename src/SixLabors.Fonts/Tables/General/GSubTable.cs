@@ -7,16 +7,16 @@ using SixLabors.Fonts.Tables.General.Glyphs;
 namespace SixLabors.Fonts.Tables.General
 {
     /// <summary>
-    /// The Glyph Positioning table (GPOS) provides precise control over glyph placement for
-    /// sophisticated text layout and rendering in each script and language system that a font supports.
-    /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos"/>
+    /// The Glyph Substitution (GSUB) table provides data for substition of glyphs for appropriate rendering of scripts,
+    /// such as cursively-connecting forms in Arabic script, or for advanced typographic effects, such as ligatures.
+    /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub"/>
     /// </summary>
     [TableName(TableName)]
-    internal class GPosTable : Table
+    internal class GSubTable : Table
     {
-        internal const string TableName = "GPOS";
+        internal const string TableName = "GSUB";
 
-        public GPosTable(ScriptList scriptList, FeatureListTable featureList, LookupListTable lookupList)
+        public GSubTable(ScriptList scriptList, FeatureListTable featureList, LookupListTable lookupList)
         {
             this.ScriptList = scriptList;
             this.FeatureList = featureList;
@@ -29,7 +29,7 @@ namespace SixLabors.Fonts.Tables.General
 
         public LookupListTable LookupList { get; }
 
-        public static GPosTable? Load(FontReader fontReader)
+        public static GSubTable? Load(FontReader fontReader)
         {
             if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
@@ -42,38 +42,38 @@ namespace SixLabors.Fonts.Tables.General
             }
         }
 
-        internal static GPosTable Load(BigEndianBinaryReader reader)
+        internal static GSubTable Load(BigEndianBinaryReader reader)
         {
-            // GPOS Header, Version 1.0
+            // GSUB Header, Version 1.0
             // +----------+-------------------+-----------------------------------------------------------+
             // | Type     | Name              | Description                                               |
             // +==========+===================+===========================================================+
-            // | uint16   | majorVersion      | Major version of the GPOS table, = 1                      |
+            // | uint16   | majorVersion      | Major version of the GSUB table, = 1                      |
             // +----------+-------------------+-----------------------------------------------------------+
-            // | uint16   | minorVersion      | Minor version of the GPOS table, = 0                      |
+            // | uint16   | minorVersion      | Minor version of the GSUB table, = 0                      |
             // +----------+-------------------+-----------------------------------------------------------+
-            // | Offset16 | scriptListOffset  | Offset to ScriptList table, from beginning of GPOS table  |
+            // | Offset16 | scriptListOffset  | Offset to ScriptList table, from beginning of GSUB table  |
             // +----------+-------------------+-----------------------------------------------------------+
-            // | Offset16 | featureListOffset | Offset to FeatureList table, from beginning of GPOS table |
+            // | Offset16 | featureListOffset | Offset to FeatureList table, from beginning of GSUB table |
             // +----------+-------------------+-----------------------------------------------------------+
-            // | Offset16 | lookupListOffset  | Offset to LookupList table, from beginning of GPOS table  |
+            // | Offset16 | lookupListOffset  | Offset to LookupList table, from beginning of GSUB table  |
             // +----------+-------------------+-----------------------------------------------------------+
 
-            // GPOS Header, Version 1.1
+            // GSUB Header, Version 1.1
             // +----------+-------------------------+-------------------------------------------------------------------------------+
             // | Type     | Name                    | Description                                                                   |
             // +==========+=========================+===============================================================================+
-            // | uint16   | majorVersion            | Major version of the GPOS table, = 1                                          |
+            // | uint16   | majorVersion            | Major version of the GSUB table, = 1                                          |
             // +----------+-------------------------+-------------------------------------------------------------------------------+
-            // | uint16   | minorVersion            | Minor version of the GPOS table, = 1                                          |
+            // | uint16   | minorVersion            | Minor version of the GSUB table, = 1                                          |
             // +----------+-------------------------+-------------------------------------------------------------------------------+
-            // | Offset16 | scriptListOffset        | Offset to ScriptList table, from beginning of GPOS table                      |
+            // | Offset16 | scriptListOffset        | Offset to ScriptList table, from beginning of GSUB table                      |
             // +----------+-------------------------+-------------------------------------------------------------------------------+
-            // | Offset16 | featureListOffset       | Offset to FeatureList table, from beginning of GPOS table                     |
+            // | Offset16 | featureListOffset       | Offset to FeatureList table, from beginning of GSUB table                     |
             // +----------+-------------------------+-------------------------------------------------------------------------------+
-            // | Offset16 | lookupListOffset        | Offset to LookupList table, from beginning of GPOS table                      |
+            // | Offset16 | lookupListOffset        | Offset to LookupList table, from beginning of GSUB table                      |
             // +----------+-------------------------+-------------------------------------------------------------------------------+
-            // | Offset32 | featureVariationsOffset | Offset to FeatureVariations table, from beginning of GPOS table (may be NULL) |
+            // | Offset32 | featureVariationsOffset | Offset to FeatureVariations table, from beginning of GSUB table (may be NULL) |
             // +----------+-------------------------+-------------------------------------------------------------------------------+
             long position = reader.BaseStream.Position;
             ushort majorVersion = reader.ReadUInt16();
@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Tables.General
             var lookupList = LookupListTable.Load(reader, position + lookupListOffset, LoadLookupSubTable);
 
             // TODO: Feature Variations.
-            return new GPosTable(scriptList, featureList, lookupList);
+            return new GSubTable(scriptList, featureList, lookupList);
         }
 
         private static LookupSubTable LoadLookupSubTable(BigEndianBinaryReader reader, long offset)
