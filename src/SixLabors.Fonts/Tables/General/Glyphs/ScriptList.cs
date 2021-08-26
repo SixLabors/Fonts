@@ -87,8 +87,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             ushort defaultLangSysOffset = reader.ReadOffset16();
             ushort langSysCount = reader.ReadUInt16();
 
-            var langSysTables = new LangSysTable[langSysCount];
-            for (int i = 0; i < langSysTables.Length; i++)
+            var langSysRecords = new LangSysRecord[langSysCount];
+            for (int i = 0; i < langSysRecords.Length; i++)
             {
                 // LangSysRecord
                 // +----------+---------------+---------------------------------------------------------+
@@ -100,46 +100,58 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 // +----------+---------------+---------------------------------------------------------+
                 uint langSysTag = reader.ReadUInt32();
                 ushort langSysOffset = reader.ReadOffset16();
-                langSysTables[i] = new LangSysTable(langSysTag, langSysOffset);
+                langSysRecords[i] = new LangSysRecord(langSysTag, langSysOffset);
             }
 
             // Load the default table.
             LangSysTable? defaultLangSysTable = null;
             if (defaultLangSysOffset > 0)
             {
-                defaultLangSysTable = new LangSysTable(0, defaultLangSysOffset);
-                defaultLangSysTable.LoadFeatures(reader, offset + defaultLangSysOffset);
+                defaultLangSysTable = LangSysTable.Load(0, reader, offset + defaultLangSysOffset);
             }
 
             // Load the other table features.
             // We do this last to avoid excessive seeking.
+            var langSysTables = new LangSysTable[langSysCount];
             for (int i = 0; i < langSysTables.Length; i++)
             {
-                LangSysTable langSysTable = langSysTables[i];
-                langSysTable.LoadFeatures(reader, offset + langSysTable.Offset);
+                LangSysRecord langSysRecord = langSysRecords[i];
+                langSysTables[i] = LangSysTable.Load(langSysRecord.LangSysTag, reader, offset + langSysRecord.LangSysOffset);
             }
 
             return new ScriptListTable(langSysTables, defaultLangSysTable, scriptTag);
         }
+
+        private readonly struct LangSysRecord
+        {
+            public LangSysRecord(uint langSysTag, ushort langSysOffset)
+            {
+                this.LangSysTag = langSysTag;
+                this.LangSysOffset = langSysOffset;
+            }
+
+            public uint LangSysTag { get; }
+
+            public ushort LangSysOffset { get; }
+        }
     }
 
-    internal class LangSysTable
+    internal sealed class LangSysTable
     {
-        public LangSysTable(uint tag, ushort offset)
+        private LangSysTable(uint langSysTag, ushort requiredFeatureIndex, ushort[] featureIndices)
         {
-            this.Tag = tag;
-            this.Offset = offset;
+            this.LangSysTag = langSysTag;
+            this.RequiredFeatureIndex = requiredFeatureIndex;
+            this.FeatureIndices = featureIndices;
         }
 
-        public uint Tag { get; }
-
-        public ushort Offset { get; }
+        public uint LangSysTag { get; }
 
         public ushort RequiredFeatureIndex { get; private set; }
 
         public ushort[] FeatureIndices { get; private set; } = Array.Empty<ushort>();
 
-        public void LoadFeatures(BigEndianBinaryReader reader, long offset)
+        public static LangSysTable Load(uint langSysTag, BigEndianBinaryReader reader, long offset)
         {
             // +----------+-----------------------------------+-----------------------------------------------------------------------------------------+
             // | Type     | Name                              | Description                                                                             |
@@ -154,9 +166,11 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             // +----------+-----------------------------------+-----------------------------------------------------------------------------------------+
             reader.Seek(offset, SeekOrigin.Begin);
             ushort lookupOrderOffset = reader.ReadOffset16();
-            this.RequiredFeatureIndex = reader.ReadUInt16();
+            ushort requiredFeatureIndex = reader.ReadUInt16();
             ushort featureIndexCount = reader.ReadUInt16();
-            this.FeatureIndices = reader.ReadUInt16Array(featureIndexCount);
+
+            ushort[] featureIndices = reader.ReadUInt16Array(featureIndexCount);
+            return new LangSysTable(langSysTag, requiredFeatureIndex, featureIndices);
         }
     }
 }

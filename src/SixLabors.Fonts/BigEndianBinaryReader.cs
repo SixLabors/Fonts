@@ -177,7 +177,7 @@ namespace SixLabors.Fonts
         public TEnum ReadUInt16<TEnum>() => CastTo<TEnum>.From(this.ReadUInt16());
 
         /// <summary>
-        /// Reads array or 16-bit unsigned integers from the stream.
+        /// Reads array of 16-bit unsigned integers from the stream.
         /// 2 bytes are read.
         /// </summary>
         /// <param name="length">The length.</param>
@@ -196,12 +196,12 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads array or 16-bit unsigned integers from the stream.
-        /// 2 bytes are read.
+        /// Reads array or 32-bit unsigned integers from the stream.
+        /// 4 bytes are read.
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
-        /// The 16-bit unsigned integer read
+        /// The 32-bit unsigned integer read
         /// </returns>
         public uint[] ReadUInt32Array(int length)
         {

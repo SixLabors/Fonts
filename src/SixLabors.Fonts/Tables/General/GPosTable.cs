@@ -16,12 +16,15 @@ namespace SixLabors.Fonts.Tables.General
     {
         internal const string TableName = "GPOS";
 
-        public GPosTable(ScriptList scriptList)
+        public GPosTable(ScriptList scriptList, FeatureList featureList)
         {
             this.ScriptList = scriptList;
+            this.FeatureList = featureList;
         }
 
         public ScriptList ScriptList { get; }
+
+        public FeatureList FeatureList { get; }
 
         public static GPosTable? Load(FontReader fontReader)
         {
@@ -81,6 +84,7 @@ namespace SixLabors.Fonts.Tables.General
             // TODO: Optimization. ALlow only reading the scriptList.
             var scriptList = ScriptList.Load(reader, position + scriptListOffset);
 
+            var featureList = FeatureList.Load(reader, position + featureListOffset);
             throw new NotImplementedException();
         }
     }

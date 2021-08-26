@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tables
 {
     // Source code is based on https://github.com/LayoutFarm/Typography
     // see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
-    internal class Woff2Utils
+    internal static class Woff2Utils
     {
         private static readonly string[] KnownTableTags =
         {
