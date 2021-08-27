@@ -1,8 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.General.GPos;
 
 namespace SixLabors.Fonts.Tables.General
 {
@@ -89,16 +89,10 @@ namespace SixLabors.Fonts.Tables.General
 
             var featureList = FeatureListTable.Load(reader, position + featureListOffset);
 
-            var lookupList = LookupListTable.Load(reader, position + lookupListOffset, LoadLookupSubTable);
+            var lookupList = LookupListTable.Load(reader, position + lookupListOffset);
 
             // TODO: Feature Variations.
             return new GPosTable(scriptList, featureList, lookupList);
-        }
-
-        private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
-        {
-            // TODO: Implement each sub table.
-            throw new NotImplementedException();
         }
     }
 }

@@ -17,7 +17,7 @@ namespace SixLabors.Fonts.Tables
 
         public TableLoader()
         {
-            // we will hard code mapping registration in here for all the tables
+            // We will hard code mapping registration in here for all the tables
             this.Register(NameTable.Load);
             this.Register(CMapTable.Load);
             this.Register(HeadTable.Load);
@@ -32,6 +32,8 @@ namespace SixLabors.Fonts.Tables
             this.Register(KerningTable.Load);
             this.Register(ColrTable.Load);
             this.Register(CpalTable.Load);
+            this.Register(GPosTable.Load);
+            this.Register(GSubTable.Load);
         }
 
         public static TableLoader Default { get; } = new TableLoader();

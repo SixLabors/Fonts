@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.IO;
 using SixLabors.Fonts.Tables.General.Glyphs;
 
@@ -14,7 +13,7 @@ namespace SixLabors.Fonts.Tables.General.Gsub
     /// Format 1 requires less space than Format 2, but it is less flexible.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-1-single-substitution-subtable"/>
     /// </summary>
-    internal class SingleSubstitutionSubTable
+    internal sealed class SingleSubstitutionSubTable
     {
         private SingleSubstitutionSubTable()
         {
@@ -36,8 +35,13 @@ namespace SixLabors.Fonts.Tables.General.Gsub
 
     internal sealed class SingleSubstitutionFormat1SubTable : LookupSubTable
     {
-        private SingleSubstitutionFormat1SubTable()
+        private readonly ushort deltaGlyphId;
+        private readonly CoverageTable coverageTable;
+
+        private SingleSubstitutionFormat1SubTable(ushort deltaGlyphId, CoverageTable coverageTable)
         {
+            this.deltaGlyphId = deltaGlyphId;
+            this.coverageTable = coverageTable;
         }
 
         public static SingleSubstitutionFormat1SubTable Load(BigEndianBinaryReader reader, long offset)
@@ -54,20 +58,35 @@ namespace SixLabors.Fonts.Tables.General.Gsub
             // | int16    | deltaGlyphID   | Add to original glyph ID to get substitute glyph ID      |
             // +----------+----------------+----------------------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
-            ushort deltaGlyphID = reader.ReadUInt16();
+            ushort deltaGlyphId = reader.ReadUInt16();
+            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            // TODO: Create Coverage Table type
-            throw new NotImplementedException();
+            return new SingleSubstitutionFormat1SubTable(deltaGlyphId, coverageTable);
+        }
+
+        public override ushort GetSubstition(ushort glyphId)
+        {
+            if (this.coverageTable.GetCoverageIndex(glyphId) > -1)
+            {
+                return (ushort)(glyphId + this.deltaGlyphId);
+            }
+
+            return glyphId;
         }
     }
 
     internal sealed class SingleSubstitutionFormat2SubTable : LookupSubTable
     {
-        private SingleSubstitutionFormat2SubTable()
+        private readonly CoverageTable coverageTable;
+        private readonly ushort[] substituteGlyphs;
+
+        private SingleSubstitutionFormat2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable)
         {
+            this.substituteGlyphs = substituteGlyphs;
+            this.coverageTable = coverageTable;
         }
 
-        public static SingleSubstitutionFormat1SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static SingleSubstitutionFormat2SubTable Load(BigEndianBinaryReader reader, long offset)
         {
             // SingleSubstFormat2
             // +----------+--------------------------------+-----------------------------------------------------------+
@@ -82,7 +101,24 @@ namespace SixLabors.Fonts.Tables.General.Gsub
             // +----------+--------------------------------+-----------------------------------------------------------+
             // | uint16   | substituteGlyphIDs[glyphCount] | Array of substitute glyph IDs — ordered by Coverage index |
             // +----------+--------------------------------+-----------------------------------------------------------+
-            throw new NotImplementedException();
+            ushort coverageOffset = reader.ReadOffset16();
+            ushort glyphCount = reader.ReadUInt16();
+            ushort[] substituteGlyphIds = reader.ReadUInt16Array(glyphCount);
+            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+
+            return new SingleSubstitutionFormat2SubTable(substituteGlyphIds, coverageTable);
+        }
+
+        public override ushort GetSubstition(ushort glyphId)
+        {
+            int index = this.coverageTable.GetCoverageIndex(glyphId);
+
+            if (index > -1)
+            {
+                return this.substituteGlyphs[index];
+            }
+
+            return glyphId;
         }
     }
 }
