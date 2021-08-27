@@ -89,7 +89,7 @@ namespace SixLabors.Fonts.Tables.General
 
             var featureList = FeatureListTable.Load(reader, position + featureListOffset);
 
-            var lookupList = LookupListTable.Load(reader, position + lookupListOffset, LoadLookupSubTable);
+            var lookupList = LookupListTable.Load(reader, position + lookupListOffset);
 
             // TODO: Feature Variations.
             return new GSubTable(scriptList, featureList, lookupList);
