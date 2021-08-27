@@ -27,7 +27,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         public static LookupListTable Load(
             BigEndianBinaryReader reader,
             long offset,
-            Func<BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
+            Func<ushort, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
         {
             // +----------+----------------------------+-----------------------------------------------------------------------------------------------------------------+
             // | Type     | Name                       | Description                                                                                                     |
@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         public static LookupTable Load(
             BigEndianBinaryReader reader,
             long offset,
-            Func<BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
+            Func<ushort, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
         {
             // +----------+--------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
             // | Type     | Name                           | Description                                                                                                                         |
@@ -116,7 +116,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
             for (int i = 0; i < lookupSubTables.Length; i++)
             {
-                lookupSubTables[i] = subTableLoader.Invoke(reader, offset + subTableOffsets[i]);
+                lookupSubTables[i] = subTableLoader.Invoke(lookupType, reader, offset + subTableOffsets[i]);
             }
 
             return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);

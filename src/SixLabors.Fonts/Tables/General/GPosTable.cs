@@ -95,7 +95,7 @@ namespace SixLabors.Fonts.Tables.General
             return new GPosTable(scriptList, featureList, lookupList);
         }
 
-        private static LookupSubTable LoadLookupSubTable(BigEndianBinaryReader reader, long offset)
+        private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
         {
             // TODO: Implement each sub table.
             throw new NotImplementedException();

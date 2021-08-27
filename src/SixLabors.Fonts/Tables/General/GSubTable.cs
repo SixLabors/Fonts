@@ -1,8 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.General.Gsub;
 
 namespace SixLabors.Fonts.Tables.General
 {
@@ -95,10 +95,15 @@ namespace SixLabors.Fonts.Tables.General
             return new GSubTable(scriptList, featureList, lookupList);
         }
 
-        private static LookupSubTable LoadLookupSubTable(BigEndianBinaryReader reader, long offset)
+        private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
         {
-            // TODO: Implement each sub table.
-            throw new NotImplementedException();
+            switch (lookupType)
+            {
+                case 7:
+                    return ExtensionSubstitutionSubTable.Load(reader, offset, LoadLookupSubTable);
+                default:
+                    return new NotImplementedSubTable();
+            }
         }
     }
 }
