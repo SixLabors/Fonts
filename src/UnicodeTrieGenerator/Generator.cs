@@ -61,6 +61,8 @@ namespace UnicodeTrieGenerator
             { "C", BidiPairedBracketType.Close }
         };
 
+        // Aliases and enum derived from
+        // https://www.unicode.org/Public/13.0.0/ucd/PropertyValueAliases.txt
         private static readonly Dictionary<string, GraphemeClusterClass> GraphemeClusterClassMap
             = new Dictionary<string, GraphemeClusterClass>(StringComparer.OrdinalIgnoreCase)
             {
@@ -81,6 +83,169 @@ namespace UnicodeTrieGenerator
                 { "ZWJ", GraphemeClusterClass.ZeroWidthJoiner }
             };
 
+        private static readonly Dictionary<string, Script> ScriptMap
+            = new Dictionary<string, Script>(StringComparer.OrdinalIgnoreCase)
+        {
+                { "Unknown", Script.Unknown },
+                { "Common", Script.Common },
+                { "Inherited", Script.Inherited },
+                { "Adlam", Script.Adlam },
+                { "Caucasian_Albanian", Script.CaucasianAlbanian },
+                { "Ahom", Script.Ahom },
+                { "Arabic", Script.Arabic },
+                { "Imperial_Aramaic", Script.ImperialAramaic },
+                { "Armenian", Script.Armenian },
+                { "Avestan", Script.Avestan },
+                { "Balinese", Script.Balinese },
+                { "Bamum", Script.Bamum },
+                { "Bassa_Vah", Script.BassaVah },
+                { "Batak", Script.Batak },
+                { "Bengali", Script.Bengali },
+                { "Bhaiksuki", Script.Bhaiksuki },
+                { "Bopomofo", Script.Bopomofo },
+                { "Brahmi", Script.Brahmi },
+                { "Braille", Script.Braille },
+                { "Buginese", Script.Buginese },
+                { "Buhid", Script.Buhid },
+                { "Chakma", Script.Chakma },
+                { "Canadian_Aboriginal", Script.CanadianAboriginal },
+                { "Carian", Script.Carian },
+                { "Cham", Script.Cham },
+                { "Cherokee", Script.Cherokee },
+                { "Chorasmian", Script.Chorasmian },
+                { "Coptic", Script.Coptic },
+                { "Cypriot", Script.Cypriot },
+                { "Cyrillic", Script.Cyrillic },
+                { "Devanagari", Script.Devanagari },
+                { "Dives_Akuru", Script.DivesAkuru },
+                { "Dogra", Script.Dogra },
+                { "Deseret", Script.Deseret },
+                { "Duployan", Script.Duployan },
+                { "Egyptian_Hieroglyphs", Script.EgyptianHieroglyphs },
+                { "Elbasan", Script.Elbasan },
+                { "Elymaic", Script.Elymaic },
+                { "Ethiopic", Script.Ethiopic },
+                { "Georgian", Script.Georgian },
+                { "Glagolitic", Script.Glagolitic },
+                { "Gunjala_Gondi", Script.GunjalaGondi },
+                { "Masaram_Gondi", Script.MasaramGondi },
+                { "Gothic", Script.Gothic },
+                { "Grantha", Script.Grantha },
+                { "Greek", Script.Greek },
+                { "Gujarati", Script.Gujarati },
+                { "Gurmukhi", Script.Gurmukhi },
+                { "Hangul", Script.Hangul },
+                { "Han", Script.Han },
+                { "Hanunoo", Script.Hanunoo },
+                { "Hatran", Script.Hatran },
+                { "Hebrew", Script.Hebrew },
+                { "Hiragana", Script.Hiragana },
+                { "Anatolian_Hieroglyphs", Script.AnatolianHieroglyphs },
+                { "Pahawh_Hmong", Script.PahawhHmong },
+                { "Nyiakeng_Puachue_Hmong", Script.NyiakengPuachueHmong },
+                { "Katakana_Or_Hiragana", Script.KatakanaOrHiragana },
+                { "Old_Hungarian", Script.OldHungarian },
+                { "Old_Italic", Script.OldItalic },
+                { "Javanese", Script.Javanese },
+                { "Kayah_Li", Script.KayahLi },
+                { "Katakana", Script.Katakana },
+                { "Kharoshthi", Script.Kharoshthi },
+                { "Khmer", Script.Khmer },
+                { "Khojki", Script.Khojki },
+                { "Khitan_Small_Script", Script.KhitanSmallScript },
+                { "Kannada", Script.Kannada },
+                { "Kaithi", Script.Kaithi },
+                { "Tai_Tham", Script.TaiTham },
+                { "Lao", Script.Lao },
+                { "Latin", Script.Latin },
+                { "Lepcha", Script.Lepcha },
+                { "Limbu", Script.Limbu },
+                { "Linear_A", Script.LinearA },
+                { "Linear_B", Script.LinearB },
+                { "Lisu", Script.Lisu },
+                { "Lycian", Script.Lycian },
+                { "Lydian", Script.Lydian },
+                { "Mahajani", Script.Mahajani },
+                { "Makasar", Script.Makasar },
+                { "Mandaic", Script.Mandaic },
+                { "Manichaean", Script.Manichaean },
+                { "Marchen", Script.Marchen },
+                { "Medefaidrin", Script.Medefaidrin },
+                { "Mende_Kikakui", Script.MendeKikakui },
+                { "Meroitic_Cursive", Script.MeroiticCursive },
+                { "Meroitic_Hieroglyphs", Script.MeroiticHieroglyphs },
+                { "Malayalam", Script.Malayalam },
+                { "Modi", Script.Modi },
+                { "Mongolian", Script.Mongolian },
+                { "Mro", Script.Mro },
+                { "Meetei_Mayek", Script.MeeteiMayek },
+                { "Multani", Script.Multani },
+                { "Myanmar", Script.Myanmar },
+                { "Nandinagari", Script.Nandinagari },
+                { "Old_North_Arabian", Script.OldNorthArabian },
+                { "Nabataean", Script.Nabataean },
+                { "Newa", Script.Newa },
+                { "Nko", Script.Nko },
+                { "Nushu", Script.Nushu },
+                { "Ogham", Script.Ogham },
+                { "Ol_Chiki", Script.OlChiki },
+                { "Old_Turkic", Script.OldTurkic },
+                { "Oriya", Script.Oriya },
+                { "Osage", Script.Osage },
+                { "Osmanya", Script.Osmanya },
+                { "Palmyrene", Script.Palmyrene },
+                { "Pau_Cin_Hau", Script.PauCinHau },
+                { "Old_Permic", Script.OldPermic },
+                { "Phags_Pa", Script.PhagsPa },
+                { "Inscriptional_Pahlavi", Script.InscriptionalPahlavi },
+                { "Psalter_Pahlavi", Script.PsalterPahlavi },
+                { "Phoenician", Script.Phoenician },
+                { "Miao", Script.Miao },
+                { "Inscriptional_Parthian", Script.InscriptionalParthian },
+                { "Rejang", Script.Rejang },
+                { "Hanifi_Rohingya", Script.HanifiRohingya },
+                { "Runic", Script.Runic },
+                { "Samaritan", Script.Samaritan },
+                { "Old_South_Arabian", Script.OldSouthArabian },
+                { "Saurashtra", Script.Saurashtra },
+                { "SignWriting", Script.SignWriting },
+                { "Shavian", Script.Shavian },
+                { "Sharada", Script.Sharada },
+                { "Siddham", Script.Siddham },
+                { "Khudawadi", Script.Khudawadi },
+                { "Sinhala", Script.Sinhala },
+                { "Sogdian", Script.Sogdian },
+                { "Old_Sogdian", Script.OldSogdian },
+                { "Sora_Sompeng", Script.SoraSompeng },
+                { "Soyombo", Script.Soyombo },
+                { "Sundanese", Script.Sundanese },
+                { "Syloti_Nagri", Script.SylotiNagri },
+                { "Syriac", Script.Syriac },
+                { "Tagbanwa", Script.Tagbanwa },
+                { "Takri", Script.Takri },
+                { "Tai_Le", Script.TaiLe },
+                { "New_Tai_Lue", Script.NewTaiLue },
+                { "Tamil", Script.Tamil },
+                { "Tangut", Script.Tangut },
+                { "Tai_Viet", Script.TaiViet },
+                { "Telugu", Script.Telugu },
+                { "Tifinagh", Script.Tifinagh },
+                { "Tagalog", Script.Tagalog },
+                { "Thaana", Script.Thaana },
+                { "Thai", Script.Thai },
+                { "Tibetan", Script.Tibetan },
+                { "Tirhuta", Script.Tirhuta },
+                { "Ugaritic", Script.Ugaritic },
+                { "Vai", Script.Vai },
+                { "Warang_Citi", Script.WarangCiti },
+                { "Wancho", Script.Wancho },
+                { "Old_Persian", Script.OldPersian },
+                { "Cuneiform", Script.Cuneiform },
+                { "Yezidi", Script.Yezidi },
+                { "Yi", Script.Yi },
+                { "Zanabazar_Square", Script.ZanabazarSquare }
+        };
+
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
@@ -99,6 +264,7 @@ namespace UnicodeTrieGenerator
             GenerateBidiBracketsTrie();
             GenerateLineBreakTrie();
             GenerateUnicodeCategoryTrie();
+            GenerateScriptTrie();
             GenerateGraphemeBreakTrie();
         }
 
@@ -296,6 +462,44 @@ namespace UnicodeTrieGenerator
             UnicodeTrie trie = builder.Freeze();
 
             using FileStream stream = GetStreamWriter("UnicodeCategory.trie");
+            trie.Save(stream);
+        }
+
+        /// <summary>
+        /// Generates the UnicodeTrie for the script code point ranges.
+        /// </summary>
+        private static void GenerateScriptTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+            var builder = new UnicodeTrieBuilder((uint)Script.Unknown);
+
+            // TODO: Figure out how to map to shared categories via ScripExtensions.txt
+            using (StreamReader sr = GetStreamReader("Scripts.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string point = match.Groups[3].Value;
+
+                        if (end?.Length == 0)
+                        {
+                            end = start;
+                        }
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)ScriptMap[point], true);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+
+            using FileStream stream = GetStreamWriter("Script.trie");
             trie.Save(stream);
         }
 

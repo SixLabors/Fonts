@@ -14,6 +14,7 @@ namespace SixLabors.Fonts.Unicode
         private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new Lazy<UnicodeTrie>(() => GetTrie("Bidi.trie"));
         private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new Lazy<UnicodeTrie>(() => GetTrie("Grapheme.trie"));
         private static readonly Lazy<UnicodeTrie> LazyLinebreakTrie = new Lazy<UnicodeTrie>(() => GetTrie("LineBreak.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new Lazy<UnicodeTrie>(() => GetTrie("Script.trie"));
         private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new Lazy<UnicodeTrie>(() => GetTrie("UnicodeCategory.trie"));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -24,6 +25,9 @@ namespace SixLabors.Fonts.Unicode
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static LineBreakClass GetLineBreakClass(int codePoint) => (LineBreakClass)LazyLinebreakTrie.Value.Get(codePoint);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Script GetScript(int codePoint) => (Script)LazyCategoryTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UnicodeCategory GetUnicodeCategory(int codePoint) => (UnicodeCategory)LazyCategoryTrie.Value.Get(codePoint);

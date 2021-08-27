@@ -12,6 +12,7 @@
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiPairedBracketType.cs" Link="BidiPairedBracketType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\GraphemeClusterClass.cs" Link="GraphemeClusterClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\LineBreakClass.cs" Link="LineBreakClass.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\Script.cs" Link="Script.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrie.cs" Link="UnicodeTrie.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrieBuilder.cs" Link="UnicodeTrieBuilder.cs" />
   </ItemGroup>
