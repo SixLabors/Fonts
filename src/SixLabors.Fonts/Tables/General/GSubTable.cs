@@ -96,14 +96,11 @@ namespace SixLabors.Fonts.Tables.General
         }
 
         private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
-        {
-            switch (lookupType)
+            => lookupType switch
             {
-                case 7:
-                    return ExtensionSubstitutionSubTable.Load(reader, offset, LoadLookupSubTable);
-                default:
-                    return new NotImplementedSubTable();
-            }
-        }
+                1 => SingleSubstitutionSubTable.Load(reader, offset),
+                7 => ExtensionSubstitutionSubTable.Load(reader, offset, LoadLookupSubTable),
+                _ => new NotImplementedSubTable(),
+            };
     }
 }
