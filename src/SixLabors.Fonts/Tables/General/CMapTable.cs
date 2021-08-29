@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
@@ -21,9 +22,12 @@ namespace SixLabors.Fonts.Tables.General
             [PlatformIDs.Macintosh] = 2,
         };
 
+        private readonly Format14SubTable[] format14SubTables = Array.Empty<Format14SubTable>();
+
         public CMapTable(IEnumerable<CMapSubTable> tables)
         {
             this.Tables = tables.OrderBy(t => GetPreferredPlatformOrder(t.Platform)).ToArray();
+            this.format14SubTables = this.Tables.OfType<Format14SubTable>().ToArray();
         }
 
         internal CMapSubTable[] Tables { get; }
@@ -35,7 +39,7 @@ namespace SixLabors.Fonts.Tables.General
         {
             foreach (CMapSubTable t in this.Tables)
             {
-                // keep looking until we have an index that's not the fallback.
+                // Keep looking until we have an index that's not the fallback.
                 if (t.TryGetGlyphId(codePoint, out glyphId))
                 {
                     return true;
@@ -46,12 +50,36 @@ namespace SixLabors.Fonts.Tables.General
             return false;
         }
 
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+        {
+            skipNextCodePoint = false;
+            if (this.TryGetGlyphId(codePoint, out glyphId))
+            {
+                // If there is a second codepoint, we are asked whether this is an UVS sequence
+                // - If true, return a glyph Id.
+                // - Otherwise, return 0.
+                if (nextCodePoint != default && this.format14SubTables.Length > 0)
+                {
+                    foreach (Format14SubTable? cmap14 in this.format14SubTables)
+                    {
+                        ushort pairGlyphId = cmap14.CharacterPairToGlyphId(codePoint, glyphId, nextCodePoint);
+                        if (pairGlyphId > 0)
+                        {
+                            glyphId = pairGlyphId;
+                            skipNextCodePoint = true;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public static CMapTable Load(FontReader reader)
         {
-            using (BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
-            {
-                return Load(binaryReader);
-            }
+            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
+            return Load(binaryReader);
         }
 
         public static CMapTable Load(BigEndianBinaryReader reader)
@@ -82,6 +110,9 @@ namespace SixLabors.Fonts.Tables.General
                         break;
                     case 12:
                         tables.AddRange(Format12SubTable.Load(encoding, reader));
+                        break;
+                    case 14:
+                        tables.AddRange(Format14SubTable.Load(encoding, reader));
                         break;
                 }
             }

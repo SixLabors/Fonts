@@ -286,6 +286,17 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Reads a 24-bit unsigned integer from the stream, using the bit converter
+        /// for this reader. 3 bytes are read.
+        /// </summary>
+        /// <returns>The 24-bit unsigned integer read.</returns>
+        public int ReadUInt24()
+        {
+            byte highByte = this.ReadByte();
+            return (highByte << 16) | this.ReadUInt16();
+        }
+
+        /// <summary>
         /// Reads a 32-bit unsigned integer from the stream, using the bit converter
         /// for this reader. 4 bytes are read.
         /// </summary>

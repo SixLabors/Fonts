@@ -157,8 +157,6 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
         {
-            // TODO: Check this. It looks like we could potentially return the metrics
-            // for the glyph at position zero when a matching codepoint cannot be found.
             bool foundGlyph = this.TryGetGlyphIndex(codePoint, out ushort idx);
             if (!foundGlyph)
             {
@@ -319,6 +317,9 @@ namespace SixLabors.Fonts
 
         internal bool TryGetGlyphIndex(CodePoint codePoint, out ushort glyphId)
             => this.cmap.TryGetGlyphId(codePoint, out glyphId);
+
+        internal bool TryGetGlyphIndex(CodePoint codePoint, CodePoint nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+            => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         internal bool TryGetColoredVectors(CodePoint codePoint, ushort idx, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
         {
