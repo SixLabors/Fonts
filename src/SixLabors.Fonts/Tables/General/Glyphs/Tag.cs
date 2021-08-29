@@ -58,7 +58,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public override string ToString()
         {
-            Span<char> chars = new char[4];
+            char[] chars = new char[4];
             chars[3] = (char)(this.Value & 0xFF);
             chars[2] = (char)((this.Value >> 8) & 0xFF);
             chars[1] = (char)((this.Value >> 16) & 0xFF);

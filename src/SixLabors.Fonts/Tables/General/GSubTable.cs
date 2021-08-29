@@ -97,23 +97,7 @@ namespace SixLabors.Fonts.Tables.General
             return new GSubTable(scriptList, featureList, lookupList);
         }
 
-        public bool TrySubstition(GlyphSubstitutionCollection collection, ushort index, int count)
-        {
-            foreach (LookupSubTable subTable in SubTables)
-            {
-                // We return after the first substitution, as explained in the spec:
-                // "A lookup is finished for a glyph after the client locates the target
-                // glyph or glyph context and performs a substitution, if specified."
-                // https://www.microsoft.com/typography/otspec/gsub.htm
-                if (subTable.TrySubstition(collection, index, count))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
+        // TODO: Replace this.
         public ushort GetSubstitution(CodePoint codePoint, ushort glyphId)
         {
             if (glyphId == 0)
@@ -126,20 +110,11 @@ namespace SixLabors.Fonts.Tables.General
             {
                 if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? scriptTag))
                 {
-
                 }
             }
 
             // Identify correct script tag, map enabled features for tag and look though correct lookup tables.
             throw new NotImplementedException();
         }
-
-        private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
-            => lookupType switch
-            {
-                1 => SingleSubstitutionSubTable.Load(reader, offset),
-                7 => ExtensionSubstitutionSubTable.Load(reader, offset, LoadLookupSubTable),
-                _ => new NotImplementedSubTable(),
-            };
     }
 }
