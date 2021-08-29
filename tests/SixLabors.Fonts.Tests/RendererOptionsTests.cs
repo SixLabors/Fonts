@@ -278,14 +278,14 @@ namespace SixLabors.Fonts.Tests
 
             AppliedFontStyle style = options.GetStyle(4, 10);
 
-            Assert.Equal(0, style.Start);
+            Assert.Equal(4, style.Start);
             Assert.Equal(9, style.End);
             Assert.Equal(font.Size, style.PointSize);
             Assert.Equal(4, style.TabWidth);
             Assert.True(style.ApplyKerning);
 
             Assert.Equal(abcFontInstance, style.MainFont);
-            Assert.Equal(2, style.FallbackFonts.Count());
+            Assert.Equal(2, style.FallbackFonts.Length);
             Assert.Contains(defFontInstance, style.FallbackFonts);
             Assert.Contains(ghiFontInstance, style.FallbackFonts);
         }

@@ -58,6 +58,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
     internal sealed class ScriptListTable
     {
+        // TODO: Expose these.
         private readonly LangSysTable? defaultLang;
         private readonly LangSysTable[] langSysTables;
 

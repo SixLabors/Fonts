@@ -17,7 +17,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
     /// </summary>
     internal abstract class CoverageTable
     {
-        public abstract int GetCoverageIndex(ushort glyphIndex);
+        public abstract int CoverageIndexOf(ushort glyphIndex);
 
         public abstract IEnumerator<ushort> GetEnumerator();
 
@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         private CoverageFormat1Table(ushort[] glyphArray)
             => this.glyphArray = glyphArray;
 
-        public override int GetCoverageIndex(ushort glyphIndex)
+        public override int CoverageIndexOf(ushort glyphIndex)
         {
             int n = Array.BinarySearch(this.glyphArray, glyphIndex);
             return n < 0 ? -1 : n;
@@ -75,7 +75,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         private CoverageFormat2Table(ushort[] glyphArray)
             => this.glyphArray = glyphArray;
 
-        public override int GetCoverageIndex(ushort glyphIndex)
+        public override int CoverageIndexOf(ushort glyphIndex)
         {
             int n = Array.BinarySearch(this.glyphArray, glyphIndex);
             return n < 0 ? -1 : n;

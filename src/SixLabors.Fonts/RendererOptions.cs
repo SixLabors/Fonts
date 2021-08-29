@@ -173,7 +173,7 @@ namespace SixLabors.Fonts
 
             return new AppliedFontStyle
             {
-                Start = 0,
+                Start = index,
                 End = length - 1,
                 PointSize = this.Font.Size,
                 MainFont = this.Font.FontMetrics,

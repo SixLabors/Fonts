@@ -17,6 +17,8 @@ namespace SixLabors.Fonts
         public int End;
         public bool ApplyKerning;
 
+        // TODO: This should accept all the glyphs in the range to
+        // allow complex substitutions.
         public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint, ColorFontSupport colorFontOptions)
         {
             GlyphMetrics glyph = this.MainFont.GetGlyphMetrics(codePoint);

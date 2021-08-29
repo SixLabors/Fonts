@@ -1,8 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Tables.General.Gsub;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.General
 {
@@ -93,6 +95,43 @@ namespace SixLabors.Fonts.Tables.General
 
             // TODO: Feature Variations.
             return new GSubTable(scriptList, featureList, lookupList);
+        }
+
+        public bool TrySubstition(GlyphSubstitutionCollection collection, ushort index, int count)
+        {
+            foreach (LookupSubTable subTable in SubTables)
+            {
+                // We return after the first substitution, as explained in the spec:
+                // "A lookup is finished for a glyph after the client locates the target
+                // glyph or glyph context and performs a substitution, if specified."
+                // https://www.microsoft.com/typography/otspec/gsub.htm
+                if (subTable.TrySubstition(collection, index, count))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public ushort GetSubstitution(CodePoint codePoint, ushort glyphId)
+        {
+            if (glyphId == 0)
+            {
+                return glyphId;
+            }
+
+            Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
+            for (int i = 0; i < tags.Length; i++)
+            {
+                if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? scriptTag))
+                {
+
+                }
+            }
+
+            // Identify correct script tag, map enabled features for tag and look though correct lookup tables.
+            throw new NotImplementedException();
         }
 
         private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
