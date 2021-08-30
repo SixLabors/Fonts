@@ -121,10 +121,15 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the width relative to the current DPI at which text will automatically wrap onto a newline
         /// </summary>
-        /// <value>
-        ///     if value is -1 then wrapping is disabled.
-        /// </value>
+        /// <remarks>
+        /// If value is -1 then wrapping is disabled.
+        /// </remarks>
         public float WrappingWidth { get; set; } = -1;
+
+        /// <summary>
+        /// Gets or sets the word breaking mode to use when wrapping text.
+        /// </summary>
+        public WordBreaking WordBreaking { get; set; }
 
         /// <summary>
         /// Gets or sets the line spacing. Applied as a multiple of the line height.

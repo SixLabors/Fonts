@@ -72,9 +72,9 @@ namespace SixLabors.Fonts
             float left = glyphLayouts.Min(x => x.Location.X);
             float right = glyphLayouts.Max(x => x.Location.X + x.Width);
 
-            // location is bottom left of the line
+            // Location is bottom left of the line. We offset the bottom by the top to handle the ascender
             float top = glyphLayouts.Min(x => x.Location.Y - x.LineHeight);
-            float bottom = glyphLayouts.Max(x => x.Location.Y - x.LineHeight + x.Height);
+            float bottom = glyphLayouts.Max(x => x.Location.Y - x.LineHeight + x.Height) - top;
 
             Vector2 topLeft = new Vector2(left, top) * dpi;
             Vector2 bottomRight = new Vector2(right, bottom) * dpi;

@@ -28,6 +28,101 @@ namespace SixLabors.Fonts.Unicode
         public static bool IsBmpCodePoint(uint value) => value <= 0xFFFFu;
 
         /// <summary>
+        /// Returns <see langword="true"/> if <paramref name="value"/> is a
+        /// Chinese/Japanese/Korean (CJK) character.
+        /// </summary>
+        /// <remarks>
+        /// <see href="https://blog.ceshine.net/post/cjk-unicode/"/>
+        /// <see href="https://en.wikipedia.org/wiki/Hiragana_%28Unicode_block%29"/>
+        /// <see href="https://en.wikipedia.org/wiki/Katakana_(Unicode_block)"/>
+        /// <see href="https://en.wikipedia.org/wiki/Hangul_Syllables"/>
+        /// <see href="https://en.wikipedia.org/wiki/CJK_Unified_Ideographs"/>
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsCJKCodePoint(uint value)
+        {
+            // Hiragana
+            if (IsInRangeInclusive(value, 0x3040u, 0x309Fu))
+            {
+                return true;
+            }
+
+            // Katakana
+            if (IsInRangeInclusive(value, 0x30A0u, 0x30FFu))
+            {
+                return true;
+            }
+
+            // Hangul Syllables
+            if (IsInRangeInclusive(value, 0xAC00u, 0xD7A3u))
+            {
+                return true;
+            }
+
+            // CJK Unified Ideographs
+            if (IsInRangeInclusive(value, 0x4E00u, 0x9FFFu))
+            {
+                return true;
+            }
+
+            // CJK Unified Ideographs Extension A
+            if (IsInRangeInclusive(value, 0x3400u, 0x4DBFu))
+            {
+                return true;
+            }
+
+            // CJK Unified Ideographs Extension B
+            if (IsInRangeInclusive(value, 0x20000u, 0x2A6DFu))
+            {
+                return true;
+            }
+
+            // CJK Unified Ideographs Extension C
+            if (IsInRangeInclusive(value, 0x2A700u, 0x2B73Fu))
+            {
+                return true;
+            }
+
+            // CJK Unified Ideographs Extension D
+            if (IsInRangeInclusive(value, 0x2B740u, 0x2B81Fu))
+            {
+                return true;
+            }
+
+            // CJK Unified Ideographs Extension E
+            if (IsInRangeInclusive(value, 0x2B820u, 0x2CEAFu))
+            {
+                return true;
+            }
+
+            // CJK Unified Ideographs Extension F
+            if (IsInRangeInclusive(value, 0x2CEB0u, 0x2EBEFu))
+            {
+                return true;
+            }
+
+            // CJK Unified Ideographs Extension G
+            if (IsInRangeInclusive(value, 0x30000u, 0x3134Fu))
+            {
+                return true;
+            }
+
+            // CJK Compatibility Ideographs
+            if (IsInRangeInclusive(value, 0xF900u, 0xFAFFu))
+            {
+                return true;
+            }
+
+            // CJK Compatibility Ideographs Supplement
+            if (IsInRangeInclusive(value, 0x2F800u, 0x2FA1Fu))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Returns the Unicode plane (0 through 16, inclusive) which contains this code point.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

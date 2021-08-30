@@ -63,7 +63,7 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(glyphMetrics, glyphMetrics1);
 
-            Assert.Equal(codePoint, glyphMetrics.Codepoint);
+            Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
             Assert.Equal(glyphMetrics.UnitsPerEm * 72F, glyphMetrics.ScaleFactor);
             Assert.Equal(1296, glyphMetrics.AdvanceWidth);
@@ -91,7 +91,7 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(glyphMetrics, glyphMetrics1);
 
-            Assert.Equal(codePoint, glyphMetrics.Codepoint);
+            Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
             Assert.Equal(glyphMetrics.UnitsPerEm * 72F, glyphMetrics.ScaleFactor);
             Assert.Equal(1296, glyphMetrics.AdvanceWidth);
@@ -120,7 +120,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(glyphMetrics, glyphMetrics1);
 
             // Position 0.
-            Assert.Equal(codePoint, glyphMetrics.Codepoint);
+            Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
             Assert.Equal(glyphMetrics.UnitsPerEm * 72F, glyphMetrics.ScaleFactor);
             Assert.Equal(364, glyphMetrics.AdvanceWidth);
