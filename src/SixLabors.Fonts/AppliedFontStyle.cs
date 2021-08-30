@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
@@ -9,6 +10,8 @@ namespace SixLabors.Fonts
 {
     internal struct AppliedFontStyle
     {
+        private Dictionary<CodePoint, ushort> glyphs;
+
         public IFontMetrics[] FallbackFonts;
         public IFontMetrics MainFont;
         public float PointSize;
@@ -17,8 +20,63 @@ namespace SixLabors.Fonts
         public int End;
         public bool ApplyKerning;
 
-        // TODO: This should accept all the glyphs in the range to
-        // allow complex substitutions.
+        public void GatherGlyphIds(ReadOnlySpan<char> text)
+        {
+            var collection = new GlyphSubstitutionCollection();
+
+            // Enumerate through each grapheme in the text.
+            int graphemeIndex;
+            int codePointIndex = 0;
+            var graphemeEnumerator = new SpanGraphemeEnumerator(text.Slice(this.Start, this.End - this.Start));
+            for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
+            {
+                int graphemeMax = graphemeEnumerator.Current.Length - 1;
+                int graphemCodePointIndex = 0;
+                int charIndex = 0;
+
+                // Now enumerate through each codepoint in the grapheme.
+                bool skipNextCodePoint = false;
+                var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
+                while (codePointEnumerator.MoveNext())
+                {
+                    if (skipNextCodePoint)
+                    {
+                        continue;
+                    }
+
+                    int charsConsumed = 0;
+                    CodePoint current = codePointEnumerator.Current;
+                    charIndex += current.Utf16SequenceLength;
+                    CodePoint next = graphemCodePointIndex < graphemeMax
+                        ? CodePoint.DecodeFromUtf16At(graphemeEnumerator.Current, charIndex, out charsConsumed)
+                        : default;
+
+                    charIndex += charsConsumed;
+
+                    // Get the glyph index for the collection and add to the collection.
+                    if (!this.MainFont.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint))
+                    {
+                        foreach (IFontMetrics? f in this.FallbackFonts)
+                        {
+                            if (f.TryGetGlyphId(current, next, out glyphId, out skipNextCodePoint))
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    collection.AddGlyph(codePointIndex, glyphId);
+
+                    codePointIndex++;
+                    graphemCodePointIndex++;
+                }
+            }
+
+            // TODO:
+            // 1: Perform the actual substitution on the collection via GSUB.
+            // 2: Create a map so we can iterate through the codepoints again matching the correct codepoint.
+        }
+
         public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint, ColorFontSupport colorFontOptions)
         {
             GlyphMetrics glyph = this.MainFont.GetGlyphMetrics(codePoint);

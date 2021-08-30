@@ -69,6 +69,14 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public short AdvanceHeightMax => this.metrics.Value.AdvanceHeightMax;
 
+        /// <inheritdoc/>
+        public bool TryGetGlyphId(
+            CodePoint codePoint,
+            CodePoint nextCodePoint,
+            out ushort glyphId,
+            out bool skipNextCodePoint)
+            => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint;
+
         /// <inheritdoc />
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
               => this.metrics.Value.GetGlyphMetrics(codePoint);

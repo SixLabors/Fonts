@@ -84,11 +84,11 @@ namespace SixLabors.Fonts
             // and then replace with a single glyph.
             this.glyphIndices.RemoveRange(index, count);
             this.glyphIndices.Insert(index, newGlyphIndex);
-            GlyphIndexToCodePoint firstRemove = this.glyphIndexToCodePointMap[index];
+            GlyphIndexToCodePoint intitial = this.glyphIndexToCodePointMap[index];
 
-            var newMap = new GlyphIndexToCodePoint(firstRemove.CodePointOffset, (ushort)count);
+            var replacement = new GlyphIndexToCodePoint(intitial.CodePointOffset, (ushort)count);
             this.glyphIndexToCodePointMap.RemoveRange(index, count);
-            this.glyphIndexToCodePointMap.Insert(index, newMap);
+            this.glyphIndexToCodePointMap.Insert(index, replacement);
         }
 
         /// <summary>

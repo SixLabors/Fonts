@@ -71,6 +71,8 @@ namespace SixLabors.Fonts.Tables.General
                         }
                     }
                 }
+
+                return true;
             }
 
             return false;

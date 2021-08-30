@@ -318,7 +318,8 @@ namespace SixLabors.Fonts
         internal bool TryGetGlyphIndex(CodePoint codePoint, out ushort glyphId)
             => this.cmap.TryGetGlyphId(codePoint, out glyphId);
 
-        internal bool TryGetGlyphIndex(CodePoint codePoint, CodePoint nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+        /// <inheritdoc/>
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
             => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         internal bool TryGetColoredVectors(CodePoint codePoint, ushort idx, [NotNullWhen(true)] out GlyphMetrics[]? vectors)

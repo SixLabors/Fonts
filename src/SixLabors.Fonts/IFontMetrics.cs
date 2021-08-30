@@ -62,6 +62,24 @@ namespace SixLabors.Fonts
         short AdvanceHeightMax { get; }
 
         /// <summary>
+        /// Gets the specified glyph id matching the codepoint pair.
+        /// </summary>
+        /// <param name="codePoint">The codepoint.</param>
+        /// <param name="nextCodePoint">The next codepoint. Can be default.</param>
+        /// <param name="glyphId">
+        /// When this method returns, contains the glyph id associated with the specified codepoint,
+        /// if the codepoint is found; otherwise, the default value for the type of the glyphId parameter.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <param name="skipNextCodePoint">
+        /// When this method return, contains a value indicating whether the next codepoint should be skipped.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains a glyph for the specified codepoint; otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint nextCodePoint, out ushort glyphId, out bool skipNextCodePoint);
+
+        /// <summary>
         /// Gets the glyph metrics for a given code point.
         /// </summary>
         /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
