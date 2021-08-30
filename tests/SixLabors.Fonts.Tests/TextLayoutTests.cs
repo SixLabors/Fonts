@@ -185,6 +185,33 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(height, size.Height, 4);
         }
 
+#if OS_WINDOWS
+        [Theory]
+        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", WordBreaking.Normal, 120.4883, 870.6344)]
+        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", WordBreaking.BreakAll, 143.4863, 399.9999)]
+        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", WordBreaking.KeepAll, 70.8887, 699.9998)]
+        public void MeasureTextWordBreak(string text, WordBreaking wordBreaking, float height, float width)
+        {
+            // Testing using Windows only to ensure that actual glyphs are rendered
+            // against known physically tested values.
+            FontFamily arial = SystemFonts.Get("Arial");
+            FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
+
+            Font font = arial.CreateFont(20);
+            FontRectangle size = TextMeasurer.Measure(
+                text,
+                new RendererOptions(font, 72)
+                {
+                    WrappingWidth = 400,
+                    WordBreaking = wordBreaking,
+                    FallbackFontFamilies = new[] { jhengHei }
+                });
+
+            Assert.Equal(width, size.Width, 4);
+            Assert.Equal(height, size.Height, 4);
+        }
+#endif
+
         [Theory]
         [InlineData("ab", 477, 1081, false)] // no kerning rules defined for lowercase ab so widths should stay the same
         [InlineData("ab", 477, 1081, true)]

@@ -68,7 +68,6 @@ namespace SixLabors.Fonts
             float lineMaxAscender = 0f;
             float lineMaxDescender = 0f;
             Vector2 location = Vector2.Zero;
-            float lineHeightOfFirstLine = 0;
 
             // Remember where the top of the layouted text is for accurate vertical alignment.
             // This is important because there is considerable space between the lineHeight at the glyph's ascender.
@@ -79,6 +78,9 @@ namespace SixLabors.Fonts
             int lastWrappableLocation = -1;
             int nextWrappableLocation = codePointCount;
             bool nextWrappableRequired = false;
+            bool shouldWrap = options.WrappingWidth > 0;
+            bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
+            bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
             bool startOfLine = true;
             float totalHeight = 0;
 
@@ -95,11 +97,11 @@ namespace SixLabors.Fonts
             int codePointIndex = 0;
 
             // Enumerate through each grapheme in the text.
-            // TODO: In the future we can use word-break settings to split graphemes when required.
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
             for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
             {
                 // Now enumerate through each codepoint in the grapheme.
+                int graphemeCodePointIndex = 0;
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
@@ -149,13 +151,7 @@ namespace SixLabors.Fonts
 
                     if (firstLine)
                     {
-                        // Reset the line height for the first line to prevent initial lead.
-                        float unspacedLineHeight = lineHeight / options.LineSpacing;
-                        if (unspacedLineHeight > lineHeightOfFirstLine)
-                        {
-                            lineHeightOfFirstLine = unspacedLineHeight;
-                        }
-
+                        // Set the position for the first line.
                         switch (options.VerticalAlignment)
                         {
                             case VerticalAlignment.Top:
@@ -170,19 +166,29 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    if ((options.WrappingWidth > 0 && nextWrappableLocation == codePointIndex) || nextWrappableRequired)
+                    // Keep a record of where to wrap text and ensure that no line starts with white space
+                    if ((shouldWrap && (breakAll || nextWrappableLocation == codePointIndex))
+                        || nextWrappableRequired)
                     {
-                        // Keep a record of where to wrap text and ensure that no line starts with white space
-                        for (int j = layout.Count - 1; j >= 0; j--)
+                        if (!(keepAll && UnicodeUtility.IsCJKCodePoint((uint)glyph.CodePoint.Value)))
                         {
-                            if (!layout[j].IsWhiteSpace())
+                            // We don't want to ever break between codepoints within a grapheme.
+                            if (graphemeCodePointIndex == 0)
                             {
-                                lastWrappableLocation = j + 1;
-                                break;
+                                for (int j = layout.Count - 1; j >= 0; j--)
+                                {
+                                    GlyphLayout item = layout[j];
+                                    if (!item.IsWhiteSpace())
+                                    {
+                                        lastWrappableLocation = j + 1;
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }
 
+                    // Find the next line break.
                     if (nextWrappableLocation == codePointIndex && lineBreakEnumerator.MoveNext())
                     {
                         LineBreak b = lineBreakEnumerator.Current;
@@ -198,12 +204,11 @@ namespace SixLabors.Fonts
                         Vector2 glyphLocation = location;
                         if (spanStyle.ApplyKerning && previousGlyph != null)
                         {
-                            // if there is special instructions for this glyph pair use that width
+                            // If there is special instructions for this glyph pair use that width
                             Vector2 scaledOffset = spanStyle.GetOffset(glyph, previousGlyph) * spanStyle.PointSize / scale;
-
                             glyphLocation += scaledOffset;
 
-                            // only fix the 'X' of the current tracked location but use the actual 'X'/'Y' of the offset
+                            // Only fix the 'X' of the current tracked location but use the actual 'X'/'Y' of the offset
                             location.X = glyphLocation.X;
                         }
 
@@ -211,7 +216,15 @@ namespace SixLabors.Fonts
                         {
                             float w = g.AdvanceWidth * spanStyle.PointSize / scale;
                             float h = g.AdvanceHeight * spanStyle.PointSize / scale;
-                            layout.Add(new GlyphLayout(graphemeIndex, codePoint, new Glyph(g, spanStyle.PointSize), glyphLocation, w, h, lineHeight, startOfLine));
+                            layout.Add(new GlyphLayout(
+                                graphemeIndex,
+                                codePoint,
+                                new Glyph(g, spanStyle.PointSize),
+                                glyphLocation,
+                                w,
+                                h,
+                                lineHeight,
+                                startOfLine));
 
                             if (w > glyphWidth)
                             {
@@ -224,8 +237,11 @@ namespace SixLabors.Fonts
                         // Move forward the actual width of the glyph, we are retaining the baseline
                         location.X += glyphWidth;
 
-                        // If the word extended pass the end of the box, wrap it
-                        if (location.X >= maxWidth && lastWrappableLocation > 0
+                        // If the word extended pass the end of the box, wrap it.
+                        // We don't want to ever break between codepoints within a grapheme.
+                        if (graphemeCodePointIndex == 0
+                            && location.X >= maxWidth
+                            && lastWrappableLocation > 0
                             && lastWrappableLocation < layout.Count)
                         {
                             float wrappingOffset = layout[lastWrappableLocation].Location.X;
@@ -243,18 +259,8 @@ namespace SixLabors.Fonts
                                 }
 
                                 GlyphLayout current = layout[j];
-                                var wrapped = new GlyphLayout(
-                                    current.GraphemeIndex,
-                                    current.CodePoint,
-                                    current.Glyph,
-                                    new Vector2(current.Location.X - wrappingOffset, current.Location.Y + lineHeight),
-                                    current.Width,
-                                    current.Height,
-                                    current.LineHeight,
-                                    startOfLine);
-
+                                var wrapped = GlyphLayout.Offset(current, new Vector2(-wrappingOffset, lineHeight), startOfLine);
                                 startOfLine = false;
-
                                 location.X = wrapped.Location.X + wrapped.Width;
                                 layout[j] = wrapped;
                             }
@@ -360,6 +366,7 @@ namespace SixLabors.Fonts
                     }
 
                     codePointIndex++;
+                    graphemeCodePointIndex++;
                 }
             }
 
@@ -390,14 +397,15 @@ namespace SixLabors.Fonts
                         int currentGraphemeIndex = current.GraphemeIndex;
                         if (current.StartOfLine && (currentGraphemeIndex != graphemeIndex))
                         {
-                            // Leading graphemes are made up of multiple glyphs all marked as 'StartOfLine so we only
+                            // Leading graphemes can be made up of multiple glyphs all marked as 'StartOfLine so we only
                             // break when we are sure we have entered a new cluster or previously defined break.
                             break;
                         }
 
-                        width = current.Location.X + current.Width;
+                        width = Math.Max(width, current.Location.X + current.Width);
                     }
 
+                    // Calculate an offset from the 'origin' based on TextAlignment for each line
                     switch (options.HorizontalAlignment)
                     {
                         case HorizontalAlignment.Left:
@@ -412,16 +420,7 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                // TODO: calculate an offset from the 'origin' based on TextAlignment for each line
-                layout[i] = new GlyphLayout(
-                    glyphLayout.GraphemeIndex,
-                    glyphLayout.CodePoint,
-                    glyphLayout.Glyph,
-                    glyphLayout.Location + offsetX + origin,
-                    glyphLayout.Width,
-                    glyphLayout.Height,
-                    glyphLayout.LineHeight,
-                    glyphLayout.StartOfLine);
+                layout[i] = GlyphLayout.Offset(glyphLayout, offsetX + origin, glyphLayout.StartOfLine);
             }
 
             return layout;
