@@ -15,9 +15,9 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
     /// </summary>
     internal sealed class ScriptList : Dictionary<uint, ScriptListTable>
     {
-        private ScriptList()
-        {
-        }
+        private readonly uint scriptTag;
+
+        private ScriptList(uint scriptTag) => this.scriptTag = scriptTag;
 
         public static ScriptList Load(BigEndianBinaryReader reader, long offset)
         {
@@ -32,7 +32,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             reader.Seek(offset, SeekOrigin.Begin);
 
             ushort scriptCount = reader.ReadUInt16();
-            var scriptList = new ScriptList();
 
             // Read records (tags and table offsets)
             uint[] scriptTags = new uint[scriptCount];
@@ -45,31 +44,40 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             }
 
             // Read each table and add it to the dictionary
+            ScriptList? scriptList = null;
             for (int i = 0; i < scriptCount; ++i)
             {
                 uint scriptTag = scriptTags[i];
+                if (i == 0)
+                {
+                    scriptList = new ScriptList(scriptTag);
+                }
+
                 var scriptTable = ScriptListTable.Load(scriptTag, reader, offset + scriptOffsets[i]);
-                scriptList.Add(scriptTag, scriptTable);
+                scriptList!.Add(scriptTag, scriptTable);
             }
 
-            return scriptList;
+            return scriptList!;
         }
+
+        // Dictionaries are unordered.
+        public ScriptListTable Default() => this[this.scriptTag];
     }
 
     internal sealed class ScriptListTable
     {
-        // TODO: Expose these.
-        private readonly LangSysTable? defaultLang;
-        private readonly LangSysTable[] langSysTables;
-
         private ScriptListTable(LangSysTable[] langSysTables, LangSysTable? defaultLang, uint scriptTag)
         {
-            this.langSysTables = langSysTables;
-            this.defaultLang = defaultLang;
+            this.LangSysTables = langSysTables;
+            this.DefaultLangSysTable = defaultLang;
             this.ScriptTag = scriptTag;
         }
 
         public uint ScriptTag { get; }
+
+        public LangSysTable? DefaultLangSysTable { get; }
+
+        public LangSysTable[] LangSysTables { get; }
 
         public static ScriptListTable Load(uint scriptTag, BigEndianBinaryReader reader, long offset)
         {

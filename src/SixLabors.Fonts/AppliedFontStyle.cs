@@ -10,8 +10,6 @@ namespace SixLabors.Fonts
 {
     internal struct AppliedFontStyle
     {
-        private Dictionary<CodePoint, ushort> glyphs;
-
         public IFontMetrics[] FallbackFonts;
         public IFontMetrics MainFont;
         public float PointSize;

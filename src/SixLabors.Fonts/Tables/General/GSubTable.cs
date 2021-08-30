@@ -97,23 +97,47 @@ namespace SixLabors.Fonts.Tables.General
             return new GSubTable(scriptList, featureList, lookupList);
         }
 
-        // TODO: Replace this.
-        public ushort GetSubstitution(CodePoint codePoint, ushort glyphId)
+        // TODO: We only pass the codepoint here to get the script.
+        // We should map that when building the collection.
+        public void ApplySubstition(CodePoint codePoint, GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            if (glyphId == 0)
-            {
-                return glyphId;
-            }
-
+            ScriptListTable scriptListTable = this.ScriptList.Default();
             Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
             for (int i = 0; i < tags.Length; i++)
             {
-                if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? scriptTag))
+                if (this.ScriptList.TryGetValue(tags[i].Value, out scriptListTable))
                 {
+                    break;
                 }
             }
 
-            // Identify correct script tag, map enabled features for tag and look though correct lookup tables.
+            LangSysTable[] langSysTables = scriptListTable.LangSysTables;
+            for (int i = 0; i < langSysTables.Length; i++)
+            {
+                ushort[] featureIndices = langSysTables[i].FeatureIndices;
+                for (int j = 0; j < featureIndices.Length; j++)
+                {
+                    // TODO: Should we be applying all features?
+                    ushort[] lookupListIndices = this.FeatureList.FeatureTables[featureIndices[j]].LookupListIndices;
+                    for (int k = 0; k < lookupListIndices.Length; k++)
+                    {
+                        // TODO: Consider caching the relevant langtables per script.
+                        // There's a lot of repetitive checks here.
+                        LookupSubTable[] lookupSubTables = this.LookupList.LookupTables[lookupListIndices[k]].LookupSubTables;
+                        for (int l = 0; l < lookupSubTables.Length; l++)
+                        {
+                            if (lookupSubTables[l].TrySubstition(collection, index, count))
+                            {
+                                // A lookup is finished for a glyph after the client locates the target
+                                // glyph or glyph context and performs a substitution, if specified.
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // TODO: Default LangSysTable and cleanup.
             throw new NotImplementedException();
         }
     }

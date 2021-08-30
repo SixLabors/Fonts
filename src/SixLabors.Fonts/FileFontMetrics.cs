@@ -75,7 +75,7 @@ namespace SixLabors.Fonts
             CodePoint nextCodePoint,
             out ushort glyphId,
             out bool skipNextCodePoint)
-            => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint;
+            => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         /// <inheritdoc />
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)

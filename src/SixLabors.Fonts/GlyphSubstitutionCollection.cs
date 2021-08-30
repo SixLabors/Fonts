@@ -119,6 +119,7 @@ namespace SixLabors.Fonts
         /// </summary>
         private readonly struct GlyphIndexToCodePoint
         {
+            // TODO: We could potentially store the codepoint script here or even the codepoint itself.
             public GlyphIndexToCodePoint(ushort codePointOffset, ushort length)
             {
                 this.CodePointOffset = codePointOffset;
