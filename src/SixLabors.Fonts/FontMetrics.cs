@@ -27,6 +27,7 @@ namespace SixLabors.Fonts
         private readonly GlyphMetrics[] glyphCache;
         private readonly GlyphMetrics[][]? colorGlyphCache;
         private readonly KerningTable kerning;
+        private readonly GSubTable? gSubTable;
         private readonly ColrTable? colrTable;
         private readonly CpalTable? cpalTable;
 
@@ -43,6 +44,7 @@ namespace SixLabors.Fonts
         /// <param name="verticalMetrics">The vertical metrics table.</param>
         /// <param name="head">The head table.</param>
         /// <param name="kern">The kerning table.</param>
+        /// <param name="gSubTable">The glyph subsitution table.</param>
         /// <param name="colrTable">The COLR table</param>
         /// <param name="cpalTable">The CPAL table</param>
         internal FontMetrics(
@@ -56,6 +58,7 @@ namespace SixLabors.Fonts
             VerticalMetricsTable? verticalMetrics,
             HeadTable head,
             KerningTable kern,
+            GSubTable? gSubTable,
             ColrTable? colrTable,
             CpalTable? cpalTable)
         {
@@ -122,6 +125,7 @@ namespace SixLabors.Fonts
             this.AdvanceHeightMax = verticalHeadTable == null ? this.LineHeight : verticalHeadTable.AdvanceHeightMax;
 
             this.kerning = kern;
+            this.gSubTable = gSubTable;
             this.colrTable = colrTable;
             this.cpalTable = cpalTable;
             this.Description = new FontDescription(nameTable, os2, head);
@@ -157,7 +161,7 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
         {
-            bool foundGlyph = this.TryGetGlyphIndex(codePoint, out ushort idx);
+            bool foundGlyph = this.TryGetGlyphId(codePoint, out ushort idx);
             if (!foundGlyph)
             {
                 idx = 0;
@@ -264,6 +268,8 @@ namespace SixLabors.Fonts
                 cpalTable = reader.TryGetTable<CpalTable>(); // colr
             }
 
+            GSubTable? gSub = reader.TryGetTable<GSubTable>();
+
             // post - PostScript information
             // gasp - Grid-fitting/Scan-conversion (optional table)
             // PCLT - PCL 5 data
@@ -279,6 +285,7 @@ namespace SixLabors.Fonts
                 verticalMetrics,
                 head,
                 kern,
+                gSub,
                 colrTable,
                 cpalTable);
         }
@@ -315,12 +322,24 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
-        internal bool TryGetGlyphIndex(CodePoint codePoint, out ushort glyphId)
+        internal bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
             => this.cmap.TryGetGlyphId(codePoint, out glyphId);
 
         /// <inheritdoc/>
-        public bool TryGetGlyphId(CodePoint codePoint, CodePoint nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
             => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+
+        /// <inheritdoc/>
+        public void ApplySubstition(IGlyphSubstitutionCollection collection)
+        {
+            if (this.gSubTable != null)
+            {
+                for (ushort index = 0; index < collection.Count; index++)
+                {
+                    this.gSubTable.ApplySubstition(collection, index, collection.Count - index);
+                }
+            }
+        }
 
         internal bool TryGetColoredVectors(CodePoint codePoint, ushort idx, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
         {

@@ -45,6 +45,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, string.Empty, pointSize: 72, fallbackFonts: new[] { emojiFont });
             RenderText(font2, "😀 Hello World! 😀", pointSize: 72, fallbackFonts: new[] { emojiFont });
 #endif
+
             // fallback font tests
             RenderTextProcessor(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
             RenderText(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });

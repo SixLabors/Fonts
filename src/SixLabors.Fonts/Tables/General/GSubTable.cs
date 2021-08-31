@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Tables.General.Gsub;
 using SixLabors.Fonts.Unicode;
@@ -99,10 +98,12 @@ namespace SixLabors.Fonts.Tables.General
 
         // TODO: We only pass the codepoint here to get the script.
         // We should map that when building the collection.
-        public void ApplySubstition(CodePoint codePoint, GlyphSubstitutionCollection collection, ushort index, int count)
+        public void ApplySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
         {
+            collection.GetGlyphIdAndRange(index, out ushort _, out CodePointRange map);
+
             ScriptListTable scriptListTable = this.ScriptList.Default();
-            Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
+            Tag[] tags = UnicodeScriptTagMap.Instance[map.Script];
             for (int i = 0; i < tags.Length; i++)
             {
                 if (this.ScriptList.TryGetValue(tags[i].Value, out scriptListTable))
@@ -111,7 +112,21 @@ namespace SixLabors.Fonts.Tables.General
                 }
             }
 
-            LangSysTable[] langSysTables = scriptListTable.LangSysTables;
+            LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
+            if (defaultLangSysTable != null && this.TryApplyFeatureSubstition(collection, index, count, defaultLangSysTable))
+            {
+                return;
+            }
+
+            this.TryApplyFeatureSubstition(collection, index, count, scriptListTable.LangSysTables);
+        }
+
+        private bool TryApplyFeatureSubstition(
+            IGlyphSubstitutionCollection collection,
+            ushort index,
+            int count,
+            params LangSysTable[] langSysTables)
+        {
             for (int i = 0; i < langSysTables.Length; i++)
             {
                 ushort[] featureIndices = langSysTables[i].FeatureIndices;
@@ -123,22 +138,22 @@ namespace SixLabors.Fonts.Tables.General
                     {
                         // TODO: Consider caching the relevant langtables per script.
                         // There's a lot of repetitive checks here.
-                        LookupSubTable[] lookupSubTables = this.LookupList.LookupTables[lookupListIndices[k]].LookupSubTables;
+                        LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
+                        LookupSubTable[] lookupSubTables = lookupTable.LookupSubTables;
                         for (int l = 0; l < lookupSubTables.Length; l++)
                         {
                             if (lookupSubTables[l].TrySubstition(collection, index, count))
                             {
                                 // A lookup is finished for a glyph after the client locates the target
                                 // glyph or glyph context and performs a substitution, if specified.
-                                return;
+                                return true;
                             }
                         }
                     }
                 }
             }
 
-            // TODO: Default LangSysTable and cleanup.
-            throw new NotImplementedException();
+            return false;
         }
     }
 }

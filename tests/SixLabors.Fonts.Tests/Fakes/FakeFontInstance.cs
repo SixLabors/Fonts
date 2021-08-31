@@ -29,6 +29,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                   GenerateHeadTable(),
                   new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]),
                   null,
+                  null,
                   null)
         {
         }
@@ -44,7 +45,20 @@ namespace SixLabors.Fonts.Tests.Fakes
             VerticalMetricsTable verticalMetrics,
             HeadTable head,
             KerningTable kern)
-            : base(nameTable, cmap, glyphs, os2, horizontalHeadTable, horizontalMetrics, verticalHeadTable, verticalMetrics, head, kern, null, null)
+            : base(
+                  nameTable,
+                  cmap,
+                  glyphs,
+                  os2,
+                  horizontalHeadTable,
+                  horizontalMetrics,
+                  verticalHeadTable,
+                  verticalMetrics,
+                  head,
+                  kern,
+                  null,
+                  null,
+                  null)
         {
         }
 

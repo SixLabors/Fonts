@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tables.General
             return false;
         }
 
-        public bool TryGetGlyphId(CodePoint codePoint, CodePoint nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
         {
             skipNextCodePoint = false;
             if (this.TryGetGlyphId(codePoint, out glyphId))
@@ -58,11 +58,11 @@ namespace SixLabors.Fonts.Tables.General
                 // If there is a second codepoint, we are asked whether this is an UVS sequence
                 // - If true, return a glyph Id.
                 // - Otherwise, return 0.
-                if (nextCodePoint != default && this.format14SubTables.Length > 0)
+                if (nextCodePoint != null && this.format14SubTables.Length > 0)
                 {
                     foreach (Format14SubTable? cmap14 in this.format14SubTables)
                     {
-                        ushort pairGlyphId = cmap14.CharacterPairToGlyphId(codePoint, glyphId, nextCodePoint);
+                        ushort pairGlyphId = cmap14.CharacterPairToGlyphId(codePoint, glyphId, nextCodePoint.Value);
                         if (pairGlyphId > 0)
                         {
                             glyphId = pairGlyphId;

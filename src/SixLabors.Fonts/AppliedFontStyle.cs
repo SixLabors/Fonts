@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
@@ -20,7 +19,7 @@ namespace SixLabors.Fonts
 
         public void GatherGlyphIds(ReadOnlySpan<char> text)
         {
-            var collection = new GlyphSubstitutionCollection();
+            IGlyphSubstitutionCollection collection = new GlyphSubstitutionCollection();
 
             // Enumerate through each grapheme in the text.
             int graphemeIndex;
@@ -45,9 +44,9 @@ namespace SixLabors.Fonts
                     int charsConsumed = 0;
                     CodePoint current = codePointEnumerator.Current;
                     charIndex += current.Utf16SequenceLength;
-                    CodePoint next = graphemCodePointIndex < graphemeMax
+                    CodePoint? next = graphemCodePointIndex < graphemeMax
                         ? CodePoint.DecodeFromUtf16At(graphemeEnumerator.Current, charIndex, out charsConsumed)
-                        : default;
+                        : null;
 
                     charIndex += charsConsumed;
 
@@ -63,15 +62,20 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    collection.AddGlyph(codePointIndex, glyphId);
+                    collection.AddGlyph(glyphId, current, codePointIndex);
 
                     codePointIndex++;
                     graphemCodePointIndex++;
                 }
             }
 
+            this.MainFont.ApplySubstition(collection);
+            foreach (IFontMetrics? f in this.FallbackFonts)
+            {
+                f.ApplySubstition(collection);
+            }
+
             // TODO:
-            // 1: Perform the actual substitution on the collection via GSUB.
             // 2: Create a map so we can iterate through the codepoints again matching the correct codepoint.
         }
 

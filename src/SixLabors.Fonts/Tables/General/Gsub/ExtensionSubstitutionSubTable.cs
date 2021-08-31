@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using SixLabors.Fonts.Tables.General.Glyphs;
 
 namespace SixLabors.Fonts.Tables.General.Gsub
 {

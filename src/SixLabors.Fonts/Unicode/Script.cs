@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Unicode
     /// <summary>
     /// Unicode Script classes <see href="http://www.unicode.org/reports/tr24/#Script"/>
     /// </summary>
-    internal enum Script
+    public enum Script
     {
         /// <summary>
         /// Zzzz

@@ -65,7 +65,7 @@ namespace SixLabors.Fonts
         /// Gets the specified glyph id matching the codepoint pair.
         /// </summary>
         /// <param name="codePoint">The codepoint.</param>
-        /// <param name="nextCodePoint">The next codepoint. Can be default.</param>
+        /// <param name="nextCodePoint">The next codepoint. Can be null.</param>
         /// <param name="glyphId">
         /// When this method returns, contains the glyph id associated with the specified codepoint,
         /// if the codepoint is found; otherwise, the default value for the type of the glyphId parameter.
@@ -77,7 +77,13 @@ namespace SixLabors.Fonts
         /// <returns>
         /// <see langword="true"/> if the face contains a glyph for the specified codepoint; otherwise, <see langword="false"/>.
         /// </returns>
-        public bool TryGetGlyphId(CodePoint codePoint, CodePoint nextCodePoint, out ushort glyphId, out bool skipNextCodePoint);
+        bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint);
+
+        /// <summary>
+        /// Applies any available subsitutions to the glyph id collection.
+        /// </summary>
+        /// <param name="collection">The glyph id collection.</param>
+        void ApplySubstition(IGlyphSubstitutionCollection collection);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point.

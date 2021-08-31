@@ -173,7 +173,9 @@ namespace SixLabors.Fonts
             }
             else
             {
-                fallbackFontInstances = this.FallbackFontFamilies.Select(x => new Font(x, this.Font.Size, this.Font.RequestedStyle).FontMetrics).ToArray();
+                fallbackFontInstances = this.FallbackFontFamilies
+                    .Select(x => new Font(x, this.Font.Size, this.Font.RequestedStyle).FontMetrics)
+                    .ToArray();
             }
 
             return new AppliedFontStyle

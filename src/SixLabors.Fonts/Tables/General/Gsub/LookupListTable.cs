@@ -120,23 +120,6 @@ namespace SixLabors.Fonts.Tables.General.Gsub
             return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);
         }
 
-        public bool TrySubstition(GlyphSubstitutionCollection collection, ushort index, int count)
-        {
-            foreach (LookupSubTable subTable in this.LookupSubTables)
-            {
-                // We return after the first substitution, as explained in the spec:
-                // "A lookup is finished for a glyph after the client locates the target
-                // glyph or glyph context and performs a substitution, if specified."
-                // https://www.microsoft.com/typography/otspec/gsub.htm
-                if (subTable.TrySubstition(collection, index, count))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
             => lookupType switch
             {
@@ -148,6 +131,6 @@ namespace SixLabors.Fonts.Tables.General.Gsub
 
     internal abstract class LookupSubTable
     {
-        public abstract bool TrySubstition(GlyphSubstitutionCollection collection, ushort index, int count);
+        public abstract bool TrySubstition(IGlyphSubstitutionCollection collection, ushort index, int count);
     }
 }
