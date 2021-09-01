@@ -3,7 +3,6 @@
 
 using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Tables.General.Gsub;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.General
 {
@@ -76,7 +75,6 @@ namespace SixLabors.Fonts.Tables.General
             // +----------+-------------------------+-------------------------------------------------------------------------------+
             // | Offset32 | featureVariationsOffset | Offset to FeatureVariations table, from beginning of GSUB table (may be NULL) |
             // +----------+-------------------------+-------------------------------------------------------------------------------+
-            long position = reader.BaseStream.Position;
             ushort majorVersion = reader.ReadUInt16();
             ushort minorVersion = reader.ReadUInt16();
 
@@ -86,11 +84,11 @@ namespace SixLabors.Fonts.Tables.General
             uint featureVariationsOffset = (minorVersion == 1) ? reader.ReadOffset32() : 0;
 
             // TODO: Optimization. Allow only reading the scriptList.
-            var scriptList = ScriptList.Load(reader, position + scriptListOffset);
+            var scriptList = ScriptList.Load(reader, scriptListOffset);
 
-            var featureList = FeatureListTable.Load(reader, position + featureListOffset);
+            var featureList = FeatureListTable.Load(reader, featureListOffset);
 
-            var lookupList = LookupListTable.Load(reader, position + lookupListOffset);
+            var lookupList = LookupListTable.Load(reader, lookupListOffset);
 
             // TODO: Feature Variations.
             return new GSubTable(scriptList, featureList, lookupList);
