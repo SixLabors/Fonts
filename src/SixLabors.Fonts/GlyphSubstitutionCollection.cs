@@ -1,7 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -11,81 +14,92 @@ namespace SixLabors.Fonts
     /// </summary>
     internal class GlyphSubstitutionCollection : IGlyphSubstitutionCollection
     {
-        private readonly List<ushort> glyphIds = new List<ushort>();
-        private readonly List<int> codePointIndices = new List<int>();
-        private ushort offset;
-        private readonly List<CodePointRange> ranges = new List<CodePointRange>();
+        /// <summary>
+        /// Contains a map between the index of a map within the collection and its offset.
+        /// </summary>
+        private readonly Dictionary<int, int> offsets = new Dictionary<int, int>();
+
+        /// <summary>
+        /// Contains a map between non-sequential codepoint offsets and their glyph ids.
+        /// </summary>
+        private readonly Dictionary<int, ScriptGlyphs> map = new Dictionary<int, ScriptGlyphs>();
 
         /// <inheritdoc/>
-        public int Count => this.glyphIds.Count;
+        public int Count { get; private set; }
 
         /// <inheritdoc/>
-        public ushort this[int index] => this.glyphIds[index];
+        public ushort this[int index] => this.map[this.offsets[index]].GlyphIds[0];
 
         /// <inheritdoc/>
-        public void AddGlyph(ushort glyphId, CodePoint codePoint, int index)
+        public void AddGlyph(ushort glyphId, CodePoint codePoint, int offset)
         {
-            // So we can monitor substitution processes
-            this.codePointIndices.Add(index);
-            this.glyphIds.Add(glyphId);
-
-            var range = new CodePointRange(this.offset, CodePoint.GetScript(codePoint), 1);
-            this.ranges.Add(range);
-            this.offset++;
+            this.map.Add(offset, new ScriptGlyphs(CodePoint.GetScript(codePoint), new[] { glyphId }));
+            this.offsets[this.Count++] = offset;
         }
 
         /// <inheritdoc/>
         public void Clear()
         {
-            this.offset = 0;
-            this.glyphIds.Clear();
-            this.codePointIndices.Clear();
-            this.ranges.Clear();
+            this.Count = 0;
+            this.map.Clear();
+            this.offsets.Clear();
         }
 
         /// <inheritdoc/>
-        public void GetGlyphIdAndRange(int index, out ushort glyphId, out CodePointRange range)
+        public void GetGlyphIdsAndScript(int index, out IEnumerable<ushort> glyphIds, out Script script)
         {
-            glyphId = this.glyphIds[index];
-            range = this.ranges[index];
+            // TODO: We should add a TryGet for the offset and we should delete the indexer
+            ScriptGlyphs result = this.map[this.offsets[index]];
+            glyphIds = result.GlyphIds;
+            script = result.Script;
         }
 
         /// <inheritdoc/>
         public void Replace(int index, ushort glyphId)
-            => this.glyphIds[index] = glyphId;
+        {
+            int offset = this.offsets[index];
+            this.map[offset] = new ScriptGlyphs(this.map[offset].Script, new[] { glyphId });
+        }
 
         /// <inheritdoc/>
         public void Replace(int index, int count, ushort glyphId)
         {
-            // e.g. f-i ligation
-            // original 'f' glyph and 'i' glyph are removed
-            // and then replace with a single glyph.
-            this.glyphIds.RemoveRange(index, count);
-            this.glyphIds.Insert(index, glyphId);
-            CodePointRange intitial = this.ranges[index];
+            int offset = this.offsets[index];
+            ScriptGlyphs current = this.map[offset];
+            for (int i = 0; i < count; i++)
+            {
+                this.map.Remove(this.offsets[index + i]);
+                this.offsets.Remove(index + i);
+            }
 
-            var replacement = new CodePointRange(intitial.Start, intitial.Script, (ushort)count);
-            this.ranges.RemoveRange(index, count);
-            this.ranges.Insert(index, replacement);
+            this.offsets[index] = offset;
+            this.map[offset] = new ScriptGlyphs(current.Script, new[] { glyphId });
+            this.Count -= count - 1;
         }
 
         /// <inheritdoc/>
         public void Replace(int index, IEnumerable<ushort> glyphIds)
         {
-            this.glyphIds.RemoveAt(index);
-            this.glyphIds.InsertRange(index, glyphIds);
-            CodePointRange current = this.ranges[index];
-            this.ranges.RemoveAt(index);
+            int offset = this.offsets[index];
+            ushort[] ids = glyphIds.ToArray();
+            this.map[offset] = new ScriptGlyphs(this.map[offset].Script, ids);
+            this.Count += ids.Length - 1;
+        }
 
-            // Insert
-            // TODO: Check this.
-            foreach (ushort id in glyphIds)
+        [DebuggerDisplay("{DebuggerDisplay,nq}")]
+        private readonly struct ScriptGlyphs
+        {
+            public ScriptGlyphs(Script script, ushort[] glyphIds)
             {
-                var range = new CodePointRange(current.Start, current.Script, 1);
-
-                // May point to the same user codepoint.
-                this.ranges.Insert(index++, range);
+                this.Script = script;
+                this.GlyphIds = glyphIds;
             }
+
+            public Script Script { get; }
+
+            public ushort[] GlyphIds { get; }
+
+            private string DebuggerDisplay => FormattableString.Invariant($"{this.Script} : [{string.Join(",", this.GlyphIds)}]");
         }
     }
 }

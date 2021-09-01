@@ -29,8 +29,8 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="glyphId">The id of the glyph to add.</param>
         /// <param name="codePoint">The codepoint the glyph represents.</param>
-        /// <param name="index">The zero-based index within the input codepoint collection.</param>
-        void AddGlyph(ushort glyphId, CodePoint codePoint, int index);
+        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        void AddGlyph(ushort glyphId, CodePoint codePoint, int offset);
 
         /// <summary>
         /// Removes all elements from the collection.
@@ -38,12 +38,12 @@ namespace SixLabors.Fonts
         void Clear();
 
         /// <summary>
-        /// Gets the glyph id and the range of codepoints it represents at the specified position.
+        /// Gets the glyph ids and the Unicode script for those ids at the specified position.
         /// </summary>
         /// <param name="index">The zero-based index of the elements to get.</param>
-        /// <param name="glyphId">The glyph id.</param>
-        /// <param name="range">The codepoint range.</param>
-        void GetGlyphIdAndRange(int index, out ushort glyphId, out CodePointRange range);
+        /// <param name="glyphIds">The glyph ids.</param>
+        /// <param name="script">The Unicode script.</param>
+        void GetGlyphIdsAndScript(int index, out IEnumerable<ushort> glyphIds, out Script script);
 
         /// <summary>
         /// Performs a 1:1 replacement of a glyph id at the given position.

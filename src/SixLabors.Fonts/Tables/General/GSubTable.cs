@@ -1,8 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Tables.General.Gsub;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.General
 {
@@ -96,10 +98,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public void ApplySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
         {
-            collection.GetGlyphIdAndRange(index, out ushort _, out CodePointRange map);
+            collection.GetGlyphIdsAndScript(index, out IEnumerable<ushort> _, out Script script);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
-            Tag[] tags = UnicodeScriptTagMap.Instance[map.Script];
+            Tag[] tags = UnicodeScriptTagMap.Instance[script];
             for (int i = 0; i < tags.Length; i++)
             {
                 if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable table))
