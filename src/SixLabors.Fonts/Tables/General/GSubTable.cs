@@ -94,8 +94,6 @@ namespace SixLabors.Fonts.Tables.General
             return new GSubTable(scriptList, featureList, lookupList);
         }
 
-        // TODO: We only pass the codepoint here to get the script.
-        // We should map that when building the collection.
         public void ApplySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
         {
             collection.GetGlyphIdAndRange(index, out ushort _, out CodePointRange map);
@@ -104,8 +102,9 @@ namespace SixLabors.Fonts.Tables.General
             Tag[] tags = UnicodeScriptTagMap.Instance[map.Script];
             for (int i = 0; i < tags.Length; i++)
             {
-                if (this.ScriptList.TryGetValue(tags[i].Value, out scriptListTable))
+                if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable table))
                 {
+                    scriptListTable = table;
                     break;
                 }
             }

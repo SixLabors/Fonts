@@ -69,10 +69,13 @@ namespace SixLabors.Fonts
                 }
             }
 
-            this.MainFont.ApplySubstition(collection);
-            foreach (IFontMetrics? f in this.FallbackFonts)
+            if (this.ApplyKerning)
             {
-                f.ApplySubstition(collection);
+                this.MainFont.ApplySubstition(collection);
+                foreach (IFontMetrics? f in this.FallbackFonts)
+                {
+                    f.ApplySubstition(collection);
+                }
             }
 
             // TODO:
