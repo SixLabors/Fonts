@@ -302,12 +302,13 @@ namespace SixLabors.Fonts.Tests
 
             var options = new RendererOptions(font)
             {
-                FallbackFontFamilies = fontFamilies
+                FallbackFontFamilies = fontFamilies,
+                ColorFontSupport = ColorFontSupport.None
             };
 
             AppliedFontStyle style = options.GetStyle(4, 10);
 
-            GlyphMetrics glyph = Assert.Single(style.GetGlyphLayers(new CodePoint('Z'), ColorFontSupport.None));
+            GlyphMetrics glyph = Assert.Single(style.GetGlyphLayers(new CodePoint('Z')));
             Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
             Assert.Equal(abcFontInstance, glyph.FontMetrics);
         }
@@ -327,12 +328,13 @@ namespace SixLabors.Fonts.Tests
 
             var options = new RendererOptions(font)
             {
-                FallbackFontFamilies = fontFamilies
+                FallbackFontFamilies = fontFamilies,
+                ColorFontSupport = ColorFontSupport.None
             };
 
             AppliedFontStyle style = options.GetStyle(4, 10);
 
-            GlyphMetrics glyph = Assert.Single(style.GetGlyphLayers(new CodePoint(character), ColorFontSupport.None));
+            GlyphMetrics glyph = Assert.Single(style.GetGlyphLayers(new CodePoint(character)));
             Assert.Equal(GlyphType.Standard, glyph.GlyphType);
             Fakes.FakeFontInstance expectedInstance = instance switch
             {

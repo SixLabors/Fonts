@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Numerics;
@@ -25,6 +26,7 @@ namespace SixLabors.Fonts
         private readonly HorizontalMetricsTable horizontalMetrics;
         private readonly VerticalMetricsTable? verticalMetricsTable;
         private readonly GlyphMetrics[] glyphCache;
+        private readonly GlyphMetrics[][] glyphCache2;
         private readonly GlyphMetrics[][]? colorGlyphCache;
         private readonly KerningTable kerning;
         private readonly GSubTable? gSubTable;
@@ -69,6 +71,7 @@ namespace SixLabors.Fonts
             this.verticalMetricsTable = verticalMetrics;
             this.head = head;
             this.glyphCache = new GlyphMetrics[this.glyphs.GlyphCount];
+            this.glyphCache2 = new GlyphMetrics[this.glyphs.GlyphCount][];
             if (!(colrTable is null))
             {
                 this.colorGlyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
@@ -173,6 +176,47 @@ namespace SixLabors.Fonts
             }
 
             return this.glyphCache[idx];
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+
+            // TODO: Should be a collection.
+            => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+
+        /// <inheritdoc/>
+        public void ApplySubstitions(IGlyphSubstitutionCollection collection)
+        {
+            if (this.gSubTable != null)
+            {
+                for (ushort index = 0; index < collection.Count; index++)
+                {
+                    this.gSubTable.ApplySubstition(collection, index, collection.Count - index);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<GlyphMetrics> GetGlyphMetrics(ushort glyphId, ColorFontSupport support)
+        {
+            if (support == ColorFontSupport.MicrosoftColrFormat
+                && this.TryGetColoredVectors(CodePoint.ReplacementChar, glyphId, out GlyphMetrics[]? metrics))
+            {
+                return metrics;
+            }
+
+            if (this.glyphCache2[glyphId] is null)
+            {
+                this.glyphCache2[glyphId] = new[]
+                {
+                    this.CreateGlyphMetrics(
+                    CodePoint.ReplacementChar, // TODO: Should we populate this value?
+                    glyphId,
+                    glyphId == 0 ? GlyphType.Standard : GlyphType.Fallback)
+                };
+            }
+
+            return this.glyphCache2[glyphId];
         }
 
         /// <inheritdoc/>
@@ -322,26 +366,11 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
+        // TODO: This has to go.
         internal bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
             => this.cmap.TryGetGlyphId(codePoint, out glyphId);
 
-        /// <inheritdoc/>
-        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
-            => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
-
-        /// <inheritdoc/>
-        public void ApplySubstition(IGlyphSubstitutionCollection collection)
-        {
-            if (this.gSubTable != null)
-            {
-                for (ushort index = 0; index < collection.Count; index++)
-                {
-                    this.gSubTable.ApplySubstition(collection, index, collection.Count - index);
-                }
-            }
-        }
-
-        internal bool TryGetColoredVectors(CodePoint codePoint, ushort idx, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
+        internal bool TryGetColoredVectors(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
         {
             if (this.colrTable == null || this.colorGlyphCache == null)
             {
@@ -349,10 +378,10 @@ namespace SixLabors.Fonts
                 return false;
             }
 
-            vectors = this.colorGlyphCache[idx];
+            vectors = this.colorGlyphCache[glyphId];
             if (vectors is null)
             {
-                Span<LayerRecord> indexes = this.colrTable.GetLayers(idx);
+                Span<LayerRecord> indexes = this.colrTable.GetLayers(glyphId);
                 if (indexes.Length > 0)
                 {
                     vectors = new GlyphMetrics[indexes.Length];
@@ -365,7 +394,7 @@ namespace SixLabors.Fonts
                 }
 
                 vectors ??= Array.Empty<GlyphMetrics>();
-                this.colorGlyphCache[idx] = vectors;
+                this.colorGlyphCache[glyphId] = vectors;
             }
 
             return vectors.Length > 0;
@@ -373,23 +402,23 @@ namespace SixLabors.Fonts
 
         private GlyphMetrics CreateGlyphMetrics(
             CodePoint codePoint,
-            ushort idx,
+            ushort glyphId,
             GlyphType glyphType,
             ushort palleteIndex = 0)
         {
-            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(idx);
-            short lsb = this.horizontalMetrics.GetLeftSideBearing(idx);
+            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphId);
+            short lsb = this.horizontalMetrics.GetLeftSideBearing(glyphId);
 
             // Provide a default for the advance height. This is overwritten for vertical fonts.
             ushort advancedHeight = (ushort)(this.Ascender - this.Descender);
             short tsb = 0;
             if (this.verticalMetricsTable != null)
             {
-                advancedHeight = this.verticalMetricsTable.GetAdvancedHeight(idx);
-                tsb = this.verticalMetricsTable.GetTopSideBearing(idx);
+                advancedHeight = this.verticalMetricsTable.GetAdvancedHeight(glyphId);
+                tsb = this.verticalMetricsTable.GetTopSideBearing(glyphId);
             }
 
-            GlyphVector vector = this.glyphs.GetGlyph(idx);
+            GlyphVector vector = this.glyphs.GetGlyph(glyphId);
             GlyphColor? color = null;
             if (glyphType == GlyphType.ColrLayer)
             {
@@ -409,7 +438,7 @@ namespace SixLabors.Fonts
                 lsb,
                 tsb,
                 this.UnitsPerEm,
-                idx,
+                glyphId,
                 glyphType,
                 color);
         }

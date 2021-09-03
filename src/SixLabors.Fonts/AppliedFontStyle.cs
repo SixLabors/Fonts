@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
@@ -9,6 +10,7 @@ namespace SixLabors.Fonts
 {
     internal struct AppliedFontStyle
     {
+        private Dictionary<int, GlyphMetrics[]> glyphMetricsMap;
         public IFontMetrics[] FallbackFonts;
         public IFontMetrics MainFont;
         public float PointSize;
@@ -16,19 +18,40 @@ namespace SixLabors.Fonts
         public int Start;
         public int End;
         public bool ApplyKerning;
+        public ColorFontSupport ColorFontSupport;
 
-        public void GatherGlyphIds(ReadOnlySpan<char> text)
+        public void ProcessText(ReadOnlySpan<char> text)
         {
-            IGlyphSubstitutionCollection collection = new GlyphSubstitutionCollection();
+            var collection = new GlyphSubstitutionCollection();
+            this.glyphMetricsMap = new Dictionary<int, GlyphMetrics[]>();
 
+            // TODO: It would be better if we could slice the text and only
+            // parse the codepoints within the start-end positions.
+            // However we actually have to refactor TextLayout to actually
+            // create slices.
+            this.DoFontRun(text, this.MainFont, collection, this.glyphMetricsMap);
+
+            foreach (IFontMetrics font in this.FallbackFonts)
+            {
+                collection.Clear();
+                this.DoFontRun(text, font, collection, this.glyphMetricsMap);
+            }
+        }
+
+        private void DoFontRun(
+            ReadOnlySpan<char> text,
+            IFontMetrics fontMetrics,
+            IGlyphSubstitutionCollection collection,
+            Dictionary<int, GlyphMetrics[]> glyphMetricsMap)
+        {
             // Enumerate through each grapheme in the text.
             int graphemeIndex;
             int codePointIndex = 0;
-            var graphemeEnumerator = new SpanGraphemeEnumerator(text.Slice(this.Start, this.End - this.Start));
+            var graphemeEnumerator = new SpanGraphemeEnumerator(text);
             for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
             {
                 int graphemeMax = graphemeEnumerator.Current.Length - 1;
-                int graphemCodePointIndex = 0;
+                int graphemeCodePointIndex = 0;
                 int charIndex = 0;
 
                 // Now enumerate through each codepoint in the grapheme.
@@ -38,58 +61,72 @@ namespace SixLabors.Fonts
                 {
                     if (skipNextCodePoint)
                     {
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
                         continue;
                     }
 
                     int charsConsumed = 0;
                     CodePoint current = codePointEnumerator.Current;
                     charIndex += current.Utf16SequenceLength;
-                    CodePoint? next = graphemCodePointIndex < graphemeMax
+                    CodePoint? next = graphemeCodePointIndex < graphemeMax
                         ? CodePoint.DecodeFromUtf16At(graphemeEnumerator.Current, charIndex, out charsConsumed)
                         : null;
 
                     charIndex += charsConsumed;
 
-                    // Get the glyph index for the collection and add to the collection.
-                    if (!this.MainFont.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint))
+                    // Get the glyph id for the codepoint and add to the collection.
+                    if (fontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint))
                     {
-                        foreach (IFontMetrics? f in this.FallbackFonts)
-                        {
-                            if (f.TryGetGlyphId(current, next, out glyphId, out skipNextCodePoint))
-                            {
-                                break;
-                            }
-                        }
+                        collection.AddGlyph(glyphId, current, codePointIndex);
                     }
 
-                    collection.AddGlyph(glyphId, current, codePointIndex);
-
                     codePointIndex++;
-                    graphemCodePointIndex++;
+                    graphemeCodePointIndex++;
                 }
             }
 
             if (this.ApplyKerning)
             {
-                this.MainFont.ApplySubstition(collection);
-                foreach (IFontMetrics? f in this.FallbackFonts)
-                {
-                    f.ApplySubstition(collection);
-                }
+                // TODO: GPOS?
+                fontMetrics.ApplySubstitions(collection);
             }
 
-            // TODO:
-            // 2: Create a map so we can iterate through the codepoints again matching the correct codepoint.
+            // Now loop through and assign metrics to our map.
+            for (int idx = 0; idx < codePointIndex; idx++)
+            {
+                // No glyphs, this codepoint has been skipped.
+                if (!collection.TryGetGlyphIdsAtOffset(idx, out IEnumerable<ushort>? glyphIds))
+                {
+                    continue;
+                }
+
+                if (!glyphMetricsMap.ContainsKey(idx))
+                {
+                    // In main font or no previous font has managed to find a matching glyph.
+                    // Add our metrics to the map.
+                    var m = new List<GlyphMetrics>();
+                    foreach (ushort id in glyphIds)
+                    {
+                        m.AddRange(fontMetrics.GetGlyphMetrics(id, this.ColorFontSupport));
+                    }
+
+                    glyphMetricsMap[idx] = m.ToArray();
+                }
+            }
         }
 
-        public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint, ColorFontSupport colorFontOptions)
+        public bool TryGetGlypMetrics(int offset, out GlyphMetrics[] metrics)
+            => this.glyphMetricsMap.TryGetValue(offset - this.Start, out metrics);
+
+        public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint)
         {
             GlyphMetrics glyph = this.MainFont.GetGlyphMetrics(codePoint);
             if (glyph.GlyphType == GlyphType.Fallback)
             {
                 foreach (IFontMetrics? f in this.FallbackFonts)
                 {
-                    GlyphMetrics? g = f.GetGlyphMetrics(codePoint);
+                    GlyphMetrics g = f.GetGlyphMetrics(codePoint);
                     if (g.GlyphType != GlyphType.Fallback)
                     {
                         glyph = g;
@@ -98,12 +135,13 @@ namespace SixLabors.Fonts
                 }
             }
 
+            // TODO: This looks never null.
             if (glyph == null)
             {
                 return Array.Empty<GlyphMetrics>();
             }
 
-            if (colorFontOptions == ColorFontSupport.MicrosoftColrFormat)
+            if (this.ColorFontSupport == ColorFontSupport.MicrosoftColrFormat)
             {
                 if (glyph.FontMetrics.TryGetColoredVectors(codePoint, glyph.Index, out GlyphMetrics[]? layers))
                 {

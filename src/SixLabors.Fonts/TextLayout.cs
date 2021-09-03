@@ -59,6 +59,8 @@ namespace SixLabors.Fonts
 
             int codePointCount = CodePoint.GetCodePointCount(text);
             AppliedFontStyle spanStyle = options.GetStyle(0, codePointCount);
+            spanStyle.ProcessText(text);
+
             var layout = new List<GlyphLayout>(codePointCount);
 
             float unscaledLineHeight = 0f;
@@ -110,14 +112,14 @@ namespace SixLabors.Fonts
                     if (spanStyle.End < codePointIndex)
                     {
                         spanStyle = options.GetStyle(codePointIndex, codePointCount);
+                        spanStyle.ProcessText(text);
                         previousGlyph = null;
                     }
 
-                    GlyphMetrics[] glyphs = spanStyle.GetGlyphLayers(codePoint, options.ColorFontSupport);
-                    if (glyphs.Length == 0)
+                    if (!spanStyle.TryGetGlypMetrics(codePointIndex, out GlyphMetrics[] glyphs))
                     {
-                        // TODO: Should we try to return the replacement glyph first?
-                        return FontsThrowHelper.ThrowGlyphMissingException<IReadOnlyList<GlyphLayout>>(codePoint);
+                        // Codepoint was skipped.
+                        continue;
                     }
 
                     GlyphMetrics? glyph = glyphs[0];
@@ -170,7 +172,7 @@ namespace SixLabors.Fonts
                     if ((shouldWrap && (breakAll || nextWrappableLocation == codePointIndex))
                         || nextWrappableRequired)
                     {
-                        if (!(keepAll && UnicodeUtility.IsCJKCodePoint((uint)glyph.CodePoint.Value)))
+                        if (!(keepAll && UnicodeUtility.IsCJKCodePoint((uint)codePoint.Value)))
                         {
                             // We don't want to ever break between codepoints within a grapheme.
                             if (graphemeCodePointIndex == 0)

@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
+using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
@@ -83,7 +85,15 @@ namespace SixLabors.Fonts
         /// Applies any available subsitutions to the glyph id collection.
         /// </summary>
         /// <param name="collection">The glyph id collection.</param>
-        void ApplySubstition(IGlyphSubstitutionCollection collection);
+        void ApplySubstitions(IGlyphSubstitutionCollection collection);
+
+        /// <summary>
+        /// Gets the glyph metrics for a given glyph id.
+        /// </summary>
+        /// <param name="glyphId">The id of the glyph in the face.</param>
+        /// <param name="support">Options for enabling color font support during layout and rendering.</param>
+        /// <returns>The glyph metrics to find.</returns>
+        IEnumerable<GlyphMetrics> GetGlyphMetrics(ushort glyphId, ColorFontSupport support);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point.

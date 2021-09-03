@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using SixLabors.Fonts.Unicode;
 
@@ -28,7 +29,7 @@ namespace SixLabors.Fonts
         public int Count { get; private set; }
 
         /// <inheritdoc/>
-        public ushort this[int index] => this.map[this.offsets[index]].GlyphIds[0];
+        public ReadOnlySpan<ushort> this[int index] => this.map[this.offsets[index]].GlyphIds;
 
         /// <inheritdoc/>
         public void AddGlyph(ushort glyphId, CodePoint codePoint, int offset)
@@ -46,9 +47,21 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
+        public bool TryGetGlyphIdsAtOffset(int offset, [NotNullWhen(true)] out IEnumerable<ushort>? glyphIds)
+        {
+            if (this.map.TryGetValue(offset, out ScriptGlyphs scriptGlyphs))
+            {
+                glyphIds = scriptGlyphs.GlyphIds;
+                return true;
+            }
+
+            glyphIds = null;
+            return false;
+        }
+
+        /// <inheritdoc/>
         public void GetGlyphIdsAndScript(int index, out IEnumerable<ushort> glyphIds, out Script script)
         {
-            // TODO: We should add a TryGet for the offset and we should delete the indexer
             ScriptGlyphs result = this.map[this.offsets[index]];
             glyphIds = result.GlyphIds;
             script = result.Script;
@@ -65,25 +78,21 @@ namespace SixLabors.Fonts
         public void Replace(int index, int count, ushort glyphId)
         {
             int offset = this.offsets[index];
-            ScriptGlyphs current = this.map[offset];
-            for (int i = 0; i < count; i++)
+            for (int i = 1; i < count; i++)
             {
                 this.map.Remove(this.offsets[index + i]);
                 this.offsets.Remove(index + i);
+                this.Count--;
             }
 
-            this.offsets[index] = offset;
-            this.map[offset] = new ScriptGlyphs(current.Script, new[] { glyphId });
-            this.Count -= count - 1;
+            this.map[offset] = new ScriptGlyphs(this.map[offset].Script, new[] { glyphId });
         }
 
         /// <inheritdoc/>
         public void Replace(int index, IEnumerable<ushort> glyphIds)
         {
             int offset = this.offsets[index];
-            ushort[] ids = glyphIds.ToArray();
-            this.map[offset] = new ScriptGlyphs(this.map[offset].Script, ids);
-            this.Count += ids.Length - 1;
+            this.map[offset] = new ScriptGlyphs(this.map[offset].Script, glyphIds.ToArray());
         }
 
         [DebuggerDisplay("{DebuggerDisplay,nq}")]

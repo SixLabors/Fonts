@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
@@ -78,8 +79,12 @@ namespace SixLabors.Fonts
             => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         /// <inheritdoc/>
-        public void ApplySubstition(IGlyphSubstitutionCollection collection)
-            => this.metrics.Value.ApplySubstition(collection);
+        public void ApplySubstitions(IGlyphSubstitutionCollection collection)
+            => this.metrics.Value.ApplySubstitions(collection);
+
+        /// <inheritdoc />
+        public IEnumerable<GlyphMetrics> GetGlyphMetrics(ushort glyphId, ColorFontSupport support)
+            => this.metrics.Value.GetGlyphMetrics(glyphId, support);
 
         /// <inheritdoc />
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
