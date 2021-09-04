@@ -13,9 +13,9 @@ namespace SixLabors.Fonts.Tables.General.Gsub
     /// Format 1 requires less space than Format 2, but it is less flexible.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-1-single-substitution-subtable"/>
     /// </summary>
-    internal sealed class SingleSubstitutionSubTable
+    internal sealed class LookupType1SubTable
     {
-        private SingleSubstitutionSubTable()
+        private LookupType1SubTable()
         {
         }
 
@@ -26,25 +26,25 @@ namespace SixLabors.Fonts.Tables.General.Gsub
 
             return substFormat switch
             {
-                1 => SingleSubstitutionFormat1SubTable.Load(reader, offset),
-                2 => SingleSubstitutionFormat2SubTable.Load(reader, offset),
+                1 => LookupType1Format1SubTable.Load(reader, offset),
+                2 => LookupType1Format2SubTable.Load(reader, offset),
                 _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1' or '2'."),
             };
         }
     }
 
-    internal sealed class SingleSubstitutionFormat1SubTable : LookupSubTable
+    internal sealed class LookupType1Format1SubTable : LookupSubTable
     {
         private readonly ushort deltaGlyphId;
         private readonly CoverageTable coverageTable;
 
-        private SingleSubstitutionFormat1SubTable(ushort deltaGlyphId, CoverageTable coverageTable)
+        private LookupType1Format1SubTable(ushort deltaGlyphId, CoverageTable coverageTable)
         {
             this.deltaGlyphId = deltaGlyphId;
             this.coverageTable = coverageTable;
         }
 
-        public static SingleSubstitutionFormat1SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset)
         {
             // SingleSubstFormat1
             // +----------+----------------+----------------------------------------------------------+
@@ -61,7 +61,7 @@ namespace SixLabors.Fonts.Tables.General.Gsub
             ushort deltaGlyphId = reader.ReadUInt16();
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new SingleSubstitutionFormat1SubTable(deltaGlyphId, coverageTable);
+            return new LookupType1Format1SubTable(deltaGlyphId, coverageTable);
         }
 
         public override bool TrySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
@@ -82,18 +82,18 @@ namespace SixLabors.Fonts.Tables.General.Gsub
         }
     }
 
-    internal sealed class SingleSubstitutionFormat2SubTable : LookupSubTable
+    internal sealed class LookupType1Format2SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
         private readonly ushort[] substituteGlyphs;
 
-        private SingleSubstitutionFormat2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable)
+        private LookupType1Format2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable)
         {
             this.substituteGlyphs = substituteGlyphs;
             this.coverageTable = coverageTable;
         }
 
-        public static SingleSubstitutionFormat2SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset)
         {
             // SingleSubstFormat2
             // +----------+--------------------------------+-----------------------------------------------------------+
@@ -113,7 +113,7 @@ namespace SixLabors.Fonts.Tables.General.Gsub
             ushort[] substituteGlyphIds = reader.ReadUInt16Array(glyphCount);
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new SingleSubstitutionFormat2SubTable(substituteGlyphIds, coverageTable);
+            return new LookupType1Format2SubTable(substituteGlyphIds, coverageTable);
         }
 
         public override bool TrySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)

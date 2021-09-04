@@ -123,8 +123,9 @@ namespace SixLabors.Fonts.Tables.General.Gsub
         private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
             => lookupType switch
             {
-                1 => SingleSubstitutionSubTable.Load(reader, offset),
-                7 => ExtensionSubstitutionSubTable.Load(reader, offset, LoadLookupSubTable),
+                1 => LookupType1SubTable.Load(reader, offset),
+                2 => LookupType2SubTable.Load(reader, offset),
+                7 => LookupType7SubTable.Load(reader, offset, LoadLookupSubTable),
                 _ => new NotImplementedSubTable(),
             };
     }

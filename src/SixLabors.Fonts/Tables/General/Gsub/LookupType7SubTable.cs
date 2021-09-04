@@ -13,9 +13,9 @@ namespace SixLabors.Fonts.Tables.General.Gsub
     /// termed the "extension" subtable.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-7-extension-substitution"/>
     /// </summary>
-    internal sealed class ExtensionSubstitutionSubTable
+    internal sealed class LookupType7SubTable
     {
-        private ExtensionSubstitutionSubTable()
+        private LookupType7SubTable()
         {
         }
 
