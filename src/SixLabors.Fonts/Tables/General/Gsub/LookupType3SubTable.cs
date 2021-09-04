@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.General.Gsub
 
             return substFormat switch
             {
-                1 => LookupType2Format1SubTable.Load(reader, offset),
+                1 => LookupType3Format1SubTable.Load(reader, offset),
                 _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1'."),
             };
         }
