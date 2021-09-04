@@ -126,6 +126,7 @@ namespace SixLabors.Fonts.Tables.General.Gsub
                 1 => LookupType1SubTable.Load(reader, offset),
                 2 => LookupType2SubTable.Load(reader, offset),
                 3 => LookupType3SubTable.Load(reader, offset),
+                4 => LookupType4SubTable.Load(reader, offset),
                 7 => LookupType7SubTable.Load(reader, offset, LoadLookupSubTable),
                 _ => new NotImplementedSubTable(),
             };
