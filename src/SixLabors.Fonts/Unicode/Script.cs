@@ -9,792 +9,792 @@ namespace SixLabors.Fonts.Unicode
     public enum Script
     {
         /// <summary>
-        /// Zzzz
+        /// Shortcode: Zzzz
         /// </summary>
         Unknown,
 
         /// <summary>
-        /// Zyyy
+        /// Shortcode: Zyyy
         /// </summary>
         Common,
 
         /// <summary>
-        /// Zinh
+        /// Shortcode: Zinh, Qaai
         /// </summary>
         Inherited,
 
         /// <summary>
-        /// Adlm
+        /// Shortcode: Adlm
         /// </summary>
         Adlam,
 
         /// <summary>
-        /// Aghb
+        /// Shortcode: Aghb
         /// </summary>
         CaucasianAlbanian,
 
         /// <summary>
-        /// Ahom
+        /// Shortcode: Ahom
         /// </summary>
         Ahom,
 
         /// <summary>
-        /// Arab
+        /// Shortcode: Arab
         /// </summary>
         Arabic,
 
         /// <summary>
-        /// Armi
+        /// Shortcode: Armi
         /// </summary>
         ImperialAramaic,
 
         /// <summary>
-        /// Armn
+        /// Shortcode: Armn
         /// </summary>
         Armenian,
 
         /// <summary>
-        /// Avst
+        /// Shortcode: Avst
         /// </summary>
         Avestan,
 
         /// <summary>
-        /// Bali
+        /// Shortcode: Bali
         /// </summary>
         Balinese,
 
         /// <summary>
-        /// Bamu
+        /// Shortcode: Bamu
         /// </summary>
         Bamum,
 
         /// <summary>
-        /// Bass
+        /// Shortcode: Bass
         /// </summary>
         BassaVah,
 
         /// <summary>
-        /// Batk
+        /// Shortcode: Batk
         /// </summary>
         Batak,
 
         /// <summary>
-        /// Beng
+        /// Shortcode: Beng
         /// </summary>
         Bengali,
 
         /// <summary>
-        /// Bhks
+        /// Shortcode: Bhks
         /// </summary>
         Bhaiksuki,
 
         /// <summary>
-        /// Bopo
+        /// Shortcode: Bopo
         /// </summary>
         Bopomofo,
 
         /// <summary>
-        /// Brah
+        /// Shortcode: Brah
         /// </summary>
         Brahmi,
 
         /// <summary>
-        /// Brai
+        /// Shortcode: Brai
         /// </summary>
         Braille,
 
         /// <summary>
-        /// Bugi
+        /// Shortcode: Bugi
         /// </summary>
         Buginese,
 
         /// <summary>
-        /// Buhd
+        /// Shortcode: Buhd
         /// </summary>
         Buhid,
 
         /// <summary>
-        /// Cakm
+        /// Shortcode: Cakm
         /// </summary>
         Chakma,
 
         /// <summary>
-        /// Cans
+        /// Shortcode: Cans
         /// </summary>
         CanadianAboriginal,
 
         /// <summary>
-        /// Cari
+        /// Shortcode: Cari
         /// </summary>
         Carian,
 
         /// <summary>
-        /// Cham
+        /// Shortcode: Cham
         /// </summary>
         Cham,
 
         /// <summary>
-        /// Cher
+        /// Shortcode: Cher
         /// </summary>
         Cherokee,
 
         /// <summary>
-        /// Chrs
+        /// Shortcode: Chrs
         /// </summary>
         Chorasmian,
 
         /// <summary>
-        /// Copt
+        /// Shortcode: Copt, Qaac
         /// </summary>
         Coptic,
 
         /// <summary>
-        /// Cprt
+        /// Shortcode: Cprt
         /// </summary>
         Cypriot,
 
         /// <summary>
-        /// Cyrl
+        /// Shortcode: Cyrl
         /// </summary>
         Cyrillic,
 
         /// <summary>
-        /// Deva
+        /// Shortcode: Deva
         /// </summary>
         Devanagari,
 
         /// <summary>
-        /// Diak
+        /// Shortcode: Diak
         /// </summary>
         DivesAkuru,
 
         /// <summary>
-        /// Dogr
+        /// Shortcode: Dogr
         /// </summary>
         Dogra,
 
         /// <summary>
-        /// Dsrt
+        /// Shortcode: Dsrt
         /// </summary>
         Deseret,
 
         /// <summary>
-        /// Dupl
+        /// Shortcode: Dupl
         /// </summary>
         Duployan,
 
         /// <summary>
-        /// Egyp
+        /// Shortcode: Egyp
         /// </summary>
         EgyptianHieroglyphs,
 
         /// <summary>
-        /// Elba
+        /// Shortcode: Elba
         /// </summary>
         Elbasan,
 
         /// <summary>
-        /// Elym
+        /// Shortcode: Elym
         /// </summary>
         Elymaic,
 
         /// <summary>
-        /// Ethi
+        /// Shortcode: Ethi
         /// </summary>
         Ethiopic,
 
         /// <summary>
-        /// Geor
+        /// Shortcode: Geor
         /// </summary>
         Georgian,
 
         /// <summary>
-        /// Glag
+        /// Shortcode: Glag
         /// </summary>
         Glagolitic,
 
         /// <summary>
-        /// Gong
+        /// Shortcode: Gong
         /// </summary>
         GunjalaGondi,
 
         /// <summary>
-        /// Gonm
+        /// Shortcode: Gonm
         /// </summary>
         MasaramGondi,
 
         /// <summary>
-        /// Goth
+        /// Shortcode: Goth
         /// </summary>
         Gothic,
 
         /// <summary>
-        /// Gran
+        /// Shortcode: Gran
         /// </summary>
         Grantha,
 
         /// <summary>
-        /// Grek
+        /// Shortcode: Grek
         /// </summary>
         Greek,
 
         /// <summary>
-        /// Gujr
+        /// Shortcode: Gujr
         /// </summary>
         Gujarati,
 
         /// <summary>
-        /// Guru
+        /// Shortcode: Guru
         /// </summary>
         Gurmukhi,
 
         /// <summary>
-        /// Hang
+        /// Shortcode: Hang
         /// </summary>
         Hangul,
 
         /// <summary>
-        /// Hani
+        /// Shortcode: Hani
         /// </summary>
         Han,
 
         /// <summary>
-        /// Hano
+        /// Shortcode: Hano
         /// </summary>
         Hanunoo,
 
         /// <summary>
-        /// Hatr
+        /// Shortcode: Hatr
         /// </summary>
         Hatran,
 
         /// <summary>
-        /// Hebr
+        /// Shortcode: Hebr
         /// </summary>
         Hebrew,
 
         /// <summary>
-        /// Hira
+        /// Shortcode: Hira
         /// </summary>
         Hiragana,
 
         /// <summary>
-        /// Hluw
+        /// Shortcode: Hluw
         /// </summary>
         AnatolianHieroglyphs,
 
         /// <summary>
-        /// Hmng
+        /// Shortcode: Hmng
         /// </summary>
         PahawhHmong,
 
         /// <summary>
-        /// Hmnp
+        /// Shortcode: Hmnp
         /// </summary>
         NyiakengPuachueHmong,
 
         /// <summary>
-        /// Hrkt
+        /// Shortcode: Hrkt
         /// </summary>
         KatakanaOrHiragana,
 
         /// <summary>
-        /// Hung
+        /// Shortcode: Hung
         /// </summary>
         OldHungarian,
 
         /// <summary>
-        /// Ital
+        /// Shortcode: Ital
         /// </summary>
         OldItalic,
 
         /// <summary>
-        /// Java
+        /// Shortcode: Java
         /// </summary>
         Javanese,
 
         /// <summary>
-        /// Kali
+        /// Shortcode: Kali
         /// </summary>
         KayahLi,
 
         /// <summary>
-        /// Kana
+        /// Shortcode: Kana
         /// </summary>
         Katakana,
 
         /// <summary>
-        /// Khar
+        /// Shortcode: Khar
         /// </summary>
         Kharoshthi,
 
         /// <summary>
-        /// Khmr
+        /// Shortcode: Khmr
         /// </summary>
         Khmer,
 
         /// <summary>
-        /// Khoj
+        /// Shortcode: Khoj
         /// </summary>
         Khojki,
 
         /// <summary>
-        /// Kits
+        /// Shortcode: Kits
         /// </summary>
         KhitanSmallScript,
 
         /// <summary>
-        /// Knda
+        /// Shortcode: Knda
         /// </summary>
         Kannada,
 
         /// <summary>
-        /// Kthi
+        /// Shortcode: Kthi
         /// </summary>
         Kaithi,
 
         /// <summary>
-        /// Lana
+        /// Shortcode: Lana
         /// </summary>
         TaiTham,
 
         /// <summary>
-        /// Laoo
+        /// Shortcode: Laoo
         /// </summary>
         Lao,
 
         /// <summary>
-        /// Latn
+        /// Shortcode: Latn
         /// </summary>
         Latin,
 
         /// <summary>
-        /// Lepc
+        /// Shortcode: Lepc
         /// </summary>
         Lepcha,
 
         /// <summary>
-        /// Limb
+        /// Shortcode: Limb
         /// </summary>
         Limbu,
 
         /// <summary>
-        /// Lina
+        /// Shortcode: Lina
         /// </summary>
         LinearA,
 
         /// <summary>
-        /// Linb
+        /// Shortcode: Linb
         /// </summary>
         LinearB,
 
         /// <summary>
-        /// Lisu
+        /// Shortcode: Lisu
         /// </summary>
         Lisu,
 
         /// <summary>
-        /// Lyci
+        /// Shortcode: Lyci
         /// </summary>
         Lycian,
 
         /// <summary>
-        /// Lydi
+        /// Shortcode: Lydi
         /// </summary>
         Lydian,
 
         /// <summary>
-        /// Mahj
+        /// Shortcode: Mahj
         /// </summary>
         Mahajani,
 
         /// <summary>
-        /// Maka
+        /// Shortcode: Maka
         /// </summary>
         Makasar,
 
         /// <summary>
-        /// Mand
+        /// Shortcode: Mand
         /// </summary>
         Mandaic,
 
         /// <summary>
-        /// Mani
+        /// Shortcode: Mani
         /// </summary>
         Manichaean,
 
         /// <summary>
-        /// Marc
+        /// Shortcode: Marc
         /// </summary>
         Marchen,
 
         /// <summary>
-        /// Medf
+        /// Shortcode: Medf
         /// </summary>
         Medefaidrin,
 
         /// <summary>
-        /// Mend
+        /// Shortcode: Mend
         /// </summary>
         MendeKikakui,
 
         /// <summary>
-        /// Merc
+        /// Shortcode: Merc
         /// </summary>
         MeroiticCursive,
 
         /// <summary>
-        /// Mero
+        /// Shortcode: Mero
         /// </summary>
         MeroiticHieroglyphs,
 
         /// <summary>
-        /// Mlym
+        /// Shortcode: Mlym
         /// </summary>
         Malayalam,
 
         /// <summary>
-        /// Modi
+        /// Shortcode: Modi
         /// </summary>
         Modi,
 
         /// <summary>
-        /// Mong
+        /// Shortcode: Mong
         /// </summary>
         Mongolian,
 
         /// <summary>
-        /// Mroo
+        /// Shortcode: Mroo
         /// </summary>
         Mro,
 
         /// <summary>
-        /// Mtei
+        /// Shortcode: Mtei
         /// </summary>
         MeeteiMayek,
 
         /// <summary>
-        /// Mult
+        /// Shortcode: Mult
         /// </summary>
         Multani,
 
         /// <summary>
-        /// Mymr
+        /// Shortcode: Mymr
         /// </summary>
         Myanmar,
 
         /// <summary>
-        /// Nand
+        /// Shortcode: Nand
         /// </summary>
         Nandinagari,
 
         /// <summary>
-        /// Narb
+        /// Shortcode: Narb
         /// </summary>
         OldNorthArabian,
 
         /// <summary>
-        /// Nbat
+        /// Shortcode: Nbat
         /// </summary>
         Nabataean,
 
         /// <summary>
-        /// Newa
+        /// Shortcode: Newa
         /// </summary>
         Newa,
 
         /// <summary>
-        /// Nkoo
+        /// Shortcode: Nkoo
         /// </summary>
         Nko,
 
         /// <summary>
-        /// Nshu
+        /// Shortcode: Nshu
         /// </summary>
         Nushu,
 
         /// <summary>
-        /// Ogam
+        /// Shortcode: Ogam
         /// </summary>
         Ogham,
 
         /// <summary>
-        /// Olck
+        /// Shortcode: Olck
         /// </summary>
         OlChiki,
 
         /// <summary>
-        /// Orkh
+        /// Shortcode: Orkh
         /// </summary>
         OldTurkic,
 
         /// <summary>
-        /// Orya
+        /// Shortcode: Orya
         /// </summary>
         Oriya,
 
         /// <summary>
-        /// Osge
+        /// Shortcode: Osge
         /// </summary>
         Osage,
 
         /// <summary>
-        /// Osma
+        /// Shortcode: Osma
         /// </summary>
         Osmanya,
 
         /// <summary>
-        /// Palm
+        /// Shortcode: Palm
         /// </summary>
         Palmyrene,
 
         /// <summary>
-        /// Pauc
+        /// Shortcode: Pauc
         /// </summary>
         PauCinHau,
 
         /// <summary>
-        /// Perm
+        /// Shortcode: Perm
         /// </summary>
         OldPermic,
 
         /// <summary>
-        /// Phag
+        /// Shortcode: Phag
         /// </summary>
         PhagsPa,
 
         /// <summary>
-        /// Phli
+        /// Shortcode: Phli
         /// </summary>
         InscriptionalPahlavi,
 
         /// <summary>
-        /// Phlp
+        /// Shortcode: Phlp
         /// </summary>
         PsalterPahlavi,
 
         /// <summary>
-        /// Phnx
+        /// Shortcode: Phnx
         /// </summary>
         Phoenician,
 
         /// <summary>
-        /// Plrd
+        /// Shortcode: Plrd
         /// </summary>
         Miao,
 
         /// <summary>
-        /// Prti
+        /// Shortcode: Prti
         /// </summary>
         InscriptionalParthian,
 
         /// <summary>
-        /// Rjng
+        /// Shortcode: Rjng
         /// </summary>
         Rejang,
 
         /// <summary>
-        /// Rohg
+        /// Shortcode: Rohg
         /// </summary>
         HanifiRohingya,
 
         /// <summary>
-        /// Runr
+        /// Shortcode: Runr
         /// </summary>
         Runic,
 
         /// <summary>
-        /// Samr
+        /// Shortcode: Samr
         /// </summary>
         Samaritan,
 
         /// <summary>
-        /// Sarb
+        /// Shortcode: Sarb
         /// </summary>
         OldSouthArabian,
 
         /// <summary>
-        /// Saur
+        /// Shortcode: Saur
         /// </summary>
         Saurashtra,
 
         /// <summary>
-        /// Sgnw
+        /// Shortcode: Sgnw
         /// </summary>
         SignWriting,
 
         /// <summary>
-        /// Shaw
+        /// Shortcode: Shaw
         /// </summary>
         Shavian,
 
         /// <summary>
-        /// Shrd
+        /// Shortcode: Shrd
         /// </summary>
         Sharada,
 
         /// <summary>
-        /// Sidd
+        /// Shortcode: Sidd
         /// </summary>
         Siddham,
 
         /// <summary>
-        /// Sind
+        /// Shortcode: Sind
         /// </summary>
         Khudawadi,
 
         /// <summary>
-        /// Sinh
+        /// Shortcode: Sinh
         /// </summary>
         Sinhala,
 
         /// <summary>
-        /// Sogd
+        /// Shortcode: Sogd
         /// </summary>
         Sogdian,
 
         /// <summary>
-        /// Sogo
+        /// Shortcode: Sogo
         /// </summary>
         OldSogdian,
 
         /// <summary>
-        /// Sora
+        /// Shortcode: Sora
         /// </summary>
         SoraSompeng,
 
         /// <summary>
-        /// Soyo
+        /// Shortcode: Soyo
         /// </summary>
         Soyombo,
 
         /// <summary>
-        /// Sund
+        /// Shortcode: Sund
         /// </summary>
         Sundanese,
 
         /// <summary>
-        /// Sylo
+        /// Shortcode: Sylo
         /// </summary>
         SylotiNagri,
 
         /// <summary>
-        /// Syrc
+        /// Shortcode: Syrc
         /// </summary>
         Syriac,
 
         /// <summary>
-        /// Tagb
+        /// Shortcode: Tagb
         /// </summary>
         Tagbanwa,
 
         /// <summary>
-        /// Takr
+        /// Shortcode: Takr
         /// </summary>
         Takri,
 
         /// <summary>
-        /// Tale
+        /// Shortcode: Tale
         /// </summary>
         TaiLe,
 
         /// <summary>
-        /// Talu
+        /// Shortcode: Talu
         /// </summary>
         NewTaiLue,
 
         /// <summary>
-        /// Taml
+        /// Shortcode: Taml
         /// </summary>
         Tamil,
 
         /// <summary>
-        /// Tang
+        /// Shortcode: Tang
         /// </summary>
         Tangut,
 
         /// <summary>
-        /// Tavt
+        /// Shortcode: Tavt
         /// </summary>
         TaiViet,
 
         /// <summary>
-        /// Telu
+        /// Shortcode: Telu
         /// </summary>
         Telugu,
 
         /// <summary>
-        /// Tfng
+        /// Shortcode: Tfng
         /// </summary>
         Tifinagh,
 
         /// <summary>
-        /// Tglg
+        /// Shortcode: Tglg
         /// </summary>
         Tagalog,
 
         /// <summary>
-        /// Thaa
+        /// Shortcode: Thaa
         /// </summary>
         Thaana,
 
         /// <summary>
-        /// Thai
+        /// Shortcode: Thai
         /// </summary>
         Thai,
 
         /// <summary>
-        /// Tibt
+        /// Shortcode: Tibt
         /// </summary>
         Tibetan,
 
         /// <summary>
-        /// Tirh
+        /// Shortcode: Tirh
         /// </summary>
         Tirhuta,
 
         /// <summary>
-        /// Ugar
+        /// Shortcode: Ugar
         /// </summary>
         Ugaritic,
 
         /// <summary>
-        /// Vaii
+        /// Shortcode: Vaii
         /// </summary>
         Vai,
 
         /// <summary>
-        /// Wara
+        /// Shortcode: Wara
         /// </summary>
         WarangCiti,
 
         /// <summary>
-        /// Wcho
+        /// Shortcode: Wcho
         /// </summary>
         Wancho,
 
         /// <summary>
-        /// Xpeo
+        /// Shortcode: Xpeo
         /// </summary>
         OldPersian,
 
         /// <summary>
-        /// Xsux
+        /// Shortcode: Xsux
         /// </summary>
         Cuneiform,
 
         /// <summary>
-        /// Yezi
+        /// Shortcode: Yezi
         /// </summary>
         Yezidi,
 
         /// <summary>
-        /// Yiii
+        /// Shortcode: Yiii
         /// </summary>
         Yi,
 
         /// <summary>
-        /// Zanb
+        /// Shortcode: Zanb
         /// </summary>
         ZanabazarSquare,
     }
