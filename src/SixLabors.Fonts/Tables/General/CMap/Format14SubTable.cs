@@ -1,10 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.WellKnownIds;
 
@@ -25,7 +23,8 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
         public static IEnumerable<Format14SubTable> Load(
             IEnumerable<EncodingRecord> encodings,
-            BigEndianBinaryReader reader)
+            BigEndianBinaryReader reader,
+            long offset)
         {
             // +-------------------+------------------------------------+------------------------------------------------------+
             // | Type              | Name                               | Description                                          |
@@ -38,7 +37,6 @@ namespace SixLabors.Fonts.Tables.General.CMap
             // +-------------------+------------------------------------+------------------------------------------------------+
             // | VariationSelector | varSelector[numVarSelectorRecords] | Array of VariationSelector records.                  |
             // +-------------------+------------------------------------+------------------------------------------------------+
-            long offset = reader.BaseStream.Position - 2; // Account for read format.
             uint length = reader.ReadUInt32();
             uint numVarSelectorRecords = reader.ReadUInt32();
 
@@ -86,7 +84,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
                     // +--------+-------------------+-------------------------------------------+
                     // | uint8  | additionalCount   | Number of additional values in this range |
                     // +--------+-------------------+-------------------------------------------+
-                    reader.BaseStream.Seek(offset + defaultUVSOffsets[i], SeekOrigin.Begin);
+                    reader.Seek(offset + defaultUVSOffsets[i], SeekOrigin.Begin);
                     uint numUnicodeValueRanges = reader.ReadUInt32();
                     for (int n = 0; n < numUnicodeValueRanges; n++)
                     {
@@ -115,7 +113,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
                     // +--------+--------------+-------------------------------+
                     // | uint16 | glyphID      | Glyph ID of the UVS           |
                     // +--------+--------------+-------------------------------+
-                    reader.BaseStream.Seek(offset + nonDefaultUVSOffsets[i], SeekOrigin.Begin);
+                    reader.Seek(offset + nonDefaultUVSOffsets[i], SeekOrigin.Begin);
                     uint numUVSMappings = reader.ReadUInt32();
                     for (int n = 0; n < numUVSMappings; n++)
                     {

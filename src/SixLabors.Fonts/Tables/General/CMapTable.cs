@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.Unicode;
@@ -95,11 +96,12 @@ namespace SixLabors.Fonts.Tables.General
                 encodings[i] = EncodingRecord.Read(reader);
             }
 
-            // foreach encoding we move forward looking for th subtables
+            // foreach encoding we move forward looking for the subtables
             var tables = new List<CMapSubTable>(numTables);
             foreach (IGrouping<uint, EncodingRecord> encoding in encodings.GroupBy(x => x.Offset))
             {
-                reader.Seek(encoding.Key, System.IO.SeekOrigin.Begin);
+                long offset = encoding.Key;
+                reader.Seek(offset, SeekOrigin.Begin);
 
                 // Subtable format.
                 switch (reader.ReadUInt16())
@@ -114,7 +116,7 @@ namespace SixLabors.Fonts.Tables.General
                         tables.AddRange(Format12SubTable.Load(encoding, reader));
                         break;
                     case 14:
-                        tables.AddRange(Format14SubTable.Load(encoding, reader));
+                        tables.AddRange(Format14SubTable.Load(encoding, reader, offset));
                         break;
                 }
             }
