@@ -17,7 +17,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
     /// </summary>
     internal abstract class CoverageTable
     {
-        public abstract int CoverageIndexOf(ushort glyphIndex);
+        public abstract int CoverageIndexOf(ushort glyphId);
 
         public abstract IEnumerator<ushort> GetEnumerator();
 

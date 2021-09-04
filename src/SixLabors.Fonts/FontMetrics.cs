@@ -179,10 +179,17 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out int glyphId, out bool skipNextCodePoint)
+        {
+            if (this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out ushort id, out skipNextCodePoint))
+            {
+                glyphId = id;
+                return true;
+            }
 
-            // TODO: Should be a collection.
-            => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+            glyphId = -1;
+            return false;
+        }
 
         /// <inheritdoc/>
         public void ApplySubstitions(IGlyphSubstitutionCollection collection)
@@ -197,10 +204,19 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public IEnumerable<GlyphMetrics> GetGlyphMetrics(ushort glyphId, ColorFontSupport support)
+        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support)
         {
+            GlyphType glyphType = GlyphType.Standard;
+            if (glyphId < 0)
+            {
+                // A glyph was not found in this face for the previously matched
+                // codepoint. Set to fallback.
+                glyphId = 0;
+                glyphType = GlyphType.Fallback;
+            }
+
             if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredVectors(CodePoint.ReplacementChar, glyphId, out GlyphMetrics[]? metrics))
+                && this.TryGetColoredVectors(codePoint, (ushort)glyphId, out GlyphMetrics[]? metrics))
             {
                 return metrics;
             }
@@ -210,9 +226,9 @@ namespace SixLabors.Fonts
                 this.glyphCache2[glyphId] = new[]
                 {
                     this.CreateGlyphMetrics(
-                    CodePoint.ReplacementChar, // TODO: Should we populate this value?
-                    glyphId,
-                    glyphId == 0 ? GlyphType.Standard : GlyphType.Fallback)
+                    codePoint,
+                    (ushort)glyphId,
+                    glyphType)
                 };
             }
 

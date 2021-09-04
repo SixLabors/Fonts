@@ -66,10 +66,15 @@ namespace SixLabors.Fonts.Tables.General.Gsub
 
         public override bool TrySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
         {
-            ushort glyphIndex = collection[index][0];
-            if (this.coverageTable.CoverageIndexOf(glyphIndex) > -1)
+            int glyphId = collection[index][0];
+            if (glyphId < 0)
             {
-                collection.Replace(index, (ushort)(glyphIndex + this.deltaGlyphId));
+                return false;
+            }
+
+            if (this.coverageTable.CoverageIndexOf((ushort)glyphId) > -1)
+            {
+                collection.Replace(index, (ushort)(glyphId + this.deltaGlyphId));
                 return true;
             }
 
@@ -113,11 +118,17 @@ namespace SixLabors.Fonts.Tables.General.Gsub
 
         public override bool TrySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
         {
-            int glyphIndex = this.coverageTable.CoverageIndexOf(collection[index][0]);
-
-            if (glyphIndex > -1)
+            int glyphId = collection[index][0];
+            if (glyphId < 0)
             {
-                collection.Replace(index, this.substituteGlyphs[glyphIndex]);
+                return false;
+            }
+
+            int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+
+            if (offset > -1)
+            {
+                collection.Replace(index, this.substituteGlyphs[offset]);
                 return true;
             }
 

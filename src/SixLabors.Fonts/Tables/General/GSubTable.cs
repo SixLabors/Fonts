@@ -98,10 +98,10 @@ namespace SixLabors.Fonts.Tables.General
 
         public void ApplySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
         {
-            collection.GetGlyphIdsAndScript(index, out IEnumerable<ushort> _, out Script script);
+            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out IEnumerable<int> _);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
-            Tag[] tags = UnicodeScriptTagMap.Instance[script];
+            Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
             for (int i = 0; i < tags.Length; i++)
             {
                 if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable table))

@@ -23,18 +23,18 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Contains a map between non-sequential codepoint offsets and their glyph ids.
         /// </summary>
-        private readonly Dictionary<int, ScriptGlyphs> map = new Dictionary<int, ScriptGlyphs>();
+        private readonly Dictionary<int, CodePointGlyphs> map = new Dictionary<int, CodePointGlyphs>();
 
         /// <inheritdoc/>
         public int Count { get; private set; }
 
         /// <inheritdoc/>
-        public ReadOnlySpan<ushort> this[int index] => this.map[this.offsets[index]].GlyphIds;
+        public ReadOnlySpan<int> this[int index] => this.map[this.offsets[index]].GlyphIds;
 
         /// <inheritdoc/>
-        public void AddGlyph(ushort glyphId, CodePoint codePoint, int offset)
+        public void AddGlyph(int glyphId, CodePoint codePoint, int offset)
         {
-            this.map.Add(offset, new ScriptGlyphs(CodePoint.GetScript(codePoint), new[] { glyphId }));
+            this.map.Add(offset, new CodePointGlyphs(codePoint, new[] { glyphId }));
             this.offsets[this.Count++] = offset;
         }
 
@@ -47,35 +47,37 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public bool TryGetGlyphIdsAtOffset(int offset, [NotNullWhen(true)] out IEnumerable<ushort>? glyphIds)
+        public bool TryGetCodePointAndGlyphIdsAtOffset(int offset, [NotNullWhen(true)] out CodePoint? codePoint, [NotNullWhen(true)] out IEnumerable<int>? glyphIds)
         {
-            if (this.map.TryGetValue(offset, out ScriptGlyphs scriptGlyphs))
+            if (this.map.TryGetValue(offset, out CodePointGlyphs value))
             {
-                glyphIds = scriptGlyphs.GlyphIds;
+                codePoint = value.CodePoint;
+                glyphIds = value.GlyphIds;
                 return true;
             }
 
+            codePoint = null;
             glyphIds = null;
             return false;
         }
 
         /// <inheritdoc/>
-        public void GetGlyphIdsAndScript(int index, out IEnumerable<ushort> glyphIds, out Script script)
+        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out IEnumerable<int> glyphIds)
         {
-            ScriptGlyphs result = this.map[this.offsets[index]];
-            glyphIds = result.GlyphIds;
-            script = result.Script;
+            CodePointGlyphs value = this.map[this.offsets[index]];
+            codePoint = value.CodePoint;
+            glyphIds = value.GlyphIds;
         }
 
         /// <inheritdoc/>
-        public void Replace(int index, ushort glyphId)
+        public void Replace(int index, int glyphId)
         {
             int offset = this.offsets[index];
-            this.map[offset] = new ScriptGlyphs(this.map[offset].Script, new[] { glyphId });
+            this.map[offset] = new CodePointGlyphs(this.map[offset].CodePoint, new[] { glyphId });
         }
 
         /// <inheritdoc/>
-        public void Replace(int index, int count, ushort glyphId)
+        public void Replace(int index, int count, int glyphId)
         {
             int offset = this.offsets[index];
             for (int i = 1; i < count; i++)
@@ -85,30 +87,32 @@ namespace SixLabors.Fonts
                 this.Count--;
             }
 
-            this.map[offset] = new ScriptGlyphs(this.map[offset].Script, new[] { glyphId });
+            this.map[offset] = new CodePointGlyphs(this.map[offset].CodePoint, new[] { glyphId });
         }
 
         /// <inheritdoc/>
-        public void Replace(int index, IEnumerable<ushort> glyphIds)
+        public void Replace(int index, IEnumerable<int> glyphIds)
         {
             int offset = this.offsets[index];
-            this.map[offset] = new ScriptGlyphs(this.map[offset].Script, glyphIds.ToArray());
+            this.map[offset] = new CodePointGlyphs(this.map[offset].CodePoint, glyphIds.ToArray());
         }
 
         [DebuggerDisplay("{DebuggerDisplay,nq}")]
-        private readonly struct ScriptGlyphs
+        private readonly struct CodePointGlyphs
         {
-            public ScriptGlyphs(Script script, ushort[] glyphIds)
+            public CodePointGlyphs(CodePoint codePoint, int[] glyphIds)
             {
-                this.Script = script;
+                this.CodePoint = codePoint;
                 this.GlyphIds = glyphIds;
             }
 
-            public Script Script { get; }
+            public CodePoint CodePoint { get; }
 
-            public ushort[] GlyphIds { get; }
+            public int[] GlyphIds { get; }
 
-            private string DebuggerDisplay => FormattableString.Invariant($"{this.Script} : [{string.Join(",", this.GlyphIds)}]");
+            private string DebuggerDisplay
+                => FormattableString
+                .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScript(this.CodePoint)} : [{string.Join(",", this.GlyphIds)}]");
         }
     }
 }

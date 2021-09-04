@@ -76,10 +76,8 @@ namespace SixLabors.Fonts
                     charIndex += charsConsumed;
 
                     // Get the glyph id for the codepoint and add to the collection.
-                    if (fontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint))
-                    {
-                        collection.AddGlyph(glyphId, current, codePointIndex);
-                    }
+                    fontMetrics.TryGetGlyphId(current, next, out int glyphId, out skipNextCodePoint);
+                    collection.AddGlyph(glyphId, current, codePointIndex);
 
                     codePointIndex++;
                     graphemeCodePointIndex++;
@@ -96,23 +94,25 @@ namespace SixLabors.Fonts
             for (int idx = 0; idx < codePointIndex; idx++)
             {
                 // No glyphs, this codepoint has been skipped.
-                if (!collection.TryGetGlyphIdsAtOffset(idx, out IEnumerable<ushort>? glyphIds))
+                if (!collection.TryGetCodePointAndGlyphIdsAtOffset(idx, out CodePoint? codePoint, out IEnumerable<int>? glyphIds))
                 {
                     continue;
                 }
 
-                if (!glyphMetricsMap.ContainsKey(idx))
+                // Never allow fallback fonts to replace previously matched glyphs.
+                if (glyphMetricsMap.TryGetValue(idx, out GlyphMetrics[]? metrics)
+                    && metrics[0].GlyphType != GlyphType.Fallback)
                 {
-                    // In main font or no previous font has managed to find a matching glyph.
-                    // Add our metrics to the map.
-                    var m = new List<GlyphMetrics>();
-                    foreach (ushort id in glyphIds)
-                    {
-                        m.AddRange(fontMetrics.GetGlyphMetrics(id, this.ColorFontSupport));
-                    }
-
-                    glyphMetricsMap[idx] = m.ToArray();
+                    continue;
                 }
+
+                var m = new List<GlyphMetrics>();
+                foreach (int id in glyphIds)
+                {
+                    m.AddRange(fontMetrics.GetGlyphMetrics(codePoint.Value, id, this.ColorFontSupport));
+                }
+
+                glyphMetricsMap[idx] = m.ToArray();
             }
         }
 

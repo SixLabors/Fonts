@@ -24,7 +24,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
         /// <returns>The <see cref="ReadOnlySpan{UInt16}"/>.</returns>
-        ReadOnlySpan<ushort> this[int index] { get; }
+        ReadOnlySpan<int> this[int index] { get; }
 
         /// <summary>
         /// Adds the glyph id and the codepoint it represents to the collection.
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts
         /// <param name="glyphId">The id of the glyph to add.</param>
         /// <param name="codePoint">The codepoint the glyph represents.</param>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
-        void AddGlyph(ushort glyphId, CodePoint codePoint, int offset);
+        void AddGlyph(int glyphId, CodePoint codePoint, int offset);
 
         /// <summary>
         /// Removes all elements from the collection.
@@ -43,8 +43,13 @@ namespace SixLabors.Fonts
         /// Gets the specified glyph ids matching the given codepoint offset.
         /// </summary>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        /// <param name="codePoint">
+        /// When this method returns, contains the codepoint associated with the specified offset,
+        /// if the value is found; otherwise, the default value for the type of the codepoint parameter.
+        /// This parameter is passed uninitialized.
+        /// </param>
         /// <param name="glyphIds">
-        /// When this method returns, contains the metrics associated with the specified offset,
+        /// When this method returns, contains the glyph ids associated with the specified offset,
         /// if the value is found; otherwise, the default value for the type of the glyphIds parameter.
         /// This parameter is passed uninitialized.
         /// </param>
@@ -52,22 +57,22 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the <see cref="IGlyphSubstitutionCollection"/> contains glyph ids
         /// for the specified offset; otherwise, <see langword="false"/>.
         /// </returns>
-        bool TryGetGlyphIdsAtOffset(int offset, [NotNullWhen(true)] out IEnumerable<ushort>? glyphIds);
+        bool TryGetCodePointAndGlyphIdsAtOffset(int offset, [NotNullWhen(true)] out CodePoint? codePoint, [NotNullWhen(true)] out IEnumerable<int>? glyphIds);
 
         /// <summary>
         /// Gets the glyph ids and the Unicode script for those ids at the specified position.
         /// </summary>
         /// <param name="index">The zero-based index of the elements to get.</param>
+        /// <param name="codePoint">The Unicode codepoint.</param>
         /// <param name="glyphIds">The glyph ids.</param>
-        /// <param name="script">The Unicode script.</param>
-        void GetGlyphIdsAndScript(int index, out IEnumerable<ushort> glyphIds, out Script script);
+        void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out IEnumerable<int> glyphIds);
 
         /// <summary>
         /// Performs a 1:1 replacement of a glyph id at the given position.
         /// </summary>
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphId">The replacement glyph id.</param>
-        void Replace(int index, ushort glyphId);
+        void Replace(int index, int glyphId);
 
         /// <summary>
         /// Replaces a series of glyph ids starting at the given position with a new id.
@@ -75,13 +80,13 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based starting index of the range of elements to replace.</param>
         /// <param name="count">The number of elements to replace.</param>
         /// <param name="glyphId">The replacement glyph id.</param>
-        void Replace(int index, int count, ushort glyphId);
+        void Replace(int index, int count, int glyphId);
 
         /// <summary>
         /// Replaces a single glyph id with a collection of glyph ids.
         /// </summary>
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphIds">The collection of replacement glyph ids.</param>
-        void Replace(int index, IEnumerable<ushort> glyphIds);
+        void Replace(int index, IEnumerable<int> glyphIds);
     }
 }

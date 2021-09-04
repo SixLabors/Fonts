@@ -74,7 +74,7 @@ namespace SixLabors.Fonts
         public bool TryGetGlyphId(
             CodePoint codePoint,
             CodePoint? nextCodePoint,
-            out ushort glyphId,
+            out int glyphId,
             out bool skipNextCodePoint)
             => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
@@ -83,8 +83,8 @@ namespace SixLabors.Fonts
             => this.metrics.Value.ApplySubstitions(collection);
 
         /// <inheritdoc />
-        public IEnumerable<GlyphMetrics> GetGlyphMetrics(ushort glyphId, ColorFontSupport support)
-            => this.metrics.Value.GetGlyphMetrics(glyphId, support);
+        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support)
+            => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
 
         /// <inheritdoc />
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
