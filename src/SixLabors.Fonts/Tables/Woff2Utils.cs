@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Tables
             CMapTable.TableName, HeadTable.TableName, HorizontalHeadTable.TableName, HorizontalMetricsTable.TableName,
             MaximumProfileTable.TableName, NameTable.TableName, OS2Table.TableName, "post", "cvt ", "fpgm", GlyphTable.TableName,
             IndexLocationTable.TableName, "prep", "CFF ", "VORG", "EBDT", "EBLC", "gasp", "hdmx", KerningTable.TableName, "LTSH",
-            "PCLT", "VDMX", VerticalHeadTable.TableName, VerticalMetricsTable.TableName, "BASE", "GDEF", "GPOS", "GSUB", "EBSC",
+            "PCLT", "VDMX", VerticalHeadTable.TableName, VerticalMetricsTable.TableName, "BASE", "GDEF", "GPOS", GSubTable.TableName, "EBSC",
             "JSTF", "MATH", "CBDT", "CBLC", ColrTable.TableName, CpalTable.TableName, "SVG ", "sbix", "acnt", "avar", "bdat",
             "bloc", "bsln", "cvar", "fdsc", "feat", "fmtx", "fvar", "gvar", "hsty", "just", "lcar", "mort", "morx", "opbd",
             "prop", "trak", "Zapf", "Silf", "Glat", "Gloc", "Feat", "Sill", "...." // Arbitrary tag follows.
