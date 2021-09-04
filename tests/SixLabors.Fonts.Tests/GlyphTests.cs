@@ -148,11 +148,6 @@ namespace SixLabors.Fonts.Tests
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 
-            for (int i = 0; i < rendererTtf.ControlPoints.Count; i++)
-            {
-                Assert.Equal(rendererTtf.ControlPoints[i], rendererWoff2.ControlPoints[i]);
-            }
-
             Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff2.ControlPoints));
         }
 #endif
