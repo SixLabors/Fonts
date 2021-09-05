@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace SixLabors.Fonts.Tables.General.Glyphs
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
     /// OpenType Layout fonts may contain one or more groups of glyphs used to render various scripts,

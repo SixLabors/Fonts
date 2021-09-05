@@ -2,11 +2,10 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using SixLabors.Fonts.Tables.General.Glyphs;
-using SixLabors.Fonts.Tables.General.Gsub;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
 using SixLabors.Fonts.Unicode;
 
-namespace SixLabors.Fonts.Tables.General
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
     /// The Glyph Substitution (GSUB) table provides data for substition of glyphs for appropriate rendering of scripts,

@@ -2,9 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Tables.General.Glyphs;
 
-namespace SixLabors.Fonts.Tables.General.Gsub
+namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 {
     /// <summary>
     /// A Ligature Substitution (LigatureSubst) subtable identifies ligature substitutions where a single glyph replaces multiple glyphs.

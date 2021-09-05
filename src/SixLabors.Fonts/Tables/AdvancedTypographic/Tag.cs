@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace SixLabors.Fonts.Tables.General.Glyphs
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
     /// Data type for tag identifiers. Tags are four byte integers, each byte representing a character.

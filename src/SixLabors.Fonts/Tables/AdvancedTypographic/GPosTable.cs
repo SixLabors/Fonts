@@ -1,10 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using SixLabors.Fonts.Tables.General.Glyphs;
-using SixLabors.Fonts.Tables.General.GPos;
+using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 
-namespace SixLabors.Fonts.Tables.General
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
     /// The Glyph Positioning table (GPOS) provides precise control over glyph placement for

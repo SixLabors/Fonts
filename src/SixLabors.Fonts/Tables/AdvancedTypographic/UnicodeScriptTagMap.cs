@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using SixLabors.Fonts.Unicode;
 
-namespace SixLabors.Fonts.Tables.General.Glyphs
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
     /// Provides a map from Unicode <see cref="Script"/> to OTF <see cref="Tag"/>.

@@ -2,9 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Tables.General.Glyphs;
 
-namespace SixLabors.Fonts.Tables.General.Gsub
+namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 {
     /// <summary>
     /// Single substitution (SingleSubst) subtables tell a client to replace a single glyph with another glyph.

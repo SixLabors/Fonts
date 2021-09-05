@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace SixLabors.Fonts.Tables.General.Glyphs
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
     /// Each subtable (except an Extension LookupType subtable) in a lookup references a Coverage table (Coverage),

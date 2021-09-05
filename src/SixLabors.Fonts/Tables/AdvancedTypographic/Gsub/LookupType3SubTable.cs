@@ -2,9 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Tables.General.Glyphs;
 
-namespace SixLabors.Fonts.Tables.General.Gsub
+namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 {
     /// <summary>
     /// An Alternate Substitution (AlternateSubst) subtable identifies any number of aesthetic alternatives

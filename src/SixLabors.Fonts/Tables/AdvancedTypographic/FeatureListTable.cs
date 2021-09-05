@@ -3,7 +3,7 @@
 
 using System.IO;
 
-namespace SixLabors.Fonts.Tables.General.Glyphs
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
     /// Features provide information about how to use the glyphs in a font to render a script or language.
