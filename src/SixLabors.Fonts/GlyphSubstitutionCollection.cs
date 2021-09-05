@@ -79,27 +79,35 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public void Replace(int index, int count, int glyphId)
         {
-            // Remove range at index
+            // Remove the count starting at the at index.
             int offset = this.offsets[index];
             CodePoint codePoint = this.map[offset].CodePoint;
-            for (int i = index; i < index + count; i++)
+            for (int i = 0; i < count; i++)
             {
-                this.map.Remove(this.offsets[i]);
-                this.offsets.Remove(i);
+                this.map.Remove(this.offsets[i + index]);
+                this.offsets.Remove(i + index);
+                this.Count--;
             }
 
-            // Assign at index
-            this.Count -= count - 1;
+            // Assign our new id at the index.
             this.map[offset] = new CodePointGlyphs(codePoint, new[] { glyphId });
             this.offsets[index] = offset;
+            this.Count++;
 
-            // Shuffle offsets following index down.
-            for (int i = 1; i < this.Count; i++)
+            // Shift indexes down to fill new gap.
+            int max = this.offsets.Count - 1;
+            for (int i = index; i < max; i++)
             {
-                this.offsets[index + i] = this.offsets[index + i + 1];
+                this.offsets[i + 1] = this.offsets[i + count];
             }
 
-            this.offsets.Remove(this.Count);
+            // Remove the newly orphaned offsets at the end.
+            max = this.offsets.Count - 1;
+            int min = this.offsets.Count - count;
+            for (int i = max; i > min; i--)
+            {
+                this.offsets.Remove(i);
+            }
         }
 
         /// <inheritdoc/>
