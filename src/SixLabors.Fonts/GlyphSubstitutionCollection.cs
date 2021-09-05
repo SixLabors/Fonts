@@ -18,7 +18,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Contains a map between the index of a map within the collection and its offset.
         /// </summary>
-        private readonly Dictionary<int, int> offsets = new Dictionary<int, int>();
+        private List<int> offsets = new List<int>();
 
         /// <summary>
         /// Contains a map between non-sequential codepoint offsets and their glyph ids.
@@ -26,7 +26,7 @@ namespace SixLabors.Fonts
         private readonly Dictionary<int, CodePointGlyphs> map = new Dictionary<int, CodePointGlyphs>();
 
         /// <inheritdoc/>
-        public int Count { get; private set; }
+        public int Count => this.offsets.Count;
 
         /// <inheritdoc/>
         public ReadOnlySpan<int> this[int index] => this.map[this.offsets[index]].GlyphIds;
@@ -35,15 +35,14 @@ namespace SixLabors.Fonts
         public void AddGlyph(int glyphId, CodePoint codePoint, int offset)
         {
             this.map.Add(offset, new CodePointGlyphs(codePoint, new[] { glyphId }));
-            this.offsets[this.Count++] = offset;
+            this.offsets.Add(offset);
         }
 
         /// <inheritdoc/>
         public void Clear()
         {
-            this.Count = 0;
-            this.map.Clear();
             this.offsets.Clear();
+            this.map.Clear();
         }
 
         /// <inheritdoc/>
@@ -85,29 +84,13 @@ namespace SixLabors.Fonts
             for (int i = 0; i < count; i++)
             {
                 this.map.Remove(this.offsets[i + index]);
-                this.offsets.Remove(i + index);
-                this.Count--;
             }
+
+            this.offsets.RemoveRange(index, count);
 
             // Assign our new id at the index.
             this.map[offset] = new CodePointGlyphs(codePoint, new[] { glyphId });
-            this.offsets[index] = offset;
-            this.Count++;
-
-            // Shift indexes down to fill new gap.
-            int max = this.offsets.Count - 1;
-            for (int i = index; i < max; i++)
-            {
-                this.offsets[i + 1] = this.offsets[i + count];
-            }
-
-            // Remove the newly orphaned offsets at the end.
-            max = this.offsets.Count - 1;
-            int min = this.offsets.Count - count;
-            for (int i = max; i > min; i--)
-            {
-                this.offsets.Remove(i);
-            }
+            this.offsets.Insert(index, offset);
         }
 
         /// <inheritdoc/>
