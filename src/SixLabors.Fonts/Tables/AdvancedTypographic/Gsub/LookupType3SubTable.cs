@@ -81,7 +81,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType3Format1SubTable(alternateTables, coverageTable);
         }
 
-        public override bool TrySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
+        public override bool TrySubstition(GSubTable gSubTable, IGlyphSubstitutionCollection collection, ushort index, int count)
         {
             int glyphId = collection[index][0];
             if (glyphId < 0)

@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         {
             if (string.IsNullOrEmpty(value) || value.Length != 4)
             {
-                return 0;
+                return default;
             }
 
             byte b3 = GetByte(value[3]);
@@ -42,7 +42,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte GetByte(char c)
         {
-            if (c > -1 && c < 256)
+            if (c is >= (char)0 and <= (char)255)
             {
                 return (byte)c;
             }

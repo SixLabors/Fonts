@@ -6,7 +6,8 @@ using System.IO;
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 {
     /// <summary>
-    /// A Chained Contexts Substitution subtable describes glyph substitutions in context with an ability to look back and/or look ahead in the sequence of glyphs.
+    /// A Chained Contexts Substitution subtable describes glyph substitutions in context
+    /// with an ability to look back and/or look ahead in the sequence of glyphs.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-6-chained-contexts-substitution-subtable"/>
     /// </summary>
     internal class LookupType6SubTable
@@ -22,89 +23,76 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             return substFormat switch
             {
-                1 => LookupType6Format1SubTable.Load(reader, offset),
-                _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1'."),
+                // TODO: Implement 1 & 2
+                3 => LookupType6Format3SubTable.Load(reader, offset),
+                _ => new NotImplementedSubTable()
             };
         }
     }
 
-    internal class LookupType6Format1SubTable : LookupSubTable
+    internal class LookupType6Format3SubTable : LookupSubTable
     {
-        private readonly LigatureSetTable[] ligatureSetTables;
-        private readonly CoverageTable coverageTable;
+        private readonly SequenceLookupRecord[] seqLookupRecords;
+        private readonly CoverageTable[] backtrackingCoverageTables;
+        private readonly CoverageTable[] inputCoverageTables;
+        private readonly CoverageTable[] lookaheadCoverageTables;
 
-        private LookupType6Format1SubTable(LigatureSetTable[] ligatureSetTables, CoverageTable coverageTable)
+        private LookupType6Format3SubTable(
+            SequenceLookupRecord[] seqLookupRecords,
+            CoverageTable[] backtrackingCoverageTables,
+            CoverageTable[] inputCoverageTables,
+            CoverageTable[] lookaheadCoverageTables)
         {
-            this.ligatureSetTables = ligatureSetTables;
-            this.coverageTable = coverageTable;
+            this.seqLookupRecords = seqLookupRecords;
+            this.backtrackingCoverageTables = backtrackingCoverageTables;
+            this.inputCoverageTables = inputCoverageTables;
+            this.lookaheadCoverageTables = lookaheadCoverageTables;
         }
 
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
-            // Ligature Substitution Format 1
-            // +----------+--------------------------------------+--------------------------------------------------------------------+
-            // | Type     | Name                                 | Description                                                        |
-            // +==========+======================================+====================================================================+
-            // | uint16   | substFormat                          | Format identifier: format = 1                                      |
-            // +----------+--------------------------------------+--------------------------------------------------------------------+
-            // | Offset16 | coverageOffset                       | Offset to Coverage table, from beginning of substitution           |
-            // |          |                                      | subtable                                                           |
-            // +----------+--------------------------------------+--------------------------------------------------------------------+
-            // | uint16   | ligatureSetCount                     | Number of LigatureSet tables                                       |
-            // +----------+--------------------------------------+--------------------------------------------------------------------+
-            // | Offset16 | ligatureSetOffsets[ligatureSetCount] | Array of offsets to LigatureSet tables. Offsets are from beginning |
-            // |          |                                      | of substitution subtable, ordered by Coverage index                |
-            // +----------+--------------------------------------+--------------------------------------------------------------------+
-            ushort coverageOffset = reader.ReadOffset16();
-            ushort ligatureSetCount = reader.ReadUInt16();
-            ushort[] ligatureSetOffsets = reader.ReadUInt16Array(ligatureSetCount);
+            // ChainedSequenceContextFormat3 1
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            // | Type                 | Name                                          | Description                                                    |
+            // +======================+===============================================+================================================================+
+            // | uint16               | format                                        | Format identifier: format = 3                                  |
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            // | uint16               | backtrackGlyphCount                           | Number of glyphs in the backtrack sequence                     |
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            // | Offset16             | backtrackCoverageOffsets[backtrackGlyphCount] | Array of offsets to coverage tables for the backtrack sequence |
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            // | uint16               | inputGlyphCount                               | Number of glyphs in the input sequence                         |
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            // | Offset16             | inputCoverageOffsets[inputGlyphCount]         | Array of offsets to coverage tables for the input sequence     |
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            // | uint16               | lookaheadGlyphCount                           | Number of glyphs in the lookahead sequence                     |
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            // | Offset16             | lookaheadCoverageOffsets[lookaheadGlyphCount] | Array of offsets to coverage tables for the lookahead sequence |
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            // | uint16               | seqLookupCount                                | Number of SequenceLookupRecords                                |
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            // | SequenceLookupRecord | seqLookupRecords[seqLookupCount]              | Array of SequenceLookupRecords                                 |
+            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
+            ushort backtrackGlyphCount = reader.ReadUInt16();
+            ushort[] backtrackCoverageOffsets = reader.ReadUInt16Array(backtrackGlyphCount);
 
-            var ligatureSetTables = new LigatureSetTable[ligatureSetCount];
-            for (int i = 0; i < ligatureSetTables.Length; i++)
-            {
-                // LigatureSet Table
-                // +----------+--------------------------------+--------------------------------------------------------------------+
-                // | Type     | Name                           | Description                                                        |
-                // +==========+================================+====================================================================+
-                // | uint16   | ligatureCount                  | Number of Ligature tables                                          |
-                // +----------+--------------------------------+--------------------------------------------------------------------+
-                // | Offset16 | ligatureOffsets[LigatureCount] | Array of offsets to Ligature tables. Offsets are from beginning of |
-                // |          |                                | LigatureSet table, ordered by preference.                          |
-                // +----------+--------------------------------+--------------------------------------------------------------------+
-                long ligatureSetOffset = offset + ligatureSetOffsets[i];
-                reader.Seek(ligatureSetOffset, SeekOrigin.Begin);
-                ushort ligatureCount = reader.ReadUInt16();
-                ushort[] ligatureOffsets = reader.ReadUInt16Array(ligatureCount);
-                var ligatureTables = new LigatureTable[ligatureCount];
+            ushort inputGlyphCount = reader.ReadUInt16();
+            ushort[] inputCoverageOffsets = reader.ReadUInt16Array(inputGlyphCount);
 
-                // +--------+---------------------------------------+------------------------------------------------------+
-                // | Type   | Name                                  | Description                                          |
-                // +========+=======================================+======================================================+
-                // | uint16 | ligatureGlyph                         | glyph ID of ligature to substitute                   |
-                // +--------+---------------------------------------+------------------------------------------------------+
-                // | uint16 | componentCount                        | Number of components in the ligature                 |
-                // +--------+---------------------------------------+------------------------------------------------------+
-                // | uint16 | componentGlyphIDs[componentCount - 1] | Array of component glyph IDs — start with the second |
-                // |        |                                       | component, ordered in writing direction              |
-                // +--------+---------------------------------------+------------------------------------------------------+
-                for (int j = 0; j < ligatureTables.Length; j++)
-                {
-                    reader.Seek(ligatureSetOffset + ligatureOffsets[j], SeekOrigin.Begin);
-                    ushort ligatureGlyph = reader.ReadUInt16();
-                    ushort componentCount = reader.ReadUInt16();
-                    ushort[] componentGlyphIds = reader.ReadUInt16Array(componentCount - 1);
-                    ligatureTables[j] = new LigatureTable(ligatureGlyph, componentGlyphIds);
-                }
+            ushort lookaheadGlyphCount = reader.ReadUInt16();
+            ushort[] lookaheadCoverageOffsets = reader.ReadUInt16Array(lookaheadGlyphCount);
 
-                ligatureSetTables[i] = new LigatureSetTable(ligatureTables);
-            }
+            ushort seqLookupCount = reader.ReadUInt16();
+            SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
 
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            CoverageTable[] backtrackingCoverageTables = CoverageTable.LoadArray(reader, offset, backtrackCoverageOffsets);
+            CoverageTable[] inputCoverageTables = CoverageTable.LoadArray(reader, offset, inputCoverageOffsets);
+            CoverageTable[] lookaheadCoverageTables = CoverageTable.LoadArray(reader, offset, lookaheadCoverageOffsets);
 
-            return new LookupType6Format1SubTable(ligatureSetTables, coverageTable);
+            return new LookupType6Format3SubTable(seqLookupRecords, backtrackingCoverageTables, inputCoverageTables, lookaheadCoverageTables);
         }
 
-        public override bool TrySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
+        public override bool TrySubstition(GSubTable gSubTable, IGlyphSubstitutionCollection collection, ushort index, int count)
         {
             int glyphId = collection[index][0];
             if (glyphId < 0)
@@ -112,62 +100,58 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 return false;
             }
 
-            int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+            int inputLength = this.inputCoverageTables.Length;
 
-            if (offset > -1)
+            // Check that there are enough context glyphs
+            if (index < this.backtrackingCoverageTables.Length
+                || inputLength + this.lookaheadCoverageTables.Length > count)
             {
-                LigatureSetTable ligatureSetTable = this.ligatureSetTables[offset];
-                foreach (LigatureTable ligatureTable in ligatureSetTable.Ligatures)
+                return false;
+            }
+
+            // Check all coverages: if any of them does not match, abort substitution
+            for (int i = 0; i < this.inputCoverageTables.Length; ++i)
+            {
+                int id = collection[index + i][0];
+                if (id < 0 || this.inputCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
                 {
-                    int remaining = count - 1;
-                    int compLength = ligatureTable.ComponentGlyphs.Length;
-                    if (compLength > remaining)
-                    {
-                        continue;
-                    }
-
-                    bool allMatched = true;
-                    int temp = index + 1;
-                    ushort[] componentGlyphs = ligatureTable.ComponentGlyphs;
-                    for (int i = 0; i < componentGlyphs.Length; i++)
-                    {
-                        if (collection[temp + i][0] != componentGlyphs[i])
-                        {
-                            allMatched = false;
-                            break;
-                        }
-                    }
-
-                    if (allMatched)
-                    {
-                        collection.Replace(index, compLength + 1, ligatureTable.GlyphId);
-                        return true;
-                    }
+                    return false;
                 }
             }
 
-            return false;
-        }
-
-        public readonly struct LigatureSetTable
-        {
-            public LigatureSetTable(LigatureTable[] ligatures)
-                => this.Ligatures = ligatures;
-
-            public readonly LigatureTable[] Ligatures { get; }
-        }
-
-        public readonly struct LigatureTable
-        {
-            public LigatureTable(ushort glyphId, ushort[] componentGlyphs)
+            for (int i = 0; i < this.backtrackingCoverageTables.Length; ++i)
             {
-                this.GlyphId = glyphId;
-                this.ComponentGlyphs = componentGlyphs;
+                int id = collection[index - 1 - i][0];
+                if (id < 0 || this.backtrackingCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                {
+                    return false;
+                }
             }
 
-            public ushort GlyphId { get; }
+            for (int i = 0; i < this.lookaheadCoverageTables.Length; ++i)
+            {
+                int id = collection[index + inputLength + i][0];
+                if (id < 0 || this.lookaheadCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                {
+                    return false;
+                }
+            }
 
-            public ushort[] ComponentGlyphs { get; }
+            // It's a match. Perform substitutions and return true if anything changed.
+            bool hasChanged = false;
+            foreach (SequenceLookupRecord lookupRecord in this.seqLookupRecords)
+            {
+                ushort sequenceIndex = lookupRecord.SequenceIndex;
+                ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                LookupTable lookup = gSubTable.LookupList.LookupTables[lookupIndex];
+                if (lookup.TrySubstition(gSubTable, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                {
+                    hasChanged = true;
+                }
+            }
+
+            return hasChanged;
         }
     }
 }

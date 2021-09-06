@@ -32,6 +32,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 _ => throw new NotSupportedException(),
             };
         }
+
+        public static CoverageTable[] LoadArray(BigEndianBinaryReader reader, long offset, ushort[] coverageOffsets)
+        {
+            var tables = new CoverageTable[coverageOffsets.Length];
+            for (int i = 0; i < tables.Length; i++)
+            {
+                tables[i] = Load(reader, offset + coverageOffsets[i]);
+            }
+
+            return tables;
+        }
     }
 
     internal sealed class CoverageFormat1Table : CoverageTable

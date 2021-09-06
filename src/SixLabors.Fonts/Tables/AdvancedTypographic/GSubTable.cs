@@ -111,15 +111,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
 
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
-            if (defaultLangSysTable != null && this.TryApplyFeatureSubstition(collection, index, count, defaultLangSysTable))
+            if (defaultLangSysTable != null)
             {
+                this.ApplyFeatureSubstitionImpl(collection, index, count, defaultLangSysTable);
                 return;
             }
 
-            this.TryApplyFeatureSubstition(collection, index, count, scriptListTable.LangSysTables);
+            this.ApplyFeatureSubstitionImpl(collection, index, count, scriptListTable.LangSysTables);
         }
 
-        private bool TryApplyFeatureSubstition(
+        private void ApplyFeatureSubstitionImpl(
             IGlyphSubstitutionCollection collection,
             ushort index,
             int count,
@@ -137,21 +138,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         // TODO: Consider caching the relevant langtables per script.
                         // There's a lot of repetitive checks here.
                         LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
-                        LookupSubTable[] lookupSubTables = lookupTable.LookupSubTables;
-                        for (int l = 0; l < lookupSubTables.Length; l++)
-                        {
-                            if (lookupSubTables[l].TrySubstition(collection, index, count))
-                            {
-                                // A lookup is finished for a glyph after the client locates the target
-                                // glyph or glyph context and performs a substitution, if specified.
-                                return true;
-                            }
-                        }
+                        lookupTable.TrySubstition(this, collection, index, count);
                     }
                 }
             }
-
-            return false;
         }
     }
 }
