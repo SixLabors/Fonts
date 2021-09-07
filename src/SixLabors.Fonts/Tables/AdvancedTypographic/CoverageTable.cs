@@ -29,7 +29,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             {
                 1 => CoverageFormat1Table.Load(reader),
                 2 => CoverageFormat2Table.Load(reader),
-                _ => throw new NotSupportedException(),
+                _ => throw new InvalidFontFileException($"Invalid value for 'coverageFormat' {coverageFormat}. Should be '1' or '2'.")
             };
         }
 
@@ -52,9 +52,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         private CoverageFormat1Table(ushort[] glyphArray)
             => this.glyphArray = glyphArray;
 
-        public override int CoverageIndexOf(ushort glyphIndex)
+        public override int CoverageIndexOf(ushort glyphId)
         {
-            int n = Array.BinarySearch(this.glyphArray, glyphIndex);
+            int n = Array.BinarySearch(this.glyphArray, glyphId);
             return n < 0 ? -1 : n;
         }
 
@@ -81,19 +81,35 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
     internal sealed class CoverageFormat2Table : CoverageTable
     {
-        private readonly ushort[] glyphArray;
+        private readonly CoverageRangeRecord[] records;
 
-        private CoverageFormat2Table(ushort[] glyphArray)
-            => this.glyphArray = glyphArray;
+        private CoverageFormat2Table(CoverageRangeRecord[] records)
+            => this.records = records;
 
-        public override int CoverageIndexOf(ushort glyphIndex)
+        public override int CoverageIndexOf(ushort glyphId)
         {
-            int n = Array.BinarySearch(this.glyphArray, glyphIndex);
-            return n < 0 ? -1 : n;
+            for (int i = 0; i < this.records.Length; i++)
+            {
+                CoverageRangeRecord rec = this.records[i];
+                if (rec.StartGlyphId <= glyphId && glyphId <= rec.EndGlyphId)
+                {
+                    return rec.Index;
+                }
+            }
+
+            return -1;
         }
 
         public override IEnumerator<ushort> GetEnumerator()
-            => ((IEnumerable<ushort>)this.glyphArray).GetEnumerator();
+        {
+            foreach (CoverageRangeRecord record in this.records)
+            {
+                for (ushort i = record.StartGlyphId; i <= record.EndGlyphId; i++)
+                {
+                    yield return i;
+                }
+            }
+        }
 
         public static CoverageFormat2Table Load(BigEndianBinaryReader reader)
         {
@@ -107,9 +123,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             // | RangeRecord | rangeRecords[rangeCount] | Array of glyph ranges — ordered by startGlyphID. |
             // +-------------+--------------------------+--------------------------------------------------+
             ushort rangeCount = reader.ReadUInt16();
+            var records = new CoverageRangeRecord[rangeCount];
 
-            var glyphArray = new List<ushort>();
-            for (int i = 0; i < rangeCount; i++)
+            for (int i = 0; i < records.Length; i++)
             {
                 // +--------+--------------------+-------------------------------------------+
                 // | Type   | Name               | Description                               |
@@ -120,17 +136,29 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 // +--------+--------------------+-------------------------------------------+
                 // | uint16 | startCoverageIndex | Coverage Index of first glyph ID in range |
                 // +--------+--------------------+-------------------------------------------+
-                ushort startId = reader.ReadUInt16();
-                ushort endId = reader.ReadUInt16();
-                ushort startCoverageIndex = reader.ReadUInt16();
-
-                for (ushort j = startId; j <= endId; j++)
-                {
-                    glyphArray.Add(j);
-                }
+                records[i] = new CoverageRangeRecord(
+                    reader.ReadUInt16(),
+                    reader.ReadUInt16(),
+                    reader.ReadUInt16());
             }
 
-            return new CoverageFormat2Table(glyphArray.ToArray());
+            return new CoverageFormat2Table(records);
+        }
+
+        private readonly struct CoverageRangeRecord
+        {
+            public CoverageRangeRecord(ushort startGlyphId, ushort endGlyphId, ushort startCoverageIndex)
+            {
+                this.StartGlyphId = startGlyphId;
+                this.EndGlyphId = endGlyphId;
+                this.Index = startCoverageIndex;
+            }
+
+            public ushort StartGlyphId { get; }
+
+            public ushort EndGlyphId { get; }
+
+            public ushort Index { get; }
         }
     }
 }
