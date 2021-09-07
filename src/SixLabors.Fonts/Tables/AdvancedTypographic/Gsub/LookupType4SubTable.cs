@@ -79,6 +79,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 ushort[] ligatureOffsets = reader.ReadUInt16Array(ligatureCount);
                 var ligatureTables = new LigatureTable[ligatureCount];
 
+                // Ligature Table
                 // +--------+---------------------------------------+------------------------------------------------------+
                 // | Type   | Name                                  | Description                                          |
                 // +========+=======================================+======================================================+

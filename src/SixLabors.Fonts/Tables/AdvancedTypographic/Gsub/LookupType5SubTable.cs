@@ -9,7 +9,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// A Contextual Substitution subtable describes glyph substitutions in context that replace one
     /// or more glyphs within a certain pattern of glyphs.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-5-contextual-substitution-subtable"/>
-    /// <see href="https://docs.microsoft.com/en-us/typography/opentype/otspec150/gsub#CS"/>
     /// </summary>
     internal sealed class LookupType5SubTable
     {
@@ -83,6 +82,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             if (this.coverageTable.CoverageIndexOf((ushort)glyphId) > -1)
             {
+                // TODO: Implement
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
                 return false;
             }
@@ -90,7 +90,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return false;
         }
 
-        public sealed class SequenceRuleSetTable
+        internal sealed class SequenceRuleSetTable
         {
             private SequenceRuleSetTable(SequenceRuleTable[] subRules)
                 => this.SubRules = subRules;
@@ -161,35 +161,53 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     internal sealed class LookupType5Format2SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
-        private readonly ushort[] substituteGlyphs;
+        private readonly ClassDefinitionTable classDefinitionTable;
+        private readonly ClassSequenceRuleSetTable[] sequenceRuleSetTables;
 
-        private LookupType5Format2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable)
+        private LookupType5Format2SubTable(
+            ClassSequenceRuleSetTable[] sequenceRuleSetTables,
+            ClassDefinitionTable classDefinitionTable,
+            CoverageTable coverageTable)
         {
-            this.substituteGlyphs = substituteGlyphs;
+            this.sequenceRuleSetTables = sequenceRuleSetTables;
+            this.classDefinitionTable = classDefinitionTable;
             this.coverageTable = coverageTable;
         }
 
         public static LookupType5Format2SubTable Load(BigEndianBinaryReader reader, long offset)
         {
-            // SingleSubstFormat2
-            // +----------+--------------------------------+-----------------------------------------------------------+
-            // | Type     | Name                           | Description                                               |
-            // +==========+================================+===========================================================+
-            // | uint16   | substFormat                    | Format identifier: format = 2                             |
-            // +----------+--------------------------------+-----------------------------------------------------------+
-            // | Offset16 | coverageOffset                 | Offset to Coverage table, from beginning of substitution  |
-            // |          |                                | subtable                                                  |
-            // +----------+--------------------------------+-----------------------------------------------------------+
-            // | uint16   | glyphCount                     | Number of glyph IDs in the substituteGlyphIDs array       |
-            // +----------+--------------------------------+-----------------------------------------------------------+
-            // | uint16   | substituteGlyphIDs[glyphCount] | Array of substitute glyph IDs — ordered by Coverage index |
-            // +----------+--------------------------------+-----------------------------------------------------------+
+            // SequenceContextFormat2
+            // +----------+----------------------------------------------+--------------------------------------------------------------------+
+            // | Type     | Name                                         | Description                                                        |
+            // +==========+==============================================+====================================================================+
+            // | uint16   | format                                       | Format identifier: format = 2                                      |
+            // +----------+----------------------------------------------+--------------------------------------------------------------------+
+            // | Offset16 | coverageOffset                               | Offset to Coverage table, from beginning of                        |
+            // |          |                                              | SequenceContextFormat2 table                                       |
+            // +----------+----------------------------------------------+--------------------------------------------------------------------+
+            // | Offset16 | classDefOffset                               | Offset to ClassDef table, from beginning of                        |
+            // |          |                                              | SequenceContextFormat2 table                                       |
+            // +----------+----------------------------------------------+--------------------------------------------------------------------+
+            // | uint16   | classSeqRuleSetCount                         | Number of ClassSequenceRuleSet tables                              |
+            // +----------+----------------------------------------------+--------------------------------------------------------------------+
+            // | Offset16 | classSeqRuleSetOffsets[classSeqRuleSetCount] | Array of offsets to ClassSequenceRuleSet tables, from beginning of |
+            // |          |                                              | SequenceContextFormat2 table (may be NULL)                         |
+            // +----------+----------------------------------------------+--------------------------------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
-            ushort glyphCount = reader.ReadUInt16();
-            ushort[] substituteGlyphIds = reader.ReadUInt16Array(glyphCount);
+            ushort classDefOffset = reader.ReadOffset16();
+            ushort classSeqRuleSetCount = reader.ReadUInt16();
+            ushort[] classSeqRuleSetOffsets = reader.ReadUInt16Array(classSeqRuleSetCount);
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            var classDefTable = ClassDefinitionTable.Load(reader, offset + classDefOffset);
 
-            return new LookupType5Format2SubTable(substituteGlyphIds, coverageTable);
+            var seqRuleSets = new ClassSequenceRuleSetTable[classSeqRuleSetCount];
+
+            for (int i = 0; i < seqRuleSets.Length; i++)
+            {
+                seqRuleSets[i] = ClassSequenceRuleSetTable.Load(reader, offset + classSeqRuleSetOffsets[i]);
+            }
+
+            return new LookupType5Format2SubTable(seqRuleSets, classDefTable, coverageTable);
         }
 
         public override bool TrySubstition(GSubTable gSubTable, IGlyphSubstitutionCollection collection, ushort index, int count)
@@ -204,14 +222,87 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             if (offset > -1)
             {
-                collection.Replace(index, this.substituteGlyphs[offset]);
-                return true;
+                // TODO: Implement
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#52-context-substitution-format-2-class-based-glyph-contexts
+                return false;
             }
 
             return false;
         }
+
+        internal sealed class ClassSequenceRuleSetTable
+        {
+            private ClassSequenceRuleSetTable(ClassSequenceRuleTable[] subRules)
+                => this.SubRules = subRules;
+
+            public ClassSequenceRuleTable[] SubRules { get; }
+
+            public static ClassSequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
+            {
+                // ClassSequenceRuleSet
+                // +----------+----------------------------------------+---------------------------------------+
+                // | Type     | Name                                   | Description                           |
+                // +==========+========================================+=======================================+
+                // | uint16   | classSeqRuleCount                      | Number of ClassSequenceRule tables    |
+                // +----------+----------------------------------------+---------------------------------------+
+                // | Offset16 | classSeqRuleOffsets[classSeqRuleCount] | Array of offsets to ClassSequenceRule |
+                // |          |                                        | tables, from beginning of             |
+                // |          |                                        | ClassSequenceRuleSet table            |
+                // +----------+----------------------------------------+---------------------------------------+
+                reader.Seek(offset, SeekOrigin.Begin);
+                ushort seqRuleCount = reader.ReadUInt16();
+                ushort[] seqRuleOffsets = reader.ReadUInt16Array(seqRuleCount);
+
+                var subRules = new ClassSequenceRuleTable[seqRuleCount];
+                for (int i = 0; i < subRules.Length; i++)
+                {
+                    subRules[i] = ClassSequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
+                }
+
+                return new ClassSequenceRuleSetTable(subRules);
+            }
+
+            public sealed class ClassSequenceRuleTable
+            {
+                private ClassSequenceRuleTable(ushort[] inputSequence, SequenceLookupRecord[] seqLookupRecords)
+                {
+                    this.InputSequence = inputSequence;
+                    this.SequenceLookupRecords = seqLookupRecords;
+                }
+
+                public ushort[] InputSequence { get; }
+
+                public SequenceLookupRecord[] SequenceLookupRecords { get; }
+
+                public static ClassSequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
+                {
+                    // ClassSequenceRule
+                    // +----------------------+----------------------------------+------------------------------------------+
+                    // | Type                 | Name                             | Description                              |
+                    // +======================+==================================+==========================================+
+                    // | uint16               | glyphCount                       | Number of glyphs to be matched           |
+                    // +----------------------+----------------------------------+------------------------------------------+
+                    // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords          |
+                    // +----------------------+----------------------------------+------------------------------------------+
+                    // | uint16               | inputSequence[glyphCount - 1]    | Sequence of classes to be matched to the |
+                    // |                      |                                  | input glyph sequence, beginning with the |
+                    // |                      |                                  | second glyph position                    |
+                    // +----------------------+----------------------------------+------------------------------------------+
+                    // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of SequenceLookupRecords           |
+                    // +----------------------+----------------------------------+------------------------------------------+
+                    reader.Seek(offset, SeekOrigin.Begin);
+                    ushort glyphCount = reader.ReadUInt16();
+                    ushort seqLookupCount = reader.ReadUInt16();
+                    ushort[] inputSequence = reader.ReadUInt16Array(glyphCount - 1);
+                    SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
+
+                    return new ClassSequenceRuleTable(inputSequence, seqLookupRecords);
+                }
+            }
+        }
     }
 
+    // TODO: Implement decode
     internal sealed class LookupType5Format3SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
