@@ -128,9 +128,9 @@ namespace SixLabors.Fonts.Tests
 
 #if NETCOREAPP3_0_OR_GREATER
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void RenderWoff2Glyphs_EqualToTtfGlyphs(bool applyKerning)
+        [InlineData(false, 843)]
+        [InlineData(true, 851)]
+        public void RenderWoff2Glyphs_EqualToTtfGlyphs(bool applyKerning, int expectedControlPoints)
         {
             Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
             Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
@@ -149,6 +149,7 @@ namespace SixLabors.Fonts.Tests
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 
+            Assert.Equal(expectedControlPoints, rendererTtf.ControlPoints.Count);
             Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff2.ControlPoints));
         }
 #endif
