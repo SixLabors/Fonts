@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.Tests
         {
             var description = FontDescription.LoadDescription(TestFonts.FontFileWoff2Data());
 
-            Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
+            Assert.Equal("Open Sans", description.FontNameInvariantCulture);
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         }
 

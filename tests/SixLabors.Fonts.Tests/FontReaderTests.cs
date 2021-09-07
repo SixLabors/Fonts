@@ -85,7 +85,7 @@ namespace SixLabors.Fonts.Tests
             GlyphTable glyphs = reader.GetTable<GlyphTable>();
             Fonts.Tables.General.Glyphs.GlyphVector glyph = glyphs.GetGlyph(0);
 
-            Assert.Equal(231, glyphs.GlyphCount);
+            Assert.Equal(938, glyphs.GlyphCount);
             Assert.Equal(8, glyph.PointCount);
             Assert.Equal(8, glyph.ControlPoints.Length);
             Assert.Equal(2, glyph.EndPoints.Length);

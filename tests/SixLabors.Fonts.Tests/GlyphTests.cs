@@ -127,8 +127,10 @@ namespace SixLabors.Fonts.Tests
         }
 
 #if NETCOREAPP3_0_OR_GREATER
-        [Fact]
-        public void RenderWoff2Glyphs_EqualToTtfGlyphs()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void RenderWoff2Glyphs_EqualToTtfGlyphs(bool applyKerning)
         {
             Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
             Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
@@ -137,14 +139,13 @@ namespace SixLabors.Fonts.Tests
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
             {
-                // TODO: Check what is different about the woff font.
-                ApplyKerning = false,
+                ApplyKerning = applyKerning,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff2 = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
             {
-                ApplyKerning = false,
+                ApplyKerning = applyKerning,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 
