@@ -18,12 +18,12 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Contains a map between the index of a map within the collection and its offset.
         /// </summary>
-        private List<int> offsets = new List<int>();
+        private readonly List<int> offsets = new();
 
         /// <summary>
         /// Contains a map between non-sequential codepoint offsets and their glyph ids.
         /// </summary>
-        private readonly Dictionary<int, CodePointGlyphs> map = new Dictionary<int, CodePointGlyphs>();
+        private readonly Dictionary<int, CodePointGlyphs> map = new();
 
         /// <inheritdoc/>
         public int Count => this.offsets.Count;
