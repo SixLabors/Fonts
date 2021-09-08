@@ -167,6 +167,19 @@ namespace SixLabors.Fonts
         public short AdvanceHeightMax { get; }
 
         /// <inheritdoc/>
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out int glyphId, out bool skipNextCodePoint)
+        {
+            if (this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out ushort id, out skipNextCodePoint))
+            {
+                glyphId = id;
+                return true;
+            }
+
+            glyphId = -1;
+            return false;
+        }
+
+        /// <inheritdoc/>
         public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
         {
             bool foundGlyph = this.TryGetGlyphId(codePoint, out ushort idx);
@@ -181,45 +194,6 @@ namespace SixLabors.Fonts
             }
 
             return this.glyphCache[idx];
-        }
-
-        /// <inheritdoc/>
-        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out int glyphId, out bool skipNextCodePoint)
-        {
-            if (this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out ushort id, out skipNextCodePoint))
-            {
-                glyphId = id;
-                return true;
-            }
-
-            glyphId = -1;
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public void ApplySubstitions(GlyphSubstitutionCollection collection)
-        {
-            if (this.gSubTable != null)
-            {
-                for (ushort index = 0; index < collection.Count; index++)
-                {
-                    this.gSubTable.ApplySubstitions(collection, index, collection.Count - index);
-                }
-            }
-        }
-
-        /// <inheritdoc/>
-        public void UpdatePositions(GlyphPositioningCollection collection)
-        {
-            if (this.gPosTable != null)
-            {
-                for (ushort index = 0; index < collection.Count; index++)
-                {
-                    this.gPosTable.UpdatePositions(this, collection, index, collection.Count - index);
-                }
-            }
-
-            // TODO: We should fall back to using the kerning table here.
         }
 
         /// <inheritdoc/>
@@ -252,6 +226,32 @@ namespace SixLabors.Fonts
             }
 
             return this.glyphCache2[glyphId];
+        }
+
+        /// <inheritdoc/>
+        public void ApplySubstitions(GlyphSubstitutionCollection collection)
+        {
+            if (this.gSubTable != null)
+            {
+                for (ushort index = 0; index < collection.Count; index++)
+                {
+                    this.gSubTable.ApplySubstitions(collection, index, collection.Count - index);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public void UpdatePositions(GlyphPositioningCollection collection)
+        {
+            if (this.gPosTable != null)
+            {
+                for (ushort index = 0; index < collection.Count; index++)
+                {
+                    this.gPosTable.UpdatePositions(this, collection, index, collection.Count - index);
+                }
+            }
+
+            // TODO: We should fall back to using the kerning table here.
         }
 
         /// <inheritdoc/>
@@ -347,6 +347,7 @@ namespace SixLabors.Fonts
                 cpalTable = reader.TryGetTable<CpalTable>(); // colr
             }
 
+            // Advanced Typographics instructions.
             GSubTable? gSub = reader.TryGetTable<GSubTable>();
             GPosTable? gPos = reader.TryGetTable<GPosTable>();
 

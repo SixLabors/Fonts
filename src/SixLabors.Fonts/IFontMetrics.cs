@@ -82,6 +82,25 @@ namespace SixLabors.Fonts
         bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out int glyphId, out bool skipNextCodePoint);
 
         /// <summary>
+        /// Gets the glyph metrics for a given code point.
+        /// </summary>
+        /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
+        /// <returns>The glyph metrics to find.</returns>
+        GlyphMetrics GetGlyphMetrics(CodePoint codePoint);
+
+        /// <summary>
+        /// Gets the glyph metrics for a given code point and glyph id.
+        /// </summary>
+        /// <param name="codePoint">The Unicode codepoint.</param>
+        /// <param name="glyphId">
+        /// The previously matched or substituted glyph id for the codepoint in the face.
+        /// If this value is less than <value>0</value> theh the default fallback metrics are returned.
+        /// </param>
+        /// <param name="support">Options for enabling color font support during layout and rendering.</param>
+        /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
+        IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support);
+
+        /// <summary>
         /// Applies any available subsitutions to the collection of glyphs.
         /// </summary>
         /// <param name="collection">The glyph substitution collection.</param>
@@ -92,25 +111,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="collection">The glyph positioning collection.</param>
         void UpdatePositions(GlyphPositioningCollection collection);
-
-        /// <summary>
-        /// Gets the glyph metrics for a given glyph id.
-        /// </summary>
-        /// <param name="codePoint">The Unicode codepoint.</param>
-        /// <param name="glyphId">
-        /// The previously matched glyph id for the codepoint in the face.
-        /// If this value is less than <value>0</value> theh the default fallback metrics are returned.
-        /// </param>
-        /// <param name="support">Options for enabling color font support during layout and rendering.</param>
-        /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
-        IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support);
-
-        /// <summary>
-        /// Gets the glyph metrics for a given code point.
-        /// </summary>
-        /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
-        /// <returns>The glyph metrics to find.</returns>
-        GlyphMetrics GetGlyphMetrics(CodePoint codePoint);
 
         /// <summary>
         /// Get the kerning offset that should be applied between 2 glyphs.

@@ -37,6 +37,16 @@ namespace SixLabors.Fonts
         public int Count => this.offsets.Count;
 
         /// <summary>
+        /// Removes all elements from the collection.
+        /// </summary>
+        public void Clear()
+        {
+            this.glyphs.Clear();
+            this.offsets.Clear();
+            this.map.Clear();
+        }
+
+        /// <summary>
         /// Gets the glyph metrics at the given codepoint offset.
         /// </summary>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>

@@ -12,8 +12,7 @@ namespace SixLabors.Fonts
 {
     /// <summary>
     /// <para>
-    /// Represents a font face with metrics, which is
-    /// a set of glyphs with a specific style (regular, italic, bold etc).
+    /// Represents a font face with metrics, which is a set of glyphs with a specific style (regular, italic, bold etc).
     /// </para>
     /// <para>The font source is a filesystem path.</para>
     /// </summary>
@@ -78,6 +77,14 @@ namespace SixLabors.Fonts
             out bool skipNextCodePoint)
             => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
+        /// <inheritdoc />
+        public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
+              => this.metrics.Value.GetGlyphMetrics(codePoint);
+
+        /// <inheritdoc />
+        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support)
+            => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
+
         /// <inheritdoc/>
         public void ApplySubstitions(GlyphSubstitutionCollection collection)
             => this.metrics.Value.ApplySubstitions(collection);
@@ -85,14 +92,6 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public void UpdatePositions(GlyphPositioningCollection collection)
             => this.metrics.Value.UpdatePositions(collection);
-
-        /// <inheritdoc />
-        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support)
-            => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
-
-        /// <inheritdoc />
-        public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
-              => this.metrics.Value.GetGlyphMetrics(codePoint);
 
         /// <inheritdoc />
         public Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
