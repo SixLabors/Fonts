@@ -26,19 +26,34 @@ namespace SixLabors.Fonts
 
         public void ProcessText(ReadOnlySpan<char> text)
         {
-            var collection = new GlyphSubstitutionCollection();
-            this.positioningCollection = new();
-
             // TODO: It would be better if we could slice the text and only
             // parse the codepoints within the start-end positions.
             // However we actually have to refactor TextLayout to actually
             // create slices.
-            this.DoFontRun(text, this.MainFont, collection, this.positioningCollection);
+            var collection = new GlyphSubstitutionCollection();
+            this.positioningCollection = new();
 
+            // Incrememntally build out collection of glyphs.
+            // For each run we start with a fresh substitution collection to avoid
+            // overwriting the glyph ids.
+            this.DoFontRun(text, this.MainFont, collection, this.positioningCollection);
             foreach (IFontMetrics font in this.FallbackFonts)
             {
                 collection.Clear();
                 this.DoFontRun(text, font, collection, this.positioningCollection);
+            }
+
+            if (this.ApplyKerning)
+            {
+                // Update the positions of the glyphs in the completed collection.
+                // Each set of metrics is associated with single font and will only be updated
+                // by that font so it's safe to use a single collection.
+                this.MainFont.UpdatePositions(this.positioningCollection);
+
+                foreach (IFontMetrics font in this.FallbackFonts)
+                {
+                    font.UpdatePositions(this.positioningCollection);
+                }
             }
         }
 
@@ -90,7 +105,6 @@ namespace SixLabors.Fonts
 
             if (this.ApplyKerning)
             {
-                // TODO: GPOS
                 fontMetrics.ApplySubstitions(substitutionCollection);
             }
 
@@ -133,6 +147,7 @@ namespace SixLabors.Fonts
             return new[] { glyph };
         }
 
+        // TODO: Remove this and call from UpdatePositions when no GPos table exists.
         public Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
         {
             if (glyph.FontMetrics != previousGlyph?.FontMetrics)

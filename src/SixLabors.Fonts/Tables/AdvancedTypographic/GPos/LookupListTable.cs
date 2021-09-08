@@ -123,12 +123,27 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
         {
             // TODO: Implement each sub table.
-            throw new NotImplementedException();
+            return new NotImplementedSubTable();
+        }
+
+        public bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+        {
+            foreach (LookupSubTable subTable in this.LookupSubTables)
+            {
+                // A lookup is finished for a glyph after the client locates the target
+                // glyph or glyph context and performs a positioning action, if specified.
+                if (subTable.TryUpdatePosition(fontMetrics, table, collection, index, count))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 
     internal abstract class LookupSubTable
     {
-        // TODO: Flesh me out.
+        public abstract bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count);
     }
 }

@@ -31,6 +31,7 @@ namespace SixLabors.Fonts
         private readonly GlyphMetrics[][]? colorGlyphCache;
         private readonly KerningTable kerning;
         private readonly GSubTable? gSubTable;
+        private readonly GPosTable? gPosTable;
         private readonly ColrTable? colrTable;
         private readonly CpalTable? cpalTable;
 
@@ -48,6 +49,7 @@ namespace SixLabors.Fonts
         /// <param name="head">The head table.</param>
         /// <param name="kern">The kerning table.</param>
         /// <param name="gSubTable">The glyph subsitution table.</param>
+        /// <param name="gPosTable">The glyph positioning table.</param>
         /// <param name="colrTable">The COLR table</param>
         /// <param name="cpalTable">The CPAL table</param>
         internal FontMetrics(
@@ -62,6 +64,7 @@ namespace SixLabors.Fonts
             HeadTable head,
             KerningTable kern,
             GSubTable? gSubTable,
+            GPosTable? gPosTable,
             ColrTable? colrTable,
             CpalTable? cpalTable)
         {
@@ -130,6 +133,7 @@ namespace SixLabors.Fonts
 
             this.kerning = kern;
             this.gSubTable = gSubTable;
+            this.gPosTable = gPosTable;
             this.colrTable = colrTable;
             this.cpalTable = cpalTable;
             this.Description = new FontDescription(nameTable, os2, head);
@@ -199,9 +203,23 @@ namespace SixLabors.Fonts
             {
                 for (ushort index = 0; index < collection.Count; index++)
                 {
-                    this.gSubTable.ApplySubstition(collection, index, collection.Count - index);
+                    this.gSubTable.ApplySubstitions(collection, index, collection.Count - index);
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        public void UpdatePositions(GlyphPositioningCollection collection)
+        {
+            if (this.gPosTable != null)
+            {
+                for (ushort index = 0; index < collection.Count; index++)
+                {
+                    this.gPosTable.UpdatePositions(this, collection, index, collection.Count - index);
+                }
+            }
+
+            // TODO: We should fall back to using the kerning table here.
         }
 
         /// <inheritdoc/>
@@ -330,6 +348,7 @@ namespace SixLabors.Fonts
             }
 
             GSubTable? gSub = reader.TryGetTable<GSubTable>();
+            GPosTable? gPos = reader.TryGetTable<GPosTable>();
 
             // post - PostScript information
             // gasp - Grid-fitting/Scan-conversion (optional table)
@@ -347,6 +366,7 @@ namespace SixLabors.Fonts
                 head,
                 kern,
                 gSub,
+                gPos,
                 colrTable,
                 cpalTable);
         }

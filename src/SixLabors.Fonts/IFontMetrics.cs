@@ -82,10 +82,16 @@ namespace SixLabors.Fonts
         bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out int glyphId, out bool skipNextCodePoint);
 
         /// <summary>
-        /// Applies any available subsitutions to the glyph id collection.
+        /// Applies any available subsitutions to the collection of glyphs.
         /// </summary>
-        /// <param name="collection">The glyph id collection.</param>
+        /// <param name="collection">The glyph substitution collection.</param>
         void ApplySubstitions(GlyphSubstitutionCollection collection);
+
+        /// <summary>
+        /// Applies any availavle positioning updates to the collection of glyphs.
+        /// </summary>
+        /// <param name="collection">The glyph positioning collection.</param>
+        void UpdatePositions(GlyphPositioningCollection collection);
 
         /// <summary>
         /// Gets the glyph metrics for a given glyph id.

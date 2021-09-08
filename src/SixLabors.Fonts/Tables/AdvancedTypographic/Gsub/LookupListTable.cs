@@ -119,11 +119,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);
         }
 
-        public bool TrySubstition(GSubTable gSubTable, GlyphSubstitutionCollection collection, ushort index, int count)
+        public bool TrySubstition(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            foreach (LookupSubTable table in this.LookupSubTables)
+            foreach (LookupSubTable subTable in this.LookupSubTables)
             {
-                if (table.TrySubstition(gSubTable, collection, index, count))
+                if (subTable.TrySubstition(table, collection, index, count))
                 {
                     // A lookup is finished for a glyph after the client locates the target
                     // glyph or glyph context and performs a substitution, if specified.
@@ -149,6 +149,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
     internal abstract class LookupSubTable
     {
-        public abstract bool TrySubstition(GSubTable gSubTable, GlyphSubstitutionCollection collection, ushort index, int count);
+        public abstract bool TrySubstition(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count);
     }
 }

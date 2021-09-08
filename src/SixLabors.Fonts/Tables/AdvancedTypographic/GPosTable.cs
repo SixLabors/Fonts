@@ -1,7 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
@@ -91,6 +93,56 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             // TODO: Feature Variations.
             return new GPosTable(scriptList, featureList, lookupList);
+        }
+
+        public void UpdatePositions(IFontMetrics fontMetrics, GlyphPositioningCollection collection, ushort index, int count)
+        {
+            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out IEnumerable<int> _);
+
+            ScriptListTable scriptListTable = this.ScriptList.Default();
+            Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
+            for (int i = 0; i < tags.Length; i++)
+            {
+                if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable table))
+                {
+                    scriptListTable = table;
+                    break;
+                }
+            }
+
+            LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
+            if (defaultLangSysTable != null)
+            {
+                this.UpdateFeaturePositions(fontMetrics, collection, index, count, defaultLangSysTable);
+                return;
+            }
+
+            this.UpdateFeaturePositions(fontMetrics, collection, index, count, scriptListTable.LangSysTables);
+        }
+
+        private void UpdateFeaturePositions(
+            IFontMetrics fontMetrics,
+            GlyphPositioningCollection collection,
+            ushort index,
+            int count,
+            params LangSysTable[] langSysTables)
+        {
+            for (int i = 0; i < langSysTables.Length; i++)
+            {
+                ushort[] featureIndices = langSysTables[i].FeatureIndices;
+                for (int j = 0; j < featureIndices.Length; j++)
+                {
+                    // TODO: Should we be applying all features?
+                    ushort[] lookupListIndices = this.FeatureList.FeatureTables[featureIndices[j]].LookupListIndices;
+                    for (int k = 0; k < lookupListIndices.Length; k++)
+                    {
+                        // TODO: Consider caching the relevant langtables per script.
+                        // There's a lot of repetitive checks here.
+                        LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
+                        lookupTable.TryUpdatePosition(fontMetrics, this, collection, index, count);
+                    }
+                }
+            }
         }
     }
 }

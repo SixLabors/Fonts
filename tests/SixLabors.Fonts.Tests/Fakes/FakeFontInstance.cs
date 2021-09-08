@@ -30,6 +30,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                   new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]),
                   null,
                   null,
+                  null,
                   null)
         {
         }
@@ -56,6 +57,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                   verticalMetrics,
                   head,
                   kern,
+                  null,
                   null,
                   null,
                   null)

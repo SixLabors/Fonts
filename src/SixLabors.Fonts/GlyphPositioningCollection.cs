@@ -1,8 +1,11 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -12,6 +15,12 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class GlyphPositioningCollection
     {
+        /// <summary>
+        /// Contains a map between the index of a map within the collection, it's codepoint
+        /// and glyph ids.
+        /// </summary>
+        private readonly Dictionary<int, CodePointGlyphs> glyphs = new();
+
         /// <summary>
         /// Contains a map between the index of a map within the collection and its offset.
         /// </summary>
@@ -26,6 +35,34 @@ namespace SixLabors.Fonts
         /// Gets the number of glyphs indexes contained in the collection.
         /// </summary>
         public int Count => this.offsets.Count;
+
+        /// <summary>
+        /// Gets the glyph metrics at the given codepoint offset.
+        /// </summary>
+        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        /// <param name="metrics">
+        /// When this method returns, contains the glyph metrics associated with the specified offset,
+        /// if the value is found; otherwise, the default value for the type of the metrics parameter.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>The <see cref="T:GlyphMetrics[]"/>.</returns>
+        public bool TryGetGlypMetricsAtOffset(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
+            => this.map.TryGetValue(offset, out metrics);
+
+        /// <summary>
+        /// Gets the glyph ids and the Unicode script for those ids at the specified position.
+        /// </summary>
+        /// <param name="index">The zero-based index of the elements to get.</param>
+        /// <param name="codePoint">The Unicode codepoint.</param>
+        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        /// <param name="glyphIds">The glyph ids.</param>
+        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out IEnumerable<int> glyphIds)
+        {
+            offset = this.offsets[index];
+            CodePointGlyphs value = this.glyphs[index];
+            codePoint = value.CodePoint;
+            glyphIds = value.GlyphIds;
+        }
 
         /// <summary>
         /// Adds the collection of glyph ids to the metrics collection.
@@ -58,7 +95,7 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                // TODO: It's likely we have to get the ids at a given index.
+                this.glyphs[i] = new CodePointGlyphs(codePoint, glyphIds.ToArray());
                 this.offsets[i] = offset;
                 this.map[offset] = m.ToArray();
             }
@@ -67,54 +104,57 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Applies an offset to the glyphs at the given index and id.
         /// </summary>
+        /// <param name="fontMetrics">The font face with metrics.</param>
         /// <param name="index">The zero-based index of the elements to offset.</param>
         /// <param name="glyphId">The id of the glyph to offset.</param>
         /// <param name="x">The x-offset.</param>
         /// <param name="y">The y-offset.</param>
-        public void Offset(ushort index, ushort glyphId, short x, short y)
+        public void Offset(IFontMetrics fontMetrics, ushort index, ushort glyphId, short x, short y)
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
-                if (m.Index != glyphId)
+                if (m.Index == glyphId && m.FontMetrics == fontMetrics)
                 {
-                    continue;
+                    m.ApplyOffset(x, y);
                 }
-
-                m.ApplyOffset(x, y);
             }
         }
 
         /// <summary>
         /// Updates the advanced metrics of the glyphs at the given index and id.
         /// </summary>
+        /// <param name="fontMetrics">The font face with metrics.</param>
         /// <param name="index">The zero-based index of the elements to offset.</param>
         /// <param name="glyphId">The id of the glyph to offset.</param>
         /// <param name="x">The x-advance.</param>
         /// <param name="y">The y-advance.</param>
-        public void Advance(ushort index, ushort glyphId, short x, short y)
+        public void Advance(IFontMetrics fontMetrics, ushort index, ushort glyphId, short x, short y)
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
-                if (m.Index != glyphId)
+                if (m.Index == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    continue;
+                    m.ApplyAdvance(x, y);
                 }
-
-                m.ApplyAdvance(x, y);
             }
         }
 
-        /// <summary>
-        /// Gets the glyph metrics at the given codepoint offset.
-        /// </summary>
-        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
-        /// <param name="metrics">
-        /// When this method returns, contains the glyph metrics associated with the specified offset,
-        /// if the value is found; otherwise, the default value for the type of the metrics parameter.
-        /// This parameter is passed uninitialized.
-        /// </param>
-        /// <returns>The <see cref="T:GlyphMetrics[]"/>.</returns>
-        public bool TryGetGlypMetricsAtOffset(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
-            => this.map.TryGetValue(offset, out metrics);
+        [DebuggerDisplay("{DebuggerDisplay,nq}")]
+        private readonly struct CodePointGlyphs
+        {
+            public CodePointGlyphs(CodePoint codePoint, int[] glyphIds)
+            {
+                this.CodePoint = codePoint;
+                this.GlyphIds = glyphIds;
+            }
+
+            public CodePoint CodePoint { get; }
+
+            public int[] GlyphIds { get; }
+
+            private string DebuggerDisplay
+                => FormattableString
+                .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScript(this.CodePoint)} : [{string.Join(",", this.GlyphIds)}]");
+        }
     }
 }

@@ -82,6 +82,10 @@ namespace SixLabors.Fonts
         public void ApplySubstitions(GlyphSubstitutionCollection collection)
             => this.metrics.Value.ApplySubstitions(collection);
 
+        /// <inheritdoc/>
+        public void UpdatePositions(GlyphPositioningCollection collection)
+            => this.metrics.Value.UpdatePositions(collection);
+
         /// <inheritdoc />
         public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support)
             => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
