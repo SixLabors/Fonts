@@ -11,7 +11,7 @@ namespace SixLabors.Fonts
 {
     internal struct AppliedFontStyle
     {
-        private GlyphPositioningCollection glyphMetricsMap;
+        private GlyphPositioningCollection positioningCollection;
 
         // TODO: Clean all this assignment up.
         public RendererOptions Options;
@@ -27,26 +27,26 @@ namespace SixLabors.Fonts
         public void ProcessText(ReadOnlySpan<char> text)
         {
             var collection = new GlyphSubstitutionCollection();
-            this.glyphMetricsMap = new();
+            this.positioningCollection = new();
 
             // TODO: It would be better if we could slice the text and only
             // parse the codepoints within the start-end positions.
             // However we actually have to refactor TextLayout to actually
             // create slices.
-            this.DoFontRun(text, this.MainFont, collection, this.glyphMetricsMap);
+            this.DoFontRun(text, this.MainFont, collection, this.positioningCollection);
 
             foreach (IFontMetrics font in this.FallbackFonts)
             {
                 collection.Clear();
-                this.DoFontRun(text, font, collection, this.glyphMetricsMap);
+                this.DoFontRun(text, font, collection, this.positioningCollection);
             }
         }
 
         private void DoFontRun(
             ReadOnlySpan<char> text,
             IFontMetrics fontMetrics,
-            GlyphSubstitutionCollection collection,
-            GlyphPositioningCollection glyphMetricsMap)
+            GlyphSubstitutionCollection substitutionCollection,
+            GlyphPositioningCollection positioningCollection)
         {
             // Enumerate through each grapheme in the text.
             int graphemeIndex;
@@ -81,7 +81,7 @@ namespace SixLabors.Fonts
 
                     // Get the glyph id for the codepoint and add to the collection.
                     fontMetrics.TryGetGlyphId(current, next, out int glyphId, out skipNextCodePoint);
-                    collection.AddGlyph(glyphId, current, codePointIndex);
+                    substitutionCollection.AddGlyph(glyphId, current, codePointIndex);
 
                     codePointIndex++;
                     graphemeCodePointIndex++;
@@ -91,14 +91,14 @@ namespace SixLabors.Fonts
             if (this.ApplyKerning)
             {
                 // TODO: GPOS
-                fontMetrics.ApplySubstitions(collection);
+                fontMetrics.ApplySubstitions(substitutionCollection);
             }
 
-            glyphMetricsMap.AddOrUpdate(fontMetrics, collection, this.Options);
+            positioningCollection.AddOrUpdate(fontMetrics, substitutionCollection, this.Options);
         }
 
         public bool TryGetGlypMetrics(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
-            => this.glyphMetricsMap.TryGetGlypMetricsAtOffset(offset - this.Start, out metrics);
+            => this.positioningCollection.TryGetGlypMetricsAtOffset(offset - this.Start, out metrics);
 
         public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint)
         {
