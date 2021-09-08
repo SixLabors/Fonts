@@ -48,6 +48,26 @@ namespace SixLabors.Fonts
             this.GlyphColor = glyphColor;
         }
 
+        internal GlyphMetrics(GlyphMetrics other)
+        {
+            this.FontMetrics = other.FontMetrics;
+            this.CodePoint = other.CodePoint;
+            this.UnitsPerEm = other.UnitsPerEm;
+            this.vector = (GlyphVector)other.vector.DeepClone();
+
+            this.AdvanceWidth = other.AdvanceWidth;
+            this.AdvanceHeight = other.AdvanceHeight;
+            this.Index = other.Index;
+
+            this.Width = other.Width;
+            this.Height = other.Height;
+            this.GlyphType = other.GlyphType;
+            this.LeftSideBearing = other.LeftSideBearing;
+            this.TopSideBearing = other.TopSideBearing;
+            this.ScaleFactor = other.ScaleFactor;
+            this.GlyphColor = other.GlyphColor;
+        }
+
         /// <summary>
         /// Gets the font metrics.
         /// </summary>

@@ -22,6 +22,11 @@ namespace SixLabors.Fonts
         private readonly Dictionary<int, GlyphMetrics[]> map = new();
 
         /// <summary>
+        /// Gets the number of glyphs indexes contained in the collection.
+        /// </summary>
+        public int Count => this.offsets.Count;
+
+        /// <summary>
         /// Adds the collection of glyph ids to the metrics collection.
         /// Adding subsequent collections will overwrite any glyphs that have been previously
         /// identified as fallbacks.
@@ -44,10 +49,15 @@ namespace SixLabors.Fonts
                 var m = new List<GlyphMetrics>();
                 foreach (int id in glyphIds)
                 {
-                    m.AddRange(fontMetrics.GetGlyphMetrics(codePoint, id, options.ColorFontSupport));
+                    // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
+                    // cache the original in the font metrics and only update our collection.
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, options.ColorFontSupport))
+                    {
+                        m.Add(new GlyphMetrics(gm));
+                    }
                 }
 
-                // TODO: It's like we have to get the ids at a given index.
+                // TODO: It's likely we have to get the ids at a given index.
                 this.offsets[i] = offset;
                 this.map[offset] = m.ToArray();
             }

@@ -187,7 +187,8 @@ namespace SixLabors.Fonts
                 FallbackFonts = fallbackFontInstances,
                 TabWidth = this.TabWidth,
                 ApplyKerning = this.ApplyKerning,
-                ColorFontSupport = this.ColorFontSupport
+                ColorFontSupport = this.ColorFontSupport,
+                Options = this
             };
         }
     }

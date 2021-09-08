@@ -10,7 +10,10 @@ namespace SixLabors.Fonts
 {
     internal struct AppliedFontStyle
     {
-        private Dictionary<int, GlyphMetrics[]> glyphMetricsMap;
+        private GlyphPositioningCollection glyphMetricsMap;
+
+        // TODO: Clean all this assignment up.
+        public RendererOptions Options;
         public IFontMetrics[] FallbackFonts;
         public IFontMetrics MainFont;
         public float PointSize;
@@ -23,7 +26,7 @@ namespace SixLabors.Fonts
         public void ProcessText(ReadOnlySpan<char> text)
         {
             var collection = new GlyphSubstitutionCollection();
-            this.glyphMetricsMap = new Dictionary<int, GlyphMetrics[]>();
+            this.glyphMetricsMap = new();
 
             // TODO: It would be better if we could slice the text and only
             // parse the codepoints within the start-end positions.
@@ -42,7 +45,7 @@ namespace SixLabors.Fonts
             ReadOnlySpan<char> text,
             IFontMetrics fontMetrics,
             GlyphSubstitutionCollection collection,
-            Dictionary<int, GlyphMetrics[]> glyphMetricsMap)
+            GlyphPositioningCollection glyphMetricsMap)
         {
             // Enumerate through each grapheme in the text.
             int graphemeIndex;
@@ -86,38 +89,15 @@ namespace SixLabors.Fonts
 
             if (this.ApplyKerning)
             {
-                // TODO: GPOS?
+                // TODO: GPOS
                 fontMetrics.ApplySubstitions(collection);
             }
 
-            // Now loop through and assign metrics to our map.
-            for (int idx = 0; idx < codePointIndex; idx++)
-            {
-                // No glyphs, this codepoint has been skipped.
-                if (!collection.TryGetCodePointAndGlyphIdsAtOffset(idx, out CodePoint? codePoint, out IEnumerable<int>? glyphIds))
-                {
-                    continue;
-                }
-
-                // Never allow fallback fonts to replace previously matched glyphs.
-                if (glyphMetricsMap.TryGetValue(idx, out GlyphMetrics[]? metrics)
-                    && metrics[0].GlyphType != GlyphType.Fallback)
-                {
-                    continue;
-                }
-
-                var m = new List<GlyphMetrics>();
-                foreach (int id in glyphIds)
-                {
-                    m.AddRange(fontMetrics.GetGlyphMetrics(codePoint.Value, id, this.ColorFontSupport));
-                }
-
-                glyphMetricsMap[idx] = m.ToArray();
-            }
+            glyphMetricsMap.AddOrUpdate(fontMetrics, collection, this.Options);
         }
 
-        public bool TryGetGlypMetrics(int offset, out GlyphMetrics[] metrics)
-            => this.glyphMetricsMap.TryGetValue(offset - this.Start, out metrics);
+        public bool TryGetGlypMetrics(int offset, out GlyphMetrics[]? metrics)
+            => this.glyphMetricsMap.TryGetGlypMetricsAtOffset(offset - this.Start, out metrics);
 
         public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint)
         {
