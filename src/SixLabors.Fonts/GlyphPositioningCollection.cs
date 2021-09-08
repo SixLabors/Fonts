@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -113,7 +114,7 @@ namespace SixLabors.Fonts
         /// This parameter is passed uninitialized.
         /// </param>
         /// <returns>The <see cref="T:GlyphMetrics[]"/>.</returns>
-        public bool TryGetGlypMetricsAtOffset(int offset, out GlyphMetrics[]? metrics)
+        public bool TryGetGlypMetricsAtOffset(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
             => this.map.TryGetValue(offset, out metrics);
     }
 }

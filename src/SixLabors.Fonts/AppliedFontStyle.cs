@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
@@ -96,7 +97,7 @@ namespace SixLabors.Fonts
             glyphMetricsMap.AddOrUpdate(fontMetrics, collection, this.Options);
         }
 
-        public bool TryGetGlypMetrics(int offset, out GlyphMetrics[]? metrics)
+        public bool TryGetGlypMetrics(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
             => this.glyphMetricsMap.TryGetGlypMetricsAtOffset(offset - this.Start, out metrics);
 
         public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint)
