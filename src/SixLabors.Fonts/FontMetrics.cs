@@ -193,7 +193,7 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public void ApplySubstitions(IGlyphSubstitutionCollection collection)
+        public void ApplySubstitions(GlyphSubstitutionCollection collection)
         {
             if (this.gSubTable != null)
             {

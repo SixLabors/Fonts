@@ -95,9 +95,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new GSubTable(scriptList, featureList, lookupList);
         }
 
-        public void ApplySubstition(IGlyphSubstitutionCollection collection, ushort index, int count)
+        public void ApplySubstition(GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out IEnumerable<int> _);
+            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out IEnumerable<int> _);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
             Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
@@ -121,7 +121,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         }
 
         private void ApplyFeatureSubstitionImpl(
-            IGlyphSubstitutionCollection collection,
+            GlyphSubstitutionCollection collection,
             ushort index,
             int count,
             params LangSysTable[] langSysTables)

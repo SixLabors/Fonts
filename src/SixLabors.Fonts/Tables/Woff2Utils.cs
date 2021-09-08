@@ -586,8 +586,8 @@ namespace SixLabors.Fonts.Tables
                     // X and Y offsets are described in FUnits.
                     if (useMatrix)
                     {
-                        newGlyph.TtfTransformWithMatrix(xscale, scale01, scale10, yscale);
-                        newGlyph.TtfOffsetXy(arg1, arg2);
+                        newGlyph.TransformWithMatrix(xscale, scale01, scale10, yscale);
+                        newGlyph.OffsetXy(arg1, arg2);
                     }
                     else
                     {
@@ -595,10 +595,10 @@ namespace SixLabors.Fonts.Tables
                         {
                             if (!(xscale == 1.0 && yscale == 1.0))
                             {
-                                newGlyph.TtfTransformWithMatrix(xscale, 0, 0, yscale);
+                                newGlyph.TransformWithMatrix(xscale, 0, 0, yscale);
                             }
 
-                            newGlyph.TtfOffsetXy(arg1, arg2);
+                            newGlyph.OffsetXy(arg1, arg2);
                         }
                         else
                         {
@@ -608,7 +608,7 @@ namespace SixLabors.Fonts.Tables
                             }
 
                             // just offset.
-                            newGlyph.TtfOffsetXy(arg1, arg2);
+                            newGlyph.OffsetXy(arg1, arg2);
                         }
                     }
                 }
@@ -626,7 +626,7 @@ namespace SixLabors.Fonts.Tables
                 }
                 else
                 {
-                    finalGlyph.TtfAppendGlyph(newGlyph);
+                    finalGlyph.AppendGlyph(newGlyph);
                 }
             }
             while (flags.HasFlag(CompositeGlyphFlags.MoreComponents));

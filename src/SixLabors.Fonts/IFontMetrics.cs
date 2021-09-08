@@ -85,7 +85,7 @@ namespace SixLabors.Fonts
         /// Applies any available subsitutions to the glyph id collection.
         /// </summary>
         /// <param name="collection">The glyph id collection.</param>
-        void ApplySubstitions(IGlyphSubstitutionCollection collection);
+        void ApplySubstitions(GlyphSubstitutionCollection collection);
 
         /// <summary>
         /// Gets the glyph metrics for a given glyph id.

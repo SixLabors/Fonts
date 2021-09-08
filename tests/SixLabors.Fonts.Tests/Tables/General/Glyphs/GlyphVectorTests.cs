@@ -45,7 +45,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
 
             // act
-            glyphVector.TtfOffsetXy(10, 10);
+            glyphVector.OffsetXy(10, 10);
 
             // assert
             Assert.Equal(expectedBounds, glyphVector.Bounds);
@@ -64,7 +64,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var glyphVector2 = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
 
             // act
-            glyphVector1.TtfAppendGlyph(glyphVector2);
+            glyphVector1.AppendGlyph(glyphVector2);
 
             // assert
             Assert.True(expectedControlPoints.SequenceEqual(glyphVector1.ControlPoints));
@@ -100,7 +100,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
 
             // act
-            glyphVector.TtfTransformWithMatrix(1.2f, 0.8f, 2.0f, 3.0f);
+            glyphVector.TransformWithMatrix(1.2f, 0.8f, 2.0f, 3.0f);
 
             // assert
             Assert.Equal(expectedBounds, glyphVector.Bounds);

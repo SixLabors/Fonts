@@ -119,7 +119,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);
         }
 
-        public bool TrySubstition(GSubTable gSubTable, IGlyphSubstitutionCollection collection, ushort index, int count)
+        public bool TrySubstition(GSubTable gSubTable, GlyphSubstitutionCollection collection, ushort index, int count)
         {
             foreach (LookupSubTable table in this.LookupSubTables)
             {
@@ -149,6 +149,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
     internal abstract class LookupSubTable
     {
-        public abstract bool TrySubstition(GSubTable gSubTable, IGlyphSubstitutionCollection collection, ushort index, int count);
+        public abstract bool TrySubstition(GSubTable gSubTable, GlyphSubstitutionCollection collection, ushort index, int count);
     }
 }

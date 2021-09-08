@@ -49,7 +49,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         /// </summary>
         /// <param name="dx">The delta x.</param>
         /// <param name="dy">The delta y.</param>
-        public void TtfOffsetXy(short dx, short dy)
+        public void OffsetXy(short dx, short dy)
         {
             Vector2[] glyphPoints = this.ControlPoints;
             for (int i = glyphPoints.Length - 1; i >= 0; --i)
@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         /// Append glyph control points to the current instance.
         /// </summary>
         /// <param name="src">The source glyph which points will be appended.</param>
-        public void TtfAppendGlyph(GlyphVector src)
+        public void AppendGlyph(GlyphVector src)
         {
             int destPointsCount = this.controlPoints.Length;
             Vector2[] srcPoints = src.ControlPoints;
@@ -77,7 +77,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             srcPoints.CopyTo(this.controlPoints.AsSpan(destPointsCount));
         }
 
-        public void TtfTransformWithMatrix(float m00, float m01, float m10, float m11)
+        public void TransformWithMatrix(float m00, float m01, float m10, float m11)
         {
             // Change data on current glyph.
             // http://stackoverflow.com/questions/13188156/whats-the-different-between-vector2-transform-and-vector2-transformnormal-i
@@ -119,6 +119,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             this.Bounds = new Bounds((short)newXmin, (short)newYmin, (short)newXmax, (short)newYmax);
         }
 
-        private static Vector2 Offset(Vector2 p, short dx, short dy) => new Vector2(p.X + dx, p.Y + dy);
+        private static Vector2 Offset(Vector2 p, short dx, short dy)
+            => new(p.X + dx, p.Y + dy);
     }
 }

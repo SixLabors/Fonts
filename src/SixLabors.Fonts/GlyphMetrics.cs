@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public class GlyphMetrics
     {
-        private static readonly Vector2 Scale = new Vector2(1, -1);
+        private static readonly Vector2 Scale = new(1, -1);
         private readonly GlyphVector vector;
 
         internal GlyphMetrics(
@@ -61,12 +61,12 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the advance width for horizontal layout, expressed in font units.
         /// </summary>
-        public ushort AdvanceWidth { get; }
+        public ushort AdvanceWidth { get; private set; }
 
         /// <summary>
         /// Gets the advance height for vertical layout, expressed in font units.
         /// </summary>
-        public ushort AdvanceHeight { get; }
+        public ushort AdvanceHeight { get; private set; }
 
         /// <summary>
         /// Gets the left side bearing for horizontal layout, expressed in font units.
@@ -128,6 +128,25 @@ namespace SixLabors.Fonts
         /// Gets the index.
         /// </summary>
         internal ushort Index { get; }
+
+        /// <summary>
+        /// Apply an offset to the glyph.
+        /// </summary>
+        /// <param name="x">The x-offset.</param>
+        /// <param name="y">The y-offset.</param>
+        internal void ApplyOffset(short x, short y) => this.vector.OffsetXy(x, y);
+
+        /// <summary>
+        /// Applies an advance to the glyph.
+        /// </summary>
+        /// <param name="x">The x-advance.</param>
+        /// <param name="y">The y-advance.</param>
+        internal void ApplyAdvance(short x, short y)
+        {
+            // TODO: Should we be setting both X and Y?
+            this.AdvanceWidth = (ushort)(this.AdvanceWidth + x);
+            this.AdvanceHeight = (ushort)(this.AdvanceWidth + y);
+        }
 
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
@@ -241,11 +260,9 @@ namespace SixLabors.Fonts
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector2 GetPoint(ref Vector2 scaledPoint, int pointIndex)
-        {
-            Vector2 point = Scale * (this.vector.ControlPoints[pointIndex] * scaledPoint / this.ScaleFactor); // scale each point as we go, w will now have the correct relative point size
 
-            return point;
-        }
+            // Scale each point as we go, we will now have the correct relative point size
+            => Scale * (this.vector.ControlPoints[pointIndex] * scaledPoint / this.ScaleFactor);
 
         private static void AlignToGrid(ref Vector2 point)
         {

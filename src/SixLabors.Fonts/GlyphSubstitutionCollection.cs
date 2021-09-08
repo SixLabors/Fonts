@@ -13,7 +13,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a collection of glyph indices that are mapped to input codepoints.
     /// </summary>
-    internal class GlyphSubstitutionCollection : IGlyphSubstitutionCollection
+    public sealed class GlyphSubstitutionCollection
     {
         /// <summary>
         /// Contains a map between the index of a map within the collection and its offset.
@@ -25,27 +25,58 @@ namespace SixLabors.Fonts
         /// </summary>
         private readonly Dictionary<int, CodePointGlyphs> map = new();
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the number of glyphs ids contained in the collection.
+        /// This may be more or less than original input codepoint count (due to substitution process).
+        /// </summary>
         public int Count => this.offsets.Count;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the glyph ids at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to get.</param>
+        /// <returns>The <see cref="ReadOnlySpan{UInt16}"/>.</returns>
         public ReadOnlySpan<int> this[int index] => this.map[this.offsets[index]].GlyphIds;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Adds the glyph id and the codepoint it represents to the collection.
+        /// </summary>
+        /// <param name="glyphId">The id of the glyph to add.</param>
+        /// <param name="codePoint">The codepoint the glyph represents.</param>
+        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
         public void AddGlyph(int glyphId, CodePoint codePoint, int offset)
         {
             this.map.Add(offset, new CodePointGlyphs(codePoint, new[] { glyphId }));
             this.offsets.Add(offset);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Removes all elements from the collection.
+        /// </summary>
         public void Clear()
         {
             this.offsets.Clear();
             this.map.Clear();
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the specified glyph ids matching the given codepoint offset.
+        /// </summary>
+        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        /// <param name="codePoint">
+        /// When this method returns, contains the codepoint associated with the specified offset,
+        /// if the value is found; otherwise, the default value for the type of the codepoint parameter.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <param name="glyphIds">
+        /// When this method returns, contains the glyph ids associated with the specified offset,
+        /// if the value is found; otherwise, the default value for the type of the glyphIds parameter.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the <see cref="GlyphSubstitutionCollection"/> contains glyph ids
+        /// for the specified offset; otherwise, <see langword="false"/>.
+        /// </returns>
         public bool TryGetCodePointAndGlyphIdsAtOffset(int offset, [NotNullWhen(true)] out CodePoint? codePoint, [NotNullWhen(true)] out IEnumerable<int>? glyphIds)
         {
             if (this.map.TryGetValue(offset, out CodePointGlyphs value))
@@ -60,22 +91,38 @@ namespace SixLabors.Fonts
             return false;
         }
 
-        /// <inheritdoc/>
-        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out IEnumerable<int> glyphIds)
+        /// <summary>
+        /// Gets the glyph ids and the Unicode script for those ids at the specified position.
+        /// </summary>
+        /// <param name="index">The zero-based index of the elements to get.</param>
+        /// <param name="codePoint">The Unicode codepoint.</param>
+        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        /// <param name="glyphIds">The glyph ids.</param>
+        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out IEnumerable<int> glyphIds)
         {
-            CodePointGlyphs value = this.map[this.offsets[index]];
+            offset = this.offsets[index];
+            CodePointGlyphs value = this.map[offset];
             codePoint = value.CodePoint;
             glyphIds = value.GlyphIds;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Performs a 1:1 replacement of a glyph id at the given position.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to replace.</param>
+        /// <param name="glyphId">The replacement glyph id.</param>
         public void Replace(int index, int glyphId)
         {
             int offset = this.offsets[index];
             this.map[offset] = new CodePointGlyphs(this.map[offset].CodePoint, new[] { glyphId });
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Replaces a series of glyph ids starting at the given position with a new id.
+        /// </summary>
+        /// <param name="index">The zero-based starting index of the range of elements to replace.</param>
+        /// <param name="count">The number of elements to replace.</param>
+        /// <param name="glyphId">The replacement glyph id.</param>
         public void Replace(int index, int count, int glyphId)
         {
             // Remove the count starting at the at index.
@@ -93,7 +140,11 @@ namespace SixLabors.Fonts
             this.offsets.Insert(index, offset);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Replaces a single glyph id with a collection of glyph ids.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to replace.</param>
+        /// <param name="glyphIds">The collection of replacement glyph ids.</param>
         public void Replace(int index, IEnumerable<int> glyphIds)
         {
             int offset = this.offsets[index];

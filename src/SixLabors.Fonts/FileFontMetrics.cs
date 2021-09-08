@@ -79,7 +79,7 @@ namespace SixLabors.Fonts
             => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         /// <inheritdoc/>
-        public void ApplySubstitions(IGlyphSubstitutionCollection collection)
+        public void ApplySubstitions(GlyphSubstitutionCollection collection)
             => this.metrics.Value.ApplySubstitions(collection);
 
         /// <inheritdoc />

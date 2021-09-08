@@ -41,7 +41,7 @@ namespace SixLabors.Fonts
         private void DoFontRun(
             ReadOnlySpan<char> text,
             IFontMetrics fontMetrics,
-            IGlyphSubstitutionCollection collection,
+            GlyphSubstitutionCollection collection,
             Dictionary<int, GlyphMetrics[]> glyphMetricsMap)
         {
             // Enumerate through each grapheme in the text.
