@@ -3,6 +3,10 @@
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
+    /// <summary>
+    /// Enum for the different font features.
+    /// For the complete docs, see: https://docs.microsoft.com/en-us/typography/opentype/otspec183/features_ae
+    /// </summary>
     internal enum FeatureTag : uint
     {
         /// <summary>
