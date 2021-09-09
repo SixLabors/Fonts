@@ -93,10 +93,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         internal sealed class SequenceRuleSetTable
         {
-            private SequenceRuleSetTable(SequenceRuleTable[] subRules)
-                => this.SubRules = subRules;
+            private SequenceRuleSetTable(SequenceRuleTable[] sequenceRuleTables)
+                => this.SequenceRuleTables = sequenceRuleTables;
 
-            public SequenceRuleTable[] SubRules { get; }
+            public SequenceRuleTable[] SequenceRuleTables { get; }
 
             public static SequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
             {
@@ -113,13 +113,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 ushort seqRuleCount = reader.ReadUInt16();
                 ushort[] seqRuleOffsets = reader.ReadUInt16Array(seqRuleCount);
 
-                var subRules = new SequenceRuleTable[seqRuleCount];
-                for (int i = 0; i < subRules.Length; i++)
+                var sequenceRuleTables = new SequenceRuleTable[seqRuleCount];
+                for (int i = 0; i < sequenceRuleTables.Length; i++)
                 {
-                    subRules[i] = SequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
+                    sequenceRuleTables[i] = SequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
                 }
 
-                return new SequenceRuleSetTable(subRules);
+                return new SequenceRuleSetTable(sequenceRuleTables);
             }
 
             public sealed class SequenceRuleTable
