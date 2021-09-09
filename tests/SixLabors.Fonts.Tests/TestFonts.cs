@@ -32,6 +32,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
 
+        public static string Version1Font => GetFullPath("Font-Version1.ttf");
+
         public static string NotoSansSCThinFile => GetFullPath("NotoSansSC-Thin.ttf");
 
         public static string HelveticaTTCFile => GetFullPath("Helvetica.ttc");
