@@ -303,8 +303,6 @@ namespace SixLabors.Fonts.Tables.General
                 return version0Table;
             }
 
-            ushort codePageRange1 = 0;
-            ushort codePageRange2 = 0;
             short heightX = 0;
             short capHeight = 0;
 
@@ -312,14 +310,18 @@ namespace SixLabors.Fonts.Tables.General
             ushort breakChar = 0;
             ushort maxContext = 0;
 
-            codePageRange1 = reader.ReadUInt16(); // Bits 0–31
-            codePageRange2 = reader.ReadUInt16(); // Bits 32–63
-            heightX = reader.ReadInt16();
-            capHeight = reader.ReadInt16();
+            ushort codePageRange1 = reader.ReadUInt16(); // Bits 0–31
+            ushort codePageRange2 = reader.ReadUInt16(); // Bits 32–63
 
-            defaultChar = reader.ReadUInt16();
-            breakChar = reader.ReadUInt16();
-            maxContext = reader.ReadUInt16();
+            // fields exist only in > v1 https://docs.microsoft.com/en-us/typography/opentype/spec/os2
+            if (version > 1)
+            {
+                heightX = reader.ReadInt16();
+                capHeight = reader.ReadInt16();
+                defaultChar = reader.ReadUInt16();
+                breakChar = reader.ReadUInt16();
+                maxContext = reader.ReadUInt16();
+            }
 
             var versionLessThan5Table = new OS2Table(
                     version0Table,
