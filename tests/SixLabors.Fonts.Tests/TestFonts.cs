@@ -28,6 +28,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string SimpleFontFileWoff => GetFullPath("SixLaborsSampleAB.woff");
 
+        public static string ArabicFontFile => GetFullPath("Dubai-regular.ttf");
+
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
@@ -45,6 +47,8 @@ namespace SixLabors.Fonts.Tests
         public static Stream CarterOneFileData() => OpenStream(CarterOneFile);
 
         public static Stream SimpleFontFileData() => OpenStream(SimpleFontFile);
+
+        public static Stream ArabicFontFileData() => OpenStream(ArabicFontFile);
 
         public static Stream OpenSansData() => OpenStream(OpenSansFile);
 
