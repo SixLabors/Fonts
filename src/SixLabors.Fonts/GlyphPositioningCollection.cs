@@ -60,6 +60,13 @@ namespace SixLabors.Fonts
             => this.map.TryGetValue(offset, out metrics);
 
         /// <summary>
+        /// Gets the glyph ids at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to get.</param>
+        /// <returns>The <see cref="ReadOnlySpan{UInt16}"/>.</returns>
+        public ReadOnlySpan<int> GetGlyphIds(int index) => this.glyphs[index].GlyphIds;
+
+        /// <summary>
         /// Gets the glyph ids and the Unicode script for those ids at the specified position.
         /// </summary>
         /// <param name="index">The zero-based index of the elements to get.</param>
@@ -144,6 +151,7 @@ namespace SixLabors.Fonts
             {
                 if (m.Index == glyphId && fontMetrics == m.FontMetrics)
                 {
+                    // TODO: SHould we apply both dimensions?
                     m.ApplyAdvance(x, y);
                 }
             }

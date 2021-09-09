@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         // TODO: This map will likely require updating to add aliases for old fonts.
         // Use HarfBuzz as a reference.
         private static UnicodeScriptTagMap CreateMap()
-            => new UnicodeScriptTagMap
+            => new()
             {
               { Script.Unknown, new[] { Tag.Parse("zzzz") } },
               { Script.Common, new[] { Tag.Parse("zyyy") } },

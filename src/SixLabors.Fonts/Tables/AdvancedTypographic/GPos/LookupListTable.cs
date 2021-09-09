@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
@@ -121,10 +120,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         }
 
         private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
-        {
-            // TODO: Implement each sub table.
-            return new NotImplementedSubTable();
-        }
+            => lookupType switch
+            {
+                1 => LookupType1SubTable.Load(reader, offset),
+                _ => new NotImplementedSubTable()
+            };
 
         public bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
         {
