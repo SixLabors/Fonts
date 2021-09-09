@@ -25,8 +25,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             {
                 // TODO: Implement 2
                 1 => LookupType6Format1SubTable.Load(reader, offset),
+                2 => LookupType6Format2SubTable.Load(reader, offset),
                 3 => LookupType6Format3SubTable.Load(reader, offset),
-                _ => new NotImplementedSubTable()
+                _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1', '2', or '3'."),
             };
         }
     }
@@ -42,7 +43,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             this.coverageTable = coverageTable;
         }
 
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset)
         {
             // ChainedSequenceContextFormat1
             // +----------+--------------------------------------------------+------------------------------------------+
@@ -190,6 +191,198 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
     }
 
+    internal sealed class LookupType6Format2SubTable : LookupSubTable
+    {
+        private readonly CoverageTable coverageTable;
+        private readonly ClassDefinitionTable inputClassDefinitionTable;
+        private readonly ClassDefinitionTable backtrackClassDefinitionTable;
+        private readonly ClassDefinitionTable lookaheadClassDefinitionTable;
+        private readonly ChainedClassSequenceRuleSetTable[] sequenceRuleSetTables;
+
+        private LookupType6Format2SubTable(
+            ChainedClassSequenceRuleSetTable[] sequenceRuleSetTables,
+            ClassDefinitionTable backtrackClassDefinitionTable,
+            ClassDefinitionTable inputClassDefinitionTable,
+            ClassDefinitionTable lookaheadClassDefinitionTable,
+            CoverageTable coverageTable)
+        {
+            this.sequenceRuleSetTables = sequenceRuleSetTables;
+            this.backtrackClassDefinitionTable = backtrackClassDefinitionTable;
+            this.inputClassDefinitionTable = inputClassDefinitionTable;
+            this.lookaheadClassDefinitionTable = lookaheadClassDefinitionTable;
+            this.coverageTable = coverageTable;
+        }
+
+        public static LookupType6Format2SubTable Load(BigEndianBinaryReader reader, long offset)
+        {
+            // ChainedSequenceContextFormat2
+            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
+            // | Type     | Name                                                       | Description                                                         |
+            // +==========+============================================================+=====================================================================+
+            // | uint16   | format                                                     | Format identifier: format = 2                                       |
+            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
+            // | Offset16 | coverageOffset                                             | Offset to Coverage table, from beginning                            |
+            // |          |                                                            | of ChainedSequenceContextFormat2 table                              |
+            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
+            // | Offset16 | backtrackClassDefOffset                                    | Offset to ClassDef table containing                                 |
+            // |          |                                                            | backtrack sequence context, from                                    |
+            // |          |                                                            | beginning of ChainedSequenceContextFormat2 table                    |
+            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
+            // | Offset16 | inputClassDefOffset                                        | Offset to ClassDef table containing input                           |
+            // |          |                                                            | sequence context, from beginning of                                 |
+            // |          |                                                            | ChainedSequenceContextFormat2 table                                 |
+            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
+            // | Offset16 | lookaheadClassDefOffset                                    | Offset to ClassDef table containing                                 |
+            // |          |                                                            | lookahead sequence context, from                                    |
+            // |          |                                                            | beginning of ChainedSequenceContextFormat2 table                    |
+            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
+            // | uint16   | chainedClassSeqRuleSetCount                                | Number of ChainedClassSequenceRuleSet tables                        |
+            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
+            // | Offset16 | chainedClassSeqRuleSetOffsets[chainedClassSeqRuleSetCount] | Array of offsets to ChainedClassSequenceRuleSet tables,             |
+            // |          |                                                            | from beginning of ChainedSequenceContextFormat2 table (may be NULL) |
+            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
+            ushort coverageOffset = reader.ReadOffset16();
+            ushort backtrackClassDefOffset = reader.ReadOffset16();
+            ushort inputClassDefOffset = reader.ReadOffset16();
+            ushort lookaheadClassDefOffset = reader.ReadOffset16();
+            ushort chainedClassSeqRuleSetCount = reader.ReadUInt16();
+
+            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            var backtrackClassDefTable = ClassDefinitionTable.Load(reader, offset + backtrackClassDefOffset);
+            var inputClassDefTable = ClassDefinitionTable.Load(reader, offset + inputClassDefOffset);
+            var lookaheadClassDefTable = ClassDefinitionTable.Load(reader, offset + lookaheadClassDefOffset);
+
+            ushort[] classSeqRuleSetOffsets = reader.ReadUInt16Array(chainedClassSeqRuleSetCount);
+            var seqRuleSets = new ChainedClassSequenceRuleSetTable[chainedClassSeqRuleSetCount];
+
+            for (int i = 0; i < seqRuleSets.Length; i++)
+            {
+                seqRuleSets[i] = ChainedClassSequenceRuleSetTable.Load(reader, offset + classSeqRuleSetOffsets[i]);
+            }
+
+            return new LookupType6Format2SubTable(seqRuleSets, backtrackClassDefTable, inputClassDefTable, lookaheadClassDefTable, coverageTable);
+        }
+
+        public override bool TrySubstition(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
+        {
+            int glyphId = collection[index][0];
+            if (glyphId < 0)
+            {
+                return false;
+            }
+
+            int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+
+            if (offset > -1)
+            {
+                // TODO: Implement
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
+                return false;
+            }
+
+            return false;
+        }
+
+        internal sealed class ChainedClassSequenceRuleSetTable
+        {
+            private ChainedClassSequenceRuleSetTable(ChainedClassSequenceRuleTable[] subRules)
+                => this.SubRules = subRules;
+
+            public ChainedClassSequenceRuleTable[] SubRules { get; }
+
+            public static ChainedClassSequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
+            {
+                // ClassSequenceRuleSet
+                // +----------+----------------------------------------+---------------------------------------+
+                // | Type     | Name                                   | Description                           |
+                // +==========+========================================+=======================================+
+                // | uint16   | classSeqRuleCount                      | Number of ClassSequenceRule tables    |
+                // +----------+----------------------------------------+---------------------------------------+
+                // | Offset16 | classSeqRuleOffsets[classSeqRuleCount] | Array of offsets to ClassSequenceRule |
+                // |          |                                        | tables, from beginning of             |
+                // |          |                                        | ClassSequenceRuleSet table            |
+                // +----------+----------------------------------------+---------------------------------------+
+                reader.Seek(offset, SeekOrigin.Begin);
+                ushort seqRuleCount = reader.ReadUInt16();
+                ushort[] seqRuleOffsets = reader.ReadUInt16Array(seqRuleCount);
+
+                var subRules = new ChainedClassSequenceRuleTable[seqRuleCount];
+                for (int i = 0; i < subRules.Length; i++)
+                {
+                    subRules[i] = ChainedClassSequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
+                }
+
+                return new ChainedClassSequenceRuleSetTable(subRules);
+            }
+
+            public sealed class ChainedClassSequenceRuleTable
+            {
+                private ChainedClassSequenceRuleTable(
+                    ushort[] backtrackSequence,
+                    ushort[] inputSequence,
+                    ushort[] lookaheadSequence,
+                    SequenceLookupRecord[] seqLookupRecords)
+                {
+                    this.BacktrackSequence = backtrackSequence;
+                    this.InputSequence = inputSequence;
+                    this.LookaheadSequence = lookaheadSequence;
+                    this.SequenceLookupRecords = seqLookupRecords;
+                }
+
+                public ushort[] BacktrackSequence { get; }
+
+                public ushort[] InputSequence { get; }
+
+                public ushort[] LookaheadSequence { get; }
+
+                public SequenceLookupRecord[] SequenceLookupRecords { get; }
+
+                public static ChainedClassSequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
+                {
+                    // ChainedClassSequenceRule
+                    // +----------------------+----------------------------------------+--------------------------------------------+
+                    // | Type                 | Name                                   | Description                                |
+                    // +======================+========================================+============================================+
+                    // | uint16               | backtrackGlyphCount                    | Number of glyphs in the backtrack          |
+                    // |                      |                                        | sequence                                   |
+                    // +----------------------+----------------------------------------+--------------------------------------------+
+                    // | uint16               | backtrackSequence[backtrackGlyphCount] | Array of backtrack-sequence classes        |
+                    // +----------------------+----------------------------------------+--------------------------------------------+
+                    // | uint16               | inputGlyphCount                        | Total number of glyphs in the input        |
+                    // |                      |                                        | sequence                                   |
+                    // +----------------------+----------------------------------------+--------------------------------------------+
+                    // | uint16               | inputSequence[inputGlyphCount - 1]     | Array of input sequence classes, beginning |
+                    // |                      |                                        | with the second glyph position             |
+                    // +----------------------+----------------------------------------+--------------------------------------------+
+                    // | uint16               | lookaheadGlyphCount                    | Number of glyphs in the lookahead          |
+                    // |                      |                                        | sequence                                   |
+                    // +----------------------+----------------------------------------+--------------------------------------------+
+                    // | uint16               | lookaheadSequence[lookaheadGlyphCount] | Array of lookahead-sequence classes        |
+                    // +----------------------+----------------------------------------+--------------------------------------------+
+                    // | uint16               | seqLookupCount                         | Number of SequenceLookupRecords            |
+                    // +----------------------+----------------------------------------+--------------------------------------------+
+                    // | SequenceLookupRecord | seqLookupRecords[seqLookupCount]       | Array of SequenceLookupRecords             |
+                    // +----------------------+----------------------------------------+--------------------------------------------+
+                    reader.Seek(offset, SeekOrigin.Begin);
+
+                    ushort backtrackGlyphCount = reader.ReadUInt16();
+                    ushort[] backtrackSequence = reader.ReadUInt16Array(backtrackGlyphCount);
+
+                    ushort inputGlyphCount = reader.ReadUInt16();
+                    ushort[] inputSequence = reader.ReadUInt16Array(inputGlyphCount - 1);
+
+                    ushort lookaheadGlyphCount = reader.ReadUInt16();
+                    ushort[] lookaheadSequence = reader.ReadUInt16Array(lookaheadGlyphCount);
+
+                    ushort seqLookupCount = reader.ReadUInt16();
+                    SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
+
+                    return new ChainedClassSequenceRuleTable(backtrackSequence, inputSequence, lookaheadSequence, seqLookupRecords);
+                }
+            }
+        }
+    }
+
     internal class LookupType6Format3SubTable : LookupSubTable
     {
         private readonly SequenceLookupRecord[] seqLookupRecords;
@@ -209,7 +402,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             this.lookaheadCoverageTables = lookaheadCoverageTables;
         }
 
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType6Format3SubTable Load(BigEndianBinaryReader reader, long offset)
         {
             // ChainedSequenceContextFormat3 1
             // +----------------------+-----------------------------------------------+----------------------------------------------------------------+

@@ -198,17 +198,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ushort classDefOffset = reader.ReadOffset16();
             ushort classSeqRuleSetCount = reader.ReadUInt16();
             ushort[] classSeqRuleSetOffsets = reader.ReadUInt16Array(classSeqRuleSetCount);
+
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
             var classDefTable = ClassDefinitionTable.Load(reader, offset + classDefOffset);
 
-            var seqRuleSets = new ClassSequenceRuleSetTable[classSeqRuleSetCount];
-
-            for (int i = 0; i < seqRuleSets.Length; i++)
+            var classSeqRuleSets = new ClassSequenceRuleSetTable[classSeqRuleSetCount];
+            for (int i = 0; i < classSeqRuleSets.Length; i++)
             {
-                seqRuleSets[i] = ClassSequenceRuleSetTable.Load(reader, offset + classSeqRuleSetOffsets[i]);
+                classSeqRuleSets[i] = ClassSequenceRuleSetTable.Load(reader, offset + classSeqRuleSetOffsets[i]);
             }
 
-            return new LookupType5Format2SubTable(seqRuleSets, classDefTable, coverageTable);
+            return new LookupType5Format2SubTable(classSeqRuleSets, classDefTable, coverageTable);
         }
 
         public override bool TrySubstition(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
