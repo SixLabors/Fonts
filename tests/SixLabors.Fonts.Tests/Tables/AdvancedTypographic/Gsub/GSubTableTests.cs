@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             });
 
             // assert
-            var glyphKey = Assert.Single(rendererTtf.GlyphKeys);
+            GlyphRendererParameters glyphKey = Assert.Single(rendererTtf.GlyphKeys);
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
     }

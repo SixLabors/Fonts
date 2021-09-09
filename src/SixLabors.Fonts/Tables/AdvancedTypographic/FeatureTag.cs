@@ -642,7 +642,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         /// <summary>
         /// Small Capitals.
-        /// This feature turns lowercase characters into small capitals. This corresponds to the common SC font layout. It is generally used for display lines set in Large & small caps, such as titles.
+        /// This feature turns lowercase characters into small capitals. This corresponds to the common SC font layout. It is generally used for display lines set in Large and small caps, such as titles.
         /// Forms related to small capitals, such as oldstyle figures, may be included.
         /// </summary>
         Smcp = 0x736D6370U,

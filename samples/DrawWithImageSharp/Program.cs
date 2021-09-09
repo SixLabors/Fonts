@@ -181,7 +181,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     WrappingWidth = 340,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
                     ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
-                }, text);
+                },
+                text);
 
         public static void RenderTextProcessor(
             FontFamily fontFamily,
