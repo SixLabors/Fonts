@@ -13,9 +13,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// termed the "extension" subtable.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-7-extension-substitution"/>
     /// </summary>
-    internal sealed class LookupType7SubTable
+    internal class LookupType7SubTable
     {
         private LookupType7SubTable()
+        {
+        }
+
+        public static LookupSubTable Load(
+            BigEndianBinaryReader reader,
+            long offset,
+            Func<ushort, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
+        {
+            reader.Seek(offset, SeekOrigin.Begin);
+            ushort substFormat = reader.ReadUInt16();
+
+            return substFormat switch
+            {
+                1 => LookupType7Format1SubTable.Load(reader, offset, subTableLoader),
+                _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1'."),
+            };
+        }
+    }
+
+    internal sealed class LookupType7Format1SubTable
+    {
+        private LookupType7Format1SubTable()
         {
         }
 
@@ -34,8 +56,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             // | Offset32 | extensionOffset     | Offset to the extension subtable, of lookup type extensionLookupType, relative to the start of the ExtensionSubstFormat1 subtable. |
             // +----------+---------------------+------------------------------------------------------------------------------------------------------------------------------------+
             reader.Seek(offset, SeekOrigin.Begin);
-
-            ushort format = reader.ReadUInt16();
             ushort extensionLookupType = reader.ReadUInt16();
             uint extensionOffset = reader.ReadOffset32();
 

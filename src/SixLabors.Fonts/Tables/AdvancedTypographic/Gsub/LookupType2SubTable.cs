@@ -40,7 +40,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             this.coverageTable = coverageTable;
         }
 
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset)
         {
             // Multiple Substitution Format 1
             // +----------+--------------------------------+-----------------------------------------------------------------+
