@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// termed the "extension" subtable.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-7-extension-substitution"/>
     /// </summary>
-    internal class LookupType7SubTable
+    internal sealed class LookupType7SubTable
     {
         private LookupType7SubTable()
         {
@@ -55,7 +55,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             // +----------+---------------------+------------------------------------------------------------------------------------------------------------------------------------+
             // | Offset32 | extensionOffset     | Offset to the extension subtable, of lookup type extensionLookupType, relative to the start of the ExtensionSubstFormat1 subtable. |
             // +----------+---------------------+------------------------------------------------------------------------------------------------------------------------------------+
-            reader.Seek(offset, SeekOrigin.Begin);
             ushort extensionLookupType = reader.ReadUInt16();
             uint extensionOffset = reader.ReadOffset32();
 

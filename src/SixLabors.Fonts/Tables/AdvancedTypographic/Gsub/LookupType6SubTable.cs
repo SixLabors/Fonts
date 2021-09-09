@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// with an ability to look back and/or look ahead in the sequence of glyphs.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-6-chained-contexts-substitution-subtable"/>
     /// </summary>
-    internal class LookupType6SubTable
+    internal sealed class LookupType6SubTable
     {
         private LookupType6SubTable()
         {
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
     }
 
-    internal class LookupType6Format1SubTable : LookupSubTable
+    internal sealed class LookupType6Format1SubTable : LookupSubTable
     {
         private readonly ChainedSequenceRuleSetTable[] seqRuleSetTables;
         private readonly CoverageTable coverageTable;
@@ -383,7 +383,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
     }
 
-    internal class LookupType6Format3SubTable : LookupSubTable
+    internal sealed class LookupType6Format3SubTable : LookupSubTable
     {
         private readonly SequenceLookupRecord[] seqLookupRecords;
         private readonly CoverageTable[] backtrackCoverageTables;

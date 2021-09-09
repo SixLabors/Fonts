@@ -144,7 +144,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 5 => LookupType5SubTable.Load(reader, offset),
                 6 => LookupType6SubTable.Load(reader, offset),
                 7 => LookupType7SubTable.Load(reader, offset, LoadLookupSubTable),
-                _ => new NotImplementedSubTable(),
+                8 => LookupType8SubTable.Load(reader, offset),
+                _ => throw new InvalidFontFileException($"Invalid value for 'lookupType' {lookupType}. Should be between '1' and '8' inclusive.")
             };
     }
 

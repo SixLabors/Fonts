@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// The subtable has one format: LigatureSubstFormat1.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-4-ligature-substitution-subtable"/>
     /// </summary>
-    internal class LookupType4SubTable
+    internal sealed class LookupType4SubTable
     {
         private LookupType4SubTable()
         {
@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
     }
 
-    internal class LookupType4Format1SubTable : LookupSubTable
+    internal sealed class LookupType4Format1SubTable : LookupSubTable
     {
         private readonly LigatureSetTable[] ligatureSetTables;
         private readonly CoverageTable coverageTable;

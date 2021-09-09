@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// from which a user can choose a glyph variant to replace the input glyph.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-3-alternate-substitution-subtable"/>
     /// </summary>
-    internal class LookupType3SubTable
+    internal sealed class LookupType3SubTable
     {
         private LookupType3SubTable()
         {
@@ -29,7 +29,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
     }
 
-    internal class LookupType3Format1SubTable : LookupSubTable
+    internal sealed class LookupType3Format1SubTable : LookupSubTable
     {
         private readonly AlternateSetTable[] alternateSetTables;
         private readonly CoverageTable coverageTable;
