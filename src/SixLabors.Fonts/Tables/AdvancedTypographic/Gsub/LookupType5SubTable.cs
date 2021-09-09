@@ -335,14 +335,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ushort glyphCount = reader.ReadUInt16();
             ushort seqLookupCount = reader.ReadUInt16();
             ushort[] coverageOffsets = reader.ReadUInt16Array(glyphCount);
+            SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
 
             var coverageTables = new CoverageTable[glyphCount];
             for (int i = 0; i < coverageTables.Length; i++)
             {
                 coverageTables[i] = CoverageTable.Load(reader, offset + coverageOffsets[i]);
             }
-
-            SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
 
             return new LookupType5Format3SubTable(seqLookupRecords, coverageTables);
         }
