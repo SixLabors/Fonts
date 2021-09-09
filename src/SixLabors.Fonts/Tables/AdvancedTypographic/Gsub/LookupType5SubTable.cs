@@ -303,39 +303,48 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
     }
 
-    // TODO: Implement decode
     internal sealed class LookupType5Format3SubTable : LookupSubTable
     {
-        private readonly CoverageTable coverageTable;
-        private readonly ushort[] substituteGlyphs;
+        private readonly CoverageTable[] coverageTables;
+        private readonly SequenceLookupRecord[] sequenceLookupRecords;
 
-        private LookupType5Format3SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable)
+        private LookupType5Format3SubTable(SequenceLookupRecord[] sequenceLookupRecords, CoverageTable[] coverageTables)
         {
-            this.substituteGlyphs = substituteGlyphs;
-            this.coverageTable = coverageTable;
+            this.sequenceLookupRecords = sequenceLookupRecords;
+            this.coverageTables = coverageTables;
         }
 
         public static LookupType5Format3SubTable Load(BigEndianBinaryReader reader, long offset)
         {
-            // SingleSubstFormat2
-            // +----------+--------------------------------+-----------------------------------------------------------+
-            // | Type     | Name                           | Description                                               |
-            // +==========+================================+===========================================================+
-            // | uint16   | substFormat                    | Format identifier: format = 2                             |
-            // +----------+--------------------------------+-----------------------------------------------------------+
-            // | Offset16 | coverageOffset                 | Offset to Coverage table, from beginning of substitution  |
-            // |          |                                | subtable                                                  |
-            // +----------+--------------------------------+-----------------------------------------------------------+
-            // | uint16   | glyphCount                     | Number of glyph IDs in the substituteGlyphIDs array       |
-            // +----------+--------------------------------+-----------------------------------------------------------+
-            // | uint16   | substituteGlyphIDs[glyphCount] | Array of substitute glyph IDs — ordered by Coverage index |
-            // +----------+--------------------------------+-----------------------------------------------------------+
-            ushort coverageOffset = reader.ReadOffset16();
+            // SequenceContextFormat3
+            // +----------------------+----------------------------------+-------------------------------------------+
+            // | Type                 | Name                             | Description                               |
+            // +======================+==================================+===========================================+
+            // | uint16               | format                           | Format identifier: format = 3             |
+            // +----------------------+----------------------------------+-------------------------------------------+
+            // | uint16               | glyphCount                       | Number of glyphs in the input sequence    |
+            // +----------------------+----------------------------------+-------------------------------------------+
+            // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords           |
+            // +----------------------+----------------------------------+-------------------------------------------+
+            // | Offset16             | coverageOffsets[glyphCount]      | Array of offsets to Coverage tables, from |
+            // |                      |                                  | beginning of SequenceContextFormat3       |
+            // |                      |                                  | subtable                                  |
+            // +----------------------+----------------------------------+-------------------------------------------+
+            // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of SequenceLookupRecords            |
+            // +----------------------+----------------------------------+-------------------------------------------+
             ushort glyphCount = reader.ReadUInt16();
-            ushort[] substituteGlyphIds = reader.ReadUInt16Array(glyphCount);
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            ushort seqLookupCount = reader.ReadUInt16();
+            ushort[] coverageOffsets = reader.ReadUInt16Array(glyphCount);
 
-            return new LookupType5Format3SubTable(substituteGlyphIds, coverageTable);
+            var coverageTables = new CoverageTable[glyphCount];
+            for (int i = 0; i < coverageTables.Length; i++)
+            {
+                coverageTables[i] = CoverageTable.Load(reader, offset + coverageOffsets[i]);
+            }
+
+            SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
+
+            return new LookupType5Format3SubTable(seqLookupRecords, coverageTables);
         }
 
         public override bool TrySubstition(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
@@ -346,14 +355,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 return false;
             }
 
-            int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
-
-            if (offset > -1)
-            {
-                collection.Replace(index, this.substituteGlyphs[offset]);
-                return true;
-            }
-
+            // TODO: Implement
+            // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#53-context-substitution-format-3-coverage-based-glyph-contexts
             return false;
         }
     }
