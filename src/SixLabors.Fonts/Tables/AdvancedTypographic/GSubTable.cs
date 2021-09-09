@@ -132,7 +132,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 for (int j = 0; j < featureIndices.Length; j++)
                 {
                     // TODO: Should we be applying all features?
-                    ushort[] lookupListIndices = this.FeatureList.FeatureTables[featureIndices[j]].LookupListIndices;
+                    FeatureTable featureTable = this.FeatureList.FeatureTables[featureIndices[j]];
+                    uint tag = featureTable.FeatureTag;
+
+                    // TODO: Check tag against known list and determine based upon index and count
+                    // whether to skip this feature.
+                    ushort[] lookupListIndices = featureTable.LookupListIndices;
                     for (int k = 0; k < lookupListIndices.Length; k++)
                     {
                         // TODO: Consider caching the relevant langtables per script.
