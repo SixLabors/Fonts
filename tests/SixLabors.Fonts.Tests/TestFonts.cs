@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tests
 
         public static string SimpleFontFileWoff => GetFullPath("SixLaborsSampleAB.woff");
 
-        public static string ArabicFontFile => GetFullPath("Dubai-regular.ttf");
+        public static string ArabicFontFile => GetFullPath("Dubai-Regular.ttf");
 
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
