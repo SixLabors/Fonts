@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests
 {
     public static class TestFonts
     {
-        private static readonly Dictionary<string, Stream> Cache = new Dictionary<string, Stream>();
+        private static readonly Dictionary<string, Stream> Cache = new();
 
         public static string TwemojiMozillaFile => GetFullPath("Twemoji Mozilla.ttf");
 

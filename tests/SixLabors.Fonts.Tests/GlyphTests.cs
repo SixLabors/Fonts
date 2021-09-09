@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests
 {
     public class GlyphTests
     {
-        private readonly GlyphRenderer renderer = new GlyphRenderer();
+        private readonly GlyphRenderer renderer = new();
 
         [Fact]
         public void RenderToPointAndSingleDPI()

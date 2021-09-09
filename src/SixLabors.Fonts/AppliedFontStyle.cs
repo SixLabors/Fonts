@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
@@ -33,7 +32,7 @@ namespace SixLabors.Fonts
             var collection = new GlyphSubstitutionCollection();
             this.positioningCollection = new();
 
-            // Incrememntally build out collection of glyphs.
+            // Incrementally build out collection of glyphs.
             // For each run we start with a fresh substitution collection to avoid
             // overwriting the glyph ids.
             this.DoFontRun(text, this.MainFont, collection, this.positioningCollection);
