@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Unicode
 {
@@ -19,7 +18,7 @@ namespace SixLabors.Fonts.Unicode
         private ArrayBuilder<BidiCharacterType> savedTypes;
         private ArrayBuilder<BidiPairedBracketType> savedPairedBracketTypes;
         private ArrayBuilder<sbyte> tempLevelBuffer;
-        private readonly List<int> paragraphPositions = new List<int>();
+        private readonly List<int> paragraphPositions = new();
 
         public sbyte ParagraphEmbeddingLevel { get; private set; }
 
@@ -61,11 +60,11 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="text">The text to process.</param>
         /// <param name="paragraphEmbeddingLevel">The paragraph embedding level</param>
-        public void Init(string text, sbyte paragraphEmbeddingLevel)
+        public void Init(ReadOnlySpan<char> text, sbyte paragraphEmbeddingLevel)
         {
             // Set working buffer sizes
             // TODO: This allocates more than it should for some arrays.
-            int length = CodePoint.GetCodePointCount(text.AsSpan());
+            int length = CodePoint.GetCodePointCount(text);
             this.types.Length = length;
             this.pairedBracketTypes.Length = length;
             this.pairedBracketValues.Length = length;
@@ -73,17 +72,17 @@ namespace SixLabors.Fonts.Unicode
             this.paragraphPositions.Clear();
             this.ParagraphEmbeddingLevel = paragraphEmbeddingLevel;
 
-            // Resolve the BidiCharacterType, paired bracket type and paired bracket values for
-            // all code points
+            // Resolve the BidiCharacterType, paired bracket type and paired
+            // bracket values for all code points
             this.HasBrackets = false;
             this.HasEmbeddings = false;
             this.HasIsolates = false;
 
             int i = 0;
-            int position = 0;
-            while (position < text.Length)
+            var codePointEnumerator = new SpanCodePointEnumerator(text);
+            while (codePointEnumerator.MoveNext())
             {
-                var codePoint = CodePoint.ReadAt(text, position, out int count);
+                CodePoint codePoint = codePointEnumerator.Current;
                 BidiClass bidi = CodePoint.GetBidiClass(codePoint);
 
                 // Look up BidiCharacterType
@@ -127,7 +126,6 @@ namespace SixLabors.Fonts.Unicode
                 }
 
                 i++;
-                position += count;
             }
 
             // Create slices on work buffers

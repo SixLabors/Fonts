@@ -78,7 +78,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                 string text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
 
                 // Arrange
-                bidiData.Init(text, t.ParagraphLevel);
+                bidiData.Init(text.AsSpan(), t.ParagraphLevel);
 
                 // Act
                 for (int i = 0; i < 10; i++)
