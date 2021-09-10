@@ -65,7 +65,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         {
             public FeatureRecord(uint featureTag, ushort featureOffset)
             {
-                this.FeatureTag = FeatureTagMap.Instance[(FeatureTag)featureTag];
+                this.FeatureTag = new Tag(featureTag);
                 this.FeatureOffset = featureOffset;
             }
 
