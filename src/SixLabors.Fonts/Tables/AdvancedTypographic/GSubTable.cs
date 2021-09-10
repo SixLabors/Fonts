@@ -133,7 +133,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 {
                     // TODO: Should we be applying all features?
                     FeatureTable featureTable = this.FeatureList.FeatureTables[featureIndices[j]];
-                    FeatureTag tag = featureTable.FeatureTag;
+                    Tag tag = featureTable.FeatureTag;
 
                     // TODO: Check tag against known list and determine based upon index and count
                     // whether to skip this feature.

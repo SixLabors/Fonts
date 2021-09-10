@@ -65,14 +65,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             LookupSubTable[] lookupSubTables)
         {
             this.LookupType = lookupType;
-            this.LookupFlags = lookupFlags;
+            this.LookupFlags = (LookupFlags)lookupFlags;
             this.MarkFilteringSet = markFilteringSet;
             this.LookupSubTables = lookupSubTables;
         }
 
         public ushort LookupType { get; }
 
-        public ushort LookupFlags { get; }
+        public LookupFlags LookupFlags { get; }
 
         public ushort MarkFilteringSet { get; }
 

@@ -185,11 +185,11 @@ namespace SixLabors.Fonts.Unicode
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
         // Operators below are explicit because they may throw.
-        public static explicit operator CodePoint(char ch) => new CodePoint(ch);
+        public static explicit operator CodePoint(char ch) => new(ch);
 
-        public static explicit operator CodePoint(uint value) => new CodePoint(value);
+        public static explicit operator CodePoint(uint value) => new(value);
 
-        public static explicit operator CodePoint(int value) => new CodePoint(value);
+        public static explicit operator CodePoint(int value) => new(value);
 
         public static bool operator ==(CodePoint left, CodePoint right) => left.value == right.value;
 
@@ -431,7 +431,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="BidiClass"/>.</returns>
         internal static BidiClass GetBidiClass(CodePoint codePoint)
-            => new BidiClass(codePoint);
+            => new(codePoint);
 
         /// <summary>
         /// Gets the <see cref="LineBreakClass"/> for the given codepoint.

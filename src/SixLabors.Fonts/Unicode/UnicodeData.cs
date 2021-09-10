@@ -11,11 +11,11 @@ namespace SixLabors.Fonts.Unicode
 {
     internal static class UnicodeData
     {
-        private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new Lazy<UnicodeTrie>(() => GetTrie("Bidi.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new Lazy<UnicodeTrie>(() => GetTrie("Grapheme.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyLinebreakTrie = new Lazy<UnicodeTrie>(() => GetTrie("LineBreak.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new Lazy<UnicodeTrie>(() => GetTrie("Script.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new Lazy<UnicodeTrie>(() => GetTrie("UnicodeCategory.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new(() => GetTrie("Bidi.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new(() => GetTrie("Grapheme.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyLinebreakTrie = new(() => GetTrie("LineBreak.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetTrie("Script.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new(() => GetTrie("UnicodeCategory.trie"));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetBidiData(int codePoint) => LazyBidiTrie.Value.Get(codePoint);
