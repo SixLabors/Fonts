@@ -3,7 +3,7 @@
 
 using System;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
     /// LookupFlag bit enumeration, see: https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#lookup-table

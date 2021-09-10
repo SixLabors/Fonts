@@ -60,7 +60,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     {
         private LookupTable(
             ushort lookupType,
-            ushort lookupFlags,
+            LookupFlags lookupFlags,
             ushort markFilteringSet,
             LookupSubTable[] lookupSubTables)
         {
@@ -72,7 +72,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
         public ushort LookupType { get; }
 
-        public ushort LookupFlags { get; }
+        public LookupFlags LookupFlags { get; }
 
         public ushort MarkFilteringSet { get; }
 
@@ -99,13 +99,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             reader.Seek(offset, SeekOrigin.Begin);
 
             ushort lookupType = reader.ReadUInt16();
-            ushort lookupFlags = reader.ReadUInt16();
+            LookupFlags lookupFlags = reader.ReadUInt16<LookupFlags>();
             ushort subTableCount = reader.ReadUInt16();
 
             ushort[] subTableOffsets = reader.ReadUInt16Array(subTableCount);
 
             // The fifth bit indicates the presence of a MarkFilteringSet field in the Lookup table.
-            ushort markFilteringSet = ((lookupFlags & 0x0010) != 0)
+            ushort markFilteringSet = ((lookupFlags & LookupFlags.UseMarkFilteringSet) != 0)
                 ? reader.ReadUInt16()
                 : (ushort)0;
 

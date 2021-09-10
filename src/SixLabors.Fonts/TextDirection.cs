@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Specifies the text writing direction for text.
+    /// Specifies the writing direction for text.
     /// </summary>
     public enum TextDirection
     {
