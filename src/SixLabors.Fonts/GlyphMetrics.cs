@@ -163,9 +163,14 @@ namespace SixLabors.Fonts
         /// <param name="y">The y-advance.</param>
         internal void ApplyAdvance(short x, short y)
         {
-            // TODO: Should we be setting both X and Y?
+            // TODO: We should be setting X and Y based upon the writing direction.
+            // That ideally would be passed via render options.
+            // vertical or horizontal.
             this.AdvanceWidth = (ushort)(this.AdvanceWidth + x);
-            this.AdvanceHeight = (ushort)(this.AdvanceWidth + y);
+
+            // TODO: When we enable vertical rendering we should enable the following line.
+            // AdvanceHeight values grow downward but font-space grows upward, hence negation
+            // this.AdvanceHeight = (ushort)(this.AdvanceHeight - y);
         }
 
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
