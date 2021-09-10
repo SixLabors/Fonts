@@ -13,8 +13,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     /// </summary>
     internal sealed class UnicodeScriptTagMap : Dictionary<Script, Tag[]>
     {
-        private static readonly Lazy<UnicodeScriptTagMap> Lazy = new Lazy<UnicodeScriptTagMap>(() => CreateMap());
+        private static readonly Lazy<UnicodeScriptTagMap> Lazy = new(() => CreateMap());
 
+        /// <summary>
+        /// Prevents a default instance of the <see cref="UnicodeScriptTagMap"/> class from being created.
+        /// </summary>
         private UnicodeScriptTagMap()
         {
         }

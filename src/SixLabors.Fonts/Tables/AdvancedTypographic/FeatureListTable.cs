@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 // +----------+---------------+--------------------------------------------------------+
                 uint featureTag = reader.ReadUInt32();
                 ushort featureOffset = reader.ReadOffset16();
-                featureRecords[i] = new FeatureRecord((FeatureTag)featureTag, featureOffset);
+                featureRecords[i] = new FeatureRecord(featureTag, featureOffset);
             }
 
             // Load the other table features.
@@ -63,13 +63,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         private readonly struct FeatureRecord
         {
-            public FeatureRecord(FeatureTag featureTag, ushort featureOffset)
+            public FeatureRecord(uint featureTag, ushort featureOffset)
             {
-                this.FeatureTag = featureTag;
+                this.FeatureTag = FeatureTagMap.Instance[(FeatureTag)featureTag];
                 this.FeatureOffset = featureOffset;
             }
 
-            public FeatureTag FeatureTag { get; }
+            public Tag FeatureTag { get; }
 
             public ushort FeatureOffset { get; }
         }
@@ -77,17 +77,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
     internal sealed class FeatureTable
     {
-        private FeatureTable(FeatureTag featureTag, ushort[] lookupListIndices)
+        private FeatureTable(Tag featureTag, ushort[] lookupListIndices)
         {
             this.FeatureTag = featureTag;
             this.LookupListIndices = lookupListIndices;
         }
 
-        public FeatureTag FeatureTag { get; }
+        public Tag FeatureTag { get; }
 
         public ushort[] LookupListIndices { get; }
 
-        public static FeatureTable Load(FeatureTag featureTag, BigEndianBinaryReader reader, long offset)
+        public static FeatureTable Load(Tag featureTag, BigEndianBinaryReader reader, long offset)
         {
             // FeatureListTable
             // +----------+-------------------------------------+--------------------------------------------------------------------------------------------------------------+
