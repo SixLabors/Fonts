@@ -17,7 +17,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public uint Value { get; }
 
-        public static implicit operator Tag(uint value) => new Tag(value);
+        public static implicit operator Tag(uint value) => new(value);
 
         public static bool operator ==(Tag left, Tag right) => left.Equals(right);
 
