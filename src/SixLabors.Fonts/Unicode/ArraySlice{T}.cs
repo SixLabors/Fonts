@@ -9,33 +9,33 @@ using System.Runtime.CompilerServices;
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
-    /// ReadOnlyArraySlice represents a contiguous region of arbitrary memory similar
-    /// to <see cref="ReadOnlyMemory{T}"/> and <see cref="ReadOnlySpan{T}"/> though constrained
+    /// ArraySlice represents a contiguous region of arbitrary memory similar
+    /// to <see cref="Memory{T}"/> and <see cref="Span{T}"/> though constrained
     /// to arrays.
-    /// Unlike <see cref="ReadOnlySpan{T}"/>, it is not a byref-like type.
+    /// Unlike <see cref="Span{T}"/>, it is not a byref-like type.
     /// </summary>
     /// <typeparam name="T">The type of item contained in the slice.</typeparam>
-    internal readonly struct ReadOnlyArraySlice<T> : IEnumerable<T>, IEnumerable
+    internal readonly struct ArraySlice<T> : IEnumerable<T>, IEnumerable
         where T : struct
     {
         private readonly T[] data;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReadOnlyArraySlice{T}"/> struct.
+        /// Initializes a new instance of the <see cref="ArraySlice{T}"/> struct.
         /// </summary>
         /// <param name="data">The underlying data buffer.</param>
-        public ReadOnlyArraySlice(T[] data)
+        public ArraySlice(T[] data)
             : this(data, 0, data.Length)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReadOnlyArraySlice{T}"/> struct.
+        /// Initializes a new instance of the <see cref="ArraySlice{T}"/> struct.
         /// </summary>
         /// <param name="data">The underlying data buffer.</param>
         /// <param name="start">The offset position in the underlying buffer this slice was created from.</param>
         /// <param name="length">The number of items in the slice.</param>
-        public ReadOnlyArraySlice(T[] data, int start, int length)
+        public ArraySlice(T[] data, int start, int length)
         {
             DebugGuard.MustBeGreaterThanOrEqualTo(start, 0, nameof(start));
             DebugGuard.MustBeLessThanOrEqualTo(length, data.Length, nameof(length));
@@ -47,9 +47,9 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Gets an empty <see cref="ReadOnlyArraySlice{T}"/>
+        /// Gets an empty <see cref="ArraySlice{T}"/>
         /// </summary>
-        public static ReadOnlyArraySlice<T> Empty => new ReadOnlyArraySlice<T>(new T[0]);
+        public static ArraySlice<T> Empty => new(new T[0]);
 
         /// <summary>
         /// Gets the offset position in the underlying buffer this slice was created from.
@@ -64,7 +64,7 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Gets a <see cref="Span{T}"/> representing this slice.
         /// </summary>
-        public ReadOnlySpan<T> Span => new ReadOnlySpan<T>(this.data, this.Start, this.Length);
+        public Span<T> Span => new(this.data, this.Start, this.Length);
 
         /// <summary>
         /// Returns a reference to specified element of the slice.
@@ -74,7 +74,7 @@ namespace SixLabors.Fonts.Unicode
         /// <exception cref="IndexOutOfRangeException">
         /// Thrown when index less than 0 or index greater than or equal to <see cref="Length"/>.
         /// </exception>
-        public readonly ref T this[int index]
+        public ref T this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -86,10 +86,16 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
-        /// Defines an implicit conversion of an array to a <see cref="ReadOnlyArraySlice{T}"/>
+        /// Defines an implicit conversion of a <see cref="ArraySlice{T}"/> to a <see cref="ReadOnlyArraySlice{T}"/>
         /// </summary>
-        public static implicit operator ReadOnlyArraySlice<T>(T[] array)
-            => new ReadOnlyArraySlice<T>(array, 0, array.Length);
+        public static implicit operator ReadOnlyArraySlice<T>(ArraySlice<T> slice)
+            => new(slice.data, slice.Start, slice.Length);
+
+        /// <summary>
+        /// Defines an implicit conversion of an array to a <see cref="ArraySlice{T}"/>
+        /// </summary>
+        public static implicit operator ArraySlice<T>(T[] array)
+            => new(array, 0, array.Length);
 
         /// <summary>
         /// Copies the contents of this slice into destination span. If the source
@@ -104,6 +110,11 @@ namespace SixLabors.Fonts.Unicode
             => this.Span.CopyTo(destination.Span);
 
         /// <summary>
+        /// Fills the contents of this slice with the given value.
+        /// </summary>
+        public void Fill(T value) => this.Span.Fill(value);
+
+        /// <summary>
         /// Forms a slice out of the given slice, beginning at 'start', of given length
         /// </summary>
         /// <param name="start">The index at which to begin this slice.</param>
@@ -111,8 +122,8 @@ namespace SixLabors.Fonts.Unicode
         /// <exception cref="ArgumentOutOfRangeException">
         /// Thrown when the specified <paramref name="start"/> or end index is not in range (&lt;0 or &gt;Length).
         /// </exception>
-        public ReadOnlyArraySlice<T> Slice(int start, int length)
-            => new ReadOnlyArraySlice<T>(this.data, start, length);
+        public ArraySlice<T> Slice(int start, int length)
+            => new(this.data, start, length);
 
         /// <inheritdoc/>
         public IEnumerator<T> GetEnumerator() => new Enumerator(this);
@@ -127,7 +138,7 @@ namespace SixLabors.Fonts.Unicode
             private readonly int end; // cache Start + Length, since it's a little slow
             private int current;
 
-            internal Enumerator(ReadOnlyArraySlice<T> slice)
+            internal Enumerator(ArraySlice<T> slice)
             {
                 DebugGuard.NotNull(slice.data, nameof(slice.data));
                 DebugGuard.MustBeGreaterThanOrEqualTo(slice.Start, 0, nameof(slice.Start));

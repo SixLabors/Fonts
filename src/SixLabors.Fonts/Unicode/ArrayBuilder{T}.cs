@@ -180,7 +180,7 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ArraySlice<T> AsSlice(int length)
-            => new ArraySlice<T>(this.data!, 0, length);
+            => new(this.data!, 0, length);
 
         /// <summary>
         /// Returns the current state of the array as a slice.
@@ -190,6 +190,6 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ArraySlice<T> AsSlice(int start, int length)
-            => new ArraySlice<T>(this.data!, start, length);
+            => new(this.data!, start, length);
     }
 }

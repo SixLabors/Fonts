@@ -151,7 +151,7 @@ namespace SixLabors.Fonts
             {
                 if (m.Index == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    // TODO: When we enable vertical rendering we should enable the following line.
+                    // TODO: When we enable vertical rendering we should pass the y value.
                     // We'll pass a TextDirection enum to manage it before RC though.
                     m.ApplyAdvance(x, 0);
                 }
