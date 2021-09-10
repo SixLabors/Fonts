@@ -83,7 +83,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     ValueRecord record = this.valueRecord;
                     collection.Offset(fontMetrics, i, (ushort)glyphId, record.XPlacement, record.YPlacement);
-                    collection.Offset(fontMetrics, i, (ushort)glyphId, record.XAdvance, record.YAdvance);
+                    collection.Advance(fontMetrics, i, (ushort)glyphId, record.XAdvance, record.YAdvance);
                     return true;
                 }
             }

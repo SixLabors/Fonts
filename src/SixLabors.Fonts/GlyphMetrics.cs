@@ -168,9 +168,8 @@ namespace SixLabors.Fonts
             // vertical or horizontal.
             this.AdvanceWidth = (ushort)(this.AdvanceWidth + x);
 
-            // TODO: When we enable vertical rendering we should enable the following line.
             // AdvanceHeight values grow downward but font-space grows upward, hence negation
-            // this.AdvanceHeight = (ushort)(this.AdvanceHeight - y);
+            this.AdvanceHeight = (ushort)(this.AdvanceHeight - y);
         }
 
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)

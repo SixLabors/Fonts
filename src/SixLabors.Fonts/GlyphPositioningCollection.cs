@@ -151,8 +151,9 @@ namespace SixLabors.Fonts
             {
                 if (m.Index == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    // TODO: SHould we apply both dimensions?
-                    m.ApplyAdvance(x, y);
+                    // TODO: When we enable vertical rendering we should enable the following line.
+                    // We'll pass a TextDirection enum to manage it before RC though.
+                    m.ApplyAdvance(x, 0);
                 }
             }
         }
