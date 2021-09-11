@@ -246,6 +246,125 @@ namespace UnicodeTrieGenerator
                 { "Zanabazar_Square", Script.ZanabazarSquare }
             };
 
+        private static readonly Dictionary<string, JoiningType> JoiningTypeMap
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "R", JoiningType.RightJoining },
+                { "L", JoiningType.LeftJoining },
+                { "D", JoiningType.DualJoining },
+                { "C", JoiningType.JoinCausing },
+                { "U", JoiningType.NonJoining },
+                { "T", JoiningType.Transparent }
+            };
+
+        private static readonly Dictionary<string, JoiningGroup> JoiningGroupMap
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "African_Feh", JoiningGroup.AfricanFeh },
+                { "African_Noon", JoiningGroup.AfricanNoon },
+                { "African_Qaf", JoiningGroup.AfricanQaf },
+                { "Ain", JoiningGroup.Ain },
+                { "Alaph", JoiningGroup.Alaph },
+                { "Alef", JoiningGroup.Alef },
+                { "Beh", JoiningGroup.Beh },
+                { "Beth", JoiningGroup.Beth },
+                { "Burushaski_Yeh_Barree", JoiningGroup.BurushaskiYehBarree },
+                { "Dal", JoiningGroup.Dal },
+                { "Dalath_Rish", JoiningGroup.DalathRish },
+                { "E", JoiningGroup.E },
+                { "Farsi_Yeh", JoiningGroup.FarsiYeh },
+                { "Fe", JoiningGroup.Fe },
+                { "Feh", JoiningGroup.Feh },
+                { "Final_Semkath", JoiningGroup.FinalSemkath },
+                { "Gaf", JoiningGroup.Gaf },
+                { "Gamal", JoiningGroup.Gamal },
+                { "Hah", JoiningGroup.Hah },
+                { "Hanifi_Rohingya_Kinna_Ya", JoiningGroup.HanifiRohingyaKinnaYa },
+                { "Hanifi_Rohingya_Pa", JoiningGroup.HanifiRohingyaPa },
+                { "He", JoiningGroup.He },
+                { "Heh", JoiningGroup.Heh },
+                { "Heh_Goal", JoiningGroup.HehGoal },
+                { "Heth", JoiningGroup.Heth },
+                { "Kaf", JoiningGroup.Kaf },
+                { "Kaph", JoiningGroup.Kaph },
+                { "Khaph", JoiningGroup.Khaph },
+                { "Knotted_Heh", JoiningGroup.KnottedHeh },
+                { "Lam", JoiningGroup.Lam },
+                { "Lamadh", JoiningGroup.Lamadh },
+                { "Malayalam_Bha", JoiningGroup.MalayalamBha },
+                { "Malayalam_Ja", JoiningGroup.MalayalamJa },
+                { "Malayalam_Lla", JoiningGroup.MalayalamLla },
+                { "Malayalam_Llla", JoiningGroup.MalayalamLlla },
+                { "Malayalam_Nga", JoiningGroup.MalayalamNga },
+                { "Malayalam_Nna", JoiningGroup.MalayalamNna },
+                { "Malayalam_Nnna", JoiningGroup.MalayalamNnna },
+                { "Malayalam_Nya", JoiningGroup.MalayalamNya },
+                { "Malayalam_Ra", JoiningGroup.MalayalamRa },
+                { "Malayalam_Ssa", JoiningGroup.MalayalamSsa },
+                { "Malayalam_Tta", JoiningGroup.MalayalamTta },
+                { "Manichaean_Aleph", JoiningGroup.ManichaeanAleph },
+                { "Manichaean_Ayin", JoiningGroup.ManichaeanAyin },
+                { "Manichaean_Beth", JoiningGroup.ManichaeanBeth },
+                { "Manichaean_Daleth", JoiningGroup.ManichaeanDaleth },
+                { "Manichaean_Dhamedh", JoiningGroup.ManichaeanDhamedh },
+                { "Manichaean_Five", JoiningGroup.ManichaeanFive },
+                { "Manichaean_Gimel", JoiningGroup.ManichaeanGimel },
+                { "Manichaean_Heth", JoiningGroup.ManichaeanHeth },
+                { "Manichaean_Hundred", JoiningGroup.ManichaeanHundred },
+                { "Manichaean_Kaph", JoiningGroup.ManichaeanKaph },
+                { "Manichaean_Lamedh", JoiningGroup.ManichaeanLamedh },
+                { "Manichaean_Mem", JoiningGroup.ManichaeanMem },
+                { "Manichaean_Nun", JoiningGroup.ManichaeanNun },
+                { "Manichaean_One", JoiningGroup.ManichaeanOne },
+                { "Manichaean_Pe", JoiningGroup.ManichaeanPe },
+                { "Manichaean_Qoph", JoiningGroup.ManichaeanQoph },
+                { "Manichaean_Resh", JoiningGroup.ManichaeanResh },
+                { "Manichaean_Sadhe", JoiningGroup.ManichaeanSadhe },
+                { "Manichaean_Samekh", JoiningGroup.ManichaeanSamekh },
+                { "Manichaean_Taw", JoiningGroup.ManichaeanTaw },
+                { "Manichaean_Ten", JoiningGroup.ManichaeanTen },
+                { "Manichaean_Teth", JoiningGroup.ManichaeanTeth },
+                { "Manichaean_Thamedh", JoiningGroup.ManichaeanThamedh },
+                { "Manichaean_Twenty", JoiningGroup.ManichaeanTwenty },
+                { "Manichaean_Waw", JoiningGroup.ManichaeanWaw },
+                { "Manichaean_Yodh", JoiningGroup.ManichaeanYodh },
+                { "Manichaean_Zayin", JoiningGroup.ManichaeanZayin },
+                { "Meem", JoiningGroup.Meem },
+                { "Mim", JoiningGroup.Mim },
+                { "No_Joining_Group", JoiningGroup.NoJoiningGroup },
+                { "Noon", JoiningGroup.Noon },
+                { "Nun", JoiningGroup.Nun },
+                { "Nya", JoiningGroup.Nya },
+                { "Pe", JoiningGroup.Pe },
+                { "Qaf", JoiningGroup.Qaf },
+                { "Qaph", JoiningGroup.Qaph },
+                { "Reh", JoiningGroup.Reh },
+                { "Reversed_Pe", JoiningGroup.ReversedPe },
+                { "Rohingya_Yeh", JoiningGroup.RohingyaYeh },
+                { "Sad", JoiningGroup.Sad },
+                { "Sadhe", JoiningGroup.Sadhe },
+                { "Seen", JoiningGroup.Seen },
+                { "Semkath", JoiningGroup.Semkath },
+                { "Shin", JoiningGroup.Shin },
+                { "Straight_Waw", JoiningGroup.StraightWaw },
+                { "Swash_Kaf", JoiningGroup.SwashKaf },
+                { "Syriac_Waw", JoiningGroup.SyriacWaw },
+                { "Tah", JoiningGroup.Tah },
+                { "Taw", JoiningGroup.Taw },
+                { "Teh_Marbuta", JoiningGroup.TehMarbuta },
+                { "Teh_Marbuta_Goal", JoiningGroup.TehMarbutaGoal },
+                { "Hamza_On_Heh_Goal", JoiningGroup.TehMarbutaGoal },
+                { "Teth", JoiningGroup.Teth },
+                { "Waw", JoiningGroup.Waw },
+                { "Yeh", JoiningGroup.Yeh },
+                { "Yeh_Barree", JoiningGroup.YehBarree },
+                { "Yeh_With_Tail", JoiningGroup.YehWithTail },
+                { "Yudh", JoiningGroup.Yudh },
+                { "Yudh_He", JoiningGroup.YudhHe },
+                { "Zain", JoiningGroup.Zain },
+                { "Zhain", JoiningGroup.Zhain }
+            };
+
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
@@ -266,6 +385,7 @@ namespace UnicodeTrieGenerator
             GenerateUnicodeCategoryTrie();
             GenerateScriptTrie();
             GenerateGraphemeBreakTrie();
+            GenerateArabicShapingTrie();
         }
 
         private static void ProcessUnicodeData()
@@ -485,14 +605,14 @@ namespace UnicodeTrieGenerator
                     {
                         string start = match.Groups[1].Value;
                         string end = match.Groups[2].Value;
-                        string point = match.Groups[3].Value;
+                        string script = match.Groups[3].Value;
 
                         if (end?.Length == 0)
                         {
                             end = start;
                         }
 
-                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)ScriptMap[point], true);
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)ScriptMap[script], true);
                     }
                 }
             }
@@ -500,6 +620,48 @@ namespace UnicodeTrieGenerator
             UnicodeTrie trie = builder.Freeze();
 
             using FileStream stream = GetStreamWriter("Script.trie");
+            trie.Save(stream);
+        }
+
+        /// <summary>
+        /// Generates the UnicodeTrie for the script code point ranges.
+        /// </summary>
+        private static void GenerateArabicShapingTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;[\w\s]+;\s*([A-Z]+);\s*([\w\s]+)");
+            const uint initial = ((int)JoiningType.NonJoining) | (((int)JoiningGroup.NoJoiningGroup) << 16);
+            var builder = new UnicodeTrieBuilder(initial);
+
+            using (StreamReader sr = GetStreamReader("ArabicShaping.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string type = match.Groups[3].Value;
+                        string group = match.Groups[4].Value.Replace(" ", "_");
+
+                        if (end?.Length == 0)
+                        {
+                            end = start;
+                        }
+
+                        JoiningType jt = JoiningTypeMap[type];
+                        JoiningGroup jg = JoiningGroupMap[group];
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)((int)jt | ((int)jg << 16)), true);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+
+            using FileStream stream = GetStreamWriter("ArabicShaping.trie");
             trie.Save(stream);
         }
 

@@ -356,5 +356,19 @@ namespace SixLabors.Fonts.Tests.Unicode
                 Assert.Equal(script, CodePoint.GetScript(new CodePoint(i)));
             }
         }
+
+        [Theory]
+        [InlineData(0x10ACD, JoiningType.LeftJoining, JoiningGroup.ManichaeanHeth)]
+        [InlineData(0x0715, JoiningType.RightJoining, JoiningGroup.DalathRish)]
+        [InlineData(0x1886, JoiningType.Transparent, JoiningGroup.NoJoiningGroup)]
+        [InlineData(0x18A6, JoiningType.DualJoining, JoiningGroup.NoJoiningGroup)]
+        [InlineData(0x200C, JoiningType.NonJoining, JoiningGroup.NoJoiningGroup)]
+        public static void CodePointIsJoiningClass(uint codePoint, JoiningType type, JoiningGroup group)
+        {
+            JoiningClass join = CodePoint.GetJoiningClass(new CodePoint(codePoint));
+
+            Assert.Equal(type, join.JoiningType);
+            Assert.Equal(group, join.JoiningGroup);
+        }
     }
 }

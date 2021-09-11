@@ -450,10 +450,18 @@ namespace SixLabors.Fonts.Unicode
             => UnicodeData.GetGraphemeClusterClass(codePoint.Value);
 
         /// <summary>
+        /// Gets the <see cref="JoiningClass"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="BidiClass"/>.</returns>
+        internal static JoiningClass GetJoiningClass(CodePoint codePoint)
+            => new(codePoint);
+
+        /// <summary>
         /// Gets the <see cref="Script"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
-        /// <returns>The <see cref="GraphemeClusterClass"/>.</returns>
+        /// <returns>The <see cref="Script"/>.</returns>
         internal static Script GetScript(CodePoint codePoint)
             => UnicodeData.GetScript(codePoint.Value);
 
