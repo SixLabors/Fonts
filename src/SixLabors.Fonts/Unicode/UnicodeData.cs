@@ -27,7 +27,7 @@ namespace SixLabors.Fonts.Unicode
         public static LineBreakClass GetLineBreakClass(int codePoint) => (LineBreakClass)LazyLinebreakTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Script GetScript(int codePoint) => (Script)LazyCategoryTrie.Value.Get(codePoint);
+        public static Script GetScript(int codePoint) => (Script)LazyScriptTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UnicodeCategory GetUnicodeCategory(int codePoint) => (UnicodeCategory)LazyCategoryTrie.Value.Get(codePoint);

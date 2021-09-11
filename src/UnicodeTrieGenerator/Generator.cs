@@ -19,52 +19,52 @@ namespace UnicodeTrieGenerator
     public static class Generator
     {
         private static readonly Dictionary<string, UnicodeCategory> UnicodeCategoryMap
-            = new Dictionary<string, UnicodeCategory>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "Lu", UnicodeCategory.UppercaseLetter },
-            { "Ll", UnicodeCategory.LowercaseLetter },
-            { "Lt", UnicodeCategory.TitlecaseLetter },
-            { "Lm", UnicodeCategory.ModifierLetter },
-            { "Lo", UnicodeCategory.OtherLetter },
-            { "Mn", UnicodeCategory.NonSpacingMark },
-            { "Mc", UnicodeCategory.SpacingCombiningMark },
-            { "Me", UnicodeCategory.EnclosingMark },
-            { "Nd", UnicodeCategory.DecimalDigitNumber },
-            { "Nl", UnicodeCategory.LetterNumber },
-            { "No", UnicodeCategory.OtherNumber },
-            { "Zs", UnicodeCategory.SpaceSeparator },
-            { "Zl", UnicodeCategory.LineSeparator },
-            { "Zp", UnicodeCategory.ParagraphSeparator },
-            { "Cc", UnicodeCategory.Control },
-            { "Cf", UnicodeCategory.Format },
-            { "Cs", UnicodeCategory.Surrogate },
-            { "Co", UnicodeCategory.PrivateUse },
-            { "Pc", UnicodeCategory.ConnectorPunctuation },
-            { "Pd", UnicodeCategory.DashPunctuation },
-            { "Ps", UnicodeCategory.OpenPunctuation },
-            { "Pe", UnicodeCategory.ClosePunctuation },
-            { "Pi", UnicodeCategory.InitialQuotePunctuation },
-            { "Pf", UnicodeCategory.FinalQuotePunctuation },
-            { "Po", UnicodeCategory.OtherPunctuation },
-            { "Sm", UnicodeCategory.MathSymbol },
-            { "Sc", UnicodeCategory.CurrencySymbol },
-            { "Sk", UnicodeCategory.ModifierSymbol },
-            { "So", UnicodeCategory.OtherSymbol },
-            { "Cn", UnicodeCategory.OtherNotAssigned }
-        };
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Lu", UnicodeCategory.UppercaseLetter },
+                { "Ll", UnicodeCategory.LowercaseLetter },
+                { "Lt", UnicodeCategory.TitlecaseLetter },
+                { "Lm", UnicodeCategory.ModifierLetter },
+                { "Lo", UnicodeCategory.OtherLetter },
+                { "Mn", UnicodeCategory.NonSpacingMark },
+                { "Mc", UnicodeCategory.SpacingCombiningMark },
+                { "Me", UnicodeCategory.EnclosingMark },
+                { "Nd", UnicodeCategory.DecimalDigitNumber },
+                { "Nl", UnicodeCategory.LetterNumber },
+                { "No", UnicodeCategory.OtherNumber },
+                { "Zs", UnicodeCategory.SpaceSeparator },
+                { "Zl", UnicodeCategory.LineSeparator },
+                { "Zp", UnicodeCategory.ParagraphSeparator },
+                { "Cc", UnicodeCategory.Control },
+                { "Cf", UnicodeCategory.Format },
+                { "Cs", UnicodeCategory.Surrogate },
+                { "Co", UnicodeCategory.PrivateUse },
+                { "Pc", UnicodeCategory.ConnectorPunctuation },
+                { "Pd", UnicodeCategory.DashPunctuation },
+                { "Ps", UnicodeCategory.OpenPunctuation },
+                { "Pe", UnicodeCategory.ClosePunctuation },
+                { "Pi", UnicodeCategory.InitialQuotePunctuation },
+                { "Pf", UnicodeCategory.FinalQuotePunctuation },
+                { "Po", UnicodeCategory.OtherPunctuation },
+                { "Sm", UnicodeCategory.MathSymbol },
+                { "Sc", UnicodeCategory.CurrencySymbol },
+                { "Sk", UnicodeCategory.ModifierSymbol },
+                { "So", UnicodeCategory.OtherSymbol },
+                { "Cn", UnicodeCategory.OtherNotAssigned }
+            };
 
         private static readonly Dictionary<string, BidiPairedBracketType> BidiPairedBracketTypeMap
-            = new Dictionary<string, BidiPairedBracketType>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "N", BidiPairedBracketType.None },
-            { "O", BidiPairedBracketType.Open },
-            { "C", BidiPairedBracketType.Close }
-        };
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "N", BidiPairedBracketType.None },
+                { "O", BidiPairedBracketType.Open },
+                { "C", BidiPairedBracketType.Close }
+            };
 
         // Aliases and enum derived from
         // https://www.unicode.org/Public/13.0.0/ucd/PropertyValueAliases.txt
         private static readonly Dictionary<string, GraphemeClusterClass> GraphemeClusterClassMap
-            = new Dictionary<string, GraphemeClusterClass>(StringComparer.OrdinalIgnoreCase)
+            = new(StringComparer.OrdinalIgnoreCase)
             {
                 { "Any", GraphemeClusterClass.Any },
                 { "CR", GraphemeClusterClass.CarriageReturn },
@@ -84,8 +84,8 @@ namespace UnicodeTrieGenerator
             };
 
         private static readonly Dictionary<string, Script> ScriptMap
-            = new Dictionary<string, Script>(StringComparer.OrdinalIgnoreCase)
-        {
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
                 { "Unknown", Script.Unknown },
                 { "Common", Script.Common },
                 { "Inherited", Script.Inherited },
@@ -244,14 +244,14 @@ namespace UnicodeTrieGenerator
                 { "Yezidi", Script.Yezidi },
                 { "Yi", Script.Yi },
                 { "Zanabazar_Square", Script.ZanabazarSquare }
-        };
+            };
 
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
 
-        private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new Lazy<string>(GetSolutionDirectoryFullPathImpl);
-        private static readonly Dictionary<int, int> Bidi = new Dictionary<int, int>();
+        private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new(GetSolutionDirectoryFullPathImpl);
+        private static readonly Dictionary<int, int> Bidi = new();
 
         private static string SolutionDirectoryFullPath => SolutionDirectoryFullPathLazy.Value;
 
