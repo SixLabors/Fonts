@@ -438,8 +438,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 return false;
             }
 
-            // TODO: Implement
+            // TODO: Check this
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#53-context-substitution-format-3-coverage-based-glyph-contexts
+            foreach (CoverageTable coverageTable in this.coverageTables)
+            {
+                int offset = coverageTable.CoverageIndexOf((ushort)glyphId);
+                if (offset > -1)
+                {
+                    // It's a match. Perform substitutions and return true if anything changed.
+                    bool hasChanged = false;
+                    foreach (SequenceLookupRecord lookupRecord in this.sequenceLookupRecords)
+                    {
+                        ushort sequenceIndex = lookupRecord.SequenceIndex;
+                        ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                        if (lookup.TrySubstition(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                        {
+                            hasChanged = true;
+                        }
+                    }
+
+                    return hasChanged;
+                }
+            }
+
             return false;
         }
     }
