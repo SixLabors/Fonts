@@ -259,13 +259,57 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 return false;
             }
 
-            int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
-
-            if (offset > -1)
+            if (this.coverageTable.CoverageIndexOf((ushort)glyphId) > -1)
             {
-                // TODO: Implement
+                // TODO: Check this.
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#52-context-substitution-format-2-class-based-glyph-contexts
-                return false;
+                int offset = this.classDefinitionTable.ClassIndexOf((ushort)glyphId);
+                if (offset < 0)
+                {
+                    return false;
+                }
+
+                ClassSequenceRuleSetTable rulsetTable = this.sequenceRuleSetTables[offset];
+                foreach (ClassSequenceRuleTable ruleTable in rulsetTable.SequenceRuleTables)
+                {
+                    int remaining = count - 1;
+                    int seqLength = ruleTable.InputSequence.Length;
+                    if (seqLength > remaining)
+                    {
+                        continue;
+                    }
+
+                    bool allMatched = true;
+                    int temp = index + 1;
+                    ushort[] sequence = ruleTable.InputSequence;
+                    for (int j = 0; j < sequence.Length; j++)
+                    {
+                        if (collection[temp + j][0] != sequence[j])
+                        {
+                            allMatched = false;
+                            break;
+                        }
+                    }
+
+                    if (allMatched)
+                    {
+                        // It's a match. Perform substitutions and return true if anything changed.
+                        bool hasChanged = false;
+                        foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                        {
+                            ushort sequenceIndex = lookupRecord.SequenceIndex;
+                            ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                            LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                            if (lookup.TrySubstition(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                            {
+                                hasChanged = true;
+                            }
+                        }
+
+                        return hasChanged;
+                    }
+                }
             }
 
             return false;
@@ -273,10 +317,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         internal sealed class ClassSequenceRuleSetTable
         {
-            private ClassSequenceRuleSetTable(ClassSequenceRuleTable[] subRules)
-                => this.SubRules = subRules;
+            private ClassSequenceRuleSetTable(ClassSequenceRuleTable[] sequenceRuleTables)
+                => this.SequenceRuleTables = sequenceRuleTables;
 
-            public ClassSequenceRuleTable[] SubRules { get; }
+            public ClassSequenceRuleTable[] SequenceRuleTables { get; }
 
             public static ClassSequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
             {
@@ -302,43 +346,43 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
                 return new ClassSequenceRuleSetTable(subRules);
             }
+        }
 
-            public sealed class ClassSequenceRuleTable
+        public sealed class ClassSequenceRuleTable
+        {
+            private ClassSequenceRuleTable(ushort[] inputSequence, SequenceLookupRecord[] seqLookupRecords)
             {
-                private ClassSequenceRuleTable(ushort[] inputSequence, SequenceLookupRecord[] seqLookupRecords)
-                {
-                    this.InputSequence = inputSequence;
-                    this.SequenceLookupRecords = seqLookupRecords;
-                }
+                this.InputSequence = inputSequence;
+                this.SequenceLookupRecords = seqLookupRecords;
+            }
 
-                public ushort[] InputSequence { get; }
+            public ushort[] InputSequence { get; }
 
-                public SequenceLookupRecord[] SequenceLookupRecords { get; }
+            public SequenceLookupRecord[] SequenceLookupRecords { get; }
 
-                public static ClassSequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
-                {
-                    // ClassSequenceRule
-                    // +----------------------+----------------------------------+------------------------------------------+
-                    // | Type                 | Name                             | Description                              |
-                    // +======================+==================================+==========================================+
-                    // | uint16               | glyphCount                       | Number of glyphs to be matched           |
-                    // +----------------------+----------------------------------+------------------------------------------+
-                    // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords          |
-                    // +----------------------+----------------------------------+------------------------------------------+
-                    // | uint16               | inputSequence[glyphCount - 1]    | Sequence of classes to be matched to the |
-                    // |                      |                                  | input glyph sequence, beginning with the |
-                    // |                      |                                  | second glyph position                    |
-                    // +----------------------+----------------------------------+------------------------------------------+
-                    // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of SequenceLookupRecords           |
-                    // +----------------------+----------------------------------+------------------------------------------+
-                    reader.Seek(offset, SeekOrigin.Begin);
-                    ushort glyphCount = reader.ReadUInt16();
-                    ushort seqLookupCount = reader.ReadUInt16();
-                    ushort[] inputSequence = reader.ReadUInt16Array(glyphCount - 1);
-                    SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
+            public static ClassSequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
+            {
+                // ClassSequenceRule
+                // +----------------------+----------------------------------+------------------------------------------+
+                // | Type                 | Name                             | Description                              |
+                // +======================+==================================+==========================================+
+                // | uint16               | glyphCount                       | Number of glyphs to be matched           |
+                // +----------------------+----------------------------------+------------------------------------------+
+                // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords          |
+                // +----------------------+----------------------------------+------------------------------------------+
+                // | uint16               | inputSequence[glyphCount - 1]    | Sequence of classes to be matched to the |
+                // |                      |                                  | input glyph sequence, beginning with the |
+                // |                      |                                  | second glyph position                    |
+                // +----------------------+----------------------------------+------------------------------------------+
+                // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of SequenceLookupRecords           |
+                // +----------------------+----------------------------------+------------------------------------------+
+                reader.Seek(offset, SeekOrigin.Begin);
+                ushort glyphCount = reader.ReadUInt16();
+                ushort seqLookupCount = reader.ReadUInt16();
+                ushort[] inputSequence = reader.ReadUInt16Array(glyphCount - 1);
+                SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
 
-                    return new ClassSequenceRuleTable(inputSequence, seqLookupRecords);
-                }
+                return new ClassSequenceRuleTable(inputSequence, seqLookupRecords);
             }
         }
     }
