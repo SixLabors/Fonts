@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -131,12 +132,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 ushort[] featureIndices = langSysTables[i].FeatureIndices;
                 for (int j = 0; j < featureIndices.Length; j++)
                 {
-                    // TODO: Should we be applying all features?
                     FeatureTable featureTable = this.FeatureList.FeatureTables[featureIndices[j]];
                     Tag tag = featureTable.FeatureTag;
 
-                    // TODO: Check tag against known list and determine based upon index and count
-                    // whether to skip this feature.
+                    // Check tag against all features, which should be applied to the given glyph.
+                    HashSet<Tag> substitutionFeatures = collection.GetSubstitutionFeatures(index);
+                    if (!substitutionFeatures.Contains(tag))
+                    {
+                        continue;
+                    }
+
                     ushort[] lookupListIndices = featureTable.LookupListIndices;
                     for (int k = 0; k < lookupListIndices.Length; k++)
                     {

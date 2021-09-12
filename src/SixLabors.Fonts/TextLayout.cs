@@ -116,7 +116,7 @@ namespace SixLabors.Fonts
                         previousGlyph = null;
                     }
 
-                    if (!spanStyle.TryGetGlypMetrics(codePointIndex, out GlyphMetrics[]? glyphs))
+                    if (!spanStyle.TryGetGlyphMetrics(codePointIndex, out GlyphMetrics[]? glyphs))
                     {
                         // Codepoint was skipped.
                         continue;

@@ -4,6 +4,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -104,13 +105,23 @@ namespace SixLabors.Fonts
 
             if (this.ApplyKerning)
             {
+                // Attempt to detect the script from the string if not provided.
+                Script script = FindScriptForText(text);
+
+                // Choose a shaper based on the script.
+                // This determines which features to apply to which glyphs.
+                BaseShaper shaper = ShaperFactory.Create(script);
+
+                // Assign Substitution features to each glyph.
+                shaper.AssignFeatures(substitutionCollection);
+
                 fontMetrics.ApplySubstitions(substitutionCollection);
             }
 
             positioningCollection.AddOrUpdate(fontMetrics, substitutionCollection, this.Options);
         }
 
-        public bool TryGetGlypMetrics(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
+        public bool TryGetGlyphMetrics(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
             => this.positioningCollection.TryGetGlypMetricsAtOffset(offset - this.Start, out metrics);
 
         public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint)
@@ -155,6 +166,40 @@ namespace SixLabors.Fonts
             }
 
             return ((IFontMetrics)glyph.FontMetrics).GetOffset(glyph, previousGlyph);
+        }
+
+        // Based on: https://github.com/foliojs/fontkit/blob/master/src/layout/Script.js
+        private static Script FindScriptForText(ReadOnlySpan<char> text)
+        {
+            Script script = Script.Unknown;
+            var len = text.Length;
+            int idx = 0;
+            while (idx < len)
+            {
+                char code = text[idx++];
+
+                // Check if this is a high surrogate.
+                if (code >= 0xd800 && code <= 0xdbff && idx < len)
+                {
+                    char next = text[idx];
+
+                    // Check if this is a low surrogate.
+                    if (next is >= (char)0xdc00 and <= (char)0xdfff)
+                    {
+                        idx++;
+                        code = (char)(((code & 0x3FF) << 10) + (next & 0x3FF) + 0x10000);
+                    }
+                }
+
+                var codePoint = new CodePoint(code);
+                script = CodePoint.GetScript(codePoint);
+                if (script is not Script.Common and not Script.Unknown and not Script.Inherited)
+                {
+                    return script;
+                }
+            }
+
+            return script;
         }
     }
 }

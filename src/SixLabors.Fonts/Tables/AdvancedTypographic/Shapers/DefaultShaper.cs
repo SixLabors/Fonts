@@ -7,9 +7,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
     /// Default shaper, which will be applied to all glyphs.
     /// Based on fontkit: <see href="https://github.com/foliojs/fontkit/blob/master/src/opentype/shapers/DefaultShaper.js"/>
     /// </summary>
-    internal class DefaultShaper
+    internal class DefaultShaper : BaseShaper
     {
-        public virtual void AssignFeatures(GlyphSubstitutionCollection glyphs)
+        /// <inheritdoc />
+        public override void AssignFeatures(GlyphSubstitutionCollection glyphs)
         {
             // Add variation Features.
             AddFeature(glyphs, Tag.Parse("rvrn"));

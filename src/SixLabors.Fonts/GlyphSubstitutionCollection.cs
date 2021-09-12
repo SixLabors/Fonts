@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
@@ -43,6 +44,13 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the element to get.</param>
         /// <returns>The <see cref="ReadOnlySpan{UInt16}"/>.</returns>
         public ReadOnlySpan<int> this[int index] => this.map[this.offsets[index]].GlyphIds;
+
+        /// <summary>
+        /// Gets the substitution features for the given glyph index.
+        /// </summary>
+        /// <param name="index">The glyph index.</param>
+        /// <returns>The substitution features to use.</returns>
+        internal HashSet<Tag> GetSubstitutionFeatures(int index) => this.substitutionFeatureTags[index];
 
         /// <summary>
         /// Adds the glyph id and the codepoint it represents to the collection.
