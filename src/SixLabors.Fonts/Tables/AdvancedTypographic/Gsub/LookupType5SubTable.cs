@@ -83,9 +83,49 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
             if (offset > -1)
             {
-                // TODO: Implement
+                // TODO: Check this.
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
-                return false;
+                SequenceRuleSetTable rulsetTable = this.seqRuleSetTables[offset];
+                foreach (SequenceRuleTable ruleTable in rulsetTable.SequenceRuleTables)
+                {
+                    int remaining = count - 1;
+                    int seqLength = ruleTable.InputSequence.Length;
+                    if (seqLength > remaining)
+                    {
+                        continue;
+                    }
+
+                    bool allMatched = true;
+                    int temp = index + 1;
+                    ushort[] sequence = ruleTable.InputSequence;
+                    for (int j = 0; j < sequence.Length; j++)
+                    {
+                        if (collection[temp + j][0] != sequence[j])
+                        {
+                            allMatched = false;
+                            break;
+                        }
+                    }
+
+                    if (allMatched)
+                    {
+                        // It's a match. Perform substitutions and return true if anything changed.
+                        bool hasChanged = false;
+                        foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                        {
+                            ushort sequenceIndex = lookupRecord.SequenceIndex;
+                            ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                            LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                            if (lookup.TrySubstition(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                            {
+                                hasChanged = true;
+                            }
+                        }
+
+                        return hasChanged;
+                    }
+                }
             }
 
             return false;
@@ -121,40 +161,40 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
                 return new SequenceRuleSetTable(sequenceRuleTables);
             }
+        }
 
-            public sealed class SequenceRuleTable
+        public sealed class SequenceRuleTable
+        {
+            private SequenceRuleTable(ushort[] inputSequence, SequenceLookupRecord[] seqLookupRecords)
             {
-                private SequenceRuleTable(ushort[] inputSequence, SequenceLookupRecord[] seqLookupRecords)
-                {
-                    this.InputSequence = inputSequence;
-                    this.SequenceLookupRecords = seqLookupRecords;
-                }
+                this.InputSequence = inputSequence;
+                this.SequenceLookupRecords = seqLookupRecords;
+            }
 
-                public ushort[] InputSequence { get; }
+            public ushort[] InputSequence { get; }
 
-                public SequenceLookupRecord[] SequenceLookupRecords { get; }
+            public SequenceLookupRecord[] SequenceLookupRecords { get; }
 
-                public static SequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
-                {
-                    // +----------------------+----------------------------------+---------------------------------------------------------+
-                    // | Type                 | Name                             | Description                                             |
-                    // +======================+==================================+=========================================================+
-                    // | uint16               | glyphCount                       | Number of glyphs in the input glyph sequence            |
-                    // +----------------------+----------------------------------+---------------------------------------------------------+
-                    // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords                         |
-                    // +----------------------+----------------------------------+---------------------------------------------------------+
-                    // | uint16               | inputSequence[glyphCount - 1]    | Array of input glyph IDs—starting with the second glyph |
-                    // +----------------------+----------------------------------+---------------------------------------------------------+
-                    // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of Sequence lookup records                        |
-                    // +----------------------+----------------------------------+---------------------------------------------------------+
-                    reader.Seek(offset, SeekOrigin.Begin);
-                    ushort glyphCount = reader.ReadUInt16();
-                    ushort seqLookupCount = reader.ReadUInt16();
-                    ushort[] inputSequence = reader.ReadUInt16Array(glyphCount - 1);
-                    SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
+            public static SequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
+            {
+                // +----------------------+----------------------------------+---------------------------------------------------------+
+                // | Type                 | Name                             | Description                                             |
+                // +======================+==================================+=========================================================+
+                // | uint16               | glyphCount                       | Number of glyphs in the input glyph sequence            |
+                // +----------------------+----------------------------------+---------------------------------------------------------+
+                // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords                         |
+                // +----------------------+----------------------------------+---------------------------------------------------------+
+                // | uint16               | inputSequence[glyphCount - 1]    | Array of input glyph IDs—starting with the second glyph |
+                // +----------------------+----------------------------------+---------------------------------------------------------+
+                // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of Sequence lookup records                        |
+                // +----------------------+----------------------------------+---------------------------------------------------------+
+                reader.Seek(offset, SeekOrigin.Begin);
+                ushort glyphCount = reader.ReadUInt16();
+                ushort seqLookupCount = reader.ReadUInt16();
+                ushort[] inputSequence = reader.ReadUInt16Array(glyphCount - 1);
+                SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
 
-                    return new SequenceRuleTable(inputSequence, seqLookupRecords);
-                }
+                return new SequenceRuleTable(inputSequence, seqLookupRecords);
             }
         }
     }
