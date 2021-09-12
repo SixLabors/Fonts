@@ -17,6 +17,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             switch (script)
             {
                 case Script.Arabic:
+                case Script.Mongolian:
+                case Script.Syriac:
+                case Script.Nko:
+                case Script.PhagsPa:
+                case Script.Mandaic:
+                case Script.Manichaean:
+                case Script.PsalterPahlavi:
                     return new ArabicShaper();
                 default:
                     return new DefaultShaper();
