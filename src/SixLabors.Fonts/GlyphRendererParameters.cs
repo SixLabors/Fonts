@@ -107,7 +107,7 @@ namespace SixLabors.Fonts
             || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => obj is GlyphRendererParameters p && this.Equals(p);
+        public override bool Equals(object? obj) => obj is GlyphRendererParameters p && this.Equals(p);
 
         /// <inheritdoc/>
         public override int GetHashCode()

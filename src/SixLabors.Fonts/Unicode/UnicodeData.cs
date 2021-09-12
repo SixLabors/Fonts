@@ -30,12 +30,12 @@ namespace SixLabors.Fonts.Unicode
 
         private static UnicodeTrie GetTrie(string name)
         {
-            Stream stream = typeof(UnicodeData)
+            Stream? stream = typeof(UnicodeData)
                 .GetTypeInfo()
                 .Assembly
                 .GetManifestResourceStream("SixLabors.Fonts.Unicode.Resources." + name);
 
-            return new UnicodeTrie(stream);
+            return new UnicodeTrie(stream!);
         }
     }
 }

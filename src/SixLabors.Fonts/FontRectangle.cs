@@ -347,7 +347,7 @@ namespace SixLabors.Fonts
             => $"FontRectangle [ X={this.X}, Y={this.Y}, Width={this.Width}, Height={this.Height} ]";
 
         /// <inheritdoc/>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => obj is FontRectangle other
             && this.Equals(other);
 
