@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -24,6 +25,11 @@ namespace SixLabors.Fonts
         /// Contains a map between non-sequential codepoint offsets and their glyph ids.
         /// </summary>
         private readonly Dictionary<int, CodePointGlyphs> map = new();
+
+        /// <summary>
+        /// Contains hashset of substitution features to apply for each glyph.
+        /// </summary>
+        private readonly Dictionary<int, HashSet<Tag>> substitutionFeatureTags = new();
 
         /// <summary>
         /// Gets the number of glyphs ids contained in the collection.
@@ -48,6 +54,7 @@ namespace SixLabors.Fonts
         {
             this.map.Add(offset, new CodePointGlyphs(codePoint, new[] { glyphId }));
             this.offsets.Add(offset);
+            this.substitutionFeatureTags[offset] = new HashSet<Tag>();
         }
 
         /// <summary>
@@ -57,6 +64,7 @@ namespace SixLabors.Fonts
         {
             this.offsets.Clear();
             this.map.Clear();
+            this.substitutionFeatureTags.Clear();
         }
 
         /// <summary>
@@ -150,6 +158,13 @@ namespace SixLabors.Fonts
             int offset = this.offsets[index];
             this.map[offset] = new CodePointGlyphs(this.map[offset].CodePoint, glyphIds.ToArray());
         }
+
+        /// <summary>
+        /// Adds the substitution feature to the features which should be applied to the glyph at a given index.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <param name="feature">The feature to apply.</param>
+        internal void AddSubstitutionFeature(int index, Tag feature) => this.substitutionFeatureTags[index].Add(feature);
 
         [DebuggerDisplay("{DebuggerDisplay,nq}")]
         private readonly struct CodePointGlyphs

@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
@@ -94,20 +93,20 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">The Unicode codepoint.</param>
         /// <param name="glyphId">
         /// The previously matched or substituted glyph id for the codepoint in the face.
-        /// If this value is less than <value>0</value> theh the default fallback metrics are returned.
+        /// If this value is less than <value>0</value> the default fallback metrics are returned.
         /// </param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
         IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support);
 
         /// <summary>
-        /// Applies any available subsitutions to the collection of glyphs.
+        /// Applies any available substitutions to the collection of glyphs.
         /// </summary>
         /// <param name="collection">The glyph substitution collection.</param>
         void ApplySubstitions(GlyphSubstitutionCollection collection);
 
         /// <summary>
-        /// Applies any availavle positioning updates to the collection of glyphs.
+        /// Applies any available positioning updates to the collection of glyphs.
         /// </summary>
         /// <param name="collection">The glyph positioning collection.</param>
         void UpdatePositions(GlyphPositioningCollection collection);
