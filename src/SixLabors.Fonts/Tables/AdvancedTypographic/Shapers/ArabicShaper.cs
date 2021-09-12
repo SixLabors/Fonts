@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
     /// The shaping state machine was ported from fontkit.
     /// <see href="https://github.com/foliojs/fontkit/blob/master/src/opentype/shapers/ArabicShaper.js"/>
     /// </summary>
-    internal sealed class ArabicShaper
+    internal sealed class ArabicShaper : DefaultShaper
     {
         private const byte None = 0;
 
@@ -61,8 +61,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         /// Assigns the substitution features to the glyph based on the position of the character in the word.
         /// </summary>
         /// <param name="glyphs">The glyphs collection.</param>
-        public void AssignFeatures(GlyphSubstitutionCollection glyphs)
+        public override void AssignFeatures(GlyphSubstitutionCollection glyphs)
         {
+            base.AssignFeatures(glyphs);
+
             int prev = -1;
             int state = 0;
             byte[] actions = new byte[glyphs.Count];
