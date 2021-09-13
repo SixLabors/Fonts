@@ -93,7 +93,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 CoverageRangeRecord rec = this.records[i];
                 if (rec.StartGlyphId <= glyphId && glyphId <= rec.EndGlyphId)
                 {
-                    return rec.Index;
+                    return rec.Index + glyphId - rec.StartGlyphId;
                 }
             }
 
