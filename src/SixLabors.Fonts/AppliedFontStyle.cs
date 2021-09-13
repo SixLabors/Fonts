@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
@@ -105,15 +106,7 @@ namespace SixLabors.Fonts
 
             if (this.ApplyKerning)
             {
-                // Attempt to detect the script from the string if not provided.
-                Script script = FindScriptForText(text);
-
-                // Choose a shaper based on the script.
-                // This determines which features to apply to which glyphs.
-                BaseShaper shaper = ShaperFactory.Create(script);
-
-                // Assign Substitution features to each glyph.
-                shaper.AssignFeatures(substitutionCollection);
+                AssignShapingFeatures(substitutionCollection);
 
                 fontMetrics.ApplySubstitions(substitutionCollection);
             }
@@ -124,6 +117,7 @@ namespace SixLabors.Fonts
         public bool TryGetGlyphMetrics(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
             => this.positioningCollection.TryGetGlypMetricsAtOffset(offset - this.Start, out metrics);
 
+        // TODO: Remove this and update tests.
         public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint)
         {
             GlyphMetrics glyph = this.MainFont.GetGlyphMetrics(codePoint);
@@ -168,38 +162,36 @@ namespace SixLabors.Fonts
             return ((IFontMetrics)glyph.FontMetrics).GetOffset(glyph, previousGlyph);
         }
 
-        // Based on: https://github.com/foliojs/fontkit/blob/master/src/layout/Script.js
-        private static Script FindScriptForText(ReadOnlySpan<char> text)
+        private static void AssignShapingFeatures(GlyphSubstitutionCollection collection)
         {
-            Script script = Script.Unknown;
-            var len = text.Length;
-            int idx = 0;
-            while (idx < len)
+            for (int i = 0; i < collection.Count; i++)
             {
-                char code = text[idx++];
+                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int _, out IEnumerable<int> _);
+                Script script = CodePoint.GetScript(codePoint);
 
-                // Check if this is a high surrogate.
-                if (code >= 0xd800 && code <= 0xdbff && idx < len)
+                // Choose a shaper based on the script.
+                // This determines which features to apply to which glyphs.
+                BaseShaper shaper = ShaperFactory.Create(script);
+                int index = i;
+                int count = 1;
+                while (i < collection.Count - 1)
                 {
-                    char next = text[idx];
-
-                    // Check if this is a low surrogate.
-                    if (next is >= (char)0xdc00 and <= (char)0xdfff)
+                    // We want to assign the same shaper to individual sections of the text rather
+                    // than the text as a whole to ensure that different language shapers do not interfere
+                    // with each other when the text contains multiple languages.
+                    collection.GetCodePointAndGlyphIds(i + 1, out codePoint, out _, out _);
+                    if (CodePoint.GetScript(codePoint) != script)
                     {
-                        idx++;
-                        code = (char)(((code & 0x3FF) << 10) + (next & 0x3FF) + 0x10000);
+                        break;
                     }
+
+                    i++;
+                    count++;
                 }
 
-                var codePoint = new CodePoint(code);
-                script = CodePoint.GetScript(codePoint);
-                if (script is not Script.Common and not Script.Unknown and not Script.Inherited)
-                {
-                    return script;
-                }
+                // Assign Substitution features to each glyph.
+                shaper.AssignFeatures(collection, index, count);
             }
-
-            return script;
         }
     }
 }

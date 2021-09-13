@@ -129,7 +129,7 @@ namespace SixLabors.Fonts.Tests
 #if NETCOREAPP3_0_OR_GREATER
         [Theory]
         [InlineData(false, 843)]
-        [InlineData(true, 851)]
+        [InlineData(true, 843)]
         public void RenderWoff2Glyphs_EqualToTtfGlyphs(bool applyKerning, int expectedControlPoints)
         {
             Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);

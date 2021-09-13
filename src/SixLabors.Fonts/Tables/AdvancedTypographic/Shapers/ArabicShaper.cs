@@ -30,13 +30,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         private const byte Init = 7;
 
         // Each entry is [prevAction, curAction, nextState]
-        private readonly byte[,][] stateTable =
+        private static readonly byte[,][] StateTable =
         {
-#pragma warning disable SA1005 // Single line comments should begin with single space
-            //             NonJoining,                    LeftJoining,                 RightJoining,                 DualJoining,                    ALAPH,                     DALATH RISH
+            // #           NonJoining,                    LeftJoining,                 RightJoining,                 DualJoining,                    ALAPH,                     DALATH RISH
             // State 0: prev was U,  not willing to join.
             { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 6 } },
-#pragma warning restore SA1005 // Single line comments should begin with single space
 
             // State 1: prev was R or ISOL/ALAPH,  not willing to join.
             { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 2 }, new byte[] { None, Fin2, 5 }, new byte[] { None, Isol, 6 } },
@@ -57,22 +55,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 2 }, new byte[] { None, Fin3, 5 }, new byte[] { None, Isol, 6 } },
         };
 
-        /// <summary>
-        /// Assigns the substitution features to the glyph based on the position of the character in the word.
-        /// </summary>
-        /// <param name="glyphs">The glyphs collection.</param>
-        public override void AssignFeatures(GlyphSubstitutionCollection glyphs)
+        /// <inheritdoc/>
+        public override void AssignFeatures(GlyphSubstitutionCollection collection, int index, int count)
         {
-            base.AssignFeatures(glyphs);
+            base.AssignFeatures(collection, index, count);
 
             int prev = -1;
             int state = 0;
-            byte[] actions = new byte[glyphs.Count];
+            byte[] actions = new byte[count];
 
             // Apply the state machine to map glyphs to features.
-            for (int i = 0; i < glyphs.Count; i++)
+            for (int i = 0; i < count; i++)
             {
-                glyphs.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int _, out IEnumerable<int> _);
+                collection.GetCodePointAndGlyphIds(i + index, out CodePoint codePoint, out int _, out IEnumerable<int> _);
                 JoiningClass joiningClass = CodePoint.GetJoiningClass(codePoint);
                 JoiningType joiningType = joiningClass.JoiningType;
                 if (joiningType == JoiningType.Transparent)
@@ -82,7 +77,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 }
 
                 int shapingClassIndex = GetShapingClassIndex(joiningType);
-                byte[] actionsWithState = this.stateTable[state, shapingClassIndex];
+                byte[] actionsWithState = StateTable[state, shapingClassIndex];
                 byte prevAction = actionsWithState[0];
                 byte curAction = actionsWithState[1];
                 state = actionsWithState[2];
@@ -96,31 +91,32 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 prev = i;
             }
 
+            // TODO: Perf. Tags should be static.
             // Apply the chosen features to their respective glyphs.
-            for (int i = 0; i < glyphs.Count; i++)
+            for (int i = 0; i < actions.Length; i++)
             {
                 switch (actions[i])
                 {
                     case Fina:
-                        glyphs.AddSubstitutionFeature(i, Tag.Parse("fina"));
+                        collection.AddSubstitutionFeature(i + index, Tag.Parse("fina"));
                         break;
                     case Fin2:
-                        glyphs.AddSubstitutionFeature(i, Tag.Parse("fin2"));
+                        collection.AddSubstitutionFeature(i + index, Tag.Parse("fin2"));
                         break;
                     case Fin3:
-                        glyphs.AddSubstitutionFeature(i, Tag.Parse("fin3"));
+                        collection.AddSubstitutionFeature(i + index, Tag.Parse("fin3"));
                         break;
                     case Isol:
-                        glyphs.AddSubstitutionFeature(i, Tag.Parse("isol"));
+                        collection.AddSubstitutionFeature(i + index, Tag.Parse("isol"));
                         break;
                     case Init:
-                        glyphs.AddSubstitutionFeature(i, Tag.Parse("init"));
+                        collection.AddSubstitutionFeature(i + index, Tag.Parse("init"));
                         break;
                     case Medi:
-                        glyphs.AddSubstitutionFeature(i, Tag.Parse("medi"));
+                        collection.AddSubstitutionFeature(i + index, Tag.Parse("medi"));
                         break;
                     case Med2:
-                        glyphs.AddSubstitutionFeature(i, Tag.Parse("med2"));
+                        collection.AddSubstitutionFeature(i + index, Tag.Parse("med2"));
                         break;
                 }
             }

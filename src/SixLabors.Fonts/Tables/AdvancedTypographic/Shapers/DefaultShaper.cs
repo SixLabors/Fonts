@@ -10,45 +10,47 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
     internal class DefaultShaper : BaseShaper
     {
         /// <inheritdoc />
-        public override void AssignFeatures(GlyphSubstitutionCollection glyphs)
+        public override void AssignFeatures(GlyphSubstitutionCollection collection, int index, int count)
         {
+            // TODO: Perf. Tags should be static.
+
             // Add variation Features.
-            AddFeature(glyphs, Tag.Parse("rvrn"));
+            AddFeature(collection, index, count, Tag.Parse("rvrn"));
 
             // Add directional features.
-            AddFeature(glyphs, Tag.Parse("ltra"));
-            AddFeature(glyphs, Tag.Parse("ltrm"));
-            AddFeature(glyphs, Tag.Parse("rtla"));
-            AddFeature(glyphs, Tag.Parse("rtlm"));
+            AddFeature(collection, index, count, Tag.Parse("ltra"));
+            AddFeature(collection, index, count, Tag.Parse("ltrm"));
+            AddFeature(collection, index, count, Tag.Parse("rtla"));
+            AddFeature(collection, index, count, Tag.Parse("rtlm"));
 
             // Add fractional features.
-            AddFeature(glyphs, Tag.Parse("frac"));
-            AddFeature(glyphs, Tag.Parse("numr"));
-            AddFeature(glyphs, Tag.Parse("dnom"));
+            AddFeature(collection, index, count, Tag.Parse("frac"));
+            AddFeature(collection, index, count, Tag.Parse("numr"));
+            AddFeature(collection, index, count, Tag.Parse("dnom"));
 
             // Add common features.
-            AddFeature(glyphs, Tag.Parse("ccmp"));
-            AddFeature(glyphs, Tag.Parse("locl"));
-            AddFeature(glyphs, Tag.Parse("rlig"));
-            AddFeature(glyphs, Tag.Parse("mark"));
-            AddFeature(glyphs, Tag.Parse("mkmk"));
+            AddFeature(collection, index, count, Tag.Parse("ccmp"));
+            AddFeature(collection, index, count, Tag.Parse("locl"));
+            AddFeature(collection, index, count, Tag.Parse("rlig"));
+            AddFeature(collection, index, count, Tag.Parse("mark"));
+            AddFeature(collection, index, count, Tag.Parse("mkmk"));
 
             // Add horizontal features.
-            AddFeature(glyphs, Tag.Parse("calt"));
-            AddFeature(glyphs, Tag.Parse("clig"));
-            AddFeature(glyphs, Tag.Parse("liga"));
-            AddFeature(glyphs, Tag.Parse("rclt"));
-            AddFeature(glyphs, Tag.Parse("curs"));
-            AddFeature(glyphs, Tag.Parse("kern"));
+            AddFeature(collection, index, count, Tag.Parse("calt"));
+            AddFeature(collection, index, count, Tag.Parse("clig"));
+            AddFeature(collection, index, count, Tag.Parse("liga"));
+            AddFeature(collection, index, count, Tag.Parse("rclt"));
+            AddFeature(collection, index, count, Tag.Parse("curs"));
+            AddFeature(collection, index, count, Tag.Parse("kern"));
 
             // TODO: Enable contextual fractions
         }
 
-        private static void AddFeature(GlyphSubstitutionCollection glyphs, Tag variationFeatures)
+        private static void AddFeature(GlyphSubstitutionCollection collection, int index, int count, Tag variationFeatures)
         {
-            for (int i = 0; i < glyphs.Count; i++)
+            for (int i = index; i < count; i++)
             {
-                glyphs.AddSubstitutionFeature(i, variationFeatures);
+                collection.AddSubstitutionFeature(i, variationFeatures);
             }
         }
     }

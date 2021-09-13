@@ -23,7 +23,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             return substFormat switch
             {
-                // TODO: Implement 2
                 1 => LookupType6Format1SubTable.Load(reader, offset),
                 2 => LookupType6Format2SubTable.Load(reader, offset),
                 3 => LookupType6Format3SubTable.Load(reader, offset),
