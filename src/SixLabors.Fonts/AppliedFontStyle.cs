@@ -37,11 +37,16 @@ namespace SixLabors.Fonts
             // Incrementally build out collection of glyphs.
             // For each run we start with a fresh substitution collection to avoid
             // overwriting the glyph ids.
-            this.DoFontRun(text, this.MainFont, collection, this.positioningCollection);
-            foreach (IFontMetrics font in this.FallbackFonts)
+            if (!this.DoFontRun(text, this.MainFont, collection, this.positioningCollection))
             {
-                collection.Clear();
-                this.DoFontRun(text, font, collection, this.positioningCollection);
+                foreach (IFontMetrics font in this.FallbackFonts)
+                {
+                    collection.Clear();
+                    if (this.DoFontRun(text, font, collection, this.positioningCollection))
+                    {
+                        break;
+                    }
+                }
             }
 
             if (this.ApplyKerning)
@@ -57,7 +62,7 @@ namespace SixLabors.Fonts
             }
         }
 
-        private void DoFontRun(
+        private bool DoFontRun(
             ReadOnlySpan<char> text,
             IFontMetrics fontMetrics,
             GlyphSubstitutionCollection substitutionCollection,
@@ -109,7 +114,7 @@ namespace SixLabors.Fonts
                 fontMetrics.ApplySubstitions(substitutionCollection);
             }
 
-            positioningCollection.AddOrUpdate(fontMetrics, substitutionCollection, this.Options);
+            return positioningCollection.TryAddOrUpdate(fontMetrics, substitutionCollection, this.Options);
         }
 
         public bool TryGetGlyphMetrics(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)

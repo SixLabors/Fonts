@@ -89,8 +89,10 @@ namespace SixLabors.Fonts
         /// <param name="fontMetrics">The font face with metrics.</param>
         /// <param name="collection">The glyph substitution collection.</param>
         /// <param name="options">The renderer options.</param>
-        public void AddOrUpdate(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
+        /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
+        public bool TryAddOrUpdate(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
         {
+            bool hasFallBacks = false;
             for (int i = 0; i < collection.Count; i++)
             {
                 collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out IEnumerable<int>? glyphIds);
@@ -108,6 +110,11 @@ namespace SixLabors.Fonts
                     // cache the original in the font metrics and only update our collection.
                     foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, options.ColorFontSupport))
                     {
+                        if (gm.GlyphType == GlyphType.Fallback)
+                        {
+                            hasFallBacks = true;
+                        }
+
                         m.Add(new GlyphMetrics(gm));
                     }
                 }
@@ -116,6 +123,8 @@ namespace SixLabors.Fonts
                 this.offsets[i] = offset;
                 this.map[offset] = m.ToArray();
             }
+
+            return !hasFallBacks;
         }
 
         /// <summary>
