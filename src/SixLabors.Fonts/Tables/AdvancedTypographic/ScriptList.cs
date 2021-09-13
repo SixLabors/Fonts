@@ -13,11 +13,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     /// Script List tables (ScriptList):
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#slTbl_sRec"/>
     /// </summary>
-    internal sealed class ScriptList : Dictionary<uint, ScriptListTable>
+    internal sealed class ScriptList : Dictionary<Tag, ScriptListTable>
     {
-        private readonly uint scriptTag;
+        private readonly Tag scriptTag;
 
-        private ScriptList(uint scriptTag) => this.scriptTag = scriptTag;
+        private ScriptList(Tag scriptTag) => this.scriptTag = scriptTag;
 
         public static ScriptList Load(BigEndianBinaryReader reader, long offset)
         {
@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             ushort scriptCount = reader.ReadUInt16();
 
             // Read records (tags and table offsets)
-            uint[] scriptTags = new uint[scriptCount];
+            var scriptTags = new Tag[scriptCount];
             ushort[] scriptOffsets = new ushort[scriptCount];
 
             for (int i = 0; i < scriptTags.Length; i++)
@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             ScriptList? scriptList = null;
             for (int i = 0; i < scriptCount; ++i)
             {
-                uint scriptTag = scriptTags[i];
+                Tag scriptTag = scriptTags[i];
                 if (i == 0)
                 {
                     scriptList = new ScriptList(scriptTag);
@@ -66,20 +66,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
     internal sealed class ScriptListTable
     {
-        private ScriptListTable(LangSysTable[] langSysTables, LangSysTable? defaultLang, uint scriptTag)
+        private ScriptListTable(LangSysTable[] langSysTables, LangSysTable? defaultLang, Tag scriptTag)
         {
             this.LangSysTables = langSysTables;
             this.DefaultLangSysTable = defaultLang;
             this.ScriptTag = scriptTag;
         }
 
-        public uint ScriptTag { get; }
+        public Tag ScriptTag { get; }
 
         public LangSysTable? DefaultLangSysTable { get; }
 
         public LangSysTable[] LangSysTables { get; }
 
-        public static ScriptListTable Load(uint scriptTag, BigEndianBinaryReader reader, long offset)
+        public static ScriptListTable Load(Tag scriptTag, BigEndianBinaryReader reader, long offset)
         {
             // ScriptListTable
             // +---------------+------------------------------+-------------------------------------------------------------------------------+
@@ -156,9 +156,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public uint LangSysTag { get; }
 
-        public ushort RequiredFeatureIndex { get; private set; }
+        public ushort RequiredFeatureIndex { get; }
 
-        public ushort[] FeatureIndices { get; private set; } = Array.Empty<ushort>();
+        public ushort[] FeatureIndices { get; } = Array.Empty<ushort>();
 
         public static LangSysTable Load(uint langSysTag, BigEndianBinaryReader reader, long offset)
         {

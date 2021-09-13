@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
-using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -101,7 +100,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out IEnumerable<int> _);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
-            Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
+            Script script = CodePoint.GetScript(codePoint);
+            Tag[] tags = UnicodeScriptTagMap.Instance[script];
             for (int i = 0; i < tags.Length; i++)
             {
                 if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable table))

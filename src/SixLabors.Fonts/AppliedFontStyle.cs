@@ -50,7 +50,6 @@ namespace SixLabors.Fonts
                 // Each set of metrics is associated with single font and will only be updated
                 // by that font so it's safe to use a single collection.
                 this.MainFont.UpdatePositions(this.positioningCollection);
-
                 foreach (IFontMetrics font in this.FallbackFonts)
                 {
                     font.UpdatePositions(this.positioningCollection);
@@ -107,7 +106,6 @@ namespace SixLabors.Fonts
             if (this.ApplyKerning)
             {
                 AssignShapingFeatures(substitutionCollection);
-
                 fontMetrics.ApplySubstitions(substitutionCollection);
             }
 
