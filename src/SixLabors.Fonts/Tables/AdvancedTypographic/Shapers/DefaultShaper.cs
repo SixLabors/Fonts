@@ -9,39 +9,75 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
     /// </summary>
     internal class DefaultShaper : BaseShaper
     {
+        private static readonly Tag RvnrTag = Tag.Parse("rvrn");
+
+        private static readonly Tag LtraTag = Tag.Parse("ltra");
+
+        private static readonly Tag LtrmTag = Tag.Parse("ltrm");
+
+        private static readonly Tag RtlaTag = Tag.Parse("rtla");
+
+        private static readonly Tag RtlmTag = Tag.Parse("rtlm");
+
+        private static readonly Tag FracTag = Tag.Parse("frac");
+
+        private static readonly Tag NumrTag = Tag.Parse("numr");
+
+        private static readonly Tag DnomTag = Tag.Parse("dnom");
+
+        private static readonly Tag CcmpTag = Tag.Parse("ccmp");
+
+        private static readonly Tag LoclTag = Tag.Parse("locl");
+
+        private static readonly Tag RligTag = Tag.Parse("rlig");
+
+        private static readonly Tag MarkTag = Tag.Parse("mark");
+
+        private static readonly Tag MkmkTag = Tag.Parse("mkmk");
+
+        private static readonly Tag CaltTag = Tag.Parse("calt");
+
+        private static readonly Tag CligTag = Tag.Parse("clig");
+
+        private static readonly Tag LigaTag = Tag.Parse("liga");
+
+        private static readonly Tag RcltTag = Tag.Parse("rclt");
+
+        private static readonly Tag CursTag = Tag.Parse("curs");
+
+        private static readonly Tag KernTag = Tag.Parse("kern");
+
         /// <inheritdoc />
         public override void AssignFeatures(GlyphSubstitutionCollection collection, int index, int count)
         {
-            // TODO: Perf. Tags should be static.
-
             // Add variation Features.
-            AddFeature(collection, index, count, Tag.Parse("rvrn"));
+            AddFeature(collection, index, count, RvnrTag);
 
             // Add directional features.
-            AddFeature(collection, index, count, Tag.Parse("ltra"));
-            AddFeature(collection, index, count, Tag.Parse("ltrm"));
-            AddFeature(collection, index, count, Tag.Parse("rtla"));
-            AddFeature(collection, index, count, Tag.Parse("rtlm"));
+            AddFeature(collection, index, count, LtraTag);
+            AddFeature(collection, index, count, LtrmTag);
+            AddFeature(collection, index, count, RtlaTag);
+            AddFeature(collection, index, count, RtlmTag);
 
             // Add fractional features.
-            AddFeature(collection, index, count, Tag.Parse("frac"));
-            AddFeature(collection, index, count, Tag.Parse("numr"));
-            AddFeature(collection, index, count, Tag.Parse("dnom"));
+            AddFeature(collection, index, count, FracTag);
+            AddFeature(collection, index, count, NumrTag);
+            AddFeature(collection, index, count, DnomTag);
 
             // Add common features.
-            AddFeature(collection, index, count, Tag.Parse("ccmp"));
-            AddFeature(collection, index, count, Tag.Parse("locl"));
-            AddFeature(collection, index, count, Tag.Parse("rlig"));
-            AddFeature(collection, index, count, Tag.Parse("mark"));
-            AddFeature(collection, index, count, Tag.Parse("mkmk"));
+            AddFeature(collection, index, count, CcmpTag);
+            AddFeature(collection, index, count, LoclTag);
+            AddFeature(collection, index, count, RligTag);
+            AddFeature(collection, index, count, MarkTag);
+            AddFeature(collection, index, count, MkmkTag);
 
             // Add horizontal features.
-            AddFeature(collection, index, count, Tag.Parse("calt"));
-            AddFeature(collection, index, count, Tag.Parse("clig"));
-            AddFeature(collection, index, count, Tag.Parse("liga"));
-            AddFeature(collection, index, count, Tag.Parse("rclt"));
-            AddFeature(collection, index, count, Tag.Parse("curs"));
-            AddFeature(collection, index, count, Tag.Parse("kern"));
+            AddFeature(collection, index, count, CaltTag);
+            AddFeature(collection, index, count, CligTag);
+            AddFeature(collection, index, count, LigaTag);
+            AddFeature(collection, index, count, RcltTag);
+            AddFeature(collection, index, count, CursTag);
+            AddFeature(collection, index, count, KernTag);
 
             // TODO: Enable contextual fractions
         }

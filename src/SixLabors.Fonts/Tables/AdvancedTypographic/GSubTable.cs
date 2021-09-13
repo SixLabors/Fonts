@@ -8,7 +8,7 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
-    /// The Glyph Substitution (GSUB) table provides data for substition of glyphs for appropriate rendering of scripts,
+    /// The Glyph Substitution (GSUB) table provides data for substitution of glyphs for appropriate rendering of scripts,
     /// such as cursively-connecting forms in Arabic script, or for advanced typographic effects, such as ligatures.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub"/>
     /// </summary>

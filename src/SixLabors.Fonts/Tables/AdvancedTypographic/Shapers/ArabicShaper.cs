@@ -13,6 +13,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
     /// </summary>
     internal sealed class ArabicShaper : DefaultShaper
     {
+        private static readonly Tag FinaTag = Tag.Parse("fina");
+
+        private static readonly Tag Fin2Tag = Tag.Parse("fin2");
+
+        private static readonly Tag Fin3Tag = Tag.Parse("fin3");
+
+        private static readonly Tag IsolTag = Tag.Parse("isol");
+
+        private static readonly Tag InitTag = Tag.Parse("init");
+
+        private static readonly Tag MediTag = Tag.Parse("medi");
+
+        private static readonly Tag Med2Tag = Tag.Parse("med2");
+
         private const byte None = 0;
 
         private const byte Isol = 1;
@@ -91,32 +105,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 prev = i;
             }
 
-            // TODO: Perf. Tags should be static.
             // Apply the chosen features to their respective glyphs.
             for (int i = 0; i < actions.Length; i++)
             {
                 switch (actions[i])
                 {
                     case Fina:
-                        collection.AddSubstitutionFeature(i + index, Tag.Parse("fina"));
+                        collection.AddSubstitutionFeature(i + index, FinaTag);
                         break;
                     case Fin2:
-                        collection.AddSubstitutionFeature(i + index, Tag.Parse("fin2"));
+                        collection.AddSubstitutionFeature(i + index, Fin2Tag);
                         break;
                     case Fin3:
-                        collection.AddSubstitutionFeature(i + index, Tag.Parse("fin3"));
+                        collection.AddSubstitutionFeature(i + index, Fin3Tag);
                         break;
                     case Isol:
-                        collection.AddSubstitutionFeature(i + index, Tag.Parse("isol"));
+                        collection.AddSubstitutionFeature(i + index, IsolTag);
                         break;
                     case Init:
-                        collection.AddSubstitutionFeature(i + index, Tag.Parse("init"));
+                        collection.AddSubstitutionFeature(i + index, InitTag);
                         break;
                     case Medi:
-                        collection.AddSubstitutionFeature(i + index, Tag.Parse("medi"));
+                        collection.AddSubstitutionFeature(i + index, MediTag);
                         break;
                     case Med2:
-                        collection.AddSubstitutionFeature(i + index, Tag.Parse("med2"));
+                        collection.AddSubstitutionFeature(i + index, Med2Tag);
                         break;
                 }
             }

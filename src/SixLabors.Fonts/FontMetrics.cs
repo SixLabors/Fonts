@@ -48,7 +48,7 @@ namespace SixLabors.Fonts
         /// <param name="verticalMetrics">The vertical metrics table.</param>
         /// <param name="head">The head table.</param>
         /// <param name="kern">The kerning table.</param>
-        /// <param name="gSubTable">The glyph subsitution table.</param>
+        /// <param name="gSubTable">The glyph substitution table.</param>
         /// <param name="gPosTable">The glyph positioning table.</param>
         /// <param name="colrTable">The COLR table</param>
         /// <param name="cpalTable">The CPAL table</param>
