@@ -207,7 +207,7 @@ namespace SixLabors.Fonts
 
                 // Choose a shaper based on the script.
                 // This determines which features to apply to which glyphs.
-                BaseShaper shaper = new ArabicShaper();// ShaperFactory.Create(script);
+                BaseShaper shaper = ShaperFactory.Create(current);
                 int index = i;
                 int count = 1;
                 while (i < collection.Count - 1)
