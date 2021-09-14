@@ -30,6 +30,15 @@ namespace SixLabors.Fonts.Tests
 
         public static string ArabicFontFile => GetFullPath("Dubai-Regular.ttf");
 
+        /// <summary>
+        /// Gets the gsub test font file.
+        /// It has the following substitution for unit tests:
+        /// - Single Substitution: A -> B
+        /// - Multiple Substitution: C -> D
+        /// - Alternate Substitution: E -> F
+        /// </summary>
+        public static string GsubTestFontFile => GetFullPath("GsubTestFont.ttf");
+
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");

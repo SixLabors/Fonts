@@ -41,17 +41,76 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         {
             // arrange
             Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
-            var rendererTtf = new ColorGlyphRenderer();
+            var renderer = new ColorGlyphRenderer();
 
             // act
-            TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(arabicFont)
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont)
             {
-                ApplyKerning = true,
-                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+                ApplyKerning = true
             });
 
             // assert
-            GlyphRendererParameters glyphKey = Assert.Single(rendererTtf.GlyphKeys);
+            GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
+            Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
+        }
+
+        [Fact]
+        public void SingleSubstitution_Works()
+        {
+            // arrange
+            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "A";
+            int expectedGlyphIndex = 38; // we expect A to be mapped to B.
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
+            Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
+        }
+
+        [Fact]
+        public void MultipleSubstitution_Works()
+        {
+            // arrange
+            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "C";
+            int expectedGlyphIndex = 40; // we expect C to be mapped to D.
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
+            Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
+        }
+
+        [Fact]
+        public void AlternateSubstitution_Works()
+        {
+            // arrange
+            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "E";
+            int expectedGlyphIndex = 42; // we expect E to be mapped to F.
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
     }
