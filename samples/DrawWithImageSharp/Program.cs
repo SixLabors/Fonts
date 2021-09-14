@@ -37,6 +37,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
 
+            RenderText(emojiFont, "👩🏽‍🚒a", pointSize: 72, fallbackFonts: new[] { font2 });
             RenderTextProcessorWithAlignment(emojiFont, "😀A😀", pointSize: 20, fallbackFonts: new[] { colorEmoji });
             RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { font2 });
             RenderTextProcessorWithAlignment(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
@@ -145,32 +146,32 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             img.SaveAsPng(fs);
         }
 
-        public static void RenderText(RendererOptions font, string text)
+        public static void RenderText(RendererOptions options, string text)
         {
-            FontRectangle size = TextMeasurer.Measure(text, font);
+            FontRectangle size = TextMeasurer.Measure(text, options);
 
-            var options = new DrawingOptions
+            var drawingOptions = new DrawingOptions
             {
                 TextOptions = new TextOptions()
                 {
-                    ApplyKerning = font.ApplyKerning,
-                    DpiX = font.DpiX,
-                    DpiY = font.DpiY,
-                    TabWidth = font.TabWidth,
-                    LineSpacing = font.LineSpacing,
-                    HorizontalAlignment = font.HorizontalAlignment,
-                    VerticalAlignment = font.VerticalAlignment,
-                    WrapTextWidth = font.WrappingWidth,
-                    RenderColorFonts = font.ColorFontSupport != ColorFontSupport.None
+                    ApplyKerning = options.ApplyKerning,
+                    DpiX = options.DpiX,
+                    DpiY = options.DpiY,
+                    TabWidth = options.TabWidth,
+                    LineSpacing = options.LineSpacing,
+                    HorizontalAlignment = options.HorizontalAlignment,
+                    VerticalAlignment = options.VerticalAlignment,
+                    WrapTextWidth = options.WrappingWidth,
+                    RenderColorFonts = options.ColorFontSupport != ColorFontSupport.None
                 }
             };
 
-            if (font.FallbackFontFamilies != null)
+            if (options.FallbackFontFamilies != null)
             {
-                options.TextOptions.FallbackFonts.AddRange(font.FallbackFontFamilies);
+                drawingOptions.TextOptions.FallbackFonts.AddRange(options.FallbackFontFamilies);
             }
 
-            SaveImage(options, text, font.Font, (int)size.Width + 20, (int)size.Height + 20, font.Origin, font.Font.Name, text + ".png");
+            SaveImage(drawingOptions, text, options.Font, (int)size.Width + 20, (int)size.Height + 20, options.Origin + Vector2.Abs(new Vector2(size.X, size.Y)), options.Font.Name, text + ".png");
         }
 
         public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
