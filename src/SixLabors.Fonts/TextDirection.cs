@@ -16,16 +16,6 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Right to left.
         /// </summary>
-        RTL,
-
-        /// <summary>
-        /// Top to bottom
-        /// </summary>
-        TTB,
-
-        /// <summary>
-        /// Bottom to top
-        /// </summary>
-        BTT,
+        RTL
     }
 }

@@ -119,6 +119,8 @@ namespace SixLabors.Fonts
                     if (!spanStyle.TryGetGlyphMetrics(codePointIndex, out GlyphMetrics[]? glyphs))
                     {
                         // Codepoint was skipped.
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
                         continue;
                     }
 
