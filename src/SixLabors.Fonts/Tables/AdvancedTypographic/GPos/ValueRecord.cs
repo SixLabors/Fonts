@@ -11,6 +11,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal readonly struct ValueRecord
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ValueRecord"/> struct.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="valueFormat">Defines the types of data in the ValueRecord.</param>
         public ValueRecord(BigEndianBinaryReader reader, ValueFormat valueFormat)
         {
             // +----------+------------------+--------------------------------------------------------------------------------------+
