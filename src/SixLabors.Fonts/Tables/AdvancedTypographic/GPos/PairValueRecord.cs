@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
     /// <summary>
-    /// PairValueRecords are used in pair adjustment positioning subtables to adjust the placement or advances of two glyphs in relation to one another. 
+    /// PairValueRecords are used in pair adjustment positioning subtables to adjust the placement or advances of two glyphs in relation to one another.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-2-pair-adjustment-positioning-subtable"/>
     /// </summary>
     internal readonly struct PairValueRecord

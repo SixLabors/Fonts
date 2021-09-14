@@ -123,6 +123,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             => lookupType switch
             {
                 1 => LookupType1SubTable.Load(reader, offset),
+                2 => LookupType2SubTable.Load(reader, offset),
                 _ => new NotImplementedSubTable()
             };
 
