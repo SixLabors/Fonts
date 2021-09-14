@@ -195,7 +195,7 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Gets the resolved levels.
         /// </summary>
-        public ReadOnlyArraySlice<sbyte> ResolvedLevels => this.resolvedLevels;
+        public ArraySlice<sbyte> ResolvedLevels => this.resolvedLevels;
 
         /// <summary>
         /// Gets the resolved paragraph embedding level

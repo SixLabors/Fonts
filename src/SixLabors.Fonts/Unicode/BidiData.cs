@@ -34,14 +34,14 @@ namespace SixLabors.Fonts.Unicode
         public int Length => this.types.Length;
 
         /// <summary>
-        /// Gets the BidiCharacterType of each code point
+        /// Gets the bidi character type of each code point
         /// </summary>
-        public ReadOnlyArraySlice<BidiCharacterType> Types { get; private set; }
+        public ArraySlice<BidiCharacterType> Types { get; private set; }
 
         /// <summary>
         /// Gets the paired bracket type for each code point
         /// </summary>
-        public ReadOnlyArraySlice<BidiPairedBracketType> PairedBracketTypes { get; private set; }
+        public ArraySlice<BidiPairedBracketType> PairedBracketTypes { get; private set; }
 
         /// <summary>
         /// Gets the paired bracket value for code point
@@ -53,7 +53,7 @@ namespace SixLabors.Fonts.Unicode
         /// matching.  Also, bracket code points are mapped
         /// to their canonical equivalents
         /// </remarks>
-        public ReadOnlyArraySlice<int> PairedBracketValues { get; private set; }
+        public ArraySlice<int> PairedBracketValues { get; private set; }
 
         /// <summary>
         /// Initialize with a text value.

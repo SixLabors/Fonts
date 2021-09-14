@@ -107,8 +107,6 @@ namespace SixLabors.Fonts
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
-                    CodePoint codePoint = codePointEnumerator.Current;
-
                     if (spanStyle.End < codePointIndex)
                     {
                         spanStyle = options.GetStyle(codePointIndex, codePointCount);
@@ -125,6 +123,7 @@ namespace SixLabors.Fonts
                     }
 
                     GlyphMetrics? glyph = glyphs[0];
+                    CodePoint codePoint = glyph.CodePoint;
                     if (previousGlyph != null && glyph.FontMetrics != previousGlyph.FontMetrics)
                     {
                         scale = glyph.ScaleFactor;

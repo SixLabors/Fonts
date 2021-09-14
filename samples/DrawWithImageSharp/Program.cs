@@ -38,10 +38,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
             FontFamily arabicFont = SystemFonts.Get("Dubai");
 
-            // RenderText(emojiFont, "👩🏽‍🚒a", pointSize: 72, fallbackFonts: new[] { font2 });
+            RenderText(emojiFont, "👩🏽‍🚒a", pointSize: 72, fallbackFonts: new[] { font2 });
             RenderText(arabicFont, "English اَلْعَرَبِيَّةُ English", pointSize: 20);
+            RenderText(arabicFont, "English English", pointSize: 20);
             RenderText(arabicFont, "اَلْعَرَبِيَّةُ اَلْعَرَبِيَّةُ", pointSize: 20);
             RenderText(arabicFont, "اَلْعَرَبِيَّةُ", pointSize: 20);
+            RenderText(arabicFont, "SS ص", pointSize: 20);
+            RenderText(arabicFont, "S ص", pointSize: 20);
             RenderText(arabicFont, "English اَلْعَرَبِيَّةُ", pointSize: 20);
             return;
 

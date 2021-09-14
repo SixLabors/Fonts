@@ -41,6 +41,14 @@ namespace SixLabors.Fonts
             BidiAlgorithm bidi = BidiAlgorithm.Instance.Value;
             var bidiData = new BidiData();
             bidiData.Init(text, (sbyte)this.Options.TextDirection);
+
+            if (this.Options.TextDirection != TextDirection.Auto)
+            {
+                bidiData.SaveTypes();
+                bidiData.Types.Span.Fill(BidiCharacterType.OtherNeutral);
+                bidiData.PairedBracketTypes.Span.Fill(BidiPairedBracketType.None);
+            }
+
             bidi.Process(bidiData);
             this.bidiRuns = BidiRun.CoalescLevels(bidi.ResolvedLevels).ToArray();
             this.bidiMap = new();
