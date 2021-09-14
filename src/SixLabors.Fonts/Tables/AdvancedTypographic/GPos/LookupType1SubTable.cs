@@ -101,17 +101,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     internal sealed class LookupType1Format2SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
-        private readonly ValueRecord[] valueRecord;
+        private readonly ValueRecord[] valueRecords;
 
-        private LookupType1Format2SubTable(ValueRecord[] valueRecord, CoverageTable coverageTable)
+        private LookupType1Format2SubTable(ValueRecord[] valueRecords, CoverageTable coverageTable)
         {
-            this.valueRecord = valueRecord;
+            this.valueRecords = valueRecords;
             this.coverageTable = coverageTable;
         }
 
         public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset)
         {
-            // SinglePosFormat1
+            // SinglePosFormat2
             // +-------------+--------------------------+-----------------------------------------------+
             // |    Type     |   Name                   | Description                                   |
             // +=============+==========================+===============================================+
@@ -141,7 +141,32 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             return new LookupType1Format2SubTable(valueRecords, coverageTable);
         }
 
-        public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
-            => throw new System.NotImplementedException();
+        public override bool TryUpdatePosition(
+            IFontMetrics fontMetrics,
+            GPosTable table,
+            GlyphPositioningCollection collection,
+            ushort index,
+            int count)
+        {
+            for (ushort i = 0; i < count; i++)
+            {
+                int glyphId = collection.GetGlyphIds(i + index)[0];
+                if (glyphId < 0)
+                {
+                    return false;
+                }
+
+                int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                if (coverage > -1)
+                {
+                    ValueRecord record = this.valueRecords[coverage];
+                    collection.Offset(fontMetrics, i, (ushort)glyphId, record.XPlacement, record.YPlacement);
+                    collection.Advance(fontMetrics, i, (ushort)glyphId, record.XAdvance, record.YAdvance);
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }
