@@ -113,5 +113,25 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
+
+        [Fact]
+        public void LigatureSubstitution_Works()
+        {
+            // arrange
+            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "ffi";
+            int expectedGlyphIndex = 229;
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
+            Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
+        }
     }
 }
