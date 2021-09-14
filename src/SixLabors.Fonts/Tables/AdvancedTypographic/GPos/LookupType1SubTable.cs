@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// such as a subscript or superscript. In addition, a SinglePos subtable is commonly used to implement lookup data for contextual positioning.
     /// A SinglePos subtable will have one of two formats: one that applies the same adjustment to a series of glyphs(Format 1),
     /// and one that applies a different adjustment for each unique glyph(Format 2).
-    /// <see cref="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-1-single-adjustment-positioning-subtable"/>
+    /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-1-single-adjustment-positioning-subtable"/>
     /// </summary>
     internal sealed class LookupType1SubTable
     {
