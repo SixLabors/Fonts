@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
@@ -13,6 +14,8 @@ namespace SixLabors.Fonts
     internal struct AppliedFontStyle
     {
         private GlyphPositioningCollection positioningCollection;
+        private BidiRun[] bidiRuns;
+        private Dictionary<int, int> bidiMap;
 
         // TODO: Clean all this assignment up.
         public RendererOptions Options;
@@ -33,6 +36,14 @@ namespace SixLabors.Fonts
             // create slices.
             var collection = new GlyphSubstitutionCollection();
             this.positioningCollection = new();
+
+            // Analyse the text for bidi directional runs.
+            BidiAlgorithm bidi = BidiAlgorithm.Instance.Value;
+            var bidiData = new BidiData();
+            bidiData.Init(text, (sbyte)this.Options.TextDirection);
+            bidi.Process(bidiData);
+            this.bidiRuns = BidiRun.CoalescLevels(bidi.ResolvedLevels).ToArray();
+            this.bidiMap = new();
 
             // Incrementally build out collection of glyphs.
             // For each run we start with a fresh substitution collection to avoid
@@ -71,6 +82,7 @@ namespace SixLabors.Fonts
             // Enumerate through each grapheme in the text.
             int graphemeIndex;
             int codePointIndex = 0;
+            int bidiRun = 0;
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
             for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
             {
@@ -83,12 +95,19 @@ namespace SixLabors.Fonts
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
+                    if (codePointIndex == this.bidiRuns[bidiRun].End)
+                    {
+                        bidiRun++;
+                    }
+
                     if (skipNextCodePoint)
                     {
                         codePointIndex++;
                         graphemeCodePointIndex++;
                         continue;
                     }
+
+                    this.bidiMap[codePointIndex] = bidiRun;
 
                     int charsConsumed = 0;
                     CodePoint current = codePointEnumerator.Current;
@@ -118,7 +137,21 @@ namespace SixLabors.Fonts
         }
 
         public bool TryGetGlyphMetrics(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
-            => this.positioningCollection.TryGetGlypMetricsAtOffset(offset - this.Start, out metrics);
+        {
+            int at = offset - this.Start;
+            if (this.bidiMap.TryGetValue(at, out int i))
+            {
+                // RTL? We want to return the glyph at the opposite end of the bidi run.
+                // Coalesced runs are either LTR or RTL.
+                BidiRun bidiRun = this.bidiRuns[i];
+                if (bidiRun.Direction == BidiCharacterType.RightToLeft)
+                {
+                    at = bidiRun.End - 1 - (at - bidiRun.Start);
+                }
+            }
+
+            return this.positioningCollection.TryGetGlypMetricsAtOffset(at, out metrics);
+        }
 
         // TODO: Remove this and update tests.
         public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint)
@@ -170,11 +203,11 @@ namespace SixLabors.Fonts
             for (int i = 0; i < collection.Count; i++)
             {
                 collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int _, out IEnumerable<int> _);
-                Script script = CodePoint.GetScript(codePoint);
+                Script current = CodePoint.GetScript(codePoint);
 
                 // Choose a shaper based on the script.
                 // This determines which features to apply to which glyphs.
-                BaseShaper shaper = ShaperFactory.Create(script);
+                BaseShaper shaper = new ArabicShaper();// ShaperFactory.Create(script);
                 int index = i;
                 int count = 1;
                 while (i < collection.Count - 1)
@@ -183,7 +216,8 @@ namespace SixLabors.Fonts
                     // than the text as a whole to ensure that different language shapers do not interfere
                     // with each other when the text contains multiple languages.
                     collection.GetCodePointAndGlyphIds(i + 1, out codePoint, out _, out _);
-                    if (CodePoint.GetScript(codePoint) != script)
+                    Script next = CodePoint.GetScript(codePoint);
+                    if (next is not Script.Common and not Script.Unknown and not Script.Inherited && next != current)
                     {
                         break;
                     }

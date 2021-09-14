@@ -137,6 +137,11 @@ namespace SixLabors.Fonts
         public float LineSpacing { get; set; } = 1;
 
         /// <summary>
+        /// Gets or sets the text direction.
+        /// </summary>
+        public TextDirection TextDirection { get; set; } = TextDirection.Auto;
+
+        /// <summary>
         /// Gets or sets the Horizontal alignment of the text.
         /// </summary>
         public HorizontalAlignment HorizontalAlignment { get; set; }

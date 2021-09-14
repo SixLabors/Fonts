@@ -11,11 +11,16 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Left to right.
         /// </summary>
-        LTR,
+        LeftToRight = 0,
 
         /// <summary>
         /// Right to left.
         /// </summary>
-        RTL
+        RightToLeft = 1,
+
+        /// <summary>
+        /// Automatically determined.
+        /// </summary>
+        Auto = 2,
     }
 }

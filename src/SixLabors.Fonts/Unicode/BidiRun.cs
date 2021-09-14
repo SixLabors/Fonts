@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Unicode
 
         public override string ToString() => $"{this.Start} - {this.End} - {this.Direction}";
 
-        public static IEnumerable<BidiRun> CoalescLevels(ArraySlice<sbyte> levels)
+        public static IEnumerable<BidiRun> CoalescLevels(ReadOnlyArraySlice<sbyte> levels)
         {
             if (levels.Length == 0)
             {

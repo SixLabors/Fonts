@@ -36,8 +36,15 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 #if OS_WINDOWS
             FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
+            FontFamily arabicFont = SystemFonts.Get("Dubai");
 
-            RenderText(emojiFont, "👩🏽‍🚒a", pointSize: 72, fallbackFonts: new[] { font2 });
+            // RenderText(emojiFont, "👩🏽‍🚒a", pointSize: 72, fallbackFonts: new[] { font2 });
+            RenderText(arabicFont, "English اَلْعَرَبِيَّةُ English", pointSize: 20);
+            RenderText(arabicFont, "اَلْعَرَبِيَّةُ اَلْعَرَبِيَّةُ", pointSize: 20);
+            RenderText(arabicFont, "اَلْعَرَبِيَّةُ", pointSize: 20);
+            RenderText(arabicFont, "English اَلْعَرَبِيَّةُ", pointSize: 20);
+            return;
+
             RenderTextProcessorWithAlignment(emojiFont, "😀A😀", pointSize: 20, fallbackFonts: new[] { colorEmoji });
             RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { font2 });
             RenderTextProcessorWithAlignment(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
