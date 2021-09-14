@@ -31,6 +31,14 @@ namespace SixLabors.Fonts
         /// </summary>
         private readonly Dictionary<int, GlyphMetrics[]> map = new();
 
+        private readonly LayoutMode mode;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
+        /// </summary>
+        /// <param name="mode">The text layout mode.</param>
+        public GlyphPositioningCollection(LayoutMode mode) => this.mode = mode;
+
         /// <summary>
         /// Gets the number of glyphs indexes contained in the collection.
         /// </summary>
@@ -160,9 +168,7 @@ namespace SixLabors.Fonts
             {
                 if (m.Index == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    // TODO: When we enable vertical rendering we should pass the y value.
-                    // We'll pass a TextDirection enum to manage it before RC though.
-                    m.ApplyAdvance(x, 0);
+                    m.ApplyAdvance(x, this.mode == LayoutMode.Horizontal ? (short)0 : y);
                 }
             }
         }

@@ -95,7 +95,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new GPosTable(scriptList, featureList, lookupList);
         }
 
-        public void UpdatePositions(IFontMetrics fontMetrics, GlyphPositioningCollection collection, ushort index, int count)
+        public void UpdatePositions(
+            IFontMetrics fontMetrics,
+            GlyphPositioningCollection collection,
+            ushort index,
+            int count)
         {
             collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out IEnumerable<int> _);
 

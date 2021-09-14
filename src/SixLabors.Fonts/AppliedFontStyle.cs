@@ -35,7 +35,7 @@ namespace SixLabors.Fonts
             // However we actually have to refactor TextLayout to actually
             // create slices.
             var collection = new GlyphSubstitutionCollection();
-            this.positioningCollection = new();
+            this.positioningCollection = new(LayoutMode.Horizontal); // TODO: Support vertical.
 
             // Analyse the text for bidi directional runs.
             BidiAlgorithm bidi = BidiAlgorithm.Instance.Value;
@@ -139,11 +139,11 @@ namespace SixLabors.Fonts
         public bool TryGetGlyphMetrics(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
             int at = offset - this.Start;
-            if (this.bidiMap.TryGetValue(at, out int i))
+            if (this.bidiMap.TryGetValue(at, out int run))
             {
                 // RTL? We want to return the glyph at the opposite end of the bidi run.
                 // Coalesced runs are either LTR or RTL.
-                BidiRun bidiRun = this.bidiRuns[i];
+                BidiRun bidiRun = this.bidiRuns[run];
                 if (bidiRun.Direction == BidiCharacterType.RightToLeft)
                 {
                     at = bidiRun.End - 1 - (at - bidiRun.Start);
