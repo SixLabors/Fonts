@@ -148,7 +148,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         // TODO: Consider caching the relevant langtables per script.
                         // There's a lot of repetitive checks here.
                         LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
-                        lookupTable.TrySubstition(this, collection, index, count);
+                        lookupTable.TrySubstitution(this, collection, index, count);
                     }
                 }
             }

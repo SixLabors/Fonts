@@ -63,7 +63,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType1Format1SubTable(deltaGlyphId, coverageTable);
         }
 
-        public override bool TrySubstition(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
+        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
             int glyphId = collection[index][0];
             if (glyphId < 0)
@@ -115,7 +115,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType1Format2SubTable(substituteGlyphIds, coverageTable);
         }
 
-        public override bool TrySubstition(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
+        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
             int glyphId = collection[index][0];
             if (glyphId < 0)
