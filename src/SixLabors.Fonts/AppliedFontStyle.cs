@@ -42,6 +42,8 @@ namespace SixLabors.Fonts
             var bidiData = new BidiData();
             bidiData.Init(text, (sbyte)this.Options.TextDirection);
 
+            // If we have embedded directional overrides then change those
+            // ranges to neutral.
             if (this.Options.TextDirection != TextDirection.Auto)
             {
                 bidiData.SaveTypes();
