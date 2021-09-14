@@ -103,7 +103,7 @@ namespace SixLabors.Fonts
         /// Applies any available substitutions to the collection of glyphs.
         /// </summary>
         /// <param name="collection">The glyph substitution collection.</param>
-        void ApplySubstitions(GlyphSubstitutionCollection collection);
+        void ApplySubstitution(GlyphSubstitutionCollection collection);
 
         /// <summary>
         /// Applies any available positioning updates to the collection of glyphs.

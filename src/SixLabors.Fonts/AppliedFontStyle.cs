@@ -130,7 +130,7 @@ namespace SixLabors.Fonts
             if (this.ApplyKerning)
             {
                 AssignShapingFeatures(substitutionCollection);
-                fontMetrics.ApplySubstitions(substitutionCollection);
+                fontMetrics.ApplySubstitution(substitutionCollection);
             }
 
             return positioningCollection.TryAddOrUpdate(fontMetrics, substitutionCollection, this.Options);

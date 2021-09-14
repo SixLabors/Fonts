@@ -95,7 +95,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new GSubTable(scriptList, featureList, lookupList);
         }
 
-        public void ApplySubstitions(GlyphSubstitutionCollection collection, ushort index, int count)
+        public void ApplySubstitution(GlyphSubstitutionCollection collection, ushort index, int count)
         {
             collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out IEnumerable<int> _);
 
@@ -114,14 +114,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
             if (defaultLangSysTable != null)
             {
-                this.ApplyFeatureSubstition(collection, index, count, defaultLangSysTable);
+                this.ApplyFeatureSubstitution(collection, index, count, defaultLangSysTable);
                 return;
             }
 
-            this.ApplyFeatureSubstition(collection, index, count, scriptListTable.LangSysTables);
+            this.ApplyFeatureSubstitution(collection, index, count, scriptListTable.LangSysTables);
         }
 
-        private void ApplyFeatureSubstition(
+        private void ApplyFeatureSubstitution(
             GlyphSubstitutionCollection collection,
             ushort index,
             int count,

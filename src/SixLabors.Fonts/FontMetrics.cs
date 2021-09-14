@@ -229,13 +229,13 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public void ApplySubstitions(GlyphSubstitutionCollection collection)
+        public void ApplySubstitution(GlyphSubstitutionCollection collection)
         {
             if (this.gSubTable != null)
             {
                 for (ushort index = 0; index < collection.Count; index++)
                 {
-                    this.gSubTable.ApplySubstitions(collection, index, collection.Count - index);
+                    this.gSubTable.ApplySubstitution(collection, index, collection.Count - index);
                 }
             }
         }
