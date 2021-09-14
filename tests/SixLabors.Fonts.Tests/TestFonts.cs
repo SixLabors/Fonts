@@ -39,6 +39,13 @@ namespace SixLabors.Fonts.Tests
         /// </summary>
         public static string GsubTestFontFile => GetFullPath("GsubTestFont.ttf");
 
+        /// <summary>
+        /// Gets the gpos test font file.
+        /// It has the following substitution for unit tests:
+        /// - Single Adjustment Positioning: A plus 100
+        /// </summary>
+        public static string GposTestFontFile => GetFullPath("GposTestFont.ttf");
+
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
