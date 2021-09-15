@@ -103,13 +103,13 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void SingleSubstitution_Works()
         {
             // arrange
-            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "A";
             int expectedGlyphIndex = 38; // we expect A to be mapped to B.
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -120,13 +120,13 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void MultipleSubstitution_Works()
         {
             // arrange
-            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "C";
             int expectedGlyphIndex = 40; // we expect C to be mapped to D.
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -137,13 +137,13 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void AlternateSubstitution_Works()
         {
             // arrange
-            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "E";
             int expectedGlyphIndex = 42; // we expect E to be mapped to F.
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -154,13 +154,13 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void LigatureSubstitution_Works()
         {
             // arrange
-            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "ffi";
             int expectedGlyphIndex = 229;
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -171,13 +171,13 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ChainedContextsSubstitutionFormat3Works()
         {
             // arrange
-            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile2).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "x=y"; // This should be replaced with "x>y".
             int[] expectedGlyphIndices = { 89, 31, 90 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);

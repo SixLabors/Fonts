@@ -33,14 +33,18 @@ namespace SixLabors.Fonts.Tests
         public static string TimesNewRomanFile => GetFullPath("TimesNewRoman.ttf");
 
         /// <summary>
-        /// Gets the gsub test font file.
-        /// It has the following substitution for unit tests:
+        /// Gets a gsub test font file which has the following substitution for unit tests:
         /// - Single Substitution: A -> B
         /// - Multiple Substitution: C -> D
         /// - Alternate Substitution: E -> F
+        /// </summary>
+        public static string GsubTestFontFile1 => GetFullPath("GsubTestFont1.ttf");
+
+        /// <summary>
+        /// Gets a gsub test font file which has the following substitution for unit tests:
         /// - Chained Context Substitution: x=y -> x>y
         /// </summary>
-        public static string GsubTestFontFile => GetFullPath("GsubTestFont.ttf");
+        public static string GsubTestFontFile2 => GetFullPath("GsubTestFont2.ttf");
 
         /// <summary>
         /// Gets the gpos test font file.
