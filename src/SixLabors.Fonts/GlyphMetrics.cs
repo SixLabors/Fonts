@@ -26,7 +26,7 @@ namespace SixLabors.Fonts
             short leftSideBearing,
             short topSideBearing,
             ushort unitsPerEM,
-            ushort index,
+            ushort glyphId,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
         {
@@ -37,7 +37,7 @@ namespace SixLabors.Fonts
 
             this.AdvanceWidth = advanceWidth;
             this.AdvanceHeight = advanceHeight;
-            this.Index = index;
+            this.GlyphId = glyphId;
 
             this.Width = this.Bounds.Max.X - this.Bounds.Min.X;
             this.Height = this.Bounds.Max.Y - this.Bounds.Min.Y;
@@ -57,7 +57,7 @@ namespace SixLabors.Fonts
 
             this.AdvanceWidth = other.AdvanceWidth;
             this.AdvanceHeight = other.AdvanceHeight;
-            this.Index = other.Index;
+            this.GlyphId = other.GlyphId;
 
             this.Width = other.Width;
             this.Height = other.Height;
@@ -145,9 +145,9 @@ namespace SixLabors.Fonts
         internal Bounds Bounds => this.vector.Bounds;
 
         /// <summary>
-        /// Gets the index.
+        /// Gets the glyph Id.
         /// </summary>
-        internal ushort Index { get; }
+        internal ushort GlyphId { get; }
 
         /// <summary>
         /// Apply an offset to the glyph.

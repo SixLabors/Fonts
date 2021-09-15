@@ -147,7 +147,7 @@ namespace SixLabors.Fonts
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
-                if (m.Index == glyphId && m.FontMetrics == fontMetrics)
+                if (m.GlyphId == glyphId && m.FontMetrics == fontMetrics)
                 {
                     m.ApplyOffset(x, y);
                 }
@@ -166,7 +166,7 @@ namespace SixLabors.Fonts
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
-                if (m.Index == glyphId && fontMetrics == m.FontMetrics)
+                if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
                     m.ApplyAdvance(x, this.mode == LayoutMode.Horizontal ? (short)0 : y);
                 }

@@ -21,14 +21,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);
-            ushort substFormat = reader.ReadUInt16();
+            ushort posFormat = reader.ReadUInt16();
 
-            return substFormat switch
+            return posFormat switch
             {
                 1 => LookupType1Format1SubTable.Load(reader, offset),
                 2 => LookupType1Format2SubTable.Load(reader, offset),
                 _ => throw new InvalidFontFileException(
-                    $"Invalid value for 'substFormat' {substFormat}. Should be '1' or '2'.")
+                    $"Invalid value for 'posFormat' {posFormat}. Should be '1' or '2'.")
             };
         }
     }

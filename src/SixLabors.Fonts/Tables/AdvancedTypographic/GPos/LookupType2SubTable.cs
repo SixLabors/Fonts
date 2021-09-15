@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
@@ -23,26 +24,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);
-            ushort substFormat = reader.ReadUInt16();
+            ushort posFormat = reader.ReadUInt16();
 
-            return substFormat switch
+            return posFormat switch
             {
                 1 => LookupType2Format1SubTable.Load(reader, offset),
-                2 => LookupType1Format2SubTable.Load(reader, offset),
+                2 => LookupType2Format2SubTable.Load(reader, offset),
                 _ => throw new InvalidFontFileException(
-                    $"Invalid value for 'substFormat' {substFormat}. Should be '1' or '2'.")
+                    $"Invalid value for 'posFormat' {posFormat}. Should be '1' or '2'.")
             };
         }
 
         internal sealed class LookupType2Format1SubTable : LookupSubTable
         {
             private readonly CoverageTable coverageTable;
-            private readonly PairValueRecord[] valueRecords;
+            private readonly PairSetTable[] pairSets;
 
-            public LookupType2Format1SubTable(CoverageTable coverageTable, PairValueRecord[] valueRecords)
+            public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets)
             {
                 this.coverageTable = coverageTable;
-                this.valueRecords = valueRecords;
+                this.pairSets = pairSets;
             }
 
             public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset)
@@ -72,34 +73,123 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 ValueFormat valueFormat1 = reader.ReadUInt16<ValueFormat>();
                 ValueFormat valueFormat2 = reader.ReadUInt16<ValueFormat>();
                 ushort pairSetCount = reader.ReadUInt16();
-                var pairValueRecords = new PairValueRecord[pairSetCount];
+                ushort[] pairSetOffsets = reader.ReadUInt16Array(pairSetCount);
+
+                var pairSets = new PairSetTable[pairSetCount];
                 for (int i = 0; i < pairSetCount; i++)
                 {
-                    ushort pairSetOffset = reader.ReadOffset16();
-                    reader.Seek(pairSetOffset, SeekOrigin.Begin);
-                    pairValueRecords[i] = new PairValueRecord(reader, valueFormat1, valueFormat2);
+                    reader.Seek(offset + pairSetOffsets[i], SeekOrigin.Begin);
+                    pairSets[i] = PairSetTable.Load(reader, offset + pairSetOffsets[i], valueFormat1, valueFormat2);
                 }
 
                 var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-                return new LookupType2Format1SubTable(coverageTable, pairValueRecords);
+                return new LookupType2Format1SubTable(coverageTable, pairSets);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
-                => throw new System.NotImplementedException();
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                ushort index,
+                int count)
+            {
+                for (ushort i = 0; i < count - 1; i++)
+                {
+                    int glyphId = collection.GetGlyphIds(i + index)[0];
+                    if (glyphId < 0)
+                    {
+                        return false;
+                    }
+
+                    int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                    if (coverage > -1)
+                    {
+                        PairSetTable pairSet = this.pairSets[coverage];
+                        int glyphId2 = collection.GetGlyphIds(i + 1 + index)[0];
+                        if (glyphId2 < 0)
+                        {
+                            return false;
+                        }
+
+                        if (pairSet.TryGetPairValueRecord((ushort)glyphId2, out PairValueRecord pairValueRecord))
+                        {
+                            ValueRecord record1 = pairValueRecord.ValueRecord1;
+                            collection.Offset(fontMetrics, i, (ushort)glyphId, record1.XPlacement, record1.YPlacement);
+                            collection.Advance(fontMetrics, i, (ushort)glyphId, record1.XAdvance, record1.YAdvance);
+
+                            ValueRecord record2 = pairValueRecord.ValueRecord2;
+                            collection.Offset(fontMetrics, (ushort)(i + 1), (ushort)glyphId2, record2.XPlacement, record2.YPlacement);
+                            collection.Advance(fontMetrics, (ushort)(i + 1), (ushort)glyphId2, record2.XAdvance, record2.YAdvance);
+
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            internal sealed class PairSetTable
+            {
+                private readonly PairValueRecord[] pairValueRecords;
+
+                private PairSetTable(PairValueRecord[] pairValueRecords)
+                    => this.pairValueRecords = pairValueRecords;
+
+                public static PairSetTable Load(BigEndianBinaryReader reader, long offset, ValueFormat valueFormat1, ValueFormat valueFormat2)
+                {
+                    // +-----------------+----------------------------------+---------------------------------------+
+                    // | Type            | Name                             | Description                           |
+                    // +=================+==================================+=======================================+
+                    // | uint16          | pairValueCount                   | Number of PairValueRecords            |
+                    // +-----------------+----------------------------------+---------------------------------------+
+                    // | PairValueRecord | pairValueRecords[pairValueCount] | Array of PairValueRecords, ordered by |
+                    // |                 |                                  | glyph ID of the second glyph.         |
+                    // +-----------------+----------------------------------+---------------------------------------+
+                    reader.Seek(offset, SeekOrigin.Begin);
+                    ushort pairValueCount = reader.ReadUInt16();
+                    var pairValueRecords = new PairValueRecord[pairValueCount];
+                    for (int i = 0; i < pairValueRecords.Length; i++)
+                    {
+                        pairValueRecords[i] = new PairValueRecord(reader, valueFormat1, valueFormat2);
+                    }
+
+                    return new PairSetTable(pairValueRecords);
+                }
+
+                public bool TryGetPairValueRecord(ushort glyphId, [NotNullWhen(true)] out PairValueRecord pairValueRecord)
+                {
+                    foreach (PairValueRecord pair in this.pairValueRecords)
+                    {
+                        if (pair.SecondGlyph == glyphId)
+                        {
+                            pairValueRecord = pair;
+                            return true;
+                        }
+                    }
+
+                    pairValueRecord = default;
+                    return false;
+                }
+            }
         }
 
         internal sealed class LookupType2Format2SubTable : LookupSubTable
         {
             private readonly CoverageTable coverageTable;
-            private readonly Class2Record[] class2Records;
+            private readonly Class1Record[] class1Records;
             private readonly ClassDefinitionTable classDefinitionTable1;
             private readonly ClassDefinitionTable classDefinitionTable2;
 
-            public LookupType2Format2SubTable(CoverageTable coverageTable, Class2Record[] class2Records, ClassDefinitionTable classDefinitionTable1, ClassDefinitionTable classDefinitionTable2)
+            public LookupType2Format2SubTable(
+                CoverageTable coverageTable,
+                Class1Record[] class1Records,
+                ClassDefinitionTable classDefinitionTable1,
+                ClassDefinitionTable classDefinitionTable2)
             {
                 this.coverageTable = coverageTable;
-                this.class2Records = class2Records;
+                this.class1Records = class1Records;
                 this.classDefinitionTable1 = classDefinitionTable1;
                 this.classDefinitionTable2 = classDefinitionTable2;
             }
@@ -144,23 +234,89 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 ushort classDef1Offset = reader.ReadOffset16();
                 ushort classDef2Offset = reader.ReadOffset16();
                 ushort class1Count = reader.ReadUInt16();
-
-                // TODO: review this again, there is something wrong still.
                 ushort class2Count = reader.ReadUInt16();
-                var class2Records = new Class2Record[class1Count];
-                for (int i = 0; i < class1Count; i++)
+
+                var class1Records = new Class1Record[class1Count];
+                for (int i = 0; i < class1Records.Length; i++)
                 {
-                    class2Records[i] = new Class2Record(reader, valueFormat1, valueFormat2);
+                    class1Records[i] = Class1Record.Load(reader, class2Count, valueFormat1, valueFormat2);
                 }
 
                 var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
                 var classDefTable1 = ClassDefinitionTable.Load(reader, offset + classDef1Offset);
                 var classDefTable2 = ClassDefinitionTable.Load(reader, offset + classDef2Offset);
 
-                return new LookupType2Format2SubTable(coverageTable, class2Records, classDefTable1, classDefTable2);
+                return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count) => throw new System.NotImplementedException();
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                ushort index,
+                int count)
+            {
+                for (ushort i = 0; i < count - 1; i++)
+                {
+                    int glyphId = collection.GetGlyphIds(i + index)[0];
+                    if (glyphId < 0)
+                    {
+                        return false;
+                    }
+
+                    int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                    if (coverage > -1)
+                    {
+                        int classDef1 = this.classDefinitionTable1.ClassIndexOf((ushort)glyphId);
+                        int glyphId2 = collection.GetGlyphIds(i + 1 + index)[0];
+                        if (glyphId2 < 0)
+                        {
+                            return false;
+                        }
+
+                        int classDef2 = this.classDefinitionTable2.ClassIndexOf((ushort)glyphId2);
+
+                        Class1Record class1Record = this.class1Records[classDef1];
+                        Class2Record class2Record = class1Record.Class2Records[classDef2];
+
+                        ValueRecord record1 = class2Record.ValueRecord1;
+                        collection.Offset(fontMetrics, i, (ushort)glyphId, record1.XPlacement, record1.YPlacement);
+                        collection.Advance(fontMetrics, i, (ushort)glyphId, record1.XAdvance, record1.YAdvance);
+
+                        ValueRecord record2 = class2Record.ValueRecord2;
+                        collection.Offset(fontMetrics, (ushort)(i + 1), (ushort)glyphId2, record2.XPlacement, record2.YPlacement);
+                        collection.Advance(fontMetrics, (ushort)(i + 1), (ushort)glyphId2, record2.XAdvance, record2.YAdvance);
+
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            internal sealed class Class1Record
+            {
+                private Class1Record(Class2Record[] class2Records) => this.Class2Records = class2Records;
+
+                public Class2Record[] Class2Records { get; }
+
+                public static Class1Record Load(BigEndianBinaryReader reader, int class2Count, ValueFormat valueFormat1, ValueFormat valueFormat2)
+                {
+                    // +--------------+----------------------------+---------------------------------------------+
+                    // | Type         | Name                       | Description                                 |
+                    // +==============+============================+=============================================+
+                    // | Class2Record | class2Records[class2Count] | Array of Class2 records, ordered by classes |
+                    // |              |                            | in classDef2.                               |
+                    // +--------------+----------------------------+---------------------------------------------+
+                    var class2Records = new Class2Record[class2Count];
+                    for (int i = 0; i < class2Records.Length; i++)
+                    {
+                        class2Records[i] = new Class2Record(reader, valueFormat1, valueFormat2);
+                    }
+
+                    return new Class1Record(class2Records);
+                }
+            }
         }
     }
 }

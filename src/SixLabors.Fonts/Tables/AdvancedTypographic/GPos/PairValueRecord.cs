@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // +--------------+------------------+--------------------------------------------------------------------------------------+
             // | ValueRecord  | valueRecord2     | Positioning data for the second glyph in the pair.                                   |
             // +--------------+------------------+--------------------------------------------------------------------------------------+
-            this.SecondGlyph = reader.ReadInt16();
+            this.SecondGlyph = reader.ReadUInt16();
             this.ValueRecord1 = new ValueRecord(reader, valueFormat1);
             this.ValueRecord2 = new ValueRecord(reader, valueFormat2);
         }
@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// <summary>
         /// Gets the second glyph ID.
         /// </summary>
-        public short SecondGlyph { get; }
+        public ushort SecondGlyph { get; }
 
         /// <summary>
         /// Gets the Positioning data for the first glyph in the pair.

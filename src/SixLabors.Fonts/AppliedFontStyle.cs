@@ -188,7 +188,7 @@ namespace SixLabors.Fonts
 
             if (this.ColorFontSupport == ColorFontSupport.MicrosoftColrFormat)
             {
-                if (glyph.FontMetrics.TryGetColoredVectors(codePoint, glyph.Index, out GlyphMetrics[]? layers))
+                if (glyph.FontMetrics.TryGetColoredVectors(codePoint, glyph.GlyphId, out GlyphMetrics[]? layers))
                 {
                     return layers;
                 }

@@ -264,7 +264,7 @@ namespace SixLabors.Fonts
             }
 
             // Once we wire in the kerning calculations this will return real data
-            return this.kerning.GetOffset(previousGlyph.Index, glyph.Index);
+            return this.kerning.GetOffset(previousGlyph.GlyphId, glyph.GlyphId);
         }
 
         /// <summary>

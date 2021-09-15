@@ -16,7 +16,7 @@ namespace SixLabors.Fonts
         {
             this.Font = glyph.FontMetrics.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
             this.FontStyle = glyph.FontMetrics.Description.Style;
-            this.GlyphIndex = glyph.Index;
+            this.GlyphIndex = glyph.GlyphId;
             this.PointSize = pointSize;
             this.DpiX = dpi.X;
             this.DpiY = dpi.Y;
