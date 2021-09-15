@@ -381,6 +381,7 @@ namespace UnicodeTrieGenerator
         {
             ProcessUnicodeData();
             GenerateBidiBracketsTrie();
+            GenerateBidiMirrorTrie();
             GenerateLineBreakTrie();
             GenerateUnicodeCategoryTrie();
             GenerateScriptTrie();
@@ -508,6 +509,35 @@ namespace UnicodeTrieGenerator
             UnicodeTrie trie = builder.Freeze();
 
             using FileStream stream = GetStreamWriter("Bidi.trie");
+            trie.Save(stream);
+        }
+
+        /// <summary>
+        /// Generates the UnicodeTrie for the Bidi Brackets code points.
+        /// </summary>
+        private static void GenerateBidiMirrorTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+);\s([0-9A-F]+)\s#");
+            var builder = new UnicodeTrieBuilder(0u);
+
+            using (StreamReader sr = GetStreamReader("BidiMirroring.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+                    if (match.Success)
+                    {
+                        int point = ParseHexInt(match.Groups[1].Value);
+                        int otherPoint = ParseHexInt(match.Groups[2].Value);
+                        builder.Set(point, (uint)otherPoint);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+
+            using FileStream stream = GetStreamWriter("BidiMirror.trie");
             trie.Save(stream);
         }
 

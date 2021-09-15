@@ -155,7 +155,7 @@ namespace SixLabors.Fonts.Unicode
             get
             {
                 int codeUnitCount = UnicodeUtility.GetUtf16SequenceLength(this.value);
-                Debug.Assert(codeUnitCount > 0 && codeUnitCount <= MaxUtf16CharsPerCodePoint, $"Invalid Utf16SequenceLength {codeUnitCount}.");
+                Debug.Assert(codeUnitCount is > 0 and <= MaxUtf16CharsPerCodePoint, $"Invalid Utf16SequenceLength {codeUnitCount}.");
                 return codeUnitCount;
             }
         }
@@ -172,7 +172,7 @@ namespace SixLabors.Fonts.Unicode
             get
             {
                 int codeUnitCount = UnicodeUtility.GetUtf8SequenceLength(this.value);
-                Debug.Assert(codeUnitCount > 0 && codeUnitCount <= MaxUtf8BytesPerCodePoint, $"Invalid Utf8SequenceLength {codeUnitCount}.");
+                Debug.Assert(codeUnitCount is > 0 and <= MaxUtf8BytesPerCodePoint, $"Invalid Utf8SequenceLength {codeUnitCount}.");
                 return codeUnitCount;
             }
         }
@@ -426,12 +426,60 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
+        /// Gets the canonical representation of a given codepoint.
+        /// <see href="http://www.unicode.org/L2/L2013/13123-norm-and-bpa.pdf"/>
+        /// </summary>
+        /// <param name="codePoint">The code point to be mapped.</param>
+        /// <returns>The mapped canonical code point, or the passed <paramref name="codePoint"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static CodePoint GetCanonicalType(CodePoint codePoint)
+        {
+            if (codePoint.Value == 0x3008)
+            {
+                return new CodePoint(0x2329);
+            }
+
+            if (codePoint.Value == 0x3009)
+            {
+                return new CodePoint(0x232A);
+            }
+
+            return codePoint;
+        }
+
+        /// <summary>
         /// Gets the <see cref="BidiClass"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="BidiClass"/>.</returns>
-        internal static BidiClass GetBidiClass(CodePoint codePoint)
+        public static BidiClass GetBidiClass(CodePoint codePoint)
             => new(codePoint);
+
+        /// <summary>
+        /// Gets the codepoint representing the bidi mirror for this instance.
+        /// <see href="http://www.unicode.org/reports/tr44/#Bidi_Mirrored"/>
+        /// </summary>
+        /// <param name="codePoint">The code point to be mapped.</param>
+        /// <param name="mirror">
+        /// When this method returns, contains the codepoint representing the bidi mirror for this instance;
+        /// otherwise, the default value for the type of the <paramref name="codePoint"/> parameter.
+        /// This parameter is passed uninitialized.
+        /// .</param>
+        /// <returns><see langword="true"/> if this instance has a mirror; otherwise, <see langword="false"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryGetBidiMirror(CodePoint codePoint, out CodePoint mirror)
+        {
+            uint value = UnicodeData.GetBidiMirror(codePoint.Value);
+
+            if (value == 0u)
+            {
+                mirror = default;
+                return false;
+            }
+
+            mirror = new CodePoint(value);
+            return true;
+        }
 
         /// <summary>
         /// Gets the <see cref="LineBreakClass"/> for the given codepoint.

@@ -136,6 +136,10 @@ namespace SixLabors.Fonts
                 }
             }
 
+            // We always do this, with or without kerning so that bidi mirrored types
+            // are substituted correctly.
+            this.SubstituteBidiMirrors(fontMetrics, substitutionCollection);
+
             if (this.ApplyKerning)
             {
                 AssignShapingFeatures(substitutionCollection);
@@ -192,6 +196,28 @@ namespace SixLabors.Fonts
 
                 // Assign Substitution features to each glyph.
                 shaper.AssignFeatures(collection, index, count);
+            }
+        }
+
+        private void SubstituteBidiMirrors(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection)
+        {
+            for (int i = 0; i < collection.Count; i++)
+            {
+                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out IEnumerable<int> _);
+                if (this.bidiMap.TryGetValue(offset, out int run))
+                {
+                    BidiRun bidiRun = this.bidiRuns[run];
+                    if (bidiRun.Direction == BidiCharacterType.RightToLeft)
+                    {
+                        if (CodePoint.TryGetBidiMirror(codePoint, out CodePoint mirror))
+                        {
+                            if (fontMetrics.TryGetGlyphId(mirror, out int glyphId))
+                            {
+                                collection.Replace(i, glyphId);
+                            }
+                        }
+                    }
+                }
             }
         }
     }

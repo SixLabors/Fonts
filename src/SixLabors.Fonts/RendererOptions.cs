@@ -104,12 +104,12 @@ namespace SixLabors.Fonts
         public bool ApplyKerning { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the the current X DPI to render/measure the text at.
+        /// Gets or sets the current X DPI to render/measure the text at.
         /// </summary>
         public float DpiX { get; set; }
 
         /// <summary>
-        /// Gets or sets the the current Ys DPI to render/measure the text at.
+        /// Gets or sets the current Ys DPI to render/measure the text at.
         /// </summary>
         public float DpiY { get; set; }
 

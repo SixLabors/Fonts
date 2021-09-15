@@ -115,13 +115,13 @@ namespace SixLabors.Fonts.Unicode
                 {
                     // Opening bracket types can never have a null pairing.
                     bidi.TryGetPairedBracket(out CodePoint paired);
-                    this.pairedBracketValues[i] = BidiClass.MapCanonicalType(paired).Value;
+                    this.pairedBracketValues[i] = CodePoint.GetCanonicalType(paired).Value;
 
                     this.HasBrackets = true;
                 }
                 else if (pbt == BidiPairedBracketType.Close)
                 {
-                    this.pairedBracketValues[i] = BidiClass.MapCanonicalType(codePoint).Value;
+                    this.pairedBracketValues[i] = CodePoint.GetCanonicalType(codePoint).Value;
                     this.HasBrackets = true;
                 }
 

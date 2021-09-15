@@ -228,34 +228,6 @@ namespace SixLabors.Fonts.Unicode
             => (value - lowerBound) <= (upperBound - lowerBound);
 
         /// <summary>
-        /// Returns a UTF-32 buffer from the provided source buffer.
-        /// </summary>
-        /// <param name="source">The buffer to read from.</param>
-        /// <returns>The <see cref="Memory{Int32}"/>.</returns>
-        public static Memory<int> ToUtf32(ReadOnlySpan<char> source)
-        {
-            unsafe
-            {
-                fixed (char* pstr = source)
-                {
-                    // Get required byte count
-                    int byteCount = Encoding.UTF32.GetByteCount(pstr, source.Length);
-
-                    // Allocate buffer
-                    int[] utf32 = new int[byteCount / sizeof(int)];
-                    fixed (int* putf32 = utf32)
-                    {
-                        // Convert
-                        Encoding.UTF32.GetBytes(pstr, source.Length, (byte*)putf32, byteCount);
-
-                        // Done
-                        return utf32;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Returns a Unicode scalar value from two code points representing a UTF-16 surrogate pair.
         /// </summary>
         public static uint GetScalarFromUtf16SurrogatePair(uint highSurrogateCodePoint, uint lowSurrogateCodePoint)
