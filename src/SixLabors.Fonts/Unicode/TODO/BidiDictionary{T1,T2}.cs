@@ -11,6 +11,8 @@ namespace SixLabors.Fonts.Unicode
     /// <typeparam name="T1">Key type</typeparam>
     /// <typeparam name="T2">Value type</typeparam>
     internal sealed class BidiDictionary<T1, T2>
+        where T1 : struct
+        where T2 : struct
     {
         public Dictionary<T1, T2> Forward { get; } = new Dictionary<T1, T2>();
 

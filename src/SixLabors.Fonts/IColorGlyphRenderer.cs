@@ -81,7 +81,7 @@ namespace SixLabors.Fonts
             => !left.Equals(right);
 
         /// <inheritdoc/>
-        public override bool Equals(object obj) => obj is GlyphColor p && this.Equals(p);
+        public override bool Equals(object? obj) => obj is GlyphColor p && this.Equals(p);
 
         /// <summary>
         /// Compares the <see cref="GlyphColor"/> for equality to this color.

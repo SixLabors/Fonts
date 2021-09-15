@@ -159,7 +159,7 @@ namespace SixLabors.Fonts.Unicode
 
                 if (this.size > 0)
                 {
-                    Array.Copy(this.data, array, this.size);
+                    Array.Copy(this.data!, array, this.size);
                 }
 
                 this.data = array;
