@@ -141,7 +141,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
         public ushort CharacterPairToGlyphId(CodePoint codePoint, ushort defaultGlyphIndex, CodePoint nextCodePoint)
         {
             // Only check codepoint if nextCodepoint is a variation selector
-            if (this.variationSelectors.TryGetValue(nextCodePoint.Value, out VariationSelector sel))
+            if (this.variationSelectors.TryGetValue(nextCodePoint.Value, out VariationSelector? sel))
             {
                 // If the sequence is a non-default UVS, return the mapped glyph
                 if (sel.UVSMappings.TryGetValue(codePoint.Value, out ushort ret))

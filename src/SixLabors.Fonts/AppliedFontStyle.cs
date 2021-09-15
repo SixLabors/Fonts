@@ -37,7 +37,7 @@ namespace SixLabors.Fonts
             this.positioningCollection = new(LayoutMode.Horizontal); // TODO: Support vertical.
 
             // Analyse the text for bidi directional runs.
-            BidiAlgorithm bidi = BidiAlgorithm.Instance.Value;
+            BidiAlgorithm bidi = BidiAlgorithm.Instance.Value!;
             var bidiData = new BidiData();
             bidiData.Init(text, (sbyte)this.Options.TextDirection);
 

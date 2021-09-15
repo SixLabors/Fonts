@@ -107,7 +107,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
             for (int i = 0; i < tags.Length; i++)
             {
-                if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable table))
+                if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? table))
                 {
                     scriptListTable = table;
                     break;

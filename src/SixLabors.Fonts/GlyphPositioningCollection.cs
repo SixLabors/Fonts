@@ -106,7 +106,7 @@ namespace SixLabors.Fonts
                 collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out IEnumerable<int>? glyphIds);
 
                 bool mapped = this.map.TryGetValue(offset, out GlyphMetrics[]? metrics);
-                if (mapped && metrics[0].GlyphType != GlyphType.Fallback)
+                if (mapped && metrics![0].GlyphType != GlyphType.Fallback)
                 {
                     // We've already got the correct glyph.
                     continue;
