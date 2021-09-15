@@ -465,14 +465,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             int inputLength = this.inputCoverageTables.Length;
 
-            // Check that there are enough context glyphs
+            // Check that there are enough context glyphs.
             if (index < this.backtrackCoverageTables.Length
                 || inputLength + this.lookaheadCoverageTables.Length > count)
             {
                 return false;
             }
 
-            // Check all coverages: if any of them does not match, abort substitution
+            // Check all coverages: if any of them does not match, abort substitution.
             for (int i = 0; i < this.inputCoverageTables.Length; ++i)
             {
                 int id = collection[index + i][0];

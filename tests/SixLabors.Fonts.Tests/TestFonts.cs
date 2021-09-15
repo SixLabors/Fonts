@@ -38,6 +38,7 @@ namespace SixLabors.Fonts.Tests
         /// - Single Substitution: A -> B
         /// - Multiple Substitution: C -> D
         /// - Alternate Substitution: E -> F
+        /// - Chained Context Substitution: x=y -> x>y
         /// </summary>
         public static string GsubTestFontFile => GetFullPath("GsubTestFont.ttf");
 

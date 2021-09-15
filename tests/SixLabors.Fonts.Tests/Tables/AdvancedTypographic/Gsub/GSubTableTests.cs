@@ -166,5 +166,25 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
+
+        [Fact]
+        public void ChainedContextsSubstitutionFormat3Works()
+        {
+            // arrange
+            Font gsubFont = new FontCollection().Add(TestFonts.GsubTestFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "x=y"; // This should be replaced with "x>y".
+            int[] expectedGlyphIndices = { 89, 31, 90 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
     }
 }
