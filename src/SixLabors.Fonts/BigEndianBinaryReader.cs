@@ -130,10 +130,10 @@ namespace SixLabors.Fonts
         public ushort ReadUFWORD() => this.ReadUInt16();
 
         /// <summary>
-        /// Reads a 32-bit signed integer from the stream
+        /// Reads a 32-bit signed integer from the stream.
         /// 4 bytes are read.
         /// </summary>
-        /// <returns>The 32-bit integer read</returns>
+        /// <returns>The 32-bit integer read.</returns>
         public float ReadFixed()
         {
             this.ReadInternal(this.buffer, 4);
@@ -147,7 +147,7 @@ namespace SixLabors.Fonts
         /// Reads a 64-bit signed integer from the stream.
         /// 8 bytes are read.
         /// </summary>
-        /// <returns>The 64-bit integer read</returns>
+        /// <returns>The 64-bit integer read.</returns>
         public long ReadInt64()
         {
             this.ReadInternal(this.buffer, 8);
@@ -159,7 +159,7 @@ namespace SixLabors.Fonts
         /// Reads a 16-bit unsigned integer from the stream.
         /// 2 bytes are read.
         /// </summary>
-        /// <returns>The 16-bit unsigned integer read</returns>
+        /// <returns>The 16-bit unsigned integer read.</returns>
         public ushort ReadUInt16()
         {
             this.ReadInternal(this.buffer, 2);
@@ -171,7 +171,7 @@ namespace SixLabors.Fonts
         /// Reads a 16-bit unsigned integer from the stream representing an offset position.
         /// 2 bytes are read.
         /// </summary>
-        /// <returns>The 16-bit unsigned integer read</returns>
+        /// <returns>The 16-bit unsigned integer read.</returns>
         public ushort ReadOffset16() => this.ReadUInt16();
 
         public TEnum ReadUInt16<TEnum>() => CastTo<TEnum>.From(this.ReadUInt16());
@@ -182,7 +182,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
-        /// The 16-bit unsigned integer read
+        /// The 16-bit unsigned integer read.
         /// </returns>
         public ushort[] ReadUInt16Array(int length)
         {
@@ -201,7 +201,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
-        /// The 16-bit unsigned integer read
+        /// The 16-bit unsigned integer read.
         /// </returns>
         public int[] ReadUInt16ArrayAsInt32(int length)
         {
@@ -220,7 +220,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
-        /// The 32-bit unsigned integer read
+        /// The 32-bit unsigned integer read.
         /// </returns>
         public uint[] ReadUInt32Array(int length)
         {
@@ -239,7 +239,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
-        /// The 16-bit unsigned integer read
+        /// The 16-bit unsigned integer read.
         /// </returns>
         public ushort[] Offset16Array(int length) => this.ReadUInt16Array(length);
 
@@ -249,7 +249,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
-        /// The 16-bit unsigned integer read
+        /// The 16-bit unsigned integer read.
         /// </returns>
         public uint[] Offset32Array(int length) => this.ReadUInt32Array(length);
 
@@ -280,7 +280,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
-        /// The 16-bit unsigned integer read
+        /// The 16-bit unsigned integer read.
         /// </returns>
         public short[] ReadInt16Array(int length)
         {
@@ -297,7 +297,7 @@ namespace SixLabors.Fonts
         /// Reads a 8-bit unsigned integer from the stream, using the bit converter
         /// for this reader. 1 bytes are read.
         /// </summary>
-        /// <returns>The 8-bit unsigned integer read</returns>
+        /// <returns>The 8-bit unsigned integer read.</returns>
         public byte ReadUInt8()
         {
             this.ReadInternal(this.buffer, 1);
@@ -319,7 +319,7 @@ namespace SixLabors.Fonts
         /// Reads a 32-bit unsigned integer from the stream, using the bit converter
         /// for this reader. 4 bytes are read.
         /// </summary>
-        /// <returns>The 32-bit unsigned integer read</returns>
+        /// <returns>The 32-bit unsigned integer read.</returns>
         public uint ReadUInt32()
         {
             this.ReadInternal(this.buffer, 4);
@@ -331,14 +331,14 @@ namespace SixLabors.Fonts
         /// Reads a 32-bit unsigned integer from the stream representing an offset position.
         /// 4 bytes are read.
         /// </summary>
-        /// <returns>The 32-bit unsigned integer read</returns>
+        /// <returns>The 32-bit unsigned integer read.</returns>
         public uint ReadOffset32() => this.ReadUInt32();
 
         /// <summary>
         /// Reads a 64-bit unsigned integer from the stream.
         /// 8 bytes are read.
         /// </summary>
-        /// <returns>The 64-bit unsigned integer read</returns>
+        /// <returns>The 64-bit unsigned integer read.</returns>
         public ulong ReadUInt64()
         {
             this.ReadInternal(this.buffer, 8);
@@ -349,7 +349,7 @@ namespace SixLabors.Fonts
         /// Reads a single-precision floating-point value from the stream.
         /// 4 bytes are read.
         /// </summary>
-        /// <returns>The floating point value read</returns>
+        /// <returns>The floating point value read.</returns>
         public float ReadSingle()
         {
             uint value = this.ReadUInt32();
@@ -361,8 +361,8 @@ namespace SixLabors.Fonts
         /// Reads the specified number of bytes into the given buffer, starting at
         /// the given index.
         /// </summary>
-        /// <param name="buffer">The buffer to copy data into</param>
-        /// <param name="index">The first index to copy data into</param>
+        /// <param name="buffer">The buffer to copy data into.</param>
+        /// <param name="index">The first index to copy data into.</param>
         /// <param name="count">The number of bytes to read</param>
         /// <returns>The number of bytes actually read. This will only be less than
         /// the requested number of bytes if the end of the stream is reached.
@@ -391,8 +391,8 @@ namespace SixLabors.Fonts
         /// If not enough bytes are available before the end of the stream, this
         /// method will return what is available.
         /// </summary>
-        /// <param name="count">The number of bytes to read</param>
-        /// <returns>The bytes read</returns>
+        /// <param name="count">The number of bytes to read.</param>
+        /// <returns>The bytes read.</returns>
         public byte[] ReadBytes(int count)
         {
             byte[] ret = new byte[count];
@@ -435,7 +435,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Reads the uint32 string.
         /// </summary>
-        /// <returns>a 4 character long UTF8 encoded string</returns>
+        /// <returns>a 4 character long UTF8 encoded string.</returns>
         public string ReadTag()
         {
             this.ReadInternal(this.buffer, 4);
@@ -447,8 +447,8 @@ namespace SixLabors.Fonts
         /// Reads the given number of bytes from the stream, throwing an exception
         /// if they can't all be read.
         /// </summary>
-        /// <param name="data">Buffer to read into</param>
-        /// <param name="size">Number of bytes to read</param>
+        /// <param name="data">Buffer to read into.</param>
+        /// <param name="size">Number of bytes to read.</param>
         private void ReadInternal(byte[] data, int size)
         {
             int index = 0;
@@ -470,9 +470,9 @@ namespace SixLabors.Fonts
         /// the number of bytes actually read, which may be less than requested if
         /// (and only if) the end of the stream is reached.
         /// </summary>
-        /// <param name="data">Buffer to read into</param>
-        /// <param name="size">Number of bytes to read</param>
-        /// <returns>Number of bytes actually read</returns>
+        /// <param name="data">Buffer to read into.</param>
+        /// <param name="size">Number of bytes to read.</param>
+        /// <returns>Number of bytes actually read.</returns>
         private int TryReadInternal(byte[] data, int size)
         {
             int index = 0;
@@ -501,7 +501,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Class to cast to type <typeparamref name="TTarget"/>
         /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TTarget">Target type.</typeparam>
         private static class CastTo<TTarget>
         {
             /// <summary>
@@ -510,7 +510,7 @@ namespace SixLabors.Fonts
             /// Useful in generic methods.
             /// </summary>
             /// <typeparam name="TSource">Source type to cast from. Usually a generic type.</typeparam>
-            /// <param name="s">The s.</param>
+            /// <param name="s">The source.</param>
             public static TTarget From<TSource>(TSource s) => Cache<TSource>.Caster(s);
 
             private static class Cache<TSource>

@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
@@ -36,9 +37,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly ChainedSequenceRuleSetTable[] seqRuleSetTables;
         private readonly CoverageTable coverageTable;
 
-        private LookupType6Format1SubTable(ChainedSequenceRuleSetTable[] seqbRuleSetTables, CoverageTable coverageTable)
+        private LookupType6Format1SubTable(ChainedSequenceRuleSetTable[] seqRuleSetTables, CoverageTable coverageTable)
         {
-            this.seqRuleSetTables = seqbRuleSetTables;
+            this.seqRuleSetTables = seqRuleSetTables;
             this.coverageTable = coverageTable;
         }
 
@@ -245,19 +246,29 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ushort inputClassDefOffset = reader.ReadOffset16();
             ushort lookaheadClassDefOffset = reader.ReadOffset16();
             ushort chainedClassSeqRuleSetCount = reader.ReadUInt16();
+            ChainedClassSequenceRuleSetTable[] seqRuleSets = Array.Empty<ChainedClassSequenceRuleSetTable>();
+            if (chainedClassSeqRuleSetCount != 0)
+            {
+                ushort[] chainedClassSeqRuleSetOffsets = new ushort[chainedClassSeqRuleSetCount];
+                for (int i = 0; i < chainedClassSeqRuleSetCount; i++)
+                {
+                    chainedClassSeqRuleSetOffsets[i] = reader.ReadOffset16();
+                }
+
+                seqRuleSets = new ChainedClassSequenceRuleSetTable[chainedClassSeqRuleSetCount];
+                for (int i = 0; i < seqRuleSets.Length; i++)
+                {
+                    if (chainedClassSeqRuleSetOffsets[i] > 0)
+                    {
+                        seqRuleSets[i] = ChainedClassSequenceRuleSetTable.Load(reader, offset + chainedClassSeqRuleSetOffsets[i]);
+                    }
+                }
+            }
 
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
             var backtrackClassDefTable = ClassDefinitionTable.Load(reader, offset + backtrackClassDefOffset);
             var inputClassDefTable = ClassDefinitionTable.Load(reader, offset + inputClassDefOffset);
             var lookaheadClassDefTable = ClassDefinitionTable.Load(reader, offset + lookaheadClassDefOffset);
-
-            ushort[] classSeqRuleSetOffsets = reader.ReadUInt16Array(chainedClassSeqRuleSetCount);
-            var seqRuleSets = new ChainedClassSequenceRuleSetTable[chainedClassSeqRuleSetCount];
-
-            for (int i = 0; i < seqRuleSets.Length; i++)
-            {
-                seqRuleSets[i] = ChainedClassSequenceRuleSetTable.Load(reader, offset + classSeqRuleSetOffsets[i]);
-            }
 
             return new LookupType6Format2SubTable(seqRuleSets, backtrackClassDefTable, inputClassDefTable, lookaheadClassDefTable, coverageTable);
         }
