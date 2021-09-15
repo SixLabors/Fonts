@@ -39,18 +39,17 @@ namespace SixLabors.Fonts.Tables
 
         public static TableLoader Default { get; } = new TableLoader();
 
-        public string GetTag(Type type)
+        public string? GetTag(Type type)
         {
-            this.types.TryGetValue(type, out string value);
+            this.types.TryGetValue(type, out string? value);
 
             return value;
         }
 
         public string GetTag<TType>()
         {
-            this.types.TryGetValue(typeof(TType), out string value);
-
-            return value;
+            this.types.TryGetValue(typeof(TType), out string? value);
+            return value!;
         }
 
         internal IEnumerable<Type> RegisteredTypes() => this.types.Keys;
@@ -74,19 +73,19 @@ namespace SixLabors.Fonts.Tables
         private void Register<T>(Func<FontReader, T?> createFunc)
             where T : Table
         {
-            string name =
+            string? name =
                 typeof(T).GetTypeInfo()
                     .CustomAttributes
                     .First(x => x.AttributeType == typeof(TableNameAttribute))
-                    .ConstructorArguments[0].Value.ToString();
+                    .ConstructorArguments[0].Value!.ToString();
 
-            this.Register(name, createFunc);
+            this.Register(name!, createFunc);
         }
 
         internal Table? Load(string tag, FontReader reader)
 
              // loader missing? register an unknown type loader and carry on
-             => this.loaders.TryGetValue(tag, out Func<FontReader, Table?> func)
+             => this.loaders.TryGetValue(tag, out Func<FontReader, Table?>? func)
                 ? func.Invoke(reader)
                 : new UnknownTable(tag);
 
@@ -94,7 +93,7 @@ namespace SixLabors.Fonts.Tables
             where TTable : Table
         {
             // loader missing register an unknown type loader and carry on
-            if (this.typesLoaders.TryGetValue(typeof(TTable), out Func<FontReader, Table?> func))
+            if (this.typesLoaders.TryGetValue(typeof(TTable), out Func<FontReader, Table?>? func))
             {
                 return (TTable?)func.Invoke(reader);
             }

@@ -152,7 +152,7 @@ namespace SixLabors.Fonts
         public TTableType? TryGetTable<TTableType>()
             where TTableType : Table
         {
-            if (this.loadedTables.TryGetValue(typeof(TTableType), out Table table))
+            if (this.loadedTables.TryGetValue(typeof(TTableType), out Table? table))
             {
                 return (TTableType)table;
             }
@@ -179,14 +179,14 @@ namespace SixLabors.Fonts
             if (tbl is null)
             {
                 string tag = this.loader.GetTag<TTableType>();
-                throw new MissingFontTableException($"Table '{tag}' is missing", tag);
+                throw new MissingFontTableException($"Table '{tag}' is missing", tag!);
             }
 
             return tbl;
         }
 
         public TableHeader? GetHeader(string tag)
-            => this.Headers.TryGetValue(tag, out TableHeader header)
+            => this.Headers.TryGetValue(tag, out TableHeader? header)
                 ? header
                 : null;
 
