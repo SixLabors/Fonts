@@ -105,13 +105,14 @@ namespace SixLabors.Fonts
             {
                 collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out IEnumerable<int>? glyphIds);
 
-                if (this.map.TryGetValue(offset, out GlyphMetrics[]? metrics)
-                    && metrics[0].GlyphType != GlyphType.Fallback)
+                bool mapped = this.map.TryGetValue(offset, out GlyphMetrics[]? metrics);
+                if (mapped && metrics[0].GlyphType != GlyphType.Fallback)
                 {
+                    // We've already got the correct glyph.
                     continue;
                 }
 
-                var m = new List<GlyphMetrics>();
+                var m = new List<GlyphMetrics>(glyphIds.Count());
                 foreach (int id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
@@ -121,15 +122,24 @@ namespace SixLabors.Fonts
                         if (gm.GlyphType == GlyphType.Fallback)
                         {
                             hasFallBacks = true;
+                            if (mapped)
+                            {
+                                // If the glyphs are fallbacks we don't want them as
+                                // we've already captured them on the first run.
+                                break;
+                            }
                         }
 
                         m.Add(new GlyphMetrics(gm));
                     }
                 }
 
-                this.glyphs[i] = new CodePointGlyphs(codePoint, glyphIds.ToArray());
-                this.offsets[i] = offset;
-                this.map[offset] = m.ToArray();
+                if (m.Count > 0)
+                {
+                    this.glyphs[i] = new CodePointGlyphs(codePoint, glyphIds.ToArray());
+                    this.offsets[i] = offset;
+                    this.map[offset] = m.ToArray();
+                }
             }
 
             return !hasFallBacks;

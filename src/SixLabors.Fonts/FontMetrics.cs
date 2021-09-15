@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.General;
@@ -29,7 +28,7 @@ namespace SixLabors.Fonts
         private readonly GlyphMetrics[] glyphCache;
         private readonly GlyphMetrics[][] glyphCache2;
         private readonly GlyphMetrics[][]? colorGlyphCache;
-        private readonly KerningTable kerning;
+        private readonly KerningTable kerningTable;
         private readonly GSubTable? gSubTable;
         private readonly GPosTable? gPosTable;
         private readonly ColrTable? colrTable;
@@ -131,7 +130,7 @@ namespace SixLabors.Fonts
             this.AdvanceWidthMax = (short)horizontalHeadTable.AdvanceWidthMax;
             this.AdvanceHeightMax = verticalHeadTable == null ? this.LineHeight : verticalHeadTable.AdvanceHeightMax;
 
-            this.kerning = kern;
+            this.kerningTable = kern;
             this.gSubTable = gSubTable;
             this.gPosTable = gPosTable;
             this.colrTable = colrTable;
@@ -243,28 +242,22 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public void UpdatePositions(GlyphPositioningCollection collection)
         {
+            bool updated = false;
             if (this.gPosTable != null)
             {
                 for (ushort index = 0; index < collection.Count; index++)
                 {
-                    this.gPosTable.UpdatePositions(this, collection, index, collection.Count - index);
+                    updated = this.gPosTable.TryUpdatePositions(this, collection, index, collection.Count - index);
                 }
             }
 
-            // TODO: We should fall back to using the kerning table here.
-        }
-
-        /// <inheritdoc/>
-        Vector2 IFontMetrics.GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
-        {
-            // We also want to wire int sub/super script offsetting into here too
-            if (previousGlyph is null)
+            if (!updated && this.kerningTable != null)
             {
-                return Vector2.Zero;
+                for (ushort index = 1; index < collection.Count; index++)
+                {
+                    this.kerningTable.UpdatePositions(this, collection, (ushort)(index - 1), index);
+                }
             }
-
-            // Once we wire in the kerning calculations this will return real data
-            return this.kerning.GetOffset(previousGlyph.GlyphId, glyph.GlyphId);
         }
 
         /// <summary>

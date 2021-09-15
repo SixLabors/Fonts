@@ -24,7 +24,6 @@ namespace SixLabors.Fonts.Tables.General.Kern
             ushort length = reader.ReadUInt16();
 
             var coverage = KerningCoverage.Read(reader);
-
             if (coverage.Format == 0)
             {
                 return Format0SubTable.Load(reader, coverage);

@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -110,13 +109,5 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="collection">The glyph positioning collection.</param>
         void UpdatePositions(GlyphPositioningCollection collection);
-
-        /// <summary>
-        /// Get the kerning offset that should be applied between 2 glyphs.
-        /// </summary>
-        /// <param name="glyph">The current glyph.</param>
-        /// <param name="previousGlyph">The previous glyph in the rendered font.</param>
-        /// <returns>The <see cref="Vector2"/> representing the offset between the 2 glyphs.</returns>
-        Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph);
     }
 }

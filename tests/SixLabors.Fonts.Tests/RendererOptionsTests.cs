@@ -306,9 +306,12 @@ namespace SixLabors.Fonts.Tests
                 ColorFontSupport = ColorFontSupport.None
             };
 
-            AppliedFontStyle style = options.GetStyle(4, 10);
+            ReadOnlySpan<char> text = "Z".AsSpan();
+            AppliedFontStyle style = options.GetStyle(0, CodePoint.GetCodePointCount(text));
+            style.ProcessText(text);
 
-            GlyphMetrics glyph = Assert.Single(style.GetGlyphLayers(new CodePoint('Z')));
+            style.TryGetGlyphMetrics(0, out GlyphMetrics[] metrics);
+            GlyphMetrics glyph = Assert.Single(metrics);
             Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
             Assert.Equal(abcFontInstance, glyph.FontMetrics);
         }
@@ -332,9 +335,12 @@ namespace SixLabors.Fonts.Tests
                 ColorFontSupport = ColorFontSupport.None
             };
 
-            AppliedFontStyle style = options.GetStyle(4, 10);
+            ReadOnlySpan<char> text = new[] { character };
+            AppliedFontStyle style = options.GetStyle(0, CodePoint.GetCodePointCount(text));
+            style.ProcessText(text);
 
-            GlyphMetrics glyph = Assert.Single(style.GetGlyphLayers(new CodePoint(character)));
+            style.TryGetGlyphMetrics(0, out GlyphMetrics[] metrics);
+            GlyphMetrics glyph = Assert.Single(metrics);
             Assert.Equal(GlyphType.Standard, glyph.GlyphType);
             Fakes.FakeFontInstance expectedInstance = instance switch
             {

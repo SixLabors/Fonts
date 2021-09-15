@@ -204,17 +204,6 @@ namespace SixLabors.Fonts
 
                     if (glyphWidth > 0 && !CodePoint.IsNewLine(codePoint) && !CodePoint.IsWhiteSpace(codePoint))
                     {
-                        Vector2 glyphLocation = location;
-                        if (spanStyle.ApplyKerning && previousGlyph != null)
-                        {
-                            // If there is special instructions for this glyph pair use that width
-                            Vector2 scaledOffset = spanStyle.GetOffset(glyph, previousGlyph) * spanStyle.PointSize / scale;
-                            glyphLocation += scaledOffset;
-
-                            // Only fix the 'X' of the current tracked location but use the actual 'X'/'Y' of the offset
-                            location.X = glyphLocation.X;
-                        }
-
                         foreach (GlyphMetrics? g in glyphs)
                         {
                             float w = g.AdvanceWidth * spanStyle.PointSize / scale;
@@ -223,7 +212,7 @@ namespace SixLabors.Fonts
                                 graphemeIndex,
                                 codePoint,
                                 new Glyph(g, spanStyle.PointSize),
-                                glyphLocation,
+                                location,
                                 w,
                                 h,
                                 lineHeight,

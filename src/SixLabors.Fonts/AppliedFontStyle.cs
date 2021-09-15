@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
 
@@ -161,51 +160,6 @@ namespace SixLabors.Fonts
             }
 
             return this.positioningCollection.TryGetGlypMetricsAtOffset(at, out metrics);
-        }
-
-        // TODO: Remove this and update tests.
-        public GlyphMetrics[] GetGlyphLayers(CodePoint codePoint)
-        {
-            GlyphMetrics glyph = this.MainFont.GetGlyphMetrics(codePoint);
-            if (glyph.GlyphType == GlyphType.Fallback)
-            {
-                foreach (IFontMetrics? f in this.FallbackFonts)
-                {
-                    GlyphMetrics g = f.GetGlyphMetrics(codePoint);
-                    if (g.GlyphType != GlyphType.Fallback)
-                    {
-                        glyph = g;
-                        break;
-                    }
-                }
-            }
-
-            // TODO: This looks never null.
-            if (glyph == null)
-            {
-                return Array.Empty<GlyphMetrics>();
-            }
-
-            if (this.ColorFontSupport == ColorFontSupport.MicrosoftColrFormat)
-            {
-                if (glyph.FontMetrics.TryGetColoredVectors(codePoint, glyph.GlyphId, out GlyphMetrics[]? layers))
-                {
-                    return layers;
-                }
-            }
-
-            return new[] { glyph };
-        }
-
-        // TODO: Remove this and call from UpdatePositions when no GPos table exists.
-        public Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
-        {
-            if (glyph.FontMetrics != previousGlyph?.FontMetrics)
-            {
-                return Vector2.Zero;
-            }
-
-            return ((IFontMetrics)glyph.FontMetrics).GetOffset(glyph, previousGlyph);
         }
 
         private static void AssignShapingFeatures(GlyphSubstitutionCollection collection)

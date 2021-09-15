@@ -95,7 +95,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new GPosTable(scriptList, featureList, lookupList);
         }
 
-        public void UpdatePositions(
+        public bool TryUpdatePositions(
             IFontMetrics fontMetrics,
             GlyphPositioningCollection collection,
             ushort index,
@@ -117,20 +117,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
             if (defaultLangSysTable != null)
             {
-                this.UpdateFeaturePositions(fontMetrics, collection, index, count, defaultLangSysTable);
-                return;
+                return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, defaultLangSysTable);
             }
 
-            this.UpdateFeaturePositions(fontMetrics, collection, index, count, scriptListTable.LangSysTables);
+            return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, scriptListTable.LangSysTables);
         }
 
-        private void UpdateFeaturePositions(
+        private bool TryUpdateFeaturePositions(
             IFontMetrics fontMetrics,
             GlyphPositioningCollection collection,
             ushort index,
             int count,
             params LangSysTable[] langSysTables)
         {
+            bool updated = false;
             for (int i = 0; i < langSysTables.Length; i++)
             {
                 ushort[] featureIndices = langSysTables[i].FeatureIndices;
@@ -143,10 +143,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         // TODO: Consider caching the relevant langtables per script.
                         // There's a lot of repetitive checks here.
                         LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
-                        lookupTable.TryUpdatePosition(fontMetrics, this, collection, index, count);
+                        updated |= lookupTable.TryUpdatePosition(fontMetrics, this, collection, index, count);
                     }
                 }
             }
+
+            return updated;
         }
     }
 }

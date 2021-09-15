@@ -93,10 +93,6 @@ namespace SixLabors.Fonts
         public void UpdatePositions(GlyphPositioningCollection collection)
             => this.metrics.Value.UpdatePositions(collection);
 
-        /// <inheritdoc />
-        public Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
-            => this.metrics.Value.GetOffset(glyph, previousGlyph);
-
         /// <summary>
         /// Reads a <see cref="FontMetrics"/> from the specified stream.
         /// </summary>

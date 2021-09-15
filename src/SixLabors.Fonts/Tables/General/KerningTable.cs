@@ -53,15 +53,22 @@ namespace SixLabors.Fonts.Tables.General
             return new KerningTable(tables.ToArray());
         }
 
-        public Vector2 GetOffset(ushort left, ushort right)
+        public void UpdatePositions(IFontMetrics fontMetrics, GlyphPositioningCollection collection, ushort left, ushort right)
         {
+            int previous = collection.GetGlyphIds(left)[0];
+            int current = collection.GetGlyphIds(right)[0];
+            if (previous < 0 || current < 0)
+            {
+                return;
+            }
+
             Vector2 result = Vector2.Zero;
             foreach (KerningSubTable sub in this.kerningSubTable)
             {
-                sub.ApplyOffset(left, right, ref result);
+                sub.ApplyOffset((ushort)previous, (ushort)current, ref result);
             }
 
-            return result;
+            collection.Advance(fontMetrics, right, (ushort)current, (short)result.X, (short)result.Y);
         }
     }
 }
