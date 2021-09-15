@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" />
-    <PackageReference Include="Verify.Xunit" />
   </ItemGroup>
   
   <ItemGroup>

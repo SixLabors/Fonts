@@ -20,7 +20,6 @@
     <!-- Test Dependencies -->
     <PackageReference Update="BenchmarkDotNet" Version="0.12.1" />
     <PackageReference Update="Moq" Version="4.14.6" />
-    <PackageReference Update="Verify.Xunit" Version="11.26.0" />
   </ItemGroup>
 
 </Project>

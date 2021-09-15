@@ -58,7 +58,11 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
             var renderer = new ColorGlyphRenderer();
             string testStr = "نەما خانی هەتا چیڕۆکی عیشقی ئێمە داڕێژێ";
-            int[] expectedGlyphIndices = { 0, 214, 0, 0, 139, 197, 0, 289, 0, 333, 336, 266, 221, 337, 242, 336, 276, 0, 0, 337, 188, 140, 170, 0, 301, 336, 294, 140, 196, 140, 290, 0, 294 };
+            int[] expectedGlyphIndices =
+            {
+                0, 214, 0, 0, 139, 197, 0, 289, 0, 333, 336, 266, 221, 337, 242, 336, 276, 0, 0, 337, 188, 140, 170,
+                0, 301, 336, 294, 140, 196, 140, 290, 0, 294
+            };
 
             // act
             TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont) { ApplyKerning = true });
@@ -78,7 +82,11 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
             var renderer = new ColorGlyphRenderer();
             string testStr = "زناب فارسی را تک کمی سخت است";
-            int[] expectedGlyphIndices = { 168, 218, 139, 168, 195, 218, 336, 289, 276, 274, 170, 139, 203, 336, 218, 203, 140, 250, 157, 140, 294, 207 };
+            int[] expectedGlyphIndices =
+            {
+                168, 218, 139, 168, 195, 218, 336, 289, 276, 274, 170, 139, 203, 336, 218, 203, 140, 250, 157, 140,
+                294, 207
+            };
 
             // act
             TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont) { ApplyKerning = true });

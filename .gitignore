@@ -260,6 +260,3 @@ SixLabors.Shapes.Coverage.xml
 
 /coverage.*.xml
 *.lcov
-
-# Verify
-*.received.txt
