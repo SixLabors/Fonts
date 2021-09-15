@@ -6,9 +6,10 @@ using System.IO;
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
     /// <summary>
-    /// The CursivePosFormat1 subtable begins with a format identifier (posFormat) and an offset to a Coverage table (coverageOffset),
-    /// which lists all the glyphs that define cursive attachment data. In addition, the subtable contains one EntryExitRecord for each glyph listed in the Coverage table,
-    /// a count of those records (entryExitCount), and an array of those records in the same order as the Coverage Index (entryExitRecords).
+    /// Cursive Attachment Positioning Subtable.
+    /// Some cursive fonts are designed so that adjacent glyphs join when rendered with their default positioning.
+    /// However, if positioning adjustments are needed to join the glyphs, a cursive attachment positioning (CursivePos) subtable can describe
+    /// how to connect the glyphs by aligning two anchor points: the designated exit point of a glyph, and the designated entry point of the following glyph.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#cursive-attachment-positioning-format1-cursive-attachment"/>
     /// </summary>
     internal sealed class LookupType3SubTable
