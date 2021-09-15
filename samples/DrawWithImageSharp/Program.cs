@@ -46,7 +46,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(arabicFont, "SS ص", pointSize: 20);
             RenderText(arabicFont, "S ص", pointSize: 20);
             RenderText(arabicFont, "English اَلْعَرَبِيَّةُ", pointSize: 20);
-            return;
 
             RenderTextProcessorWithAlignment(emojiFont, "😀A😀", pointSize: 20, fallbackFonts: new[] { colorEmoji });
             RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { font2 });
