@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Unicode;
 
@@ -70,6 +69,10 @@ namespace SixLabors.Fonts
         public short AdvanceHeightMax => this.metrics.Value.AdvanceHeightMax;
 
         /// <inheritdoc/>
+        public bool TryGetGlyphId(CodePoint codePoint, out int glyphId)
+            => this.metrics.Value.TryGetGlyphId(codePoint, out glyphId);
+
+        /// <inheritdoc/>
         public bool TryGetGlyphId(
             CodePoint codePoint,
             CodePoint? nextCodePoint,
@@ -78,8 +81,8 @@ namespace SixLabors.Fonts
             => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         /// <inheritdoc />
-        public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
-              => this.metrics.Value.GetGlyphMetrics(codePoint);
+        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
+              => this.metrics.Value.GetGlyphMetrics(codePoint, support);
 
         /// <inheritdoc />
         public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support)

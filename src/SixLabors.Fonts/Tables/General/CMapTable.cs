@@ -16,7 +16,7 @@ namespace SixLabors.Fonts.Tables.General
     {
         internal const string TableName = "cmap";
 
-        private static readonly Dictionary<PlatformIDs, int> PreferredPlatformOrder = new Dictionary<PlatformIDs, int>
+        private static readonly Dictionary<PlatformIDs, int> PreferredPlatformOrder = new()
         {
             [PlatformIDs.Windows] = 0,
             [PlatformIDs.Unicode] = 1,
@@ -34,22 +34,7 @@ namespace SixLabors.Fonts.Tables.General
         internal CMapSubTable[] Tables { get; }
 
         private static int GetPreferredPlatformOrder(PlatformIDs platform)
-            => PreferredPlatformOrder.TryGetValue(platform, out var order) ? order : int.MaxValue;
-
-        public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
-        {
-            foreach (CMapSubTable t in this.Tables)
-            {
-                // Keep looking until we have an index that's not the fallback.
-                if (t.TryGetGlyphId(codePoint, out glyphId))
-                {
-                    return true;
-                }
-            }
-
-            glyphId = 0;
-            return false;
-        }
+            => PreferredPlatformOrder.TryGetValue(platform, out int order) ? order : int.MaxValue;
 
         public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
         {
@@ -76,6 +61,21 @@ namespace SixLabors.Fonts.Tables.General
                 return true;
             }
 
+            return false;
+        }
+
+        private bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
+        {
+            foreach (CMapSubTable t in this.Tables)
+            {
+                // Keep looking until we have an index that's not the fallback.
+                if (t.TryGetGlyphId(codePoint, out glyphId))
+                {
+                    return true;
+                }
+            }
+
+            glyphId = 0;
             return false;
         }
 

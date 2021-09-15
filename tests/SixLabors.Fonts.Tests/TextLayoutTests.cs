@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
@@ -17,7 +18,7 @@ namespace SixLabors.Fonts.Tests
         public void FakeFontGetGlyph()
         {
             Font font = CreateFont("hello world");
-            Glyph glyph = font.GetGlyph(new CodePoint('h'));
+            Glyph glyph = font.GetGlyphs(new CodePoint('h'), ColorFontSupport.None).First();
             Assert.NotEqual(default, glyph);
         }
 

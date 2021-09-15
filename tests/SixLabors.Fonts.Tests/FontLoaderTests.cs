@@ -13,8 +13,7 @@ namespace SixLabors.Fonts.Tests
         public void Issue21_LoopDetectedLoadingGlyphs()
         {
             Font font = new FontCollection().Add(TestFonts.CarterOneFileData()).CreateFont(12);
-
-            GlyphMetrics g = font.FontMetrics.GetGlyphMetrics(new CodePoint('\0'));
+            GlyphMetrics _ = font.FontMetrics.GetGlyphMetrics(new CodePoint('\0'), ColorFontSupport.None).First();
         }
 
         [Fact]
@@ -50,7 +49,7 @@ namespace SixLabors.Fonts.Tests
         {
             IFontMetrics font = FontMetrics.LoadFont(TestFonts.FontFileWoff2Data());
 
-            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'));
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
 
@@ -66,7 +65,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
 
-            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'));
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
 
@@ -82,7 +81,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
 
-            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'));
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
 

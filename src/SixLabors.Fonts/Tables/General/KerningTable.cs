@@ -33,10 +33,13 @@ namespace SixLabors.Fonts.Tables.General
 
         public static KerningTable Load(BigEndianBinaryReader reader)
         {
-            // Type   | Field    | Description
-            // -------|----------|-----------------------------------------
-            // uint16 | version  | Table version number(0)
-            // uint16 | nTables  | Number of subtables in the kerning table.
+            // +--------+---------+-------------------------------------------+
+            // | Type   | Field   | Description                               |
+            // +========+=========+===========================================+
+            // | uint16 | version | Table version number(0)                   |
+            // +--------+---------+-------------------------------------------+
+            // | uint16 | nTables | Number of subtables in the kerning table. |
+            // +--------+---------+-------------------------------------------+
             ushort version = reader.ReadUInt16();
             ushort subtableCount = reader.ReadUInt16();
 

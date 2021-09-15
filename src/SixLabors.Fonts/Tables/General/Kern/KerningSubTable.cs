@@ -14,15 +14,19 @@ namespace SixLabors.Fonts.Tables.General.Kern
 
         public static KerningSubTable? Load(BigEndianBinaryReader reader)
         {
-            // Kerning subtables will share the same header format. This header is used to identify the format of the subtable and the kind of information it contains:
-            // Type   | Field    | Description
-            // -------|----------|-----------------------------------------
-            // uint16 | version  | Kern subtable version number
-            // uint16 | length   | Length of the subtable, in bytes(including this header).
-            // uint16 | coverage | What type of information is contained in this table.
+            // Kerning subtables will share the same header format.
+            // This header is used to identify the format of the subtable and the kind of information it contains:
+            // +--------+----------+----------------------------------------------------------+
+            // | Type   | Field    | Description                                              |
+            // +========+==========+==========================================================+
+            // | uint16 | version  | Kern subtable version number                             |
+            // +--------+----------+----------------------------------------------------------+
+            // | uint16 | length   | Length of the subtable, in bytes(including this header). |
+            // +--------+----------+----------------------------------------------------------+
+            // | uint16 | coverage | What type of information is contained in this table.     |
+            // +--------+----------+----------------------------------------------------------+
             ushort subVersion = reader.ReadUInt16();
             ushort length = reader.ReadUInt16();
-
             var coverage = KerningCoverage.Read(reader);
             if (coverage.Format == 0)
             {

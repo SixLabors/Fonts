@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
@@ -91,7 +92,7 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Add(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             // Get letter A
-            Glyph g = font.GetGlyph(new CodePoint(41));
+            Glyph g = font.GetGlyphs(new CodePoint(41), ColorFontSupport.None).First();
             GlyphMetrics instance = g.GlyphMetrics;
 
             Assert.Equal(20, instance.ControlPoints.Length);
@@ -106,10 +107,9 @@ namespace SixLabors.Fonts.Tests
             // Get letter Grinning Face emoji
             var instance = font.FontMetrics as FontMetrics;
             CodePoint codePoint = this.AsCodePoint("😀");
-            Assert.True(instance.TryGetGlyphId(codePoint, out ushort idx));
-            Assert.True(instance.TryGetColoredVectors(codePoint, idx, out GlyphMetrics[] vectors));
-
-            Assert.Equal(3, vectors.Length);
+            Assert.True(instance.TryGetGlyphId(codePoint, out int idx));
+            IEnumerable<GlyphMetrics> vectors = instance.GetGlyphMetrics(codePoint, idx, ColorFontSupport.MicrosoftColrFormat);
+            Assert.Equal(3, vectors.Count());
         }
 
         [Fact]

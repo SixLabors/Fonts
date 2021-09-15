@@ -25,8 +25,7 @@ namespace SixLabors.Fonts
         private readonly OS2Table os2;
         private readonly HorizontalMetricsTable horizontalMetrics;
         private readonly VerticalMetricsTable? verticalMetricsTable;
-        private readonly GlyphMetrics[] glyphCache;
-        private readonly GlyphMetrics[][] glyphCache2;
+        private readonly GlyphMetrics[][] glyphCache;
         private readonly GlyphMetrics[][]? colorGlyphCache;
         private readonly KerningTable kerningTable;
         private readonly GSubTable? gSubTable;
@@ -73,8 +72,7 @@ namespace SixLabors.Fonts
             this.horizontalMetrics = horizontalMetrics;
             this.verticalMetricsTable = verticalMetrics;
             this.head = head;
-            this.glyphCache = new GlyphMetrics[this.glyphs.GlyphCount];
-            this.glyphCache2 = new GlyphMetrics[this.glyphs.GlyphCount][];
+            this.glyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
             if (!(colrTable is null))
             {
                 this.colorGlyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
@@ -166,6 +164,10 @@ namespace SixLabors.Fonts
         public short AdvanceHeightMax { get; }
 
         /// <inheritdoc/>
+        public bool TryGetGlyphId(CodePoint codePoint, out int glyphId)
+            => this.TryGetGlyphId(codePoint, null, out glyphId, out bool _);
+
+        /// <inheritdoc/>
         public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out int glyphId, out bool skipNextCodePoint)
         {
             if (this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out ushort id, out skipNextCodePoint))
@@ -179,20 +181,10 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
+        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
         {
-            bool foundGlyph = this.TryGetGlyphId(codePoint, out ushort idx);
-            if (!foundGlyph)
-            {
-                idx = 0;
-            }
-
-            if (this.glyphCache[idx] is null)
-            {
-                this.glyphCache[idx] = this.CreateGlyphMetrics(codePoint, idx, foundGlyph ? GlyphType.Standard : GlyphType.Fallback);
-            }
-
-            return this.glyphCache[idx];
+            this.TryGetGlyphId(codePoint, out int glyphId);
+            return this.GetGlyphMetrics(codePoint, glyphId, support);
         }
 
         /// <inheritdoc/>
@@ -213,9 +205,9 @@ namespace SixLabors.Fonts
                 return metrics;
             }
 
-            if (this.glyphCache2[glyphId] is null)
+            if (this.glyphCache[glyphId] is null)
             {
-                this.glyphCache2[glyphId] = new[]
+                this.glyphCache[glyphId] = new[]
                 {
                     this.CreateGlyphMetrics(
                     codePoint,
@@ -224,7 +216,7 @@ namespace SixLabors.Fonts
                 };
             }
 
-            return this.glyphCache2[glyphId];
+            return this.glyphCache[glyphId];
         }
 
         /// <inheritdoc/>
@@ -397,11 +389,7 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
-        // TODO: This has to go.
-        internal bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
-            => this.cmap.TryGetGlyphId(codePoint, out glyphId);
-
-        internal bool TryGetColoredVectors(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
+        private bool TryGetColoredVectors(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
         {
             if (this.colrTable == null || this.colorGlyphCache == null)
             {

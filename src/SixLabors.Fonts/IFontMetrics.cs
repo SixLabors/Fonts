@@ -62,6 +62,20 @@ namespace SixLabors.Fonts
         short AdvanceHeightMax { get; }
 
         /// <summary>
+        /// Gets the specified glyph id matching the codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint.</param>
+        /// <param name="glyphId">
+        /// When this method returns, contains the glyph id associated with the specified codepoint,
+        /// if the codepoint is found; otherwise, <value>-1</value>.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains a glyph for the specified codepoint; otherwise, <see langword="false"/>.
+        /// </returns>
+        bool TryGetGlyphId(CodePoint codePoint, out int glyphId);
+
+        /// <summary>
         /// Gets the specified glyph id matching the codepoint pair.
         /// </summary>
         /// <param name="codePoint">The codepoint.</param>
@@ -83,8 +97,9 @@ namespace SixLabors.Fonts
         /// Gets the glyph metrics for a given code point.
         /// </summary>
         /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
+        /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The glyph metrics to find.</returns>
-        GlyphMetrics GetGlyphMetrics(CodePoint codePoint);
+        IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point and glyph id.
