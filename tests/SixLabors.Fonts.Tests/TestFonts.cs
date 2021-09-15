@@ -30,6 +30,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string ArabicFontFile => GetFullPath("Dubai-Regular.ttf");
 
+        public static string TimesNewRomanFile => GetFullPath("TimesNewRoman.ttf");
+
         /// <summary>
         /// Gets the gsub test font file.
         /// It has the following substitution for unit tests:

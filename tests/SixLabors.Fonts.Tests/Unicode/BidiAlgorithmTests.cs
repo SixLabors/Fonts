@@ -18,6 +18,31 @@ namespace SixLabors.Fonts.Tests.Unicode
         public BidiAlgorithmTests(ITestOutputHelper output) => this.output = output;
 
         [Fact]
+        public void RendersArabicTextWithPunctuationCorrectly()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.TimesNewRomanFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "زۆرمان باس کرد؛ باسی ئاو، کەش، هەوای کوردستان.";
+            int[] expectedGlyphIndices =
+            {
+                17, 997, 910, 920, 947, 937, 941, 1006, 815, 821, 909, 1005, 1002, 1003, 748,
+                949, 1002, 815, 748, 1005, 910, 907, 822, 947, 910, 913, 749, 937, 942, 815,
+                945, 910, 913, 997, 910, 995, 941, 1574, 943
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
         public void RendersArabicNumbersFromLeftToRight()
         {
             // arrange

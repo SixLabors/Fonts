@@ -52,6 +52,26 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         }
 
         [Fact]
+        public void RendersKurdishTextCorrect()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "نەما خانی هەتا چیڕۆکی عیشقی ئێمە داڕێژێ";
+            int[] expectedGlyphIndices = { 0, 214, 0, 0, 139, 197, 0, 289, 0, 333, 336, 266, 221, 337, 242, 336, 276, 0, 0, 337, 188, 140, 170, 0, 301, 336, 294, 140, 196, 140, 290, 0, 294 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
         public void RendersFarsiTextCorrect()
         {
             // arrange
