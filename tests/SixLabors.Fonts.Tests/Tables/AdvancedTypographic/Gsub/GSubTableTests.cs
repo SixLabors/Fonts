@@ -44,14 +44,31 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             var renderer = new ColorGlyphRenderer();
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont)
-            {
-                ApplyKerning = true
-            });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont) { ApplyKerning = true });
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
+        }
+
+        [Fact]
+        public void RendersFarsiTextCorrect()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "زناب فارسی را تک کمی سخت است";
+            int[] expectedGlyphIndices = { 168, 218, 139, 168, 195, 218, 336, 289, 276, 274, 170, 139, 203, 336, 218, 203, 140, 250, 157, 140, 294, 207 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
         }
 
         [Fact]
@@ -64,10 +81,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int expectedGlyphIndex = 38; // we expect A to be mapped to B.
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont)
-            {
-                ApplyKerning = true
-            });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -84,10 +98,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int expectedGlyphIndex = 40; // we expect C to be mapped to D.
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont)
-            {
-                ApplyKerning = true
-            });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -104,10 +115,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int expectedGlyphIndex = 42; // we expect E to be mapped to F.
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont)
-            {
-                ApplyKerning = true
-            });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -124,10 +132,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int expectedGlyphIndex = 229;
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont)
-            {
-                ApplyKerning = true
-            });
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gsubFont) { ApplyKerning = true });
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
