@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace SixLabors.Fonts
@@ -10,6 +11,7 @@ namespace SixLabors.Fonts
     /// The combined set of properties that uniquely identify the glyph that is to be rendered
     /// at a particular size and dpi.
     /// </summary>
+    [DebuggerDisplay("GlyphIndex = {GlyphIndex}, PointSize = {PointSize}, DpiX = {DpiX}, DpiY = {DpiY}")]
     public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParameters>
     {
         internal GlyphRendererParameters(GlyphMetrics glyph, float pointSize, Vector2 dpi)
