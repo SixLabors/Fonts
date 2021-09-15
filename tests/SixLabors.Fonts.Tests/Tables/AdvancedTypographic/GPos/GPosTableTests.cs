@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             // arrange
             Font gPosFont = new FontCollection().Add(TestFonts.GposTestFontFile).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
-            string testStr = "BAB"; // character a should be placed slightly to the right.
+            string testStr = "BAB"; // character A should be placed slightly to the right.
 
             // act
             TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gPosFont)

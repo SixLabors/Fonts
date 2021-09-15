@@ -18,6 +18,26 @@ namespace SixLabors.Fonts.Tests.Unicode
         public BidiAlgorithmTests(ITestOutputHelper output) => this.output = output;
 
         [Fact]
+        public void RendersArabicNumbersFromLeftToRight()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "٠١٢٣٤٥٦٧٨٩";
+            int[] expectedGlyphIndices = { 403, 405, 407, 409, 411, 413, 415, 417, 419, 421 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
         public void ICUTests() => Assert.True(this.ICUTestsImpl());
 
         private bool ICUTestsImpl()
