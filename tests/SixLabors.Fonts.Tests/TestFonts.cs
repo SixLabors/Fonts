@@ -55,6 +55,13 @@ namespace SixLabors.Fonts.Tests
 
         /// <summary>
         /// Gets a gsub test font file which has the following substitution for unit tests:
+        /// - Chained Context Substitution, Format 3: [bovw] -> [a-z]
+        /// Script from FontForge example: https://fontforge.org/docs/ui/dialogs/contextchain.html
+        /// </summary>
+        public static string FormalScript => GetFullPath("FormalScript.ttf");
+
+        /// <summary>
+        /// Gets a gpos test font file which has the following substitution for unit tests:
         /// - Single Adjustment Positioning: A plus 100
         /// </summary>
         public static string GposTestFontFile => GetFullPath("GposTestFont.ttf");

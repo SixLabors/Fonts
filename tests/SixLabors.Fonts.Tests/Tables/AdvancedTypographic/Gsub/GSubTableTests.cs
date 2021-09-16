@@ -206,5 +206,25 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
                 Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
             }
         }
+
+        [Fact]
+        public void ChainedContextsSubstitutionFormat3_WithCursiveScript_Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.FormalScript).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "ba"; // Characters following b should have a special form and should be replaced.
+            int[] expectedGlyphIndices = { 69, 102 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
     }
 }
