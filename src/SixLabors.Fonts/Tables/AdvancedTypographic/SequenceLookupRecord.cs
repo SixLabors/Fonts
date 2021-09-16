@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
@@ -9,6 +11,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     /// sequence position within the input sequence.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#sequence-lookup-record"/>
     /// </summary>
+    [DebuggerDisplay("SequenceIndex: {SequenceIndex}, LookupListIndex: {LookupListIndex}")]
     internal struct SequenceLookupRecord
     {
         public SequenceLookupRecord(ushort sequenceIndex, ushort lookupListIndex)

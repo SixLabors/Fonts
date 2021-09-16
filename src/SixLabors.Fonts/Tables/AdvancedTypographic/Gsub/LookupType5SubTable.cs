@@ -85,8 +85,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             {
                 // TODO: Check this.
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
-                SequenceRuleSetTable rulsetTable = this.seqRuleSetTables[offset];
-                foreach (SequenceRuleTable ruleTable in rulsetTable.SequenceRuleTables)
+                SequenceRuleSetTable ruleSetTable = this.seqRuleSetTables[offset];
+                foreach (SequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
                 {
                     int remaining = count - 1;
                     int seqLength = ruleTable.InputSequence.Length;
@@ -95,107 +95,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                         continue;
                     }
 
-                    bool allMatched = true;
-                    int temp = index + 1;
-                    ushort[] sequence = ruleTable.InputSequence;
-                    for (int j = 0; j < sequence.Length; j++)
+                    bool allMatched = GSubUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                    if (!allMatched)
                     {
-                        if (collection[temp + j][0] != sequence[j])
+                        continue;
+                    }
+
+                    // It's a match. Perform substitutions and return true if anything changed.
+                    bool hasChanged = false;
+                    foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                    {
+                        ushort sequenceIndex = lookupRecord.SequenceIndex;
+                        ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                        if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
                         {
-                            allMatched = false;
-                            break;
+                            hasChanged = true;
                         }
                     }
 
-                    if (allMatched)
-                    {
-                        // It's a match. Perform substitutions and return true if anything changed.
-                        bool hasChanged = false;
-                        foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
-                        {
-                            ushort sequenceIndex = lookupRecord.SequenceIndex;
-                            ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                            LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                            if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                            {
-                                hasChanged = true;
-                            }
-                        }
-
-                        return hasChanged;
-                    }
+                    return hasChanged;
                 }
             }
 
             return false;
-        }
-
-        internal sealed class SequenceRuleSetTable
-        {
-            private SequenceRuleSetTable(SequenceRuleTable[] sequenceRuleTables)
-                => this.SequenceRuleTables = sequenceRuleTables;
-
-            public SequenceRuleTable[] SequenceRuleTables { get; }
-
-            public static SequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
-            {
-                // SequenceRuleSet
-                // +----------+------------------------------+----------------------------------------------------------------+
-                // | Type     | Name                         | Description                                                    |
-                // +==========+==============================+================================================================+
-                // | uint16   | seqRuleCount                 | Number of SequenceRule tables                                  |
-                // +----------+------------------------------+----------------------------------------------------------------+
-                // | Offset16 | seqRuleOffsets[posRuleCount] | Array of offsets to SequenceRule tables, from beginning of the |
-                // |          |                              | SequenceRuleSet table                                          |
-                // +----------+------------------------------+----------------------------------------------------------------+
-                reader.Seek(offset, SeekOrigin.Begin);
-                ushort seqRuleCount = reader.ReadUInt16();
-                ushort[] seqRuleOffsets = reader.ReadUInt16Array(seqRuleCount);
-
-                var sequenceRuleTables = new SequenceRuleTable[seqRuleCount];
-                for (int i = 0; i < sequenceRuleTables.Length; i++)
-                {
-                    sequenceRuleTables[i] = SequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
-                }
-
-                return new SequenceRuleSetTable(sequenceRuleTables);
-            }
-        }
-
-        public sealed class SequenceRuleTable
-        {
-            private SequenceRuleTable(ushort[] inputSequence, SequenceLookupRecord[] seqLookupRecords)
-            {
-                this.InputSequence = inputSequence;
-                this.SequenceLookupRecords = seqLookupRecords;
-            }
-
-            public ushort[] InputSequence { get; }
-
-            public SequenceLookupRecord[] SequenceLookupRecords { get; }
-
-            public static SequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
-            {
-                // +----------------------+----------------------------------+---------------------------------------------------------+
-                // | Type                 | Name                             | Description                                             |
-                // +======================+==================================+=========================================================+
-                // | uint16               | glyphCount                       | Number of glyphs in the input glyph sequence            |
-                // +----------------------+----------------------------------+---------------------------------------------------------+
-                // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords                         |
-                // +----------------------+----------------------------------+---------------------------------------------------------+
-                // | uint16               | inputSequence[glyphCount - 1]    | Array of input glyph IDs—starting with the second glyph |
-                // +----------------------+----------------------------------+---------------------------------------------------------+
-                // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of Sequence lookup records                        |
-                // +----------------------+----------------------------------+---------------------------------------------------------+
-                reader.Seek(offset, SeekOrigin.Begin);
-                ushort glyphCount = reader.ReadUInt16();
-                ushort seqLookupCount = reader.ReadUInt16();
-                ushort[] inputSequence = reader.ReadUInt16Array(glyphCount - 1);
-                SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
-
-                return new SequenceRuleTable(inputSequence, seqLookupRecords);
-            }
         }
     }
 
@@ -269,8 +193,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     return false;
                 }
 
-                ClassSequenceRuleSetTable rulsetTable = this.sequenceRuleSetTables[offset];
-                foreach (ClassSequenceRuleTable ruleTable in rulsetTable.SequenceRuleTables)
+                ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
+                foreach (ClassSequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
                 {
                     int remaining = count - 1;
                     int seqLength = ruleTable.InputSequence.Length;
@@ -279,111 +203,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                         continue;
                     }
 
-                    bool allMatched = true;
-                    int temp = index + 1;
-                    ushort[] sequence = ruleTable.InputSequence;
-                    for (int j = 0; j < sequence.Length; j++)
+                    bool allMatched = GSubUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                    if (!allMatched)
                     {
-                        if (collection[temp + j][0] != sequence[j])
+                        continue;
+                    }
+
+                    // It's a match. Perform substitutions and return true if anything changed.
+                    bool hasChanged = false;
+                    foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                    {
+                        ushort sequenceIndex = lookupRecord.SequenceIndex;
+                        ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                        if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
                         {
-                            allMatched = false;
-                            break;
+                            hasChanged = true;
                         }
                     }
 
-                    if (allMatched)
-                    {
-                        // It's a match. Perform substitutions and return true if anything changed.
-                        bool hasChanged = false;
-                        foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
-                        {
-                            ushort sequenceIndex = lookupRecord.SequenceIndex;
-                            ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                            LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                            if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                            {
-                                hasChanged = true;
-                            }
-                        }
-
-                        return hasChanged;
-                    }
+                    return hasChanged;
                 }
             }
 
             return false;
-        }
-
-        internal sealed class ClassSequenceRuleSetTable
-        {
-            private ClassSequenceRuleSetTable(ClassSequenceRuleTable[] sequenceRuleTables)
-                => this.SequenceRuleTables = sequenceRuleTables;
-
-            public ClassSequenceRuleTable[] SequenceRuleTables { get; }
-
-            public static ClassSequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
-            {
-                // ClassSequenceRuleSet
-                // +----------+----------------------------------------+---------------------------------------+
-                // | Type     | Name                                   | Description                           |
-                // +==========+========================================+=======================================+
-                // | uint16   | classSeqRuleCount                      | Number of ClassSequenceRule tables    |
-                // +----------+----------------------------------------+---------------------------------------+
-                // | Offset16 | classSeqRuleOffsets[classSeqRuleCount] | Array of offsets to ClassSequenceRule |
-                // |          |                                        | tables, from beginning of             |
-                // |          |                                        | ClassSequenceRuleSet table            |
-                // +----------+----------------------------------------+---------------------------------------+
-                reader.Seek(offset, SeekOrigin.Begin);
-                ushort seqRuleCount = reader.ReadUInt16();
-                ushort[] seqRuleOffsets = reader.ReadUInt16Array(seqRuleCount);
-
-                var subRules = new ClassSequenceRuleTable[seqRuleCount];
-                for (int i = 0; i < subRules.Length; i++)
-                {
-                    subRules[i] = ClassSequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
-                }
-
-                return new ClassSequenceRuleSetTable(subRules);
-            }
-        }
-
-        public sealed class ClassSequenceRuleTable
-        {
-            private ClassSequenceRuleTable(ushort[] inputSequence, SequenceLookupRecord[] seqLookupRecords)
-            {
-                this.InputSequence = inputSequence;
-                this.SequenceLookupRecords = seqLookupRecords;
-            }
-
-            public ushort[] InputSequence { get; }
-
-            public SequenceLookupRecord[] SequenceLookupRecords { get; }
-
-            public static ClassSequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
-            {
-                // ClassSequenceRule
-                // +----------------------+----------------------------------+------------------------------------------+
-                // | Type                 | Name                             | Description                              |
-                // +======================+==================================+==========================================+
-                // | uint16               | glyphCount                       | Number of glyphs to be matched           |
-                // +----------------------+----------------------------------+------------------------------------------+
-                // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords          |
-                // +----------------------+----------------------------------+------------------------------------------+
-                // | uint16               | inputSequence[glyphCount - 1]    | Sequence of classes to be matched to the |
-                // |                      |                                  | input glyph sequence, beginning with the |
-                // |                      |                                  | second glyph position                    |
-                // +----------------------+----------------------------------+------------------------------------------+
-                // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of SequenceLookupRecords           |
-                // +----------------------+----------------------------------+------------------------------------------+
-                reader.Seek(offset, SeekOrigin.Begin);
-                ushort glyphCount = reader.ReadUInt16();
-                ushort seqLookupCount = reader.ReadUInt16();
-                ushort[] inputSequence = reader.ReadUInt16Array(glyphCount - 1);
-                SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
-
-                return new ClassSequenceRuleTable(inputSequence, seqLookupRecords);
-            }
         }
     }
 
@@ -443,24 +287,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             foreach (CoverageTable coverageTable in this.coverageTables)
             {
                 int offset = coverageTable.CoverageIndexOf((ushort)glyphId);
-                if (offset > -1)
+                if (offset <= -1)
                 {
-                    // It's a match. Perform substitutions and return true if anything changed.
-                    bool hasChanged = false;
-                    foreach (SequenceLookupRecord lookupRecord in this.sequenceLookupRecords)
-                    {
-                        ushort sequenceIndex = lookupRecord.SequenceIndex;
-                        ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                        if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                        {
-                            hasChanged = true;
-                        }
-                    }
-
-                    return hasChanged;
+                    continue;
                 }
+
+                // It's a match. Perform substitutions and return true if anything changed.
+                bool hasChanged = false;
+                foreach (SequenceLookupRecord lookupRecord in this.sequenceLookupRecords)
+                {
+                    ushort sequenceIndex = lookupRecord.SequenceIndex;
+                    ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                    if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    {
+                        hasChanged = true;
+                    }
+                }
+
+                return hasChanged;
             }
 
             return false;
