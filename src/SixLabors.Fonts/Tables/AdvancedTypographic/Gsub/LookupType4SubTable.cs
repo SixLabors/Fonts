@@ -116,25 +116,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
-
-            if (offset > -1)
+            if (offset <= -1)
             {
-                LigatureSetTable ligatureSetTable = this.ligatureSetTables[offset];
-                foreach (LigatureTable ligatureTable in ligatureSetTable.Ligatures)
-                {
-                    int remaining = count - 1;
-                    int compLength = ligatureTable.ComponentGlyphs.Length;
-                    if (compLength > remaining)
-                    {
-                        continue;
-                    }
+                return false;
+            }
 
-                    bool allMatched = GSubUtils.MatchInputSequence(collection, index, ligatureTable.ComponentGlyphs);
-                    if (allMatched)
-                    {
-                        collection.Replace(index, compLength + 1, ligatureTable.GlyphId);
-                        return true;
-                    }
+            LigatureSetTable ligatureSetTable = this.ligatureSetTables[offset];
+            foreach (LigatureTable ligatureTable in ligatureSetTable.Ligatures)
+            {
+                int remaining = count - 1;
+                int compLength = ligatureTable.ComponentGlyphs.Length;
+                if (compLength > remaining)
+                {
+                    continue;
+                }
+
+                bool allMatched = GSubUtils.MatchInputSequence(collection, index, ligatureTable.ComponentGlyphs);
+                if (allMatched)
+                {
+                    collection.Replace(index, compLength + 1, ligatureTable.GlyphId);
+                    return true;
                 }
             }
 
@@ -146,7 +147,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             public LigatureSetTable(LigatureTable[] ligatures)
                 => this.Ligatures = ligatures;
 
-            public readonly LigatureTable[] Ligatures { get; }
+            public LigatureTable[] Ligatures { get; }
         }
 
         public readonly struct LigatureTable

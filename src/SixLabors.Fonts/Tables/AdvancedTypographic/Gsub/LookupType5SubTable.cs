@@ -96,24 +96,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     }
 
                     bool allMatched = GSubUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
-                    if (allMatched)
+                    if (!allMatched)
                     {
-                        // It's a match. Perform substitutions and return true if anything changed.
-                        bool hasChanged = false;
-                        foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
-                        {
-                            ushort sequenceIndex = lookupRecord.SequenceIndex;
-                            ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                            LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                            if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                            {
-                                hasChanged = true;
-                            }
-                        }
-
-                        return hasChanged;
+                        continue;
                     }
+
+                    // It's a match. Perform substitutions and return true if anything changed.
+                    bool hasChanged = false;
+                    foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                    {
+                        ushort sequenceIndex = lookupRecord.SequenceIndex;
+                        ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                        if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                        {
+                            hasChanged = true;
+                        }
+                    }
+
+                    return hasChanged;
                 }
             }
 
@@ -121,7 +123,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
     }
 
-    internal sealed partial class LookupType5Format2SubTable : LookupSubTable
+    internal sealed class LookupType5Format2SubTable : LookupSubTable
     {
         private readonly CoverageTable coverageTable;
         private readonly ClassDefinitionTable classDefinitionTable;
@@ -202,24 +204,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     }
 
                     bool allMatched = GSubUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
-                    if (allMatched)
+                    if (!allMatched)
                     {
-                        // It's a match. Perform substitutions and return true if anything changed.
-                        bool hasChanged = false;
-                        foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
-                        {
-                            ushort sequenceIndex = lookupRecord.SequenceIndex;
-                            ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                            LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                            if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                            {
-                                hasChanged = true;
-                            }
-                        }
-
-                        return hasChanged;
+                        continue;
                     }
+
+                    // It's a match. Perform substitutions and return true if anything changed.
+                    bool hasChanged = false;
+                    foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                    {
+                        ushort sequenceIndex = lookupRecord.SequenceIndex;
+                        ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                        if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                        {
+                            hasChanged = true;
+                        }
+                    }
+
+                    return hasChanged;
                 }
             }
 
@@ -283,24 +287,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             foreach (CoverageTable coverageTable in this.coverageTables)
             {
                 int offset = coverageTable.CoverageIndexOf((ushort)glyphId);
-                if (offset > -1)
+                if (offset <= -1)
                 {
-                    // It's a match. Perform substitutions and return true if anything changed.
-                    bool hasChanged = false;
-                    foreach (SequenceLookupRecord lookupRecord in this.sequenceLookupRecords)
-                    {
-                        ushort sequenceIndex = lookupRecord.SequenceIndex;
-                        ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                        if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                        {
-                            hasChanged = true;
-                        }
-                    }
-
-                    return hasChanged;
+                    continue;
                 }
+
+                // It's a match. Perform substitutions and return true if anything changed.
+                bool hasChanged = false;
+                foreach (SequenceLookupRecord lookupRecord in this.sequenceLookupRecords)
+                {
+                    ushort sequenceIndex = lookupRecord.SequenceIndex;
+                    ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                    if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    {
+                        hasChanged = true;
+                    }
+                }
+
+                return hasChanged;
             }
 
             return false;

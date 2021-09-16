@@ -106,7 +106,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             public SequenceTable(int[] substituteGlyphs)
                 => this.SubstituteGlyphs = substituteGlyphs;
 
-            public readonly int[] SubstituteGlyphs { get; }
+            public int[] SubstituteGlyphs { get; }
         }
     }
 }
