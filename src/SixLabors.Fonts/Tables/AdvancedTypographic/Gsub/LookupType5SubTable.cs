@@ -95,18 +95,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                         continue;
                     }
 
-                    bool allMatched = true;
-                    int temp = index + 1;
-                    ushort[] sequence = ruleTable.InputSequence;
-                    for (int j = 0; j < sequence.Length; j++)
-                    {
-                        if (collection[temp + j][0] != sequence[j])
-                        {
-                            allMatched = false;
-                            break;
-                        }
-                    }
-
+                    bool allMatched = GSubUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
                     if (allMatched)
                     {
                         // It's a match. Perform substitutions and return true if anything changed.
@@ -279,18 +268,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                         continue;
                     }
 
-                    bool allMatched = true;
-                    int temp = index + 1;
-                    ushort[] sequence = ruleTable.InputSequence;
-                    for (int j = 0; j < sequence.Length; j++)
-                    {
-                        if (collection[temp + j][0] != sequence[j])
-                        {
-                            allMatched = false;
-                            break;
-                        }
-                    }
-
+                    bool allMatched = GSubUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
                     if (allMatched)
                     {
                         // It's a match. Perform substitutions and return true if anything changed.

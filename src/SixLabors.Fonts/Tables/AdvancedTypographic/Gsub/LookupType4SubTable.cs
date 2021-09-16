@@ -129,18 +129,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                         continue;
                     }
 
-                    bool allMatched = true;
-                    int temp = index + 1;
-                    ushort[] componentGlyphs = ligatureTable.ComponentGlyphs;
-                    for (int i = 0; i < componentGlyphs.Length; i++)
-                    {
-                        if (collection[temp + i][0] != componentGlyphs[i])
-                        {
-                            allMatched = false;
-                            break;
-                        }
-                    }
-
+                    bool allMatched = GSubUtils.MatchInputSequence(collection, index, ligatureTable.ComponentGlyphs);
                     if (allMatched)
                     {
                         collection.Replace(index, compLength + 1, ligatureTable.GlyphId);
