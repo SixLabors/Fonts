@@ -85,8 +85,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             {
                 // TODO: Check this.
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
-                SequenceRuleSetTable rulsetTable = this.seqRuleSetTables[offset];
-                foreach (SequenceRuleTable ruleTable in rulsetTable.SequenceRuleTables)
+                SequenceRuleSetTable ruleSetTable = this.seqRuleSetTables[offset];
+                foreach (SequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
                 {
                     int remaining = count - 1;
                     int seqLength = ruleTable.InputSequence.Length;
@@ -269,8 +269,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     return false;
                 }
 
-                ClassSequenceRuleSetTable rulsetTable = this.sequenceRuleSetTables[offset];
-                foreach (ClassSequenceRuleTable ruleTable in rulsetTable.SequenceRuleTables)
+                ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
+                foreach (ClassSequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
                 {
                     int remaining = count - 1;
                     int seqLength = ruleTable.InputSequence.Length;

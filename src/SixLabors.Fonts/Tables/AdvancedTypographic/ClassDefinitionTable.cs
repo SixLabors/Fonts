@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -14,6 +15,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     /// </summary>
     internal abstract class ClassDefinitionTable
     {
+        /// <summary>
+        /// Gets the class id for the given glyph id.
+        /// Any glyph not included in the range of covered glyph IDs automatically belongs to Class 0.
+        /// </summary>
+        /// <param name="glyphId">The glyph identifier.</param>
+        /// <returns>The class id.</returns>
         public abstract int ClassIndexOf(ushort glyphId);
 
         public static ClassDefinitionTable Load(BigEndianBinaryReader reader, long offset)
@@ -59,6 +66,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new ClassDefinitionFormat1Table(startGlyphId, classValueArray);
         }
 
+        /// <inheritdoc />
         public override int ClassIndexOf(ushort glyphId)
         {
             if (glyphId >= this.startGlyphId && glyphId < this.classValueArray.Length)
@@ -112,6 +120,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new ClassDefinitionFormat2Table(records);
         }
 
+        /// <inheritdoc />
         public override int ClassIndexOf(ushort glyphId)
         {
             for (int i = 0; i < this.records.Length; i++)
@@ -127,6 +136,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return 0;
         }
 
+        [DebuggerDisplay("StartGlyphId: {StartGlyphId}, EndGlyphId: {EndGlyphId}, Class: {Class}")]
         private readonly struct ClassRangeRecord
         {
             public ClassRangeRecord(ushort startGlyphId, ushort endGlyphId, ushort glyphClass)
