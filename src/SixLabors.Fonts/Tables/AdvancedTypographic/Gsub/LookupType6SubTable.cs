@@ -180,36 +180,58 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
+            // Implements Chained Contexts Substitution for Format 2:
+            // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
             int glyphId = collection[index][0];
             if (glyphId < 0)
             {
                 return false;
             }
 
+            // Search for the current glyph in the Coverage table.
             int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
-
             if (offset <= -1)
             {
                 return false;
             }
 
-            int classIndex = this.inputClassDefinitionTable.ClassIndexOf((ushort)glyphId);
-            ChainedClassSequenceRuleTable[]? rules = classIndex >= 0 && classIndex < this.sequenceRuleSetTables.Length ? this.sequenceRuleSetTables[classIndex].SubRules : null;
+            // Search in the class definition table to find the class value assigned to the currently glyph.
+            int classId = this.inputClassDefinitionTable.ClassIndexOf((ushort)glyphId);
+            ChainedClassSequenceRuleTable[]? rules = classId >= 0 && classId < this.sequenceRuleSetTables.Length ? this.sequenceRuleSetTables[classId].SubRules : null;
             if (rules is null)
             {
                 return false;
             }
 
-            foreach (ChainedClassSequenceRuleTable rule in rules)
+            // Apply ruleset for the given glyph class id.
+            for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
             {
-                ushort[] backtrack = rule.BacktrackSequence;
-                ushort[] input = rule.InputSequence;
-                ushort[] lookahead = rule.LookaheadSequence;
-                SequenceLookupRecord[] lookupRecords = rule.SequenceLookupRecords;
+                ChainedClassSequenceRuleTable rule = rules[lookupIndex];
+                if (rule.InputSequence.Length > 0 &&
+                    !GSubUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                {
+                    continue;
+                }
+
+                if (rule.BacktrackSequence.Length > 0
+                    && !GSubUtils.MatchBacktrackClassIdSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
+                {
+                    continue;
+                }
+
+                if (rule.LookaheadSequence.Length > 0
+                    && !GSubUtils.MatchLookAheadClassIdSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
+                {
+                    continue;
+                }
+
+                LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                if (lookup.TrySubstitution(table, collection, (ushort)lookupIndex, 1))
+                {
+                    return true;
+                }
             }
 
-            // TODO: Implement
-            // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
             return false;
         }
     }

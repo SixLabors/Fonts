@@ -36,9 +36,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly SequenceRuleSetTable[] seqRuleSetTables;
         private readonly CoverageTable coverageTable;
 
-        private LookupType5Format1SubTable(SequenceRuleSetTable[] seqbRuleSetTables, CoverageTable coverageTable)
+        private LookupType5Format1SubTable(SequenceRuleSetTable[] seqRuleSetTables, CoverageTable coverageTable)
         {
-            this.seqRuleSetTables = seqbRuleSetTables;
+            this.seqRuleSetTables = seqRuleSetTables;
             this.coverageTable = coverageTable;
         }
 
