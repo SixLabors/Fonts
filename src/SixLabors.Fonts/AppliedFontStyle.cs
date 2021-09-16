@@ -33,8 +33,9 @@ namespace SixLabors.Fonts
             // parse the codepoints within the start-end positions.
             // However we actually have to refactor TextLayout to actually
             // create slices.
+            const LayoutMode layoutMode = LayoutMode.Horizontal; // TODO: Support vertical.
             var collection = new GlyphSubstitutionCollection();
-            this.positioningCollection = new(LayoutMode.Horizontal); // TODO: Support vertical.
+            this.positioningCollection = new(layoutMode);
 
             // Analyse the text for bidi directional runs.
             BidiAlgorithm bidi = BidiAlgorithm.Instance.Value!;
