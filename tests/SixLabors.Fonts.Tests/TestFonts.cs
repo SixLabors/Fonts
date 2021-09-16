@@ -42,13 +42,19 @@ namespace SixLabors.Fonts.Tests
 
         /// <summary>
         /// Gets a gsub test font file which has the following substitution for unit tests:
-        /// - Chained Context Substitution: x=y -> x>y
+        /// - Chained Context Substitution, Format 3: x=y -> x>y
         /// </summary>
         public static string GsubTestFontFile2 => GetFullPath("GsubTestFont2.ttf");
 
         /// <summary>
-        /// Gets the gpos test font file.
-        /// It has the following substitution for unit tests:
+        /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
+        /// - Chained Context Substitution, Format 2:
+        /// "\u1361\u136B\u1361" -> The character in the middle should be replaced with the final form.
+        /// </summary>
+        public static string GsubTestFontFile3 => GetFullPath("TestShapeEthi.ttf");
+
+        /// <summary>
+        /// Gets a gsub test font file which has the following substitution for unit tests:
         /// - Single Adjustment Positioning: A plus 100
         /// </summary>
         public static string GposTestFontFile => GetFullPath("GposTestFont.ttf");

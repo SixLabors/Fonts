@@ -168,6 +168,26 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         }
 
         [Fact]
+        public void ChainedContextsSubstitutionFormat2Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile3).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "\u1361\u136B\u1361"; // The character in the middle should be replaced with the final form.
+            int[] expectedGlyphIndices = { 2, 8, 2 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
         public void ChainedContextsSubstitutionFormat3Works()
         {
             // arrange
