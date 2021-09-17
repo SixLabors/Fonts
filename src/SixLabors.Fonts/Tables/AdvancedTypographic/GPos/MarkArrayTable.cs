@@ -15,6 +15,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal class MarkArrayTable
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MarkArrayTable"/> class.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the start of the mark array table.</param>
         public MarkArrayTable(BigEndianBinaryReader reader, long offset)
         {
             // +--------------+------------------------+--------------------------------------------------------------------------------------+

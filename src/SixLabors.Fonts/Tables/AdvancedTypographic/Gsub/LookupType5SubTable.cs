@@ -19,14 +19,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);
-            ushort substFormat = reader.ReadUInt16();
+            ushort subTableFormat = reader.ReadUInt16();
 
-            return substFormat switch
+            return subTableFormat switch
             {
                 1 => LookupType5Format1SubTable.Load(reader, offset),
                 2 => LookupType5Format2SubTable.Load(reader, offset),
                 3 => LookupType5Format3SubTable.Load(reader, offset),
-                _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1', '2', or '3'."),
+                _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {subTableFormat}. Should be '1', '2', or '3'."),
             };
         }
     }
