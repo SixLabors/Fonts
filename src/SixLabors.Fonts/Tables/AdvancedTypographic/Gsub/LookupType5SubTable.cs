@@ -33,13 +33,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
     internal sealed class LookupType5Format1SubTable : LookupSubTable
     {
-        private readonly SequenceRuleSetTable[] seqRuleSetTables;
         private readonly CoverageTable coverageTable;
+        private readonly SequenceRuleSetTable[] seqRuleSetTables;
 
-        private LookupType5Format1SubTable(SequenceRuleSetTable[] seqRuleSetTables, CoverageTable coverageTable)
+        private LookupType5Format1SubTable(CoverageTable coverageTable, SequenceRuleSetTable[] seqRuleSetTables)
         {
-            this.seqRuleSetTables = seqRuleSetTables;
             this.coverageTable = coverageTable;
+            this.seqRuleSetTables = seqRuleSetTables;
         }
 
         public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset)
@@ -51,25 +51,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             // | uint16   | format                             | Format identifier: format = 1                                 |
             // +----------+------------------------------------+---------------------------------------------------------------+
             // | Offset16 | coverageOffset                     | Offset to Coverage table, from beginning of                   |
-            // |          |                                    | SequenceContextFormat1 table                                  |
+            // |          |                                    | SequenceContextFormat1 table.                                 |
             // +----------+------------------------------------+---------------------------------------------------------------+
-            // | uint16   | seqRuleSetCount                    | Number of SequenceRuleSet tables                              |
+            // | uint16   | seqRuleSetCount                    | Number of SequenceRuleSet tables.                             |
             // +----------+------------------------------------+---------------------------------------------------------------+
             // | Offset16 | seqRuleSetOffsets[seqRuleSetCount] | Array of offsets to SequenceRuleSet tables, from beginning of |
-            // |          |                                    | SequenceContextFormat1 table (offsets may be NULL)            |
+            // |          |                                    | SequenceContextFormat1 table (offsets may be NULL).           |
             // +----------+------------------------------------+---------------------------------------------------------------+
-            ushort coverageOffset = reader.ReadOffset16();
-            ushort seqRuleSetCount = reader.ReadUInt16();
-            ushort[] seqRuleSetOffsets = reader.ReadUInt16Array(seqRuleSetCount);
-            var seqRuleSets = new SequenceRuleSetTable[seqRuleSetCount];
+            SequenceRuleSetTable[] seqRuleSets = AdvancedTypographicUtils.LoadSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
 
-            for (int i = 0; i < seqRuleSets.Length; i++)
-            {
-                seqRuleSets[i] = SequenceRuleSetTable.Load(reader, offset + seqRuleSetOffsets[i]);
-            }
-
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
-            return new LookupType5Format1SubTable(seqRuleSets, coverageTable);
+            return new LookupType5Format1SubTable(coverageTable, seqRuleSets);
         }
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
@@ -81,42 +72,44 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
-            if (offset > -1)
+            if (offset <= -1)
             {
-                // TODO: Check this.
-                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
-                SequenceRuleSetTable ruleSetTable = this.seqRuleSetTables[offset];
-                foreach (SequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
+                return false;
+            }
+
+            // TODO: Check this.
+            // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
+            SequenceRuleSetTable ruleSetTable = this.seqRuleSetTables[offset];
+            foreach (SequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
+            {
+                int remaining = count - 1;
+                int seqLength = ruleTable.InputSequence.Length;
+                if (seqLength > remaining)
                 {
-                    int remaining = count - 1;
-                    int seqLength = ruleTable.InputSequence.Length;
-                    if (seqLength > remaining)
-                    {
-                        continue;
-                    }
-
-                    bool allMatched = GSubUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
-                    if (!allMatched)
-                    {
-                        continue;
-                    }
-
-                    // It's a match. Perform substitutions and return true if anything changed.
-                    bool hasChanged = false;
-                    foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
-                    {
-                        ushort sequenceIndex = lookupRecord.SequenceIndex;
-                        ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                        if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                        {
-                            hasChanged = true;
-                        }
-                    }
-
-                    return hasChanged;
+                    continue;
                 }
+
+                bool allMatched = GSubUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                if (!allMatched)
+                {
+                    continue;
+                }
+
+                // It's a match. Perform substitutions and return true if anything changed.
+                bool hasChanged = false;
+                foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                {
+                    ushort sequenceIndex = lookupRecord.SequenceIndex;
+                    ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                    if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    {
+                        hasChanged = true;
+                    }
+                }
+
+                return hasChanged;
             }
 
             return false;
@@ -148,29 +141,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             // | uint16   | format                                       | Format identifier: format = 2                                      |
             // +----------+----------------------------------------------+--------------------------------------------------------------------+
             // | Offset16 | coverageOffset                               | Offset to Coverage table, from beginning of                        |
-            // |          |                                              | SequenceContextFormat2 table                                       |
+            // |          |                                              | SequenceContextFormat2 table.                                      |
             // +----------+----------------------------------------------+--------------------------------------------------------------------+
             // | Offset16 | classDefOffset                               | Offset to ClassDef table, from beginning of                        |
-            // |          |                                              | SequenceContextFormat2 table                                       |
+            // |          |                                              | SequenceContextFormat2 table.                                      |
             // +----------+----------------------------------------------+--------------------------------------------------------------------+
-            // | uint16   | classSeqRuleSetCount                         | Number of ClassSequenceRuleSet tables                              |
+            // | uint16   | classSeqRuleSetCount                         | Number of ClassSequenceRuleSet tables.                             |
             // +----------+----------------------------------------------+--------------------------------------------------------------------+
             // | Offset16 | classSeqRuleSetOffsets[classSeqRuleSetCount] | Array of offsets to ClassSequenceRuleSet tables, from beginning of |
-            // |          |                                              | SequenceContextFormat2 table (may be NULL)                         |
+            // |          |                                              | SequenceContextFormat2 table (may be NULL).                        |
             // +----------+----------------------------------------------+--------------------------------------------------------------------+
-            ushort coverageOffset = reader.ReadOffset16();
-            ushort classDefOffset = reader.ReadOffset16();
-            ushort classSeqRuleSetCount = reader.ReadUInt16();
-            ushort[] classSeqRuleSetOffsets = reader.ReadUInt16Array(classSeqRuleSetCount);
-
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
-            var classDefTable = ClassDefinitionTable.Load(reader, offset + classDefOffset);
-
-            var classSeqRuleSets = new ClassSequenceRuleSetTable[classSeqRuleSetCount];
-            for (int i = 0; i < classSeqRuleSets.Length; i++)
-            {
-                classSeqRuleSets[i] = ClassSequenceRuleSetTable.Load(reader, offset + classSeqRuleSetOffsets[i]);
-            }
+            CoverageTable coverageTable = AdvancedTypographicUtils.LoadSequenceContextFormat2(reader, offset, out ClassDefinitionTable classDefTable, out ClassSequenceRuleSetTable[] classSeqRuleSets);
 
             return new LookupType5Format2SubTable(classSeqRuleSets, classDefTable, coverageTable);
         }
@@ -236,10 +217,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly CoverageTable[] coverageTables;
         private readonly SequenceLookupRecord[] sequenceLookupRecords;
 
-        private LookupType5Format3SubTable(SequenceLookupRecord[] sequenceLookupRecords, CoverageTable[] coverageTables)
+        private LookupType5Format3SubTable(CoverageTable[] coverageTables, SequenceLookupRecord[] sequenceLookupRecords)
         {
-            this.sequenceLookupRecords = sequenceLookupRecords;
             this.coverageTables = coverageTables;
+            this.sequenceLookupRecords = sequenceLookupRecords;
         }
 
         public static LookupType5Format3SubTable Load(BigEndianBinaryReader reader, long offset)
@@ -260,18 +241,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             // +----------------------+----------------------------------+-------------------------------------------+
             // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of SequenceLookupRecords            |
             // +----------------------+----------------------------------+-------------------------------------------+
-            ushort glyphCount = reader.ReadUInt16();
-            ushort seqLookupCount = reader.ReadUInt16();
-            ushort[] coverageOffsets = reader.ReadUInt16Array(glyphCount);
-            SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
+            SequenceLookupRecord[] seqLookupRecords = AdvancedTypographicUtils.LoadSequenceContextFormat3(reader, offset, out CoverageTable[] coverageTables);
 
-            var coverageTables = new CoverageTable[glyphCount];
-            for (int i = 0; i < coverageTables.Length; i++)
-            {
-                coverageTables[i] = CoverageTable.Load(reader, offset + coverageOffsets[i]);
-            }
-
-            return new LookupType5Format3SubTable(seqLookupRecords, coverageTables);
+            return new LookupType5Format3SubTable(coverageTables, seqLookupRecords);
         }
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)

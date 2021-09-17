@@ -25,19 +25,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             return subTableFormat switch
             {
-                1 => LookupType5Format1SubTable.Load(reader, offset),
+                1 => LookupType6Format1SubTable.Load(reader, offset),
                 _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {subTableFormat}. Should be '1'."),
             };
         }
 
-        internal sealed class LookupType5Format1SubTable : LookupSubTable
+        internal sealed class LookupType6Format1SubTable : LookupSubTable
         {
             private readonly CoverageTable mark1Coverage;
             private readonly CoverageTable mark2Coverage;
             private readonly MarkArrayTable markArrayTable;
             private readonly Mark2ArrayTable mark2ArrayTable;
 
-            public LookupType5Format1SubTable(CoverageTable mark1Coverage, CoverageTable mark2Coverage, MarkArrayTable markArrayTable, Mark2ArrayTable mark2ArrayTable)
+            public LookupType6Format1SubTable(CoverageTable mark1Coverage, CoverageTable mark2Coverage, MarkArrayTable markArrayTable, Mark2ArrayTable mark2ArrayTable)
             {
                 this.mark1Coverage = mark1Coverage;
                 this.mark2Coverage = mark2Coverage;
@@ -45,7 +45,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 this.mark2ArrayTable = mark2ArrayTable;
             }
 
-            public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset)
             {
                 // MarkMarkPosFormat1 Subtable.
                 // +--------------------+---------------------------------+------------------------------------------------------+
@@ -78,7 +78,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 var mark1ArrayTable = new MarkArrayTable(reader, offset + mark1ArrayOffset);
                 var mark2ArrayTable = new Mark2ArrayTable(reader, offset + mark2ArrayOffset, markClassCount);
 
-                return new LookupType5Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable);
+                return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable);
             }
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
