@@ -46,20 +46,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public static LookupType7Format1SubTable Load(BigEndianBinaryReader reader, long offset)
             {
-                // Context Positioning Subtable Format 1: Simple Glyph Contexts.
-                // +----------+------------------------------------+---------------------------------------------------------------+
-                // | Type     | Name                               | Description                                                   |
-                // +==========+====================================+===============================================================+
-                // | uint16   | format                             | Format identifier: format = 1                                 |
-                // +----------+------------------------------------+---------------------------------------------------------------+
-                // | Offset16 | coverageOffset                     | Offset to Coverage table, from beginning of                   |
-                // |          |                                    | SequenceContextFormat1 table                                  |
-                // +----------+------------------------------------+---------------------------------------------------------------+
-                // | uint16   | seqRuleSetCount                    | Number of SequenceRuleSet tables                              |
-                // +----------+------------------------------------+---------------------------------------------------------------+
-                // | Offset16 | seqRuleSetOffsets[seqRuleSetCount] | Array of offsets to SequenceRuleSet tables, from beginning of |
-                // |          |                                    | SequenceContextFormat1 table (offsets may be NULL)            |
-                // +----------+------------------------------------+---------------------------------------------------------------+
                 SequenceRuleSetTable[] seqRuleSets = AdvancedTypographicUtils.LoadSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
 
                 return new LookupType7Format1SubTable(coverageTable, seqRuleSets);
@@ -84,23 +70,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public static LookupType7Format2SubTable Load(BigEndianBinaryReader reader, long offset)
             {
-                // Context Positioning Subtable Format 2: Class-based Glyph Contexts.
-                // +----------+----------------------------------------------+--------------------------------------------------------------------+
-                // | Type     | Name                                         | Description                                                        |
-                // +==========+==============================================+====================================================================+
-                // | uint16   | format                                       | Format identifier: format = 2                                      |
-                // +----------+----------------------------------------------+--------------------------------------------------------------------+
-                // | Offset16 | coverageOffset                               | Offset to Coverage table, from beginning of                        |
-                // |          |                                              | SequenceContextFormat2 table.                                      |
-                // +----------+----------------------------------------------+--------------------------------------------------------------------+
-                // | Offset16 | classDefOffset                               | Offset to ClassDef table, from beginning of                        |
-                // |          |                                              | SequenceContextFormat2 table.                                      |
-                // +----------+----------------------------------------------+--------------------------------------------------------------------+
-                // | uint16   | classSeqRuleSetCount                         | Number of ClassSequenceRuleSet tables.                             |
-                // +----------+----------------------------------------------+--------------------------------------------------------------------+
-                // | Offset16 | classSeqRuleSetOffsets[classSeqRuleSetCount] | Array of offsets to ClassSequenceRuleSet tables, from beginning of |
-                // |          |                                              | SequenceContextFormat2 table (may be NULL)                         |
-                // +----------+----------------------------------------------+--------------------------------------------------------------------+
                 CoverageTable coverageTable = AdvancedTypographicUtils.LoadSequenceContextFormat2(reader, offset, out ClassDefinitionTable classDefTable, out ClassSequenceRuleSetTable[] classSeqRuleSets);
 
                 return new LookupType7Format2SubTable(coverageTable, classDefTable, classSeqRuleSets);
@@ -123,22 +92,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public static LookupType7Format3SubTable Load(BigEndianBinaryReader reader, long offset)
             {
-                // Context Positioning Subtable Format 3: Coverage-based Glyph Contexts.
-                // +----------------------+----------------------------------+-------------------------------------------+
-                // | Type                 | Name                             | Description                               |
-                // +======================+==================================+===========================================+
-                // | uint16               | format                           | Format identifier: format = 3             |
-                // +----------------------+----------------------------------+-------------------------------------------+
-                // | uint16               | glyphCount                       | Number of glyphs in the input sequence.   |
-                // +----------------------+----------------------------------+-------------------------------------------+
-                // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords.          |
-                // +----------------------+----------------------------------+-------------------------------------------+
-                // | Offset16             | coverageOffsets[glyphCount]      | Array of offsets to Coverage tables, from |
-                // |                      |                                  | beginning of SequenceContextFormat3       |
-                // |                      |                                  | subtable.                                 |
-                // +----------------------+----------------------------------+-------------------------------------------+
-                // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of SequenceLookupRecords.           |
-                // +----------------------+----------------------------------+-------------------------------------------+
                 SequenceLookupRecord[] seqLookupRecords = AdvancedTypographicUtils.LoadSequenceContextFormat3(reader, offset, out CoverageTable[] coverageTables);
 
                 return new LookupType7Format3SubTable(coverageTables, seqLookupRecords);
