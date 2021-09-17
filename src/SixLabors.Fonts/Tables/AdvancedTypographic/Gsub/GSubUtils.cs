@@ -2,8 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Linq;
-using System.Runtime.InteropServices;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 {
@@ -25,53 +23,24 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return allMatched;
         }
 
-        internal static bool MatchBacktrackClassIdSequence(
+        internal static bool MatchClassSequence(
             GlyphSubstitutionCollection collection,
             int glyphIndex,
             int sequenceIndex,
-            ushort[] backtrackSequence,
-            ClassDefinitionTable backtrackClassDefinitionTable)
+            ushort[] sequence,
+            ClassDefinitionTable classDefinitionTable)
         {
             int pos = glyphIndex - sequenceIndex;
             int idx = 0;
 
-            while (idx < backtrackSequence.Length)
+            while (idx < sequence.Length)
             {
                 collection.GetCodePointAndGlyphIds(pos, out _, out _, out System.Collections.Generic.IEnumerable<int>? glyphIds);
                 int glyphId = glyphIds.First();
-                int glyphIdClass = backtrackClassDefinitionTable.ClassIndexOf((ushort)glyphId);
-                ushort backtrackEntry = backtrackSequence[idx];
-                int backTrackClassId = backtrackClassDefinitionTable.ClassIndexOf(backtrackEntry);
-                if (glyphIdClass != backTrackClassId)
-                {
-                    return false;
-                }
-
-                pos++;
-                idx++;
-            }
-
-            return true;
-        }
-
-        internal static bool MatchLookAheadClassIdSequence(
-            GlyphSubstitutionCollection collection,
-            int glyphIndex,
-            int sequenceIndex,
-            ushort[] lookAheadSequence,
-            ClassDefinitionTable lookAheadClassDefinitionTable)
-        {
-            int pos = glyphIndex - sequenceIndex;
-            int idx = 0;
-
-            while (idx < lookAheadSequence.Length)
-            {
-                collection.GetCodePointAndGlyphIds(pos, out _, out _, out System.Collections.Generic.IEnumerable<int>? glyphIds);
-                int glyphId = glyphIds.First();
-                int glyphIdClass = lookAheadClassDefinitionTable.ClassIndexOf((ushort)glyphId);
-                ushort lookAheadEntry = lookAheadSequence[idx];
-                int lookAheadClassId = lookAheadClassDefinitionTable.ClassIndexOf(lookAheadEntry);
-                if (glyphIdClass != lookAheadClassId)
+                int glyphIdClass = classDefinitionTable.ClassIndexOf((ushort)glyphId);
+                ushort sequenceEntry = sequence[idx];
+                int sequenceEntryClassId = classDefinitionTable.ClassIndexOf(sequenceEntry);
+                if (glyphIdClass != sequenceEntryClassId)
                 {
                     return false;
                 }

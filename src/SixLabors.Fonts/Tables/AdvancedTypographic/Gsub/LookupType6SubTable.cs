@@ -214,13 +214,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 }
 
                 if (rule.BacktrackSequence.Length > 0
-                    && !GSubUtils.MatchBacktrackClassIdSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
+                    && !GSubUtils.MatchClassSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
                 {
                     continue;
                 }
 
                 if (rule.LookaheadSequence.Length > 0
-                    && !GSubUtils.MatchLookAheadClassIdSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
+                    && !GSubUtils.MatchClassSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
                 {
                     continue;
                 }
