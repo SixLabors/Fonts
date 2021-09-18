@@ -381,6 +381,22 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
+        /// Gets a value indicating whether the given codepoint is a carriage return indicator.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a carriage return indicator; otherwise, <see langword="false"/></returns>
+        public static bool IsCarriageReturn(CodePoint codePoint)
+            => codePoint.value == 0x000D;
+
+        /// <summary>
+        /// Gets a value indicating whether the given codepoint is a tabulation indicator.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a tabulation indicator; otherwise, <see langword="false"/></returns>
+        public static bool IsTabulation(CodePoint codePoint)
+            => codePoint.value == 0x0009;
+
+        /// <summary>
         /// Gets a value indicating whether the given codepoint is a new line indicator.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>

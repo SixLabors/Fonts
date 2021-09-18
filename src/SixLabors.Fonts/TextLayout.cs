@@ -3,7 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -15,12 +18,6 @@ namespace SixLabors.Fonts
     {
         internal static TextLayout Default { get; set; } = new TextLayout();
 
-        /// <summary>
-        /// Generates the layout.
-        /// </summary>
-        /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
-        /// <returns>A collection of layout that describe all that's needed to measure or render a series of glyphs.</returns>
         public IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, RendererOptions options)
         {
             if (text.IsEmpty)
@@ -28,27 +25,10 @@ namespace SixLabors.Fonts
                 return Array.Empty<GlyphLayout>();
             }
 
-            var dpi = new Vector2(options.DpiX, options.DpiY);
-            Vector2 origin = options.Origin / dpi;
-            float originX = 0;
-
-            // Handle potential horizontal alignment adjustment based upon wrapping width.
-            float maxWidth = float.MaxValue;
             if (options.WrappingWidth > 0)
             {
                 // Trim trailing white spaces from the text
                 text = text.TrimEnd(null);
-                maxWidth = options.WrappingWidth / options.DpiX;
-
-                switch (options.HorizontalAlignment)
-                {
-                    case HorizontalAlignment.Right:
-                        originX = maxWidth;
-                        break;
-                    case HorizontalAlignment.Center:
-                        originX = maxWidth * .5F;
-                        break;
-                }
             }
 
             // Check our string again after trimming.
@@ -57,46 +37,388 @@ namespace SixLabors.Fonts
                 return Array.Empty<GlyphLayout>();
             }
 
-            int codePointCount = CodePoint.GetCodePointCount(text);
-            AppliedFontStyle spanStyle = options.GetStyle(0, codePointCount);
-            spanStyle.ProcessText(text);
+            IReadOnlyList<GlyphLayout> glyphsToRender = new TextLayout2().GenerateLayout(text, options);
+            FontRectangle bound = TextMeasurer.GetBounds(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
 
-            var layout = new List<GlyphLayout>(codePointCount);
+            IEnumerable<TextLine> textLines = ProcessText(text, options);
+            var xxx = LayoutText(textLines, options);
+            FontRectangle bound2 = TextMeasurer.GetBounds(xxx, new Vector2(options.DpiX, options.DpiY));
+            return xxx;
 
-            float unscaledLineHeight = 0f;
-            float lineHeight = 0f;
-            float unscaledLineMaxAscender = 0f;
-            float unscaledLineMaxDescender = 0f;
-            float lineMaxAscender = 0f;
-            float lineMaxDescender = 0f;
-            Vector2 location = Vector2.Zero;
+        }
 
-            // Remember where the top of the layouted text is for accurate vertical alignment.
-            // This is important because there is considerable space between the lineHeight at the glyph's ascender.
-            float top = 0;
-            float scale = 0;
-            bool firstLine = true;
-            GlyphMetrics? previousGlyph = null;
-            int lastWrappableLocation = -1;
-            int nextWrappableLocation = codePointCount;
-            bool nextWrappableRequired = false;
-            bool shouldWrap = options.WrappingWidth > 0;
-            bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
-            bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
-            bool startOfLine = true;
-            float totalHeight = 0;
-
-            // Calculate the initial position of potential line breaks.
-            var lineBreakEnumerator = new LineBreakEnumerator(text);
-            if (lineBreakEnumerator.MoveNext())
+        private static IEnumerable<TextLine> ProcessText(ReadOnlySpan<char> text, RendererOptions options)
+        {
+            // Gather the font and fallbacks.
+            IFontMetrics mainFont = options.Font.FontMetrics;
+            IFontMetrics[] fallbackFonts;
+            if (options.FallbackFontFamilies is null)
             {
-                LineBreak b = lineBreakEnumerator.Current;
-                nextWrappableLocation = b.PositionWrap - 1;
-                nextWrappableRequired = b.Required;
+                fallbackFonts = Array.Empty<IFontMetrics>();
+            }
+            else
+            {
+                fallbackFonts = options.FallbackFontFamilies
+                    .Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle).FontMetrics)
+                    .ToArray();
             }
 
+            const LayoutMode layoutMode = LayoutMode.Horizontal; // TODO: Support vertical.
+            var substitutions = new GlyphSubstitutionCollection();
+            var positionings = new GlyphPositioningCollection(layoutMode);
+
+            // Analyse the text for bidi directional runs.
+            BidiAlgorithm bidi = BidiAlgorithm.Instance.Value!;
+            var bidiData = new BidiData();
+            bidiData.Init(text, (sbyte)options.TextDirection);
+
+            // If we have embedded directional overrides then change those
+            // ranges to neutral.
+            if (options.TextDirection != TextDirection.Auto)
+            {
+                bidiData.SaveTypes();
+                bidiData.Types.Span.Fill(BidiCharacterType.OtherNeutral);
+                bidiData.PairedBracketTypes.Span.Fill(BidiPairedBracketType.None);
+            }
+
+            bidi.Process(bidiData);
+            BidiRun[] bidiRuns = BidiRun.CoalescLevels(bidi.ResolvedLevels).ToArray();
+            Dictionary<int, int> bidiMap = new();
+
+            // Incrementally build out collection of glyphs.
+            // For each run we start with a fresh substitution collection to avoid
+            // overwriting the glyph ids.
+            if (!DoFontRun(
+                text,
+                options,
+                mainFont,
+                bidiRuns,
+                bidiMap,
+                substitutions,
+                positionings))
+            {
+                foreach (IFontMetrics font in fallbackFonts)
+                {
+                    substitutions.Clear();
+                    if (DoFontRun(
+                        text,
+                        options,
+                        font,
+                        bidiRuns,
+                        bidiMap,
+                        substitutions,
+                        positionings))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (options.ApplyKerning)
+            {
+                // Update the positions of the glyphs in the completed collection.
+                // Each set of metrics is associated with single font and will only be updated
+                // by that font so it's safe to use a single collection.
+                mainFont.UpdatePositions(positionings);
+                foreach (IFontMetrics font in fallbackFonts)
+                {
+                    font.UpdatePositions(positionings);
+                }
+            }
+
+            return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
+        }
+
+        private static IReadOnlyList<GlyphLayout> LayoutText(IEnumerable<TextLine> textLines, RendererOptions options)
+        {
+            const LayoutMode layoutMode = LayoutMode.Horizontal; // TODO: Support vertical.
+            TextDirection textDirection = textLines.First().Direction();
+            List<GlyphLayout> glyphs = new();
+
+            int lineCount = textLines.Count();
+            Vector2 location = options.Origin / new Vector2(options.DpiX, options.DpiY);
+            if (layoutMode == LayoutMode.Horizontal)
+            {
+                float maxScaledAdvance = textLines.Max(x => x.ScaledAdvance());
+                if (textDirection == TextDirection.LeftToRight)
+                {
+                    foreach (TextLine textLine in textLines)
+                    {
+                        glyphs.AddRange(LayoutLineLeftToRightHorizontal(textLine, lineCount, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    }
+                }
+                else if (textDirection == TextDirection.RightToLeft)
+                {
+                    // TODO:
+                }
+            }
+
+            return glyphs;
+        }
+
+        private static IEnumerable<GlyphLayout> LayoutLineLeftToRightHorizontal(
+            TextLine textLine,
+            int lineCount,
+            float maxScaledAdvance,
+            RendererOptions options,
+            bool first,
+            ref Vector2 location)
+        {
+            float originY = 0;
+            float originX = 0;
+            if (first)
+            {
+                // Set the Y-Origin for the first line.
+                float lineScaledAscender = textLine.ScaledAscender();
+                float lineScaledDescender = textLine.ScaledDescender();
+                switch (options.VerticalAlignment)
+                {
+                    case VerticalAlignment.Top:
+                        originY = lineScaledAscender;
+                        break;
+                    case VerticalAlignment.Center:
+                        originY = (lineScaledAscender * .5F) - (lineScaledDescender * .5F);
+                        originY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing * .5F;
+                        break;
+                    case VerticalAlignment.Bottom:
+                        originY = -lineScaledDescender;
+                        originY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing;
+                        break;
+                }
+
+                location.Y += originY;
+            }
+
+            // Set the X-Origin for horizontal alignment.
+            float wrappingAdvance = options.WrappingWidth > 0 && options.WrappingWidth < maxScaledAdvance
+                ? options.WrappingWidth / options.DpiX
+                : 0;
+
+            switch (options.HorizontalAlignment)
+            {
+                case HorizontalAlignment.Right:
+                    originX = wrappingAdvance - textLine.ScaledAdvance();
+                    break;
+                case HorizontalAlignment.Center:
+                    originX = (wrappingAdvance * .5F) - (textLine.ScaledAdvance() * .5F);
+                    break;
+            }
+
+            location.X += originX;
+
+            List<GlyphLayout> glyphs = new();
+            for (int i = 0; i < textLine.Count; i++)
+            {
+                TextLine.GlyphInfo info = textLine[i];
+
+                // TODO: Handle embedded RTL values.
+                bool doReturn = true;
+                foreach (GlyphMetrics metric in info.Metrics)
+                {
+                    if (doReturn && info.IsCarriageReturn)
+                    {
+                        // Carriage Return resets advance.
+                        location.X -= location.X;
+                        doReturn = false;
+                    }
+
+                    float scale = info.PointSize / metric.ScaleFactor;
+                    if (info.IsNewLine)
+                    {
+                        location.Y += metric.FontMetrics.LineHeight * scale;
+                        continue;
+                    }
+
+                    glyphs.Add(new GlyphLayout(
+                        info.GraphemeIndex,
+                        metric.CodePoint,
+                        new Glyph(metric, info.PointSize),
+                        location,
+                        metric.AdvanceWidth * scale,
+                        metric.AdvanceHeight * scale,
+                        metric.FontMetrics.LineHeight * scale * options.LineSpacing,
+                        i == 0));
+                }
+
+                location.X += info.ScaledAdvance;
+            }
+
+            location.X = options.Origin.X / options.DpiX;
+            if (glyphs.Count > 0)
+            {
+                location.Y += glyphs.Max(x => x.LineHeight);
+            }
+
+            return glyphs;
+        }
+
+        private static bool DoFontRun(
+            ReadOnlySpan<char> text,
+            RendererOptions options,
+            IFontMetrics fontMetrics,
+            BidiRun[] bidiRuns,
+            Dictionary<int, int> bidiMap,
+            GlyphSubstitutionCollection substitutions,
+            GlyphPositioningCollection positionings)
+        {
+            // Enumerate through each grapheme in the text.
             int graphemeIndex;
             int codePointIndex = 0;
+            int bidiRun = 0;
+            var graphemeEnumerator = new SpanGraphemeEnumerator(text);
+            for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
+            {
+                int graphemeMax = graphemeEnumerator.Current.Length - 1;
+                int graphemeCodePointIndex = 0;
+                int charIndex = 0;
+
+                // Now enumerate through each codepoint in the grapheme.
+                bool skipNextCodePoint = false;
+                var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
+                while (codePointEnumerator.MoveNext())
+                {
+                    if (codePointIndex == bidiRuns[bidiRun].End)
+                    {
+                        bidiRun++;
+                    }
+
+                    if (skipNextCodePoint)
+                    {
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
+                        continue;
+                    }
+
+                    bidiMap[codePointIndex] = bidiRun;
+
+                    int charsConsumed = 0;
+                    CodePoint current = codePointEnumerator.Current;
+                    charIndex += current.Utf16SequenceLength;
+                    CodePoint? next = graphemeCodePointIndex < graphemeMax
+                        ? CodePoint.DecodeFromUtf16At(graphemeEnumerator.Current, charIndex, out charsConsumed)
+                        : null;
+
+                    charIndex += charsConsumed;
+
+                    // Get the glyph id for the codepoint and add to the collection.
+                    fontMetrics.TryGetGlyphId(current, next, out int glyphId, out skipNextCodePoint);
+                    substitutions.AddGlyph(glyphId, current, codePointIndex);
+
+                    codePointIndex++;
+                    graphemeCodePointIndex++;
+                }
+            }
+
+            // We always do this, with or without kerning so that bidi mirrored types
+            // are substituted correctly.
+            SubstituteBidiMirrors(fontMetrics, bidiRuns, bidiMap, substitutions);
+
+            if (options.ApplyKerning)
+            {
+                AssignShapingFeatures(substitutions);
+                fontMetrics.ApplySubstitution(substitutions);
+            }
+
+            return positionings.TryAddOrUpdate(fontMetrics, substitutions, options);
+        }
+
+        private static void SubstituteBidiMirrors(
+            IFontMetrics fontMetrics,
+            BidiRun[] bidiRuns,
+            Dictionary<int, int> bidiMap,
+            GlyphSubstitutionCollection substitutions)
+        {
+            // TODO: Vertical bidi mirrors appear to be different.
+            // See hb-ot-shape.cc in HarfBuzz. Line 651.
+            for (int i = 0; i < substitutions.Count; i++)
+            {
+                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out IEnumerable<int> _);
+                if (bidiMap.TryGetValue(offset, out int run))
+                {
+                    BidiRun bidiRun = bidiRuns[run];
+                    if (bidiRun.Direction != BidiCharacterType.RightToLeft)
+                    {
+                        continue;
+                    }
+
+                    if (!CodePoint.TryGetBidiMirror(codePoint, out CodePoint mirror))
+                    {
+                        continue;
+                    }
+
+                    if (fontMetrics.TryGetGlyphId(mirror, out int glyphId))
+                    {
+                        substitutions.Replace(i, glyphId);
+                    }
+                }
+            }
+        }
+
+        private static void AssignShapingFeatures(GlyphSubstitutionCollection substitutions)
+        {
+            for (int i = 0; i < substitutions.Count; i++)
+            {
+                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int _, out IEnumerable<int> _);
+                Script current = CodePoint.GetScript(codePoint);
+
+                // Choose a shaper based on the script.
+                // This determines which features to apply to which glyphs.
+                BaseShaper shaper = ShaperFactory.Create(current);
+                int index = i;
+                int count = 1;
+                while (i < substitutions.Count - 1)
+                {
+                    // We want to assign the same shaper to individual sections of the text rather
+                    // than the text as a whole to ensure that different language shapers do not interfere
+                    // with each other when the text contains multiple languages.
+                    substitutions.GetCodePointAndGlyphIds(i + 1, out codePoint, out _, out _);
+                    Script next = CodePoint.GetScript(codePoint);
+                    if (next is not Script.Common and not Script.Unknown and not Script.Inherited && next != current)
+                    {
+                        break;
+                    }
+
+                    i++;
+                    count++;
+                }
+
+                // Assign Substitution features to each glyph.
+                shaper.AssignFeatures(substitutions, index, count);
+            }
+        }
+
+        private static IEnumerable<TextLine> BreakLines(
+            ReadOnlySpan<char> text,
+            RendererOptions options,
+            BidiRun[] bidiRuns,
+            Dictionary<int, int> bidiMap,
+            GlyphPositioningCollection positionings,
+            LayoutMode layoutMode)
+        {
+            float pointSize = options.Font.Size;
+            bool shouldWrap = options.WrappingWidth > 0;
+            float wrappingLength = shouldWrap ? options.WrappingWidth / options.DpiX : float.MaxValue;
+            bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
+            bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
+            bool isHorizontal = layoutMode == LayoutMode.Horizontal;
+
+            // Calculate the position of potential line breaks.
+            var lineBreakEnumerator = new LineBreakEnumerator(text);
+            List<LineBreak> lineBreaks = new();
+            while (lineBreakEnumerator.MoveNext())
+            {
+                lineBreaks.Add(lineBreakEnumerator.Current);
+            }
+
+            int lineBreakIndex = 0;
+            LineBreak lastLineBreak = lineBreaks[lineBreakIndex];
+            LineBreak currentLineBreak = lineBreaks[lineBreakIndex];
+            int graphemeIndex;
+            int codePointIndex = 0;
+            float lineAdvance = 0;
+            List<TextLine> textLines = new();
+            TextLine textLine = new();
+            int glyphCount = 0;
 
             // Enumerate through each grapheme in the text.
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
@@ -107,315 +429,313 @@ namespace SixLabors.Fonts
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
-                    if (spanStyle.End < codePointIndex)
+                    if (!positionings.TryGetGlypMetricsAtOffset(codePointIndex, out GlyphMetrics[]? metrics))
                     {
-                        spanStyle = options.GetStyle(codePointIndex, codePointCount);
-                        spanStyle.ProcessText(text);
-                        previousGlyph = null;
-                    }
-
-                    if (!spanStyle.TryGetGlyphMetrics(codePointIndex, out GlyphMetrics[]? glyphs))
-                    {
-                        // Codepoint was skipped.
+                        // Codepoint was skipped during original enumeration.
                         codePointIndex++;
                         graphemeCodePointIndex++;
                         continue;
                     }
 
-                    GlyphMetrics? glyph = glyphs[0];
-                    CodePoint codePoint = glyph.CodePoint;
-                    if (previousGlyph != null && glyph.FontMetrics != previousGlyph.FontMetrics)
-                    {
-                        scale = glyph.ScaleFactor;
-                    }
+                    CodePoint codePoint = codePointEnumerator.Current;
 
-                    float fontHeight = glyph.FontMetrics.LineHeight * options.LineSpacing;
-                    if (fontHeight > unscaledLineHeight)
+                    // Do not start a line with whitespace.
+                    if (textLine.Count == 0)
                     {
-                        // Get the largest line height thus far
-                        unscaledLineHeight = fontHeight;
-                        scale = glyph.ScaleFactor;
-                        lineHeight = unscaledLineHeight * spanStyle.PointSize / scale;
-                    }
-
-                    if (glyph.FontMetrics.Ascender > unscaledLineMaxAscender)
-                    {
-                        unscaledLineMaxAscender = glyph.FontMetrics.Ascender;
-                        scale = glyph.ScaleFactor;
-                        lineMaxAscender = unscaledLineMaxAscender * spanStyle.PointSize / scale;
-                    }
-
-                    if (Math.Abs(glyph.FontMetrics.Descender) > unscaledLineMaxDescender)
-                    {
-                        unscaledLineMaxDescender = Math.Abs(glyph.FontMetrics.Descender);
-                        scale = glyph.ScaleFactor;
-                        lineMaxDescender = unscaledLineMaxDescender * spanStyle.PointSize / scale;
-                    }
-
-                    if (firstLine)
-                    {
-                        // Set the position for the first line.
-                        switch (options.VerticalAlignment)
+                        // Do not start a line with whitespace.
+                        if (CodePoint.IsWhiteSpace(codePoint))
                         {
-                            case VerticalAlignment.Top:
-                                top = lineMaxAscender;
-                                break;
-                            case VerticalAlignment.Center:
-                                top = (lineMaxAscender * .5F) - (lineMaxDescender * .5F);
-                                break;
-                            case VerticalAlignment.Bottom:
-                                top = -lineMaxDescender;
-                                break;
+                            codePointIndex++;
+                            graphemeCodePointIndex++;
+                            continue;
                         }
                     }
 
-                    // Keep a record of where to wrap text and ensure that no line starts with white space
-                    if ((shouldWrap && (breakAll || nextWrappableLocation == codePointIndex))
-                        || nextWrappableRequired)
+                    // Calculate the advance for the current codepoint.
+                    GlyphMetrics glyph = metrics[0];
+                    float glyphAdvance = isHorizontal ? glyph.AdvanceWidth : glyph.AdvanceHeight;
+                    if (glyphAdvance > 0 && !CodePoint.IsNewLine(codePoint))
                     {
-                        if (!(keepAll && UnicodeUtility.IsCJKCodePoint((uint)codePoint.Value)))
+                        // Standard text. Use the largest advance for the metrics.
+                        if (isHorizontal)
                         {
-                            // We don't want to ever break between codepoints within a grapheme.
-                            if (graphemeCodePointIndex == 0)
+                            for (int i = 1; i < metrics.Length; i++)
                             {
-                                for (int j = layout.Count - 1; j >= 0; j--)
+                                float a = metrics[i].AdvanceWidth;
+                                if (a > glyphAdvance)
                                 {
-                                    GlyphLayout item = layout[j];
-                                    if (!item.IsWhiteSpace())
-                                    {
-                                        lastWrappableLocation = j + 1;
-                                        break;
-                                    }
+                                    glyphAdvance = a;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 1; i < metrics.Length; i++)
+                            {
+                                float a = metrics[i].AdvanceHeight;
+                                if (a > glyphAdvance)
+                                {
+                                    glyphAdvance = a;
+                                }
+                            }
+                        }
+                    }
+                    else if (CodePoint.IsTabulation(codePoint))
+                    {
+                        float tabStop = glyphAdvance * options.TabWidth;
+                        float tabAdvance = 0;
+                        if (tabStop > 0)
+                        {
+                            tabAdvance = tabStop - (lineAdvance % tabStop);
+                        }
+
+                        if (tabAdvance < glyphAdvance)
+                        {
+                            // Ensure tab advance is at least a glyph advance.
+                            tabAdvance += tabStop;
+                        }
+
+                        glyphAdvance = tabAdvance;
+                    }
+                    else if (CodePoint.IsCarriageReturn(codePoint))
+                    {
+                        // Carriage Return resets the coordinates to 0
+                        lineAdvance = 0;
+                        glyphAdvance = 0;
+                    }
+
+                    glyphAdvance *= pointSize / glyph.ScaleFactor;
+
+                    // Should we start a new line?
+                    if (graphemeCodePointIndex == 0)
+                    {
+                        // Mandatory wrap at index.
+                        if (currentLineBreak.PositionWrap == codePointIndex && currentLineBreak.Required)
+                        {
+                            textLines.Add(textLine);
+                            glyphCount += textLine.Count;
+                            textLine = new TextLine();
+                            lineAdvance = 0;
+                        }
+                        else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
+                        {
+                            // Forced wordbreak
+                            if (breakAll)
+                            {
+                                textLines.Add(textLine);
+                                glyphCount += textLine.Count;
+                                textLine = new TextLine();
+                                lineAdvance = 0;
+                            }
+                            else if (lastLineBreak.PositionWrap < codePointIndex)
+                            {
+                                // Split the current textline into two at the last wrapping point.
+                                TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
+                                if (split != textLine)
+                                {
+                                    textLines.Add(textLine);
+                                    textLine = split;
+                                    lineAdvance = split.ScaledAdvance();
                                 }
                             }
                         }
                     }
 
                     // Find the next line break.
-                    if (nextWrappableLocation == codePointIndex && lineBreakEnumerator.MoveNext())
+                    if (currentLineBreak.PositionWrap == codePointIndex)
                     {
-                        LineBreak b = lineBreakEnumerator.Current;
-                        nextWrappableLocation = b.PositionWrap - 1;
-                        nextWrappableRequired = b.Required;
+                        lastLineBreak = currentLineBreak;
+                        currentLineBreak = lineBreaks[++lineBreakIndex];
                     }
 
-                    float glyphWidth = glyph.AdvanceWidth * spanStyle.PointSize / scale;
-                    float glyphHeight = glyph.AdvanceHeight * spanStyle.PointSize / scale;
-
-                    if (glyphWidth > 0 && !CodePoint.IsNewLine(codePoint) && !CodePoint.IsWhiteSpace(codePoint))
+                    // Do not start a line following a break with whitespace
+                    if (textLine.Count == 0
+                        && CodePoint.IsWhiteSpace(codePoint)
+                        && !CodePoint.IsNewLine(codePoint))
                     {
-                        foreach (GlyphMetrics? g in glyphs)
-                        {
-                            float w = g.AdvanceWidth * spanStyle.PointSize / scale;
-                            float h = g.AdvanceHeight * spanStyle.PointSize / scale;
-                            layout.Add(new GlyphLayout(
-                                graphemeIndex,
-                                codePoint,
-                                new Glyph(g, spanStyle.PointSize),
-                                location,
-                                w,
-                                h,
-                                lineHeight,
-                                startOfLine));
-
-                            if (w > glyphWidth)
-                            {
-                                glyphWidth = w;
-                            }
-                        }
-
-                        startOfLine = false;
-
-                        // Move forward the actual width of the glyph, we are retaining the baseline
-                        location.X += glyphWidth;
-
-                        // If the word extended pass the end of the box, wrap it.
-                        // We don't want to ever break between codepoints within a grapheme.
-                        if (graphemeCodePointIndex == 0
-                            && location.X >= maxWidth
-                            && lastWrappableLocation > 0
-                            && lastWrappableLocation < layout.Count)
-                        {
-                            float wrappingOffset = layout[lastWrappableLocation].Location.X;
-                            startOfLine = true;
-
-                            // Move the characters to the next line
-                            for (int j = lastWrappableLocation; j < layout.Count; j++)
-                            {
-                                if (layout[j].IsWhiteSpace())
-                                {
-                                    wrappingOffset += layout[j].Width;
-                                    layout.RemoveAt(j);
-                                    j--;
-                                    continue;
-                                }
-
-                                GlyphLayout current = layout[j];
-                                var wrapped = GlyphLayout.Offset(current, new Vector2(-wrappingOffset, lineHeight), startOfLine);
-                                startOfLine = false;
-                                location.X = wrapped.Location.X + wrapped.Width;
-                                layout[j] = wrapped;
-                            }
-
-                            location.Y += lineHeight;
-                            totalHeight += lineHeight;
-                            firstLine = false;
-                            lastWrappableLocation = -1;
-                        }
-
-                        previousGlyph = glyph;
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
+                        continue;
                     }
-                    else if (codePoint.Value == '\r')
+
+                    if (textLine.Count > 0
+                        && CodePoint.IsNewLine(codePoint)
+                        && !CodePoint.IsCarriageReturn(codePoint))
                     {
-                        // Carriage Return resets the XX coordinate to 0
-                        location.X = 0;
-                        previousGlyph = null;
-                        startOfLine = true;
-
-                        layout.Add(new GlyphLayout(
-                            graphemeIndex,
-                            codePoint,
-                            new Glyph(glyph, spanStyle.PointSize),
-                            location,
-                            0,
-                            glyphHeight,
-                            lineHeight,
-                            startOfLine));
-
-                        startOfLine = false;
+                        // Do not add new lines unless at position zero.
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
+                        continue;
                     }
-                    else if (CodePoint.IsNewLine(codePoint))
-                    {
-                        // New Line resets the XX coordinate to 0 and offsets vertically to a new line.
-                        layout.Add(new GlyphLayout(
-                            graphemeIndex,
-                            codePoint,
-                            new Glyph(glyph, spanStyle.PointSize),
-                            location,
-                            0,
-                            glyphHeight,
-                            lineHeight,
-                            startOfLine));
 
-                        location.X = 0;
-                        location.Y += lineHeight;
-                        totalHeight += lineHeight;
-                        unscaledLineHeight = 0;
-                        unscaledLineMaxAscender = 0;
-                        previousGlyph = null;
-                        firstLine = false;
-                        lastWrappableLocation = -1;
-                        startOfLine = true;
-                    }
-                    else if (codePoint.Value == '\t')
-                    {
-                        float tabStop = glyphWidth * spanStyle.TabWidth;
-                        float finalWidth = 0;
-
-                        if (tabStop > 0)
-                        {
-                            finalWidth = tabStop - (location.X % tabStop);
-                        }
-
-                        if (finalWidth < glyphWidth)
-                        {
-                            // If we are not going to tab at least a glyph width add another tabstop
-                            // to it ??? TODO: Should I be doing this?
-                            finalWidth += tabStop;
-                        }
-
-                        layout.Add(new GlyphLayout(
-                            graphemeIndex,
-                            codePoint,
-                            new Glyph(glyph, spanStyle.PointSize),
-                            location,
-                            finalWidth,
-                            glyphHeight,
-                            lineHeight,
-                            startOfLine));
-
-                        startOfLine = false;
-
-                        // Advance to a position > width away that
-                        location.X += finalWidth;
-                        previousGlyph = null;
-                    }
-                    else if (CodePoint.IsWhiteSpace(codePoint))
-                    {
-                        layout.Add(new GlyphLayout(
-                            graphemeIndex,
-                            codePoint,
-                            new Glyph(glyph, spanStyle.PointSize),
-                            location,
-                            glyphWidth,
-                            glyphHeight,
-                            lineHeight,
-                            startOfLine));
-
-                        startOfLine = false;
-                        location.X += glyphWidth;
-                        previousGlyph = null;
-                    }
+                    // Add our metrics to the line.
+                    lineAdvance += glyphAdvance;
+                    textLine.Add(
+                        metrics,
+                        pointSize,
+                        glyphAdvance,
+                        bidiRuns[bidiMap[codePointIndex]],
+                        graphemeIndex,
+                        codePointIndex);
 
                     codePointIndex++;
                     graphemeCodePointIndex++;
                 }
             }
 
-            var offsetY = new Vector2(0, top);
-            switch (options.VerticalAlignment)
+            // Add the final line.
+            if (textLine.Count > 0)
             {
-                case VerticalAlignment.Center:
-                    offsetY += new Vector2(0, -(totalHeight * .5F));
-                    break;
-                case VerticalAlignment.Bottom:
-                    offsetY += new Vector2(0, -totalHeight);
-                    break;
+                textLines.Add(textLine);
             }
 
-            Vector2 offsetX = Vector2.Zero;
-            for (int i = 0; i < layout.Count; i++)
+            return textLines;
+        }
+
+        internal class TextLine
+        {
+            private readonly List<GlyphInfo> info = new();
+
+            public int Count => this.info.Count;
+
+            public GlyphInfo this[int index] => this.info[index];
+
+            public TextDirection Direction() => (TextDirection)this.info[0].BidiRun.Direction;
+
+            public float ScaledAdvance()
             {
-                GlyphLayout glyphLayout = layout[i];
-                graphemeIndex = glyphLayout.GraphemeIndex;
-
-                // Scan ahead getting the width.
-                if (glyphLayout.StartOfLine)
+                float sum = 0;
+                List<GlyphInfo> info = this.info;
+                for (int i = 0; i < info.Count; i++)
                 {
-                    float width = 0;
-                    for (int j = i; j < layout.Count; j++)
+                    GlyphInfo gi = this.info[i];
+                    if (gi.IsCarriageReturn && i + 1 < info.Count)
                     {
-                        GlyphLayout current = layout[j];
-                        int currentGraphemeIndex = current.GraphemeIndex;
-                        if (current.StartOfLine && (currentGraphemeIndex != graphemeIndex))
-                        {
-                            // Leading graphemes can be made up of multiple glyphs all marked as 'StartOfLine so we only
-                            // break when we are sure we have entered a new cluster or previously defined break.
-                            break;
-                        }
-
-                        width = Math.Max(width, current.Location.X + current.Width);
+                        // Carriage Return resets advance.
+                        sum -= sum;
                     }
-
-                    // Calculate an offset from the 'origin' based on TextAlignment for each line
-                    switch (options.HorizontalAlignment)
+                    else
                     {
-                        case HorizontalAlignment.Left:
-                            offsetX = new Vector2(originX, 0) + offsetY;
-                            break;
-                        case HorizontalAlignment.Right:
-                            offsetX = new Vector2(originX - width, 0) + offsetY;
-                            break;
-                        case HorizontalAlignment.Center:
-                            offsetX = new Vector2(originX - (width * .5F), 0) + offsetY;
-                            break;
+                        sum += gi.ScaledAdvance;
                     }
                 }
 
-                layout[i] = GlyphLayout.Offset(glyphLayout, offsetX + origin, glyphLayout.StartOfLine);
+                return sum;
             }
 
-            return layout;
+            public float ScaledAscender()
+                => this.info.Max(x => x.Metrics[0].FontMetrics.Ascender * x.PointSize / x.Metrics[0].ScaleFactor);
+
+            public float ScaledDescender()
+                => this.info.Max(x => Math.Abs(x.Metrics[0].FontMetrics.Descender) * x.PointSize / x.Metrics[0].ScaleFactor);
+
+            public float ScaledLineHeight()
+                => this.info.Max(x => Math.Abs(x.Metrics[0].FontMetrics.LineHeight) * x.PointSize / x.Metrics[0].ScaleFactor);
+
+            public void Add(
+                GlyphMetrics[] metrics,
+                float pointSize,
+                float advance,
+                BidiRun bidiRun,
+                int graphemeIndex,
+                int offset)
+                => this.info.Add(
+                    new GlyphInfo(
+                        metrics,
+                        pointSize,
+                        advance,
+                        bidiRun,
+                        graphemeIndex,
+                        offset));
+
+            public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
+            {
+                int index = this.info.Count;
+                GlyphInfo? glyphWrap = null;
+                while (index > 0)
+                {
+                    glyphWrap = this.info[--index];
+                    if (glyphWrap.Offset == lineBreak.PositionWrap)
+                    {
+                        break;
+                    }
+                }
+
+                if (index == 0)
+                {
+                    return this;
+                }
+
+                // Word breaks should not be used for Chinese/Japanese/Korean (CJK) text
+                // when word-breaking mode is keep-all.
+                if (keepAll && UnicodeUtility.IsCJKCodePoint((uint)glyphWrap!.CodePoint.Value))
+                {
+                    // Loop through previous glyphs to see if there is
+                    // a non CJK codepoint we can break at.
+                    while (index > 0)
+                    {
+                        glyphWrap = this.info[--index];
+                        if (!UnicodeUtility.IsCJKCodePoint((uint)glyphWrap.CodePoint.Value))
+                        {
+                            index++;
+                            break;
+                        }
+                    }
+
+                    if (index == 0)
+                    {
+                        return this;
+                    }
+                }
+
+                TextLine result = new();
+                result.info.AddRange(this.info.GetRange(index, this.info.Count - index));
+                this.info.RemoveRange(index, this.info.Count - index);
+                return result;
+            }
+
+            [DebuggerDisplay("{DebuggerDisplay,nq}")]
+            internal class GlyphInfo
+            {
+                public GlyphInfo(
+                    GlyphMetrics[] metrics,
+                    float pointSize,
+                    float scaledAdvance,
+                    BidiRun bidiRun,
+                    int graphemeIndex,
+                    int offset)
+                {
+                    this.Metrics = metrics;
+                    this.PointSize = pointSize;
+                    this.ScaledAdvance = scaledAdvance;
+                    this.BidiRun = bidiRun;
+                    this.GraphemeIndex = graphemeIndex;
+                    this.Offset = offset;
+                }
+
+                public CodePoint CodePoint => this.Metrics[0].CodePoint;
+
+                public GlyphMetrics[] Metrics { get; }
+
+                public float PointSize { get; }
+
+                public float ScaledAdvance { get; }
+
+                public bool IsNewLine => CodePoint.IsNewLine(this.Metrics[0].CodePoint);
+
+                public bool IsCarriageReturn => CodePoint.IsCarriageReturn(this.Metrics[0].CodePoint);
+
+                public BidiRun BidiRun { get; }
+
+                public TextDirection TextDirection => (TextDirection)this.BidiRun.Direction;
+
+                public int GraphemeIndex { get; }
+
+                public int Offset { get; }
+
+                private string DebuggerDisplay => FormattableString
+                    .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.Offset}");
+            }
         }
     }
 }
