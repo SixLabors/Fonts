@@ -37,14 +37,8 @@ namespace SixLabors.Fonts
                 return Array.Empty<GlyphLayout>();
             }
 
-            IReadOnlyList<GlyphLayout> glyphsToRender = new TextLayout2().GenerateLayout(text, options);
-            FontRectangle bound = TextMeasurer.GetBounds(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
-
             IEnumerable<TextLine> textLines = ProcessText(text, options);
-            var xxx = LayoutText(textLines, options);
-            FontRectangle bound2 = TextMeasurer.GetBounds(xxx, new Vector2(options.DpiX, options.DpiY));
-            return xxx;
-
+            return LayoutText(textLines, options);
         }
 
         private static IEnumerable<TextLine> ProcessText(ReadOnlySpan<char> text, RendererOptions options)
@@ -190,7 +184,7 @@ namespace SixLabors.Fonts
             }
 
             // Set the X-Origin for horizontal alignment.
-            float wrappingAdvance = options.WrappingWidth > 0 && options.WrappingWidth < maxScaledAdvance
+            float wrappingAdvance = options.WrappingWidth > 0 && options.WrappingWidth < maxScaledAdvance * options.DpiX
                 ? options.WrappingWidth / options.DpiX
                 : 0;
 
@@ -212,20 +206,12 @@ namespace SixLabors.Fonts
                 TextLine.GlyphInfo info = textLine[i];
 
                 // TODO: Handle embedded RTL values.
-                bool doReturn = true;
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
-                    if (doReturn && info.IsCarriageReturn)
-                    {
-                        // Carriage Return resets advance.
-                        location.X -= location.X;
-                        doReturn = false;
-                    }
-
                     float scale = info.PointSize / metric.ScaleFactor;
                     if (info.IsNewLine)
                     {
-                        location.Y += metric.FontMetrics.LineHeight * scale;
+                        location.Y += metric.FontMetrics.LineHeight * scale * options.LineSpacing;
                         continue;
                     }
 
@@ -234,7 +220,7 @@ namespace SixLabors.Fonts
                         metric.CodePoint,
                         new Glyph(metric, info.PointSize),
                         location,
-                        metric.AdvanceWidth * scale,
+                        info.ScaledAdvance,
                         metric.AdvanceHeight * scale,
                         metric.FontMetrics.LineHeight * scale * options.LineSpacing,
                         i == 0));
@@ -439,8 +425,8 @@ namespace SixLabors.Fonts
 
                     CodePoint codePoint = codePointEnumerator.Current;
 
-                    // Do not start a line with whitespace.
-                    if (textLine.Count == 0)
+                    // Do not start a line following a break with whitespace.
+                    if (textLine.Count == 0 && textLines.Count > 0)
                     {
                         // Do not start a line with whitespace.
                         if (CodePoint.IsWhiteSpace(codePoint))
@@ -454,7 +440,32 @@ namespace SixLabors.Fonts
                     // Calculate the advance for the current codepoint.
                     GlyphMetrics glyph = metrics[0];
                     float glyphAdvance = isHorizontal ? glyph.AdvanceWidth : glyph.AdvanceHeight;
-                    if (glyphAdvance > 0 && !CodePoint.IsNewLine(codePoint))
+                    if (glyphAdvance == 0)
+                    {
+                        // Nothing to render.
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
+                        continue;
+                    }
+
+                    if (CodePoint.IsTabulation(codePoint))
+                    {
+                        float tabStop = glyphAdvance * options.TabWidth;
+                        float tabAdvance = 0;
+                        if (tabStop > 0)
+                        {
+                            tabAdvance = tabStop - (lineAdvance % tabStop);
+                        }
+
+                        if (tabAdvance < glyphAdvance)
+                        {
+                            // Ensure tab advance is at least a glyph advance.
+                            tabAdvance += tabStop;
+                        }
+
+                        glyphAdvance = tabAdvance;
+                    }
+                    else if (!CodePoint.IsNewLine(codePoint))
                     {
                         // Standard text. Use the largest advance for the metrics.
                         if (isHorizontal)
@@ -479,29 +490,6 @@ namespace SixLabors.Fonts
                                 }
                             }
                         }
-                    }
-                    else if (CodePoint.IsTabulation(codePoint))
-                    {
-                        float tabStop = glyphAdvance * options.TabWidth;
-                        float tabAdvance = 0;
-                        if (tabStop > 0)
-                        {
-                            tabAdvance = tabStop - (lineAdvance % tabStop);
-                        }
-
-                        if (tabAdvance < glyphAdvance)
-                        {
-                            // Ensure tab advance is at least a glyph advance.
-                            tabAdvance += tabStop;
-                        }
-
-                        glyphAdvance = tabAdvance;
-                    }
-                    else if (CodePoint.IsCarriageReturn(codePoint))
-                    {
-                        // Carriage Return resets the coordinates to 0
-                        lineAdvance = 0;
-                        glyphAdvance = 0;
                     }
 
                     glyphAdvance *= pointSize / glyph.ScaleFactor;
@@ -549,7 +537,7 @@ namespace SixLabors.Fonts
                     }
 
                     // Do not start a line following a break with whitespace
-                    if (textLine.Count == 0
+                    if (textLine.Count == 0 && textLines.Count > 0
                         && CodePoint.IsWhiteSpace(codePoint)
                         && !CodePoint.IsNewLine(codePoint))
                     {
@@ -558,9 +546,7 @@ namespace SixLabors.Fonts
                         continue;
                     }
 
-                    if (textLine.Count > 0
-                        && CodePoint.IsNewLine(codePoint)
-                        && !CodePoint.IsCarriageReturn(codePoint))
+                    if (textLine.Count > 0 && CodePoint.IsNewLine(codePoint))
                     {
                         // Do not add new lines unless at position zero.
                         codePointIndex++;
@@ -603,25 +589,7 @@ namespace SixLabors.Fonts
             public TextDirection Direction() => (TextDirection)this.info[0].BidiRun.Direction;
 
             public float ScaledAdvance()
-            {
-                float sum = 0;
-                List<GlyphInfo> info = this.info;
-                for (int i = 0; i < info.Count; i++)
-                {
-                    GlyphInfo gi = this.info[i];
-                    if (gi.IsCarriageReturn && i + 1 < info.Count)
-                    {
-                        // Carriage Return resets advance.
-                        sum -= sum;
-                    }
-                    else
-                    {
-                        sum += gi.ScaledAdvance;
-                    }
-                }
-
-                return sum;
-            }
+                => this.info.Sum(x => x.ScaledAdvance);
 
             public float ScaledAscender()
                 => this.info.Max(x => x.Metrics[0].FontMetrics.Ascender * x.PointSize / x.Metrics[0].ScaleFactor);
@@ -722,8 +690,6 @@ namespace SixLabors.Fonts
                 public float ScaledAdvance { get; }
 
                 public bool IsNewLine => CodePoint.IsNewLine(this.Metrics[0].CodePoint);
-
-                public bool IsCarriageReturn => CodePoint.IsCarriageReturn(this.Metrics[0].CodePoint);
 
                 public BidiRun BidiRun { get; }
 
