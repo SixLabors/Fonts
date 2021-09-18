@@ -428,8 +428,8 @@ namespace SixLabors.Fonts
                     // Do not start a line following a break with whitespace.
                     if (textLine.Count == 0 && textLines.Count > 0)
                     {
-                        // Do not start a line with whitespace.
-                        if (CodePoint.IsWhiteSpace(codePoint))
+                        // Do not start a line with whitespace unless tab.
+                        if (CodePoint.IsWhiteSpace(codePoint) && !CodePoint.IsTabulation(codePoint))
                         {
                             codePointIndex++;
                             graphemeCodePointIndex++;
@@ -539,6 +539,7 @@ namespace SixLabors.Fonts
                     // Do not start a line following a break with whitespace
                     if (textLine.Count == 0 && textLines.Count > 0
                         && CodePoint.IsWhiteSpace(codePoint)
+                        && !CodePoint.IsTabulation(codePoint)
                         && !CodePoint.IsNewLine(codePoint))
                     {
                         codePointIndex++;
