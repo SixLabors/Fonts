@@ -95,6 +95,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
+            // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#81-reverse-chaining-contextual-single-substitution-format-1-coverage-based-glyph-contexts
             int glyphId = collection[index][0];
             if (glyphId < 0)
             {
@@ -102,15 +103,38 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
-
-            if (offset > -1)
+            if (offset <= -1)
             {
-                // TODO: Implement
-                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#81-reverse-chaining-contextual-single-substitution-format-1-coverage-based-glyph-contexts
                 return false;
             }
 
-            return false;
+            for (int i = 0; i < this.backtrackCoverageTables.Length; ++i)
+            {
+                int id = collection[index - 1 - i][0];
+                if (id < 0 || this.backtrackCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                {
+                    return false;
+                }
+            }
+
+            for (int i = 0; i < this.lookaheadCoverageTables.Length; ++i)
+            {
+                int id = collection[index + i][0];
+                if (id < 0 || this.lookaheadCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                {
+                    return false;
+                }
+            }
+
+            // It's a match. Perform substitutions and return true if anything changed.
+            bool hasChanged = false;
+            for (int i = 0; i < this.substituteGlyphIds.Length; i++)
+            {
+                collection.Replace(index + i, this.substituteGlyphIds[i]);
+                hasChanged = true;
+            }
+
+            return hasChanged;
         }
 
         public readonly struct AlternateSetTable
@@ -118,7 +142,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             public AlternateSetTable(int[] alternateGlyphs)
                 => this.AlternateGlyphs = alternateGlyphs;
 
-            public readonly int[] AlternateGlyphs { get; }
+            public int[] AlternateGlyphs { get; }
         }
     }
 }
