@@ -3,16 +3,15 @@
 
 using System.IO;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
-    internal sealed class ClassSequenceRuleSetTable
+    internal sealed class ChainedClassSequenceRuleSetTable
     {
-        private ClassSequenceRuleSetTable(ClassSequenceRuleTable[] sequenceRuleTables)
-            => this.SequenceRuleTables = sequenceRuleTables;
+        private ChainedClassSequenceRuleSetTable(ChainedClassSequenceRuleTable[] subRules) => this.SubRules = subRules;
 
-        public ClassSequenceRuleTable[] SequenceRuleTables { get; }
+        public ChainedClassSequenceRuleTable[] SubRules { get; }
 
-        public static ClassSequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
+        public static ChainedClassSequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
         {
             // ClassSequenceRuleSet
             // +----------+----------------------------------------+---------------------------------------+
@@ -28,13 +27,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ushort seqRuleCount = reader.ReadUInt16();
             ushort[] seqRuleOffsets = reader.ReadUInt16Array(seqRuleCount);
 
-            var subRules = new ClassSequenceRuleTable[seqRuleCount];
+            var subRules = new ChainedClassSequenceRuleTable[seqRuleCount];
             for (int i = 0; i < subRules.Length; i++)
             {
-                subRules[i] = ClassSequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
+                subRules[i] = ChainedClassSequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);
             }
 
-            return new ClassSequenceRuleSetTable(subRules);
+            return new ChainedClassSequenceRuleSetTable(subRules);
         }
     }
 }
