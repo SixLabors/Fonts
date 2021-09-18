@@ -99,6 +99,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             }
         }
 
+        // LookupType1SubTable
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#11-single-substitution-format-1
         [Fact]
         public void SingleSubstitution_Works()
         {
@@ -116,6 +118,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
 
+        // LookupType2SubTable
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#21-multiple-substitution-format-1
         [Fact]
         public void MultipleSubstitution_Works()
         {
@@ -133,6 +137,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
 
+        // LookupType3SubTable
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-3-alternate-substitution-subtable
         [Fact]
         public void AlternateSubstitution_Works()
         {
@@ -150,6 +156,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
 
+        // LookupType4SubTable
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-3-alternate-substitution-subtable
         [Fact]
         public void LigatureSubstitution_Works()
         {
@@ -167,6 +175,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
 
+        // LookupType6SubTable, Format 3
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
         [Fact]
         public void ChainedContextsSubstitutionFormat2Works()
         {
@@ -187,6 +197,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             }
         }
 
+        // LookupType6SubTable, Format 3
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#63-chained-contexts-substitution-format-3-coverage-based-glyph-contexts
         [Fact]
         public void ChainedContextsSubstitutionFormat3Works()
         {
@@ -207,6 +219,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             }
         }
 
+        // LookupType6SubTable, Format 3
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#63-chained-contexts-substitution-format-3-coverage-based-glyph-contexts
         [Fact]
         public void ChainedContextsSubstitutionFormat3_WithCursiveScript_Works()
         {
@@ -215,6 +229,28 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             var renderer = new ColorGlyphRenderer();
             string testStr = "ba"; // Characters following b should have a special form and should be replaced.
             int[] expectedGlyphIndices = { 69, 102 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        // LookupType8SubTable
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-8-reverse-chaining-contextual-single-substitution-subtable
+        [Fact]
+        public void ReverseChainingContextualSingleSubstitution_Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile2).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "X89"; // X89 -> XYZ
+            int[] expectedGlyphIndices = { 57, 58, 59 };
 
             // act
             TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
