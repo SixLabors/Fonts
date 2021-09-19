@@ -1,20 +1,24 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 
 namespace SixLabors.Fonts.Unicode
 {
-    internal readonly struct BidiRun
+    internal readonly struct BidiRun : IEquatable<BidiRun>
     {
-        public BidiRun(BidiCharacterType direction, int start, int length)
+        public BidiRun(BidiCharacterType direction, int level, int start, int length)
         {
             this.Direction = direction;
+            this.Level = level;
             this.Start = start;
             this.Length = length;
         }
 
         public BidiCharacterType Direction { get; }
+
+        public int Level { get; }
 
         public int Start { get; }
 
@@ -22,9 +26,13 @@ namespace SixLabors.Fonts.Unicode
 
         public int End => this.Start + this.Length;
 
+        public static bool operator ==(BidiRun left, BidiRun right) => left.Equals(right);
+
+        public static bool operator !=(BidiRun left, BidiRun right) => !(left == right);
+
         public override string ToString() => $"{this.Start} - {this.End} - {this.Direction}";
 
-        public static IEnumerable<BidiRun> CoalescLevels(ReadOnlyArraySlice<sbyte> levels)
+        public static IEnumerable<BidiRun> CoalesceLevels(ReadOnlyArraySlice<sbyte> levels)
         {
             if (levels.Length == 0)
             {
@@ -43,7 +51,7 @@ namespace SixLabors.Fonts.Unicode
 
                 // End of this run
                 direction = (runLevel & 0x01) == 0 ? BidiCharacterType.LeftToRight : BidiCharacterType.RightToLeft;
-                yield return new BidiRun(direction, startRun, i - startRun);
+                yield return new BidiRun(direction, runLevel, startRun, i - startRun);
 
                 // Move to next run
                 startRun = i;
@@ -51,7 +59,20 @@ namespace SixLabors.Fonts.Unicode
             }
 
             direction = (runLevel & 0x01) == 0 ? BidiCharacterType.LeftToRight : BidiCharacterType.RightToLeft;
-            yield return new BidiRun(direction, startRun, levels.Length - startRun);
+            yield return new BidiRun(direction, runLevel, startRun, levels.Length - startRun);
         }
+
+        public override bool Equals(object? obj)
+            => obj is BidiRun run && this.Equals(run);
+
+        public bool Equals(BidiRun other)
+            => this.Direction == other.Direction
+            && this.Level == other.Level
+            && this.Start == other.Start
+            && this.Length == other.Length
+            && this.End == other.End;
+
+        public override int GetHashCode()
+            => HashCode.Combine(this.Direction, this.Level, this.Start, this.Length, this.End);
     }
 }

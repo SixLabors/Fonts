@@ -52,7 +52,7 @@ namespace SixLabors.Fonts
             }
 
             bidi.Process(bidiData);
-            this.bidiRuns = BidiRun.CoalescLevels(bidi.ResolvedLevels).ToArray();
+            this.bidiRuns = BidiRun.CoalesceLevels(bidi.ResolvedLevels).ToArray();
             this.bidiMap = new();
 
             // Incrementally build out collection of glyphs.

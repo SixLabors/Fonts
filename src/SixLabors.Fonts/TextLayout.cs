@@ -76,7 +76,7 @@ namespace SixLabors.Fonts
             }
 
             bidi.Process(bidiData);
-            BidiRun[] bidiRuns = BidiRun.CoalescLevels(bidi.ResolvedLevels).ToArray();
+            BidiRun[] bidiRuns = BidiRun.CoalesceLevels(bidi.ResolvedLevels).ToArray();
             Dictionary<int, int> bidiMap = new();
 
             // Incrementally build out collection of glyphs.
@@ -134,26 +134,16 @@ namespace SixLabors.Fonts
             if (layoutMode == LayoutMode.Horizontal)
             {
                 float maxScaledAdvance = textLines.Max(x => x.ScaledAdvance());
-                if (textDirection == TextDirection.LeftToRight)
+                foreach (TextLine textLine in textLines)
                 {
-                    foreach (TextLine textLine in textLines)
-                    {
-                        glyphs.AddRange(LayoutLineLeftToRightHorizontal(textLine, lineCount, maxScaledAdvance, options, glyphs.Count == 0, ref location));
-                    }
-                }
-                else if (textDirection == TextDirection.RightToLeft)
-                {
-                    foreach (TextLine textLine in textLines)
-                    {
-                        glyphs.AddRange(LayoutLineLeftToRightHorizontal(textLine, lineCount, maxScaledAdvance, options, glyphs.Count == 0, ref location));
-                    }
+                    glyphs.AddRange(LayoutLineHorizontal(textLine, lineCount, maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
 
             return glyphs;
         }
 
-        private static IEnumerable<GlyphLayout> LayoutLineLeftToRightHorizontal(
+        private static IEnumerable<GlyphLayout> LayoutLineHorizontal(
             TextLine textLine,
             int lineCount,
             float maxScaledAdvance,
@@ -224,88 +214,6 @@ namespace SixLabors.Fonts
                 }
 
                 location.X += info.ScaledAdvance;
-            }
-
-            location.X = originX + (options.Origin.X / options.DpiX);
-            if (glyphs.Count > 0)
-            {
-                location.Y += glyphs.Max(x => x.LineHeight);
-            }
-
-            return glyphs;
-        }
-
-        private static IEnumerable<GlyphLayout> LayoutLineRightToLeftHorizontal(
-            TextLine textLine,
-            int lineCount,
-            float maxScaledAdvance,
-            RendererOptions options,
-            bool first,
-            ref Vector2 location)
-        {
-            float originY = 0;
-            float originX = maxScaledAdvance;
-            if (first)
-            {
-                // Set the Y-Origin for the first line.
-                float lineScaledAscender = textLine.ScaledAscender();
-                float lineScaledDescender = textLine.ScaledDescender();
-                switch (options.VerticalAlignment)
-                {
-                    case VerticalAlignment.Top:
-                        originY = lineScaledAscender;
-                        break;
-                    case VerticalAlignment.Center:
-                        originY = (lineScaledAscender * .5F) - (lineScaledDescender * .5F);
-                        originY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing * .5F;
-                        break;
-                    case VerticalAlignment.Bottom:
-                        originY = -lineScaledDescender;
-                        originY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing;
-                        break;
-                }
-
-                location.Y += originY;
-            }
-
-            // Set the X-Origin for horizontal alignment.
-            float wrappingAdvance = options.WrappingWidth > 0 && options.WrappingWidth / options.DpiX < maxScaledAdvance
-                ? options.WrappingWidth / options.DpiX
-                : 0;
-
-            switch (options.HorizontalAlignment)
-            {
-                case HorizontalAlignment.Left:
-                    //originX = wrappingAdvance - textLine.ScaledAdvance();
-                    break;
-                case HorizontalAlignment.Center:
-                    originX = (wrappingAdvance * .5F) - (textLine.ScaledAdvance() * .5F);
-                    break;
-            }
-
-            location.X += originX;
-
-            List<GlyphLayout> glyphs = new();
-            for (int i = 0; i < textLine.Count; i++)
-            {
-                TextLine.GlyphInfo info = textLine[i];
-
-                // TODO: Handle embedded LTR values.
-                foreach (GlyphMetrics metric in info.Metrics)
-                {
-                    float scale = info.PointSize / metric.ScaleFactor;
-                    glyphs.Add(new GlyphLayout(
-                        info.GraphemeIndex,
-                        metric.CodePoint,
-                        new Glyph(metric, info.PointSize),
-                        location,
-                        info.ScaledAdvance,
-                        metric.AdvanceHeight * scale,
-                        metric.FontMetrics.LineHeight * scale * options.LineSpacing,
-                        i == 0));
-                }
-
-                location.X -= info.ScaledAdvance;
             }
 
             location.X = originX + (options.Origin.X / options.DpiX);
@@ -580,7 +488,7 @@ namespace SixLabors.Fonts
                         // Mandatory wrap at index.
                         if (currentLineBreak.PositionWrap == codePointIndex && currentLineBreak.Required)
                         {
-                            textLines.Add(textLine);
+                            textLines.Add(textLine.BidiReOrder());
                             glyphCount += textLine.Count;
                             textLine = new TextLine();
                             lineAdvance = 0;
@@ -590,7 +498,7 @@ namespace SixLabors.Fonts
                             // Forced wordbreak
                             if (breakAll)
                             {
-                                textLines.Add(textLine);
+                                textLines.Add(textLine.BidiReOrder());
                                 glyphCount += textLine.Count;
                                 textLine = new TextLine();
                                 lineAdvance = 0;
@@ -601,7 +509,7 @@ namespace SixLabors.Fonts
                                 TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
                                 if (split != textLine)
                                 {
-                                    textLines.Add(textLine);
+                                    textLines.Add(textLine.BidiReOrder());
                                     textLine = split;
                                     lineAdvance = split.ScaledAdvance();
                                 }
@@ -654,7 +562,7 @@ namespace SixLabors.Fonts
             // Add the final line.
             if (textLine.Count > 0)
             {
-                textLines.Add(textLine);
+                textLines.Add(textLine.BidiReOrder());
             }
 
             return textLines;
@@ -701,7 +609,7 @@ namespace SixLabors.Fonts
             public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
             {
                 int index = this.info.Count;
-                GlyphInfo? glyphWrap = null;
+                GlyphInfo glyphWrap = default;
                 while (index > 0)
                 {
                     glyphWrap = this.info[--index];
@@ -718,7 +626,7 @@ namespace SixLabors.Fonts
 
                 // Word breaks should not be used for Chinese/Japanese/Korean (CJK) text
                 // when word-breaking mode is keep-all.
-                if (keepAll && UnicodeUtility.IsCJKCodePoint((uint)glyphWrap!.CodePoint.Value))
+                if (keepAll && UnicodeUtility.IsCJKCodePoint((uint)glyphWrap.CodePoint.Value))
                 {
                     // Loop through previous glyphs to see if there is
                     // a non CJK codepoint we can break at.
@@ -762,8 +670,123 @@ namespace SixLabors.Fonts
                 return result;
             }
 
+            public TextLine BidiReOrder()
+            {
+                // Build up the collection of ordered runs.
+                BidiRun run = this.info[0].BidiRun;
+                OrderedBidiRun orderedRun = new(run.Level);
+                OrderedBidiRun? current = orderedRun;
+                for (int i = 0; i < this.info.Count; i++)
+                {
+                    GlyphInfo g = this.info[i];
+                    if (run != g.BidiRun)
+                    {
+                        run = g.BidiRun;
+                        current.Next = new OrderedBidiRun(run.Level);
+                        current = current.Next;
+                    }
+
+                    current.Add(g);
+                }
+
+                // Reorder them into visual order.
+                orderedRun = RecursiveReOrder(orderedRun);
+
+                // Now perform a recursive reversal of each run.
+                int max = this.info.Max(x => x.BidiRun.Level);
+                int min = this.info.Where(x => x.BidiRun.Level % 2 != 0).Min(x => x.BidiRun.Level);
+                int level = max;
+                while (level >= min)
+                {
+                    for (int i = level; i <= max; i++)
+                    {
+                        current = orderedRun;
+                        while (current != null)
+                        {
+                            if (current.Level == level)
+                            {
+                                current.Reverse();
+                            }
+
+                            current = current.Next;
+                        }
+                    }
+
+                    level--;
+                }
+
+                this.info.Clear();
+                current = orderedRun;
+                while (current != null)
+                {
+                    this.info.AddRange(current.AsSlice());
+                    current = current.Next;
+                }
+
+                return this;
+            }
+
+            /// <summary>
+            /// Reorders a series of runs from logical to visual order, returning the left most run.
+            /// <see href="https://github.com/fribidi/linear-reorder/blob/f2f872257d4d8b8e137fcf831f254d6d4db79d3c/linear-reorder.c"/>
+            /// </summary>
+            /// <param name="line">The ordered bidi run.</param>
+            /// <returns>The <see cref="OrderedBidiRun"/>.</returns>
+            private static OrderedBidiRun RecursiveReOrder(OrderedBidiRun? line)
+            {
+                BidiRange? range = null;
+                OrderedBidiRun? run = line;
+
+                while (run != null)
+                {
+                    OrderedBidiRun? next = run.Next;
+
+                    while (range != null && range.Level > run.Level
+                        && range.Previous != null && range.Previous.Level >= run.Level)
+                    {
+                        range = BidiRange.MergeWithPrevious(range);
+                    }
+
+                    if (range != null && range.Level >= run.Level)
+                    {
+                        // Attach run to the range.
+                        if (run.Level % 2 != 0)
+                        {
+                            // Odd, range goes to the right of run.
+                            run.Next = range.Left;
+                            range.Left = run;
+                        }
+                        else
+                        {
+                            // Even, range goes to the left of run.
+                            range.Right!.Next = run;
+                            range.Right = run;
+                        }
+
+                        range.Level = run.Level;
+                    }
+                    else
+                    {
+                        BidiRange r = new();
+                        r.Left = r.Right = run;
+                        r.Level = run.Level;
+                        r.Previous = range;
+                        range = r;
+                    }
+
+                    run = next;
+                }
+
+                while (range?.Previous != null)
+                {
+                    range = BidiRange.MergeWithPrevious(range);
+                }
+
+                return range!.Left!;
+            }
+
             [DebuggerDisplay("{DebuggerDisplay,nq}")]
-            internal class GlyphInfo
+            internal readonly struct GlyphInfo
             {
                 public GlyphInfo(
                     GlyphMetrics[] metrics,
@@ -799,6 +822,62 @@ namespace SixLabors.Fonts
 
                 private string DebuggerDisplay => FormattableString
                     .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.Offset}");
+            }
+
+            private class OrderedBidiRun
+            {
+                private ArrayBuilder<GlyphInfo> info;
+
+                public OrderedBidiRun(int level) => this.Level = level;
+
+                public int Level { get; }
+
+                public OrderedBidiRun? Next { get; set; }
+
+                public void Add(GlyphInfo info) => this.info.Add(info);
+
+                public ArraySlice<GlyphInfo> AsSlice() => this.info.AsSlice();
+
+                public void Reverse() => this.AsSlice().Span.Reverse();
+            }
+
+            private class BidiRange
+            {
+                public int Level { get; set; }
+
+                public OrderedBidiRun? Left { get; set; }
+
+                public OrderedBidiRun? Right { get; set; }
+
+                public BidiRange? Previous { get; set; }
+
+                public static BidiRange MergeWithPrevious(BidiRange? range)
+                {
+                    BidiRange previous = range!.Previous!;
+                    BidiRange left;
+                    BidiRange right;
+
+                    if (previous.Level % 2 != 0)
+                    {
+                        // Odd, previous goes to the right of range.
+                        left = range;
+                        right = previous;
+                    }
+                    else
+                    {
+                        // Even, previous goes to the left of range.
+                        left = previous;
+                        right = range;
+                    }
+
+                    // Stitch them
+                    left.Right!.Next = right.Left;
+                    previous.Left = left.Left;
+                    previous.Right = right.Right;
+
+                    range = null;
+                    return previous;
+                }
             }
         }
     }
