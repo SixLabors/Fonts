@@ -60,9 +60,7 @@ namespace SixLabors.Fonts.Tests.Issues
                 if (lineYPos != glyph.Location.Y)
                 {
                     Assert.False(glyph.IsWhiteSpace());
-
-                    // TODO: Should we bother trimming trailing trailing whitespace?
-                    // Assert.False(layout[i - 1].IsWhiteSpace());
+                    Assert.False(layout[i - 1].IsWhiteSpace());
                     lineYPos = glyph.Location.Y;
                 }
             }

@@ -143,7 +143,10 @@ namespace SixLabors.Fonts
                 }
                 else if (textDirection == TextDirection.RightToLeft)
                 {
-                    // TODO:
+                    foreach (TextLine textLine in textLines)
+                    {
+                        glyphs.AddRange(LayoutLineLeftToRightHorizontal(textLine, lineCount, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    }
                 }
             }
 
@@ -223,7 +226,89 @@ namespace SixLabors.Fonts
                 location.X += info.ScaledAdvance;
             }
 
-            location.X = options.Origin.X / options.DpiX;
+            location.X = originX + (options.Origin.X / options.DpiX);
+            if (glyphs.Count > 0)
+            {
+                location.Y += glyphs.Max(x => x.LineHeight);
+            }
+
+            return glyphs;
+        }
+
+        private static IEnumerable<GlyphLayout> LayoutLineRightToLeftHorizontal(
+            TextLine textLine,
+            int lineCount,
+            float maxScaledAdvance,
+            RendererOptions options,
+            bool first,
+            ref Vector2 location)
+        {
+            float originY = 0;
+            float originX = maxScaledAdvance;
+            if (first)
+            {
+                // Set the Y-Origin for the first line.
+                float lineScaledAscender = textLine.ScaledAscender();
+                float lineScaledDescender = textLine.ScaledDescender();
+                switch (options.VerticalAlignment)
+                {
+                    case VerticalAlignment.Top:
+                        originY = lineScaledAscender;
+                        break;
+                    case VerticalAlignment.Center:
+                        originY = (lineScaledAscender * .5F) - (lineScaledDescender * .5F);
+                        originY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing * .5F;
+                        break;
+                    case VerticalAlignment.Bottom:
+                        originY = -lineScaledDescender;
+                        originY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing;
+                        break;
+                }
+
+                location.Y += originY;
+            }
+
+            // Set the X-Origin for horizontal alignment.
+            float wrappingAdvance = options.WrappingWidth > 0 && options.WrappingWidth / options.DpiX < maxScaledAdvance
+                ? options.WrappingWidth / options.DpiX
+                : 0;
+
+            switch (options.HorizontalAlignment)
+            {
+                case HorizontalAlignment.Left:
+                    //originX = wrappingAdvance - textLine.ScaledAdvance();
+                    break;
+                case HorizontalAlignment.Center:
+                    originX = (wrappingAdvance * .5F) - (textLine.ScaledAdvance() * .5F);
+                    break;
+            }
+
+            location.X += originX;
+
+            List<GlyphLayout> glyphs = new();
+            for (int i = 0; i < textLine.Count; i++)
+            {
+                TextLine.GlyphInfo info = textLine[i];
+
+                // TODO: Handle embedded LTR values.
+                foreach (GlyphMetrics metric in info.Metrics)
+                {
+                    float scale = info.PointSize / metric.ScaleFactor;
+                    glyphs.Add(new GlyphLayout(
+                        info.GraphemeIndex,
+                        metric.CodePoint,
+                        new Glyph(metric, info.PointSize),
+                        location,
+                        info.ScaledAdvance,
+                        metric.AdvanceHeight * scale,
+                        metric.FontMetrics.LineHeight * scale * options.LineSpacing,
+                        i == 0));
+                }
+
+                location.X -= info.ScaledAdvance;
+            }
+
+            location.X = originX + (options.Origin.X / options.DpiX);
             if (glyphs.Count > 0)
             {
                 location.Y += glyphs.Max(x => x.LineHeight);
@@ -656,6 +741,24 @@ namespace SixLabors.Fonts
                 TextLine result = new();
                 result.info.AddRange(this.info.GetRange(index, this.info.Count - index));
                 this.info.RemoveRange(index, this.info.Count - index);
+
+                // Trim trailing whitespace from previous line.
+                index = this.info.Count - 1;
+                while (index > 0)
+                {
+                    if (!CodePoint.IsWhiteSpace(this.info[index].CodePoint))
+                    {
+                        break;
+                    }
+
+                    index--;
+                }
+
+                if (index < this.info.Count)
+                {
+                    this.info.RemoveRange(index, this.info.Count - index);
+                }
+
                 return result;
             }
 
