@@ -31,6 +31,9 @@ namespace SixLabors.Fonts
         /// </summary>
         private readonly Dictionary<int, GlyphMetrics[]> map = new();
 
+        /// <summary>
+        /// The text layout mode.
+        /// </summary>
         private readonly LayoutMode mode;
 
         /// <summary>
@@ -130,7 +133,7 @@ namespace SixLabors.Fonts
                             }
                         }
 
-                        m.Add(new GlyphMetrics(gm));
+                        m.Add(new GlyphMetrics(gm, codePoint));
                     }
                 }
 

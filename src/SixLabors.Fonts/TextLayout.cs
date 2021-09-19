@@ -184,7 +184,7 @@ namespace SixLabors.Fonts
             }
 
             // Set the X-Origin for horizontal alignment.
-            float wrappingAdvance = options.WrappingWidth > 0 && options.WrappingWidth < maxScaledAdvance * options.DpiX
+            float wrappingAdvance = options.WrappingWidth > 0 && options.WrappingWidth / options.DpiX < maxScaledAdvance
                 ? options.WrappingWidth / options.DpiX
                 : 0;
 
@@ -209,12 +209,6 @@ namespace SixLabors.Fonts
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
                     float scale = info.PointSize / metric.ScaleFactor;
-                    if (info.IsNewLine)
-                    {
-                        location.Y += metric.FontMetrics.LineHeight * scale * options.LineSpacing;
-                        continue;
-                    }
-
                     glyphs.Add(new GlyphLayout(
                         info.GraphemeIndex,
                         metric.CodePoint,
@@ -425,11 +419,12 @@ namespace SixLabors.Fonts
 
                     CodePoint codePoint = codePointEnumerator.Current;
 
-                    // Do not start a line following a break with whitespace.
+                    // Do not start a line following a break with breaking whitespace.
                     if (textLine.Count == 0 && textLines.Count > 0)
                     {
-                        // Do not start a line with whitespace unless tab.
-                        if (CodePoint.IsWhiteSpace(codePoint) && !CodePoint.IsTabulation(codePoint))
+                        if (CodePoint.IsWhiteSpace(codePoint)
+                            && !CodePoint.IsNonBreakingSpace(codePoint)
+                            && !CodePoint.IsTabulation(codePoint))
                         {
                             codePointIndex++;
                             graphemeCodePointIndex++;
@@ -536,9 +531,10 @@ namespace SixLabors.Fonts
                         currentLineBreak = lineBreaks[++lineBreakIndex];
                     }
 
-                    // Do not start a line following a break with whitespace
+                    // Do not start a line following a break with breaking whitespace
                     if (textLine.Count == 0 && textLines.Count > 0
                         && CodePoint.IsWhiteSpace(codePoint)
+                        && !CodePoint.IsNonBreakingSpace(codePoint)
                         && !CodePoint.IsTabulation(codePoint)
                         && !CodePoint.IsNewLine(codePoint))
                     {
@@ -689,8 +685,6 @@ namespace SixLabors.Fonts
                 public float PointSize { get; }
 
                 public float ScaledAdvance { get; }
-
-                public bool IsNewLine => CodePoint.IsNewLine(this.Metrics[0].CodePoint);
 
                 public BidiRun BidiRun { get; }
 

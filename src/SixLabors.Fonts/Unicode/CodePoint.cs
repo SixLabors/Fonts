@@ -238,6 +238,14 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
+        /// Gets a value indicating whether the given codepoint is a non-breaking space.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a non-breaking space character; otherwise, <see langword="false"/></returns>
+        public static bool IsNonBreakingSpace(CodePoint codePoint)
+            => codePoint.Value == 0x00A0;
+
+        /// <summary>
         /// Gets a value indicating whether the given codepoint is a control character.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>

@@ -48,10 +48,10 @@ namespace SixLabors.Fonts
             this.GlyphColor = glyphColor;
         }
 
-        internal GlyphMetrics(GlyphMetrics other)
+        internal GlyphMetrics(GlyphMetrics other, CodePoint codePoint)
         {
             this.FontMetrics = other.FontMetrics;
-            this.CodePoint = other.CodePoint;
+            this.CodePoint = codePoint;
             this.UnitsPerEm = other.UnitsPerEm;
             this.vector = (GlyphVector)other.vector.DeepClone();
 
