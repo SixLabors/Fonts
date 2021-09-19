@@ -76,6 +76,34 @@ namespace SixLabors.Fonts
             }
 
             bidi.Process(bidiData);
+            ArraySlice<sbyte> resolvedLevels = bidi.ResolvedLevels;
+
+            // Now process the embedded runs
+            if (options.TextDirection != TextDirection.Auto)
+            {
+                // Restore types
+                bidiData.RestoreTypes();
+
+                // Get a temp buffer to store the results
+                // (We can't use the Bidi's built in buffer because we're about to patch it)
+                ArraySlice<sbyte> levels = bidiData.GetTempLevelBuffer(bidiData.Types.Length);
+
+                // Reprocess the data
+                bidi.Process(
+                    bidiData.Types,
+                    bidiData.PairedBracketTypes,
+                    bidiData.PairedBracketValues,
+                    (sbyte)options.TextDirection,
+                    bidiData.HasBrackets,
+                    bidiData.HasEmbeddings,
+                    bidiData.HasIsolates,
+                    levels);
+
+                // Copy result levels back to the full level set
+                levels.Span.CopyTo(resolvedLevels.Span);
+            }
+
+            // Get the list of directional runs
             BidiRun[] bidiRuns = BidiRun.CoalesceLevels(bidi.ResolvedLevels).ToArray();
             Dictionary<int, int> bidiMap = new();
 
@@ -690,9 +718,14 @@ namespace SixLabors.Fonts
                 }
 
                 // Reorder them into visual order.
-                orderedRun = RecursiveReOrder(orderedRun);
+                orderedRun = LinearReOrder(orderedRun);
 
                 // Now perform a recursive reversal of each run.
+                // From the highest level found in the text to the lowest odd level on each line, including intermediate levels
+                // not actually present in the text, reverse any contiguous sequence of characters that are at that level or higher.
+                // https://unicode.org/reports/tr9/#L2
+
+                // TODO: Fix this. I'm reversing the wrong number of times.
                 int max = this.info.Max(x => x.BidiRun.Level);
                 int min = this.info.Where(x => x.BidiRun.Level % 2 != 0).Min(x => x.BidiRun.Level);
                 int level = max;
@@ -732,7 +765,7 @@ namespace SixLabors.Fonts
             /// </summary>
             /// <param name="line">The ordered bidi run.</param>
             /// <returns>The <see cref="OrderedBidiRun"/>.</returns>
-            private static OrderedBidiRun RecursiveReOrder(OrderedBidiRun? line)
+            private static OrderedBidiRun LinearReOrder(OrderedBidiRun? line)
             {
                 BidiRange? range = null;
                 OrderedBidiRun? run = line;
@@ -782,6 +815,8 @@ namespace SixLabors.Fonts
                     range = BidiRange.MergeWithPrevious(range);
                 }
 
+                // Terminate.
+                range!.Right!.Next = null;
                 return range!.Left!;
             }
 
