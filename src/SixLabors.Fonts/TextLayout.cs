@@ -724,28 +724,23 @@ namespace SixLabors.Fonts
                 // From the highest level found in the text to the lowest odd level on each line, including intermediate levels
                 // not actually present in the text, reverse any contiguous sequence of characters that are at that level or higher.
                 // https://unicode.org/reports/tr9/#L2
-
-                // TODO: Fix this. I'm reversing the wrong number of times.
                 int max = this.info.Max(x => x.BidiRun.Level);
                 int min = this.info.Where(x => x.BidiRun.Level % 2 != 0).Min(x => x.BidiRun.Level);
-                int level = max;
-                while (level >= min)
+                int minLevelToReverse = max;
+                while (minLevelToReverse >= min)
                 {
-                    for (int i = level; i <= max; i++)
+                    current = orderedRun;
+                    while (current != null)
                     {
-                        current = orderedRun;
-                        while (current != null)
+                        if (current.Level >= minLevelToReverse)
                         {
-                            if (current.Level == level)
-                            {
-                                current.Reverse();
-                            }
-
-                            current = current.Next;
+                            current.Reverse();
                         }
+
+                        current = current.Next;
                     }
 
-                    level--;
+                    minLevelToReverse--;
                 }
 
                 this.info.Clear();
@@ -856,7 +851,7 @@ namespace SixLabors.Fonts
                 public int Offset { get; }
 
                 private string DebuggerDisplay => FormattableString
-                    .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.Offset}");
+                    .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.Offset}, level: {this.BidiRun.Level}");
             }
 
             private class OrderedBidiRun
