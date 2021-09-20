@@ -139,7 +139,6 @@ namespace SixLabors.Fonts.Tests
                 new GlyphBounds(new CodePoint('a'), new FontRectangle(10, 0, 10, 10)),
                 new GlyphBounds(new CodePoint(' '), new FontRectangle(40, 0, 30, 10)),
                 new GlyphBounds(new CodePoint('b'), new FontRectangle(70, 0, 10, 10)),
-                new GlyphBounds(new CodePoint('\n'), new FontRectangle(100, 0, 0, 10)),
                 new GlyphBounds(new CodePoint('c'), new FontRectangle(10, 30, 10, 10)),
             };
             Font font = CreateFont(text);
@@ -149,7 +148,8 @@ namespace SixLabors.Fonts.Tests
                 new RendererOptions(font, font.FontMetrics.ScaleFactor),
                 out GlyphBounds[] glyphMetrics));
 
-            Assert.Equal(text.Length, glyphMetrics.Length);
+            // Newline should not be returned.
+            Assert.Equal(text.Length - 1, glyphMetrics.Length);
             for (int i = 0; i < glyphMetrics.Length; i++)
             {
                 GlyphBounds expected = expectedGlyphMetrics[i];
@@ -188,9 +188,9 @@ namespace SixLabors.Fonts.Tests
 
 #if OS_WINDOWS
         [Theory]
-        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", WordBreaking.Normal, 120.4883, 870.2731)]
+        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", WordBreaking.Normal, 116.8848, 870.2731)]
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", WordBreaking.BreakAll, 143.4863, 399.9999)]
-        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", WordBreaking.KeepAll, 70.8887, 699.9998)]
+        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", WordBreaking.KeepAll, 67.2852, 699.9998)]
         public void MeasureTextWordBreak(string text, WordBreaking wordBreaking, float height, float width)
         {
             // Testing using Windows only to ensure that actual glyphs are rendered
