@@ -42,25 +42,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return allMatched;
         }
 
-        internal static bool MatchSequence(GlyphSubstitutionCollection collection, int glyphIndex, int sequenceIndex, ushort[] sequence)
-        {
-            int pos = glyphIndex - sequenceIndex;
-            int idx = 0;
-
-            while (idx < sequence.Length)
-            {
-                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out IEnumerable<int>? glyphIds);
-                int glyphId = glyphIds.First();
-                if (glyphId != sequence[idx++])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        internal static bool MatchSequence(GlyphPositioningCollection collection, int glyphIndex, int sequenceIndex, ushort[] sequence)
+        internal static bool MatchSequence(IGlyphCollection collection, int glyphIndex, int sequenceIndex, ushort[] sequence)
         {
             int pos = glyphIndex - sequenceIndex;
             int idx = 0;
@@ -79,29 +61,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         }
 
         internal static bool MatchClassSequence(
-            GlyphSubstitutionCollection collection,
-            int glyphIndex,
-            int sequenceIndex,
-            ushort[] sequence,
-            ClassDefinitionTable classDefinitionTable)
-        {
-            int pos = glyphIndex - sequenceIndex;
-            int idx = 0;
-
-            while (idx < sequence.Length)
-            {
-                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out IEnumerable<int> glyphIds);
-                if (!MatchClass(idx++, sequence, classDefinitionTable, glyphIds))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        internal static bool MatchClassSequence(
-            GlyphPositioningCollection collection,
+            IGlyphCollection collection,
             int glyphIndex,
             int sequenceIndex,
             ushort[] sequence,

@@ -201,7 +201,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 return false;
             }
-
         }
 
         internal sealed class LookupType8Format3SubTable : LookupSubTable

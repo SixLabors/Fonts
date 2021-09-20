@@ -435,7 +435,7 @@ namespace SixLabors.Fonts
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
-                    if (!positionings.TryGetGlypMetricsAtOffset(codePointIndex, out GlyphMetrics[]? metrics))
+                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out GlyphMetrics[]? metrics))
                     {
                         // Codepoint was skipped during original enumeration.
                         codePointIndex++;

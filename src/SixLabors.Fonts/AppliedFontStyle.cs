@@ -164,7 +164,7 @@ namespace SixLabors.Fonts
                 }
             }
 
-            return this.positioningCollection.TryGetGlypMetricsAtOffset(at, out metrics);
+            return this.positioningCollection.TryGetGlyphMetricsAtOffset(at, out metrics);
         }
 
         private static void AssignShapingFeatures(GlyphSubstitutionCollection collection)

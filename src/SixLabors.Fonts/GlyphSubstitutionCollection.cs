@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a collection of glyph indices that are mapped to input codepoints.
     /// </summary>
-    public sealed class GlyphSubstitutionCollection
+    public sealed class GlyphSubstitutionCollection : IGlyphCollection
     {
         /// <summary>
         /// Contains a map between the index of a map within the collection and its offset.
@@ -106,13 +106,7 @@ namespace SixLabors.Fonts
             return false;
         }
 
-        /// <summary>
-        /// Gets the glyph ids and the Unicode script for those ids at the specified position.
-        /// </summary>
-        /// <param name="index">The zero-based index of the elements to get.</param>
-        /// <param name="codePoint">The Unicode codepoint.</param>
-        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
-        /// <param name="glyphIds">The glyph ids.</param>
+        /// <inheritdoc />
         public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out IEnumerable<int> glyphIds)
         {
             offset = this.offsets[index];
