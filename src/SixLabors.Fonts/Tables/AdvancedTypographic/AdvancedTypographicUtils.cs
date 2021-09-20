@@ -1,263 +1,99 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     internal static class AdvancedTypographicUtils
     {
-        internal static SequenceRuleSetTable[] LoadSequenceContextFormat1(BigEndianBinaryReader reader, long offset, out CoverageTable coverageTable)
+        internal static bool MatchInputSequence(GlyphSubstitutionCollection collection, ushort index, ushort[] inputSequence)
         {
-            // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#seqctxt1
-            // SequenceContextFormat1
-            // +----------+------------------------------------+---------------------------------------------------------------+
-            // | Type     | Name                               | Description                                                   |
-            // +==========+====================================+===============================================================+
-            // | uint16   | format                             | Format identifier: format = 1                                 |
-            // +----------+------------------------------------+---------------------------------------------------------------+
-            // | Offset16 | coverageOffset                     | Offset to Coverage table, from beginning of                   |
-            // |          |                                    | SequenceContextFormat1 table.                                 |
-            // +----------+------------------------------------+---------------------------------------------------------------+
-            // | uint16   | seqRuleSetCount                    | Number of SequenceRuleSet tables.                             |
-            // +----------+------------------------------------+---------------------------------------------------------------+
-            // | Offset16 | seqRuleSetOffsets[seqRuleSetCount] | Array of offsets to SequenceRuleSet tables, from beginning of |
-            // |          |                                    | SequenceContextFormat1 table (offsets may be NULL).           |
-            // +----------+------------------------------------+---------------------------------------------------------------+
-            ushort coverageOffset = reader.ReadOffset16();
-            ushort seqRuleSetCount = reader.ReadUInt16();
-            ushort[] seqRuleSetOffsets = reader.ReadUInt16Array(seqRuleSetCount);
-            var seqRuleSets = new SequenceRuleSetTable[seqRuleSetCount];
-
-            for (int i = 0; i < seqRuleSets.Length; i++)
+            bool allMatched = true;
+            int startIdx = index + 1;
+            for (int i = 0; i < inputSequence.Length; i++)
             {
-                seqRuleSets[i] = SequenceRuleSetTable.Load(reader, offset + seqRuleSetOffsets[i]);
-            }
-
-            coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
-            return seqRuleSets;
-        }
-
-        internal static CoverageTable LoadSequenceContextFormat2(BigEndianBinaryReader reader, long offset, out ClassDefinitionTable classDefTable, out ClassSequenceRuleSetTable[] classSeqRuleSets)
-        {
-            // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#sequence-context-format-2-class-based-glyph-contexts
-            // Context Positioning Subtable Format 2: Class-based Glyph Contexts.
-            // +----------+----------------------------------------------+--------------------------------------------------------------------+
-            // | Type     | Name                                         | Description                                                        |
-            // +==========+==============================================+====================================================================+
-            // | uint16   | format                                       | Format identifier: format = 2                                      |
-            // +----------+----------------------------------------------+--------------------------------------------------------------------+
-            // | Offset16 | coverageOffset                               | Offset to Coverage table, from beginning of                        |
-            // |          |                                              | SequenceContextFormat2 table.                                      |
-            // +----------+----------------------------------------------+--------------------------------------------------------------------+
-            // | Offset16 | classDefOffset                               | Offset to ClassDef table, from beginning of                        |
-            // |          |                                              | SequenceContextFormat2 table.                                      |
-            // +----------+----------------------------------------------+--------------------------------------------------------------------+
-            // | uint16   | classSeqRuleSetCount                         | Number of ClassSequenceRuleSet tables.                             |
-            // +----------+----------------------------------------------+--------------------------------------------------------------------+
-            // | Offset16 | classSeqRuleSetOffsets[classSeqRuleSetCount] | Array of offsets to ClassSequenceRuleSet tables, from beginning of |
-            // |          |                                              | SequenceContextFormat2 table (may be NULL)                         |
-            // +----------+----------------------------------------------+--------------------------------------------------------------------+
-            ushort coverageOffset = reader.ReadOffset16();
-            ushort classDefOffset = reader.ReadOffset16();
-            ushort classSeqRuleSetCount = reader.ReadUInt16();
-            ushort[] classSeqRuleSetOffsets = reader.ReadUInt16Array(classSeqRuleSetCount);
-
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
-            classDefTable = ClassDefinitionTable.Load(reader, offset + classDefOffset);
-
-            classSeqRuleSets = new ClassSequenceRuleSetTable[classSeqRuleSetCount];
-            for (int i = 0; i < classSeqRuleSets.Length; i++)
-            {
-                classSeqRuleSets[i] = ClassSequenceRuleSetTable.Load(reader, offset + classSeqRuleSetOffsets[i]);
-            }
-
-            return coverageTable;
-        }
-
-        internal static SequenceLookupRecord[] LoadSequenceContextFormat3(BigEndianBinaryReader reader, long offset, out CoverageTable[] coverageTables)
-        {
-            // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#sequence-context-format-3-coverage-based-glyph-contexts
-            // SequenceContextFormat3
-            // +----------------------+----------------------------------+-------------------------------------------+
-            // | Type                 | Name                             | Description                               |
-            // +======================+==================================+===========================================+
-            // | uint16               | format                           | Format identifier: format = 3             |
-            // +----------------------+----------------------------------+-------------------------------------------+
-            // | uint16               | glyphCount                       | Number of glyphs in the input sequence    |
-            // +----------------------+----------------------------------+-------------------------------------------+
-            // | uint16               | seqLookupCount                   | Number of SequenceLookupRecords           |
-            // +----------------------+----------------------------------+-------------------------------------------+
-            // | Offset16             | coverageOffsets[glyphCount]      | Array of offsets to Coverage tables, from |
-            // |                      |                                  | beginning of SequenceContextFormat3       |
-            // |                      |                                  | subtable                                  |
-            // +----------------------+----------------------------------+-------------------------------------------+
-            // | SequenceLookupRecord | seqLookupRecords[seqLookupCount] | Array of SequenceLookupRecords            |
-            // +----------------------+----------------------------------+-------------------------------------------+
-            ushort glyphCount = reader.ReadUInt16();
-            ushort seqLookupCount = reader.ReadUInt16();
-            ushort[] coverageOffsets = reader.ReadUInt16Array(glyphCount);
-            SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
-
-            coverageTables = new CoverageTable[glyphCount];
-            for (int i = 0; i < coverageTables.Length; i++)
-            {
-                coverageTables[i] = CoverageTable.Load(reader, offset + coverageOffsets[i]);
-            }
-
-            return seqLookupRecords;
-        }
-
-        internal static ChainedSequenceRuleSetTable[] LoadChainedSequenceContextFormat1(BigEndianBinaryReader reader, long offset, out CoverageTable coverageTable)
-        {
-            // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#chained-sequence-context-format-1-simple-glyph-contexts
-            // ChainedSequenceContextFormat1
-            // +----------+--------------------------------------------------+------------------------------------------+
-            // | Type     | Name                                             | Description                              |
-            // +==========+==================================================+==========================================+
-            // | uint16   | format                                           | Format identifier: format = 1            |
-            // +----------+--------------------------------------------------+------------------------------------------+
-            // | Offset16 | coverageOffset                                   | Offset to Coverage table, from beginning |
-            // |          |                                                  | of ChainSequenceContextFormat1 table     |
-            // +----------+--------------------------------------------------+------------------------------------------+
-            // | uint16   | chainedSeqRuleSetCount                           | Number of ChainedSequenceRuleSet tables  |
-            // +----------+--------------------------------------------------+------------------------------------------+
-            // | Offset16 | chainedSeqRuleSetOffsets[chainedSeqRuleSetCount] | Array of offsets to ChainedSeqRuleSet    |
-            // |          |                                                  | tables, from beginning of                |
-            // |          |                                                  | ChainedSequenceContextFormat1 table      |
-            // |          |                                                  | (may be NULL)                            |
-            // +----------+--------------------------------------------------+------------------------------------------+
-            ushort coverageOffset = reader.ReadOffset16();
-            ushort chainedSeqRuleSetCount = reader.ReadUInt16();
-            ushort[] chainedSeqRuleSetOffsets = reader.ReadUInt16Array(chainedSeqRuleSetCount);
-
-            var seqRuleSets = new ChainedSequenceRuleSetTable[chainedSeqRuleSetCount];
-
-            for (int i = 0; i < seqRuleSets.Length; i++)
-            {
-                if (chainedSeqRuleSetOffsets[i] > 0)
+                int collectionIdx = startIdx + i;
+                if (collectionIdx < collection.Count && collection[collectionIdx][0] != inputSequence[i])
                 {
-                    seqRuleSets[i] = ChainedSequenceRuleSetTable.Load(reader, offset + chainedSeqRuleSetOffsets[i]);
+                    allMatched = false;
+                    break;
                 }
             }
 
-            coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
-            return seqRuleSets;
+            return allMatched;
         }
 
-        internal static ChainedClassSequenceRuleSetTable[] LoadChainedSequenceContextFormat2(
-            BigEndianBinaryReader reader,
-            long offset,
-            out CoverageTable coverageTable,
-            out ClassDefinitionTable backtrackClassDefTable,
-            out ClassDefinitionTable inputClassDefTable,
-            out ClassDefinitionTable lookaheadClassDefTable)
+        internal static bool MatchInputSequence(GlyphPositioningCollection collection, ushort index, ushort[] inputSequence)
         {
-            // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#chained-sequence-context-format-2-class-based-glyph-contexts
-            // ChainedSequenceContextFormat2
-            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
-            // | Type     | Name                                                       | Description                                                         |
-            // +==========+============================================================+=====================================================================+
-            // | uint16   | format                                                     | Format identifier: format = 2                                       |
-            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
-            // | Offset16 | coverageOffset                                             | Offset to Coverage table, from beginning                            |
-            // |          |                                                            | of ChainedSequenceContextFormat2 table                              |
-            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
-            // | Offset16 | backtrackClassDefOffset                                    | Offset to ClassDef table containing                                 |
-            // |          |                                                            | backtrack sequence context, from                                    |
-            // |          |                                                            | beginning of ChainedSequenceContextFormat2 table                    |
-            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
-            // | Offset16 | inputClassDefOffset                                        | Offset to ClassDef table containing input                           |
-            // |          |                                                            | sequence context, from beginning of                                 |
-            // |          |                                                            | ChainedSequenceContextFormat2 table                                 |
-            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
-            // | Offset16 | lookaheadClassDefOffset                                    | Offset to ClassDef table containing                                 |
-            // |          |                                                            | lookahead sequence context, from                                    |
-            // |          |                                                            | beginning of ChainedSequenceContextFormat2 table                    |
-            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
-            // | uint16   | chainedClassSeqRuleSetCount                                | Number of ChainedClassSequenceRuleSet tables                        |
-            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
-            // | Offset16 | chainedClassSeqRuleSetOffsets[chainedClassSeqRuleSetCount] | Array of offsets to ChainedClassSequenceRuleSet tables,             |
-            // |          |                                                            | from beginning of ChainedSequenceContextFormat2 table (may be NULL) |
-            // +----------+------------------------------------------------------------+---------------------------------------------------------------------+
-            ushort coverageOffset = reader.ReadOffset16();
-            ushort backtrackClassDefOffset = reader.ReadOffset16();
-            ushort inputClassDefOffset = reader.ReadOffset16();
-            ushort lookaheadClassDefOffset = reader.ReadOffset16();
-            ushort chainedClassSeqRuleSetCount = reader.ReadUInt16();
-            ChainedClassSequenceRuleSetTable[] seqRuleSets = Array.Empty<ChainedClassSequenceRuleSetTable>();
-            if (chainedClassSeqRuleSetCount != 0)
+            bool allMatched = true;
+            int startIdx = index + 1;
+            for (int i = 0; i < inputSequence.Length; i++)
             {
-                ushort[] chainedClassSeqRuleSetOffsets = new ushort[chainedClassSeqRuleSetCount];
-                for (int i = 0; i < chainedClassSeqRuleSetCount; i++)
+                int collectionIdx = startIdx + i;
+                if (collectionIdx < collection.Count && collection[collectionIdx][0].GlyphId != inputSequence[i])
                 {
-                    chainedClassSeqRuleSetOffsets[i] = reader.ReadOffset16();
-                }
-
-                seqRuleSets = new ChainedClassSequenceRuleSetTable[chainedClassSeqRuleSetCount];
-                for (int i = 0; i < seqRuleSets.Length; i++)
-                {
-                    if (chainedClassSeqRuleSetOffsets[i] > 0)
-                    {
-                        seqRuleSets[i] =
-                            ChainedClassSequenceRuleSetTable.Load(reader, offset + chainedClassSeqRuleSetOffsets[i]);
-                    }
+                    allMatched = false;
+                    break;
                 }
             }
 
-            coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
-            backtrackClassDefTable = ClassDefinitionTable.Load(reader, offset + backtrackClassDefOffset);
-            inputClassDefTable = ClassDefinitionTable.Load(reader, offset + inputClassDefOffset);
-            lookaheadClassDefTable = ClassDefinitionTable.Load(reader, offset + lookaheadClassDefOffset);
-            return seqRuleSets;
+            return allMatched;
         }
 
-        internal static SequenceLookupRecord[] LoadChainedSequenceContextFormat3(
-            BigEndianBinaryReader reader,
-            long offset,
-            out CoverageTable[] backtrackCoverageTables,
-            out CoverageTable[] inputCoverageTables,
-            out CoverageTable[] lookaheadCoverageTables)
+        internal static bool MatchSequence(IGlyphCollection collection, int glyphIndex, int sequenceIndex, ushort[] sequence)
         {
-            // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#chseqctxt3
-            // ChainedSequenceContextFormat3 1
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            // | Type                 | Name                                          | Description                                                    |
-            // +======================+===============================================+================================================================+
-            // | uint16               | format                                        | Format identifier: format = 3                                  |
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            // | uint16               | backtrackGlyphCount                           | Number of glyphs in the backtrack sequence                     |
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            // | Offset16             | backtrackCoverageOffsets[backtrackGlyphCount] | Array of offsets to coverage tables for the backtrack sequence |
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            // | uint16               | inputGlyphCount                               | Number of glyphs in the input sequence                         |
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            // | Offset16             | inputCoverageOffsets[inputGlyphCount]         | Array of offsets to coverage tables for the input sequence     |
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            // | uint16               | lookaheadGlyphCount                           | Number of glyphs in the lookahead sequence                     |
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            // | Offset16             | lookaheadCoverageOffsets[lookaheadGlyphCount] | Array of offsets to coverage tables for the lookahead sequence |
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            // | uint16               | seqLookupCount                                | Number of SequenceLookupRecords                                |
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            // | SequenceLookupRecord | seqLookupRecords[seqLookupCount]              | Array of SequenceLookupRecords                                 |
-            // +----------------------+-----------------------------------------------+----------------------------------------------------------------+
-            ushort backtrackGlyphCount = reader.ReadUInt16();
-            ushort[] backtrackCoverageOffsets = reader.ReadUInt16Array(backtrackGlyphCount);
+            int pos = glyphIndex - sequenceIndex;
+            int idx = 0;
 
-            ushort inputGlyphCount = reader.ReadUInt16();
-            ushort[] inputCoverageOffsets = reader.ReadUInt16Array(inputGlyphCount);
+            while (idx < sequence.Length)
+            {
+                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out IEnumerable<int>? glyphIds);
+                int glyphId = glyphIds.First();
+                if (glyphId != sequence[idx++])
+                {
+                    return false;
+                }
+            }
 
-            ushort lookaheadGlyphCount = reader.ReadUInt16();
-            ushort[] lookaheadCoverageOffsets = reader.ReadUInt16Array(lookaheadGlyphCount);
+            return true;
+        }
 
-            ushort seqLookupCount = reader.ReadUInt16();
-            SequenceLookupRecord[] seqLookupRecords = SequenceLookupRecord.LoadArray(reader, seqLookupCount);
+        internal static bool MatchClassSequence(
+            IGlyphCollection collection,
+            int glyphIndex,
+            int sequenceIndex,
+            ushort[] sequence,
+            ClassDefinitionTable classDefinitionTable)
+        {
+            int pos = glyphIndex - sequenceIndex;
+            int idx = 0;
 
-            backtrackCoverageTables = CoverageTable.LoadArray(reader, offset, backtrackCoverageOffsets);
-            inputCoverageTables = CoverageTable.LoadArray(reader, offset, inputCoverageOffsets);
-            lookaheadCoverageTables = CoverageTable.LoadArray(reader, offset, lookaheadCoverageOffsets);
-            return seqLookupRecords;
+            while (idx < sequence.Length)
+            {
+                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out IEnumerable<int> glyphIds);
+                if (!MatchClass(idx++, sequence, classDefinitionTable, glyphIds))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, IEnumerable<int> glyphIds)
+        {
+            int glyphId = glyphIds.First();
+            int glyphIdClass = classDefinitionTable.ClassIndexOf((ushort)glyphId);
+            ushort sequenceEntry = sequence[idx];
+            int sequenceEntryClassId = classDefinitionTable.ClassIndexOf(sequenceEntry);
+            if (glyphIdClass != sequenceEntryClassId)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

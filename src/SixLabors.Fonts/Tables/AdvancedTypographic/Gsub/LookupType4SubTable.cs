@@ -132,7 +132,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = GSubUtils.MatchInputSequence(collection, index, ligatureTable.ComponentGlyphs);
+                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ligatureTable.ComponentGlyphs);
                 if (allMatched)
                 {
                     collection.Replace(index, compLength + 1, ligatureTable.GlyphId);

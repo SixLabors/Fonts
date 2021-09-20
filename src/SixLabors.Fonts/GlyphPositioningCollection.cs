@@ -13,7 +13,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a collection of glyph metrics that are mapped to input codepoints.
     /// </summary>
-    public sealed class GlyphPositioningCollection
+    public sealed class GlyphPositioningCollection : IGlyphCollection
     {
         /// <summary>
         /// Contains a map between the index of a map within the collection, it's codepoint
@@ -74,7 +74,7 @@ namespace SixLabors.Fonts
         /// This parameter is passed uninitialized.
         /// </param>
         /// <returns>The <see cref="T:GlyphMetrics[]"/>.</returns>
-        public bool TryGetGlypMetricsAtOffset(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
+        public bool TryGetGlyphMetricsAtOffset(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
             => this.map.TryGetValue(offset, out metrics);
 
         /// <summary>
@@ -84,13 +84,7 @@ namespace SixLabors.Fonts
         /// <returns>The <see cref="ReadOnlySpan{UInt16}"/>.</returns>
         public ReadOnlySpan<int> GetGlyphIds(int index) => this.glyphs[index].GlyphIds;
 
-        /// <summary>
-        /// Gets the glyph ids and the Unicode script for those ids at the specified position.
-        /// </summary>
-        /// <param name="index">The zero-based index of the elements to get.</param>
-        /// <param name="codePoint">The Unicode codepoint.</param>
-        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
-        /// <param name="glyphIds">The glyph ids.</param>
+        /// <inheritdoc />
         public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out IEnumerable<int> glyphIds)
         {
             offset = this.offsets[index];

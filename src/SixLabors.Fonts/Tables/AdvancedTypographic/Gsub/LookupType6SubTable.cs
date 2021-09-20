@@ -44,7 +44,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset)
         {
-            ChainedSequenceRuleSetTable[] seqRuleSets = AdvancedTypographicUtils.LoadChainedSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
+            ChainedSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
             return new LookupType6Format1SubTable(coverageTable, seqRuleSets);
         }
 
@@ -76,17 +76,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
             {
                 ChainedSequenceRuleTable rule = rules[lookupIndex];
-                if (rule.BacktrackSequence.Length > 0 && !GSubUtils.MatchSequence(collection, index, rule.BacktrackSequence.Length, rule.InputSequence))
+                if (rule.BacktrackSequence.Length > 0
+                    && !AdvancedTypographicUtils.MatchSequence(collection, index, rule.BacktrackSequence.Length, rule.InputSequence))
                 {
                     continue;
                 }
 
-                if (rule.InputSequence.Length > 0 && !GSubUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                if (rule.InputSequence.Length > 0
+                    && !AdvancedTypographicUtils.MatchInputSequence(collection, index, rule.InputSequence))
                 {
                     continue;
                 }
 
-                if (rule.LookaheadSequence.Length > 0 && !GSubUtils.MatchSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
+                if (rule.LookaheadSequence.Length > 0
+                    && !AdvancedTypographicUtils.MatchSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
                 {
                     continue;
                 }
@@ -126,7 +129,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public static LookupType6Format2SubTable Load(BigEndianBinaryReader reader, long offset)
         {
-            ChainedClassSequenceRuleSetTable[] seqRuleSets = AdvancedTypographicUtils.LoadChainedSequenceContextFormat2(
+            ChainedClassSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat2(
                 reader,
                 offset,
                 out CoverageTable coverageTable,
@@ -167,19 +170,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             {
                 ChainedClassSequenceRuleTable rule = rules[lookupIndex];
                 if (rule.BacktrackSequence.Length > 0
-                    && !GSubUtils.MatchClassSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
+                    && !AdvancedTypographicUtils.MatchClassSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
                 {
                     continue;
                 }
 
                 if (rule.InputSequence.Length > 0 &&
-                    !GSubUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                    !AdvancedTypographicUtils.MatchInputSequence(collection, index, rule.InputSequence))
                 {
                     continue;
                 }
 
                 if (rule.LookaheadSequence.Length > 0
-                    && !GSubUtils.MatchClassSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
+                    && !AdvancedTypographicUtils.MatchClassSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
                 {
                     continue;
                 }
@@ -216,7 +219,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public static LookupType6Format3SubTable Load(BigEndianBinaryReader reader, long offset)
         {
-            SequenceLookupRecord[] seqLookupRecords = AdvancedTypographicUtils.LoadChainedSequenceContextFormat3(
+            SequenceLookupRecord[] seqLookupRecords = TableLoadingUtils.LoadChainedSequenceContextFormat3(
                 reader,
                 offset,
                 out CoverageTable[] backtrackCoverageTables,

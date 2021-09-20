@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -46,12 +45,65 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public static LookupType8Format1SubTable Load(BigEndianBinaryReader reader, long offset)
             {
-                ChainedSequenceRuleSetTable[] seqRuleSets = AdvancedTypographicUtils.LoadChainedSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
+                ChainedSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
                 return new LookupType8Format1SubTable(coverageTable, seqRuleSets);
             }
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
-                => throw new System.NotImplementedException();
+            {
+                // Implements Chained Contexts Substitution, Format 1:
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#61-chained-contexts-substitution-format-1-simple-glyph-contexts
+                int glyphId = collection[index][0].GlyphId;
+                if (glyphId < 0)
+                {
+                    return false;
+                }
+
+                // Search for the current glyph in the Coverage table.
+                int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                if (offset <= -1)
+                {
+                    return false;
+                }
+
+                ChainedSequenceRuleSetTable seqRuleSet = this.seqRuleSetTables[index];
+                if (seqRuleSet is null || seqRuleSet.SequenceRuleTables.Length is 0)
+                {
+                    return false;
+                }
+
+                // Apply ruleset for the given glyph id.
+                ChainedSequenceRuleTable[] rules = seqRuleSet.SequenceRuleTables;
+                for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
+                {
+                    ChainedSequenceRuleTable rule = rules[lookupIndex];
+                    if (rule.BacktrackSequence.Length > 0
+                        && !AdvancedTypographicUtils.MatchSequence(collection, index, rule.BacktrackSequence.Length, rule.InputSequence))
+                    {
+                        continue;
+                    }
+
+                    if (rule.InputSequence.Length > 0
+                        && !AdvancedTypographicUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                    {
+                        continue;
+                    }
+
+                    if (rule.LookaheadSequence.Length > 0
+                        && !AdvancedTypographicUtils.MatchSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
+                    {
+                        continue;
+                    }
+
+                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)lookupIndex, 1))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
 
         internal sealed class LookupType8Format2SubTable : LookupSubTable
@@ -78,7 +130,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public static LookupType8Format2SubTable Load(BigEndianBinaryReader reader, long offset)
             {
-                ChainedClassSequenceRuleSetTable[] seqRuleSets = AdvancedTypographicUtils.LoadChainedSequenceContextFormat2(
+                ChainedClassSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat2(
                     reader,
                     offset,
                     out CoverageTable coverageTable,
@@ -119,19 +171,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     ChainedClassSequenceRuleTable rule = rules[lookupIndex];
                     if (rule.BacktrackSequence.Length > 0
-                        && !GSubUtils.MatchClassSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
+                        && !AdvancedTypographicUtils.MatchClassSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
                     {
                         continue;
                     }
 
                     if (rule.InputSequence.Length > 0 &&
-                        !GSubUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                        !AdvancedTypographicUtils.MatchInputSequence(collection, index, rule.InputSequence))
                     {
                         continue;
                     }
 
                     if (rule.LookaheadSequence.Length > 0
-                        && !GSubUtils.MatchClassSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
+                        && !AdvancedTypographicUtils.MatchClassSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
                     {
                         continue;
                     }
@@ -172,7 +224,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public static LookupType8Format3SubTable Load(BigEndianBinaryReader reader, long offset)
             {
-                SequenceLookupRecord[] seqLookupRecords = AdvancedTypographicUtils.LoadChainedSequenceContextFormat3(
+                SequenceLookupRecord[] seqLookupRecords = TableLoadingUtils.LoadChainedSequenceContextFormat3(
                     reader,
                     offset,
                     out CoverageTable[] backtrackCoverageTables,
