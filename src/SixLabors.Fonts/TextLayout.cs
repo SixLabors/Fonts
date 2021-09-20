@@ -179,8 +179,9 @@ namespace SixLabors.Fonts
             bool first,
             ref Vector2 location)
         {
-            float originY = 0;
-            float originX = 0;
+            float originX = location.X;
+            float offsetY = 0;
+            float offsetX = 0;
             if (first)
             {
                 // Set the Y-Origin for the first line.
@@ -189,19 +190,19 @@ namespace SixLabors.Fonts
                 switch (options.VerticalAlignment)
                 {
                     case VerticalAlignment.Top:
-                        originY = lineScaledAscender;
+                        offsetY = lineScaledAscender;
                         break;
                     case VerticalAlignment.Center:
-                        originY = (lineScaledAscender * .5F) - (lineScaledDescender * .5F);
-                        originY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing * .5F;
+                        offsetY = (lineScaledAscender * .5F) - (lineScaledDescender * .5F);
+                        offsetY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing * .5F;
                         break;
                     case VerticalAlignment.Bottom:
-                        originY = -lineScaledDescender;
-                        originY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing;
+                        offsetY = -lineScaledDescender;
+                        offsetY -= (lineCount - 1) * textLine.ScaledLineHeight() * options.LineSpacing;
                         break;
                 }
 
-                location.Y += originY;
+                location.Y += offsetY;
             }
 
             // Set the X-Origin for horizontal alignment.
@@ -212,21 +213,19 @@ namespace SixLabors.Fonts
             switch (options.HorizontalAlignment)
             {
                 case HorizontalAlignment.Right:
-                    originX = wrappingAdvance - textLine.ScaledAdvance();
+                    offsetX = wrappingAdvance - textLine.ScaledAdvance();
                     break;
                 case HorizontalAlignment.Center:
-                    originX = (wrappingAdvance * .5F) - (textLine.ScaledAdvance() * .5F);
+                    offsetX = (wrappingAdvance * .5F) - (textLine.ScaledAdvance() * .5F);
                     break;
             }
 
-            location.X += originX;
+            location.X += offsetX;
 
             List<GlyphLayout> glyphs = new();
             for (int i = 0; i < textLine.Count; i++)
             {
                 TextLine.GlyphInfo info = textLine[i];
-
-                // TODO: Handle embedded RTL values.
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
                     float scale = info.PointSize / metric.ScaleFactor;
@@ -244,11 +243,8 @@ namespace SixLabors.Fonts
                 location.X += info.ScaledAdvance;
             }
 
-            location.X = originX + (options.Origin.X / options.DpiX);
-            if (glyphs.Count > 0)
-            {
-                location.Y += glyphs.Max(x => x.LineHeight);
-            }
+            location.X = originX;
+            location.Y += glyphs.Max(x => x.LineHeight);
 
             return glyphs;
         }
