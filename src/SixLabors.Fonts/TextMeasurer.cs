@@ -69,20 +69,16 @@ namespace SixLabors.Fonts
                 return FontRectangle.Empty;
             }
 
+            float top = glyphLayouts.Min(x => x.Location.Y);
             float left = glyphLayouts.Min(x => x.Location.X);
             float right = glyphLayouts.Max(x => x.Location.X + x.Width);
-
-            // Location is bottom left of the line. We offset the bottom by the top to handle the ascender
-            float top = glyphLayouts.Min(x => x.Location.Y - x.LineHeight);
-            float bottom = glyphLayouts.Max(x => x.Location.Y - x.LineHeight + x.Height) - top;
+            float bottom = glyphLayouts.Max(x => x.Location.Y + x.LineHeight);
 
             Vector2 topLeft = new Vector2(left, top) * dpi;
             Vector2 bottomRight = new Vector2(right, bottom) * dpi;
-
             Vector2 size = bottomRight - topLeft;
 
-            // TODO: Size should have X,Y at 0,0
-            return new FontRectangle(topLeft.X, topLeft.Y, size.X, size.Y);
+            return new FontRectangle(0, 0, size.X, size.Y);
         }
 
         internal static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
@@ -92,51 +88,35 @@ namespace SixLabors.Fonts
                 return FontRectangle.Empty;
             }
 
-            bool hasSize = false;
-
             float left = int.MaxValue;
             float top = int.MaxValue;
             float bottom = int.MinValue;
             float right = int.MinValue;
-
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
-                GlyphLayout c = glyphLayouts[i];
-                if (!CodePoint.IsNewLine(c.CodePoint))
+                FontRectangle box = glyphLayouts[i].BoundingBox(dpi);
+                if (left > box.Left)
                 {
-                    hasSize = true;
-                    FontRectangle box = c.BoundingBox(dpi);
-                    if (left > box.Left)
-                    {
-                        left = box.Left;
-                    }
+                    left = box.Left;
+                }
 
-                    if (top > box.Top)
-                    {
-                        top = box.Top;
-                    }
+                if (top > box.Top)
+                {
+                    top = box.Top;
+                }
 
-                    if (bottom < box.Bottom)
-                    {
-                        bottom = box.Bottom;
-                    }
+                if (bottom < box.Bottom)
+                {
+                    bottom = box.Bottom;
+                }
 
-                    if (right < box.Right)
-                    {
-                        right = box.Right;
-                    }
+                if (right < box.Right)
+                {
+                    right = box.Right;
                 }
             }
 
-            if (!hasSize)
-            {
-                return FontRectangle.Empty;
-            }
-
-            float width = right - left;
-            float height = bottom - top;
-
-            return new FontRectangle(left, top, width, height);
+            return FontRectangle.FromLTRB(left, top, right, bottom);
         }
 
         internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi, out GlyphBounds[] characterBounds)

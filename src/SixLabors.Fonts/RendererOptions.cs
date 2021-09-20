@@ -139,14 +139,24 @@ namespace SixLabors.Fonts
         public TextDirection TextDirection { get; set; } = TextDirection.Auto;
 
         /// <summary>
-        /// Gets or sets the Horizontal alignment of the text.
+        /// Gets or sets the text alignment of the text within the box.
+        /// </summary>
+        public TextAlignment TextAlignment { get; set; } = TextAlignment.Right;
+
+        /// <summary>
+        /// Gets or sets the horizontal alignment of the text box.
         /// </summary>
         public HorizontalAlignment HorizontalAlignment { get; set; }
 
         /// <summary>
-        /// Gets or sets the Vertical alignment of the text.
+        /// Gets or sets the vertical alignment of the text box.
         /// </summary>
         public VerticalAlignment VerticalAlignment { get; set; }
+
+        /// <summary>
+        /// Gets or sets the layout mode for the text lines.
+        /// </summary>
+        public LayoutMode LayoutMode { get; set; } = LayoutMode.Horizontal;
 
         /// <summary>
         /// Gets or sets the rendering origin.

@@ -13,7 +13,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace DrawWithImageSharp
 {
-    public static class TextAlignment
+    public static class TextAlignmentSample
     {
         public static void Generate(Font font)
         {

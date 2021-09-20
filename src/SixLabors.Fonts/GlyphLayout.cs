@@ -86,7 +86,7 @@ namespace SixLabors.Fonts
         /// <param name="startOfLine">Whether the glyph should be considered to fall at the start of a line.</param>
         /// <returns>The <see cref="GlyphLayout"/>.</returns>
         public static GlyphLayout Offset(GlyphLayout glyphLayout, Vector2 offset, bool startOfLine)
-            => new GlyphLayout(
+            => new(
                 glyphLayout.GraphemeIndex,
                 glyphLayout.CodePoint,
                 glyphLayout.Glyph,
