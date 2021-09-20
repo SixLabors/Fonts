@@ -724,8 +724,34 @@ namespace SixLabors.Fonts
                 // From the highest level found in the text to the lowest odd level on each line, including intermediate levels
                 // not actually present in the text, reverse any contiguous sequence of characters that are at that level or higher.
                 // https://unicode.org/reports/tr9/#L2
-                int max = this.info.Max(x => x.BidiRun.Level);
-                int min = this.info.Where(x => x.BidiRun.Level % 2 != 0).Min(x => x.BidiRun.Level);
+                int max = 0;
+                int min = int.MaxValue;
+                for (int i = 0; i < this.info.Count; i++)
+                {
+                    int level = this.info[i].BidiRun.Level;
+                    if (level > max)
+                    {
+                        max = level;
+                    }
+
+                    if (level % 2 != 0 && level < min)
+                    {
+                        min = level;
+                    }
+                }
+
+                if (min > max)
+                {
+                    min = max;
+                }
+
+                if (max == 0)
+                {
+                    // Nothing to reverse.
+                    return this;
+                }
+
+                // Now apply the reversal and replace the original contents.
                 int minLevelToReverse = max;
                 while (minLevelToReverse >= min)
                 {
