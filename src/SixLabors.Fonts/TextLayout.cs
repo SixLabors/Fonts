@@ -461,21 +461,9 @@ namespace SixLabors.Fonts
                     // Calculate the advance for the current codepoint.
                     GlyphMetrics glyph = metrics[0];
                     float glyphAdvance = isHorizontal ? glyph.AdvanceWidth : glyph.AdvanceHeight;
-                    if (glyphAdvance == 0)
-                    {
-                        // Nothing to render.
-                        codePointIndex++;
-                        graphemeCodePointIndex++;
-                        continue;
-                    }
-
                     if (CodePoint.IsTabulation(codePoint))
                     {
-                        float tabAdvance = glyphAdvance * options.TabWidth;
-                        if (tabAdvance > glyphAdvance)
-                        {
-                            glyphAdvance = tabAdvance;
-                        }
+                        glyphAdvance *= options.TabWidth;
                     }
                     else if (!CodePoint.IsNewLine(codePoint))
                     {
@@ -504,6 +492,14 @@ namespace SixLabors.Fonts
                         }
                     }
 
+                    if (glyphAdvance == 0)
+                    {
+                        // Nothing to render.
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
+                        continue;
+                    }
+
                     glyphAdvance *= pointSize / glyph.ScaleFactor;
 
                     // Should we start a new line?
@@ -526,6 +522,27 @@ namespace SixLabors.Fonts
                                 glyphCount += textLine.Count;
                                 textLine = new TextLine();
                                 lineAdvance = 0;
+                            }
+                            else if (currentLineBreak.PositionMeasure == codePointIndex)
+                            {
+                                // Exact length match. Check for CJK
+                                if (keepAll && UnicodeUtility.IsCJKCodePoint((uint)codePoint.Value))
+                                {
+                                    TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
+                                    if (split != textLine)
+                                    {
+                                        textLines.Add(textLine.BidiReOrder());
+                                        textLine = split;
+                                        lineAdvance = split.ScaledAdvance();
+                                    }
+                                }
+                                else
+                                {
+                                    textLines.Add(textLine.BidiReOrder());
+                                    glyphCount += textLine.Count;
+                                    textLine = new TextLine();
+                                    lineAdvance = 0;
+                                }
                             }
                             else if (lastLineBreak.PositionWrap < codePointIndex)
                             {
@@ -637,6 +654,7 @@ namespace SixLabors.Fonts
                 while (index > 0)
                 {
                     glyphWrap = this.info[--index];
+
                     if (glyphWrap.Offset == lineBreak.PositionWrap)
                     {
                         break;
