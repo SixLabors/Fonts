@@ -50,7 +50,60 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
-                => throw new System.NotImplementedException();
+            {
+                // Implements Chained Contexts Substitution, Format 1:
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#61-chained-contexts-substitution-format-1-simple-glyph-contexts
+                int glyphId = collection[index][0].GlyphId;
+                if (glyphId < 0)
+                {
+                    return false;
+                }
+
+                // Search for the current glyph in the Coverage table.
+                int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                if (offset <= -1)
+                {
+                    return false;
+                }
+
+                ChainedSequenceRuleSetTable seqRuleSet = this.seqRuleSetTables[index];
+                if (seqRuleSet is null || seqRuleSet.SequenceRuleTables.Length is 0)
+                {
+                    return false;
+                }
+
+                // Apply ruleset for the given glyph id.
+                ChainedSequenceRuleTable[] rules = seqRuleSet.SequenceRuleTables;
+                for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
+                {
+                    ChainedSequenceRuleTable rule = rules[lookupIndex];
+                    if (rule.BacktrackSequence.Length > 0
+                        && !AdvancedTypographicUtils.MatchSequence(collection, index, rule.BacktrackSequence.Length, rule.InputSequence))
+                    {
+                        continue;
+                    }
+
+                    if (rule.InputSequence.Length > 0
+                        && !AdvancedTypographicUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                    {
+                        continue;
+                    }
+
+                    if (rule.LookaheadSequence.Length > 0
+                        && !AdvancedTypographicUtils.MatchSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
+                    {
+                        continue;
+                    }
+
+                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)lookupIndex, 1))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
 
         internal sealed class LookupType8Format2SubTable : LookupSubTable

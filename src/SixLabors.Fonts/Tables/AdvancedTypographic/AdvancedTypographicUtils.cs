@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -43,26 +42,37 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return allMatched;
         }
 
-        internal static bool MatchSequence(
-            GlyphSubstitutionCollection collection,
-            int glyphIndex,
-            int sequenceIndex,
-            ushort[] sequence)
+        internal static bool MatchSequence(GlyphSubstitutionCollection collection, int glyphIndex, int sequenceIndex, ushort[] sequence)
         {
             int pos = glyphIndex - sequenceIndex;
             int idx = 0;
 
             while (idx < sequence.Length)
             {
-                collection.GetCodePointAndGlyphIds(pos, out _, out _, out IEnumerable<int>? glyphIds);
+                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out IEnumerable<int>? glyphIds);
                 int glyphId = glyphIds.First();
-                if (glyphId != sequence[idx])
+                if (glyphId != sequence[idx++])
                 {
                     return false;
                 }
+            }
 
-                pos++;
-                idx++;
+            return true;
+        }
+
+        internal static bool MatchSequence(GlyphPositioningCollection collection, int glyphIndex, int sequenceIndex, ushort[] sequence)
+        {
+            int pos = glyphIndex - sequenceIndex;
+            int idx = 0;
+
+            while (idx < sequence.Length)
+            {
+                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out IEnumerable<int>? glyphIds);
+                int glyphId = glyphIds.First();
+                if (glyphId != sequence[idx++])
+                {
+                    return false;
+                }
             }
 
             return true;
