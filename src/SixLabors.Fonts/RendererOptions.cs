@@ -88,11 +88,8 @@ namespace SixLabors.Fonts
         public Font Font { get; }
 
         /// <summary>
-        /// Gets or sets the width of the tab.
+        /// Gets or sets the width of the tab. Measured as the distance in spaces.
         /// </summary>
-        /// <value>
-        /// The width of the tab.
-        /// </value>
         public float TabWidth { get; set; } = 4;
 
         /// <summary>

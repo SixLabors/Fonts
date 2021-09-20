@@ -471,20 +471,11 @@ namespace SixLabors.Fonts
 
                     if (CodePoint.IsTabulation(codePoint))
                     {
-                        float tabStop = glyphAdvance * options.TabWidth;
-                        float tabAdvance = 0;
-                        if (tabStop > 0)
+                        float tabAdvance = glyphAdvance * options.TabWidth;
+                        if (tabAdvance > glyphAdvance)
                         {
-                            tabAdvance = tabStop - (lineAdvance % tabStop);
+                            glyphAdvance = tabAdvance;
                         }
-
-                        if (tabAdvance < glyphAdvance)
-                        {
-                            // Ensure tab advance is at least a glyph advance.
-                            tabAdvance += tabStop;
-                        }
-
-                        glyphAdvance = tabAdvance;
                     }
                     else if (!CodePoint.IsNewLine(codePoint))
                     {
