@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -52,7 +51,56 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
-                => throw new System.NotImplementedException();
+            {
+                int glyphId = collection[index][0].GlyphId;
+                if (glyphId < 0)
+                {
+                    return false;
+                }
+
+                int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                if (offset <= -1)
+                {
+                    return false;
+                }
+
+                // TODO: Check this.
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
+                SequenceRuleSetTable ruleSetTable = this.seqRuleSetTables[offset];
+                foreach (SequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
+                {
+                    int remaining = count - 1;
+                    int seqLength = ruleTable.InputSequence.Length;
+                    if (seqLength > remaining)
+                    {
+                        continue;
+                    }
+
+                    bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                    if (!allMatched)
+                    {
+                        continue;
+                    }
+
+                    // It's a match. Perform position update and return true if anything changed.
+                    bool hasChanged = false;
+                    foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                    {
+                        ushort sequenceIndex = lookupRecord.SequenceIndex;
+                        ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                        {
+                            hasChanged = true;
+                        }
+                    }
+
+                    return hasChanged;
+                }
+
+                return false;
+            }
         }
 
         internal sealed class LookupType7Format2SubTable : LookupSubTable
@@ -76,7 +124,59 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
-                => throw new System.NotImplementedException();
+            {
+                int glyphId = collection[index][0].GlyphId;
+                if (glyphId < 0)
+                {
+                    return false;
+                }
+
+                if (this.coverageTable.CoverageIndexOf((ushort)glyphId) > -1)
+                {
+                    // TODO: Check this.
+                    // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#52-context-substitution-format-2-class-based-glyph-contexts
+                    int offset = this.classDefinitionTable.ClassIndexOf((ushort)glyphId);
+                    if (offset < 0)
+                    {
+                        return false;
+                    }
+
+                    ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
+                    foreach (ClassSequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
+                    {
+                        int remaining = count - 1;
+                        int seqLength = ruleTable.InputSequence.Length;
+                        if (seqLength > remaining)
+                        {
+                            continue;
+                        }
+
+                        bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                        if (!allMatched)
+                        {
+                            continue;
+                        }
+
+                        // It's a match. Perform position update and return true if anything changed.
+                        bool hasChanged = false;
+                        foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                        {
+                            ushort sequenceIndex = lookupRecord.SequenceIndex;
+                            ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                            LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                            if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                            {
+                                hasChanged = true;
+                            }
+                        }
+
+                        return hasChanged;
+                    }
+                }
+
+                return false;
+            }
         }
 
         internal sealed class LookupType7Format3SubTable : LookupSubTable
@@ -98,7 +198,42 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
-                => throw new System.NotImplementedException();
+            {
+                int glyphId = collection[index][0].GlyphId;
+                if (glyphId < 0)
+                {
+                    return false;
+                }
+
+                // TODO: Check this
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#53-context-substitution-format-3-coverage-based-glyph-contexts
+                foreach (CoverageTable coverageTable in this.coverageTables)
+                {
+                    int offset = coverageTable.CoverageIndexOf((ushort)glyphId);
+                    if (offset <= -1)
+                    {
+                        continue;
+                    }
+
+                    // It's a match. Perform position update and return true if anything changed.
+                    bool hasChanged = false;
+                    foreach (SequenceLookupRecord lookupRecord in this.sequenceLookupRecords)
+                    {
+                        ushort sequenceIndex = lookupRecord.SequenceIndex;
+                        ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                        {
+                            hasChanged = true;
+                        }
+                    }
+
+                    return hasChanged;
+                }
+
+                return false;
+            }
         }
     }
 }
