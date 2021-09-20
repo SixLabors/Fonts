@@ -16,7 +16,7 @@ namespace SixLabors.Fonts
     /// </summary>
     internal class TextLayout
     {
-        internal static TextLayout Default { get; set; } = new TextLayout();
+        internal static TextLayout Default { get; set; } = new();
 
         public IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, RendererOptions options)
         {
