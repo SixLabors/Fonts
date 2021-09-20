@@ -679,10 +679,10 @@ namespace SixLabors.Fonts
                 this.info.RemoveRange(index, this.info.Count - index);
 
                 // Trim trailing whitespace from previous line.
-                index = this.info.Count - 1;
+                index = this.info.Count;
                 while (index > 0)
                 {
-                    if (!CodePoint.IsWhiteSpace(this.info[index].CodePoint))
+                    if (!CodePoint.IsWhiteSpace(this.info[index - 1].CodePoint))
                     {
                         break;
                     }
