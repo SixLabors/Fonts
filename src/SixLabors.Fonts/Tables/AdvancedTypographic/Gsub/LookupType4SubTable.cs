@@ -122,8 +122,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             LigatureSetTable ligatureSetTable = this.ligatureSetTables[offset];
-            foreach (LigatureTable ligatureTable in ligatureSetTable.Ligatures)
+            for (int i = 0; i < ligatureSetTable.Ligatures.Length; i++)
             {
+                LigatureTable ligatureTable = ligatureSetTable.Ligatures[i];
                 int remaining = count - 1;
                 int compLength = ligatureTable.ComponentGlyphs.Length;
                 if (compLength > remaining)

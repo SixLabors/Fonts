@@ -27,7 +27,7 @@ namespace SixLabors.Fonts
         private readonly Dictionary<int, int> offsets = new();
 
         /// <summary>
-        /// Contains a map between non-sequential codepoint offsets and their glyphss.
+        /// Contains a map between non-sequential codepoint offsets and their glyphs.
         /// </summary>
         private readonly Dictionary<int, GlyphMetrics[]> map = new();
 
@@ -46,6 +46,13 @@ namespace SixLabors.Fonts
         /// Gets the number of glyphs indexes contained in the collection.
         /// </summary>
         public int Count => this.offsets.Count;
+
+        /// <summary>
+        /// Gets the glyph metrics at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to get.</param>
+        /// <returns>The GlyphMetrics.</returns>
+        public GlyphMetrics[] this[int index] => this.map[this.offsets[index]];
 
         /// <summary>
         /// Removes all elements from the collection.

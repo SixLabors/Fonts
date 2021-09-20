@@ -13,7 +13,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             int startIdx = index + 1;
             for (int i = 0; i < inputSequence.Length; i++)
             {
-                if (collection[startIdx + i][0] != inputSequence[i])
+                int collectionIdx = startIdx + i;
+                if (collectionIdx < collection.Count && collection[collectionIdx][0] != inputSequence[i])
                 {
                     allMatched = false;
                     break;

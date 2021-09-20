@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -125,7 +124,66 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
-                => throw new System.NotImplementedException();
+            {
+                int glyphId = collection[index][0].GlyphId;
+                if (glyphId < 0)
+                {
+                    return false;
+                }
+
+                int inputLength = this.inputCoverageTables.Length;
+
+                // Check that there are enough context glyphs.
+                if (index < this.backtrackCoverageTables.Length
+                    || inputLength + this.lookaheadCoverageTables.Length > count)
+                {
+                    return false;
+                }
+
+                // Check all coverages: if any of them does not match, abort update.
+                for (int i = 0; i < this.inputCoverageTables.Length; ++i)
+                {
+                    int id = collection[index + i][0].GlyphId;
+                    if (id < 0 || this.inputCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                    {
+                        return false;
+                    }
+                }
+
+                for (int i = 0; i < this.backtrackCoverageTables.Length; ++i)
+                {
+                    int id = collection[index - 1 - i][0].GlyphId;
+                    if (id < 0 || this.backtrackCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                    {
+                        return false;
+                    }
+                }
+
+                for (int i = 0; i < this.lookaheadCoverageTables.Length; ++i)
+                {
+                    int id = collection[index + inputLength + i][0].GlyphId;
+                    if (id < 0 || this.lookaheadCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                    {
+                        return false;
+                    }
+                }
+
+                // It's a match. Perform position update and return true if anything changed.
+                bool hasChanged = false;
+                foreach (SequenceLookupRecord lookupRecord in this.seqLookupRecords)
+                {
+                    ushort sequenceIndex = lookupRecord.SequenceIndex;
+                    ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    {
+                        hasChanged = true;
+                    }
+                }
+
+                return hasChanged;
+            }
         }
     }
 }
