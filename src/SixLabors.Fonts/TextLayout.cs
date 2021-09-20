@@ -229,6 +229,12 @@ namespace SixLabors.Fonts
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
                     float scale = info.PointSize / metric.ScaleFactor;
+                    if (info.IsNewLine)
+                    {
+                        location.Y += metric.FontMetrics.LineHeight * scale * options.LineSpacing;
+                        continue;
+                    }
+
                     glyphs.Add(new GlyphLayout(
                         info.GraphemeIndex,
                         metric.CodePoint,
@@ -244,7 +250,10 @@ namespace SixLabors.Fonts
             }
 
             location.X = originX;
-            location.Y += glyphs.Max(x => x.LineHeight);
+            if (glyphs.Count > 0)
+            {
+                location.Y += glyphs.Max(x => x.LineHeight);
+            }
 
             return glyphs;
         }
@@ -730,7 +739,7 @@ namespace SixLabors.Fonts
                         max = level;
                     }
 
-                    if (level % 2 != 0 && level < min)
+                    if ((level & 1) != 0 && level < min)
                     {
                         min = level;
                     }
@@ -741,7 +750,7 @@ namespace SixLabors.Fonts
                     min = max;
                 }
 
-                if (max == 0)
+                if (max == 0 || (min == max && (max & 1) == 0))
                 {
                     // Nothing to reverse.
                     return this;
@@ -800,7 +809,7 @@ namespace SixLabors.Fonts
                     if (range != null && range.Level >= run.Level)
                     {
                         // Attach run to the range.
-                        if (run.Level % 2 != 0)
+                        if ((run.Level & 1) != 0)
                         {
                             // Odd, range goes to the right of run.
                             run.Next = range.Left;
@@ -872,6 +881,8 @@ namespace SixLabors.Fonts
 
                 public int Offset { get; }
 
+                public bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);
+
                 private string DebuggerDisplay => FormattableString
                     .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.Offset}, level: {this.BidiRun.Level}");
             }
@@ -909,7 +920,7 @@ namespace SixLabors.Fonts
                     BidiRange left;
                     BidiRange right;
 
-                    if (previous.Level % 2 != 0)
+                    if ((previous.Level & 1) != 0)
                     {
                         // Odd, previous goes to the right of range.
                         left = range;

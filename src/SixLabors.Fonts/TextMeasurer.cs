@@ -80,6 +80,8 @@ namespace SixLabors.Fonts
             Vector2 bottomRight = new Vector2(right, bottom) * dpi;
 
             Vector2 size = bottomRight - topLeft;
+
+            // TODO: Size should have X,Y at 0,0
             return new FontRectangle(topLeft.X, topLeft.Y, size.X, size.Y);
         }
 
