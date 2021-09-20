@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -89,7 +90,66 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
-                => throw new System.NotImplementedException();
+            {
+                // Implements Chained Contexts Substitution for Format 2:
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
+                int glyphId = collection[index][0].GlyphId;
+                if (glyphId < 0)
+                {
+                    return false;
+                }
+
+                // Search for the current glyph in the Coverage table.
+                int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                if (offset <= -1)
+                {
+                    return false;
+                }
+
+                // Search in the class definition table to find the class value assigned to the currently glyph.
+                int classId = this.inputClassDefinitionTable.ClassIndexOf((ushort)glyphId);
+                ChainedClassSequenceRuleTable[]? rules = classId >= 0 && classId < this.sequenceRuleSetTables.Length ? this.sequenceRuleSetTables[classId].SubRules : null;
+                if (rules is null)
+                {
+                    return false;
+                }
+
+                // Apply ruleset for the given glyph class id.
+                for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
+                {
+                    ChainedClassSequenceRuleTable rule = rules[lookupIndex];
+                    if (rule.BacktrackSequence.Length > 0
+                        && !GSubUtils.MatchClassSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
+                    {
+                        continue;
+                    }
+
+                    if (rule.InputSequence.Length > 0 &&
+                        !GSubUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                    {
+                        continue;
+                    }
+
+                    if (rule.LookaheadSequence.Length > 0
+                        && !GSubUtils.MatchClassSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
+                    {
+                        continue;
+                    }
+
+                    // It's a match. Perform position update and return true if anything changed.
+                    bool hasChanged = false;
+                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)lookupIndex, 1))
+                    {
+                        return true;
+                    }
+
+                    return hasChanged;
+                }
+
+                return false;
+            }
+
         }
 
         internal sealed class LookupType8Format3SubTable : LookupSubTable
