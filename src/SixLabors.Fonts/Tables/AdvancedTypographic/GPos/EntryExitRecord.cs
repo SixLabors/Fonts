@@ -14,20 +14,34 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// Initializes a new instance of the <see cref="EntryExitRecord"/> struct.
         /// </summary>
         /// <param name="reader">The big endian binary reader.</param>
-        public EntryExitRecord(BigEndianBinaryReader reader)
+        /// <param name="offset">The offset to exitAnchor table, from beginning of CursivePos subtable.</param>
+        public EntryExitRecord(BigEndianBinaryReader reader, long offset)
         {
-            this.EntryAnchorOffset = reader.ReadUInt16();
-            this.ExitAnchorOffset = reader.ReadUInt16();
+            // EntryExitRecord
+            // +--------------+------------------------+------------------------------------------------+
+            // | Type         | Name                   | Description                                    |
+            // +==============+========================+================================================+
+            // | Offset16     | entryAnchorOffset      | Offset to entryAnchor table, from beginning of |
+            // |              |                        | CursivePos subtable (may be NULL).             |
+            // +--------------+------------------------+------------------------------------------------+
+            // | Offset16     | exitAnchorOffset       | Offset to exitAnchor table, from beginning of  |
+            // |              |                        | CursivePos subtable (may be NULL).             |
+            // +--------------+------------------------+------------------------------------------------+
+            ushort entryAnchorOffset = reader.ReadOffset16();
+            ushort exitAnchorOffset = reader.ReadOffset16();
+
+            this.EntryAnchor = entryAnchorOffset != 0 ? AnchorTable.Load(reader, offset + entryAnchorOffset) : null;
+            this.ExitAnchor = exitAnchorOffset != 0 ? AnchorTable.Load(reader, offset + exitAnchorOffset) : null;
         }
 
         /// <summary>
-        /// Gets the offset to entryAnchor table, from beginning of CursivePos subtable.
+        /// Gets the entry anchor table.
         /// </summary>
-        public ushort EntryAnchorOffset { get; }
+        public AnchorTable? EntryAnchor { get; }
 
         /// <summary>
-        /// Gets the offset to exitAnchor table, from beginning of CursivePos subtable.
+        /// Gets the exit anchor table.
         /// </summary>
-        public ushort ExitAnchorOffset { get; }
+        public AnchorTable? ExitAnchor { get; }
     }
 }

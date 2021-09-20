@@ -62,7 +62,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 var entryExitRecords = new EntryExitRecord[entryExitCount];
                 for (int i = 0; i < entryExitCount; i++)
                 {
-                    entryExitRecords[i] = new EntryExitRecord(reader);
+                    entryExitRecords[i] = new EntryExitRecord(reader, offset);
                 }
 
                 var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
@@ -70,7 +70,51 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 return new LookupType3Format1SubTable(coverageTable, entryExitRecords);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count) => throw new System.NotImplementedException();
+            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+            {
+                // Implements Cursive Attachment Positioning Subtable:
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
+                for (ushort i = 0; i < count - 1; i++)
+                {
+                    int curIndex = i + index;
+                    int glyphId = collection.GetGlyphIds(curIndex)[0];
+                    if (glyphId < 0)
+                    {
+                        return false;
+                    }
+
+                    int nextIndex = i + index + 1;
+                    int nextGlyphId = collection.GetGlyphIds(nextIndex)[0];
+                    if (nextGlyphId < 0)
+                    {
+                        return false;
+                    }
+
+                    int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                    EntryExitRecord curRecord = this.entryExitRecords[coverage];
+                    AnchorTable? entry = curRecord.EntryAnchor;
+                    if (entry is null)
+                    {
+                        return false;
+                    }
+
+                    int coverageNext = this.coverageTable.CoverageIndexOf((ushort)nextGlyphId);
+                    EntryExitRecord nextRecord = this.entryExitRecords[coverage];
+                    AnchorTable? exit = nextRecord.ExitAnchor;
+                    if (exit is null)
+                    {
+                        return false;
+                    }
+
+                    // TODO: we need to know here if we are RTL or LTR.
+                    // TODO: advance current glyph by exit.x + cur.xOffset.
+                    // TODO: var d = entry.x + next.xOffset;
+                    // next.xAdvance -= d;
+                    // next.xOffset -= d;
+                }
+
+                return true;
+            }
         }
     }
 }
