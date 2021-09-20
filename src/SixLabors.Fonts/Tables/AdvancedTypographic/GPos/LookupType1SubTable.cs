@@ -88,8 +88,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 if (coverage > -1)
                 {
                     ValueRecord record = this.valueRecord;
-                    collection.Offset(fontMetrics, i, (ushort)glyphId, record.XPlacement, record.YPlacement);
-                    collection.Advance(fontMetrics, i, (ushort)glyphId, record.XAdvance, record.YAdvance);
+                    collection.Offset(fontMetrics, (ushort)(i + index), (ushort)glyphId, record.XPlacement, record.YPlacement);
+                    collection.Advance(fontMetrics, (ushort)(i + index), (ushort)glyphId, record.XAdvance, record.YAdvance);
                     return true;
                 }
             }
