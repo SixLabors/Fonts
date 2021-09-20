@@ -27,21 +27,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // | Offset16     | exitAnchorOffset       | Offset to exitAnchor table, from beginning of  |
             // |              |                        | CursivePos subtable (may be NULL).             |
             // +--------------+------------------------+------------------------------------------------+
-            ushort entryAnchorOffset = reader.ReadOffset16();
-            ushort exitAnchorOffset = reader.ReadOffset16();
-
-            this.EntryAnchor = entryAnchorOffset != 0 ? AnchorTable.Load(reader, offset + entryAnchorOffset) : null;
-            this.ExitAnchor = exitAnchorOffset != 0 ? AnchorTable.Load(reader, offset + exitAnchorOffset) : null;
+            this.EntryAnchorOffset = reader.ReadOffset16();
+            this.ExitAnchorOffset = reader.ReadOffset16();
         }
 
         /// <summary>
-        /// Gets the entry anchor table.
+        /// Gets the offset to entryAnchor table, from beginning of CursivePos subtable.
         /// </summary>
-        public AnchorTable? EntryAnchor { get; }
+        public ushort EntryAnchorOffset { get; }
 
         /// <summary>
-        /// Gets the exit anchor table.
+        /// Gets the offset to exitAnchor table, from beginning of CursivePos subtable.
         /// </summary>
-        public AnchorTable? ExitAnchor { get; }
+        public ushort ExitAnchorOffset { get; }
     }
 }

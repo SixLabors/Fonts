@@ -8,9 +8,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
     internal class AnchorTable
     {
-        private AnchorTable()
+        public AnchorTable(short xCoordinate, short yCoordinate)
         {
+            this.XCoordinate = xCoordinate;
+            this.YCoordinate = yCoordinate;
         }
+
+        /// <summary>
+        /// Gets the horizontal value, in design units.
+        /// </summary>
+        public short XCoordinate { get; }
+
+        /// <summary>
+        /// Gets the vertical value, in design units.
+        /// </summary>
+        public short YCoordinate { get; }
 
         public static AnchorTable Load(BigEndianBinaryReader reader, long offset)
         {
@@ -19,28 +31,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             return anchorFormat switch
             {
-                1 => Load(reader, offset),
-                _ => throw new NotSupportedException($"anchorFormat {anchorFormat}. Should be '1'.")
+                1 => AnchorFormat1.Load(reader),
+                _ => throw new NotSupportedException($"anchorFormat {anchorFormat} not supported. Should be '1'.")
             };
         }
 
         internal sealed class AnchorFormat1 : AnchorTable
         {
             public AnchorFormat1(short xCoordinate, short yCoordinate)
+                : base(xCoordinate, yCoordinate)
             {
-                this.XCoordinate = xCoordinate;
-                this.YCoordinate = yCoordinate;
             }
-
-            /// <summary>
-            /// Gets the horizontal value, in design units.
-            /// </summary>
-            public short XCoordinate { get; }
-
-            /// <summary>
-            /// Gets the vertical value, in design units.
-            /// </summary>
-            public short YCoordinate { get; }
 
             public static AnchorFormat1 Load(BigEndianBinaryReader reader)
             {
@@ -51,7 +52,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // +--------------+------------------------+------------------------------------------------+
                 // | int16        | xCoordinate            | Horizontal value, in design units.             |
                 // +--------------+------------------------+------------------------------------------------+
-                // |int16         | yCoordinate            | Vertical value, in design units.               |
+                // | int16        | yCoordinate            | Vertical value, in design units.               |
                 // +--------------+------------------------+------------------------------------------------+
                 short xCoordinate = reader.ReadInt16();
                 short yCoordinate = reader.ReadInt16();

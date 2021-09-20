@@ -34,12 +34,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         internal sealed class LookupType3Format1SubTable : LookupSubTable
         {
             private readonly CoverageTable coverageTable;
-            private readonly EntryExitRecord[] entryExitRecords;
+            private readonly EntryExitAnchors[] entryExitAnchors;
 
-            public LookupType3Format1SubTable(CoverageTable coverageTable, EntryExitRecord[] entryExitRecords)
+            public LookupType3Format1SubTable(CoverageTable coverageTable, EntryExitAnchors[] entryExitAnchors)
             {
                 this.coverageTable = coverageTable;
-                this.entryExitRecords = entryExitRecords;
+                this.entryExitAnchors = entryExitAnchors;
             }
 
             public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset)
@@ -53,7 +53,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // | Offset16           | coverageOffset                  | Offset to Coverage table,                            |
                 // |                    |                                 | from beginning of CursivePos subtable.               |
                 // +--------------------+---------------------------------+------------------------------------------------------+
-                // | uint16             | entryExitCount                  | Number of EntryExit records                          |
+                // | uint16             | entryExitCount                  | Number of EntryExit records.                         |
                 // +--------------------+---------------------------------+------------------------------------------------------+
                 // | EntryExitRecord    | entryExitRecord[entryExitCount] | Array of EntryExit records, in Coverage index order. |
                 // +--------------------+---------------------------------+------------------------------------------------------+
@@ -65,9 +65,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     entryExitRecords[i] = new EntryExitRecord(reader, offset);
                 }
 
+                var entryExitAnchors = new EntryExitAnchors[entryExitCount];
+                for (int i = 0; i < entryExitCount; i++)
+                {
+                    entryExitAnchors[i] = new EntryExitAnchors(reader, offset, entryExitRecords[i]);
+                }
+
                 var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-                return new LookupType3Format1SubTable(coverageTable, entryExitRecords);
+                return new LookupType3Format1SubTable(coverageTable, entryExitAnchors);
             }
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
@@ -91,7 +97,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
-                    EntryExitRecord curRecord = this.entryExitRecords[coverage];
+                    EntryExitAnchors? curRecord = this.entryExitAnchors[coverage];
                     AnchorTable? entry = curRecord.EntryAnchor;
                     if (entry is null)
                     {
@@ -99,7 +105,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     int coverageNext = this.coverageTable.CoverageIndexOf((ushort)nextGlyphId);
-                    EntryExitRecord nextRecord = this.entryExitRecords[coverage];
+                    EntryExitAnchors? nextRecord = this.entryExitAnchors[coverage];
                     AnchorTable? exit = nextRecord.ExitAnchor;
                     if (exit is null)
                     {
