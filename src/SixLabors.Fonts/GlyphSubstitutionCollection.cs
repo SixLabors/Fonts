@@ -106,6 +106,13 @@ namespace SixLabors.Fonts
             return false;
         }
 
+        /// <summary>
+        /// Gets the glyph ids at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to get.</param>
+        /// <returns>The <see cref="ReadOnlySpan{UInt16}"/>.</returns>
+        public ReadOnlySpan<int> GetGlyphIds(int index) => this[index];
+
         /// <inheritdoc />
         public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out IEnumerable<int> glyphIds)
         {

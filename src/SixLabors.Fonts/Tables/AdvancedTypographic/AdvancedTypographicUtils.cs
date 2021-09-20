@@ -8,31 +8,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     internal static class AdvancedTypographicUtils
     {
-        internal static bool MatchInputSequence(GlyphSubstitutionCollection collection, ushort index, ushort[] inputSequence)
+        internal static bool MatchInputSequence(IGlyphCollection collection, ushort index, ushort[] inputSequence)
         {
             bool allMatched = true;
             int startIdx = index + 1;
             for (int i = 0; i < inputSequence.Length; i++)
             {
                 int collectionIdx = startIdx + i;
-                if (collectionIdx < collection.Count && collection[collectionIdx][0] != inputSequence[i])
-                {
-                    allMatched = false;
-                    break;
-                }
-            }
-
-            return allMatched;
-        }
-
-        internal static bool MatchInputSequence(GlyphPositioningCollection collection, ushort index, ushort[] inputSequence)
-        {
-            bool allMatched = true;
-            int startIdx = index + 1;
-            for (int i = 0; i < inputSequence.Length; i++)
-            {
-                int collectionIdx = startIdx + i;
-                if (collectionIdx < collection.Count && collection[collectionIdx][0].GlyphId != inputSequence[i])
+                if (collectionIdx < collection.Count && collection.GetGlyphIds(collectionIdx)[0] != inputSequence[i])
                 {
                     allMatched = false;
                     break;
