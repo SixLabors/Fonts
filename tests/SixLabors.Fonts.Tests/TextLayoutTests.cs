@@ -134,7 +134,7 @@ namespace SixLabors.Fonts.Tests
         public void TryMeasureCharacterBounds()
         {
             string text = "a b\nc";
-            var expectedGlyphMetrics = new GlyphBounds[]
+            GlyphBounds[] expectedGlyphMetrics =
             {
                 new GlyphBounds(new CodePoint('a'), new FontRectangle(10, 0, 10, 10)),
                 new GlyphBounds(new CodePoint(' '), new FontRectangle(40, 0, 30, 10)),

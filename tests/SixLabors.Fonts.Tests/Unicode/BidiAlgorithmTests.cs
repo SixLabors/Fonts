@@ -63,6 +63,26 @@ namespace SixLabors.Fonts.Tests.Unicode
         }
 
         [Fact]
+        public void MixingArabicWordsWithNumbers_Works()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.SegeouiFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "لە ساڵی ١٢٣٤ ڕوویدا";
+            int[] expectedGlyphIndices = { 2317, 3631, 2380, 2345, 2345, 2485, 2264, 2265, 2266, 2267, 2379, 2540, 2247, 2260, 2842, 2286 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
         public void ICUTests() => Assert.True(this.ICUTestsImpl());
 
         private bool ICUTestsImpl()
