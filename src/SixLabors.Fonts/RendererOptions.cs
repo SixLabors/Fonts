@@ -141,7 +141,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the text alignment of the text within the box.
         /// </summary>
-        public TextAlignment TextAlignment { get; set; } = TextAlignment.Right;
+        public TextAlignment TextAlignment { get; set; }
 
         /// <summary>
         /// Gets or sets the horizontal alignment of the text box.
