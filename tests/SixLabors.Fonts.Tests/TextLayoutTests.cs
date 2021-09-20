@@ -136,10 +136,10 @@ namespace SixLabors.Fonts.Tests
             string text = "a b\nc";
             GlyphBounds[] expectedGlyphMetrics =
             {
-                new GlyphBounds(new CodePoint('a'), new FontRectangle(10, 0, 10, 10)),
-                new GlyphBounds(new CodePoint(' '), new FontRectangle(40, 0, 30, 10)),
-                new GlyphBounds(new CodePoint('b'), new FontRectangle(70, 0, 10, 10)),
-                new GlyphBounds(new CodePoint('c'), new FontRectangle(10, 30, 10, 10)),
+                new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10)),
+                new(new CodePoint(' '), new FontRectangle(40, 0, 30, 10)),
+                new(new CodePoint('b'), new FontRectangle(70, 0, 10, 10)),
+                new(new CodePoint('c'), new FontRectangle(10, 30, 10, 10)),
             };
             Font font = CreateFont(text);
 
