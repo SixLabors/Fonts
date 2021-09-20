@@ -102,7 +102,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(new Font(SystemFonts.Get("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
             RenderText(new RendererOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
             BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
-            TextAlignment.Generate(SystemFonts.CreateFont("arial", 50f));
+            TextAlignmentSample.Generate(SystemFonts.CreateFont("arial", 50f));
             TextAlignmentWrapped.Generate(SystemFonts.CreateFont("arial", 50f));
 
             FontFamily simsum = SystemFonts.Get("SimSun");
