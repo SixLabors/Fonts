@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public static LookupType7Format1SubTable Load(BigEndianBinaryReader reader, long offset)
             {
-                SequenceRuleSetTable[] seqRuleSets = AdvancedTypographicUtils.LoadSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
+                SequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
 
                 return new LookupType7Format1SubTable(coverageTable, seqRuleSets);
             }
@@ -70,7 +70,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public static LookupType7Format2SubTable Load(BigEndianBinaryReader reader, long offset)
             {
-                CoverageTable coverageTable = AdvancedTypographicUtils.LoadSequenceContextFormat2(reader, offset, out ClassDefinitionTable classDefTable, out ClassSequenceRuleSetTable[] classSeqRuleSets);
+                CoverageTable coverageTable = TableLoadingUtils.LoadSequenceContextFormat2(reader, offset, out ClassDefinitionTable classDefTable, out ClassSequenceRuleSetTable[] classSeqRuleSets);
 
                 return new LookupType7Format2SubTable(coverageTable, classDefTable, classSeqRuleSets);
             }
@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public static LookupType7Format3SubTable Load(BigEndianBinaryReader reader, long offset)
             {
-                SequenceLookupRecord[] seqLookupRecords = AdvancedTypographicUtils.LoadSequenceContextFormat3(reader, offset, out CoverageTable[] coverageTables);
+                SequenceLookupRecord[] seqLookupRecords = TableLoadingUtils.LoadSequenceContextFormat3(reader, offset, out CoverageTable[] coverageTables);
 
                 return new LookupType7Format3SubTable(coverageTables, seqLookupRecords);
             }
