@@ -114,7 +114,7 @@ namespace SixLabors.Fonts
         public ReadOnlySpan<int> GetGlyphIds(int index) => this[index];
 
         /// <inheritdoc />
-        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out IEnumerable<int> glyphIds)
+        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> glyphIds)
         {
             offset = this.offsets[index];
             CodePointGlyphs value = this.map[offset];

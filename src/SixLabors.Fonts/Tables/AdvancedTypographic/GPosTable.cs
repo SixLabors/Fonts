@@ -1,7 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Generic;
+using System;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 using SixLabors.Fonts.Unicode;
 
@@ -101,7 +101,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             ushort index,
             int count)
         {
-            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out IEnumerable<int> _);
+            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out ReadOnlySpan<int> _);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
             Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];

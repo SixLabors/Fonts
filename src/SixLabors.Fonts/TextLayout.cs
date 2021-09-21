@@ -192,19 +192,21 @@ namespace SixLabors.Fonts
             if (first)
             {
                 // Set the Y-Origin for the first line.
-                float lineScaledAscender = textLine.ScaledMaxAscender();
-                float lineScaledDescender = textLine.ScaledMaxDescender();
+                // TODO: Should we include the line gap?
+                float halfScaledMaxLineGap = 0; // textLine.ScaledMaxLineGap() * .5F;
+                float scaledMaxAscender = textLine.ScaledMaxAscender() + halfScaledMaxLineGap;
+                float scaledMaxDescender = textLine.ScaledMaxDescender() + halfScaledMaxLineGap;
                 switch (options.VerticalAlignment)
                 {
                     case VerticalAlignment.Top:
-                        offsetY = lineScaledAscender;
+                        offsetY = scaledMaxAscender;
                         break;
                     case VerticalAlignment.Center:
-                        offsetY = (lineScaledAscender * .5F) - (lineScaledDescender * .5F);
+                        offsetY = (scaledMaxAscender * .5F) - (scaledMaxDescender * .5F);
                         offsetY -= (lineCount - 1) * textLine.ScaledMaxLineHeight() * options.LineSpacing * .5F;
                         break;
                     case VerticalAlignment.Bottom:
-                        offsetY = -lineScaledDescender;
+                        offsetY = -scaledMaxDescender;
                         offsetY -= (lineCount - 1) * textLine.ScaledMaxLineHeight() * options.LineSpacing;
                         break;
                 }
@@ -240,6 +242,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < textLine.Count; i++)
             {
                 TextLine.GlyphInfo info = textLine[i];
+                FontMetrics fm = info.Metrics[0].FontMetrics;
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
                     float scale = info.PointSize / metric.ScaleFactor;
@@ -281,25 +284,26 @@ namespace SixLabors.Fonts
             ref Vector2 location)
         {
             float originY = location.Y;
-            float originX = location.X;
             float offsetY = 0;
             float offsetX = 0;
             if (first)
             {
                 // Set the Y-Origin for the first line.
-                float lineScaledAscender = textLine.ScaledMaxAscender();
-                float lineScaledDescender = textLine.ScaledMaxDescender();
+                // TODO: Should we include the line gap?
+                float halfScaledMaxLineGap = 0; // textLine.ScaledMaxLineGap() * .5F;
+                float scaledMaxAscender = textLine.ScaledMaxAscender() + halfScaledMaxLineGap;
+                float scaledMaxDescender = textLine.ScaledMaxDescender() + halfScaledMaxLineGap;
                 switch (options.VerticalAlignment)
                 {
                     case VerticalAlignment.Top:
-                        offsetY = lineScaledAscender;
+                        offsetY = scaledMaxAscender;
                         break;
                     case VerticalAlignment.Center:
-                        offsetY = (lineScaledAscender * .5F) - (lineScaledDescender * .5F);
+                        offsetY = (scaledMaxAscender * .5F) - (scaledMaxDescender * .5F);
                         offsetY -= (lineCount - 1) * textLine.ScaledMaxLineHeight() * options.LineSpacing * .5F;
                         break;
                     case VerticalAlignment.Bottom:
-                        offsetY = -lineScaledDescender;
+                        offsetY = -scaledMaxDescender;
                         offsetY -= (lineCount - 1) * textLine.ScaledMaxLineHeight() * options.LineSpacing;
                         break;
                 }
@@ -308,17 +312,24 @@ namespace SixLabors.Fonts
             }
 
             // Set the X-Origin for horizontal alignment.
-            float wrappingAdvance = options.WrappingWidth > 0 && options.WrappingWidth / options.DpiX < maxScaledAdvance
-                ? 0 // options.WrappingWidth / options.DpiX
-                : 0;
-
             switch (options.HorizontalAlignment)
             {
                 case HorizontalAlignment.Right:
-                    offsetX = wrappingAdvance - textLine.ScaledLineAdvance();
+                    offsetX = -maxScaledAdvance;
                     break;
                 case HorizontalAlignment.Center:
-                    offsetX = (wrappingAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
+                    offsetX = -(maxScaledAdvance * .5F);
+                    break;
+            }
+
+            // Set the alignment of lines within the text.
+            switch (options.TextAlignment)
+            {
+                case TextAlignment.Right:
+                    offsetX += maxScaledAdvance - textLine.ScaledLineAdvance();
+                    break;
+                case TextAlignment.Center:
+                    offsetX += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
                     break;
             }
 
@@ -443,7 +454,7 @@ namespace SixLabors.Fonts
             // See hb-ot-shape.cc in HarfBuzz. Line 651.
             for (int i = 0; i < substitutions.Count; i++)
             {
-                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out IEnumerable<int> _);
+                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> _);
                 if (bidiMap.TryGetValue(offset, out int run))
                 {
                     BidiRun bidiRun = bidiRuns[run];
@@ -469,7 +480,7 @@ namespace SixLabors.Fonts
         {
             for (int i = 0; i < substitutions.Count; i++)
             {
-                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int _, out IEnumerable<int> _);
+                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int _, out ReadOnlySpan<int> _);
                 Script current = CodePoint.GetScript(codePoint);
 
                 // Choose a shaper based on the script.
@@ -569,6 +580,13 @@ namespace SixLabors.Fonts
                     if (CodePoint.IsTabulation(codePoint))
                     {
                         glyphAdvance *= options.TabWidth;
+                    }
+                    else if (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthJoiner(codePoint))
+                    {
+                        // The zero-width joiner characters should be ignored when determining word or
+                        // line break boundaries so are safe to skip here.
+                        // Any existing instances are the result of font error.
+                        glyphAdvance = 0;
                     }
                     else if (!CodePoint.IsNewLine(codePoint))
                     {
@@ -732,9 +750,13 @@ namespace SixLabors.Fonts
                 => this.info.Max(x => Math.Abs(x.Metrics[0].FontMetrics.Descender) * x.PointSize / x.Metrics[0].ScaleFactor);
 
             public float ScaledMaxLineHeight()
-                => this.info.Max(x => Math.Abs(x.Metrics[0].FontMetrics.LineHeight) * x.PointSize / x.Metrics[0].ScaleFactor);
+                => this.info.Max(x => x.Metrics[0].FontMetrics.LineHeight * x.PointSize / x.Metrics[0].ScaleFactor);
 
-            public float ScaledMaxAdvanceWidth() => this.info.Max(x => Math.Abs(x.Metrics[0].FontMetrics.AdvanceWidthMax) * x.PointSize / x.Metrics[0].ScaleFactor);
+            public float ScaledMaxLineGap()
+                => this.info.Max(x => x.Metrics[0].FontMetrics.LineGap * x.PointSize / x.Metrics[0].ScaleFactor);
+
+            public float ScaledMaxAdvanceWidth()
+                => this.info.Max(x => x.Metrics[0].FontMetrics.AdvanceWidthMax * x.PointSize / x.Metrics[0].ScaleFactor);
 
             public void Add(
                 GlyphMetrics[] metrics,

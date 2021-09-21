@@ -1,8 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Generic;
-using System.Linq;
+using System;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
@@ -32,8 +31,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             while (idx < sequence.Length)
             {
-                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out IEnumerable<int>? glyphIds);
-                int glyphId = glyphIds.First();
+                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out ReadOnlySpan<int> glyphIds);
+                int glyphId = glyphIds[0];
                 if (glyphId != sequence[idx++])
                 {
                     return false;
@@ -55,7 +54,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             while (idx < sequence.Length)
             {
-                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out IEnumerable<int> glyphIds);
+                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out ReadOnlySpan<int> glyphIds);
                 if (!MatchClass(idx++, sequence, classDefinitionTable, glyphIds))
                 {
                     return false;
@@ -65,9 +64,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, IEnumerable<int> glyphIds)
+        private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, ReadOnlySpan<int> glyphIds)
         {
-            int glyphId = glyphIds.First();
+            int glyphId = glyphIds[0];
             int glyphIdClass = classDefinitionTable.ClassIndexOf((ushort)glyphId);
             ushort sequenceEntry = sequence[idx];
             int sequenceEntryClassId = classDefinitionTable.ClassIndexOf(sequenceEntry);

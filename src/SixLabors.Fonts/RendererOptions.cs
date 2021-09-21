@@ -167,41 +167,5 @@ namespace SixLabors.Fonts
         /// Gets or sets a value indicating whether we enable various color font formats.
         /// </summary>
         public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.None;
-
-        /// <summary>
-        /// Gets the style. In derived classes this could switch out to different fonts mid stream
-        /// </summary>
-        /// <param name="index">The index.</param>
-        /// <param name="length">The length.</param>
-        /// <returns>
-        /// The Font style that applies to a region of text.
-        /// </returns>
-        internal AppliedFontStyle GetStyle(int index, int length)
-        {
-            IFontMetrics[] fallbackFontInstances;
-            if (this.FallbackFontFamilies is null)
-            {
-                fallbackFontInstances = Array.Empty<IFontMetrics>();
-            }
-            else
-            {
-                fallbackFontInstances = this.FallbackFontFamilies
-                    .Select(x => new Font(x, this.Font.Size, this.Font.RequestedStyle).FontMetrics)
-                    .ToArray();
-            }
-
-            return new AppliedFontStyle
-            {
-                Start = index,
-                End = length - 1,
-                PointSize = this.Font.Size,
-                MainFont = this.Font.FontMetrics,
-                FallbackFonts = fallbackFontInstances,
-                TabWidth = this.TabWidth,
-                ApplyKerning = this.ApplyKerning,
-                ColorFontSupport = this.ColorFontSupport,
-                Options = this
-            };
-        }
     }
 }

@@ -262,35 +262,6 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void GetStylePassesCorrectValues()
-        {
-            Font font = FakeFont.CreateFontWithInstance("ABC", out Fakes.FakeFontInstance abcFontInstance);
-            FontFamily[] fontFamilies = new[]
-            {
-                FakeFont.CreateFontWithInstance("DEF", out Fakes.FakeFontInstance defFontInstance).Family,
-                FakeFont.CreateFontWithInstance("GHI", out Fakes.FakeFontInstance ghiFontInstance).Family
-            };
-
-            var options = new RendererOptions(font)
-            {
-                FallbackFontFamilies = fontFamilies
-            };
-
-            AppliedFontStyle style = options.GetStyle(4, 10);
-
-            Assert.Equal(4, style.Start);
-            Assert.Equal(9, style.End);
-            Assert.Equal(font.Size, style.PointSize);
-            Assert.Equal(4, style.TabWidth);
-            Assert.True(style.ApplyKerning);
-
-            Assert.Equal(abcFontInstance, style.MainFont);
-            Assert.Equal(2, style.FallbackFonts.Length);
-            Assert.Contains(defFontInstance, style.FallbackFonts);
-            Assert.Contains(ghiFontInstance, style.FallbackFonts);
-        }
-
-        [Fact]
         public void GetMissingGlyphFromMainFont()
         {
             Font font = FakeFont.CreateFontWithInstance("ABC", out Fakes.FakeFontInstance abcFontInstance);

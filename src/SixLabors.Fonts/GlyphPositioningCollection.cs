@@ -86,7 +86,7 @@ namespace SixLabors.Fonts
         public ReadOnlySpan<int> GetGlyphIds(int index) => this.glyphs[index].GlyphIds;
 
         /// <inheritdoc />
-        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out IEnumerable<int> glyphIds)
+        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> glyphIds)
         {
             offset = this.offsets[index];
             CodePointGlyphs value = this.glyphs[index];
@@ -105,10 +105,13 @@ namespace SixLabors.Fonts
         /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
         public bool TryAddOrUpdate(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
         {
+            // TODO: There's a design issue here.
+            // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
+            // then we end up with orphaned fallbacks. We need a way to detect that.
             bool hasFallBacks = false;
             for (int i = 0; i < collection.Count; i++)
             {
-                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out IEnumerable<int>? glyphIds);
+                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> glyphIds);
 
                 bool mapped = this.map.TryGetValue(offset, out GlyphMetrics[]? metrics);
                 if (mapped && metrics![0].GlyphType != GlyphType.Fallback)
@@ -117,7 +120,7 @@ namespace SixLabors.Fonts
                     continue;
                 }
 
-                var m = new List<GlyphMetrics>(glyphIds.Count());
+                var m = new List<GlyphMetrics>(glyphIds.Length);
                 foreach (int id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to

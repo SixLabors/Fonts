@@ -246,6 +246,22 @@ namespace SixLabors.Fonts.Unicode
             => codePoint.Value == 0x00A0;
 
         /// <summary>
+        /// Gets a value indicating whether the given codepoint is a zero-width-non-joiner.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a zero-width-non-joiner character; otherwise, <see langword="false"/></returns>
+        public static bool IsZeroWidthNonJoiner(CodePoint codePoint)
+            => codePoint.Value == 0x200C;
+
+        /// <summary>
+        /// Gets a value indicating whether the given codepoint is a zero-width-joiner.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a zero-width-joiner character; otherwise, <see langword="false"/></returns>
+        public static bool IsZeroWidthJoiner(CodePoint codePoint)
+            => codePoint.Value == 0x200D;
+
+        /// <summary>
         /// Gets a value indicating whether the given codepoint is a control character.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>

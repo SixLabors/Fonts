@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
 using SixLabors.Fonts.Unicode;
@@ -97,7 +98,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public void ApplySubstitution(GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out IEnumerable<int> _);
+            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out ReadOnlySpan<int> _);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
             Script script = CodePoint.GetScript(codePoint);

@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tables.General
             foreach (CMapSubTable t in this.Tables)
             {
                 // Keep looking until we have an index that's not the fallback.
-                if (t.TryGetGlyphId(codePoint, out glyphId))
+                if (t.TryGetGlyphId(codePoint, out glyphId) && glyphId > 0)
                 {
                     return true;
                 }

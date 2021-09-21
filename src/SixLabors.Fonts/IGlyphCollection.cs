@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -24,7 +23,7 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">The Unicode codepoint.</param>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
         /// <param name="glyphIds">The glyph ids.</param>
-        void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out IEnumerable<int> glyphIds);
+        void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> glyphIds);
 
         /// <summary>
         /// Gets the glyph ids at the specified index.
