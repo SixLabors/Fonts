@@ -2,12 +2,19 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
+    [DebuggerDisplay("X: {XCoordinate}, Y: {YCoordinate}")]
     internal class AnchorTable
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AnchorTable"/> class.
+        /// </summary>
+        /// <param name="xCoordinate">The horizontal value, in design units.</param>
+        /// <param name="yCoordinate">The vertical value, in design units.</param>
         public AnchorTable(short xCoordinate, short yCoordinate)
         {
             this.XCoordinate = xCoordinate;

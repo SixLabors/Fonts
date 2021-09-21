@@ -96,27 +96,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         return false;
                     }
 
-                    int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
-                    EntryExitAnchors? curRecord = this.entryExitAnchors[coverage];
-                    AnchorTable? entry = curRecord.EntryAnchor;
+                    int coverageNext = this.coverageTable.CoverageIndexOf((ushort)nextGlyphId);
+                    EntryExitAnchors nextRecord = this.entryExitAnchors[coverageNext];
+                    AnchorTable? entry = nextRecord.EntryAnchor;
                     if (entry is null)
                     {
                         return false;
                     }
 
-                    int coverageNext = this.coverageTable.CoverageIndexOf((ushort)nextGlyphId);
-                    EntryExitAnchors? nextRecord = this.entryExitAnchors[coverage];
-                    AnchorTable? exit = nextRecord.ExitAnchor;
+                    int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                    EntryExitAnchors curRecord = this.entryExitAnchors[coverage];
+                    AnchorTable? exit = curRecord.ExitAnchor;
                     if (exit is null)
                     {
                         return false;
                     }
 
-                    // TODO: we need to know here if we are RTL or LTR.
-                    // TODO: advance current glyph by exit.x + cur.xOffset.
-                    // TODO: var d = entry.x + next.xOffset;
-                    // next.xAdvance -= d;
-                    // next.xOffset -= d;
+                    // TODO: we need to know here if we are RTL or LTR. This assumes LTR.
+                    int curOffset = 0; // TODO: get current offset.
+                    int nextXOffset = 0; // TODO: get next offset.
+                    int dx = entry.XCoordinate + nextXOffset;
+                    int dy = exit.YCoordinate - entry.YCoordinate;
+                    int curXAdvance = exit.XCoordinate + curOffset;
+                    collection.SetAdvance(fontMetrics, (ushort)curIndex, (ushort)glyphId, (ushort)curXAdvance, (ushort)dy);
+                    collection.Advance(fontMetrics, (ushort)nextIndex, (ushort)nextGlyphId, (short)-dx, 0);
+                    collection.Offset(fontMetrics, (ushort)nextIndex, (ushort)nextGlyphId, (short)-dx, 0);
                 }
 
                 return true;

@@ -172,6 +172,17 @@ namespace SixLabors.Fonts
             this.AdvanceHeight = (ushort)(this.AdvanceHeight - y);
         }
 
+        /// <summary>
+        /// Sets a new advance.
+        /// </summary>
+        /// <param name="x">The x-advance.</param>
+        /// <param name="y">The y-advance.</param>
+        internal void SetAdvance(ushort x, ushort y)
+        {
+            this.AdvanceWidth = x;
+            this.AdvanceHeight = y;
+        }
+
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
             Vector2 size = this.Bounds.Size() * scaledPointSize / this.ScaleFactor;
@@ -217,7 +228,7 @@ namespace SixLabors.Fonts
                     int startOfContour = endOfContour + 1;
                     endOfContour = this.vector.EndPoints[i];
 
-                    Vector2 prev = Vector2.Zero;
+                    Vector2 prev;
                     Vector2 curr = this.GetPoint(ref scaledPoint, endOfContour) + location;
                     Vector2 next = this.GetPoint(ref scaledPoint, startOfContour) + location;
 
