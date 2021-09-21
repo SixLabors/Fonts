@@ -173,15 +173,16 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Sets a new advance.
+        /// Sets a new advance width.
         /// </summary>
         /// <param name="x">The x-advance.</param>
+        internal void SetAdvanceWidth(ushort x) => this.AdvanceWidth = x;
+
+        /// <summary>
+        /// Sets a new advance height.
+        /// </summary>
         /// <param name="y">The y-advance.</param>
-        internal void SetAdvance(ushort x, ushort y)
-        {
-            this.AdvanceWidth = x;
-            this.AdvanceHeight = y;
-        }
+        internal void SetAdvanceHeight(ushort y) => this.AdvanceHeight = y;
 
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
@@ -205,8 +206,6 @@ namespace SixLabors.Fonts
         public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, Vector2 dpi, float lineHeight)
         {
             location *= dpi;
-
-            Vector2 firstPoint = Vector2.Zero;
 
             Vector2 scaledPoint = dpi * pointSize;
 

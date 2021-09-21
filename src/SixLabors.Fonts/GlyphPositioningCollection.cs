@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -169,6 +170,26 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Gets the offset of the glyph at the given index and id.
+        /// </summary>
+        /// <param name="fontMetrics">The font face with metrics.</param>
+        /// <param name="index">The zero-based index of the elements to offset.</param>
+        /// <param name="glyphId">The id of the glyph to offset.</param>
+        /// <returns>The offset.</returns>
+        public Vector2 GetOffset(IFontMetrics fontMetrics, ushort index, ushort glyphId)
+        {
+            foreach (GlyphMetrics m in this.map[this.offsets[index]])
+            {
+                if (m.GlyphId == glyphId && m.FontMetrics == fontMetrics)
+                {
+                    return m.Bounds.Min;
+                }
+            }
+
+            return Vector2.Zero;
+        }
+
+        /// <summary>
         /// Updates the advanced metrics of the glyphs at the given index and id,
         /// adding dx and dy to the current advance.
         /// </summary>
@@ -189,20 +210,19 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Sets a new advance.
+        /// Sets a new advance width.
         /// </summary>
         /// <param name="fontMetrics">The font metrics.</param>
         /// <param name="index">The zero-based index of the elements to offset.</param>
         /// <param name="glyphId">The id of the glyph to offset.</param>
-        /// <param name="x">The x.</param>
-        /// <param name="y">The y.</param>
-        public void SetAdvance(IFontMetrics fontMetrics, ushort index, ushort glyphId, ushort x, ushort y)
+        /// <param name="x">The x advance to set.</param>
+        public void SetAdvanceWidth(IFontMetrics fontMetrics, ushort index, ushort glyphId, ushort x)
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.SetAdvance(x, y);
+                    m.SetAdvanceWidth(x);
                 }
             }
         }

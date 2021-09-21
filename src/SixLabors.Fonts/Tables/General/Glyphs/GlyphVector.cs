@@ -45,7 +45,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         /// <summary>
         /// TrueType outline, offset glyph points.
-        /// Change the bounding box on the current glyph.
+        /// Changes the bounding box on the current glyph.
         /// </summary>
         /// <param name="dx">The delta x.</param>
         /// <param name="dy">The delta y.</param>
@@ -77,6 +77,13 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             srcPoints.CopyTo(this.controlPoints.AsSpan(destPointsCount));
         }
 
+        /// <summary>
+        /// Transforms the glyph points with the given matrix.
+        /// </summary>
+        /// <param name="m00">The matrix value at m00.</param>
+        /// <param name="m01">The matrix value at m01.</param>
+        /// <param name="m10">The matrix value at m10.</param>
+        /// <param name="m11">The matrix value at m11.</param>
         public void TransformWithMatrix(float m00, float m01, float m10, float m11)
         {
             // Change data on current glyph.
@@ -119,6 +126,13 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             this.Bounds = new Bounds((short)newXmin, (short)newYmin, (short)newXmax, (short)newYmax);
         }
 
+        /// <summary>
+        /// Adds an offsets to the specified point p.
+        /// </summary>
+        /// <param name="p">The point.</param>
+        /// <param name="dx">The dx offset.</param>
+        /// <param name="dy">The dy offset.</param>
+        /// <returns>A point with an offset added.</returns>
         private static Vector2 Offset(Vector2 p, short dx, short dy)
             => new(p.X + dx, p.Y + dy);
     }

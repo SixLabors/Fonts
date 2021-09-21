@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
+using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -76,50 +77,56 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // Implements Cursive Attachment Positioning Subtable:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
+                bool updated = false;
                 for (ushort i = 0; i < count - 1; i++)
                 {
-                    int curIndex = i + index;
-                    int glyphId = collection.GetGlyphIds(curIndex)[0];
+                    ushort curIndex = (ushort)(i + index);
+                    ushort glyphId = (ushort)collection.GetGlyphIds(curIndex)[0];
                     if (glyphId < 0)
                     {
-                        return false;
+                        continue;
                     }
 
-                    int nextIndex = i + index + 1;
-                    int nextGlyphId = collection.GetGlyphIds(nextIndex)[0];
+                    ushort nextIndex = (ushort)(i + index + 1);
+                    ushort nextGlyphId = (ushort)collection.GetGlyphIds(nextIndex)[0];
                     if (nextGlyphId < 0)
                     {
-                        return false;
+                        continue;
                     }
 
-                    int coverageNext = this.coverageTable.CoverageIndexOf((ushort)nextGlyphId);
+                    int coverageNext = this.coverageTable.CoverageIndexOf(nextGlyphId);
                     EntryExitAnchors nextRecord = this.entryExitAnchors[coverageNext];
                     AnchorTable? entry = nextRecord.EntryAnchor;
                     if (entry is null)
                     {
-                        return false;
+                        continue;
                     }
 
-                    int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                    int coverage = this.coverageTable.CoverageIndexOf(glyphId);
                     EntryExitAnchors curRecord = this.entryExitAnchors[coverage];
                     AnchorTable? exit = curRecord.ExitAnchor;
                     if (exit is null)
                     {
-                        return false;
+                        continue;
                     }
 
                     // TODO: we need to know here if we are RTL or LTR. This assumes LTR.
-                    int curOffset = 0; // TODO: get current offset.
-                    int nextXOffset = 0; // TODO: get next offset.
-                    int dx = entry.XCoordinate + nextXOffset;
-                    int dy = exit.YCoordinate - entry.YCoordinate;
-                    int curXAdvance = exit.XCoordinate + curOffset;
-                    collection.SetAdvance(fontMetrics, (ushort)curIndex, (ushort)glyphId, (ushort)curXAdvance, (ushort)dy);
-                    collection.Advance(fontMetrics, (ushort)nextIndex, (ushort)nextGlyphId, (short)-dx, 0);
-                    collection.Offset(fontMetrics, (ushort)nextIndex, (ushort)nextGlyphId, (short)-dx, 0);
+                    Vector2 curOffset = collection.GetOffset(fontMetrics, curIndex, glyphId);
+                    Vector2 nextOffset = collection.GetOffset(fontMetrics, nextIndex, nextGlyphId);
+                    int curXOffset = (int)curOffset.X;
+                    int nextXOffset = (int)nextOffset.X;
+                    int curDy = exit.YCoordinate - entry.YCoordinate;
+                    int curXAdvance = exit.XCoordinate + curXOffset;
+                    int nextDx = entry.XCoordinate + nextXOffset;
+                    collection.SetAdvanceWidth(fontMetrics, curIndex, glyphId, (ushort)curXAdvance);
+                    collection.Offset(fontMetrics, curIndex, glyphId, 0, (short)-curDy);
+                    collection.Advance(fontMetrics, nextIndex, nextGlyphId, (short)-nextDx, 0);
+                    collection.Offset(fontMetrics, nextIndex, nextGlyphId, (short)-nextDx, 0);
+
+                    updated = true;
                 }
 
-                return true;
+                return updated;
             }
         }
     }
