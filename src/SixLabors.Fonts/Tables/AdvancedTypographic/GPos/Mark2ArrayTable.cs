@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // +--------------+------------------------+--------------------------------------------------------------------------------------+
             // | Mark2Record  | mark2Records[markCount]| Array of Mark2Records, in Coverage order.                                            |
             // +--------------+------------------------+--------------------------------------------------------------------------------------+
-            reader.BaseStream.Seek(offset, SeekOrigin.Begin);
+            reader.Seek(offset, SeekOrigin.Begin);
             ushort markCount = reader.ReadUInt16();
             this.Mark2Records = new Mark2Record[markCount];
             for (int i = 0; i < markCount; i++)

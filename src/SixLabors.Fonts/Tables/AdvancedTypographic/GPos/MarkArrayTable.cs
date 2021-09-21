@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // | MarkRecord   | markRecords[markCount] | Array of MarkRecords, ordered by corresponding glyphs                                |
             // |              |                        | in the associated mark Coverage table.                                               |
             // +--------------+------------------------+--------------------------------------------------------------------------------------+
-            reader.BaseStream.Seek(offset, SeekOrigin.Begin);
+            reader.Seek(offset, SeekOrigin.Begin);
             ushort markCount = reader.ReadUInt16();
             this.MarkRecords = new MarkRecord[markCount];
             for (int i = 0; i < markCount; i++)

@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // +--------------+------------------------+--------------------------------------------------------------------------------------+
             // | BaseRecord   | baseRecords[baseCount] | Array of BaseRecords, in order of baseCoverage Index.                                |
             // +--------------+------------------------+--------------------------------------------------------------------------------------+
-            reader.BaseStream.Seek(offset, SeekOrigin.Begin);
+            reader.Seek(offset, SeekOrigin.Begin);
             ushort baseCount = reader.ReadUInt16();
             this.BaseRecords = new BaseRecord[baseCount];
             for (int i = 0; i < baseCount; i++)

@@ -83,17 +83,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // +----------+--------------------------------+-------------------------------------------------------------+
             // | Type     | Name                           | Description                                                 |
             // +==========+================================+=============================================================+
-            // | uint16   | lookupType                     | Different enumerations for GSUB and GPOS                    |
+            // | uint16   | lookupType                     | Different enumerations for GSUB and GPOS.                   |
             // +----------+--------------------------------+-------------------------------------------------------------+
-            // | uint16   | lookupFlag                     | Lookup qualifiers                                           |
+            // | uint16   | lookupFlag                     | Lookup qualifiers .                                         |
             // +----------+--------------------------------+-------------------------------------------------------------+
-            // | uint16   | subTableCount                  | Number of subtables for this lookup                         |
+            // | uint16   | subTableCount                  | Number of subtables for this lookup.                        |
             // +----------+--------------------------------+-------------------------------------------------------------+
             // | Offset16 | subtableOffsets[subTableCount] | Array of offsets to lookup subtables, from beginning of     |
-            // |          |                                | Lookup table                                                |
+            // |          |                                | Lookup table.                                               |
             // +----------+--------------------------------+-------------------------------------------------------------+
             // | uint16   | markFilteringSet               | Index (base 0) into GDEF mark glyph sets structure.         |
-            // |          |                                | This field is only present if the USE\_MARK\_FILTERING\_SET |
+            // |          |                                | This field is only present if the USE_MARK_FILTERING_SET    |
             // |          |                                | lookup flag is set.                                         |
             // +----------+--------------------------------+-------------------------------------------------------------+
             reader.Seek(offset, SeekOrigin.Begin);
@@ -129,7 +129,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 8 => LookupType8SubTable.Load(reader, offset),
 
                 // TODO: enable once TryUpdatePosition is implemented.
-                // 3 => LookupType3SubTable.Load(reader, offset),
                 // 4 => LookupType4SubTable.Load(reader, offset),
                 // 5 => LookupType5SubTable.Load(reader, offset),
                 // 6 => LookupType6SubTable.Load(reader, offset),

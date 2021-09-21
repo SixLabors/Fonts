@@ -53,10 +53,10 @@ namespace SixLabors.Fonts
         /// Seeks within the stream.
         /// </summary>
         /// <param name="offset">Offset to seek to.</param>
-        /// <param name="origin">Origin of seek operation.</param>
+        /// <param name="origin">Origin of seek operation. If SeekOrigin.Begin, the offset will be set to the start of stream position.</param>
         public void Seek(long offset, SeekOrigin origin)
         {
-            // if begin offset the offset by the start of stream position
+            // If SeekOrigin.Begin, the offset will be set to the start of stream position.
             if (origin == SeekOrigin.Begin)
             {
                 offset += this.StartOfStream;

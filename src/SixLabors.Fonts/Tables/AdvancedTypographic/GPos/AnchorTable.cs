@@ -39,7 +39,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// <returns>The anchor table.</returns>
         public static AnchorTable Load(BigEndianBinaryReader reader, long offset)
         {
-            reader.BaseStream.Seek(offset, SeekOrigin.Begin);
+            reader.Seek(offset, SeekOrigin.Begin);
             ushort anchorFormat = reader.ReadUInt16();
 
             return anchorFormat switch
