@@ -7,6 +7,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
     internal class BaseArrayTable
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseArrayTable"/> class.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the base array table.</param>
+        /// <param name="classCount">The class count.</param>
         public BaseArrayTable(BigEndianBinaryReader reader, long offset, ushort classCount)
         {
             // +--------------+------------------------+--------------------------------------------------------------------------------------+
@@ -21,10 +27,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             this.BaseRecords = new BaseRecord[baseCount];
             for (int i = 0; i < baseCount; i++)
             {
-                this.BaseRecords[i] = new BaseRecord(reader, classCount);
+                this.BaseRecords[i] = new BaseRecord(reader, classCount, offset);
             }
         }
 
+        /// <summary>
+        /// Gets the base records.
+        /// </summary>
         public BaseRecord[] BaseRecords { get; }
     }
 }

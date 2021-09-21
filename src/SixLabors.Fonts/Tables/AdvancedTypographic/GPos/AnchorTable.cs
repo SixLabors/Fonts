@@ -31,9 +31,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// </summary>
         public short YCoordinate { get; }
 
+        /// <summary>
+        /// Loads the anchor table.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">The offset to the beginning of the anchor table.</param>
+        /// <returns>The anchor table.</returns>
         public static AnchorTable Load(BigEndianBinaryReader reader, long offset)
         {
-            reader.Seek(offset, SeekOrigin.Begin);
+            reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             ushort anchorFormat = reader.ReadUInt16();
 
             return anchorFormat switch

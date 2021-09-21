@@ -35,10 +35,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             this.MarkRecords = new MarkRecord[markCount];
             for (int i = 0; i < markCount; i++)
             {
-                this.MarkRecords[i] = new MarkRecord(reader);
+                this.MarkRecords[i] = new MarkRecord(reader, offset);
             }
         }
 
+        /// <summary>
+        /// Gets the mark records.
+        /// </summary>
         public MarkRecord[] MarkRecords { get; }
     }
 }

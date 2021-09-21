@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.IO;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
     /// <summary>
@@ -13,7 +15,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// Initializes a new instance of the <see cref="MarkRecord"/> struct.
         /// </summary>
         /// <param name="reader">The big endian binary reader.</param>
-        public MarkRecord(BigEndianBinaryReader reader)
+        /// <param name="offset">Offset to the beginning of MarkArray table.</param>
+        public MarkRecord(BigEndianBinaryReader reader, long offset)
         {
             // +--------------+------------------+--------------------------------------------------------------------------------------+
             // | Type         | Name             | Description                                                                          |
@@ -23,7 +26,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // | Offset16     | markAnchorOffset | Offset to Anchor table, from beginning of MarkArray table.                           |
             // +--------------+------------------+--------------------------------------------------------------------------------------+
             this.MarkClass = reader.ReadUInt16();
-            this.MarkAnchorOffset = reader.ReadOffset16();
+            ushort markAnchorOffset = reader.ReadOffset16();
+
+            // Reset the reader position after reading the anchor table.
+            long readerPosition = reader.BaseStream.Position;
+            this.MarkAnchorTable = AnchorTable.Load(reader, offset + markAnchorOffset);
+            reader.BaseStream.Seek(readerPosition, SeekOrigin.Begin);
         }
 
         /// <summary>
@@ -32,8 +40,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         public uint MarkClass { get; }
 
         /// <summary>
-        /// Gets the offset to Anchor table, from beginning of MarkArray table.
+        /// Gets the mark anchor table.
         /// </summary>
-        public uint MarkAnchorOffset { get; }
+        public AnchorTable MarkAnchorTable { get; }
     }
 }

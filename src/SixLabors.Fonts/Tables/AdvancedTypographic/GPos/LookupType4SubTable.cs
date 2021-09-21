@@ -15,13 +15,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);
-            ushort posFormat = reader.ReadUInt16();
+            ushort format = reader.ReadUInt16();
 
-            return posFormat switch
+            return format switch
             {
                 1 => LookupType4Format1SubTable.Load(reader, offset),
-                _ => throw new InvalidFontFileException(
-                    $"Invalid value for 'posFormat' {posFormat}. Should be '1'.")
+                _ => throw new InvalidFontFileException($"Invalid MarkBasePos table format {format}, only format '1' is supported.")
             };
         }
 

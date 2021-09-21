@@ -5,19 +5,35 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
     internal readonly struct BaseRecord
     {
-        public BaseRecord(BigEndianBinaryReader reader, ushort classCount)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseRecord"/> struct.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="classCount">The class count.</param>
+        /// <param name="offset">Offset to the from beginning of BaseArray table.</param>
+        public BaseRecord(BigEndianBinaryReader reader, ushort classCount, long offset)
         {
-            this.BaseAnchorOffsets = new ushort[classCount];
+            // +--------------+-----------------------------------+----------------------------------------------------------------------------------------+
+            // | Type         | Name                              | Description                                                                            |
+            // +==============+===================================+========================================================================================+
+            // | Offset16     | baseAnchorOffsets[markClassCount] | Array of offsets (one per mark class) to Anchor tables.                                |
+            // |              |                                   | Offsets are from beginning of BaseArray table, ordered by class (offsets may be NULL). |
+            // +--------------+-----------------------------------+----------------------------------------------------------------------------------------+
+            this.BaseAnchorTables = new AnchorTable[classCount];
             for (int i = 0; i < classCount; i++)
             {
-                this.BaseAnchorOffsets[i] = reader.ReadUInt16();
+                ushort baseAnchorOffset = reader.ReadOffset16();
+
+                // Restore stream offset, after reading anchor table.
+                long readerPosition = reader.BaseStream.Position;
+                this.BaseAnchorTables[i] = AnchorTable.Load(reader, offset + baseAnchorOffset);
+                reader.BaseStream.Position = readerPosition;
             }
         }
 
         /// <summary>
-        /// Gets the base anchor offsets.
-        /// Array of offsets (one per mark class) to Anchor tables. Offsets are from beginning of BaseArray table, ordered by class.
+        /// Gets the base anchor tables.
         /// </summary>
-        public ushort[] BaseAnchorOffsets { get; }
+        public AnchorTable[] BaseAnchorTables { get; }
     }
 }
