@@ -20,12 +20,12 @@ namespace SixLabors.Fonts
         /// Contains a map between the index of a map within the collection, it's codepoint
         /// and glyph ids.
         /// </summary>
-        private readonly Dictionary<int, CodePointGlyphs> glyphs = new();
+        private readonly List<CodePointGlyphs> glyphs = new();
 
         /// <summary>
         /// Contains a map between the index of a map within the collection and its offset.
         /// </summary>
-        private readonly Dictionary<int, int> offsets = new();
+        private readonly List<int> offsets = new();
 
         /// <summary>
         /// Contains a map between non-sequential codepoint offsets and their glyphs.
@@ -105,16 +105,25 @@ namespace SixLabors.Fonts
         /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
         public bool TryAddOrUpdate(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
         {
-            // TODO: There's a design issue here.
-            // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
-            // then we end up with orphaned fallbacks. We need a way to detect that.
-            bool hasFallBacks = false;
-            for (int i = 0; i < collection.Count; i++)
+            if (this.Count == 0)
             {
-                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> glyphIds);
+                return this.Add(fontMetrics, collection, options);
+            }
 
-                bool mapped = this.map.TryGetValue(offset, out GlyphMetrics[]? metrics);
-                if (mapped && metrics![0].GlyphType != GlyphType.Fallback)
+            bool hasFallBacks = false;
+            List<int> orphans = new();
+            for (int i = 0; i < this.offsets.Count; i++)
+            {
+                int offset = this.offsets[i];
+                if (!collection.TryGetCodePointAndGlyphIdsAtOffset(offset, out CodePoint codePoint, out ReadOnlySpan<int> glyphIds))
+                {
+                    // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
+                    // then we end up with orphaned fallbacks. We need to remove them.
+                    orphans.Add(i);
+                }
+
+                GlyphMetrics[] metrics = this.map[offset];
+                if (metrics[0].GlyphType != GlyphType.Fallback)
                 {
                     // We've already got the correct glyph.
                     continue;
@@ -129,13 +138,10 @@ namespace SixLabors.Fonts
                     {
                         if (gm.GlyphType == GlyphType.Fallback)
                         {
+                            // If the glyphs are fallbacks we don't want them as
+                            // we've already captured them on the first run.
                             hasFallBacks = true;
-                            if (mapped)
-                            {
-                                // If the glyphs are fallbacks we don't want them as
-                                // we've already captured them on the first run.
-                                break;
-                            }
+                            break;
                         }
 
                         m.Add(new GlyphMetrics(gm, codePoint));
@@ -146,6 +152,50 @@ namespace SixLabors.Fonts
                 {
                     this.glyphs[i] = new CodePointGlyphs(codePoint, glyphIds.ToArray());
                     this.offsets[i] = offset;
+                    this.map[offset] = m.ToArray();
+                }
+            }
+
+            // Remove any orphans.
+            int shift = 0;
+            foreach (int idx in orphans)
+            {
+                this.map.Remove(this.offsets[idx - shift]);
+                this.offsets.RemoveAt(idx - shift);
+                this.glyphs.RemoveAt(idx - shift);
+                shift++;
+            }
+
+            return !hasFallBacks;
+        }
+
+        private bool Add(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
+        {
+            bool hasFallBacks = false;
+            for (int i = 0; i < collection.Count; i++)
+            {
+                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> glyphIds);
+
+                var m = new List<GlyphMetrics>(glyphIds.Length);
+                foreach (int id in glyphIds)
+                {
+                    // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
+                    // cache the original in the font metrics and only update our collection.
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, options.ColorFontSupport))
+                    {
+                        if (gm.GlyphType == GlyphType.Fallback)
+                        {
+                            hasFallBacks = true;
+                        }
+
+                        m.Add(new GlyphMetrics(gm, codePoint));
+                    }
+                }
+
+                if (m.Count > 0)
+                {
+                    this.glyphs.Add(new CodePointGlyphs(codePoint, glyphIds.ToArray()));
+                    this.offsets.Add(offset);
                     this.map[offset] = m.ToArray();
                 }
             }

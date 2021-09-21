@@ -92,7 +92,7 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the <see cref="GlyphSubstitutionCollection"/> contains glyph ids
         /// for the specified offset; otherwise, <see langword="false"/>.
         /// </returns>
-        public bool TryGetCodePointAndGlyphIdsAtOffset(int offset, [NotNullWhen(true)] out CodePoint? codePoint, [NotNullWhen(true)] out IEnumerable<int>? glyphIds)
+        public bool TryGetCodePointAndGlyphIdsAtOffset(int offset, out CodePoint codePoint, out ReadOnlySpan<int> glyphIds)
         {
             if (this.map.TryGetValue(offset, out CodePointGlyphs value))
             {
@@ -101,8 +101,8 @@ namespace SixLabors.Fonts
                 return true;
             }
 
-            codePoint = null;
-            glyphIds = null;
+            codePoint = default;
+            glyphIds = default;
             return false;
         }
 
