@@ -12,12 +12,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// and one that applies a different adjustment for each unique glyph(Format 2).
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-1-single-adjustment-positioning-subtable"/>
     /// </summary>
-    internal sealed class LookupType1SubTable
+    internal static class LookupType1SubTable
     {
-        private LookupType1SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

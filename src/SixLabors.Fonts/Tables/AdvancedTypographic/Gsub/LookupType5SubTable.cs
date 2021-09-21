@@ -10,12 +10,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// or more glyphs within a certain pattern of glyphs.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-5-contextual-substitution-subtable"/>
     /// </summary>
-    internal sealed class LookupType5SubTable
+    internal static class LookupType5SubTable
     {
-        private LookupType5SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

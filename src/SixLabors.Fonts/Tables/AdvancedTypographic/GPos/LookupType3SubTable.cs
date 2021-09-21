@@ -12,12 +12,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// how to connect the glyphs by aligning two anchor points: the designated exit point of a glyph, and the designated entry point of the following glyph.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#cursive-attachment-positioning-format1-cursive-attachment"/>
     /// </summary>
-    internal sealed class LookupType3SubTable
+    internal static class LookupType3SubTable
     {
-        private LookupType3SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

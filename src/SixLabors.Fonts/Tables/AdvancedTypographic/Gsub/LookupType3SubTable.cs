@@ -10,12 +10,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// from which a user can choose a glyph variant to replace the input glyph.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-3-alternate-substitution-subtable"/>
     /// </summary>
-    internal sealed class LookupType3SubTable
+    internal static class LookupType3SubTable
     {
-        private LookupType3SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

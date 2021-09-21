@@ -12,12 +12,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// Each format can describe one or more chained backtrack, input, and lookahead sequence combinations, and one or more positioning adjustments for glyphs in each input sequence.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookuptype-8-chained-contexts-positioning-subtable"/>
     /// </summary>
-    internal sealed class LookupType8SubTable
+    internal static class LookupType8SubTable
     {
-        internal LookupType8SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

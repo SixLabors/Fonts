@@ -10,12 +10,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// with an ability to look back and/or look ahead in the sequence of glyphs.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-6-chained-contexts-substitution-subtable"/>
     /// </summary>
-    internal sealed class LookupType6SubTable
+    internal static class LookupType6SubTable
     {
-        private LookupType6SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

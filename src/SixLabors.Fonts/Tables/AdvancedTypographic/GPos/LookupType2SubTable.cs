@@ -15,12 +15,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// PairPos subtables can be either of two formats: one that identifies glyphs individually by index(Format 1), and one that identifies glyphs by class (Format 2).
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-2-pair-adjustment-positioning-subtable"/>
     /// </summary>
-    internal sealed class LookupType2SubTable
+    internal static class LookupType2SubTable
     {
-        internal LookupType2SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

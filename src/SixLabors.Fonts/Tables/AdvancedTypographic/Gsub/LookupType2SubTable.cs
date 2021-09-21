@@ -10,12 +10,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// as when multiple glyphs replace a single ligature. The subtable has a single format: MultipleSubstFormat1.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-2-multiple-substitution-subtable"/>
     /// </summary>
-    internal class LookupType2SubTable
+    internal static class LookupType2SubTable
     {
-        private LookupType2SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

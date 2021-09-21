@@ -12,12 +12,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// positioning tone marks with respect to vowel diacritical marks in Vietnamese.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-6-mark-to-mark-attachment-positioning-subtable"/>
     /// </summary>
-    internal sealed class LookupType6SubTable
+    internal static class LookupType6SubTable
     {
-        internal LookupType6SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

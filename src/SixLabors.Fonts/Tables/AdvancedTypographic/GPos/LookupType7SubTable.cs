@@ -11,12 +11,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// of one or more glyphs within a certain pattern of glyphs.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-7-contextual-positioning-subtables"/>
     /// </summary>
-    internal sealed class LookupType7SubTable
+    internal static class LookupType7SubTable
     {
-        internal LookupType7SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);

@@ -13,12 +13,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// and each component has a separate set of attachment points defined for the different mark classes.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-5-mark-to-ligature-attachment-positioning-subtable"/>
     /// </summary>
-    internal sealed class LookupType5SubTable
+    internal static class LookupType5SubTable
     {
-        internal LookupType5SubTable()
-        {
-        }
-
         public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);
