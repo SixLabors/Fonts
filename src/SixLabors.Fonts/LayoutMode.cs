@@ -6,7 +6,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Defines modes to determine the layout direction of text.
     /// </summary>
-    public enum LayoutMode
+    internal enum LayoutMode
     {
         /// <summary>
         /// Text is laid out horizontally.

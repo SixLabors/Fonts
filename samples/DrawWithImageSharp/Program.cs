@@ -189,7 +189,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 new RendererOptions(new Font(font, pointSize), 96)
                 {
                     ApplyKerning = true,
-                    WrappingWidth = 340,
+                    WrappingWidth = 400,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
                     ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
                 },
@@ -280,12 +280,12 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     };
 
                     Size size = img.Size();
-                    img.Mutate(x => x.Fill(Color.White).ApplyProcessor(
+                    img.Mutate(x => x.Fill(Color.Black).ApplyProcessor(
                         new DrawTextProcessor(
                             options,
                             text,
                             font,
-                            new SolidBrush(Color.Black),
+                            new SolidBrush(Color.Yellow),
                             null,
                             new PointF(size.Width / 2F, size.Height / 2F))));
 
@@ -319,9 +319,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             string fullPath = CreatePath(path);
 
             using var img = new Image<Rgba32>(width, height);
-            img.Mutate(x => x.Fill(Color.White));
+            img.Mutate(x => x.Fill(Color.Black));
 
-            img.Mutate(x => x.DrawText(options, text, font, Color.HotPink, origin));
+            img.Mutate(x => x.DrawText(options, text, font, Color.Yellow, origin));
 
             // Ensure directory exists
             Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));

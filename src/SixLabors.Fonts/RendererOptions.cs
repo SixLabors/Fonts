@@ -156,7 +156,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the layout mode for the text lines.
         /// </summary>
-        public LayoutMode LayoutMode { get; set; } = LayoutMode.Horizontal;
+        internal LayoutMode LayoutMode { get; set; } = LayoutMode.Horizontal;
 
         /// <summary>
         /// Gets or sets the rendering origin.
