@@ -49,14 +49,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // Implements Chained Contexts Substitution, Format 1:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#61-chained-contexts-substitution-format-1-simple-glyph-contexts
-                int glyphId = collection[index][0].GlyphId;
-                if (glyphId < 0)
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
                 {
                     return false;
                 }
 
                 // Search for the current glyph in the Coverage table.
-                int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                int offset = this.coverageTable.CoverageIndexOf(glyphId);
                 if (offset <= -1)
                 {
                     return false;
@@ -141,21 +141,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // Implements Chained Contexts Substitution for Format 2:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
-                int glyphId = collection[index][0].GlyphId;
-                if (glyphId < 0)
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
                 {
                     return false;
                 }
 
                 // Search for the current glyph in the Coverage table.
-                int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                int offset = this.coverageTable.CoverageIndexOf(glyphId);
                 if (offset <= -1)
                 {
                     return false;
                 }
 
                 // Search in the class definition table to find the class value assigned to the currently glyph.
-                int classId = this.inputClassDefinitionTable.ClassIndexOf((ushort)glyphId);
+                int classId = this.inputClassDefinitionTable.ClassIndexOf(glyphId);
                 ChainedClassSequenceRuleTable[]? rules = classId >= 0 && classId < this.sequenceRuleSetTables.Length ? this.sequenceRuleSetTables[classId].SubRules : null;
                 if (rules is null)
                 {
@@ -232,8 +232,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
             {
-                int glyphId = collection[index][0].GlyphId;
-                if (glyphId < 0)
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
                 {
                     return false;
                 }
@@ -250,8 +250,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // Check all coverages: if any of them does not match, abort update.
                 for (int i = 0; i < this.inputCoverageTables.Length; ++i)
                 {
-                    int id = collection[index + i][0].GlyphId;
-                    if (id < 0 || this.inputCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                    ushort id = collection[index + i][0];
+                    if (id == 0 || this.inputCoverageTables[i].CoverageIndexOf(id) < 0)
                     {
                         return false;
                     }
@@ -259,8 +259,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 for (int i = 0; i < this.backtrackCoverageTables.Length; ++i)
                 {
-                    int id = collection[index - 1 - i][0].GlyphId;
-                    if (id < 0 || this.backtrackCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                    ushort id = collection[index - 1 - i][0];
+                    if (id == 0 || this.backtrackCoverageTables[i].CoverageIndexOf(id) < 0)
                     {
                         return false;
                     }
@@ -268,8 +268,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 for (int i = 0; i < this.lookaheadCoverageTables.Length; ++i)
                 {
-                    int id = collection[index + inputLength + i][0].GlyphId;
-                    if (id < 0 || this.lookaheadCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                    ushort id = collection[index + inputLength + i][0];
+                    if (id == 0 || this.lookaheadCoverageTables[i].CoverageIndexOf(id) < 0)
                     {
                         return false;
                     }

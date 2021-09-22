@@ -105,13 +105,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            int glyphId = collection[index][0];
-            if (glyphId < 0)
+            ushort glyphId = collection[index][0];
+            if (glyphId == 0)
             {
                 return false;
             }
 
-            int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+            int offset = this.coverageTable.CoverageIndexOf(glyphId);
             if (offset <= -1)
             {
                 return false;

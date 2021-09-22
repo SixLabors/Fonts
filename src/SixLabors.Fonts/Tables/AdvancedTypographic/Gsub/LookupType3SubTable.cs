@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 // +--------+-------------------------------+----------------------------------------------------+
                 reader.Seek(offset + alternateSetOffsets[i], SeekOrigin.Begin);
                 ushort glyphCount = reader.ReadUInt16();
-                alternateTables[i] = new AlternateSetTable(reader.ReadUInt16ArrayAsInt32(glyphCount));
+                alternateTables[i] = new AlternateSetTable(reader.ReadUInt16Array(glyphCount));
             }
 
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
@@ -79,13 +79,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            int glyphId = collection[index][0];
-            if (glyphId < 0)
+            ushort glyphId = collection[index][0];
+            if (glyphId == 0)
             {
                 return false;
             }
 
-            int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+            int offset = this.coverageTable.CoverageIndexOf(glyphId);
 
             if (offset > -1)
             {
@@ -101,10 +101,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public readonly struct AlternateSetTable
         {
-            public AlternateSetTable(int[] alternateGlyphs)
+            public AlternateSetTable(ushort[] alternateGlyphs)
                 => this.AlternateGlyphs = alternateGlyphs;
 
-            public readonly int[] AlternateGlyphs { get; }
+            public readonly ushort[] AlternateGlyphs { get; }
         }
     }
 }

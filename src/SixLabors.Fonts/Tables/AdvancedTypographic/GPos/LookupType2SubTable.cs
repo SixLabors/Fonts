@@ -92,31 +92,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 for (ushort i = 0; i < count - 1; i++)
                 {
-                    int glyphId = collection.GetGlyphIds(i + index)[0];
-                    if (glyphId < 0)
+                    ushort glyphId = collection[i + index][0];
+                    if (glyphId == 0)
                     {
                         return false;
                     }
 
-                    int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                    int coverage = this.coverageTable.CoverageIndexOf(glyphId);
                     if (coverage > -1)
                     {
                         PairSetTable pairSet = this.pairSets[coverage];
-                        int glyphId2 = collection.GetGlyphIds(i + 1 + index)[0];
-                        if (glyphId2 < 0)
+                        ushort glyphId2 = collection[i + 1 + index][0];
+                        if (glyphId2 == 0)
                         {
                             return false;
                         }
 
-                        if (pairSet.TryGetPairValueRecord((ushort)glyphId2, out PairValueRecord pairValueRecord))
+                        if (pairSet.TryGetPairValueRecord(glyphId2, out PairValueRecord pairValueRecord))
                         {
                             ValueRecord record1 = pairValueRecord.ValueRecord1;
-                            collection.Offset(fontMetrics, i, (ushort)glyphId, record1.XPlacement, record1.YPlacement);
-                            collection.Advance(fontMetrics, i, (ushort)glyphId, record1.XAdvance, record1.YAdvance);
+                            collection.Offset(fontMetrics, i, glyphId, record1.XPlacement, record1.YPlacement);
+                            collection.Advance(fontMetrics, i, glyphId, record1.XAdvance, record1.YAdvance);
 
                             ValueRecord record2 = pairValueRecord.ValueRecord2;
-                            collection.Offset(fontMetrics, (ushort)(i + 1), (ushort)glyphId2, record2.XPlacement, record2.YPlacement);
-                            collection.Advance(fontMetrics, (ushort)(i + 1), (ushort)glyphId2, record2.XAdvance, record2.YAdvance);
+                            collection.Offset(fontMetrics, (ushort)(i + 1), glyphId2, record2.XPlacement, record2.YPlacement);
+                            collection.Advance(fontMetrics, (ushort)(i + 1), glyphId2, record2.XAdvance, record2.YAdvance);
 
                             return true;
                         }
@@ -254,34 +254,34 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 for (ushort i = 0; i < count - 1; i++)
                 {
-                    int glyphId = collection.GetGlyphIds(i + index)[0];
-                    if (glyphId < 0)
+                    ushort glyphId = collection[i + index][0];
+                    if (glyphId == 0)
                     {
                         return false;
                     }
 
-                    int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                    int coverage = this.coverageTable.CoverageIndexOf(glyphId);
                     if (coverage > -1)
                     {
-                        int classDef1 = this.classDefinitionTable1.ClassIndexOf((ushort)glyphId);
-                        int glyphId2 = collection.GetGlyphIds(i + 1 + index)[0];
-                        if (glyphId2 < 0)
+                        int classDef1 = this.classDefinitionTable1.ClassIndexOf(glyphId);
+                        ushort glyphId2 = collection[i + 1 + index][0];
+                        if (glyphId2 == 0)
                         {
                             return false;
                         }
 
-                        int classDef2 = this.classDefinitionTable2.ClassIndexOf((ushort)glyphId2);
+                        int classDef2 = this.classDefinitionTable2.ClassIndexOf(glyphId2);
 
                         Class1Record class1Record = this.class1Records[classDef1];
                         Class2Record class2Record = class1Record.Class2Records[classDef2];
 
                         ValueRecord record1 = class2Record.ValueRecord1;
-                        collection.Offset(fontMetrics, i, (ushort)glyphId, record1.XPlacement, record1.YPlacement);
-                        collection.Advance(fontMetrics, i, (ushort)glyphId, record1.XAdvance, record1.YAdvance);
+                        collection.Offset(fontMetrics, i, glyphId, record1.XPlacement, record1.YPlacement);
+                        collection.Advance(fontMetrics, i, glyphId, record1.XAdvance, record1.YAdvance);
 
                         ValueRecord record2 = class2Record.ValueRecord2;
-                        collection.Offset(fontMetrics, (ushort)(i + 1), (ushort)glyphId2, record2.XPlacement, record2.YPlacement);
-                        collection.Advance(fontMetrics, (ushort)(i + 1), (ushort)glyphId2, record2.XAdvance, record2.YAdvance);
+                        collection.Offset(fontMetrics, (ushort)(i + 1), glyphId2, record2.XPlacement, record2.YPlacement);
+                        collection.Advance(fontMetrics, (ushort)(i + 1), glyphId2, record2.XAdvance, record2.YAdvance);
 
                         return true;
                     }

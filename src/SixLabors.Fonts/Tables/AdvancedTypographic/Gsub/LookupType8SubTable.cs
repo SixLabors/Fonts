@@ -92,13 +92,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#81-reverse-chaining-contextual-single-substitution-format-1-coverage-based-glyph-contexts
-            int glyphId = collection[index][0];
-            if (glyphId < 0)
+            ushort glyphId = collection[index][0];
+            if (glyphId == 0)
             {
                 return false;
             }
 
-            int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+            int offset = this.coverageTable.CoverageIndexOf(glyphId);
             if (offset <= -1)
             {
                 return false;
@@ -106,8 +106,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             for (int i = 0; i < this.backtrackCoverageTables.Length; ++i)
             {
-                int id = collection[index - 1 - i][0];
-                if (id < 0 || this.backtrackCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                ushort id = collection[index - 1 - i][0];
+                if (id == 0 || this.backtrackCoverageTables[i].CoverageIndexOf(id) < 0)
                 {
                     return false;
                 }
@@ -115,8 +115,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             for (int i = 0; i < this.lookaheadCoverageTables.Length; ++i)
             {
-                int id = collection[index + i][0];
-                if (id < 0 || this.lookaheadCoverageTables[i].CoverageIndexOf((ushort)id) < 0)
+                ushort id = collection[index + i][0];
+                if (id == 0 || this.lookaheadCoverageTables[i].CoverageIndexOf(id) < 0)
                 {
                     return false;
                 }
@@ -131,14 +131,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             return hasChanged;
-        }
-
-        public readonly struct AlternateSetTable
-        {
-            public AlternateSetTable(int[] alternateGlyphs)
-                => this.AlternateGlyphs = alternateGlyphs;
-
-            public int[] AlternateGlyphs { get; }
         }
     }
 }

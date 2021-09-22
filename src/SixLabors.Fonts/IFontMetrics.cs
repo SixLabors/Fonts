@@ -67,13 +67,13 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">The codepoint.</param>
         /// <param name="glyphId">
         /// When this method returns, contains the glyph id associated with the specified codepoint,
-        /// if the codepoint is found; otherwise, <value>-1</value>.
+        /// if the codepoint is found; otherwise, <value>0</value>.
         /// This parameter is passed uninitialized.
         /// </param>
         /// <returns>
         /// <see langword="true"/> if the face contains a glyph for the specified codepoint; otherwise, <see langword="false"/>.
         /// </returns>
-        bool TryGetGlyphId(CodePoint codePoint, out int glyphId);
+        bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId);
 
         /// <summary>
         /// Gets the specified glyph id matching the codepoint pair.
@@ -82,7 +82,7 @@ namespace SixLabors.Fonts
         /// <param name="nextCodePoint">The next codepoint. Can be null.</param>
         /// <param name="glyphId">
         /// When this method returns, contains the glyph id associated with the specified codepoint,
-        /// if the codepoint is found; otherwise, <value>-1</value>.
+        /// if the codepoint is found; otherwise, <value>0</value>.
         /// This parameter is passed uninitialized.
         /// </param>
         /// <param name="skipNextCodePoint">
@@ -91,7 +91,7 @@ namespace SixLabors.Fonts
         /// <returns>
         /// <see langword="true"/> if the face contains a glyph for the specified codepoint; otherwise, <see langword="false"/>.
         /// </returns>
-        bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out int glyphId, out bool skipNextCodePoint);
+        bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point.
@@ -107,11 +107,11 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">The Unicode codepoint.</param>
         /// <param name="glyphId">
         /// The previously matched or substituted glyph id for the codepoint in the face.
-        /// If this value is less than <value>0</value> the default fallback metrics are returned.
+        /// If this value equals <value>0</value> the default fallback metrics are returned.
         /// </param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
-        IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support);
+        IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support);
 
         /// <summary>
         /// Applies any available substitutions to the collection of glyphs.

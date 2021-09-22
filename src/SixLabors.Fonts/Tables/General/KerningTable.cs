@@ -58,9 +58,9 @@ namespace SixLabors.Fonts.Tables.General
 
         public void UpdatePositions(IFontMetrics fontMetrics, GlyphPositioningCollection collection, ushort left, ushort right)
         {
-            int previous = collection.GetGlyphIds(left)[0];
-            int current = collection.GetGlyphIds(right)[0];
-            if (previous < 0 || current < 0)
+            ushort previous = collection[left][0];
+            ushort current = collection[right][0];
+            if (previous == 0 || current == 0)
             {
                 return;
             }
@@ -68,10 +68,10 @@ namespace SixLabors.Fonts.Tables.General
             Vector2 result = Vector2.Zero;
             foreach (KerningSubTable sub in this.kerningSubTable)
             {
-                sub.ApplyOffset((ushort)previous, (ushort)current, ref result);
+                sub.ApplyOffset(previous, current, ref result);
             }
 
-            collection.Advance(fontMetrics, right, (ushort)current, (short)result.X, (short)result.Y);
+            collection.Advance(fontMetrics, right, current, (short)result.X, (short)result.Y);
         }
     }
 }

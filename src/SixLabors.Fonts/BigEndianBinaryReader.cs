@@ -196,25 +196,6 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Reads array of 16-bit unsigned integers from the stream.
-        /// 2 bytes are read.
-        /// </summary>
-        /// <param name="length">The length.</param>
-        /// <returns>
-        /// The 16-bit unsigned integer read.
-        /// </returns>
-        public int[] ReadUInt16ArrayAsInt32(int length)
-        {
-            int[] data = new int[length];
-            for (int i = 0; i < length; i++)
-            {
-                data[i] = this.ReadUInt16();
-            }
-
-            return data;
-        }
-
-        /// <summary>
         /// Reads array or 32-bit unsigned integers from the stream.
         /// 4 bytes are read.
         /// </summary>

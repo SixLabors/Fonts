@@ -164,43 +164,33 @@ namespace SixLabors.Fonts
         public short AdvanceHeightMax { get; }
 
         /// <inheritdoc/>
-        public bool TryGetGlyphId(CodePoint codePoint, out int glyphId)
+        public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
             => this.TryGetGlyphId(codePoint, null, out glyphId, out bool _);
 
         /// <inheritdoc/>
-        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out int glyphId, out bool skipNextCodePoint)
-        {
-            if (this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out ushort id, out skipNextCodePoint))
-            {
-                glyphId = id;
-                return true;
-            }
-
-            glyphId = -1;
-            return false;
-        }
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+            => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         /// <inheritdoc/>
         public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
         {
-            this.TryGetGlyphId(codePoint, out int glyphId);
+            this.TryGetGlyphId(codePoint, out ushort glyphId);
             return this.GetGlyphMetrics(codePoint, glyphId, support);
         }
 
         /// <inheritdoc/>
-        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, int glyphId, ColorFontSupport support)
+        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
         {
             GlyphType glyphType = GlyphType.Standard;
-            if (glyphId < 0)
+            if (glyphId == 0)
             {
                 // A glyph was not found in this face for the previously matched
                 // codepoint. Set to fallback.
-                glyphId = 0;
                 glyphType = GlyphType.Fallback;
             }
 
             if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredVectors(codePoint, (ushort)glyphId, out GlyphMetrics[]? metrics))
+                && this.TryGetColoredVectors(codePoint, glyphId, out GlyphMetrics[]? metrics))
             {
                 return metrics;
             }
@@ -211,7 +201,7 @@ namespace SixLabors.Fonts
                 {
                     this.CreateGlyphMetrics(
                     codePoint,
-                    (ushort)glyphId,
+                    glyphId,
                     glyphType)
                 };
             }

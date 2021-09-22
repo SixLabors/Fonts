@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             for (int i = 0; i < inputSequence.Length; i++)
             {
                 int collectionIdx = startIdx + i;
-                if (collectionIdx < collection.Count && collection.GetGlyphIds(collectionIdx)[0] != inputSequence[i])
+                if (collectionIdx < collection.Count && collection[collectionIdx][0] != inputSequence[i])
                 {
                     allMatched = false;
                     break;
@@ -31,8 +31,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             while (idx < sequence.Length)
             {
-                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out _, out ReadOnlySpan<int> glyphIds);
-                int glyphId = glyphIds[0];
+                ReadOnlySpan<ushort> glyphIds = collection[pos++];
+                ushort glyphId = glyphIds[0];
                 if (glyphId != sequence[idx++])
                 {
                     return false;
@@ -44,7 +44,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         internal static bool MatchClassSequence(
             IGlyphCollection collection,
-            int glyphIndex,
+            ushort glyphIndex,
             int sequenceIndex,
             ushort[] sequence,
             ClassDefinitionTable classDefinitionTable)
@@ -54,7 +54,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             while (idx < sequence.Length)
             {
-                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out _, out ReadOnlySpan<int> glyphIds);
+                ReadOnlySpan<ushort> glyphIds = collection[pos++];
                 if (!MatchClass(idx++, sequence, classDefinitionTable, glyphIds))
                 {
                     return false;
@@ -64,18 +64,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, ReadOnlySpan<int> glyphIds)
+        private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, ReadOnlySpan<ushort> glyphIds)
         {
-            int glyphId = glyphIds[0];
-            int glyphIdClass = classDefinitionTable.ClassIndexOf((ushort)glyphId);
+            ushort glyphId = glyphIds[0];
+            int glyphIdClass = classDefinitionTable.ClassIndexOf(glyphId);
             ushort sequenceEntry = sequence[idx];
             int sequenceEntryClassId = classDefinitionTable.ClassIndexOf(sequenceEntry);
-            if (glyphIdClass != sequenceEntryClassId)
-            {
-                return false;
-            }
-
-            return true;
+            return glyphIdClass == sequenceEntryClassId;
         }
     }
 }

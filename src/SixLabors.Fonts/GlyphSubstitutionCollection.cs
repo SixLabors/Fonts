@@ -36,12 +36,8 @@ namespace SixLabors.Fonts
         /// </summary>
         public int Count => this.offsets.Count;
 
-        /// <summary>
-        /// Gets the glyph ids at the specified index.
-        /// </summary>
-        /// <param name="index">The zero-based index of the element to get.</param>
-        /// <returns>The <see cref="ReadOnlySpan{UInt16}"/>.</returns>
-        public ReadOnlySpan<int> this[int index] => this.map[this.offsets[index]].GlyphIds;
+        /// <inheritdoc />
+        public ReadOnlySpan<ushort> this[int index] => this.map[this.offsets[index]].GlyphIds;
 
         /// <summary>
         /// Gets the substitution features for the given glyph index.
@@ -57,7 +53,7 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">The codepoint the glyph represents.</param>
         /// <param name="direction">The resolved text direction for the codepoint.</param>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
-        public void AddGlyph(int glyphId, CodePoint codePoint, TextDirection direction, int offset)
+        public void AddGlyph(ushort glyphId, CodePoint codePoint, TextDirection direction, int offset)
         {
             this.map.Add(offset, new CodePointGlyphs(codePoint, direction, new[] { glyphId }));
             this.offsets.Add(offset);
@@ -97,7 +93,7 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the <see cref="GlyphSubstitutionCollection"/> contains glyph ids
         /// for the specified offset; otherwise, <see langword="false"/>.
         /// </returns>
-        public bool TryGetCodePointAndGlyphIdsAtOffset(int offset, out CodePoint codePoint, out TextDirection direction, out ReadOnlySpan<int> glyphIds)
+        public bool TryGetCodePointAndGlyphIdsAtOffset(int offset, out CodePoint codePoint, out TextDirection direction, out ReadOnlySpan<ushort> glyphIds)
         {
             if (this.map.TryGetValue(offset, out CodePointGlyphs value))
             {
@@ -118,10 +114,10 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
         /// <returns>The <see cref="ReadOnlySpan{UInt16}"/>.</returns>
-        public ReadOnlySpan<int> GetGlyphIds(int index) => this[index];
+        public ReadOnlySpan<ushort> GetGlyphIds(int index) => this[index];
 
         /// <inheritdoc />
-        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<int> glyphIds)
+        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<ushort> glyphIds)
         {
             offset = this.offsets[index];
             CodePointGlyphs value = this.map[offset];
@@ -135,7 +131,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphId">The replacement glyph id.</param>
-        public void Replace(int index, int glyphId)
+        public void Replace(int index, ushort glyphId)
         {
             int offset = this.offsets[index];
             CodePointGlyphs current = this.map[offset];
@@ -148,7 +144,7 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based starting index of the range of elements to replace.</param>
         /// <param name="count">The number of elements to replace.</param>
         /// <param name="glyphId">The replacement glyph id.</param>
-        public void Replace(int index, int count, int glyphId)
+        public void Replace(int index, int count, ushort glyphId)
         {
             // Remove the count starting at the at index.
             int offset = this.offsets[index];
@@ -170,7 +166,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphIds">The collection of replacement glyph ids.</param>
-        public void Replace(int index, IEnumerable<int> glyphIds)
+        public void Replace(int index, IEnumerable<ushort> glyphIds)
         {
             int offset = this.offsets[index];
             CodePointGlyphs current = this.map[offset];
@@ -187,7 +183,7 @@ namespace SixLabors.Fonts
         [DebuggerDisplay("{DebuggerDisplay,nq}")]
         private readonly struct CodePointGlyphs
         {
-            public CodePointGlyphs(CodePoint codePoint, TextDirection direction, int[] glyphIds)
+            public CodePointGlyphs(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
             {
                 this.CodePoint = codePoint;
                 this.Direction = direction;
@@ -198,7 +194,7 @@ namespace SixLabors.Fonts
 
             public TextDirection Direction { get; }
 
-            public int[] GlyphIds { get; }
+            public ushort[] GlyphIds { get; }
 
             private string DebuggerDisplay
                 => FormattableString

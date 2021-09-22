@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 
 namespace SixLabors.Fonts
@@ -156,7 +155,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the layout mode for the text lines.
         /// </summary>
-        internal LayoutMode LayoutMode { get; set; } = LayoutMode.Horizontal;
+        internal LayoutMode LayoutMode { get; set; } = LayoutMode.HorizontalTopBottom;
 
         /// <summary>
         /// Gets or sets the rendering origin.

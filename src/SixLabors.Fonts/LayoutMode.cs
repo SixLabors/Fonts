@@ -9,9 +9,14 @@ namespace SixLabors.Fonts
     internal enum LayoutMode
     {
         /// <summary>
-        /// Text is laid out horizontally.
+        /// Text is laid out horizontally from top to bottom.
         /// </summary>
-        Horizontal,
+        HorizontalTopBottom,
+
+        /// <summary>
+        /// Text is laid out horizontally from bottom to top.
+        /// </summary>
+        HorizontalBottomTop,
 
         /// <summary>
         /// Text is laid out vertically. Currently unsupported.

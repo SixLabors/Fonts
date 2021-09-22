@@ -40,19 +40,13 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
         /// </summary>
         /// <param name="mode">The text layout mode.</param>
-        public GlyphPositioningCollection(LayoutMode mode) => this.mode = mode;
+        internal GlyphPositioningCollection(LayoutMode mode) => this.mode = mode;
 
-        /// <summary>
-        /// Gets the number of glyphs indexes contained in the collection.
-        /// </summary>
+        /// <inheritdoc />
         public int Count => this.offsets.Count;
 
-        /// <summary>
-        /// Gets the glyph metrics at the specified index.
-        /// </summary>
-        /// <param name="index">The zero-based index of the element to get.</param>
-        /// <returns>The GlyphMetrics.</returns>
-        public GlyphMetrics[] this[int index] => this.map[this.offsets[index]];
+        /// <inheritdoc />
+        public ReadOnlySpan<ushort> this[int index] => this.glyphs[index].GlyphIds;
 
         /// <summary>
         /// Removes all elements from the collection.
@@ -77,15 +71,8 @@ namespace SixLabors.Fonts
         public bool TryGetGlyphMetricsAtOffset(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
             => this.map.TryGetValue(offset, out metrics);
 
-        /// <summary>
-        /// Gets the glyph ids at the specified index.
-        /// </summary>
-        /// <param name="index">The zero-based index of the element to get.</param>
-        /// <returns>The <see cref="ReadOnlySpan{UInt16}"/>.</returns>
-        public ReadOnlySpan<int> GetGlyphIds(int index) => this.glyphs[index].GlyphIds;
-
         /// <inheritdoc />
-        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<int> glyphIds)
+        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<ushort> glyphIds)
         {
             offset = this.offsets[index];
             CodePointGlyphs value = this.glyphs[index];
@@ -115,7 +102,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < this.offsets.Count; i++)
             {
                 int offset = this.offsets[i];
-                if (!collection.TryGetCodePointAndGlyphIdsAtOffset(offset, out CodePoint codePoint, out TextDirection direction, out ReadOnlySpan<int> glyphIds))
+                if (!collection.TryGetCodePointAndGlyphIdsAtOffset(offset, out CodePoint codePoint, out TextDirection direction, out ReadOnlySpan<ushort> glyphIds))
                 {
                     // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
                     // then we end up with orphaned fallbacks. We need to remove them.
@@ -130,7 +117,7 @@ namespace SixLabors.Fonts
                 }
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
-                foreach (int id in glyphIds)
+                foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
@@ -174,10 +161,10 @@ namespace SixLabors.Fonts
             bool hasFallBacks = false;
             for (int i = 0; i < collection.Count; i++)
             {
-                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<int> glyphIds);
+                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<ushort> glyphIds);
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
-                foreach (int id in glyphIds)
+                foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
@@ -257,7 +244,7 @@ namespace SixLabors.Fonts
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.ApplyAdvance(dx, this.mode == LayoutMode.Horizontal ? (short)0 : dy);
+                    m.ApplyAdvance(dx, this.mode == LayoutMode.HorizontalTopBottom ? (short)0 : dy);
                 }
             }
         }
@@ -283,7 +270,7 @@ namespace SixLabors.Fonts
         [DebuggerDisplay("{DebuggerDisplay,nq}")]
         private readonly struct CodePointGlyphs
         {
-            public CodePointGlyphs(CodePoint codePoint, TextDirection direction, int[] glyphIds)
+            public CodePointGlyphs(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
             {
                 this.CodePoint = codePoint;
                 this.Direction = direction;
@@ -294,7 +281,7 @@ namespace SixLabors.Fonts
 
             public TextDirection Direction { get; }
 
-            public int[] GlyphIds { get; }
+            public ushort[] GlyphIds { get; }
 
             private string DebuggerDisplay
                 => FormattableString

@@ -107,7 +107,7 @@ namespace SixLabors.Fonts.Tests
             // Get letter Grinning Face emoji
             var instance = font.FontMetrics as FontMetrics;
             CodePoint codePoint = this.AsCodePoint("😀");
-            Assert.True(instance.TryGetGlyphId(codePoint, out int idx));
+            Assert.True(instance.TryGetGlyphId(codePoint, out ushort idx));
             IEnumerable<GlyphMetrics> vectors = instance.GetGlyphMetrics(codePoint, idx, ColorFontSupport.MicrosoftColrFormat);
             Assert.Equal(3, vectors.Count());
         }

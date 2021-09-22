@@ -48,13 +48,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
             {
-                int glyphId = collection[index][0].GlyphId;
-                if (glyphId < 0)
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
                 {
                     return false;
                 }
 
-                int offset = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                int offset = this.coverageTable.CoverageIndexOf(glyphId);
                 if (offset <= -1)
                 {
                     return false;
@@ -121,17 +121,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
             {
-                int glyphId = collection[index][0].GlyphId;
-                if (glyphId < 0)
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
                 {
                     return false;
                 }
 
-                if (this.coverageTable.CoverageIndexOf((ushort)glyphId) > -1)
+                if (this.coverageTable.CoverageIndexOf(glyphId) > -1)
                 {
                     // TODO: Check this.
                     // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#52-context-substitution-format-2-class-based-glyph-contexts
-                    int offset = this.classDefinitionTable.ClassIndexOf((ushort)glyphId);
+                    int offset = this.classDefinitionTable.ClassIndexOf(glyphId);
                     if (offset < 0)
                     {
                         return false;
@@ -195,8 +195,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
             {
-                int glyphId = collection[index][0].GlyphId;
-                if (glyphId < 0)
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
                 {
                     return false;
                 }
@@ -205,7 +205,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#53-context-substitution-format-3-coverage-based-glyph-contexts
                 foreach (CoverageTable coverageTable in this.coverageTables)
                 {
-                    int offset = coverageTable.CoverageIndexOf((ushort)glyphId);
+                    int offset = coverageTable.CoverageIndexOf(glyphId);
                     if (offset <= -1)
                     {
                         continue;

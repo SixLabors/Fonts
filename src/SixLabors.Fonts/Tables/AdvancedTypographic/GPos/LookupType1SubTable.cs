@@ -74,18 +74,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         {
             for (ushort i = 0; i < count; i++)
             {
-                int glyphId = collection.GetGlyphIds(i + index)[0];
-                if (glyphId < 0)
+                ushort glyphId = collection[i + index][0];
+                if (glyphId == 0)
                 {
                     return false;
                 }
 
-                int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                int coverage = this.coverageTable.CoverageIndexOf(glyphId);
                 if (coverage > -1)
                 {
                     ValueRecord record = this.valueRecord;
-                    collection.Offset(fontMetrics, (ushort)(i + index), (ushort)glyphId, record.XPlacement, record.YPlacement);
-                    collection.Advance(fontMetrics, (ushort)(i + index), (ushort)glyphId, record.XAdvance, record.YAdvance);
+                    collection.Offset(fontMetrics, (ushort)(i + index), glyphId, record.XPlacement, record.YPlacement);
+                    collection.Advance(fontMetrics, (ushort)(i + index), glyphId, record.XAdvance, record.YAdvance);
                     return true;
                 }
             }
@@ -146,18 +146,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         {
             for (ushort i = 0; i < count; i++)
             {
-                int glyphId = collection.GetGlyphIds(i + index)[0];
-                if (glyphId < 0)
+                ushort glyphId = collection[i + index][0];
+                if (glyphId == 0)
                 {
                     return false;
                 }
 
-                int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
+                int coverage = this.coverageTable.CoverageIndexOf(glyphId);
                 if (coverage > -1)
                 {
                     ValueRecord record = this.valueRecords[coverage];
-                    collection.Offset(fontMetrics, i, (ushort)glyphId, record.XPlacement, record.YPlacement);
-                    collection.Advance(fontMetrics, i, (ushort)glyphId, record.XAdvance, record.YAdvance);
+                    collection.Offset(fontMetrics, i, glyphId, record.XPlacement, record.YPlacement);
+                    collection.Advance(fontMetrics, i, glyphId, record.XAdvance, record.YAdvance);
                     return true;
                 }
             }

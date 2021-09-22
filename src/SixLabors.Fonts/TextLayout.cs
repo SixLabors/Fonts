@@ -160,7 +160,7 @@ namespace SixLabors.Fonts
             Vector2 location = options.Origin / new Vector2(options.DpiX, options.DpiY);
             float maxScaledAscender = textBox.ScaledMaxAscender;
             float maxScaledAdvance = textBox.TextLines.Max(x => x.ScaledLineAdvance());
-            if (layoutMode == LayoutMode.Horizontal)
+            if (layoutMode == LayoutMode.HorizontalTopBottom)
             {
                 foreach (TextLine textLine in textBox.TextLines)
                 {
@@ -420,7 +420,7 @@ namespace SixLabors.Fonts
                     charIndex += charsConsumed;
 
                     // Get the glyph id for the codepoint and add to the collection.
-                    fontMetrics.TryGetGlyphId(current, next, out int glyphId, out skipNextCodePoint);
+                    fontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
                     substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, codePointIndex);
 
                     codePointIndex++;
@@ -459,7 +459,7 @@ namespace SixLabors.Fonts
                     continue;
                 }
 
-                if (fontMetrics.TryGetGlyphId(mirror, out int glyphId))
+                if (fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
                 {
                     substitutions.Replace(i, glyphId);
                 }
@@ -512,7 +512,7 @@ namespace SixLabors.Fonts
             float wrappingLength = shouldWrap ? options.WrappingWidth / options.DpiX : float.MaxValue;
             bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
             bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
-            bool isHorizontal = layoutMode == LayoutMode.Horizontal;
+            bool isHorizontal = layoutMode == LayoutMode.HorizontalTopBottom;
 
             float scaledMaxAscender = 0;
             float scaledMaxDescender = 0;
