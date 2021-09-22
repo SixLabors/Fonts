@@ -24,16 +24,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return allMatched;
         }
 
-        internal static bool MatchSequence(IGlyphShapingCollection collection, int glyphIndex, int sequenceIndex, ushort[] sequence)
+        internal static bool MatchSequence(IGlyphShapingCollection collection, int glyphSequenceIndex, ushort[] sequenceToMatch)
         {
-            int pos = glyphIndex - sequenceIndex;
-            int idx = 0;
+            int sequenceToMatchIdx = 0;
+            int glyphCollectionIdx = glyphSequenceIndex + 1;
 
-            while (idx < sequence.Length)
+            while (sequenceToMatchIdx < sequenceToMatch.Length)
             {
-                ReadOnlySpan<ushort> glyphIds = collection[pos++];
+                ReadOnlySpan<ushort> glyphIds = collection[glyphCollectionIdx++];
                 ushort glyphId = glyphIds[0];
-                if (glyphId != sequence[idx++])
+                if (glyphId != sequenceToMatch[sequenceToMatchIdx++])
                 {
                     return false;
                 }
@@ -44,18 +44,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         internal static bool MatchClassSequence(
             IGlyphShapingCollection collection,
-            ushort glyphIndex,
-            int sequenceIndex,
-            ushort[] sequence,
+            int glyphSequenceIndex,
+            ushort[] sequenceToMatch,
             ClassDefinitionTable classDefinitionTable)
         {
-            int pos = glyphIndex - sequenceIndex;
-            int idx = 0;
+            int sequenceToMatchIdx = 0;
+            int glyphCollectionIdx = glyphSequenceIndex + 1;
 
-            while (idx < sequence.Length)
+            while (sequenceToMatchIdx < sequenceToMatch.Length)
             {
-                ReadOnlySpan<ushort> glyphIds = collection[pos++];
-                if (!MatchClass(idx++, sequence, classDefinitionTable, glyphIds))
+                ReadOnlySpan<ushort> glyphIds = collection[glyphCollectionIdx++];
+                if (!MatchClass(sequenceToMatchIdx++, sequenceToMatch, classDefinitionTable, glyphIds))
                 {
                     return false;
                 }

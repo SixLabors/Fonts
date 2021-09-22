@@ -74,7 +74,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     ChainedSequenceRuleTable rule = rules[lookupIndex];
                     if (rule.BacktrackSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchSequence(collection, index, rule.BacktrackSequence.Length, rule.InputSequence))
+                        && !AdvancedTypographicUtils.MatchSequence(collection, -rule.BacktrackSequence.Length, rule.InputSequence))
                     {
                         continue;
                     }
@@ -86,7 +86,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     if (rule.LookaheadSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
+                        && !AdvancedTypographicUtils.MatchSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
                     {
                         continue;
                     }
@@ -167,7 +167,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     ChainedClassSequenceRuleTable rule = rules[lookupIndex];
                     if (rule.BacktrackSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchClassSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
+                        && !AdvancedTypographicUtils.MatchClassSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
                     {
                         continue;
                     }
@@ -179,7 +179,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     if (rule.LookaheadSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchClassSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
+                        && !AdvancedTypographicUtils.MatchClassSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
                     {
                         continue;
                     }

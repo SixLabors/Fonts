@@ -61,19 +61,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 return false;
             }
 
-            ChainedSequenceRuleSetTable seqRuleSet = this.seqRuleSetTables[index];
-            if (seqRuleSet is null || seqRuleSet.SequenceRuleTables.Length is 0)
+            if (this.seqRuleSetTables is null || this.seqRuleSetTables.Length is 0)
             {
                 return false;
             }
 
             // Apply ruleset for the given glyph id.
+            ChainedSequenceRuleSetTable seqRuleSet = this.seqRuleSetTables[offset];
             ChainedSequenceRuleTable[] rules = seqRuleSet.SequenceRuleTables;
-            for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
+            for (int i = 0; i < rules.Length; i++)
             {
-                ChainedSequenceRuleTable rule = rules[lookupIndex];
+                ChainedSequenceRuleTable rule = rules[i];
+
                 if (rule.BacktrackSequence.Length > 0
-                    && !AdvancedTypographicUtils.MatchSequence(collection, index, rule.BacktrackSequence.Length, rule.InputSequence))
+                    && !AdvancedTypographicUtils.MatchSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence))
+                {
+                    continue;
+                }
+
+                if (rule.LookaheadSequence.Length > 0
+                    && !AdvancedTypographicUtils.MatchSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
                 {
                     continue;
                 }
@@ -84,16 +91,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                if (rule.LookaheadSequence.Length > 0
-                    && !AdvancedTypographicUtils.MatchSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
+                for (int j = 0; j < rule.SequenceLookupRecords.Length; j++)
                 {
-                    continue;
-                }
-
-                LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                if (lookup.TrySubstitution(table, collection, (ushort)lookupIndex, 1))
-                {
-                    return true;
+                    SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
+                    LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
+                    ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
+                    if (lookup.TrySubstitution(table, collection, sequenceIndex, 1))
+                    {
+                        return true;
+                    }
                 }
             }
 
@@ -166,7 +172,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             {
                 ChainedClassSequenceRuleTable rule = rules[lookupIndex];
                 if (rule.BacktrackSequence.Length > 0
-                    && !AdvancedTypographicUtils.MatchClassSequence(collection, index, rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
+                    && !AdvancedTypographicUtils.MatchClassSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
                 {
                     continue;
                 }
@@ -178,7 +184,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 }
 
                 if (rule.LookaheadSequence.Length > 0
-                    && !AdvancedTypographicUtils.MatchClassSequence(collection, index, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
+                    && !AdvancedTypographicUtils.MatchClassSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
                 {
                     continue;
                 }

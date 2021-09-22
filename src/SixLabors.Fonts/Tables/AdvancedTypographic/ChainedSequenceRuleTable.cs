@@ -25,6 +25,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public ushort[] LookaheadSequence { get; }
 
+        /// <summary>
+        /// Gets the sequence lookup records.
+        /// The seqLookupRecords array lists the sequence lookup records that specify actions to be taken on glyphs at various positions within the input sequence.
+        /// These do not have to be ordered in sequence position order; they are ordered according to the desired result.
+        /// All of the sequence lookup records are processed in order, and each applies to the results of the actions indicated by the preceding record.
+        /// </summary>
         public SequenceLookupRecord[] SequenceLookupRecords { get; }
 
         public static ChainedSequenceRuleTable Load(BigEndianBinaryReader reader, long offset)
