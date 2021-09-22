@@ -57,6 +57,13 @@ namespace SixLabors.Fonts.Tests
         public static string GsubTestFontFile3 => GetFullPath("TestShapeEthi.ttf");
 
         /// <summary>
+        /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
+        /// - Context Substitution Format 1:
+        /// "6566" (\u0041\u0042) -> "6576"
+        /// </summary>
+        public static string GsubTestFontFile4 => GetFullPath("GsubLookupType5Format1.ttf");
+
+        /// <summary>
         /// Gets a gsub test font file which has the following substitution for unit tests:
         /// - Chained Context Substitution, Format 3: [bovw] -> [a-z]
         /// Script from FontForge example: https://fontforge.org/docs/ui/dialogs/contextchain.html
