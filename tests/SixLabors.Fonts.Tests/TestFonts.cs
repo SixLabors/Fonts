@@ -59,9 +59,16 @@ namespace SixLabors.Fonts.Tests
         /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
         /// - Context Substitution Format 1:
-        /// "6566" (\u0041\u0042) -> "6576"
+        /// "6566" ("\u0041\u0042") -> "6576"
         /// </summary>
         public static string GsubTestFontFile4 => GetFullPath("GsubLookupType5Format1.ttf");
+
+        /// <summary>
+        /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
+        /// - Context Substitution Format 3:
+        /// "65666768" ("\u0041\u0042\u0043\u0044") -> "657678"
+        /// </summary>
+        public static string GsubTestFontFile5 => GetFullPath("GsubLookupType5Format3.ttf");
 
         /// <summary>
         /// Gets a gsub test font file which has the following substitution for unit tests:
