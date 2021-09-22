@@ -80,7 +80,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            int glyphId = collection[index][0];
+            int glyphId = collection.GetFirstGlyphIdAtIndex(index);
             if (glyphId < 0)
             {
                 return false;

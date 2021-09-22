@@ -31,12 +31,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
     }
 
-    internal sealed class LookupType7Format1SubTable
+    internal static class LookupType7Format1SubTable
     {
-        private LookupType7Format1SubTable()
-        {
-        }
-
         public static LookupSubTable Load(
             BigEndianBinaryReader reader,
             long offset,

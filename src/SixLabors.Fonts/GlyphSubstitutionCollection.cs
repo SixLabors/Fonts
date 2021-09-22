@@ -44,6 +44,17 @@ namespace SixLabors.Fonts
         public ReadOnlySpan<int> this[int index] => this.map[this.offsets[index]].GlyphIds;
 
         /// <summary>
+        /// Gets the first glyph identifier at a given position.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <returns>The first glyph id at a given position or -1 if not found.</returns>
+        public int GetFirstGlyphIdAtIndex(int index)
+        {
+            ReadOnlySpan<int> glyphs = index >= 0 && index < this.map.Count ? this.map[this.offsets[index]].GlyphIds : ReadOnlySpan<int>.Empty;
+            return glyphs.Length > 0 ? glyphs[0] : -1;
+        }
+
+        /// <summary>
         /// Gets the substitution features for the given glyph index.
         /// </summary>
         /// <param name="index">The glyph index.</param>

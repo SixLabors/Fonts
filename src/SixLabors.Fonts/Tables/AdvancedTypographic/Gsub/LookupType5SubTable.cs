@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            int glyphId = collection[index][0];
+            int glyphId = collection.GetFirstGlyphIdAtIndex(index);
             if (glyphId < 0)
             {
                 return false;
@@ -123,54 +123,56 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            int glyphId = collection[index][0];
+            int glyphId = collection.GetFirstGlyphIdAtIndex(index);
             if (glyphId < 0)
             {
                 return false;
             }
 
-            if (this.coverageTable.CoverageIndexOf((ushort)glyphId) > -1)
+            if (this.coverageTable.CoverageIndexOf((ushort)glyphId) <= -1)
             {
-                // TODO: Check this.
-                // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#52-context-substitution-format-2-class-based-glyph-contexts
-                int offset = this.classDefinitionTable.ClassIndexOf((ushort)glyphId);
-                if (offset < 0)
+                return false;
+            }
+
+            // TODO: Check this.
+            // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#52-context-substitution-format-2-class-based-glyph-contexts
+            int offset = this.classDefinitionTable.ClassIndexOf((ushort)glyphId);
+            if (offset < 0)
+            {
+                return false;
+            }
+
+            ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
+            foreach (ClassSequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
+            {
+                int remaining = count - 1;
+                int seqLength = ruleTable.InputSequence.Length;
+                if (seqLength > remaining)
                 {
-                    return false;
+                    continue;
                 }
 
-                ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
-                foreach (ClassSequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
+                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                if (!allMatched)
                 {
-                    int remaining = count - 1;
-                    int seqLength = ruleTable.InputSequence.Length;
-                    if (seqLength > remaining)
-                    {
-                        continue;
-                    }
-
-                    bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
-                    if (!allMatched)
-                    {
-                        continue;
-                    }
-
-                    // It's a match. Perform substitutions and return true if anything changed.
-                    bool hasChanged = false;
-                    foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
-                    {
-                        ushort sequenceIndex = lookupRecord.SequenceIndex;
-                        ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                        LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                        if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                        {
-                            hasChanged = true;
-                        }
-                    }
-
-                    return hasChanged;
+                    continue;
                 }
+
+                // It's a match. Perform substitutions and return true if anything changed.
+                bool hasChanged = false;
+                foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                {
+                    ushort sequenceIndex = lookupRecord.SequenceIndex;
+                    ushort lookupIndex = lookupRecord.LookupListIndex;
+
+                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                    if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    {
+                        hasChanged = true;
+                    }
+                }
+
+                return hasChanged;
             }
 
             return false;
@@ -197,7 +199,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            int glyphId = collection[index][0];
+            int glyphId = collection.GetFirstGlyphIdAtIndex(index);
             if (glyphId < 0)
             {
                 return false;

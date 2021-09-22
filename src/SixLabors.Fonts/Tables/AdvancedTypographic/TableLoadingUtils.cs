@@ -56,7 +56,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             // | uint16   | classSeqRuleSetCount                         | Number of ClassSequenceRuleSet tables.                             |
             // +----------+----------------------------------------------+--------------------------------------------------------------------+
             // | Offset16 | classSeqRuleSetOffsets[classSeqRuleSetCount] | Array of offsets to ClassSequenceRuleSet tables, from beginning of |
-            // |          |                                              | SequenceContextFormat2 table (may be NULL)                         |
+            // |          |                                              | SequenceContextFormat2 table (may be NULL).                        |
             // +----------+----------------------------------------------+--------------------------------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
             ushort classDefOffset = reader.ReadOffset16();

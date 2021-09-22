@@ -127,7 +127,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
 
-        // LookupType5SubTable
+        // LookupType5SubTable, Format 1.
         // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-5-contextual-substitution-subtable
         [Fact]
         public void ContextualSubstitution_Format1_Works()
@@ -149,10 +149,10 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             }
         }
 
-        // LookupType5SubTable
+        // LookupType5SubTable, Format 3
         // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-5-contextual-substitution-subtable
         [Fact]
-        public void ContextualSubstitution_Format2_Works()
+        public void ContextualSubstitution_Format3_Works()
         {
             // arrange
             Font font = new FontCollection().Add(TestFonts.GsubTestFontFile5).CreateFont(12);

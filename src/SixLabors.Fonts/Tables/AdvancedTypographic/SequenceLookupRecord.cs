@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#sequence-lookup-record"/>
     /// </summary>
     [DebuggerDisplay("SequenceIndex: {SequenceIndex}, LookupListIndex: {LookupListIndex}")]
-    internal struct SequenceLookupRecord
+    internal readonly struct SequenceLookupRecord
     {
         public SequenceLookupRecord(ushort sequenceIndex, ushort lookupListIndex)
         {
@@ -31,7 +31,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             // +========+=================+===================================================+
             // | uint16 | SequenceIndex   | Index into current glyph sequence-first glyph = 0 |
             // +--------+-----------------+---------------------------------------------------+
-            // | uint16 | LookupListIndex | Lookup to apply to that position-zero-based       |
+            // | uint16 | LookupListIndex | Lookup to apply to that position-zero-based.      |
             // +--------+-----------------+---------------------------------------------------+
             var records = new SequenceLookupRecord[count];
             for (int i = 0; i < records.Length; i++)

@@ -48,7 +48,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         {
             // Implements Chained Contexts Substitution, Format 1:
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#61-chained-contexts-substitution-format-1-simple-glyph-contexts
-            int glyphId = collection[index][0];
+            int glyphId = collection.GetFirstGlyphIdAtIndex(index);
             if (glyphId < 0)
             {
                 return false;
@@ -140,7 +140,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         {
             // Implements Chained Contexts Substitution for Format 2:
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
-            int glyphId = collection[index][0];
+            int glyphId = collection.GetFirstGlyphIdAtIndex(index);
             if (glyphId < 0)
             {
                 return false;
@@ -227,7 +227,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            int glyphId = collection[index][0];
+            int glyphId = collection.GetFirstGlyphIdAtIndex(index);
             if (glyphId < 0)
             {
                 return false;

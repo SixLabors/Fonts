@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
         {
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#81-reverse-chaining-contextual-single-substitution-format-1-coverage-based-glyph-contexts
-            int glyphId = collection[index][0];
+            int glyphId = collection.GetFirstGlyphIdAtIndex(index);
             if (glyphId < 0)
             {
                 return false;
@@ -131,14 +131,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             return hasChanged;
-        }
-
-        public readonly struct AlternateSetTable
-        {
-            public AlternateSetTable(int[] alternateGlyphs)
-                => this.AlternateGlyphs = alternateGlyphs;
-
-            public int[] AlternateGlyphs { get; }
         }
     }
 }
