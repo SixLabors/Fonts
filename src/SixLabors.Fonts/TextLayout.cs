@@ -641,7 +641,7 @@ namespace SixLabors.Fonts
                             else if (currentLineBreak.PositionMeasure == codePointIndex)
                             {
                                 // Exact length match. Check for CJK
-                                if (keepAll && UnicodeUtility.IsCJKCodePoint((uint)codePoint.Value))
+                                if (keepAll)
                                 {
                                     TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
                                     if (split != textLine)

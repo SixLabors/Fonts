@@ -171,7 +171,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     HorizontalAlignment = options.HorizontalAlignment,
                     VerticalAlignment = options.VerticalAlignment,
                     WrapTextWidth = options.WrappingWidth,
-                    RenderColorFonts = options.ColorFontSupport != ColorFontSupport.None
+                    RenderColorFonts = options.ColorFontSupport != ColorFontSupport.None,
+                    WordBreaking = options.WordBreaking
                 }
             };
 
