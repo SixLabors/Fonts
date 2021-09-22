@@ -69,9 +69,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         /// <inheritdoc />
         public override int ClassIndexOf(ushort glyphId)
         {
-            if (glyphId >= this.startGlyphId && glyphId < this.classValueArray.Length)
+            int i = glyphId - this.startGlyphId;
+            if (i >= 0 && i < this.classValueArray.Length)
             {
-                return this.classValueArray[glyphId - this.startGlyphId];
+                return this.classValueArray[i];
             }
 
             // Any glyph not included in the range of covered glyph IDs automatically belongs to Class 0.

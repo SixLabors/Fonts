@@ -151,7 +151,6 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
 
         // LookupType5SubTable, Format 2.
         // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-5-contextual-substitution-subtable
-        // TODO: investigate why this substitution does not work
         [Fact]
         public void ContextualSubstitution_Format2_Works()
         {
@@ -196,7 +195,6 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
 
         // LookupType6SubTable, Format 1
         // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-1-class-based-glyph-contexts
-        // TODO: substitution is still not right.
         [Fact]
         public void ChainedContextsSubstitution_Format1_Works()
         {
@@ -223,10 +221,10 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ChainedContextsSubstitution_Format2_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile3).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GsubLookupType6Format2).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
-            string testStr = "\u1361\u136B\u1361"; // The character in the middle should be replaced with the final form.
-            int[] expectedGlyphIndices = { 2, 8, 2 };
+            string testStr = "\u0014\u0015\u0016\u0017"; // "20212223" -> "20216423"
+            int[] expectedGlyphIndices = { 22, 23, 64, 25 };
 
             // act
             TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });

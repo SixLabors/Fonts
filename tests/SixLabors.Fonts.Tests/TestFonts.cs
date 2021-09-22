@@ -80,9 +80,16 @@ namespace SixLabors.Fonts.Tests
         /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
         /// - Chained Contexts Substitution Subtable Format 1:
-        /// "20212223" ("\u0014\u0015\u0016\u0017") -> "20616223"
+        /// "20212223" ("\u0014\u0015\u0016\u0017") -> "20636423"
         /// </summary>
         public static string GsubLookupType6Format1 => GetFullPath("GsubLookupType6Format1.ttf");
+
+        /// <summary>
+        /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
+        /// - Chained Contexts Substitution Subtable Format 2:
+        /// "20212223" ("\u0014\u0015\u0016\u0017") -> "20216423"
+        /// </summary>
+        public static string GsubLookupType6Format2 => GetFullPath("GsubLookupType6Format2.ttf");
 
         /// <summary>
         /// Gets a gsub test font file which has the following substitution for unit tests:

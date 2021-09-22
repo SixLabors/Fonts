@@ -164,7 +164,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             // Search in the class definition table to find the class value assigned to the currently glyph.
             int classId = this.inputClassDefinitionTable.ClassIndexOf(glyphId);
-            ChainedClassSequenceRuleTable[]? rules = classId >= 0 && classId < this.sequenceRuleSetTables.Length ? this.sequenceRuleSetTables[classId].SubRules : null;
+            ChainedClassSequenceRuleTable[]? rules = classId >= 0 && classId < this.sequenceRuleSetTables.Length ? this.sequenceRuleSetTables[classId]?.SubRules : null;
             if (rules is null)
             {
                 return false;
@@ -181,7 +181,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 }
 
                 if (rule.InputSequence.Length > 0 &&
-                    !AdvancedTypographicUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                    !AdvancedTypographicUtils.MatchClassSequence(collection, index, rule.InputSequence, this.inputClassDefinitionTable))
                 {
                     continue;
                 }
@@ -192,11 +192,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                if (lookup.TrySubstitution(table, collection, (ushort)lookupIndex, 1))
+                bool hasChanged = false;
+                for (int j = 0; j < rule.SequenceLookupRecords.Length; j++)
                 {
-                    return true;
+                    SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
+                    LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
+                    ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
+                    if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), 1))
+                    {
+                        hasChanged = true;
+                    }
                 }
+
+                return hasChanged;
             }
 
             return false;

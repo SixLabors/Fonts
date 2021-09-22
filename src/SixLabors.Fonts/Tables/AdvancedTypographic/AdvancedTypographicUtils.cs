@@ -31,6 +31,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             while (sequenceToMatchIdx < sequenceToMatch.Length)
             {
+                if (glyphCollectionIdx >= collection.Count)
+                {
+                    return false;
+                }
+
                 ReadOnlySpan<ushort> glyphIds = collection[glyphCollectionIdx++];
                 ushort glyphId = glyphIds[0];
                 if (glyphId != sequenceToMatch[sequenceToMatchIdx++])
@@ -53,6 +58,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             while (sequenceToMatchIdx < sequenceToMatch.Length)
             {
+                if (glyphCollectionIdx >= collection.Count)
+                {
+                    return false;
+                }
+
                 ReadOnlySpan<ushort> glyphIds = collection[glyphCollectionIdx++];
                 if (!MatchClass(sequenceToMatchIdx++, sequenceToMatch, classDefinitionTable, glyphIds))
                 {
@@ -67,8 +77,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         {
             ushort glyphId = glyphIds[0];
             int glyphIdClass = classDefinitionTable.ClassIndexOf(glyphId);
-            ushort sequenceEntry = sequence[idx];
-            int sequenceEntryClassId = classDefinitionTable.ClassIndexOf(sequenceEntry);
+            ushort sequenceEntryClassId = sequence[idx];
             return glyphIdClass == sequenceEntryClassId;
         }
     }

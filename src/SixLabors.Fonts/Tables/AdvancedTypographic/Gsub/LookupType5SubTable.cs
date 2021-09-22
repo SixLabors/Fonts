@@ -143,16 +143,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
-            foreach (ClassSequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
+            foreach (ClassSequenceRuleTable rule in ruleSetTable.SequenceRuleTables)
             {
                 int remaining = count - 1;
-                int seqLength = ruleTable.InputSequence.Length;
+                int seqLength = rule.InputSequence.Length;
                 if (seqLength > remaining)
                 {
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                bool allMatched = AdvancedTypographicUtils.MatchClassSequence(collection, index, rule.InputSequence, this.classDefinitionTable);
                 if (!allMatched)
                 {
                     continue;
@@ -160,7 +160,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
                 // It's a match. Perform substitutions and return true if anything changed.
                 bool hasChanged = false;
-                foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
+                foreach (SequenceLookupRecord lookupRecord in rule.SequenceLookupRecords)
                 {
                     ushort sequenceIndex = lookupRecord.SequenceIndex;
                     ushort lookupIndex = lookupRecord.LookupListIndex;
