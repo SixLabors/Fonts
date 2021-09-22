@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -13,7 +14,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a collection of glyph metrics that are mapped to input codepoints.
     /// </summary>
-    public sealed class GlyphPositioningCollection : IGlyphCollection
+    public sealed class GlyphPositioningCollection : IGlyphShapingCollection
     {
         /// <summary>
         /// Contains a map between the index of a map within the collection, it's codepoint
@@ -32,6 +33,11 @@ namespace SixLabors.Fonts
         private readonly Dictionary<int, GlyphMetrics[]> map = new();
 
         /// <summary>
+        /// Contains hashset of substitution features to apply for each glyph.
+        /// </summary>
+        private readonly Dictionary<int, HashSet<Tag>> featureTags = new();
+
+        /// <summary>
         /// The text layout mode.
         /// </summary>
         private readonly LayoutMode mode;
@@ -48,6 +54,40 @@ namespace SixLabors.Fonts
         /// <inheritdoc />
         public ReadOnlySpan<ushort> this[int index] => this.glyphs[index].GlyphIds;
 
+        /// <inheritdoc />
+        public bool TryGetShapingFeatures(int index, [NotNullWhen(true)] out IReadOnlySet<Tag>? value)
+        {
+            if (this.featureTags.TryGetValue(index, out HashSet<Tag>? tags))
+            {
+                value = new ReadOnlySet<Tag>(tags);
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
+
+        /// <inheritdoc />
+        public void GetGlyphData(int index, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<ushort> glyphIds)
+        {
+            offset = this.offsets[index];
+            CodePointGlyphs value = this.glyphs[index];
+            codePoint = value.CodePoint;
+            direction = value.Direction;
+            glyphIds = value.GlyphIds;
+        }
+
+        /// <inheritdoc />
+        public void AddShapingFeature(int index, Tag feature)
+        {
+            if (!this.featureTags.ContainsKey(index))
+            {
+                this.featureTags[index] = new HashSet<Tag>();
+            }
+
+            this.featureTags[index].Add(feature);
+        }
+
         /// <summary>
         /// Removes all elements from the collection.
         /// </summary>
@@ -56,6 +96,7 @@ namespace SixLabors.Fonts
             this.glyphs.Clear();
             this.offsets.Clear();
             this.map.Clear();
+            this.featureTags.Clear();
         }
 
         /// <summary>
@@ -70,16 +111,6 @@ namespace SixLabors.Fonts
         /// <returns>The <see cref="T:GlyphMetrics[]"/>.</returns>
         public bool TryGetGlyphMetricsAtOffset(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
             => this.map.TryGetValue(offset, out metrics);
-
-        /// <inheritdoc />
-        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<ushort> glyphIds)
-        {
-            offset = this.offsets[index];
-            CodePointGlyphs value = this.glyphs[index];
-            codePoint = value.CodePoint;
-            direction = value.Direction;
-            glyphIds = value.GlyphIds;
-        }
 
         /// <summary>
         /// Adds the collection of glyph ids to the metrics collection.
@@ -148,6 +179,7 @@ namespace SixLabors.Fonts
             foreach (int idx in orphans)
             {
                 this.map.Remove(this.offsets[idx - shift]);
+                this.featureTags.Remove(idx - shift);
                 this.offsets.RemoveAt(idx - shift);
                 this.glyphs.RemoveAt(idx - shift);
                 shift++;
@@ -161,7 +193,7 @@ namespace SixLabors.Fonts
             bool hasFallBacks = false;
             for (int i = 0; i < collection.Count; i++)
             {
-                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<ushort> glyphIds);
+                collection.GetGlyphData(i, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<ushort> glyphIds);
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
                 foreach (ushort id in glyphIds)
@@ -184,6 +216,7 @@ namespace SixLabors.Fonts
                     this.glyphs.Add(new CodePointGlyphs(codePoint, direction, glyphIds.ToArray()));
                     this.offsets.Add(offset);
                     this.map[offset] = m.ToArray();
+                    this.featureTags[offset] = new HashSet<Tag>();
                 }
             }
 

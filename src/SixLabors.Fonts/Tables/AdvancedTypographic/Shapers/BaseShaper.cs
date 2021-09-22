@@ -8,9 +8,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         /// <summary>
         /// Assigns the substitution features to each glyph within the collection.
         /// </summary>
-        /// <param name="collection">The glyph subsitution collection.</param>
+        /// <param name="collection">The glyph shaping collection.</param>
         /// <param name="index">The zero-based index of the elements to assign.</param>
         /// <param name="count">The number of elements to assign.</param>
-        public abstract void AssignFeatures(GlyphSubstitutionCollection collection, int index, int count);
+        public abstract void AssignFeatures(IGlyphShapingCollection collection, int index, int count);
     }
 }

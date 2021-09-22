@@ -48,7 +48,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         private static readonly Tag KernTag = Tag.Parse("kern");
 
         /// <inheritdoc />
-        public override void AssignFeatures(GlyphSubstitutionCollection collection, int index, int count)
+        public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
         {
             // Add variation Features.
             AddFeature(collection, index, count, RvnrTag);
@@ -82,11 +82,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             // TODO: Enable contextual fractions
         }
 
-        private static void AddFeature(GlyphSubstitutionCollection collection, int index, int count, Tag variationFeatures)
+        private static void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures)
         {
             for (int i = index; i < count; i++)
             {
-                collection.AddSubstitutionFeature(i, variationFeatures);
+                collection.AddShapingFeature(i, variationFeatures);
             }
         }
     }

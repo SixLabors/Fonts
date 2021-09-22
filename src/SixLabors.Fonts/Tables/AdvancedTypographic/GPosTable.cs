@@ -101,7 +101,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             ushort index,
             int count)
         {
-            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out _, out _, out _);
+            collection.GetGlyphData(index, out CodePoint codePoint, out _, out _, out _);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
             Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
@@ -136,7 +136,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 ushort[] featureIndices = langSysTables[i].FeatureIndices;
                 for (int j = 0; j < featureIndices.Length; j++)
                 {
-                    // TODO: Should we be applying all features?
+                    FeatureTable featureTable = this.FeatureList.FeatureTables[featureIndices[j]];
+                    Tag tag = featureTable.FeatureTag;
+
+                    // Check tag against all features, which should be applied to the given glyph.
+                    if (!collection.TryGetShapingFeatures(index, out IReadOnlySet<Tag>? featureTags))
+                    {
+                        continue;
+                    }
+
+                    if (!featureTags.Contains(tag))
+                    {
+                        continue;
+                    }
+
                     ushort[] lookupListIndices = this.FeatureList.FeatureTables[featureIndices[j]].LookupListIndices;
                     for (int k = 0; k < lookupListIndices.Length; k++)
                     {

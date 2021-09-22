@@ -70,7 +70,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         };
 
         /// <inheritdoc/>
-        public override void AssignFeatures(GlyphSubstitutionCollection collection, int index, int count)
+        public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
         {
             base.AssignFeatures(collection, index, count);
 
@@ -81,7 +81,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             // Apply the state machine to map glyphs to features.
             for (int i = 0; i < count; i++)
             {
-                collection.GetCodePointAndGlyphIds(i + index, out CodePoint codePoint, out _, out _, out _);
+                collection.GetGlyphData(i + index, out CodePoint codePoint, out _, out _, out _);
                 JoiningClass joiningClass = CodePoint.GetJoiningClass(codePoint);
                 JoiningType joiningType = joiningClass.JoiningType;
                 if (joiningType == JoiningType.Transparent)
@@ -111,25 +111,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 switch (actions[i])
                 {
                     case Fina:
-                        collection.AddSubstitutionFeature(i + index, FinaTag);
+                        collection.AddShapingFeature(i + index, FinaTag);
                         break;
                     case Fin2:
-                        collection.AddSubstitutionFeature(i + index, Fin2Tag);
+                        collection.AddShapingFeature(i + index, Fin2Tag);
                         break;
                     case Fin3:
-                        collection.AddSubstitutionFeature(i + index, Fin3Tag);
+                        collection.AddShapingFeature(i + index, Fin3Tag);
                         break;
                     case Isol:
-                        collection.AddSubstitutionFeature(i + index, IsolTag);
+                        collection.AddShapingFeature(i + index, IsolTag);
                         break;
                     case Init:
-                        collection.AddSubstitutionFeature(i + index, InitTag);
+                        collection.AddShapingFeature(i + index, InitTag);
                         break;
                     case Medi:
-                        collection.AddSubstitutionFeature(i + index, MediTag);
+                        collection.AddShapingFeature(i + index, MediTag);
                         break;
                     case Med2:
-                        collection.AddSubstitutionFeature(i + index, Med2Tag);
+                        collection.AddShapingFeature(i + index, Med2Tag);
                         break;
                 }
             }

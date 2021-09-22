@@ -139,6 +139,8 @@ namespace SixLabors.Fonts
 
             if (options.ApplyKerning)
             {
+                AssignShapingFeatures(positionings);
+
                 // Update the positions of the glyphs in the completed collection.
                 // Each set of metrics is associated with single font and will only be updated
                 // by that font so it's safe to use a single collection.
@@ -162,18 +164,25 @@ namespace SixLabors.Fonts
             float maxScaledAdvance = textBox.TextLines.Max(x => x.ScaledLineAdvance());
             if (layoutMode == LayoutMode.HorizontalTopBottom)
             {
-                foreach (TextLine textLine in textBox.TextLines)
+                for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textLine, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                }
+            }
+            else if (layoutMode == LayoutMode.HorizontalBottomTop)
+            {
+                for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
+                {
+                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
             else
             {
-                foreach (TextLine textLine in textBox.TextLines)
+                for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
                     // TODO: Investigate and implement this so we can make LayoutMode public.
                     // https://www.unicode.org/reports/tr50/
-                    glyphs.AddRange(LayoutLineVertical(textBox, textLine, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
 
@@ -447,7 +456,7 @@ namespace SixLabors.Fonts
             // See hb-ot-shape.cc in HarfBuzz. Line 651.
             for (int i = 0; i < substitutions.Count; i++)
             {
-                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out TextDirection direction, out _, out _);
+                substitutions.GetGlyphData(i, out CodePoint codePoint, out TextDirection direction, out _, out _);
 
                 if (direction != TextDirection.RightToLeft)
                 {
@@ -466,11 +475,11 @@ namespace SixLabors.Fonts
             }
         }
 
-        private static void AssignShapingFeatures(GlyphSubstitutionCollection substitutions)
+        private static void AssignShapingFeatures(IGlyphShapingCollection collection)
         {
-            for (int i = 0; i < substitutions.Count; i++)
+            for (int i = 0; i < collection.Count; i++)
             {
-                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out _, out _, out _);
+                collection.GetGlyphData(i, out CodePoint codePoint, out _, out _, out _);
                 Script current = CodePoint.GetScript(codePoint);
 
                 // Choose a shaper based on the script.
@@ -478,12 +487,12 @@ namespace SixLabors.Fonts
                 BaseShaper shaper = ShaperFactory.Create(current);
                 int index = i;
                 int count = 1;
-                while (i < substitutions.Count - 1)
+                while (i < collection.Count - 1)
                 {
                     // We want to assign the same shaper to individual sections of the text rather
                     // than the text as a whole to ensure that different language shapers do not interfere
                     // with each other when the text contains multiple languages.
-                    substitutions.GetCodePointAndGlyphIds(i + 1, out codePoint, out _, out _, out _);
+                    collection.GetGlyphData(i + 1, out codePoint, out _, out _, out _);
                     Script next = CodePoint.GetScript(codePoint);
                     if (next is not Script.Common and not Script.Unknown and not Script.Inherited && next != current)
                     {
@@ -495,7 +504,7 @@ namespace SixLabors.Fonts
                 }
 
                 // Assign Substitution features to each glyph.
-                shaper.AssignFeatures(substitutions, index, count);
+                shaper.AssignFeatures(collection, index, count);
             }
         }
 
