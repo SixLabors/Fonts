@@ -779,18 +779,6 @@ namespace SixLabors.Fonts
             public float ScaledLineAdvance()
                 => this.info.Sum(x => x.ScaledAdvance);
 
-            public float ScaledMaxAscender()
-                => this.info.Max(x => x.Metrics[0].FontMetrics.Ascender * x.PointSize / x.Metrics[0].ScaleFactor);
-
-            public float ScaledMaxDescender()
-                => this.info.Max(x => Math.Abs(x.Metrics[0].FontMetrics.Descender) * x.PointSize / x.Metrics[0].ScaleFactor);
-
-            public float ScaledMaxLineHeight()
-                => this.info.Max(x => x.Metrics[0].FontMetrics.LineHeight * x.PointSize / x.Metrics[0].ScaleFactor);
-
-            public float ScaledMaxLineGap()
-                => this.info.Max(x => x.Metrics[0].FontMetrics.LineGap * x.PointSize / x.Metrics[0].ScaleFactor);
-
             public float ScaledMaxAdvanceWidth()
                 => this.info.Max(x => x.Metrics[0].FontMetrics.AdvanceWidthMax * x.PointSize / x.Metrics[0].ScaleFactor);
 
