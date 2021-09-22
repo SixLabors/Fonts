@@ -2,9 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Linq;
 using System.Numerics;
-using SixLabors.Fonts.Unicode;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -264,11 +262,11 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void GetMissingGlyphFromMainFont()
         {
-            Font font = FakeFont.CreateFontWithInstance("ABC", out Fakes.FakeFontInstance abcFontInstance);
+            Font font = FakeFont.CreateFontWithInstance("ABC", "ABC", out Fakes.FakeFontInstance abcFontInstance);
             FontFamily[] fontFamilies = new[]
             {
-                FakeFont.CreateFontWithInstance("DEF", out Fakes.FakeFontInstance defFontInstance).Family,
-                FakeFont.CreateFontWithInstance("GHI", out Fakes.FakeFontInstance ghiFontInstance).Family
+                FakeFont.CreateFontWithInstance("DEF", "DEF", out Fakes.FakeFontInstance defFontInstance).Family,
+                FakeFont.CreateFontWithInstance("GHI", "GHI", out Fakes.FakeFontInstance ghiFontInstance).Family
             };
 
             var options = new RendererOptions(font)
@@ -278,13 +276,12 @@ namespace SixLabors.Fonts.Tests
             };
 
             ReadOnlySpan<char> text = "Z".AsSpan();
-            AppliedFontStyle style = options.GetStyle(0, CodePoint.GetCodePointCount(text));
-            style.ProcessText(text);
+            var renderer = new GlyphRenderer();
+            TextRenderer.RenderTextTo(renderer, text, options);
 
-            style.TryGetGlyphMetrics(0, out GlyphMetrics[] metrics);
-            GlyphMetrics glyph = Assert.Single(metrics);
+            GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
             Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
-            Assert.Equal(abcFontInstance, glyph.FontMetrics);
+            Assert.Equal(abcFontInstance.Description.FontNameInvariantCulture.ToUpper(), glyph.Font);
         }
 
         [Theory]
@@ -293,11 +290,11 @@ namespace SixLabors.Fonts.Tests
         [InlineData('H', "efghiFontInstance")]
         public void GetGlyphFromFirstAvailableInstance(char character, string instance)
         {
-            Font font = FakeFont.CreateFontWithInstance("ABC", out Fakes.FakeFontInstance abcFontInstance);
+            Font font = FakeFont.CreateFontWithInstance("ABC", "ABC", out Fakes.FakeFontInstance abcFontInstance);
             FontFamily[] fontFamilies = new[]
             {
-                FakeFont.CreateFontWithInstance("DEF", out Fakes.FakeFontInstance defFontInstance).Family,
-                FakeFont.CreateFontWithInstance("EFGHI", out Fakes.FakeFontInstance efghiFontInstance).Family
+                FakeFont.CreateFontWithInstance("DEF", "DEF", out Fakes.FakeFontInstance defFontInstance).Family,
+                FakeFont.CreateFontWithInstance("EFGHI", "EFGHI", out Fakes.FakeFontInstance efghiFontInstance).Family
             };
 
             var options = new RendererOptions(font)
@@ -307,11 +304,9 @@ namespace SixLabors.Fonts.Tests
             };
 
             ReadOnlySpan<char> text = new[] { character };
-            AppliedFontStyle style = options.GetStyle(0, CodePoint.GetCodePointCount(text));
-            style.ProcessText(text);
-
-            style.TryGetGlyphMetrics(0, out GlyphMetrics[] metrics);
-            GlyphMetrics glyph = Assert.Single(metrics);
+            var renderer = new GlyphRenderer();
+            TextRenderer.RenderTextTo(renderer, text, options);
+            GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
             Assert.Equal(GlyphType.Standard, glyph.GlyphType);
             Fakes.FakeFontInstance expectedInstance = instance switch
             {
@@ -321,7 +316,7 @@ namespace SixLabors.Fonts.Tests
                 _ => throw new Exception("does not match")
             };
 
-            Assert.Equal(expectedInstance, glyph.FontMetrics);
+            Assert.Equal(expectedInstance.Description.FontNameInvariantCulture.ToUpper(), glyph.Font);
         }
     }
 }

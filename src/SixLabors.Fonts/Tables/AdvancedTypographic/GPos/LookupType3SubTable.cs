@@ -81,20 +81,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 for (ushort i = 0; i < count - 1; i++)
                 {
                     ushort curIndex = (ushort)(i + index);
-                    ushort glyphId = (ushort)collection.GetGlyphIds(curIndex)[0];
+                    int glyphId = collection.GetGlyphIds(curIndex)[0];
                     if (glyphId < 0)
                     {
                         continue;
                     }
 
                     ushort nextIndex = (ushort)(i + index + 1);
-                    ushort nextGlyphId = (ushort)collection.GetGlyphIds(nextIndex)[0];
+                    int nextGlyphId = collection.GetGlyphIds(nextIndex)[0];
                     if (nextGlyphId < 0)
                     {
                         continue;
                     }
 
-                    int coverageNext = this.coverageTable.CoverageIndexOf(nextGlyphId);
+                    int coverageNext = this.coverageTable.CoverageIndexOf((ushort)nextGlyphId);
                     EntryExitAnchors nextRecord = this.entryExitAnchors[coverageNext];
                     AnchorTable? entry = nextRecord.EntryAnchor;
                     if (entry is null)
@@ -102,7 +102,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         continue;
                     }
 
-                    int coverage = this.coverageTable.CoverageIndexOf(glyphId);
+                    int coverage = this.coverageTable.CoverageIndexOf((ushort)glyphId);
                     EntryExitAnchors curRecord = this.entryExitAnchors[coverage];
                     AnchorTable? exit = curRecord.ExitAnchor;
                     if (exit is null)
@@ -111,17 +111,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     // TODO: we need to know here if we are RTL or LTR. This assumes LTR.
-                    Vector2 curOffset = collection.GetOffset(fontMetrics, curIndex, glyphId);
-                    Vector2 nextOffset = collection.GetOffset(fontMetrics, nextIndex, nextGlyphId);
+                    Vector2 curOffset = collection.GetOffset(fontMetrics, curIndex, (ushort)glyphId);
+                    Vector2 nextOffset = collection.GetOffset(fontMetrics, nextIndex, (ushort)nextGlyphId);
                     int curXOffset = (int)curOffset.X;
                     int nextXOffset = (int)nextOffset.X;
                     int curDy = exit.YCoordinate - entry.YCoordinate;
                     int curXAdvance = exit.XCoordinate + curXOffset;
                     int nextDx = entry.XCoordinate + nextXOffset;
-                    collection.SetAdvanceWidth(fontMetrics, curIndex, glyphId, (ushort)curXAdvance);
-                    collection.Offset(fontMetrics, curIndex, glyphId, 0, (short)-curDy);
-                    collection.Advance(fontMetrics, nextIndex, nextGlyphId, (short)-nextDx, 0);
-                    collection.Offset(fontMetrics, nextIndex, nextGlyphId, (short)-nextDx, 0);
+                    collection.SetAdvanceWidth(fontMetrics, curIndex, (ushort)glyphId, (ushort)curXAdvance);
+                    collection.Offset(fontMetrics, curIndex, (ushort)glyphId, 0, (short)-curDy);
+                    collection.Advance(fontMetrics, nextIndex, (ushort)nextGlyphId, (short)-nextDx, 0);
+                    collection.Offset(fontMetrics, nextIndex, (ushort)nextGlyphId, (short)-nextDx, 0);
 
                     updated = true;
                 }

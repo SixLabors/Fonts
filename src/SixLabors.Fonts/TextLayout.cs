@@ -424,7 +424,7 @@ namespace SixLabors.Fonts
 
                     // Get the glyph id for the codepoint and add to the collection.
                     fontMetrics.TryGetGlyphId(current, next, out int glyphId, out skipNextCodePoint);
-                    substitutions.AddGlyph(glyphId, current, codePointIndex);
+                    substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, codePointIndex);
 
                     codePointIndex++;
                     graphemeCodePointIndex++;
@@ -433,7 +433,7 @@ namespace SixLabors.Fonts
 
             // We always do this, with or without kerning so that bidi mirrored types
             // are substituted correctly.
-            SubstituteBidiMirrors(fontMetrics, bidiRuns, bidiMap, substitutions);
+            SubstituteBidiMirrors(fontMetrics, substitutions);
 
             if (options.ApplyKerning)
             {
@@ -444,34 +444,27 @@ namespace SixLabors.Fonts
             return positionings.TryAddOrUpdate(fontMetrics, substitutions, options);
         }
 
-        private static void SubstituteBidiMirrors(
-            IFontMetrics fontMetrics,
-            BidiRun[] bidiRuns,
-            Dictionary<int, int> bidiMap,
-            GlyphSubstitutionCollection substitutions)
+        private static void SubstituteBidiMirrors(IFontMetrics fontMetrics, GlyphSubstitutionCollection substitutions)
         {
             // TODO: Vertical bidi mirrors appear to be different.
             // See hb-ot-shape.cc in HarfBuzz. Line 651.
             for (int i = 0; i < substitutions.Count; i++)
             {
-                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> _);
-                if (bidiMap.TryGetValue(offset, out int run))
+                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out TextDirection direction, out _, out _);
+
+                if (direction != TextDirection.RightToLeft)
                 {
-                    BidiRun bidiRun = bidiRuns[run];
-                    if (bidiRun.Direction != BidiCharacterType.RightToLeft)
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    if (!CodePoint.TryGetBidiMirror(codePoint, out CodePoint mirror))
-                    {
-                        continue;
-                    }
+                if (!CodePoint.TryGetBidiMirror(codePoint, out CodePoint mirror))
+                {
+                    continue;
+                }
 
-                    if (fontMetrics.TryGetGlyphId(mirror, out int glyphId))
-                    {
-                        substitutions.Replace(i, glyphId);
-                    }
+                if (fontMetrics.TryGetGlyphId(mirror, out int glyphId))
+                {
+                    substitutions.Replace(i, glyphId);
                 }
             }
         }
@@ -480,7 +473,7 @@ namespace SixLabors.Fonts
         {
             for (int i = 0; i < substitutions.Count; i++)
             {
-                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int _, out ReadOnlySpan<int> _);
+                substitutions.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out _, out _, out _);
                 Script current = CodePoint.GetScript(codePoint);
 
                 // Choose a shaper based on the script.
@@ -493,7 +486,7 @@ namespace SixLabors.Fonts
                     // We want to assign the same shaper to individual sections of the text rather
                     // than the text as a whole to ensure that different language shapers do not interfere
                     // with each other when the text contains multiple languages.
-                    substitutions.GetCodePointAndGlyphIds(i + 1, out codePoint, out _, out _);
+                    substitutions.GetCodePointAndGlyphIds(i + 1, out codePoint, out _, out _, out _);
                     Script next = CodePoint.GetScript(codePoint);
                     if (next is not Script.Common and not Script.Unknown and not Script.Inherited && next != current)
                     {

@@ -31,7 +31,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             while (idx < sequence.Length)
             {
-                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out ReadOnlySpan<int> glyphIds);
+                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out _, out ReadOnlySpan<int> glyphIds);
                 int glyphId = glyphIds[0];
                 if (glyphId != sequence[idx++])
                 {
@@ -54,7 +54,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             while (idx < sequence.Length)
             {
-                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out ReadOnlySpan<int> glyphIds);
+                collection.GetCodePointAndGlyphIds(pos++, out _, out _, out _, out ReadOnlySpan<int> glyphIds);
                 if (!MatchClass(idx++, sequence, classDefinitionTable, glyphIds))
                 {
                     return false;

@@ -18,7 +18,7 @@ namespace SixLabors.Fonts.Tests.Fakes
 
         internal FakeFontInstance(List<FakeGlyphSource> glyphs)
             : base(
-                  GenerateNameTable(),
+                  GenerateNameTable("name"),
                   GenerateCMapTable(glyphs),
                   new FakeGlyphTable(glyphs),
                   GenerateOS2Table(),
@@ -67,12 +67,12 @@ namespace SixLabors.Fonts.Tests.Fakes
         /// <summary>
         /// Creates a fake font with varying vertical font metrics to facilitate testing.
         /// </summary>
-        public static FakeFontInstance CreateFontWithVaryingVerticalFontMetrics(string text)
+        public static FakeFontInstance CreateFontWithVaryingVerticalFontMetrics(string text, string name = "name")
         {
             List<FakeGlyphSource> glyphs = GetGlyphs(text);
 
             return new FakeFontInstance(
-                GenerateNameTable(),
+                GenerateNameTable(name),
                 GenerateCMapTable(glyphs),
                 new FakeGlyphTable(glyphs),
                 GenerateOS2TableWithVaryingVerticalFontMetrics(),
@@ -86,7 +86,13 @@ namespace SixLabors.Fonts.Tests.Fakes
 
         private static List<FakeGlyphSource> GetGlyphs(string text)
         {
-            var codePoints = new HashSet<CodePoint>();
+            HashSet<CodePoint> codePoints = new()
+            {
+                // Regardless of the encoding scheme, character codes that do
+                // not correspond to any glyph in the font should be mapped to glyph index 0.
+                // The glyph at this location must be a special glyph representing a missing character, commonly known as .notdef.
+                default // Add default at position 0;
+            };
 
             foreach (CodePoint codePoint in text.AsSpan().EnumerateCodePoints())
             {
@@ -96,12 +102,12 @@ namespace SixLabors.Fonts.Tests.Fakes
             return codePoints.Select((x, i) => new FakeGlyphSource(x, (ushort)i)).ToList();
         }
 
-        private static NameTable GenerateNameTable()
+        private static NameTable GenerateNameTable(string name)
             => new NameTable(
                 new[]
                 {
-                    new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.NameIds.FullFontName, "name"),
-                    new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.NameIds.FontFamilyName, "name")
+                    new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.NameIds.FullFontName, name),
+                    new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.NameIds.FontFamilyName, name)
                 },
                 Array.Empty<string>());
 

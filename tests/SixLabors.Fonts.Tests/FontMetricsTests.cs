@@ -130,7 +130,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(666, glyphMetrics.Height);
             Assert.Equal(33, glyphMetrics.LeftSideBearing);
             Assert.Equal(134, glyphMetrics.TopSideBearing);
-            Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
+            Assert.Equal(GlyphType.Fallback, glyphMetrics.GlyphType);
         }
     }
 }

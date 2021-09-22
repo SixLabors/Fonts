@@ -101,7 +101,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             ushort index,
             int count)
         {
-            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out ReadOnlySpan<int> _);
+            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out _, out _, out _);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
             Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];

@@ -21,9 +21,10 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the elements to get.</param>
         /// <param name="codePoint">The Unicode codepoint.</param>
+        /// <param name="direction">The resolved text direction for the codepoint.</param>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
         /// <param name="glyphIds">The glyph ids.</param>
-        void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> glyphIds);
+        void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<int> glyphIds);
 
         /// <summary>
         /// Gets the glyph ids at the specified index.

@@ -81,7 +81,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             // Apply the state machine to map glyphs to features.
             for (int i = 0; i < count; i++)
             {
-                collection.GetCodePointAndGlyphIds(i + index, out CodePoint codePoint, out int _, out ReadOnlySpan<int> _);
+                collection.GetCodePointAndGlyphIds(i + index, out CodePoint codePoint, out _, out _, out _);
                 JoiningClass joiningClass = CodePoint.GetJoiningClass(codePoint);
                 JoiningType joiningType = joiningClass.JoiningType;
                 if (joiningType == JoiningType.Transparent)

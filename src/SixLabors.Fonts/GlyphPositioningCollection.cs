@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
@@ -86,11 +85,12 @@ namespace SixLabors.Fonts
         public ReadOnlySpan<int> GetGlyphIds(int index) => this.glyphs[index].GlyphIds;
 
         /// <inheritdoc />
-        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> glyphIds)
+        public void GetCodePointAndGlyphIds(int index, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<int> glyphIds)
         {
             offset = this.offsets[index];
             CodePointGlyphs value = this.glyphs[index];
             codePoint = value.CodePoint;
+            direction = value.Direction;
             glyphIds = value.GlyphIds;
         }
 
@@ -115,7 +115,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < this.offsets.Count; i++)
             {
                 int offset = this.offsets[i];
-                if (!collection.TryGetCodePointAndGlyphIdsAtOffset(offset, out CodePoint codePoint, out ReadOnlySpan<int> glyphIds))
+                if (!collection.TryGetCodePointAndGlyphIdsAtOffset(offset, out CodePoint codePoint, out TextDirection direction, out ReadOnlySpan<int> glyphIds))
                 {
                     // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
                     // then we end up with orphaned fallbacks. We need to remove them.
@@ -150,7 +150,7 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs[i] = new CodePointGlyphs(codePoint, glyphIds.ToArray());
+                    this.glyphs[i] = new CodePointGlyphs(codePoint, direction, glyphIds.ToArray());
                     this.offsets[i] = offset;
                     this.map[offset] = m.ToArray();
                 }
@@ -174,7 +174,7 @@ namespace SixLabors.Fonts
             bool hasFallBacks = false;
             for (int i = 0; i < collection.Count; i++)
             {
-                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out int offset, out ReadOnlySpan<int> glyphIds);
+                collection.GetCodePointAndGlyphIds(i, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<int> glyphIds);
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
                 foreach (int id in glyphIds)
@@ -194,7 +194,7 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs.Add(new CodePointGlyphs(codePoint, glyphIds.ToArray()));
+                    this.glyphs.Add(new CodePointGlyphs(codePoint, direction, glyphIds.ToArray()));
                     this.offsets.Add(offset);
                     this.map[offset] = m.ToArray();
                 }
@@ -283,19 +283,22 @@ namespace SixLabors.Fonts
         [DebuggerDisplay("{DebuggerDisplay,nq}")]
         private readonly struct CodePointGlyphs
         {
-            public CodePointGlyphs(CodePoint codePoint, int[] glyphIds)
+            public CodePointGlyphs(CodePoint codePoint, TextDirection direction, int[] glyphIds)
             {
                 this.CodePoint = codePoint;
+                this.Direction = direction;
                 this.GlyphIds = glyphIds;
             }
 
             public CodePoint CodePoint { get; }
 
+            public TextDirection Direction { get; }
+
             public int[] GlyphIds { get; }
 
             private string DebuggerDisplay
                 => FormattableString
-                .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScript(this.CodePoint)} : [{string.Join(",", this.GlyphIds)}]");
+                .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScript(this.CodePoint)} : {this.Direction} : [{string.Join(",", this.GlyphIds)}]");
         }
     }
 }

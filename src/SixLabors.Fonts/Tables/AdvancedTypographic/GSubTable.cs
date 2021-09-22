@@ -98,7 +98,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public void ApplySubstitution(GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out int _, out ReadOnlySpan<int> _);
+            collection.GetCodePointAndGlyphIds(index, out CodePoint codePoint, out _, out _, out _);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
             Script script = CodePoint.GetScript(codePoint);

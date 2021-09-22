@@ -69,6 +69,9 @@ namespace SixLabors.Fonts.Tables.General
             foreach (CMapSubTable t in this.Tables)
             {
                 // Keep looking until we have an index that's not the fallback.
+                // Regardless of the encoding scheme, character codes that do
+                // not correspond to any glyph in the font should be mapped to glyph index 0.
+                // The glyph at this location must be a special glyph representing a missing character, commonly known as .notdef.
                 if (t.TryGetGlyphId(codePoint, out glyphId) && glyphId > 0)
                 {
                     return true;
