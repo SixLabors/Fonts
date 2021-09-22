@@ -133,7 +133,30 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ContextualSubstitution_Format1_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile4).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GsubLookupType5Format1).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "\u0041\u0042"; // "6566" (\u0041\u0042) -> "6576"
+            int[] expectedGlyphIndices = { 3, 7 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        // LookupType5SubTable, Format 2.
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#lookuptype-5-contextual-substitution-subtable
+        // TODO: investigate why this substitution does not work
+        [Fact]
+        public void ContextualSubstitution_Format2_Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.GsubLookupType5Format2).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "\u0041\u0042"; // "6566" (\u0041\u0042) -> "6576"
             int[] expectedGlyphIndices = { 3, 7 };
@@ -155,7 +178,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ContextualSubstitution_Format3_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile5).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GsubLookupType5Format3).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "\u0041\u0042\u0043\u0044"; // "65666768" -> "657678"
             int[] expectedGlyphIndices = { 67, 78, 80 };
