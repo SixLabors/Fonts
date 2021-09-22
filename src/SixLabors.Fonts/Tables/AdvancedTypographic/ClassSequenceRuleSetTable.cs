@@ -12,17 +12,23 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public ClassSequenceRuleTable[] SequenceRuleTables { get; }
 
+        /// <summary>
+        /// Loads the class sequence rule set table.
+        /// </summary>
+        /// <param name="reader">The big endian binary reader.</param>
+        /// <param name="offset">Offset from beginning of the ClassSequenceRuleSet table.</param>
+        /// <returns>A class sequence rule set table.</returns>
         public static ClassSequenceRuleSetTable Load(BigEndianBinaryReader reader, long offset)
         {
             // ClassSequenceRuleSet
             // +----------+----------------------------------------+---------------------------------------+
             // | Type     | Name                                   | Description                           |
             // +==========+========================================+=======================================+
-            // | uint16   | classSeqRuleCount                      | Number of ClassSequenceRule tables    |
+            // | uint16   | classSeqRuleCount                      | Number of ClassSequenceRule tables.   |
             // +----------+----------------------------------------+---------------------------------------+
             // | Offset16 | classSeqRuleOffsets[classSeqRuleCount] | Array of offsets to ClassSequenceRule |
             // |          |                                        | tables, from beginning of             |
-            // |          |                                        | ClassSequenceRuleSet table            |
+            // |          |                                        | ClassSequenceRuleSet table.           |
             // +----------+----------------------------------------+---------------------------------------+
             reader.Seek(offset, SeekOrigin.Begin);
             ushort seqRuleCount = reader.ReadUInt16();
