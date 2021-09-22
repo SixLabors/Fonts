@@ -91,16 +91,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
+                bool hasChanged = false;
                 for (int j = 0; j < rule.SequenceLookupRecords.Length; j++)
                 {
                     SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
                     LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
                     ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                    if (lookup.TrySubstitution(table, collection, sequenceIndex, 1))
+                    if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), 1))
                     {
-                        return true;
+                        hasChanged = true;
                     }
                 }
+
+                return hasChanged;
             }
 
             return false;

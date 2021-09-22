@@ -203,8 +203,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             // arrange
             Font font = new FontCollection().Add(TestFonts.GsubLookupType6Format1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
-            string testStr = "\u0014\u0015\u0016\u0017"; // The character in the middle should be replaced with the final form.
-            int[] expectedGlyphIndices = { 22, 61, 62, 25 };
+            string testStr = "\u0014\u0015\u0016\u0017"; // "20212223" -> "20636423"
+            int[] expectedGlyphIndices = { 22, 63, 64, 25 };
 
             // act
             TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
