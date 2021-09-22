@@ -194,6 +194,29 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             }
         }
 
+        // LookupType6SubTable, Format 1
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-1-class-based-glyph-contexts
+        // TODO: substitution is still not right.
+        [Fact]
+        public void ChainedContextsSubstitution_Format1_Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.GsubLookupType6Format1).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "\u0014\u0015\u0016\u0017"; // The character in the middle should be replaced with the final form.
+            int[] expectedGlyphIndices = { 22, 61, 62, 25 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
         // LookupType6SubTable, Format 2
         // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
         [Fact]
