@@ -1,41 +1,24 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Numerics;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
 {
     public class GPosTableTests
     {
-        // TODO: adjust test to GposLookupType1Format1.ttf instead.
-        [Fact(Skip = "Review the output again")]
+        [Fact]
         public void SingleAdjustmentPositioning_Format1_Works()
         {
             // arrange
             Font gPosFont = new FontCollection().Add(TestFonts.GposLookupType1Format1).CreateFont(8);
             var renderer = new ColorGlyphRenderer();
-            string testStr = "IA"; // character A should be placed slightly to the right.
-            Vector2[] expectedControlPoints =
+            string testStr = "\u0015\u0014"; // second character the XPlacement should be adjusted by minus 200
+            int[] expectedGlyphIndices = { 23, 22 };
+            FontRectangle[] expectedFontRectangles =
             {
-                new(1.4648438f, 1.734375f),
-                new(1.4648438f, 7.421875f),
-                new(0.71484375f, 7.421875f),
-                new(0.71484375f, 1.734375f),
-                new(1.4648438f, 1.734375f),
-                new(6.9804688f, 7.421875f),
-                new(6.4375f, 5.9375f),
-                new(4.0546875f, 5.9375f),
-                new(3.5195312f, 7.421875f),
-                new(2.7460938f, 7.421875f),
-                new(4.9179688f, 1.734375f),
-                new(5.5742188f, 1.734375f),
-                new(7.75f, 7.421875f),
-                new(6.9804688f, 7.421875f),
-                new(5.2460938f, 2.6601562f),
-                new(4.28125f, 5.3203125f),
-                new(6.2148438f, 5.3203125f),
-                new(5.2460938f, 2.6601562f)
+                new FontRectangle(2.0608f, 12.8703995f, 6.2592f, 4.5312f),
+                new FontRectangle(9.10080051f, 12.8639984f, 6.2592f, 4.5056f),
             };
 
             // act
@@ -45,10 +28,16 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             });
 
             // assert
-            Assert.Equal(expectedControlPoints.Length, renderer.ControlPoints.Count);
-            for (int i = 0; i < expectedControlPoints.Length; i++)
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedControlPoints[i], renderer.ControlPoints[i]);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+
+            for (int i = 0; i < expectedFontRectangles.Length; i++)
+            {
+                Assert.Equal(expectedFontRectangles[i], renderer.GlyphRects[i]);
             }
         }
     }

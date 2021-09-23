@@ -1,9 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
 using SixLabors.Fonts.Unicode;
 
