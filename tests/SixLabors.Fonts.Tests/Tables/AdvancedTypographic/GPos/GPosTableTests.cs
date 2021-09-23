@@ -8,11 +8,12 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
 {
     public class GPosTableTests
     {
+        // TODO: adjust test to GposLookupType1Format1.ttf instead.
         [Fact(Skip = "Review the output again")]
-        public void SingleAdjustmentPositioning_Works()
+        public void SingleAdjustmentPositioning_Format1_Works()
         {
             // arrange
-            Font gPosFont = new FontCollection().Add(TestFonts.GposTestFontFile).CreateFont(8);
+            Font gPosFont = new FontCollection().Add(TestFonts.GposLookupType1Format1).CreateFont(8);
             var renderer = new ColorGlyphRenderer();
             string testStr = "IA"; // character A should be placed slightly to the right.
             Vector2[] expectedControlPoints =
