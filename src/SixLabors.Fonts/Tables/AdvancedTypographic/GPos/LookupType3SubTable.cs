@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 using System.Numerics;
 
@@ -81,7 +82,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 for (ushort i = 0; i < count - 1; i++)
                 {
                     ushort curIndex = (ushort)(i + index);
-                    ushort glyphId = collection[curIndex][0];
+                    collection.GetGlyphData(curIndex, out _, out TextDirection direction, out _, out ReadOnlySpan<ushort> glyphIds);
+                    ushort glyphId = glyphIds[0];
                     if (glyphId == 0)
                     {
                         continue;
@@ -110,18 +112,35 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         continue;
                     }
 
-                    // TODO: we need to know here if we are RTL or LTR. This assumes LTR.
                     Vector2 curOffset = collection.GetOffset(fontMetrics, curIndex, glyphId);
                     Vector2 nextOffset = collection.GetOffset(fontMetrics, nextIndex, nextGlyphId);
                     int curXOffset = (int)curOffset.X;
                     int nextXOffset = (int)nextOffset.X;
-                    int curDy = exit.YCoordinate - entry.YCoordinate;
-                    int curXAdvance = exit.XCoordinate + curXOffset;
-                    int nextDx = entry.XCoordinate + nextXOffset;
-                    collection.SetAdvanceWidth(fontMetrics, curIndex, glyphId, (ushort)curXAdvance);
-                    collection.Offset(fontMetrics, curIndex, glyphId, 0, (short)-curDy);
-                    collection.Advance(fontMetrics, nextIndex, nextGlyphId, (short)-nextDx, 0);
-                    collection.Offset(fontMetrics, nextIndex, nextGlyphId, (short)-nextDx, 0);
+
+                    if (direction == TextDirection.LeftToRight)
+                    {
+                        int curXAdvance = exit.XCoordinate + curXOffset;
+                        collection.SetAdvanceWidth(fontMetrics, curIndex, glyphId, (ushort)curXAdvance);
+
+                        int nextDx = -(entry.XCoordinate + nextXOffset);
+                        collection.Advance(fontMetrics, nextIndex, nextGlyphId, (short)nextDx, 0);
+                        collection.Offset(fontMetrics, nextIndex, nextGlyphId, (short)nextDx, 0);
+
+                        int curDy = -(exit.YCoordinate - entry.YCoordinate);
+                        collection.Offset(fontMetrics, curIndex, glyphId, 0, (short)curDy);
+                    }
+                    else
+                    {
+                        int currDx = -(exit.XCoordinate + curXOffset);
+                        collection.Advance(fontMetrics, curIndex, glyphId, (short)currDx, 0);
+                        collection.Offset(fontMetrics, curIndex, glyphId, (short)currDx, 0);
+
+                        int nextXAdvance = entry.XCoordinate + nextXOffset;
+                        collection.SetAdvanceWidth(fontMetrics, nextIndex, nextGlyphId, (ushort)nextXAdvance);
+
+                        int nextDy = -(entry.YCoordinate - exit.YCoordinate);
+                        collection.Offset(fontMetrics, nextIndex, nextGlyphId, 0, (short)nextDy);
+                    }
 
                     updated = true;
                 }
