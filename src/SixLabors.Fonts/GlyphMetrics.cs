@@ -15,7 +15,7 @@ namespace SixLabors.Fonts
     public class GlyphMetrics
     {
         private static readonly Vector2 Scale = new(1, -1);
-        private readonly GlyphVector vector;
+        private GlyphVector vector;
 
         internal GlyphMetrics(
             FontMetrics font,
