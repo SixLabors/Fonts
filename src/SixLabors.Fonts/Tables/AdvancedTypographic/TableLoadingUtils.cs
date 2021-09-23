@@ -69,7 +69,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             classSeqRuleSets = new ClassSequenceRuleSetTable[classSeqRuleSetCount];
             for (int i = 0; i < classSeqRuleSets.Length; i++)
             {
-                classSeqRuleSets[i] = ClassSequenceRuleSetTable.Load(reader, offset + classSeqRuleSetOffsets[i]);
+                ushort ruleSetOffset = classSeqRuleSetOffsets[i];
+                if (ruleSetOffset > 0)
+                {
+                    classSeqRuleSets[i] = ClassSequenceRuleSetTable.Load(reader, offset + classSeqRuleSetOffsets[i]);
+                }
             }
 
             return coverageTable;
