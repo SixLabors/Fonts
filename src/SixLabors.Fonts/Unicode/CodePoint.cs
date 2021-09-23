@@ -388,6 +388,14 @@ namespace SixLabors.Fonts.Unicode
             => IsCategorySymbol(GetGeneralCategory(codePoint));
 
         /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a mark.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a symbol; otherwise, <see langword="false"/></returns>
+        public static bool IsMark(CodePoint codePoint)
+            => IsCategoryMark(GetGeneralCategory(codePoint));
+
+        /// <summary>
         /// Returns a value that indicates whether the specified codepoint is categorized as an uppercase letter.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
@@ -701,6 +709,10 @@ namespace SixLabors.Fonts.Unicode
         // Returns true if this Unicode category represents a symbol
         private static bool IsCategorySymbol(UnicodeCategory category)
             => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.MathSymbol, (uint)UnicodeCategory.OtherSymbol);
+
+        // Returns true if this Unicode category represents a mark
+        private static bool IsCategoryMark(UnicodeCategory category)
+            => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.NonSpacingMark, (uint)UnicodeCategory.EnclosingMark);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowArgumentOutOfRange(uint value, string paramName, string message)
