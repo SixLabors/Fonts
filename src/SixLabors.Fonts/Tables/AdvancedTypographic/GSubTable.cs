@@ -99,6 +99,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public void ApplySubstitution(GlyphSubstitutionCollection collection, ushort index, int count)
         {
+            if (!collection.TryGetShapingFeatures(index, out IReadOnlySet<Tag>? featureTags))
+            {
+                return;
+            }
+
             collection.GetGlyphData(index, out CodePoint codePoint, out _, out _, out _);
 
             ScriptListTable scriptListTable = this.ScriptList.Default();
@@ -116,17 +121,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
             if (defaultLangSysTable != null)
             {
-                this.ApplyFeatureSubstitution(collection, index, count, defaultLangSysTable);
+                this.ApplyFeatureSubstitution(collection, index, count, featureTags, defaultLangSysTable);
                 return;
             }
 
-            this.ApplyFeatureSubstitution(collection, index, count, scriptListTable.LangSysTables);
+            this.ApplyFeatureSubstitution(collection, index, count, featureTags, scriptListTable.LangSysTables);
         }
 
         private void ApplyFeatureSubstitution(
             GlyphSubstitutionCollection collection,
             ushort index,
             int count,
+            IReadOnlySet<Tag> featureTags,
             params LangSysTable[] langSysTables)
         {
             for (int i = 0; i < langSysTables.Length; i++)
@@ -138,11 +144,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     Tag tag = featureTable.FeatureTag;
 
                     // Check tag against all features, which should be applied to the given glyph.
-                    if (!collection.TryGetShapingFeatures(index, out IReadOnlySet<Tag>? featureTags))
-                    {
-                        continue;
-                    }
-
                     if (!featureTags.Contains(tag))
                     {
                         continue;

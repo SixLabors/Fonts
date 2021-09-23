@@ -38,6 +38,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
             FontFamily arabicFont = SystemFonts.Get("Dubai");
 
+            RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
+
+            // TODO: Test and fix tomorrow. Gsub Lookup 4.
+            RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { font2 });
+
+            RenderText(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
+            RenderText(uiFont, "Testing", pointSize: 20);
             RenderText(emojiFont, "👩🏽‍🚒a", pointSize: 72, fallbackFonts: new[] { font2 });
             RenderText(arabicFont, "English اَلْعَرَبِيَّةُ English", pointSize: 20);
             RenderText(arabicFont, "English English", pointSize: 20);
@@ -158,6 +165,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         public static void RenderText(RendererOptions options, string text)
         {
             FontRectangle size = TextMeasurer.Measure(text, options);
+            if (size == FontRectangle.Empty)
+            {
+                return;
+            }
 
             var drawingOptions = new DrawingOptions
             {
@@ -181,7 +192,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 drawingOptions.TextOptions.FallbackFonts.AddRange(options.FallbackFontFamilies);
             }
 
-            SaveImage(drawingOptions, text, options.Font, (int)size.Width + 20, (int)size.Height + 20, options.Origin + Vector2.Abs(new Vector2(size.X, size.Y)), options.Font.Name, text + ".png");
+            SaveImage(drawingOptions, text, options.Font, (int)size.Width, (int)size.Height, options.Origin, options.Font.Name, text + ".png");
         }
 
         public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
@@ -289,7 +300,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                             null,
                             new PointF(size.Width / 2F, size.Height / 2F))));
 
-                    img[size.Width / 2, size.Height / 2] = Color.Black;
+                    img[size.Width / 2, size.Height / 2] = Color.White;
 
                     string h = ha.ToString().Replace(nameof(HorizontalAlignment), string.Empty).ToLower();
                     string v = va.ToString().Replace(nameof(VerticalAlignment), string.Empty).ToLower();
