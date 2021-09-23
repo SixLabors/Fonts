@@ -154,7 +154,7 @@ namespace SixLabors.Fonts
                     // cache the original in the font metrics and only update our collection.
                     foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, options.ColorFontSupport))
                     {
-                        if (gm.GlyphType == GlyphType.Fallback)
+                        if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
                             // If the glyphs are fallbacks we don't want them as
                             // we've already captured them on the first run.
@@ -202,7 +202,7 @@ namespace SixLabors.Fonts
                     // cache the original in the font metrics and only update our collection.
                     foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, options.ColorFontSupport))
                     {
-                        if (gm.GlyphType == GlyphType.Fallback)
+                        if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
                             hasFallBacks = true;
                         }
