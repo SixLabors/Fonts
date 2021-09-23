@@ -7,6 +7,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
 {
     public class GPosTableTests
     {
+        // LookupType1SubTable, Format 1
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-1-single-adjustment-positioning-subtable
         [Fact]
         public void SingleAdjustmentPositioning_Format1_Works()
         {
@@ -41,6 +43,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             }
         }
 
+        // LookupType1SubTable, Format 2
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-1-single-adjustment-positioning-subtable
         [Fact]
         public void SingleAdjustmentPositioning_Format2_Works()
         {
@@ -75,6 +79,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             }
         }
 
+        // LookupType2SubTable, Format 1
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-2-pair-adjustment-positioning-subtable
         [Fact]
         public void PairAdjustmentPositioning_Format1_Works()
         {
@@ -88,6 +94,42 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
                 new(2.0608f, 12.9919987f, 6.2592f, 4.2944f),
                 new(10.72f, 12.8703995f, 5.28f, 4.6016f),
                 new(21.2608013f, 15.4239988f, 6.2592f, 4.5056f),
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gPosFont)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+
+            for (int i = 0; i < expectedFontRectangles.Length; i++)
+            {
+                Assert.Equal(expectedFontRectangles[i], renderer.GlyphRects[i]);
+            }
+        }
+
+        // LookupType3SubTable, Format 1
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
+        [Fact]
+        public void CursiveAttachmentPositioning_Format1_Works()
+        {
+            // arrange
+            Font gPosFont = new FontCollection().Add(TestFonts.GposLookupType3Format1).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "\u0012\u0012"; // "\u0012\u0012" characters should overlap.
+            int[] expectedGlyphIndices = { 20, 20 };
+            FontRectangle[] expectedFontRectangles =
+            {
+                new(3.04f, 13.5103989f, 5.28f, 4.6016f),
+                new(3.68000031f, 12.8703995f, 5.28f, 4.6016f),
             };
 
             // act

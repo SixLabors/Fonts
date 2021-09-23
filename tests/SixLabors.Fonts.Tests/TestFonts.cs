@@ -116,6 +116,12 @@ namespace SixLabors.Fonts.Tests
         /// </summary>
         public static string GposLookupType2Format1 => GetFullPath("GposLookupType2Format1.ttf");
 
+        /// <summary>
+        /// Gets a gpos test font file which has the following substitution for unit tests:
+        /// - Cursive Attachment Positioning, Format 1: "\u0012\u0012" characters should overlap.
+        /// </summary>
+        public static string GposLookupType3Format1 => GetFullPath("GposLookupType3Format1.ttf");
+
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
