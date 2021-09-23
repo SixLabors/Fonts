@@ -74,5 +74,40 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
                 Assert.Equal(expectedFontRectangles[i], renderer.GlyphRects[i]);
             }
         }
+
+        [Fact]
+        public void PairAdjustmentPositioning_Format1_Works()
+        {
+            // arrange
+            Font gPosFont = new FontCollection().Add(TestFonts.GposLookupType2Format1).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "\u0017\u0012\u0014"; // "\u0012\u0014" first XPlacement minus 300 and second YPlacement minus 400.
+            int[] expectedGlyphIndices = { 25, 20, 22 };
+            FontRectangle[] expectedFontRectangles =
+            {
+                new(2.0608f, 12.9919987f, 6.2592f, 4.2944f),
+                new(10.72f, 12.8703995f, 5.28f, 4.6016f),
+                new(21.2608013f, 15.4239988f, 6.2592f, 4.5056f),
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gPosFont)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+
+            for (int i = 0; i < expectedFontRectangles.Length; i++)
+            {
+                Assert.Equal(expectedFontRectangles[i], renderer.GlyphRects[i]);
+            }
+        }
     }
 }
