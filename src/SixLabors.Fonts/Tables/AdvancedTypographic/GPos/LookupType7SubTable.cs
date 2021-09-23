@@ -147,7 +147,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                             continue;
                         }
 
-                        bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                        bool allMatched = AdvancedTypographicUtils.MatchClassSequence(collection, index, ruleTable.InputSequence, this.classDefinitionTable);
                         if (!allMatched)
                         {
                             continue;
