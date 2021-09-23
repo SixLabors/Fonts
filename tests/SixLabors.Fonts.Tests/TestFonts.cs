@@ -100,9 +100,15 @@ namespace SixLabors.Fonts.Tests
 
         /// <summary>
         /// Gets a gpos test font file which has the following substitution for unit tests:
-        /// - Single Adjustment Positioning: A plus 100
+        /// - Single Adjustment Positioning, Format 1: "\u0012" and "\u0014" XPlacement minus 200
         /// </summary>
-        public static string GposTestFontFile => GetFullPath("GposTestFont.ttf");
+        public static string GposLookupType1Format1 => GetFullPath("GposLookupType1Format1.ttf");
+
+        /// <summary>
+        /// Gets a gpos test font file which has the following substitution for unit tests:
+        /// - Single Adjustment Positioning, Format 2: "\u0012" XPlacement minus 200 and "\u0014" XPlacement minus 300
+        /// </summary>
+        public static string GposLookupType1Format2 => GetFullPath("GposLookupType1Format1.ttf");
 
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
