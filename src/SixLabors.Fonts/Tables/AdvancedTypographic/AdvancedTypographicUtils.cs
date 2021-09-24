@@ -85,6 +85,34 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
+        internal static bool CheckCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
+        {
+            for (int i = 0; i < coverageTable.Length; ++i)
+            {
+                ushort id = collection[offset + i][0];
+                if (id == 0 || coverageTable[i].CoverageIndexOf(id) < 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        internal static bool CheckBacktrackCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
+        {
+            for (int i = 0; i < coverageTable.Length; ++i)
+            {
+                ushort id = collection[offset - i][0];
+                if (id == 0 || coverageTable[i].CoverageIndexOf(id) < 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, ReadOnlySpan<ushort> glyphIds)
         {
             ushort glyphId = glyphIds[0];

@@ -284,31 +284,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 // Check all coverages: if any of them does not match, abort update.
-                for (int i = 0; i < this.inputCoverageTables.Length; ++i)
+                if (!AdvancedTypographicUtils.CheckCoverage(collection, this.inputCoverageTables, index))
                 {
-                    ushort id = collection[index + i][0];
-                    if (id == 0 || this.inputCoverageTables[i].CoverageIndexOf(id) < 0)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
-                for (int i = 0; i < this.backtrackCoverageTables.Length; ++i)
+                if (!AdvancedTypographicUtils.CheckBacktrackCoverage(collection, this.backtrackCoverageTables, index - 1))
                 {
-                    ushort id = collection[index - 1 - i][0];
-                    if (id == 0 || this.backtrackCoverageTables[i].CoverageIndexOf(id) < 0)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
-                for (int i = 0; i < this.lookaheadCoverageTables.Length; ++i)
+                if (!AdvancedTypographicUtils.CheckCoverage(collection, this.lookaheadCoverageTables, index + inputLength))
                 {
-                    ushort id = collection[index + inputLength + i][0];
-                    if (id == 0 || this.lookaheadCoverageTables[i].CoverageIndexOf(id) < 0)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
                 // It's a match. Perform position update and return true if anything changed.
