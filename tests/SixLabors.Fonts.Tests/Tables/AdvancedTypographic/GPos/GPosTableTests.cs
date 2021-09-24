@@ -263,6 +263,46 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             }
         }
 
+        // LookupType8SubTable, Format 1
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookuptype-8-chained-contexts-positioning-subtable
+        [Fact]
+        public void ChainedContextsPositioning_Format1_Works()
+        {
+            // arrange
+            Font gPosFont = new FontCollection().Add(TestFonts.GposLookupType8Format1).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+
+            // "\u0014\u0015\u0016\u0017" backtrack:\u0014, input:\u0015\u0016, lookahead:u0017 -> XPlacement plus 200.
+            string testStr = "\u0014\u0015\u0016\u0017";
+            int[] expectedGlyphIndices = { 22, 23, 24, 25 };
+            FontRectangle[] expectedFontRectangles =
+            {
+                new(2.0608f, 12.8639984f, 6.2592f, 4.5056f),
+                new(12.9408007f, 12.8703995f, 6.2592f, 4.5312f),
+                new(22.5408f, 13.0175991f, 6.2592f, 4.2688f),
+                new(30.8608036f, 12.9919987f, 6.2592f, 4.2944f),
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gPosFont)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+
+            for (int i = 0; i < expectedFontRectangles.Length; i++)
+            {
+                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i]);
+            }
+        }
+
         private static void CompareRectangle(FontRectangle expected, FontRectangle actual, int precision = 4)
         {
             Assert.Equal(expected.X, actual.X, precision);
