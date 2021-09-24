@@ -68,8 +68,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                ChainedSequenceRuleSetTable seqRuleSet = this.seqRuleSetTables[index];
-                if (seqRuleSet is null || seqRuleSet.SequenceRuleTables.Length is 0)
+                if (this.seqRuleSetTables is null || this.seqRuleSetTables.Length is 0)
+                {
+                    return false;
+                }
+
+                ChainedSequenceRuleSetTable seqRuleSet = this.seqRuleSetTables[offset];
+                if (seqRuleSet is null)
                 {
                     return false;
                 }
@@ -80,7 +85,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     ChainedSequenceRuleTable rule = rules[lookupIndex];
                     if (rule.BacktrackSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchSequence(collection, -rule.BacktrackSequence.Length, rule.InputSequence))
+                        && !AdvancedTypographicUtils.MatchSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence))
                     {
                         continue;
                     }
@@ -97,11 +102,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         continue;
                     }
 
-                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)lookupIndex, 1))
+                    bool hasChanged = false;
+                    for (int j = 0; j < rule.SequenceLookupRecords.Length; j++)
                     {
-                        return true;
+                        SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
+                        LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
+                        ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
+                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
+                        {
+                            hasChanged = true;
+                        }
                     }
+
+                    return hasChanged;
                 }
 
                 return false;
