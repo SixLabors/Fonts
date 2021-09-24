@@ -134,6 +134,12 @@ namespace SixLabors.Fonts.Tests
         /// </summary>
         public static string GposLookupType7Format2 => GetFullPath("GposLookupType7Format2.ttf");
 
+        /// <summary>
+        /// Gets a gpos test font file which has the following substitution for unit tests:
+        /// - Contextual Positioning Subtables, Format 3: "\u0014\u0015\u0016" XPlacement plus 20.
+        /// </summary>
+        public static string GposLookupType7Format3 => GetFullPath("GposLookupType7Format3.ttf");
+
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
