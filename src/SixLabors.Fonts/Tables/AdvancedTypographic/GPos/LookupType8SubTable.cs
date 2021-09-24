@@ -198,7 +198,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     if (rule.InputSequence.Length > 0 &&
-                        !AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, rule.InputSequence))
+                        !AdvancedTypographicUtils.MatchClassSequence(collection, index, rule.InputSequence, this.inputClassDefinitionTable))
                     {
                         continue;
                     }
@@ -211,10 +211,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                     // It's a match. Perform position update and return true if anything changed.
                     bool hasChanged = false;
-                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)lookupIndex, 1))
+                    for (int j = 0; j < rule.SequenceLookupRecords.Length; j++)
                     {
-                        return true;
+                        SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
+                        LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
+                        ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
+                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
+                        {
+                            hasChanged = true;
+                        }
                     }
 
                     return hasChanged;
