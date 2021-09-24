@@ -9,6 +9,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             IFontMetrics fontMetrics,
             GPosTable table,
             GlyphPositioningCollection collection,
+            Tag feature,
             ushort index,
             int count)
             => false;

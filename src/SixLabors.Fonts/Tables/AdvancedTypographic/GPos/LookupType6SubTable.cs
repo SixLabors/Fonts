@@ -77,7 +77,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                Tag feature,
+                ushort index,
+                int count)
                 => throw new System.NotImplementedException();
         }
     }

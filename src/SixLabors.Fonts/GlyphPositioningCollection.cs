@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
@@ -20,7 +19,7 @@ namespace SixLabors.Fonts
         /// Contains a map between the index of a map within the collection, it's codepoint
         /// and glyph ids.
         /// </summary>
-        private readonly List<CodePointGlyphs> glyphs = new();
+        private readonly List<GlyphShapingData> glyphs = new();
 
         /// <summary>
         /// Contains a map between the index of a map within the collection and its offset.
@@ -31,11 +30,6 @@ namespace SixLabors.Fonts
         /// Contains a map between non-sequential codepoint offsets and their glyphs.
         /// </summary>
         private readonly Dictionary<int, GlyphMetrics[]> map = new();
-
-        /// <summary>
-        /// Contains hashset of substitution features to apply for each glyph.
-        /// </summary>
-        private readonly Dictionary<int, HashSet<Tag>> featureTags = new();
 
         /// <summary>
         /// The text layout mode.
@@ -55,38 +49,11 @@ namespace SixLabors.Fonts
         public ReadOnlySpan<ushort> this[int index] => this.glyphs[index].GlyphIds;
 
         /// <inheritdoc />
-        public bool TryGetShapingFeatures(int index, [NotNullWhen(true)] out IReadOnlySet<Tag>? value)
-        {
-            if (this.featureTags.TryGetValue(index, out HashSet<Tag>? tags))
-            {
-                value = new ReadOnlySet<Tag>(tags);
-                return true;
-            }
-
-            value = null;
-            return false;
-        }
-
-        /// <inheritdoc />
-        public void GetGlyphData(int index, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<ushort> glyphIds)
-        {
-            offset = this.offsets[index];
-            CodePointGlyphs value = this.glyphs[index];
-            codePoint = value.CodePoint;
-            direction = value.Direction;
-            glyphIds = value.GlyphIds;
-        }
+        public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index];
 
         /// <inheritdoc />
         public void AddShapingFeature(int index, Tag feature)
-        {
-            if (!this.featureTags.ContainsKey(index))
-            {
-                this.featureTags[index] = new HashSet<Tag>();
-            }
-
-            this.featureTags[index].Add(feature);
-        }
+            => this.glyphs[index].Features.Add(feature);
 
         /// <summary>
         /// Removes all elements from the collection.
@@ -96,7 +63,6 @@ namespace SixLabors.Fonts
             this.glyphs.Clear();
             this.offsets.Clear();
             this.map.Clear();
-            this.featureTags.Clear();
         }
 
         /// <summary>
@@ -133,7 +99,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < this.offsets.Count; i++)
             {
                 int offset = this.offsets[i];
-                if (!collection.TryGetCodePointAndGlyphIdsAtOffset(offset, out CodePoint codePoint, out TextDirection direction, out ReadOnlySpan<ushort> glyphIds))
+                if (!collection.TryGetGlyphShapingDataAtOffset(offset, out GlyphShapingData data))
                 {
                     // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
                     // then we end up with orphaned fallbacks. We need to remove them.
@@ -146,6 +112,9 @@ namespace SixLabors.Fonts
                     // We've already got the correct glyph.
                     continue;
                 }
+
+                CodePoint codePoint = data.CodePoint;
+                ushort[] glyphIds = data.GlyphIds;
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
                 foreach (ushort id in glyphIds)
@@ -168,7 +137,7 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs[i] = new CodePointGlyphs(codePoint, direction, glyphIds.ToArray());
+                    this.glyphs[i] = new GlyphShapingData(codePoint, data.Direction, glyphIds);
                     this.offsets[i] = offset;
                     this.map[offset] = m.ToArray();
                 }
@@ -179,7 +148,6 @@ namespace SixLabors.Fonts
             foreach (int idx in orphans)
             {
                 this.map.Remove(this.offsets[idx - shift]);
-                this.featureTags.Remove(idx - shift);
                 this.offsets.RemoveAt(idx - shift);
                 this.glyphs.RemoveAt(idx - shift);
                 shift++;
@@ -193,7 +161,9 @@ namespace SixLabors.Fonts
             bool hasFallBacks = false;
             for (int i = 0; i < collection.Count; i++)
             {
-                collection.GetGlyphData(i, out CodePoint codePoint, out TextDirection direction, out int offset, out ReadOnlySpan<ushort> glyphIds);
+                GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
+                CodePoint codePoint = data.CodePoint;
+                ushort[] glyphIds = data.GlyphIds;
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
                 foreach (ushort id in glyphIds)
@@ -213,10 +183,9 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs.Add(new CodePointGlyphs(codePoint, direction, glyphIds.ToArray()));
+                    this.glyphs.Add(new GlyphShapingData(codePoint, data.Direction, glyphIds));
                     this.offsets.Add(offset);
                     this.map[offset] = m.ToArray();
-                    this.featureTags[offset] = new HashSet<Tag>();
                 }
             }
 
@@ -298,27 +267,6 @@ namespace SixLabors.Fonts
                     m.SetAdvanceWidth(x);
                 }
             }
-        }
-
-        [DebuggerDisplay("{DebuggerDisplay,nq}")]
-        private readonly struct CodePointGlyphs
-        {
-            public CodePointGlyphs(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
-            {
-                this.CodePoint = codePoint;
-                this.Direction = direction;
-                this.GlyphIds = glyphIds;
-            }
-
-            public CodePoint CodePoint { get; }
-
-            public TextDirection Direction { get; }
-
-            public ushort[] GlyphIds { get; }
-
-            private string DebuggerDisplay
-                => FormattableString
-                .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScript(this.CodePoint)} : {this.Direction} : [{string.Join(",", this.GlyphIds)}]");
         }
     }
 }

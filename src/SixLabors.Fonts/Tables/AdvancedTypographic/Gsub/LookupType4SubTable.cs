@@ -103,7 +103,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType4Format1SubTable(ligatureSetTables, coverageTable);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
+        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
         {
             ushort glyphId = collection[index][0];
             if (glyphId == 0)
@@ -128,7 +128,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ligatureTable.ComponentGlyphs);
+                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ligatureTable.ComponentGlyphs);
                 if (allMatched)
                 {
                     collection.Replace(index, compLength + 1, ligatureTable.GlyphId);

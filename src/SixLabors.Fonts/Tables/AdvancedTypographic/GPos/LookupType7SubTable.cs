@@ -46,7 +46,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 return new LookupType7Format1SubTable(coverageTable, seqRuleSets);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                Tag feature,
+                ushort index,
+                int count)
             {
                 ushort glyphId = collection[index][0];
                 if (glyphId == 0)
@@ -72,7 +78,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         continue;
                     }
 
-                    bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                    bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ruleTable.InputSequence);
                     if (!allMatched)
                     {
                         continue;
@@ -86,7 +92,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         ushort lookupIndex = lookupRecord.LookupListIndex;
 
                         LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                         {
                             hasChanged = true;
                         }
@@ -119,7 +125,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 return new LookupType7Format2SubTable(coverageTable, classDefTable, classSeqRuleSets);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                Tag feature,
+                ushort index,
+                int count)
             {
                 ushort glyphId = collection[index][0];
                 if (glyphId == 0)
@@ -161,7 +173,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                             ushort lookupIndex = lookupRecord.LookupListIndex;
 
                             LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                            if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                            if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                             {
                                 hasChanged = true;
                             }
@@ -193,7 +205,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 return new LookupType7Format3SubTable(coverageTables, seqLookupRecords);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                Tag feature,
+                ushort index,
+                int count)
             {
                 ushort glyphId = collection[index][0];
                 if (glyphId == 0)
@@ -219,7 +237,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         ushort lookupIndex = lookupRecord.LookupListIndex;
 
                         LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                         {
                             hasChanged = true;
                         }

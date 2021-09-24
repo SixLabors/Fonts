@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
 using SixLabors.Fonts.Unicode;
 
@@ -96,15 +97,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public void ApplySubstitution(GlyphSubstitutionCollection collection, ushort index, int count)
         {
-            if (!collection.TryGetShapingFeatures(index, out IReadOnlySet<Tag>? featureTags))
+            GlyphShapingData data = collection.GetGlyphShapingData(index);
+            if (data.Features.Count == 0)
             {
                 return;
             }
 
-            collection.GetGlyphData(index, out CodePoint codePoint, out _, out _, out _);
-
             ScriptListTable scriptListTable = this.ScriptList.Default();
-            Script script = CodePoint.GetScript(codePoint);
+            Script script = CodePoint.GetScript(data.CodePoint);
             Tag[] tags = UnicodeScriptTagMap.Instance[script];
             for (int i = 0; i < tags.Length; i++)
             {
@@ -118,18 +118,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
             if (defaultLangSysTable != null)
             {
-                this.ApplyFeatureSubstitution(collection, index, count, featureTags, defaultLangSysTable);
+                this.ApplyFeatureSubstitution(collection, index, count, data.Features, defaultLangSysTable);
                 return;
             }
 
-            this.ApplyFeatureSubstitution(collection, index, count, featureTags, scriptListTable.LangSysTables);
+            this.ApplyFeatureSubstitution(collection, index, count, data.Features, scriptListTable.LangSysTables);
         }
 
         private void ApplyFeatureSubstitution(
             GlyphSubstitutionCollection collection,
             ushort index,
             int count,
-            IReadOnlySet<Tag> featureTags,
+            HashSet<Tag> featureTags,
             params LangSysTable[] langSysTables)
         {
             for (int i = 0; i < langSysTables.Length; i++)
@@ -138,10 +138,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 for (int j = 0; j < featureIndices.Length; j++)
                 {
                     FeatureTable featureTable = this.FeatureList.FeatureTables[featureIndices[j]];
-                    Tag tag = featureTable.FeatureTag;
+                    Tag feature = featureTable.FeatureTag;
 
                     // Check tag against all features, which should be applied to the given glyph.
-                    if (!featureTags.Contains(tag))
+                    if (!featureTags.Contains(feature))
                     {
                         continue;
                     }
@@ -152,7 +152,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         // TODO: Consider caching the relevant langtables per script.
                         // There's a lot of repetitive checks here.
                         LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
-                        lookupTable.TrySubstitution(this, collection, index, count);
+                        lookupTable.TrySubstitution(this, collection, feature, index, count);
                     }
                 }
             }

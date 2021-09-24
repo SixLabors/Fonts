@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
@@ -81,8 +80,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             // Apply the state machine to map glyphs to features.
             for (int i = 0; i < count; i++)
             {
-                collection.GetGlyphData(i + index, out CodePoint codePoint, out _, out _, out _);
-                JoiningClass joiningClass = CodePoint.GetJoiningClass(codePoint);
+                GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                JoiningClass joiningClass = CodePoint.GetJoiningClass(data.CodePoint);
                 JoiningType joiningType = joiningClass.JoiningType;
                 if (joiningType == JoiningType.Transparent)
                 {

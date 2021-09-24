@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 using SixLabors.Fonts.Unicode;
 
@@ -100,15 +101,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             ushort index,
             int count)
         {
-            if (!collection.TryGetShapingFeatures(index, out IReadOnlySet<Tag>? featureTags))
+            GlyphShapingData data = collection.GetGlyphShapingData(index);
+            if (data.Features.Count == 0)
             {
                 return false;
             }
 
-            collection.GetGlyphData(index, out CodePoint codePoint, out _, out _, out _);
-
             ScriptListTable scriptListTable = this.ScriptList.Default();
-            Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(codePoint)];
+            Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(data.CodePoint)];
             for (int i = 0; i < tags.Length; i++)
             {
                 if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? table))
@@ -121,10 +121,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
             if (defaultLangSysTable != null)
             {
-                return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, featureTags, defaultLangSysTable);
+                return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, data.Features, defaultLangSysTable);
             }
 
-            return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, featureTags, scriptListTable.LangSysTables);
+            return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, data.Features, scriptListTable.LangSysTables);
         }
 
         private bool TryUpdateFeaturePositions(
@@ -132,7 +132,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             GlyphPositioningCollection collection,
             ushort index,
             int count,
-            IReadOnlySet<Tag> featureTags,
+            HashSet<Tag> featureTags,
             params LangSysTable[] langSysTables)
         {
             bool updated = false;
@@ -142,10 +142,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 for (int j = 0; j < featureIndices.Length; j++)
                 {
                     FeatureTable featureTable = this.FeatureList.FeatureTables[featureIndices[j]];
-                    Tag tag = featureTable.FeatureTag;
+                    Tag feature = featureTable.FeatureTag;
 
                     // Check tag against all features, which should be applied to the given glyph.
-                    if (!featureTags.Contains(tag))
+                    if (!featureTags.Contains(feature))
                     {
                         continue;
                     }
@@ -156,7 +156,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         // TODO: Consider caching the relevant langtables per script.
                         // There's a lot of repetitive checks here.
                         LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
-                        updated |= lookupTable.TryUpdatePosition(fontMetrics, this, collection, index, count);
+                        updated |= lookupTable.TryUpdatePosition(fontMetrics, this, collection, feature, index, count);
                     }
                 }
             }

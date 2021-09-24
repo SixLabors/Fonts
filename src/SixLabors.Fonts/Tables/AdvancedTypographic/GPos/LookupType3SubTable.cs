@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.IO;
 using System.Numerics;
 
@@ -74,7 +73,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 return new LookupType3Format1SubTable(coverageTable, entryExitAnchors);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                Tag feature,
+                ushort index,
+                int count)
             {
                 // Implements Cursive Attachment Positioning Subtable:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
@@ -82,8 +87,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 for (ushort i = 0; i < count - 1; i++)
                 {
                     ushort curIndex = (ushort)(i + index);
-                    collection.GetGlyphData(curIndex, out _, out TextDirection direction, out _, out ReadOnlySpan<ushort> glyphIds);
-                    ushort glyphId = glyphIds[0];
+                    GlyphShapingData data = collection.GetGlyphShapingData(curIndex);
+                    ushort glyphId = data.GlyphIds[0];
                     if (glyphId == 0)
                     {
                         continue;
@@ -117,7 +122,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     int curXOffset = (int)curOffset.X;
                     int nextXOffset = (int)nextOffset.X;
 
-                    if (direction == TextDirection.LeftToRight)
+                    if (data.Direction == TextDirection.LeftToRight)
                     {
                         int curXAdvance = exit.XCoordinate + curXOffset;
                         collection.SetAdvanceWidth(fontMetrics, curIndex, glyphId, (ushort)curXAdvance);

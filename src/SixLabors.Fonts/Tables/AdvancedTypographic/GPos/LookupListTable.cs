@@ -139,6 +139,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             IFontMetrics fontMetrics,
             GPosTable table,
             GlyphPositioningCollection collection,
+            Tag feature,
             ushort index,
             int count)
         {
@@ -146,7 +147,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // A lookup is finished for a glyph after the client locates the target
                 // glyph or glyph context and performs a positioning action, if specified.
-                if (subTable.TryUpdatePosition(fontMetrics, table, collection, index, count))
+                if (subTable.TryUpdatePosition(fontMetrics, table, collection, feature, index, count))
                 {
                     return true;
                 }
@@ -162,6 +163,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             IFontMetrics fontMetrics,
             GPosTable table,
             GlyphPositioningCollection collection,
+            Tag feature,
             ushort index,
             int count);
     }

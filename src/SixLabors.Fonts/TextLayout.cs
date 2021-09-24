@@ -250,7 +250,7 @@ namespace SixLabors.Fonts
             List<GlyphLayout> glyphs = new();
             for (int i = 0; i < textLine.Count; i++)
             {
-                TextLine.GlyphInfo info = textLine[i];
+                TextLine.GlyphLayoutData info = textLine[i];
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
                     float scale = info.PointSize / metric.ScaleFactor;
@@ -346,7 +346,7 @@ namespace SixLabors.Fonts
             List<GlyphLayout> glyphs = new();
             for (int i = 0; i < textLine.Count; i++)
             {
-                TextLine.GlyphInfo info = textLine[i];
+                TextLine.GlyphLayoutData info = textLine[i];
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
                     float scale = info.PointSize / metric.ScaleFactor;
@@ -450,27 +450,27 @@ namespace SixLabors.Fonts
             return positionings.TryAddOrUpdate(fontMetrics, substitutions, options);
         }
 
-        private static void SubstituteBidiMirrors(IFontMetrics fontMetrics, GlyphSubstitutionCollection substitutions)
+        private static void SubstituteBidiMirrors(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection)
         {
             // TODO: Vertical bidi mirrors appear to be different.
             // See hb-ot-shape.cc in HarfBuzz. Line 651.
-            for (int i = 0; i < substitutions.Count; i++)
+            for (int i = 0; i < collection.Count; i++)
             {
-                substitutions.GetGlyphData(i, out CodePoint codePoint, out TextDirection direction, out _, out _);
+                GlyphShapingData data = collection.GetGlyphShapingData(i);
 
-                if (direction != TextDirection.RightToLeft)
+                if (data.Direction != TextDirection.RightToLeft)
                 {
                     continue;
                 }
 
-                if (!CodePoint.TryGetBidiMirror(codePoint, out CodePoint mirror))
+                if (!CodePoint.TryGetBidiMirror(data.CodePoint, out CodePoint mirror))
                 {
                     continue;
                 }
 
                 if (fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
                 {
-                    substitutions.Replace(i, glyphId);
+                    collection.Replace(i, glyphId);
                 }
             }
         }
@@ -479,8 +479,8 @@ namespace SixLabors.Fonts
         {
             for (int i = 0; i < collection.Count; i++)
             {
-                collection.GetGlyphData(i, out CodePoint codePoint, out _, out _, out _);
-                Script current = CodePoint.GetScript(codePoint);
+                GlyphShapingData data = collection.GetGlyphShapingData(i);
+                Script current = CodePoint.GetScript(data.CodePoint);
 
                 // Choose a shaper based on the script.
                 // This determines which features to apply to which glyphs.
@@ -492,8 +492,8 @@ namespace SixLabors.Fonts
                     // We want to assign the same shaper to individual sections of the text rather
                     // than the text as a whole to ensure that different language shapers do not interfere
                     // with each other when the text contains multiple languages.
-                    collection.GetGlyphData(i + 1, out codePoint, out _, out _, out _);
-                    Script next = CodePoint.GetScript(codePoint);
+                    GlyphShapingData nextData = collection.GetGlyphShapingData(i + 1);
+                    Script next = CodePoint.GetScript(nextData.CodePoint);
                     if (next is not Script.Common and not Script.Unknown and not Script.Inherited && next != current)
                     {
                         break;
@@ -779,11 +779,11 @@ namespace SixLabors.Fonts
 
         internal sealed class TextLine
         {
-            private readonly List<GlyphInfo> info = new();
+            private readonly List<GlyphLayoutData> info = new();
 
             public int Count => this.info.Count;
 
-            public GlyphInfo this[int index] => this.info[index];
+            public GlyphLayoutData this[int index] => this.info[index];
 
             public float ScaledLineAdvance()
                 => this.info.Sum(x => x.ScaledAdvance);
@@ -803,7 +803,7 @@ namespace SixLabors.Fonts
             public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
             {
                 int index = this.info.Count;
-                GlyphInfo glyphWrap = default;
+                GlyphLayoutData glyphWrap = default;
                 while (index > 0)
                 {
                     glyphWrap = this.info[--index];
@@ -873,7 +873,7 @@ namespace SixLabors.Fonts
                 OrderedBidiRun? current = orderedRun;
                 for (int i = 0; i < this.info.Count; i++)
                 {
-                    GlyphInfo g = this.info[i];
+                    GlyphLayoutData g = this.info[i];
                     if (run != g.BidiRun)
                     {
                         run = g.BidiRun;
@@ -1009,9 +1009,9 @@ namespace SixLabors.Fonts
             }
 
             [DebuggerDisplay("{DebuggerDisplay,nq}")]
-            internal readonly struct GlyphInfo
+            internal readonly struct GlyphLayoutData
             {
-                public GlyphInfo(
+                public GlyphLayoutData(
                     GlyphMetrics[] metrics,
                     float pointSize,
                     float scaledAdvance,
@@ -1051,7 +1051,7 @@ namespace SixLabors.Fonts
 
             private class OrderedBidiRun
             {
-                private ArrayBuilder<GlyphInfo> info;
+                private ArrayBuilder<GlyphLayoutData> info;
 
                 public OrderedBidiRun(int level) => this.Level = level;
 
@@ -1059,9 +1059,9 @@ namespace SixLabors.Fonts
 
                 public OrderedBidiRun? Next { get; set; }
 
-                public void Add(GlyphInfo info) => this.info.Add(info);
+                public void Add(GlyphLayoutData info) => this.info.Add(info);
 
-                public ArraySlice<GlyphInfo> AsSlice() => this.info.AsSlice();
+                public ArraySlice<GlyphLayoutData> AsSlice() => this.info.AsSlice();
 
                 public void Reverse() => this.AsSlice().Span.Reverse();
             }

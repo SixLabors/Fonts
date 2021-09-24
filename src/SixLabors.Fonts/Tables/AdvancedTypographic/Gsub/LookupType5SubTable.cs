@@ -45,7 +45,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType5Format1SubTable(coverageTable, seqRuleSets);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
+        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
         {
             ushort glyphId = collection[index][0];
             if (glyphId == 0)
@@ -71,7 +71,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, index, ruleTable.InputSequence);
+                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ruleTable.InputSequence);
                 if (!allMatched)
                 {
                     continue;
@@ -85,7 +85,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     ushort lookupIndex = lookupRecord.LookupListIndex;
 
                     LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    if (lookup.TrySubstitution(table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                     {
                         hasChanged = true;
                     }
@@ -121,7 +121,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType5Format2SubTable(classSeqRuleSets, classDefTable, coverageTable);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
+        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
         {
             ushort glyphId = collection[index][0];
             if (glyphId == 0)
@@ -166,7 +166,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     ushort lookupIndex = lookupRecord.LookupListIndex;
 
                     LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    if (lookup.TrySubstitution(table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                     {
                         hasChanged = true;
                     }
@@ -197,7 +197,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType5Format3SubTable(coverageTables, seqLookupRecords);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, ushort index, int count)
+        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
         {
             ushort glyphId = collection[index][0];
             if (glyphId == 0)
@@ -223,7 +223,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     ushort lookupIndex = lookupRecord.LookupListIndex;
 
                     LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TrySubstitution(table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    if (lookup.TrySubstitution(table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                     {
                         hasChanged = true;
                     }

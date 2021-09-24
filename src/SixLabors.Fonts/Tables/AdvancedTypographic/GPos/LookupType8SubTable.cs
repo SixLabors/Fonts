@@ -45,7 +45,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 return new LookupType8Format1SubTable(coverageTable, seqRuleSets);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                Tag feature,
+                ushort index,
+                int count)
             {
                 // Implements Chained Contexts Substitution, Format 1:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#61-chained-contexts-substitution-format-1-simple-glyph-contexts
@@ -80,7 +86,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     if (rule.InputSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                        && !AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, rule.InputSequence))
                     {
                         continue;
                     }
@@ -92,7 +98,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)lookupIndex, 1))
+                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)lookupIndex, 1))
                     {
                         return true;
                     }
@@ -137,7 +143,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 return new LookupType8Format2SubTable(seqRuleSets, backtrackClassDefTable, inputClassDefTable, lookaheadClassDefTable, coverageTable);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                Tag feature,
+                ushort index,
+                int count)
             {
                 // Implements Chained Contexts Substitution for Format 2:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
@@ -173,7 +185,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     if (rule.InputSequence.Length > 0 &&
-                        !AdvancedTypographicUtils.MatchInputSequence(collection, index, rule.InputSequence))
+                        !AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, rule.InputSequence))
                     {
                         continue;
                     }
@@ -187,7 +199,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     // It's a match. Perform position update and return true if anything changed.
                     bool hasChanged = false;
                     LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)lookupIndex, 1))
+                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)lookupIndex, 1))
                     {
                         return true;
                     }
@@ -230,7 +242,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 return new LookupType8Format3SubTable(seqLookupRecords, backtrackCoverageTables, inputCoverageTables, lookaheadCoverageTables);
             }
 
-            public override bool TryUpdatePosition(IFontMetrics fontMetrics, GPosTable table, GlyphPositioningCollection collection, ushort index, int count)
+            public override bool TryUpdatePosition(
+                IFontMetrics fontMetrics,
+                GPosTable table,
+                GlyphPositioningCollection collection,
+                Tag feature,
+                ushort index,
+                int count)
             {
                 ushort glyphId = collection[index][0];
                 if (glyphId == 0)
@@ -283,7 +301,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     ushort lookupIndex = lookupRecord.LookupListIndex;
 
                     LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                     {
                         hasChanged = true;
                     }
