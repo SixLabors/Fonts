@@ -40,7 +40,7 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
         /// </summary>
         /// <param name="mode">The text layout mode.</param>
-        internal GlyphPositioningCollection(LayoutMode mode) => this.mode = mode;
+        public GlyphPositioningCollection(LayoutMode mode) => this.mode = mode;
 
         /// <inheritdoc />
         public int Count => this.offsets.Count;
@@ -246,7 +246,7 @@ namespace SixLabors.Fonts
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.ApplyAdvance(dx, this.mode == LayoutMode.HorizontalTopBottom ? (short)0 : dy);
+                    m.ApplyAdvance(dx, (this.mode & LayoutMode.VerticalLeftRight) != 0 ? dy : (short)0);
                 }
             }
         }

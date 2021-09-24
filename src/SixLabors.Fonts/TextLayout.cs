@@ -176,12 +176,19 @@ namespace SixLabors.Fonts
                     glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
-            else
+            else if (layoutMode == LayoutMode.VerticalLeftRight)
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
                     // TODO: Investigate and implement this so we can make LayoutMode public.
                     // https://www.unicode.org/reports/tr50/
+                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                }
+            }
+            else
+            {
+                for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
+                {
                     glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
@@ -521,7 +528,7 @@ namespace SixLabors.Fonts
             float wrappingLength = shouldWrap ? options.WrappingWidth / options.DpiX : float.MaxValue;
             bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
             bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
-            bool isHorizontal = layoutMode == LayoutMode.HorizontalTopBottom;
+            bool isHorizontal = (layoutMode & LayoutMode.VerticalLeftRight) == 0;
 
             float scaledMaxAscender = 0;
             float scaledMaxDescender = 0;

@@ -153,9 +153,9 @@ namespace SixLabors.Fonts
         public VerticalAlignment VerticalAlignment { get; set; }
 
         /// <summary>
-        /// Gets or sets the layout mode for the text lines.
+        /// Gets the layout mode for the text lines.
         /// </summary>
-        internal LayoutMode LayoutMode { get; set; } = LayoutMode.HorizontalTopBottom;
+        public LayoutMode LayoutMode { get; internal set; }
 
         /// <summary>
         /// Gets or sets the rendering origin.
