@@ -14,21 +14,21 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Text is laid out horizontally from top to bottom.
         /// </summary>
-        HorizontalTopBottom = 1 << 0,
+        HorizontalTopBottom = 0,
 
         /// <summary>
         /// Text is laid out horizontally from bottom to top.
         /// </summary>
-        HorizontalBottomTop = 1 << 1,
+        HorizontalBottomTop = 1 << 0,
 
         /// <summary>
         /// Text is laid out vertically from left to right. Currently unsupported.
         /// </summary>
-        VerticalLeftRight = 1 << 2,
+        VerticalLeftRight = 1 << 1,
 
         /// <summary>
         /// Text is laid out vertically from right to left. Currently unsupported.
         /// </summary>
-        VerticalRightLeft = 1 << 3
+        VerticalRightLeft = 1 << 2
     }
 }
