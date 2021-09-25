@@ -154,6 +154,13 @@ namespace SixLabors.Fonts.Tests
         /// </summary>
         public static string GposLookupType8Format2 => GetFullPath("GposLookupType8Format2.ttf");
 
+        /// <summary>
+        /// Gets a gpos test font file which has the following substitution for unit tests:
+        /// - Chained Contexts Positioning, Format 3:
+        /// "\u0014\u0015\u0016\u0017" backtrack:\u0014, input:\u0015\u0016, lookahead:u0017 -> XPlacement plus 200.
+        /// </summary>
+        public static string GposLookupType8Format3 => GetFullPath("GposLookupType8Format3.ttf");
+
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
