@@ -85,7 +85,89 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static bool CheckCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
+        internal static bool ApplyChainedSequenceRule(IGlyphShapingCollection collection, Tag feature, ushort index, ChainedSequenceRuleTable rule)
+        {
+            if (rule.BacktrackSequence.Length > 0
+                && !MatchSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence))
+            {
+                return false;
+            }
+
+            if (rule.LookaheadSequence.Length > 0
+                && !MatchSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
+            {
+                return false;
+            }
+
+            if (rule.InputSequence.Length > 0
+                && !MatchInputSequence(collection, feature, index, rule.InputSequence))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        internal static bool ApplyChainedClassSequenceRule(
+            IGlyphShapingCollection collection,
+            ushort index,
+            ChainedClassSequenceRuleTable rule,
+            ClassDefinitionTable inputClassDefinitionTable,
+            ClassDefinitionTable backtrackClassDefinitionTable,
+            ClassDefinitionTable lookaheadClassDefinitionTable)
+        {
+            if (rule.BacktrackSequence.Length > 0
+                && !MatchClassSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence, backtrackClassDefinitionTable))
+            {
+                return false;
+            }
+
+            if (rule.InputSequence.Length > 0 &&
+                !MatchClassSequence(collection, index, rule.InputSequence, inputClassDefinitionTable))
+            {
+                return false;
+            }
+
+            if (rule.LookaheadSequence.Length > 0
+                && !MatchClassSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence, lookaheadClassDefinitionTable))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        internal static bool CheckAllCoverages(IGlyphShapingCollection collection, ushort index, int count, CoverageTable[] input, CoverageTable[] backtrack, CoverageTable[] lookahead)
+        {
+            int inputLength = input.Length;
+
+            // Check that there are enough context glyphs.
+            if (index < backtrack.Length
+                || inputLength + lookahead.Length > count)
+            {
+                return false;
+            }
+
+            // Check all coverages: if any of them does not match, abort update.
+            if (!CheckCoverage(collection, input, index))
+            {
+                return false;
+            }
+
+            if (!CheckBacktrackCoverage(collection, backtrack, index - 1))
+            {
+                return false;
+            }
+
+            if (!CheckCoverage(collection, lookahead, index + inputLength))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool CheckCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
         {
             for (int i = 0; i < coverageTable.Length; ++i)
             {
@@ -99,7 +181,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static bool CheckBacktrackCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
+        private static bool CheckBacktrackCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
         {
             for (int i = 0; i < coverageTable.Length; ++i)
             {

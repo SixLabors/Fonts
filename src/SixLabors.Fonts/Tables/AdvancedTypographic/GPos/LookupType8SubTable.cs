@@ -84,20 +84,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
                 {
                     ChainedSequenceRuleTable rule = rules[lookupIndex];
-                    if (rule.BacktrackSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence))
-                    {
-                        continue;
-                    }
-
-                    if (rule.InputSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, rule.InputSequence))
-                    {
-                        continue;
-                    }
-
-                    if (rule.LookaheadSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
+                    if (!AdvancedTypographicUtils.ApplyChainedSequenceRule(collection, feature, index, rule))
                     {
                         continue;
                     }
@@ -191,20 +178,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
                 {
                     ChainedClassSequenceRuleTable rule = rules[lookupIndex];
-                    if (rule.BacktrackSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchClassSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence, this.backtrackClassDefinitionTable))
-                    {
-                        continue;
-                    }
-
-                    if (rule.InputSequence.Length > 0 &&
-                        !AdvancedTypographicUtils.MatchClassSequence(collection, index, rule.InputSequence, this.inputClassDefinitionTable))
-                    {
-                        continue;
-                    }
-
-                    if (rule.LookaheadSequence.Length > 0
-                        && !AdvancedTypographicUtils.MatchClassSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence, this.lookaheadClassDefinitionTable))
+                    if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(collection, index, rule, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
                     {
                         continue;
                     }
@@ -274,27 +248,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                int inputLength = this.inputCoverageTables.Length;
-
-                // Check that there are enough context glyphs.
-                if (index < this.backtrackCoverageTables.Length
-                    || inputLength + this.lookaheadCoverageTables.Length > count)
-                {
-                    return false;
-                }
-
-                // Check all coverages: if any of them does not match, abort update.
-                if (!AdvancedTypographicUtils.CheckCoverage(collection, this.inputCoverageTables, index))
-                {
-                    return false;
-                }
-
-                if (!AdvancedTypographicUtils.CheckBacktrackCoverage(collection, this.backtrackCoverageTables, index - 1))
-                {
-                    return false;
-                }
-
-                if (!AdvancedTypographicUtils.CheckCoverage(collection, this.lookaheadCoverageTables, index + inputLength))
+                if (!AdvancedTypographicUtils.CheckAllCoverages(collection, index, count, this.inputCoverageTables, this.backtrackCoverageTables, this.lookaheadCoverageTables))
                 {
                     return false;
                 }
