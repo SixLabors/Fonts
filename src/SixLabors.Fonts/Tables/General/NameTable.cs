@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -70,21 +71,21 @@ namespace SixLabors.Fonts.Tables.General
             {
                 if (name.NameID == nameId)
                 {
-                    // get just the first one, just in case.
+                    // Get just the first one, just in case.
                     first ??= name;
                     if (name.Platform == PlatformIDs.Windows)
                     {
-                        // if us not found return the first windows one
+                        // If us not found return the first windows one.
                         firstWindows ??= name;
                         if (name.LanguageID == 0x0409)
                         {
-                            // grab the us version as its on next best match
+                            // Grab the us version as its on next best match.
                             usaVersion ??= name;
                         }
 
                         if (name.LanguageID == languageId)
                         {
-                            // return the most exact first
+                            // Return the most exact first.
                             return name.Value;
                         }
                     }
@@ -133,10 +134,10 @@ namespace SixLabors.Fonts.Tables.General
                 }
             }
 
-            var langs = new StringLoader[0];
+            StringLoader[]? langs = Array.Empty<StringLoader>();
             if (format == 1)
             {
-                // format 1 adds language data
+                // Format 1 adds language data.
                 ushort langCount = reader.ReadUInt16();
                 langs = new StringLoader[langCount];
 
@@ -147,17 +148,18 @@ namespace SixLabors.Fonts.Tables.General
                 }
             }
 
-            foreach (StringLoader readable in strings.OrderBy(x => x.Offset))
+            IOrderedEnumerable<StringLoader> orderedStrings = strings.OrderBy(x => x.Offset);
+            foreach (StringLoader readable in orderedStrings)
             {
-                int diff = stringOffset + readable.Offset;
+                int readableStartOffset = stringOffset + readable.Offset;
 
-                // only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack
-                reader.Seek(diff, SeekOrigin.Begin);
+                // Only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack.
+                reader.Seek(readableStartOffset, SeekOrigin.Begin);
 
                 readable.LoadValue(reader);
             }
 
-            string[] langNames = langs?.Select(x => x.Value).ToArray() ?? new string[0];
+            string[] langNames = langs?.Select(x => x.Value).ToArray() ?? Array.Empty<string>();
 
             return new NameTable(names, langNames);
         }

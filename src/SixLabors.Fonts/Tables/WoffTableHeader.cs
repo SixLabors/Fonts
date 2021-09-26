@@ -15,17 +15,19 @@ namespace SixLabors.Fonts.Tables
 
         public override BigEndianBinaryReader CreateReader(Stream stream)
         {
-            // not compressed use uncompress
+            // Stream is not compressed.
             if (this.Length == this.CompressedLength)
             {
                 return base.CreateReader(stream);
             }
-            else
-            {
-                stream.Seek(this.Offset, SeekOrigin.Begin);
-                var compressedStream = new IO.ZlibInflateStream(stream);
-                return new BigEndianBinaryReader(compressedStream, false);
-            }
+
+            // Read all data from the compressed stream.
+            stream.Seek(this.Offset, SeekOrigin.Begin);
+            using var compressedStream = new IO.ZlibInflateStream(stream);
+            byte[] uncompressedBytes = new byte[this.Length];
+            compressedStream.Read(uncompressedBytes, 0, uncompressedBytes.Length);
+            var memoryStream = new MemoryStream(uncompressedBytes);
+            return new BigEndianBinaryReader(memoryStream, false);
         }
 
         // WOFF TableDirectoryEntry
@@ -35,8 +37,7 @@ namespace SixLabors.Fonts.Tables
         // UInt32 | origLength   | Length of the uncompressed table, excluding padding.
         // UInt32 | origChecksum | Checksum of the uncompressed table.
         public static new WoffTableHeader Read(BigEndianBinaryReader reader) =>
-            new WoffTableHeader(
-                reader.ReadTag(),
+            new(reader.ReadTag(),
                 reader.ReadUInt32(),
                 reader.ReadUInt32(),
                 reader.ReadUInt32(),
