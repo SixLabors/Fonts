@@ -15,17 +15,24 @@ namespace SixLabors.Fonts.Tables
 
         public override BigEndianBinaryReader CreateReader(Stream stream)
         {
-            // not compressed use uncompress
+            // Stream is not compressed.
             if (this.Length == this.CompressedLength)
             {
                 return base.CreateReader(stream);
             }
-            else
+
+            // Read all data from the compressed stream.
+            stream.Seek(this.Offset, SeekOrigin.Begin);
+            using var compressedStream = new IO.ZlibInflateStream(stream);
+            byte[] uncompressedBytes = new byte[this.Length];
+            int bytesRead = compressedStream.Read(uncompressedBytes, 0, uncompressedBytes.Length);
+            if (bytesRead < this.Length)
             {
-                stream.Seek(this.Offset, SeekOrigin.Begin);
-                var compressedStream = new IO.ZlibInflateStream(stream);
-                return new BigEndianBinaryReader(compressedStream, false);
+                throw new InvalidFontFileException($"Could not read compressed data! Expected bytes: {this.Length}, bytes read: {bytesRead}");
             }
+
+            var memoryStream = new MemoryStream(uncompressedBytes);
+            return new BigEndianBinaryReader(memoryStream, false);
         }
 
         // WOFF TableDirectoryEntry
