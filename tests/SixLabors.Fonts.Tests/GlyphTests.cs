@@ -153,9 +153,10 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void RenderWoff2Glyphs_IsEqualToTtfGlyphs()
         {
-            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
-            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
+            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansVersion26File).CreateFont(12);
+            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansVersion26FileWoff).CreateFont(12);
             string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            int expectedControlPointsCount = 1238;
 
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
@@ -168,6 +169,7 @@ namespace SixLabors.Fonts.Tests
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 
+            Assert.Equal(expectedControlPointsCount, rendererWoff2.ControlPoints.Count);
             Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff2.ControlPoints));
         }
 #endif

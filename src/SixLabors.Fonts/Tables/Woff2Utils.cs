@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Glyphs;
 
 namespace SixLabors.Fonts.Tables
@@ -15,15 +14,16 @@ namespace SixLabors.Fonts.Tables
     // see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
     internal class Woff2Utils
     {
+        // We don't reuse the const tag headers from our table types for clarity.
         private static readonly string[] KnownTableTags =
         {
-            CMapTable.TableName, HeadTable.TableName, HorizontalHeadTable.TableName, HorizontalMetricsTable.TableName,
-            MaximumProfileTable.TableName, NameTable.TableName, OS2Table.TableName, "post", "cvt ", "fpgm", GlyphTable.TableName,
-            IndexLocationTable.TableName, "prep", "CFF ", "VORG", "EBDT", "EBLC", "gasp", "hdmx", KerningTable.TableName, "LTSH",
-            "PCLT", "VDMX", VerticalHeadTable.TableName, VerticalMetricsTable.TableName, "BASE", "GDEF", "GPOS", "GSUB", "EBSC",
-            "JSTF", "MATH", "CBDT", "CBLC", ColrTable.TableName, CpalTable.TableName, "SVG ", "sbix", "acnt", "avar", "bdat",
-            "bloc", "bsln", "cvar", "fdsc", "feat", "fmtx", "fvar", "gvar", "hsty", "just", "lcar", "mort", "morx", "opbd",
-            "prop", "trak", "Zapf", "Silf", "Glat", "Gloc", "Feat", "Sill", "...." // Arbitrary tag follows.
+            "cmap", "head", "hhea", "hmtx", "maxp", "name", "OS/2", "post", "cvt ",
+            "fpgm", "glyf", "loca", "prep", "CFF ", "VORG", "EBDT", "EBLC", "gasp",
+            "hdmx", "kern", "LTSH", "PCLT", "VDMX", "vhea", "vmtx", "BASE", "GDEF",
+            "GPOS", "GSUB", "EBSC", "JSTF", "MATH", "CBDT", "CBLC", "COLR", "CPAL",
+            "SVG ", "sbix", "acnt", "avar", "bdat", "bloc", "bsln", "cvar", "fdsc",
+            "feat", "fmtx", "fvar", "gvar", "hsty", "just", "lcar", "mort", "morx",
+            "opbd", "prop", "trak", "Zapf", "Silf", "Glat", "Gloc", "Feat", "Sill"
         };
 
         private const byte OneMoreByteCode1 = 255;
@@ -47,73 +47,56 @@ namespace SixLabors.Fonts.Tables
 
         public static Woff2TableHeader Read(BigEndianBinaryReader reader, uint expectedTableStartAt, out uint nextExpectedTableStartAt)
         {
-            byte flags = reader.ReadByte();
-            int knowTable = flags & 0x1F;
-            string tableName = (knowTable < 63) ? KnownTableTags[knowTable] : reader.ReadTag();
-            byte preprocessingTransformation = (byte)((flags >> 5) & 0x3);
+            // Leave the first byte open to store flagByte
+            const uint woff2FlagsTransform = 1 << 8;
+            byte flagsByte = reader.ReadByte();
+            int knownTable = flagsByte & 0x3F;
+            string tableName = knownTable == 0x3F ? reader.ReadTag() : KnownTableTags[knownTable];
+
+            uint flags = 0;
+            byte xformVersion = (byte)((flagsByte >> 6) & 0x03);
+
+            // 0 means xform for glyph/loca, non-0 for others
+            if (tableName is "glyf" or "loca")
+            {
+                if (xformVersion == 0)
+                {
+                    flags |= woff2FlagsTransform;
+                }
+            }
+            else if (xformVersion != 0)
+            {
+                flags |= woff2FlagsTransform;
+            }
+
+            flags |= xformVersion;
 
             if (!ReadUIntBase128(reader, out uint tableOrigLength))
             {
                 throw new FontException("Error parsing woff2 table header");
             }
 
-            var woffTableHeader = new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableOrigLength);
-            uint tableTransformLength = 0;
-            nextExpectedTableStartAt = expectedTableStartAt;
-            switch (preprocessingTransformation)
+            uint tableTransformLength = tableOrigLength;
+            if ((flags & woff2FlagsTransform) != 0)
             {
-                default:
-                    break;
-                case 0:
-                    if (tableName == GlyphTable.TableName)
-                    {
-                        if (!ReadUIntBase128(reader, out tableTransformLength))
-                        {
-                            throw new FontException("Error parsing woff2 table header");
-                        }
+                if (!ReadUIntBase128(reader, out tableTransformLength))
+                {
+                    throw new FontException("Error parsing woff2 table header");
+                }
 
-                        nextExpectedTableStartAt += tableTransformLength;
-                    }
-                    else if (tableName == IndexLocationTable.TableName)
-                    {
-                        if (!ReadUIntBase128(reader, out tableTransformLength))
-                        {
-                            throw new FontException("Error parsing woff2 table header");
-                        }
-
-                        nextExpectedTableStartAt += tableTransformLength;
-                    }
-                    else
-                    {
-                        nextExpectedTableStartAt += tableOrigLength;
-                    }
-
-                    break;
-
-                case 1:
-                    nextExpectedTableStartAt += tableOrigLength;
-                    break;
-
-                case 2:
-                    nextExpectedTableStartAt += tableOrigLength;
-                    break;
-
-                case 3:
-                    nextExpectedTableStartAt += tableOrigLength;
-                    break;
+                if (tableName == "loca" && tableTransformLength > 0)
+                {
+                    throw new FontException("Error parsing woff2 table header");
+                }
             }
 
-            if (tableName == GlyphTable.TableName && preprocessingTransformation == 0)
+            nextExpectedTableStartAt = expectedTableStartAt + tableTransformLength;
+            if (nextExpectedTableStartAt < expectedTableStartAt)
             {
-                woffTableHeader = new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableTransformLength);
+                throw new FontException("Error parsing woff2 table header");
             }
 
-            if (tableName == IndexLocationTable.TableName && preprocessingTransformation == 0)
-            {
-                woffTableHeader = new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableTransformLength);
-            }
-
-            return woffTableHeader;
+            return new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableTransformLength);
         }
 
         public static GlyphLoader[] LoadAllGlyphs(BigEndianBinaryReader reader, EmptyGlyphLoader emptyGlyphLoader)
