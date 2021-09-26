@@ -132,6 +132,7 @@ namespace SixLabors.Fonts.Tests
             Font fontTtf = new FontCollection().Add(TestFonts.OpenSansVersion26File).CreateFont(12);
             Font fontWoff = new FontCollection().Add(TestFonts.OpenSansVersion26FileWoff).CreateFont(12);
             string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            int expectedControlPointsCount = 1238;
 
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
@@ -144,6 +145,7 @@ namespace SixLabors.Fonts.Tests
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 
+            Assert.Equal(expectedControlPointsCount, rendererWoff.ControlPoints.Count);
             Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff.ControlPoints));
         }
 

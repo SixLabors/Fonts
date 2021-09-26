@@ -24,6 +24,7 @@ namespace SixLabors.Fonts.Tests
 
         public static string OpenSansFileWoff2 => GetFullPath("OpenSans-Regular.woff2");
 
+        // Font from: https://google-webfonts-helper.herokuapp.com/fonts/open-sans?subsets=cyrillic,cyrillic-ext,greek,greek-ext,hebrew,latin,latin-ext,vietnamese
         public static string OpenSansVersion26File => GetFullPath("OpenSans-v26-Regular.ttf");
 
         public static string OpenSansVersion26FileWoff => GetFullPath("OpenSans-v26-Regular.woff");
