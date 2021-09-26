@@ -25,7 +25,12 @@ namespace SixLabors.Fonts.Tables
             stream.Seek(this.Offset, SeekOrigin.Begin);
             using var compressedStream = new IO.ZlibInflateStream(stream);
             byte[] uncompressedBytes = new byte[this.Length];
-            compressedStream.Read(uncompressedBytes, 0, uncompressedBytes.Length);
+            int bytesRead = compressedStream.Read(uncompressedBytes, 0, uncompressedBytes.Length);
+            if (bytesRead < this.Length)
+            {
+                throw new InvalidFontFileException($"Could not read compressed data! Expected bytes: {this.Length}, bytes read: {bytesRead}");
+            }
+
             var memoryStream = new MemoryStream(uncompressedBytes);
             return new BigEndianBinaryReader(memoryStream, false);
         }
