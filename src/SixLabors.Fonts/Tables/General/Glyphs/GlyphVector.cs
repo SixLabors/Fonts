@@ -8,11 +8,9 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 {
     internal struct GlyphVector : IDeepCloneable
     {
-        private Vector2[] controlPoints;
-
         internal GlyphVector(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds)
         {
-            this.controlPoints = controlPoints;
+            this.ControlPoints = controlPoints;
             this.OnCurves = onCurves;
             this.EndPoints = endPoints;
             this.Bounds = bounds;
@@ -20,8 +18,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         private GlyphVector(GlyphVector other)
         {
-            this.controlPoints = new Vector2[other.ControlPoints.Length];
-            other.ControlPoints.CopyTo(this.controlPoints.AsSpan());
+            this.ControlPoints = new Vector2[other.ControlPoints.Length];
+            other.ControlPoints.CopyTo(this.ControlPoints.AsSpan());
             this.OnCurves = new bool[other.OnCurves.Length];
             other.OnCurves.CopyTo(this.OnCurves.AsSpan());
             this.EndPoints = new ushort[other.EndPoints.Length];
@@ -32,7 +30,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public int PointCount => this.ControlPoints.Length;
 
-        public Vector2[] ControlPoints => this.controlPoints;
+        public Vector2[] ControlPoints { get; }
 
         public ushort[] EndPoints { get; }
 
@@ -44,81 +42,65 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         public IDeepCloneable DeepClone() => new GlyphVector(this);
 
         /// <summary>
-        /// TrueType outline, offset glyph points.
-        /// Change the bounding box on the current glyph.
+        /// Transforms a glyph vector by a specified 3x2 matrix.
         /// </summary>
-        /// <param name="dx">The delta x.</param>
-        /// <param name="dy">The delta y.</param>
-        public void TtfOffsetXy(short dx, short dy)
+        /// <param name="src">THe glyph vector to transform.</param>
+        /// <param name="matrix">The transformation matrix.</param>
+        /// <returns>The new <see cref="GlyphVector"/>.</returns>
+        public static GlyphVector Transform(GlyphVector src, Matrix3x2 matrix)
         {
-            Vector2[] glyphPoints = this.ControlPoints;
-            for (int i = glyphPoints.Length - 1; i >= 0; --i)
+            var controlPoints = new Vector2[src.PointCount];
+            bool[] onCurves = new bool[src.OnCurves.Length];
+            ushort[] endPoints = new ushort[src.EndPoints.Length];
+
+            for (int i = 0; i < controlPoints.Length; i++)
             {
-                glyphPoints[i] = Offset(glyphPoints[i], dx, dy);
+                controlPoints[i] = Vector2.Transform(src.ControlPoints[i], matrix);
             }
 
-            Bounds orgBounds = this.Bounds;
-            this.Bounds = new Bounds(
-                orgBounds.Min.X + dx,
-                orgBounds.Min.Y + dy,
-                orgBounds.Max.X + dx,
-                orgBounds.Max.Y + dy);
+            src.OnCurves.AsSpan().CopyTo(onCurves);
+            src.EndPoints.AsSpan().CopyTo(endPoints);
+
+            var bounds = new Bounds(
+                Vector2.Transform(src.Bounds.Min, matrix),
+                Vector2.Transform(src.Bounds.Max, matrix));
+
+            return new GlyphVector(controlPoints, onCurves, endPoints, bounds);
         }
 
         /// <summary>
-        /// Append glyph control points to the current instance.
+        /// Appends the second glyph vector's controls points to the first.
         /// </summary>
-        /// <param name="src">The source glyph which points will be appended.</param>
-        public void TtfAppendGlyph(GlyphVector src)
+        /// <param name="first">The first glyph vector.</param>
+        /// <param name="second">The second glyph vector.</param>
+        /// <returns>The new <see cref="GlyphVector"/>.</returns>
+        public static GlyphVector Append(GlyphVector first, GlyphVector second)
         {
-            int destPointsCount = this.controlPoints.Length;
-            Vector2[] srcPoints = src.ControlPoints;
-            Array.Resize(ref this.controlPoints, this.controlPoints.Length + srcPoints.Length);
-            srcPoints.CopyTo(this.controlPoints.AsSpan(destPointsCount));
-        }
-
-        public void TtfTransformWithMatrix(float m00, float m01, float m10, float m11)
-        {
-            // Change data on current glyph.
-            // http://stackoverflow.com/questions/13188156/whats-the-different-between-vector2-transform-and-vector2-transformnormal-i
-            // http://www.technologicalutopia.com/sourcecode/xnageometry/vector2.cs.htm
-            float newXmin = 0;
-            float newYmin = 0;
-            float newXmax = 0;
-            float newYmax = 0;
-            var m = new Matrix4x4(m00, m01, 0.0f, 0.0f, m10, m11, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-
-            Vector2[] glyphPoints = this.ControlPoints;
-            for (int i = 0; i < glyphPoints.Length; ++i)
+            // No IEquality<GlyphVector> implementation
+            if (first.ControlPoints is null)
             {
-                var transformedGlyphPoint = Vector2.TransformNormal(glyphPoints[i], m);
-                float newX = (float)Math.Round(transformedGlyphPoint.X);
-                float newY = (float)Math.Round(transformedGlyphPoint.Y);
-                glyphPoints[i] = transformedGlyphPoint;
-                if (newX < newXmin)
-                {
-                    newXmin = newX;
-                }
-
-                if (newX > newXmax)
-                {
-                    newXmax = newX;
-                }
-
-                if (newY < newYmin)
-                {
-                    newYmin = newY;
-                }
-
-                if (newY > newYmax)
-                {
-                    newYmax = newY;
-                }
+                return new GlyphVector(second);
             }
 
-            this.Bounds = new Bounds((short)newXmin, (short)newYmin, (short)newXmax, (short)newYmax);
-        }
+            var controlPoints = new Vector2[first.PointCount + second.PointCount];
+            first.ControlPoints.AsSpan().CopyTo(controlPoints);
+            second.ControlPoints.AsSpan().CopyTo(controlPoints.AsSpan(first.PointCount));
 
-        private static Vector2 Offset(Vector2 p, short dx, short dy) => new Vector2(p.X + dx, p.Y + dy);
+            bool[] onCurves = new bool[first.OnCurves.Length + second.OnCurves.Length];
+            first.OnCurves.AsSpan().CopyTo(onCurves);
+            second.OnCurves.AsSpan().CopyTo(onCurves.AsSpan(first.OnCurves.Length));
+
+            ushort[] endPoints = new ushort[first.EndPoints.Length + second.EndPoints.Length];
+            first.EndPoints.AsSpan().CopyTo(endPoints);
+            int offset = first.EndPoints.Length;
+            ushort endPointOffset = (ushort)first.PointCount;
+            for (int i = 0; i < second.EndPoints.Length; i++)
+            {
+                endPoints[i + offset] = (ushort)(second.EndPoints[i] + endPointOffset);
+            }
+
+            var bounds = new Bounds(first.Bounds.Min, first.Bounds.Max);
+            return new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+        }
     }
 }

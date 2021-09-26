@@ -490,141 +490,53 @@ namespace SixLabors.Fonts.Tables
             // 3a.If any of the flag words had the FLAG_WE_HAVE_INSTRUCTIONS bit(bit 8) set,
             // then read the instructions from the glyph and store them in the reconstructed glyph,
             // using the same process as described in steps 4 and 5 above (see Building Simple Glyph).
-            var finalGlyph = default(GlyphVector);
+            GlyphVector finalGlyph = default;
             CompositeGlyphFlags flags;
             do
             {
-                flags = (CompositeGlyphFlags)reader.ReadUInt16();
+                flags = reader.ReadUInt16<CompositeGlyphFlags>();
                 ushort glyphIndex = reader.ReadUInt16();
-                if (createdGlyphs[glyphIndex].Equals(default(GlyphVector)))
+
+                // No IEquality<GlyphVector> implementation
+                if (createdGlyphs[glyphIndex].ControlPoints is null)
                 {
                     // This glyph is not read yet, resolve it first!
                     long storedOffset = reader.BaseStream.Position;
-                    GlyphVector missingGlyph = ReadCompositeGlyph(createdGlyphs, reader);
-                    createdGlyphs[glyphIndex] = missingGlyph;
+                    createdGlyphs[glyphIndex] = ReadCompositeGlyph(createdGlyphs, reader);
                     reader.BaseStream.Position = storedOffset;
                 }
 
-                var glyphClone = (GlyphVector)createdGlyphs[glyphIndex].DeepClone();
-                var newGlyph = (GlyphVector)createdGlyphs[glyphIndex].DeepClone();
+                CompositeGlyphLoader.LoadArguments(reader, flags, out int dx, out int dy);
 
-                short arg1 = 0;
-                short arg2 = 0;
-                ushort arg1and2 = 0;
+                Matrix3x2 transform = Matrix3x2.Identity;
+                transform.Translation = new Vector2(dx, dy);
 
-                if (flags.HasFlag(CompositeGlyphFlags.Args1And2AreWords))
+                if ((flags & CompositeGlyphFlags.WeHaveAScale) != 0)
                 {
-                    arg1 = reader.ReadInt16();
-                    arg2 = reader.ReadInt16();
+                    float scale = reader.ReadF2dot14(); // Format 2.14
+                    transform.M11 = scale;
+                    transform.M21 = scale;
                 }
-                else
+                else if ((flags & CompositeGlyphFlags.WeHaveXAndYScale) != 0)
                 {
-                    arg1and2 = reader.ReadUInt16();
+                    transform.M11 = reader.ReadF2dot14();
+                    transform.M22 = reader.ReadF2dot14();
                 }
-
-                //-----------------------------------------
-                float xscale = 1;
-                float scale01 = 0;
-                float scale10 = 0;
-                float yscale = 1;
-
-                bool useMatrix = false;
-                bool hasScale = false;
-                if (flags.HasFlag(CompositeGlyphFlags.WeHaveAScale))
+                else if ((flags & CompositeGlyphFlags.WeHaveATwoByTwo) != 0)
                 {
-                    // If the bit WE_HAVE_A_SCALE is set,
-                    // the scale value is read in 2.14 format-the value can be between -2 to almost +2.
-                    // The glyph will be scaled by this value before grid-fitting.
-                    xscale = yscale = reader.ReadF2dot14();
-                    hasScale = true;
-                }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveXAndYScale))
-                {
-                    xscale = reader.ReadF2dot14();
-                    yscale = reader.ReadF2dot14();
-                    hasScale = true;
-                }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveATwoByTwo))
-                {
-                    // The bit WE_HAVE_A_TWO_BY_TWO allows for linear transformation of the X and Y coordinates by specifying a 2 × 2 matrix.
-                    // This could be used for scaling and 90-degree*** rotations of the glyph components, for example.
-
-                    // 2x2 matrix
-
-                    // The purpose of USE_MY_METRICS is to force the lsb and rsb to take on a desired value.
-                    // For example, an i-circumflex (U+00EF) is often composed of the circumflex and a dotless-i.
-                    // In order to force the composite to have the same metrics as the dotless-i,
-                    // set USE_MY_METRICS for the dotless-i component of the composite.
-                    // Without this bit, the rsb and lsb would be calculated from the hmtx entry for the composite
-                    // (or would need to be explicitly set with TrueType instructions).
-
-                    // Note that the behavior of the USE_MY_METRICS operation is undefined for rotated composite components.
-                    useMatrix = true;
-                    hasScale = true;
-                    xscale = reader.ReadF2dot14();
-                    scale01 = reader.ReadF2dot14();
-                    scale10 = reader.ReadF2dot14();
-                    yscale = reader.ReadF2dot14();
+                    transform.M11 = reader.ReadF2dot14();
+                    transform.M12 = reader.ReadF2dot14();
+                    transform.M21 = reader.ReadF2dot14();
+                    transform.M22 = reader.ReadF2dot14();
                 }
 
-                //--------------------------------------------------------------------
-                if (flags.HasFlag(CompositeGlyphFlags.ArgsAreXYValues))
-                {
-                    // Argument1 and argument2 can be either x and y offsets to be added to the glyph or two point numbers.
-                    // x and y offsets to be added to the glyph
-                    // When arguments 1 and 2 are an x and a y offset instead of points and the bit ROUND_XY_TO_GRID is set to 1,
-                    // the values are rounded to those of the closest grid lines before they are added to the glyph.
-                    // X and Y offsets are described in FUnits.
-                    if (useMatrix)
-                    {
-                        newGlyph.TtfTransformWithMatrix(xscale, scale01, scale10, yscale);
-                        newGlyph.TtfOffsetXy(arg1, arg2);
-                    }
-                    else
-                    {
-                        if (hasScale)
-                        {
-                            if (!(xscale == 1.0 && yscale == 1.0))
-                            {
-                                newGlyph.TtfTransformWithMatrix(xscale, 0, 0, yscale);
-                            }
-
-                            newGlyph.TtfOffsetXy(arg1, arg2);
-                        }
-                        else
-                        {
-                            if (flags.HasFlag(CompositeGlyphFlags.RoundXYToGrid))
-                            {
-                                // TODO: implement round xy to grid
-                            }
-
-                            // just offset.
-                            newGlyph.TtfOffsetXy(arg1, arg2);
-                        }
-                    }
-                }
-                else
-                {
-                    // two point numbers.
-                    // the first point number indicates the point that is to be matched to the new glyph.
-                    // The second number indicates the new glyph's “matched” point.
-                    // Once a glyph is added,its point numbers begin directly after the last glyphs (endpoint of first glyph + 1)
-                }
-
-                if (finalGlyph.Equals(default(GlyphVector)))
-                {
-                    finalGlyph = newGlyph;
-                }
-                else
-                {
-                    finalGlyph.TtfAppendGlyph(newGlyph);
-                }
+                finalGlyph = GlyphVector.Append(finalGlyph, GlyphVector.Transform(createdGlyphs[glyphIndex], transform));
             }
-            while (flags.HasFlag(CompositeGlyphFlags.MoreComponents));
+            while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
-            if (flags.HasFlag(CompositeGlyphFlags.WeHaveInstructions))
+            if ((flags & CompositeGlyphFlags.WeHaveInstructions) != 0)
             {
-                // Read this later.
+                // TODO: Read this later.
                 // ushort numInstr = reader.ReadUInt16();
                 // byte[] insts = reader.ReadBytes(numInstr);
                 // finalGlyph.GlyphInstructions = insts;
