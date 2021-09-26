@@ -114,7 +114,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             Assert.Equal(expectedBounds.Min.X, transformed.Bounds.Min.X, precision);
             Assert.Equal(expectedBounds.Min.Y, transformed.Bounds.Min.Y, precision);
             Assert.Equal(expectedBounds.Max.X, transformed.Bounds.Max.X, precision);
-            Assert.Equal(expectedBounds.Max.X, transformed.Bounds.Max.X, precision);
+            Assert.Equal(expectedBounds.Max.Y, transformed.Bounds.Max.Y, precision);
         }
     }
 }
