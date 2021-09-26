@@ -1,10 +1,12 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics;
 using System.Text;
 
 namespace SixLabors.Fonts.Utilities
 {
+    [DebuggerDisplay("Offset: {Offset}, Length: {Length}, Value: {Value}")]
     internal class StringLoader
     {
         public StringLoader(ushort length, ushort offset, Encoding encoding)

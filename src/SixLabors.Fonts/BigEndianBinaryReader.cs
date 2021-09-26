@@ -3,6 +3,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -12,6 +13,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// BinaryReader using big-endian encoding.
     /// </summary>
+    [DebuggerDisplay("Start: {StartOfStream}, Position: {BaseStream.Position}")]
     internal class BigEndianBinaryReader : IDisposable
     {
         /// <summary>
