@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tables
 {
     // Source code is based on https://github.com/LayoutFarm/Typography
     // see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
-    internal class Woff2Utils
+    internal static class Woff2Utils
     {
         // We don't reuse the const tag headers from our table types for clarity.
         private static readonly string[] KnownTableTags =
@@ -101,6 +101,48 @@ namespace SixLabors.Fonts.Tables
 
         public static GlyphLoader[] LoadAllGlyphs(BigEndianBinaryReader reader, EmptyGlyphLoader emptyGlyphLoader)
         {
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Data Type | Semantic              | Description and value type (if applicable)                                                            |
+            // +===========+=======================+=======================================================================================================+
+            // | Fixed     | version               | = 0x00000000                                                                                          |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt16    | numGlyphs             | Number of glyphs                                                                                      |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt16    | indexFormat           | Offset format for loca table, should be consistent with indexToLocFormat                              |
+            // |           |                       | of the original head table (see specification)                                                        |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | nContourStreamSize    | Size of nContour stream in bytes                                                                      |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | nPointsStreamSize     | Size of nPoints stream in bytes                                                                       |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | flagStreamSize        | Size of flag stream in bytes                                                                          |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | glyphStreamSize       | Size of glyph stream in bytes (a stream of variable-length encoded values, see description below)     |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | compositeStreamSize   | Size of composite stream in bytes (a stream of variable-length encoded values, see description below) |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | bboxStreamSize        | Size of bbox data in bytes representing combined length of bboxBitmap (a packed bit array)            |
+            // |           |                       | and bboxStream (a stream of Int16 values)                                                             |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | instructionStreamSize | Size of instruction stream (a stream of UInt8 values)                                                 |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Int16     | nContourStream[]      | Stream of Int16 values representing number of contours for each glyph record                          |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | 255UInt16 | nPointsStream[]       | Stream of values representing number of outline points for each contour in glyph records              |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt8     | flagStream[]          | Stream of UInt8 values representing flag values for each outline point.                               |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Vary      | glyphStream[]         | Stream of bytes representing point coordinate values using variable length                            |
+            // |           |                       | encoding format (defined in subclause 5.2)                                                            |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Vary      | compositeStream[]     | Stream of bytes representing component flag values and associated composite glyph data                |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt8     | bboxBitmap[]          | Bitmap (a numGlyphs-long bit array) indicating explicit bounding boxes                                |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Int16     | bboxStream[]          | Stream of Int16 values representing glyph bounding box data                                           |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt8     | instructionStream[]   | Stream of UInt8 values representing a set of instructions for each corresponding glyph                |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
             uint version = reader.ReadUInt32();
             ushort numGlyphs = reader.ReadUInt16();
             ushort indexFormatOffset = reader.ReadUInt16();
@@ -137,7 +179,7 @@ namespace SixLabors.Fonts.Tables
                     contourCount += numContour;
 
                     // >0 => simple glyph
-                    // -1 = compound
+                    // -1 = composite
                     // 0 = empty glyph
                 }
                 else if (numContour < 0)
@@ -396,72 +438,39 @@ namespace SixLabors.Fonts.Tables
 
         private static bool CompositeHasInstructions(BigEndianBinaryReader reader)
         {
-            CompositeGlyphFlags flags;
-            do
+            bool weHaveInstructions = false;
+            CompositeGlyphFlags flags = CompositeGlyphFlags.MoreComponents;
+            while ((flags & CompositeGlyphFlags.MoreComponents) != 0)
             {
-                flags = (CompositeGlyphFlags)reader.ReadUInt16();
-                ushort glyphIndex = reader.ReadUInt16();
-                short arg1 = 0;
-                short arg2 = 0;
-                ushort arg1and2 = 0;
-                if (flags.HasFlag(CompositeGlyphFlags.ArgsAreWords))
+                flags = reader.ReadUInt16<CompositeGlyphFlags>();
+                weHaveInstructions |= (flags & CompositeGlyphFlags.WeHaveInstructions) != 0;
+                int argSize = 2; // glyph index
+                if ((flags & CompositeGlyphFlags.Args1And2AreWords) != 0)
                 {
-                    arg1 = reader.ReadInt16();
-                    arg2 = reader.ReadInt16();
+                    argSize += 4;
                 }
                 else
                 {
-                    arg1and2 = reader.ReadUInt16();
+                    argSize += 2;
                 }
 
-                float xscale = 1;
-                float scale01 = 0;
-                float scale10 = 0;
-                float yscale = 1;
-
-                // bool useMatrix = false;
-                // bool hasScale = false;
-                if (flags.HasFlag(CompositeGlyphFlags.WeHaveAScale))
+                if ((flags & CompositeGlyphFlags.WeHaveAScale) != 0)
                 {
-                    // If the bit WE_HAVE_A_SCALE is set, the scale value is read in 2.14 format-the value can be between -2 to almost +2.
-                    // The glyph will be scaled by this value before grid-fitting.
-                    xscale = yscale = reader.ReadF2dot14();
-
-                    // hasScale = true;
+                    argSize += 2;
                 }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveXAndYScale))
+                else if ((flags & CompositeGlyphFlags.WeHaveXAndYScale) != 0)
                 {
-                    xscale = reader.ReadF2dot14();
-                    yscale = reader.ReadF2dot14();
-
-                    // hasScale = true;
+                    argSize += 4;
                 }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveATwoByTwo))
+                else if ((flags & CompositeGlyphFlags.WeHaveATwoByTwo) != 0)
                 {
-                    // The bit WE_HAVE_A_TWO_BY_TWO allows for linear transformation of the X and Y coordinates by specifying a 2 × 2 matrix.
-                    // This could be used for scaling and 90-degree*** rotations of the glyph components, for example.
-
-                    // 2x2 matrix
-
-                    // The purpose of USE_MY_METRICS is to force the lsb and rsb to take on a desired value.
-                    // For example, an i-circumflex (U+00EF) is often composed of the circumflex and a dotless-i.
-                    // In order to force the composite to have the same metrics as the dotless-i,
-                    // set USE_MY_METRICS for the dotless-i component of the composite.
-                    // Without this bit, the rsb and lsb would be calculated from the hmtx entry for the composite
-                    // (or would need to be explicitly set with TrueType instructions).
-
-                    // Note that the behavior of the USE_MY_METRICS operation is undefined for rotated composite components.
-                    // useMatrix = true;
-                    // hasScale = true;
-                    xscale = reader.ReadF2dot14();
-                    scale01 = reader.ReadF2dot14();
-                    scale10 = reader.ReadF2dot14();
-                    yscale = reader.ReadF2dot14();
+                    argSize += 8;
                 }
+
+                reader.BaseStream.Seek(argSize, SeekOrigin.Current);
             }
-            while (flags.HasFlag(CompositeGlyphFlags.MoreComponents));
 
-            return flags.HasFlag(CompositeGlyphFlags.WeHaveInstructions);
+            return weHaveInstructions;
         }
 
         private static GlyphVector ReadCompositeGlyph(GlyphVector[] createdGlyphs, BigEndianBinaryReader reader)
@@ -503,7 +512,7 @@ namespace SixLabors.Fonts.Tables
                 short arg2 = 0;
                 ushort arg1and2 = 0;
 
-                if (flags.HasFlag(CompositeGlyphFlags.ArgsAreWords))
+                if (flags.HasFlag(CompositeGlyphFlags.Args1And2AreWords))
                 {
                     arg1 = reader.ReadInt16();
                     arg2 = reader.ReadInt16();

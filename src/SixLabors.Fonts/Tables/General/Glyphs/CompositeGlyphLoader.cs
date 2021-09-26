@@ -97,7 +97,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         private static void LoadArguments(BigEndianBinaryReader reader, CompositeGlyphFlags flags, out int dx, out int dy)
         {
             // are we 16 or 8 bits values?
-            if (flags.HasFlag(CompositeGlyphFlags.ArgsAreWords))
+            if (flags.HasFlag(CompositeGlyphFlags.Args1And2AreWords))
             {
                 // 16 bit
                 // are we int or unit?

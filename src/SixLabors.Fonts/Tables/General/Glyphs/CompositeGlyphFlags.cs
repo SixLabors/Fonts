@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
+
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {
     /*
@@ -22,9 +24,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
     | 0x1000 | UNSCALED_COMPONENT_OFFSET| Bit 12: The composite is designed not to have the component offset scaled.
     | 0xE010 | Reserved                 | Bits 4, 13, 14 and 15 are reserved: set to 0.
      */
+    [Flags]
     internal enum CompositeGlyphFlags : ushort
     {
-        ArgsAreWords = 1,    // If this is set, the arguments are words; otherwise, they are bytes.
+        Args1And2AreWords = 1,    // If this is set, the arguments are words; otherwise, they are bytes.
         ArgsAreXYValues = 2, // If this is set, the arguments are xy values; otherwise, they are points.
         RoundXYToGrid = 4,   // For the xy values if the preceding is true.
         WeHaveAScale = 8,    // This indicates that there is a simple scale for the component. Otherwise, scale = 1.0.
