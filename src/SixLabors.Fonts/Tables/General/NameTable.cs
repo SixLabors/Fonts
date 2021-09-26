@@ -148,12 +148,10 @@ namespace SixLabors.Fonts.Tables.General
                 }
             }
 
-            IOrderedEnumerable<StringLoader> orderedStrings = strings.OrderBy(x => x.Offset);
-            foreach (StringLoader readable in orderedStrings)
+            foreach (StringLoader readable in strings)
             {
                 int readableStartOffset = stringOffset + readable.Offset;
 
-                // Only seek forward, if we find issues with this we will consume forwards as the idea is we will never need to backtrack.
                 reader.Seek(readableStartOffset, SeekOrigin.Begin);
 
                 readable.LoadValue(reader);

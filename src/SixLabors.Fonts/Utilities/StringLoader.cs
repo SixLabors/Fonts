@@ -29,7 +29,7 @@ namespace SixLabors.Fonts.Utilities
             => Create(reader, Encoding.BigEndianUnicode);
 
         public static StringLoader Create(BigEndianBinaryReader reader, Encoding encoding)
-            => new(reader.ReadUInt16(), reader.ReadUInt16(), encoding);
+            => new StringLoader(reader.ReadUInt16(), reader.ReadUInt16(), encoding);
 
         public void LoadValue(BigEndianBinaryReader reader)
             => this.Value = reader.ReadString(this.Length, this.Encoding).Replace("\0", string.Empty);
