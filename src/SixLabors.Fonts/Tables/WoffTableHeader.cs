@@ -42,7 +42,8 @@ namespace SixLabors.Fonts.Tables
         // UInt32 | origLength   | Length of the uncompressed table, excluding padding.
         // UInt32 | origChecksum | Checksum of the uncompressed table.
         public static new WoffTableHeader Read(BigEndianBinaryReader reader) =>
-            new WoffTableHeader(reader.ReadTag(),
+            new WoffTableHeader(
+                reader.ReadTag(),
                 reader.ReadUInt32(),
                 reader.ReadUInt32(),
                 reader.ReadUInt32(),
