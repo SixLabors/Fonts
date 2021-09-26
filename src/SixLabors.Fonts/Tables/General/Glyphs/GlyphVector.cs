@@ -44,7 +44,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         /// <summary>
         /// Transforms a glyph vector by a specified 3x2 matrix.
         /// </summary>
-        /// <param name="src">THe glyph vector to transform.</param>
+        /// <param name="src">The glyph vector to transform.</param>
         /// <param name="matrix">The transformation matrix.</param>
         /// <returns>The new <see cref="GlyphVector"/>.</returns>
         public static GlyphVector Transform(GlyphVector src, Matrix3x2 matrix)
@@ -69,14 +69,14 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         }
 
         /// <summary>
-        /// Appends the second glyph vector's controls points to the first.
+        /// Appends the second glyph vector's control points to the first.
         /// </summary>
         /// <param name="first">The first glyph vector.</param>
         /// <param name="second">The second glyph vector.</param>
         /// <returns>The new <see cref="GlyphVector"/>.</returns>
         public static GlyphVector Append(GlyphVector first, GlyphVector second)
         {
-            // No IEquality<GlyphVector> implementation
+            // No IEquality<GlyphVector> implementation.
             if (first.ControlPoints is null)
             {
                 return new GlyphVector(second);
