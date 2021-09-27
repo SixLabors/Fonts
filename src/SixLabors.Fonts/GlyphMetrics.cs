@@ -154,7 +154,8 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="x">The x-offset.</param>
         /// <param name="y">The y-offset.</param>
-        internal void ApplyOffset(short x, short y) => this.vector.OffsetXy(x, y);
+        internal void ApplyOffset(short x, short y)
+            => this.vector = GlyphVector.Translate(this.vector, x, y);
 
         /// <summary>
         /// Applies an advance to the glyph.
@@ -163,9 +164,6 @@ namespace SixLabors.Fonts
         /// <param name="y">The y-advance.</param>
         internal void ApplyAdvance(short x, short y)
         {
-            // TODO: We should be setting X and Y based upon the writing direction.
-            // That ideally would be passed via render options.
-            // vertical or horizontal.
             this.AdvanceWidth = (ushort)(this.AdvanceWidth + x);
 
             // AdvanceHeight values grow downward but font-space grows upward, hence negation
