@@ -77,32 +77,6 @@ namespace SixLabors.Fonts
             }
 
             bidi.Process(bidiData);
-            ArraySlice<sbyte> resolvedLevels = bidi.ResolvedLevels;
-
-            // Now process the embedded runs
-            if (options.TextDirection != TextDirection.Auto)
-            {
-                // Restore types
-                bidiData.RestoreTypes();
-
-                // Get a temp buffer to store the results
-                // (We can't use the Bidi's built in buffer because we're about to patch it)
-                ArraySlice<sbyte> levels = bidiData.GetTempLevelBuffer(bidiData.Types.Length);
-
-                // Reprocess the data
-                bidi.Process(
-                    bidiData.Types,
-                    bidiData.PairedBracketTypes,
-                    bidiData.PairedBracketValues,
-                    (sbyte)options.TextDirection,
-                    bidiData.HasBrackets,
-                    bidiData.HasEmbeddings,
-                    bidiData.HasIsolates,
-                    levels);
-
-                // Copy result levels back to the full level set
-                levels.Span.CopyTo(resolvedLevels.Span);
-            }
 
             // Get the list of directional runs
             BidiRun[] bidiRuns = BidiRun.CoalesceLevels(bidi.ResolvedLevels).ToArray();
@@ -160,20 +134,20 @@ namespace SixLabors.Fonts
             List<GlyphLayout> glyphs = new();
 
             Vector2 location = options.Origin / new Vector2(options.DpiX, options.DpiY);
-            float maxScaledAscender = textBox.ScaledMaxAscender;
             float maxScaledAdvance = textBox.TextLines.Max(x => x.ScaledLineAdvance());
+            TextDirection direction = textBox.TextDirection();
             if (layoutMode == LayoutMode.HorizontalTopBottom)
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
             else if (layoutMode == LayoutMode.HorizontalBottomTop)
             {
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
             else if (layoutMode == LayoutMode.VerticalLeftRight)
@@ -182,14 +156,14 @@ namespace SixLabors.Fonts
                 {
                     // TODO: Investigate and implement this so we can make LayoutMode public.
                     // https://www.unicode.org/reports/tr50/
-                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
             else
             {
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
 
@@ -199,6 +173,7 @@ namespace SixLabors.Fonts
         private static IEnumerable<GlyphLayout> LayoutLineHorizontal(
             TextBox textBox,
             TextLine textLine,
+            TextDirection direction,
             float maxScaledAdvance,
             RendererOptions options,
             bool first,
@@ -242,14 +217,29 @@ namespace SixLabors.Fonts
             }
 
             // Set the alignment of lines within the text.
-            switch (options.TextAlignment)
+            if (direction == TextDirection.LeftToRight)
             {
-                case TextAlignment.Right:
-                    offsetX += maxScaledAdvance - textLine.ScaledLineAdvance();
-                    break;
-                case TextAlignment.Center:
-                    offsetX += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
-                    break;
+                switch (options.TextAlignment)
+                {
+                    case TextAlignment.End:
+                        offsetX += maxScaledAdvance - textLine.ScaledLineAdvance();
+                        break;
+                    case TextAlignment.Center:
+                        offsetX += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
+                        break;
+                }
+            }
+            else
+            {
+                switch (options.TextAlignment)
+                {
+                    case TextAlignment.Start:
+                        offsetX += maxScaledAdvance - textLine.ScaledLineAdvance();
+                        break;
+                    case TextAlignment.Center:
+                        offsetX += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
+                        break;
+                }
             }
 
             location.X += offsetX;
@@ -293,6 +283,7 @@ namespace SixLabors.Fonts
         private static IEnumerable<GlyphLayout> LayoutLineVertical(
             TextBox textBox,
             TextLine textLine,
+            TextDirection direction,
             float maxScaledAdvance,
             RendererOptions options,
             bool first,
@@ -321,14 +312,29 @@ namespace SixLabors.Fonts
             }
 
             // Set the alignment of lines within the text.
-            switch (options.TextAlignment)
+            if (direction == TextDirection.LeftToRight)
             {
-                case TextAlignment.Right:
-                    offsetY += maxScaledAdvance - textLine.ScaledLineAdvance();
-                    break;
-                case TextAlignment.Center:
-                    offsetY += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
-                    break;
+                switch (options.TextAlignment)
+                {
+                    case TextAlignment.End:
+                        offsetY += maxScaledAdvance - textLine.ScaledLineAdvance();
+                        break;
+                    case TextAlignment.Center:
+                        offsetY += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
+                        break;
+                }
+            }
+            else
+            {
+                switch (options.TextAlignment)
+                {
+                    case TextAlignment.Start:
+                        offsetY += maxScaledAdvance - textLine.ScaledLineAdvance();
+                        break;
+                    case TextAlignment.Center:
+                        offsetY += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
+                        break;
+                }
             }
 
             location.Y += offsetY;
@@ -800,6 +806,8 @@ namespace SixLabors.Fonts
             public float ScaledMaxLeftSideBearing { get; }
 
             public ReadOnlyCollection<TextLine> TextLines { get; }
+
+            public TextDirection TextDirection() => this.TextLines[0][0].TextDirection;
         }
 
         internal sealed class TextLine
@@ -812,12 +820,6 @@ namespace SixLabors.Fonts
 
             public float ScaledLineAdvance()
                 => this.info.Sum(x => x.ScaledAdvance);
-
-            public float ScaledLineAdvanceWidth()
-                => this.info.Sum(x => x.Metrics.Max(y => y.AdvanceWidth) * x.PointSize / x.Metrics[0].ScaleFactor);
-
-            public float ScaledMaxAdvanceWidth()
-                => this.info.Max(x => x.Metrics.Max(y => y.AdvanceWidth) * x.PointSize / x.Metrics[0].ScaleFactor);
 
             public void Add(
                 GlyphMetrics[] metrics,

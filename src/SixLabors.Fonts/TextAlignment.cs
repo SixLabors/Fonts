@@ -9,14 +9,16 @@ namespace SixLabors.Fonts
     public enum TextAlignment
     {
         /// <summary>
-        /// Aligns text from the left.
+        /// Aligns text from the left or top when the text direction is <see cref="TextDirection.LeftToRight"/>
+        /// and from the right or bottom when the text direction is <see cref="TextDirection.RightToLeft"/>.
         /// </summary>
-        Left = 0,
+        Start = 0,
 
         /// <summary>
-        /// Aligns text from the right.
+        /// Aligns text from the right or bottom when the text direction is <see cref="TextDirection.LeftToRight"/>
+        /// and from the left or top when the text direction is <see cref="TextDirection.RightToLeft"/>.
         /// </summary>
-        Right = 1,
+        End = 1,
 
         /// <summary>
         /// Aligns text from the center.
