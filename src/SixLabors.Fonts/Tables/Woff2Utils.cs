@@ -6,8 +6,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Numerics;
-using SixLabors.Fonts.Tables.AdvancedTypographic;
-using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Glyphs;
 
 namespace SixLabors.Fonts.Tables
@@ -16,15 +14,16 @@ namespace SixLabors.Fonts.Tables
     // see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
     internal static class Woff2Utils
     {
+        // We don't reuse the const tag headers from our table types for clarity.
         private static readonly string[] KnownTableTags =
         {
-            CMapTable.TableName, HeadTable.TableName, HorizontalHeadTable.TableName, HorizontalMetricsTable.TableName,
-            MaximumProfileTable.TableName, NameTable.TableName, OS2Table.TableName, "post", "cvt ", "fpgm", GlyphTable.TableName,
-            IndexLocationTable.TableName, "prep", "CFF ", "VORG", "EBDT", "EBLC", "gasp", "hdmx", KerningTable.TableName, "LTSH",
-            "PCLT", "VDMX", VerticalHeadTable.TableName, VerticalMetricsTable.TableName, "BASE", "GDEF", "GPOS", GSubTable.TableName, "EBSC",
-            "JSTF", "MATH", "CBDT", "CBLC", ColrTable.TableName, CpalTable.TableName, "SVG ", "sbix", "acnt", "avar", "bdat",
-            "bloc", "bsln", "cvar", "fdsc", "feat", "fmtx", "fvar", "gvar", "hsty", "just", "lcar", "mort", "morx", "opbd",
-            "prop", "trak", "Zapf", "Silf", "Glat", "Gloc", "Feat", "Sill", "...." // Arbitrary tag follows.
+            "cmap", "head", "hhea", "hmtx", "maxp", "name", "OS/2", "post", "cvt ",
+            "fpgm", "glyf", "loca", "prep", "CFF ", "VORG", "EBDT", "EBLC", "gasp",
+            "hdmx", "kern", "LTSH", "PCLT", "VDMX", "vhea", "vmtx", "BASE", "GDEF",
+            "GPOS", "GSUB", "EBSC", "JSTF", "MATH", "CBDT", "CBLC", "COLR", "CPAL",
+            "SVG ", "sbix", "acnt", "avar", "bdat", "bloc", "bsln", "cvar", "fdsc",
+            "feat", "fmtx", "fvar", "gvar", "hsty", "just", "lcar", "mort", "morx",
+            "opbd", "prop", "trak", "Zapf", "Silf", "Glat", "Gloc", "Feat", "Sill"
         };
 
         private const byte OneMoreByteCode1 = 255;
@@ -48,77 +47,102 @@ namespace SixLabors.Fonts.Tables
 
         public static Woff2TableHeader Read(BigEndianBinaryReader reader, uint expectedTableStartAt, out uint nextExpectedTableStartAt)
         {
-            byte flags = reader.ReadByte();
-            int knowTable = flags & 0x1F;
-            string tableName = (knowTable < 63) ? KnownTableTags[knowTable] : reader.ReadTag();
-            byte preprocessingTransformation = (byte)((flags >> 5) & 0x3);
+            // Leave the first byte open to store flagByte
+            const uint woff2FlagsTransform = 1 << 8;
+            byte flagsByte = reader.ReadByte();
+            int knownTable = flagsByte & 0x3F;
+            string tableName = knownTable == 0x3F ? reader.ReadTag() : KnownTableTags[knownTable];
+
+            uint flags = 0;
+            byte xformVersion = (byte)((flagsByte >> 6) & 0x03);
+
+            // 0 means xform for glyph/loca, non-0 for others
+            if (tableName is "glyf" or "loca")
+            {
+                if (xformVersion == 0)
+                {
+                    flags |= woff2FlagsTransform;
+                }
+            }
+            else if (xformVersion != 0)
+            {
+                flags |= woff2FlagsTransform;
+            }
+
+            flags |= xformVersion;
 
             if (!ReadUIntBase128(reader, out uint tableOrigLength))
             {
                 throw new FontException("Error parsing woff2 table header");
             }
 
-            var woffTableHeader = new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableOrigLength);
-            uint tableTransformLength = 0;
-            nextExpectedTableStartAt = expectedTableStartAt;
-            switch (preprocessingTransformation)
+            uint tableTransformLength = tableOrigLength;
+            if ((flags & woff2FlagsTransform) != 0)
             {
-                default:
-                    break;
-                case 0:
-                    if (tableName == GlyphTable.TableName)
-                    {
-                        if (!ReadUIntBase128(reader, out tableTransformLength))
-                        {
-                            throw new FontException("Error parsing woff2 table header");
-                        }
+                if (!ReadUIntBase128(reader, out tableTransformLength))
+                {
+                    throw new FontException("Error parsing woff2 table header");
+                }
 
-                        nextExpectedTableStartAt += tableTransformLength;
-                    }
-                    else if (tableName == IndexLocationTable.TableName)
-                    {
-                        if (!ReadUIntBase128(reader, out tableTransformLength))
-                        {
-                            throw new FontException("Error parsing woff2 table header");
-                        }
-
-                        nextExpectedTableStartAt += tableTransformLength;
-                    }
-                    else
-                    {
-                        nextExpectedTableStartAt += tableOrigLength;
-                    }
-
-                    break;
-
-                case 1:
-                    nextExpectedTableStartAt += tableOrigLength;
-                    break;
-
-                case 2:
-                    nextExpectedTableStartAt += tableOrigLength;
-                    break;
-
-                case 3:
-                    nextExpectedTableStartAt += tableOrigLength;
-                    break;
+                if (tableName == "loca" && tableTransformLength > 0)
+                {
+                    throw new FontException("Error parsing woff2 table header");
+                }
             }
 
-            if (tableName == GlyphTable.TableName && preprocessingTransformation == 0)
+            nextExpectedTableStartAt = expectedTableStartAt + tableTransformLength;
+            if (nextExpectedTableStartAt < expectedTableStartAt)
             {
-                woffTableHeader = new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableTransformLength);
+                throw new FontException("Error parsing woff2 table header");
             }
 
-            if (tableName == IndexLocationTable.TableName && preprocessingTransformation == 0)
-            {
-                woffTableHeader = new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableTransformLength);
-            }
-
-            return woffTableHeader;
+            return new Woff2TableHeader(tableName, 0, expectedTableStartAt, tableTransformLength);
         }
 
         public static GlyphLoader[] LoadAllGlyphs(BigEndianBinaryReader reader, EmptyGlyphLoader emptyGlyphLoader)
         {
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Data Type | Semantic              | Description and value type (if applicable)                                                            |
+            // +===========+=======================+=======================================================================================================+
+            // | Fixed     | version               | = 0x00000000                                                                                          |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt16    | numGlyphs             | Number of glyphs                                                                                      |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt16    | indexFormat           | Offset format for loca table, should be consistent with indexToLocFormat                              |
+            // |           |                       | of the original head table (see specification)                                                        |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | nContourStreamSize    | Size of nContour stream in bytes                                                                      |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | nPointsStreamSize     | Size of nPoints stream in bytes                                                                       |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | flagStreamSize        | Size of flag stream in bytes                                                                          |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | glyphStreamSize       | Size of glyph stream in bytes (a stream of variable-length encoded values, see description below)     |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | compositeStreamSize   | Size of composite stream in bytes (a stream of variable-length encoded values, see description below) |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | bboxStreamSize        | Size of bbox data in bytes representing combined length of bboxBitmap (a packed bit array)            |
+            // |           |                       | and bboxStream (a stream of Int16 values)                                                             |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt32    | instructionStreamSize | Size of instruction stream (a stream of UInt8 values)                                                 |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Int16     | nContourStream[]      | Stream of Int16 values representing number of contours for each glyph record                          |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | 255UInt16 | nPointsStream[]       | Stream of values representing number of outline points for each contour in glyph records              |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt8     | flagStream[]          | Stream of UInt8 values representing flag values for each outline point.                               |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Vary      | glyphStream[]         | Stream of bytes representing point coordinate values using variable length                            |
+            // |           |                       | encoding format (defined in subclause 5.2)                                                            |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Vary      | compositeStream[]     | Stream of bytes representing component flag values and associated composite glyph data                |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt8     | bboxBitmap[]          | Bitmap (a numGlyphs-long bit array) indicating explicit bounding boxes                                |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | Int16     | bboxStream[]          | Stream of Int16 values representing glyph bounding box data                                           |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
+            // | UInt8     | instructionStream[]   | Stream of UInt8 values representing a set of instructions for each corresponding glyph                |
+            // +-----------+-----------------------+-------------------------------------------------------------------------------------------------------+
             uint version = reader.ReadUInt32();
             ushort numGlyphs = reader.ReadUInt16();
             ushort indexFormatOffset = reader.ReadUInt16();
@@ -155,7 +179,7 @@ namespace SixLabors.Fonts.Tables
                     contourCount += numContour;
 
                     // >0 => simple glyph
-                    // -1 = compound
+                    // -1 = composite
                     // 0 = empty glyph
                 }
                 else if (numContour < 0)
@@ -414,72 +438,39 @@ namespace SixLabors.Fonts.Tables
 
         private static bool CompositeHasInstructions(BigEndianBinaryReader reader)
         {
-            CompositeGlyphFlags flags;
-            do
+            bool weHaveInstructions = false;
+            CompositeGlyphFlags flags = CompositeGlyphFlags.MoreComponents;
+            while ((flags & CompositeGlyphFlags.MoreComponents) != 0)
             {
-                flags = (CompositeGlyphFlags)reader.ReadUInt16();
-                ushort glyphIndex = reader.ReadUInt16();
-                short arg1 = 0;
-                short arg2 = 0;
-                ushort arg1and2 = 0;
-                if (flags.HasFlag(CompositeGlyphFlags.ArgsAreWords))
+                flags = reader.ReadUInt16<CompositeGlyphFlags>();
+                weHaveInstructions |= (flags & CompositeGlyphFlags.WeHaveInstructions) != 0;
+                int argSize = 2; // glyph index
+                if ((flags & CompositeGlyphFlags.Args1And2AreWords) != 0)
                 {
-                    arg1 = reader.ReadInt16();
-                    arg2 = reader.ReadInt16();
+                    argSize += 4;
                 }
                 else
                 {
-                    arg1and2 = reader.ReadUInt16();
+                    argSize += 2;
                 }
 
-                float xscale = 1;
-                float scale01 = 0;
-                float scale10 = 0;
-                float yscale = 1;
-
-                // bool useMatrix = false;
-                // bool hasScale = false;
-                if (flags.HasFlag(CompositeGlyphFlags.WeHaveAScale))
+                if ((flags & CompositeGlyphFlags.WeHaveAScale) != 0)
                 {
-                    // If the bit WE_HAVE_A_SCALE is set, the scale value is read in 2.14 format-the value can be between -2 to almost +2.
-                    // The glyph will be scaled by this value before grid-fitting.
-                    xscale = yscale = reader.ReadF2dot14();
-
-                    // hasScale = true;
+                    argSize += 2;
                 }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveXAndYScale))
+                else if ((flags & CompositeGlyphFlags.WeHaveXAndYScale) != 0)
                 {
-                    xscale = reader.ReadF2dot14();
-                    yscale = reader.ReadF2dot14();
-
-                    // hasScale = true;
+                    argSize += 4;
                 }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveATwoByTwo))
+                else if ((flags & CompositeGlyphFlags.WeHaveATwoByTwo) != 0)
                 {
-                    // The bit WE_HAVE_A_TWO_BY_TWO allows for linear transformation of the X and Y coordinates by specifying a 2 × 2 matrix.
-                    // This could be used for scaling and 90-degree*** rotations of the glyph components, for example.
-
-                    // 2x2 matrix
-
-                    // The purpose of USE_MY_METRICS is to force the lsb and rsb to take on a desired value.
-                    // For example, an i-circumflex (U+00EF) is often composed of the circumflex and a dotless-i.
-                    // In order to force the composite to have the same metrics as the dotless-i,
-                    // set USE_MY_METRICS for the dotless-i component of the composite.
-                    // Without this bit, the rsb and lsb would be calculated from the hmtx entry for the composite
-                    // (or would need to be explicitly set with TrueType instructions).
-
-                    // Note that the behavior of the USE_MY_METRICS operation is undefined for rotated composite components.
-                    // useMatrix = true;
-                    // hasScale = true;
-                    xscale = reader.ReadF2dot14();
-                    scale01 = reader.ReadF2dot14();
-                    scale10 = reader.ReadF2dot14();
-                    yscale = reader.ReadF2dot14();
+                    argSize += 8;
                 }
+
+                reader.BaseStream.Seek(argSize, SeekOrigin.Current);
             }
-            while (flags.HasFlag(CompositeGlyphFlags.MoreComponents));
 
-            return flags.HasFlag(CompositeGlyphFlags.WeHaveInstructions);
+            return weHaveInstructions;
         }
 
         private static GlyphVector ReadCompositeGlyph(GlyphVector[] createdGlyphs, BigEndianBinaryReader reader)
@@ -499,141 +490,53 @@ namespace SixLabors.Fonts.Tables
             // 3a.If any of the flag words had the FLAG_WE_HAVE_INSTRUCTIONS bit(bit 8) set,
             // then read the instructions from the glyph and store them in the reconstructed glyph,
             // using the same process as described in steps 4 and 5 above (see Building Simple Glyph).
-            var finalGlyph = default(GlyphVector);
+            GlyphVector finalGlyph = default;
             CompositeGlyphFlags flags;
             do
             {
-                flags = (CompositeGlyphFlags)reader.ReadUInt16();
+                flags = reader.ReadUInt16<CompositeGlyphFlags>();
                 ushort glyphIndex = reader.ReadUInt16();
-                if (createdGlyphs[glyphIndex].Equals(default(GlyphVector)))
+
+                // No IEquality<GlyphVector> implementation
+                if (createdGlyphs[glyphIndex].ControlPoints is null)
                 {
                     // This glyph is not read yet, resolve it first!
                     long storedOffset = reader.BaseStream.Position;
-                    GlyphVector missingGlyph = ReadCompositeGlyph(createdGlyphs, reader);
-                    createdGlyphs[glyphIndex] = missingGlyph;
+                    createdGlyphs[glyphIndex] = ReadCompositeGlyph(createdGlyphs, reader);
                     reader.BaseStream.Position = storedOffset;
                 }
 
-                var glyphClone = (GlyphVector)createdGlyphs[glyphIndex].DeepClone();
-                var newGlyph = (GlyphVector)createdGlyphs[glyphIndex].DeepClone();
+                CompositeGlyphLoader.LoadArguments(reader, flags, out int dx, out int dy);
 
-                short arg1 = 0;
-                short arg2 = 0;
-                ushort arg1and2 = 0;
+                Matrix3x2 transform = Matrix3x2.Identity;
+                transform.Translation = new Vector2(dx, dy);
 
-                if (flags.HasFlag(CompositeGlyphFlags.ArgsAreWords))
+                if ((flags & CompositeGlyphFlags.WeHaveAScale) != 0)
                 {
-                    arg1 = reader.ReadInt16();
-                    arg2 = reader.ReadInt16();
+                    float scale = reader.ReadF2dot14(); // Format 2.14
+                    transform.M11 = scale;
+                    transform.M21 = scale;
                 }
-                else
+                else if ((flags & CompositeGlyphFlags.WeHaveXAndYScale) != 0)
                 {
-                    arg1and2 = reader.ReadUInt16();
+                    transform.M11 = reader.ReadF2dot14();
+                    transform.M22 = reader.ReadF2dot14();
                 }
-
-                //-----------------------------------------
-                float xscale = 1;
-                float scale01 = 0;
-                float scale10 = 0;
-                float yscale = 1;
-
-                bool useMatrix = false;
-                bool hasScale = false;
-                if (flags.HasFlag(CompositeGlyphFlags.WeHaveAScale))
+                else if ((flags & CompositeGlyphFlags.WeHaveATwoByTwo) != 0)
                 {
-                    // If the bit WE_HAVE_A_SCALE is set,
-                    // the scale value is read in 2.14 format-the value can be between -2 to almost +2.
-                    // The glyph will be scaled by this value before grid-fitting.
-                    xscale = yscale = reader.ReadF2dot14();
-                    hasScale = true;
-                }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveXAndYScale))
-                {
-                    xscale = reader.ReadF2dot14();
-                    yscale = reader.ReadF2dot14();
-                    hasScale = true;
-                }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveATwoByTwo))
-                {
-                    // The bit WE_HAVE_A_TWO_BY_TWO allows for linear transformation of the X and Y coordinates by specifying a 2 × 2 matrix.
-                    // This could be used for scaling and 90-degree*** rotations of the glyph components, for example.
-
-                    // 2x2 matrix
-
-                    // The purpose of USE_MY_METRICS is to force the lsb and rsb to take on a desired value.
-                    // For example, an i-circumflex (U+00EF) is often composed of the circumflex and a dotless-i.
-                    // In order to force the composite to have the same metrics as the dotless-i,
-                    // set USE_MY_METRICS for the dotless-i component of the composite.
-                    // Without this bit, the rsb and lsb would be calculated from the hmtx entry for the composite
-                    // (or would need to be explicitly set with TrueType instructions).
-
-                    // Note that the behavior of the USE_MY_METRICS operation is undefined for rotated composite components.
-                    useMatrix = true;
-                    hasScale = true;
-                    xscale = reader.ReadF2dot14();
-                    scale01 = reader.ReadF2dot14();
-                    scale10 = reader.ReadF2dot14();
-                    yscale = reader.ReadF2dot14();
+                    transform.M11 = reader.ReadF2dot14();
+                    transform.M12 = reader.ReadF2dot14();
+                    transform.M21 = reader.ReadF2dot14();
+                    transform.M22 = reader.ReadF2dot14();
                 }
 
-                //--------------------------------------------------------------------
-                if (flags.HasFlag(CompositeGlyphFlags.ArgsAreXYValues))
-                {
-                    // Argument1 and argument2 can be either x and y offsets to be added to the glyph or two point numbers.
-                    // x and y offsets to be added to the glyph
-                    // When arguments 1 and 2 are an x and a y offset instead of points and the bit ROUND_XY_TO_GRID is set to 1,
-                    // the values are rounded to those of the closest grid lines before they are added to the glyph.
-                    // X and Y offsets are described in FUnits.
-                    if (useMatrix)
-                    {
-                        newGlyph.TransformWithMatrix(xscale, scale01, scale10, yscale);
-                        newGlyph.OffsetXy(arg1, arg2);
-                    }
-                    else
-                    {
-                        if (hasScale)
-                        {
-                            if (!(xscale == 1.0 && yscale == 1.0))
-                            {
-                                newGlyph.TransformWithMatrix(xscale, 0, 0, yscale);
-                            }
-
-                            newGlyph.OffsetXy(arg1, arg2);
-                        }
-                        else
-                        {
-                            if (flags.HasFlag(CompositeGlyphFlags.RoundXYToGrid))
-                            {
-                                // TODO: implement round xy to grid
-                            }
-
-                            // just offset.
-                            newGlyph.OffsetXy(arg1, arg2);
-                        }
-                    }
-                }
-                else
-                {
-                    // two point numbers.
-                    // the first point number indicates the point that is to be matched to the new glyph.
-                    // The second number indicates the new glyph's “matched” point.
-                    // Once a glyph is added,its point numbers begin directly after the last glyphs (endpoint of first glyph + 1)
-                }
-
-                if (finalGlyph.Equals(default(GlyphVector)))
-                {
-                    finalGlyph = newGlyph;
-                }
-                else
-                {
-                    finalGlyph.AppendGlyph(newGlyph);
-                }
+                finalGlyph = GlyphVector.Append(finalGlyph, GlyphVector.Transform(createdGlyphs[glyphIndex], transform));
             }
-            while (flags.HasFlag(CompositeGlyphFlags.MoreComponents));
+            while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
-            if (flags.HasFlag(CompositeGlyphFlags.WeHaveInstructions))
+            if ((flags & CompositeGlyphFlags.WeHaveInstructions) != 0)
             {
-                // Read this later.
+                // TODO: Read this later.
                 // ushort numInstr = reader.ReadUInt16();
                 // byte[] insts = reader.ReadBytes(numInstr);
                 // finalGlyph.GlyphInstructions = insts;

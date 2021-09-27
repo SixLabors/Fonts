@@ -149,15 +149,67 @@ namespace SixLabors.Fonts.Tests
             Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff.ControlPoints));
         }
 
+        [Theory]
+        [InlineData("\uFB00")]
+        [InlineData("\uFB01")]
+        [InlineData("\uFB02")]
+        [InlineData("\uFB03")]
+        [InlineData("\uFB04")]
+        public void RenderWoff_CompositeGlyphs_IsEqualToTtfGlyphs(string testStr)
+        {
+            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansVersion26File).CreateFont(12);
+            Font fontWoff = new FontCollection().Add(TestFonts.OpenSansVersion26FileWoff).CreateFont(12);
+
+            var rendererTtf = new ColorGlyphRenderer();
+            TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
+            {
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+            });
+            var rendererWoff = new ColorGlyphRenderer();
+            TextRenderer.RenderTextTo(rendererWoff, testStr, new RendererOptions(fontWoff)
+            {
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+            });
+
+            Assert.True(rendererTtf.ControlPoints.Count > 0);
+            Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff.ControlPoints));
+        }
+
 #if NETCOREAPP3_0_OR_GREATER
         [Theory]
-        [InlineData(false, 843)]
-        [InlineData(true, 843)]
+        [InlineData(false, 1238)]
+        [InlineData(true, 1238)]
         public void RenderWoff2Glyphs_IsEqualToTtfGlyphs(bool applyKerning, int expectedControlPoints)
         {
-            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
-            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
+            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansVersion26File).CreateFont(12);
+            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansVersion26FileWoff2).CreateFont(12);
             string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+            var rendererTtf = new ColorGlyphRenderer();
+            TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
+            {
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+            });
+            var rendererWoff2 = new ColorGlyphRenderer();
+            TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
+            {
+                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+            });
+
+            Assert.Equal(expectedControlPoints, rendererWoff2.ControlPoints.Count);
+            Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff2.ControlPoints));
+        }
+
+        [Theory]
+        [InlineData("\uFB00")]
+        [InlineData("\uFB01")]
+        [InlineData("\uFB02")]
+        [InlineData("\uFB03")]
+        [InlineData("\uFB04")]
+        public void RenderWoff2_CompositeGlyphs_IsEqualToTtfGlyphs(string testStr)
+        {
+            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansVersion26File).CreateFont(12);
+            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansVersion26FileWoff2).CreateFont(12);
 
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
@@ -172,7 +224,7 @@ namespace SixLabors.Fonts.Tests
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 
-            Assert.Equal(expectedControlPoints, rendererTtf.ControlPoints.Count);
+            Assert.True(rendererTtf.ControlPoints.Count > 0);
             Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff2.ControlPoints));
         }
 #endif
