@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
@@ -69,31 +70,53 @@ namespace SixLabors.Fonts.Tests
             Assert.NotNull(cmap);
         }
 
+        [Fact]
+        public void ReadFont_WithWoffFormat_EqualsTtf()
+        {
+            var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
+            var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff1Data());
+
+            Assert.Equal(fontReaderTtf.Headers.Count, fontReaderWoff.Headers.Count);
+            foreach (string key in fontReaderTtf.Headers.Keys)
+            {
+                Assert.True(fontReaderWoff.Headers.ContainsKey(key));
+            }
+        }
+
+        [Fact]
+        public void GlyphsCount_WithWoffFormat_EqualsTtf()
+        {
+            var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff1Data());
+            GlyphTable glyphsWoff = fontReaderWoff.GetTable<GlyphTable>();
+            var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
+            GlyphTable glyphsTtf = fontReaderTtf.GetTable<GlyphTable>();
+
+            Assert.Equal(glyphsTtf.GlyphCount, glyphsWoff.GlyphCount);
+        }
+
 #if NETCOREAPP3_0_OR_GREATER
         [Fact]
-        public void ReadGlyphsTable_WithWoff2Format()
+        public void ReadFont_WithWoff2Format_EqualsTtf()
         {
-            bool[] expectedOnCurves = { true, true, true, true, true, true, true, true };
-            ushort[] expectedEndPoints = { 3, 7 };
-            var expectedBounds = new Bounds(193.0f, 0.0f, 1034.0f, 1462.0f);
-            var expectedControlPoints = new Vector2[]
-            {
-                new Vector2(193.0f, 1462.0f), new Vector2(1034.0f, 1462.0f), new Vector2(1034.0f, 0.0f), new Vector2(193.0f, 0.0f),
-                new Vector2(297.0f, 104.0f), new Vector2(930.0f, 104.0f), new Vector2(930.0f, 1358.0f), new Vector2(297.0f, 1358.0f)
-            };
-            var reader = new FontReader(TestFonts.FontFileWoff2Data());
-            GlyphTable glyphs = reader.GetTable<GlyphTable>();
-            Fonts.Tables.General.Glyphs.GlyphVector glyph = glyphs.GetGlyph(0);
+            var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
+            var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff2Data());
 
-            Assert.Equal(938, glyphs.GlyphCount);
-            Assert.Equal(8, glyph.PointCount);
-            Assert.Equal(8, glyph.ControlPoints.Length);
-            Assert.Equal(2, glyph.EndPoints.Length);
-            Assert.Equal(8, glyph.OnCurves.Length);
-            Assert.Equal(expectedBounds, glyph.Bounds);
-            Assert.True(expectedOnCurves.SequenceEqual(glyph.OnCurves));
-            Assert.True(expectedEndPoints.SequenceEqual(glyph.EndPoints));
-            Assert.True(expectedControlPoints.SequenceEqual(glyph.ControlPoints));
+            Assert.Equal(fontReaderTtf.Headers.Count, fontReaderWoff.Headers.Count);
+            foreach (string key in fontReaderTtf.Headers.Keys)
+            {
+                Assert.True(fontReaderWoff.Headers.ContainsKey(key));
+            }
+        }
+
+        [Fact]
+        public void GlyphsCount_WithWoff2Format_EqualsTtf()
+        {
+            var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff2Data());
+            GlyphTable glyphsWoff = fontReaderWoff.GetTable<GlyphTable>();
+            var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
+            GlyphTable glyphsTtf = fontReaderTtf.GetTable<GlyphTable>();
+
+            Assert.Equal(glyphsTtf.GlyphCount, glyphsWoff.GlyphCount);
         }
 #endif
     }

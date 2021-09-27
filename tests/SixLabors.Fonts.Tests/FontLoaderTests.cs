@@ -34,26 +34,65 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         }
 
+        [Fact]
+        public void LoadFont_WithTtfFormat()
+        {
+            IFontMetrics font = FontMetrics.LoadFont(TestFonts.OpenSansFile);
+
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
+            var r = new GlyphRenderer();
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
+
+            Assert.Equal(37, r.ControlPoints.Count());
+            Assert.Single(r.GlyphKeys);
+            Assert.Single(r.GlyphRects);
+        }
+
+        [Fact]
+        public void LoadFont_WithWoff1Format()
+        {
+            IFontMetrics font = FontMetrics.LoadFont(TestFonts.OpenSansFileWoff1);
+
+            GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
+            var r = new GlyphRenderer();
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
+
+            Assert.Equal(37, r.ControlPoints.Count());
+            Assert.Single(r.GlyphKeys);
+            Assert.Single(r.GlyphRects);
+        }
+
+        [Fact]
+        public void LoadFontMetadata_WithWoff1Format()
+        {
+            var description = FontDescription.LoadDescription(TestFonts.OpensSansWoff1Data());
+
+            Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
+            Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
+        }
+
 #if NETCOREAPP3_0_OR_GREATER
         [Fact]
         public void LoadFontMetadata_WithWoff2Format()
         {
-            var description = FontDescription.LoadDescription(TestFonts.FontFileWoff2Data());
+            var description = FontDescription.LoadDescription(TestFonts.OpensSansWoff2Data());
 
-            Assert.Equal("Open Sans", description.FontNameInvariantCulture);
+            Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         }
 
         [Fact]
         public void LoadFont_WithWoff2Format()
         {
-            IFontMetrics font = FontMetrics.LoadFont(TestFonts.FontFileWoff2Data());
+            IFontMetrics font = FontMetrics.LoadFont(TestFonts.OpensSansWoff2Data());
 
             GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new System.Numerics.Vector2(72), 0);
 
-            Assert.Equal(15, r.ControlPoints.Distinct().Count());
+            Assert.Equal(37, r.ControlPoints.Count());
+            Assert.Single(r.GlyphKeys);
+            Assert.Single(r.GlyphRects);
         }
 #endif
 

@@ -20,16 +20,12 @@ namespace SixLabors.Fonts.Tests
 
         public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");
 
-        public static string OpenSansFile => GetFullPath("OpenSans-Regular.ttf");
-
-        public static string OpenSansFileWoff2 => GetFullPath("OpenSans-Regular.woff2");
-
         // Font from: https://google-webfonts-helper.herokuapp.com/fonts/open-sans?subsets=cyrillic,cyrillic-ext,greek,greek-ext,hebrew,latin,latin-ext,vietnamese
-        public static string OpenSansVersion26File => GetFullPath("OpenSans-v26-Regular.ttf");
+        public static string OpenSansFile => GetFullPath("OpenSans-v26-Regular.ttf");
 
-        public static string OpenSansVersion26FileWoff => GetFullPath("OpenSans-v26-Regular.woff");
+        public static string OpenSansFileWoff1 => GetFullPath("OpenSans-v26-Regular.woff");
 
-        public static string OpenSansVersion26FileWoff2 => GetFullPath("OpenSans-v26-Regular.woff2");
+        public static string OpenSansFileWoff2 => GetFullPath("OpenSans-v26-Regular.woff2");
 
         public static string SimpleFontFile => GetFullPath("SixLaborsSampleAB.ttf");
 
@@ -188,13 +184,15 @@ namespace SixLabors.Fonts.Tests
 
         public static Stream ArabicFontFileData() => OpenStream(ArabicFontFile);
 
-        public static Stream OpenSansData() => OpenStream(OpenSansFile);
+        public static Stream OpenSansTtfData() => OpenStream(OpenSansFile);
+
+        public static Stream OpensSansWoff1Data() => OpenStream(OpenSansFileWoff1);
+
+        public static Stream OpensSansWoff2Data() => OpenStream(OpenSansFileWoff2);
 
         public static Stream SimpleFontFileWoffData() => OpenStream(SimpleFontFileWoff);
 
         public static Stream SSimpleTrueTypeCollectionData() => OpenStream(SimpleTrueTypeCollection);
-
-        public static Stream FontFileWoff2Data() => OpenStream(OpenSansFileWoff2);
 
         public static class Issues
         {
