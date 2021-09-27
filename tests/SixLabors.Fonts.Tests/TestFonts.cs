@@ -21,11 +21,11 @@ namespace SixLabors.Fonts.Tests
         public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");
 
         // Font from: https://google-webfonts-helper.herokuapp.com/fonts/open-sans?subsets=cyrillic,cyrillic-ext,greek,greek-ext,hebrew,latin,latin-ext,vietnamese
-        public static string OpenSansFile => GetFullPath("OpenSans-v26-Regular.ttf");
+        public static string OpenSansFile => GetFullPath("OpenSans-Regular.ttf");
 
-        public static string OpenSansFileWoff1 => GetFullPath("OpenSans-v26-Regular.woff");
+        public static string OpenSansFileWoff1 => GetFullPath("OpenSans-Regular.woff");
 
-        public static string OpenSansFileWoff2 => GetFullPath("OpenSans-v26-Regular.woff2");
+        public static string OpenSansFileWoff2 => GetFullPath("OpenSans-Regular.woff2");
 
         public static string SimpleFontFile => GetFullPath("SixLaborsSampleAB.ttf");
 
