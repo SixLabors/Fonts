@@ -76,11 +76,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         /// <param name="dy">The y-offset.</param>
         /// <returns>The new <see cref="GlyphVector"/>.</returns>
         public static GlyphVector Translate(GlyphVector src, float dx, float dy)
-        {
-            Matrix3x2 matrix = Matrix3x2.Identity;
-            matrix.Translation = new Vector2(dx, dy);
-            return Transform(src, matrix);
-        }
+            => Transform(src, Matrix3x2.CreateTranslation(dx, dy));
 
         /// <summary>
         /// Appends the second glyph vector's control points to the first.
