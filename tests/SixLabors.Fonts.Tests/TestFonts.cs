@@ -127,6 +127,24 @@ namespace SixLabors.Fonts.Tests
 
         /// <summary>
         /// Gets a gpos test font file which has the following substitution for unit tests:
+        /// - Mark-to-Base Attachment Positioning, Format 1: "\u0012\u0013" Base 100, 150; Mark 200, 230
+        /// </summary>
+        public static string GposLookupType4Format1 => GetFullPath("GposLookupType4Format1.ttf");
+
+        /// <summary>
+        /// Gets a gpos test font file which has the following substitution for unit tests:
+        /// - Mark-to-Ligature Attachment Positioning, Format 1: "\u0012\u0013" Ligature 100, 150; Mark 200, 230
+        /// </summary>
+        public static string GposLookupType5Format1 => GetFullPath("GposLookupType5Format1.ttf");
+
+        /// <summary>
+        /// Gets a gpos test font file which has the following substitution for unit tests:
+        /// - Mark-to-Mark Attachment Positioning, Format 1: "\u0012\u0013" FirstMark 100, 150; SecondMark 200, 230
+        /// </summary>
+        public static string GposLookupType6Format1 => GetFullPath("GposLookupType6Format1.ttf");
+
+        /// <summary>
+        /// Gets a gpos test font file which has the following substitution for unit tests:
         /// - Contextual Positioning Subtables, Format 1: "\u0014\u0015\u0016" XPlacement plus 20.
         /// </summary>
         public static string GposLookupType7Format1 => GetFullPath("GposLookupType7Format1.ttf");
