@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -82,7 +83,57 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 Tag feature,
                 ushort index,
                 int count)
-                => throw new System.NotImplementedException();
+            {
+                // Mark-to-Base Attachment Positioning Subtable.
+                // Implements: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-4-mark-to-base-attachment-positioning-subtable
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
+                {
+                    return false;
+                }
+
+                int markIndex = this.markCoverage.CoverageIndexOf(glyphId);
+                if (markIndex == -1)
+                {
+                    return false;
+                }
+
+                // Search backward for a base glyph.
+                ushort baseGlyphIndex = index;
+                while (--baseGlyphIndex >= 0)
+                {
+                    if (!collection.TryGetGlyphMetricsAtOffset(index, out GlyphMetrics[]? metrics))
+                    {
+                        return false;
+                    }
+
+                    foreach (GlyphMetrics glyphMetrics in metrics)
+                    {
+                        if (!CodePoint.IsMark(glyphMetrics.CodePoint))
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                if (baseGlyphIndex < 0)
+                {
+                    return false;
+                }
+
+                ushort baseGlyphId = collection[baseGlyphIndex][0];
+                int baseIndex = this.baseCoverage.CoverageIndexOf(baseGlyphId);
+                if (baseIndex < 0)
+                {
+                    return false;
+                }
+
+                MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
+                AnchorTable baseAnchor = this.baseArrayTable.BaseRecords[baseIndex].BaseAnchorTables[markRecord.MarkClass];
+
+                // TODO: applyAnchor
+                return false;
+            }
         }
     }
 }
