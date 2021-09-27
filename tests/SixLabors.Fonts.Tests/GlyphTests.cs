@@ -129,8 +129,8 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void RenderWoffGlyphs_IsEqualToTtfGlyphs()
         {
-            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansVersion26File).CreateFont(12);
-            Font fontWoff = new FontCollection().Add(TestFonts.OpenSansVersion26FileWoff).CreateFont(12);
+            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
+            Font fontWoff = new FontCollection().Add(TestFonts.OpenSansFileWoff1).CreateFont(12);
             string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             int expectedControlPointsCount = 1238;
 
@@ -157,8 +157,8 @@ namespace SixLabors.Fonts.Tests
         [InlineData("\uFB04")]
         public void RenderWoff_CompositeGlyphs_IsEqualToTtfGlyphs(string testStr)
         {
-            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansVersion26File).CreateFont(12);
-            Font fontWoff = new FontCollection().Add(TestFonts.OpenSansVersion26FileWoff).CreateFont(12);
+            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
+            Font fontWoff = new FontCollection().Add(TestFonts.OpenSansFileWoff1).CreateFont(12);
 
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
@@ -181,8 +181,8 @@ namespace SixLabors.Fonts.Tests
         [InlineData(true, 1238)]
         public void RenderWoff2Glyphs_IsEqualToTtfGlyphs(bool applyKerning, int expectedControlPoints)
         {
-            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansVersion26File).CreateFont(12);
-            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansVersion26FileWoff2).CreateFont(12);
+            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
+            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
             string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
             var rendererTtf = new ColorGlyphRenderer();
@@ -210,8 +210,8 @@ namespace SixLabors.Fonts.Tests
         [InlineData("\uFB04")]
         public void RenderWoff2_CompositeGlyphs_IsEqualToTtfGlyphs(string testStr)
         {
-            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansVersion26File).CreateFont(12);
-            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansVersion26FileWoff2).CreateFont(12);
+            Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
+            Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
 
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
