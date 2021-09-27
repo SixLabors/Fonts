@@ -23,9 +23,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             var controlPoints = new List<Vector2>();
             var onCurves = new List<bool>();
             var endPoints = new List<ushort>();
-            var minBounds = new List<Vector2>();
-            var maxBounds = new List<Vector2>();
-            var parts = new List<GlyphMetrics>();
 
             for (int resultIndex = 0; resultIndex < this.result.Length; resultIndex++)
             {
@@ -94,10 +91,10 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             return new CompositeGlyphLoader(result, bounds);
         }
 
-        private static void LoadArguments(BigEndianBinaryReader reader, CompositeGlyphFlags flags, out int dx, out int dy)
+        public static void LoadArguments(BigEndianBinaryReader reader, CompositeGlyphFlags flags, out int dx, out int dy)
         {
             // are we 16 or 8 bits values?
-            if (flags.HasFlag(CompositeGlyphFlags.ArgsAreWords))
+            if (flags.HasFlag(CompositeGlyphFlags.Args1And2AreWords))
             {
                 // 16 bit
                 // are we int or unit?

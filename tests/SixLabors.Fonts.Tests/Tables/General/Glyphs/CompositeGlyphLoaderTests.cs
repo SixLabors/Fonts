@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void LoadSingleGlyphWithUInt16Offset_unsigned_short()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteUInt16((ushort)CompositeGlyphFlags.ArgsAreWords); // 16bit unsigned
+            writer.WriteUInt16((ushort)CompositeGlyphFlags.Args1And2AreWords); // 16bit unsigned
             writer.WriteUInt16(1); // glyph id
 
             writer.WriteUInt16(short.MaxValue + 1); // dx
@@ -40,7 +40,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void LoadSingleGlyphWithInt16Offset_signed_short()
         {
             var writer = new BigEndianBinaryWriter();
-            writer.WriteUInt16((ushort)(CompositeGlyphFlags.ArgsAreWords /* 16bit */ | CompositeGlyphFlags.ArgsAreXYValues /* signed */)); // flags
+            writer.WriteUInt16((ushort)(CompositeGlyphFlags.Args1And2AreWords /* 16bit */ | CompositeGlyphFlags.ArgsAreXYValues /* signed */)); // flags
             writer.WriteUInt16(1); // glyph id
 
             writer.WriteInt16(short.MinValue + 1); // dx

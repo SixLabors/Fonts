@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void CloneIsDeep()
         {
             // arrange
-            Vector2[] controlPoints = { new Vector2(1.0f), new Vector2(2.0f) };
+            Vector2[] controlPoints = { new(1.0f), new(2.0f) };
             bool[] onCurves = { true, false };
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
@@ -37,7 +37,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
         public void TtfOffsetXy_Works()
         {
             // arrange
-            Vector2[] controlPoints = { new Vector2(1.0f), new Vector2(2.0f) };
+            Vector2[] controlPoints = { new(1.0f), new(2.0f) };
             bool[] onCurves = { true, false };
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
@@ -45,18 +45,20 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
 
             // act
-            glyphVector.TtfOffsetXy(10, 10);
+            Matrix3x2 matrix = Matrix3x2.Identity;
+            matrix.Translation = new Vector2(10, 10);
+            var transformed = GlyphVector.Transform(glyphVector, matrix);
 
             // assert
-            Assert.Equal(expectedBounds, glyphVector.Bounds);
+            Assert.Equal(expectedBounds, transformed.Bounds);
         }
 
         [Fact]
         public void TtfAppendGlyph_Works()
         {
             // arrange
-            Vector2[] controlPoints = { new Vector2(1.0f), new Vector2(2.0f) };
-            Vector2[] expectedControlPoints = { new Vector2(1.0f), new Vector2(2.0f), new Vector2(1.0f), new Vector2(2.0f) };
+            Vector2[] controlPoints = { new(1.0f), new(2.0f) };
+            Vector2[] expectedControlPoints = { new(1.0f), new(2.0f), new(1.0f), new(2.0f) };
             bool[] onCurves = { true, false };
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
@@ -64,46 +66,55 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var glyphVector2 = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
 
             // act
-            glyphVector1.TtfAppendGlyph(glyphVector2);
+            var appended = GlyphVector.Append(glyphVector1, glyphVector2);
 
             // assert
-            Assert.True(expectedControlPoints.SequenceEqual(glyphVector1.ControlPoints));
+            Assert.True(expectedControlPoints.SequenceEqual(appended.ControlPoints));
         }
 
         [Fact]
         public void TtfTransformWith2x2Matrix_Works()
         {
             // arrange
+            int precision = 2;
             Vector2[] controlPoints =
             {
-                new Vector2(653.0f, 791.0f),
-                new Vector2(1065.0f, 791.0f),
-                new Vector2(1065.0f, 653.0f),
-                new Vector2(653.0f, 653.0f),
-                new Vector2(653.0f, 227.0f),
-                new Vector2(514.0f, 227.0f),
-                new Vector2(514.0f, 653.0f),
-                new Vector2(104.0f, 653.0f),
-                new Vector2(104.0f, 791.0f),
-                new Vector2(514.0f, 791.0f),
-                new Vector2(514.0f, 1219.0f),
-                new Vector2(653.0f, 1219.0f),
-                new Vector2(104.0f, 1.0f),
-                new Vector2(104.0f, 139.0f),
-                new Vector2(1065.0f, 139.0f),
-                new Vector2(1065.0f, 1.0f),
+                new(653.0f, 791.0f),
+                new(1065.0f, 791.0f),
+                new(1065.0f, 653.0f),
+                new(653.0f, 653.0f),
+                new(653.0f, 227.0f),
+                new(514.0f, 227.0f),
+                new(514.0f, 653.0f),
+                new(104.0f, 653.0f),
+                new(104.0f, 791.0f),
+                new(514.0f, 791.0f),
+                new(514.0f, 1219.0f),
+                new(653.0f, 1219.0f),
+                new(104.0f, 1.0f),
+                new(104.0f, 139.0f),
+                new(1065.0f, 139.0f),
+                new(1065.0f, 1.0f),
             };
             bool[] onCurves = { true, false };
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(16130.0f, 260.0f, 26624.0f, 28928.0f);
-            var expectedBounds = new Bounds(0.0f, 0.0f, 3222.0f, 4179.0f);
+            var expectedBounds = new Bounds(19876f, 013684f, 89804.8f, 108083.2f);
             var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
 
             // act
-            glyphVector.TtfTransformWithMatrix(1.2f, 0.8f, 2.0f, 3.0f);
+            Matrix3x2 matrix = Matrix3x2.Identity;
+            matrix.M11 = 1.2F;
+            matrix.M12 = 0.8F;
+            matrix.M21 = 2.0F;
+            matrix.M22 = 3.0F;
+            var transformed = GlyphVector.Transform(glyphVector, matrix);
 
             // assert
-            Assert.Equal(expectedBounds, glyphVector.Bounds);
+            Assert.Equal(expectedBounds.Min.X, transformed.Bounds.Min.X, precision);
+            Assert.Equal(expectedBounds.Min.Y, transformed.Bounds.Min.Y, precision);
+            Assert.Equal(expectedBounds.Max.X, transformed.Bounds.Max.X, precision);
+            Assert.Equal(expectedBounds.Max.Y, transformed.Bounds.Max.Y, precision);
         }
     }
 }
