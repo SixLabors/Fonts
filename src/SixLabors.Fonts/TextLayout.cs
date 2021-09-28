@@ -92,7 +92,8 @@ namespace SixLabors.Fonts
                 bidiRuns,
                 bidiMap,
                 substitutions,
-                positionings))
+                positionings,
+                layoutMode))
             {
                 foreach (IFontMetrics font in fallbackFonts)
                 {
@@ -104,7 +105,8 @@ namespace SixLabors.Fonts
                         bidiRuns,
                         bidiMap,
                         substitutions,
-                        positionings))
+                        positionings,
+                        layoutMode))
                     {
                         break;
                     }
@@ -358,17 +360,15 @@ namespace SixLabors.Fonts
             location.X += offsetX;
 
             List<GlyphLayout> glyphs = new();
+            float xLineAdvance = textBox.ScaledMaxLineHeight * (first ? 1F : options.LineSpacing);
             for (int i = 0; i < textLine.Count; i++)
             {
                 TextLine.GlyphLayoutData info = textLine[i];
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
-                    float lineHeight = textBox.ScaledMaxLineHeight * options.LineSpacing;
-                    float scale = info.PointSize / metric.ScaleFactor;
-                    float advanceWidth = metric.AdvanceWidth * scale;
                     if (info.IsNewLine)
                     {
-                        location.X += textBox.ScaledMaxLineHeight * options.LineSpacing;
+                        location.X += xLineAdvance;
                         location.Y = originY;
                         continue;
                     }
@@ -377,7 +377,7 @@ namespace SixLabors.Fonts
                         info.GraphemeIndex,
                         metric.CodePoint,
                         new Glyph(metric, info.PointSize),
-                        location + new Vector2((lineHeight - advanceWidth) * .5F, 0),
+                        location + new Vector2((xLineAdvance - (metric.AdvanceWidth * (info.PointSize / metric.ScaleFactor))) * .5F, 0),
                         textBox.ScaledMaxLineHeight,
                         info.ScaledAdvance,
                         textBox.ScaledMaxLineHeight * options.LineSpacing,
@@ -390,7 +390,7 @@ namespace SixLabors.Fonts
             location.Y = originY;
             if (glyphs.Count > 0)
             {
-                location.X += textBox.ScaledMaxLineHeight * options.LineSpacing;
+                location.X += xLineAdvance;
             }
 
             return glyphs;
@@ -403,7 +403,8 @@ namespace SixLabors.Fonts
             BidiRun[] bidiRuns,
             Dictionary<int, int> bidiMap,
             GlyphSubstitutionCollection substitutions,
-            GlyphPositioningCollection positionings)
+            GlyphPositioningCollection positionings,
+            LayoutMode layoutMode)
         {
             // Enumerate through each grapheme in the text.
             int graphemeIndex;
@@ -455,7 +456,7 @@ namespace SixLabors.Fonts
 
             // We always do this, with or without kerning so that bidi mirrored types
             // are substituted correctly.
-            SubstituteBidiMirrors(fontMetrics, substitutions);
+            SubstituteBidiMirrors(fontMetrics, substitutions, layoutMode);
 
             if (options.ApplyKerning)
             {
@@ -466,10 +467,8 @@ namespace SixLabors.Fonts
             return positionings.TryAddOrUpdate(fontMetrics, substitutions, options);
         }
 
-        private static void SubstituteBidiMirrors(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection)
+        private static void SubstituteBidiMirrors(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, LayoutMode layoutMode)
         {
-            // TODO: Vertical bidi mirrors appear to be different.
-            // See hb-ot-shape.cc in HarfBuzz. Line 651.
             for (int i = 0; i < collection.Count; i++)
             {
                 GlyphShapingData data = collection.GetGlyphShapingData(i);
@@ -487,6 +486,25 @@ namespace SixLabors.Fonts
                 if (fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
                 {
                     collection.Replace(i, glyphId);
+                }
+            }
+
+            // TODO: This only replaces certain glyphs. We should investigate the specification further.
+            // https://www.unicode.org/reports/tr50/#vertical_alternates
+            if (layoutMode.IsVertical())
+            {
+                for (int i = 0; i < collection.Count; i++)
+                {
+                    GlyphShapingData data = collection.GetGlyphShapingData(i);
+                    if (!CodePoint.TryGetVerticalMirror(data.CodePoint, out CodePoint mirror))
+                    {
+                        continue;
+                    }
+
+                    if (fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
+                    {
+                        collection.Replace(i, glyphId);
+                    }
                 }
             }
         }
@@ -1079,7 +1097,7 @@ namespace SixLabors.Fonts
                     .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.Offset}, level: {this.BidiRun.Level}");
             }
 
-            private class OrderedBidiRun
+            private sealed class OrderedBidiRun
             {
                 private ArrayBuilder<GlyphLayoutData> info;
 
@@ -1096,7 +1114,7 @@ namespace SixLabors.Fonts
                 public void Reverse() => this.AsSlice().Span.Reverse();
             }
 
-            private class BidiRange
+            private sealed class BidiRange
             {
                 public int Level { get; set; }
 

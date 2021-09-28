@@ -120,7 +120,7 @@ namespace SixLabors.Fonts
         /// <remarks>
         /// If value is -1 then wrapping is disabled.
         /// </remarks>
-        public float WrappingWidth { get; set; } = -1;
+        public float WrappingWidth { get; set; } = -1F;
 
         /// <summary>
         /// Gets or sets the word breaking mode to use when wrapping text.
@@ -130,7 +130,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the line spacing. Applied as a multiple of the line height.
         /// </summary>
-        public float LineSpacing { get; set; } = 1;
+        public float LineSpacing { get; set; } = 1F;
 
         /// <summary>
         /// Gets or sets the text direction.
@@ -153,9 +153,9 @@ namespace SixLabors.Fonts
         public VerticalAlignment VerticalAlignment { get; set; }
 
         /// <summary>
-        /// Gets the layout mode for the text lines.
+        /// Gets or sets the layout mode for the text lines.
         /// </summary>
-        public LayoutMode LayoutMode { get; internal set; }
+        public LayoutMode LayoutMode { get; set; }
 
         /// <summary>
         /// Gets or sets the rendering origin.
@@ -165,6 +165,6 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets a value indicating whether we enable various color font formats.
         /// </summary>
-        public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.None;
+        public ColorFontSupport ColorFontSupport { get; set; }
     }
 }

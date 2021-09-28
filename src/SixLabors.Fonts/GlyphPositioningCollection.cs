@@ -32,15 +32,15 @@ namespace SixLabors.Fonts
         private readonly Dictionary<int, GlyphMetrics[]> map = new();
 
         /// <summary>
-        /// The text layout mode.
+        /// Whether the text layout mode is vertical.
         /// </summary>
-        private readonly LayoutMode mode;
+        private readonly bool isVertical;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
         /// </summary>
         /// <param name="mode">The text layout mode.</param>
-        public GlyphPositioningCollection(LayoutMode mode) => this.mode = mode;
+        public GlyphPositioningCollection(LayoutMode mode) => this.isVertical = mode.IsVertical();
 
         /// <inheritdoc />
         public int Count => this.offsets.Count;
@@ -246,7 +246,7 @@ namespace SixLabors.Fonts
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.ApplyAdvance(dx, (this.mode & LayoutMode.VerticalLeftRight) != 0 ? dy : (short)0);
+                    m.ApplyAdvance(dx, this.isVertical ? dy : (short)0);
                 }
             }
         }

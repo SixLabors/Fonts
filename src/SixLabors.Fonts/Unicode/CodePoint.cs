@@ -522,6 +522,31 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
+        /// Gets the codepoint representing the vertical mirror for this instance.
+        /// <see href="https://www.unicode.org/reports/tr50/#vertical_alternates"/>
+        /// </summary>
+        /// <param name="codePoint">The code point to be mapped.</param>
+        /// <param name="mirror">
+        /// When this method returns, contains the codepoint representing the vertical mirror for this instance;
+        /// otherwise, the default value for the type of the <paramref name="codePoint"/> parameter.
+        /// This parameter is passed uninitialized.
+        /// .</param>
+        /// <returns><see langword="true"/> if this instance has a mirror; otherwise, <see langword="false"/></returns>
+        public static bool TryGetVerticalMirror(CodePoint codePoint, out CodePoint mirror)
+        {
+            uint value = UnicodeUtility.GetVerticalMirror((uint)codePoint.Value);
+
+            if (value == 0u)
+            {
+                mirror = default;
+                return false;
+            }
+
+            mirror = new CodePoint(value);
+            return true;
+        }
+
+        /// <summary>
         /// Gets the <see cref="LineBreakClass"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>

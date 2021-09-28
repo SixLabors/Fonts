@@ -22,12 +22,12 @@ namespace SixLabors.Fonts
         HorizontalBottomTop = 1 << 0,
 
         /// <summary>
-        /// Text is laid out vertically from left to right. Currently unsupported.
+        /// Text is laid out vertically from left to right.
         /// </summary>
         VerticalLeftRight = 1 << 1,
 
         /// <summary>
-        /// Text is laid out vertically from right to left. Currently unsupported.
+        /// Text is laid out vertically from right to left.
         /// </summary>
         VerticalRightLeft = 1 << 2
     }
