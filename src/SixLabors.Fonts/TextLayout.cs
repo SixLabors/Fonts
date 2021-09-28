@@ -156,8 +156,6 @@ namespace SixLabors.Fonts
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    // TODO: Investigate and implement this so we can make LayoutMode public.
-                    // https://www.unicode.org/reports/tr50/
                     glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
                 }
             }
