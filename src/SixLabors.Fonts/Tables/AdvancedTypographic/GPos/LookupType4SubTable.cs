@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
+using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
@@ -102,17 +103,24 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 ushort baseGlyphIndex = index;
                 while (--baseGlyphIndex >= 0)
                 {
-                    if (!collection.TryGetGlyphMetricsAtOffset(index, out GlyphMetrics[]? metrics))
+                    if (!collection.TryGetGlyphMetricsAtOffset(baseGlyphIndex, out GlyphMetrics[]? metrics))
                     {
                         return false;
                     }
 
+                    bool isMark = true;
                     foreach (GlyphMetrics glyphMetrics in metrics)
                     {
                         if (!CodePoint.IsMark(glyphMetrics.CodePoint))
                         {
-                            return false;
+                            isMark = false;
+                            break;
                         }
+                    }
+
+                    if (!isMark)
+                    {
+                        break;
                     }
                 }
 
@@ -131,8 +139,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
                 AnchorTable baseAnchor = this.baseArrayTable.BaseRecords[baseIndex].BaseAnchorTables[markRecord.MarkClass];
 
-                // TODO: applyAnchor
-                return false;
+                short baseX = baseAnchor.XCoordinate;
+                short baseY = baseAnchor.YCoordinate;
+                short markX = markRecord.MarkAnchorTable.XCoordinate;
+                short markY = markRecord.MarkAnchorTable.YCoordinate;
+
+                int markPosXOffset = baseX - markX;
+                int markPosYOffset = baseY - markY;
+
+                Vector2 baseGlyphOffset = collection.GetOffset(fontMetrics, baseGlyphIndex, baseGlyphId);
+                Vector2 glyphOffset = collection.GetOffset(fontMetrics, index, glyphId);
+
+                // TODO: this is still wrong. We need to move the current glyph (at index) to the base glyph position and then apply the mark offsets.
+                collection.Offset(fontMetrics, index, glyphId, (short)(-baseGlyphOffset.X + markPosXOffset), (short)(-baseGlyphOffset.Y + markPosYOffset));
+
+                return true;
             }
         }
     }

@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         }
 
         /// <summary>
-        /// Translates a glyph vector by a specified x and y cooordinates.
+        /// Translates a glyph vector by a specified x and y coordinates.
         /// </summary>
         /// <param name="src">The glyph vector to translate.</param>
         /// <param name="dx">The x-offset.</param>
