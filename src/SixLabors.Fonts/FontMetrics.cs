@@ -5,11 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.Hinting;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -19,6 +21,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public class FontMetrics : IFontMetrics
     {
+        private readonly MaximumProfileTable maximumProfileTable;
         private readonly CMapTable cmap;
         private readonly GlyphTable glyphs;
         private readonly HeadTable head;
@@ -32,6 +35,12 @@ namespace SixLabors.Fonts
         private readonly GPosTable? gPosTable;
         private readonly ColrTable? colrTable;
         private readonly CpalTable? cpalTable;
+        private readonly FpgmTable? fpgm;
+        private readonly CvtTable? cvt;
+        private readonly PrepTable? prep;
+
+        [ThreadStatic]
+        private Hinting.Interpreter interpreter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontMetrics"/> class.
@@ -52,6 +61,7 @@ namespace SixLabors.Fonts
         /// <param name="cpalTable">The CPAL table</param>
         internal FontMetrics(
             NameTable nameTable,
+            MaximumProfileTable maximumProfileTable,
             CMapTable cmap,
             GlyphTable glyphs,
             OS2Table os2,
@@ -64,8 +74,12 @@ namespace SixLabors.Fonts
             GSubTable? gSubTable,
             GPosTable? gPosTable,
             ColrTable? colrTable,
-            CpalTable? cpalTable)
+            CpalTable? cpalTable,
+            FpgmTable? fpgm,
+            CvtTable? cvt,
+            PrepTable? prep)
         {
+            this.maximumProfileTable = maximumProfileTable;
             this.cmap = cmap;
             this.os2 = os2;
             this.glyphs = glyphs;
@@ -133,6 +147,9 @@ namespace SixLabors.Fonts
             this.gPosTable = gPosTable;
             this.colrTable = colrTable;
             this.cpalTable = cpalTable;
+            this.fpgm = fpgm;
+            this.cvt = cvt;
+            this.prep = prep;
             this.Description = new FontDescription(nameTable, os2, head);
         }
 
@@ -162,6 +179,54 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         public short AdvanceHeightMax { get; }
+
+        internal GlyphVector ApplyHinting(GlyphVector glyphVector, float pixelSize, ushort glyphIndex)
+        {
+            if (interpreter == null)
+            {
+                interpreter = new Hinting.Interpreter(
+                    maximumProfileTable.MaxStackElements,
+                    maximumProfileTable.MaxStorage,
+                    maximumProfileTable.MaxFunctionDefs,
+                    maximumProfileTable.MaxInstructionDefs,
+                    maximumProfileTable.MaxTwilightPoints);
+
+                if (fpgm != null)
+                {
+                    interpreter.InitializeFunctionDefs(fpgm.Instructions);
+                }
+            }
+
+            var scale = pixelSize / UnitsPerEm;
+            interpreter.SetControlValueTable(cvt?.ControlValues, scale, pixelSize, prep?.Instructions);
+
+            var frontSideBearing = horizontalMetrics?.GetLeftSideBearing(glyphIndex) ?? 0;
+            var verticalFrontSideBearing = verticalMetricsTable?.GetTopSideBearing(glyphIndex) ?? 0;
+            var advance = horizontalMetrics?.GetAdvancedWidth(glyphIndex) ?? (ushort)AdvanceWidthMax;
+            var verticalAdvance = verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)AdvanceHeightMax;
+
+            var pp1 = new Vector2(glyphVector.Bounds.Max.X - frontSideBearing, 0);
+
+            var pp2 = new Vector2(pp1.X + advance, 0);
+            var pp3 = new Vector2(0, glyphVector.Bounds.Max.Y + verticalFrontSideBearing);
+            var pp4 = new Vector2(0, pp3.Y - verticalAdvance);
+
+            var controlPoints = new Vector2[glyphVector.ControlPoints.Length + 4];
+            controlPoints[controlPoints.Length - 4] = pp1 * scale;
+            controlPoints[controlPoints.Length - 3] = pp2 * scale;
+            controlPoints[controlPoints.Length - 2] = pp3 * scale;
+            controlPoints[controlPoints.Length - 1] = pp4 * scale;
+
+            glyphVector.ControlPoints.AsSpan().CopyTo(controlPoints.AsSpan());
+
+            var withPhantomPoints = new GlyphVector(controlPoints, glyphVector.OnCurves, glyphVector.EndPoints, glyphVector.Bounds, glyphVector.Instructions);
+
+            interpreter.HintGlyph(withPhantomPoints);
+
+            controlPoints.AsSpan(0, glyphVector.ControlPoints.Length).CopyTo(glyphVector.ControlPoints.AsSpan());
+
+            return glyphVector;
+        }
 
         /// <inheritdoc/>
         public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
@@ -284,7 +349,7 @@ namespace SixLabors.Fonts
             // recommended order
             HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
             HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>(); // hhea
-            reader.GetTable<MaximumProfileTable>(); // maxp
+            MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>(); // maxp
             OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
 
             // LTSH - Linear threshold data
@@ -303,9 +368,10 @@ namespace SixLabors.Fonts
 
             CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
 
-            // fpgm - Font Program
-            // prep - Control Value Program
-            // cvt  - Control Value Table
+            var fpgm = reader.TryGetTable<FpgmTable>(); // fpgm - Font Program
+            var prep = reader.TryGetTable<PrepTable>(); // prep -  Control Value Program
+            var cvt = reader.TryGetTable<CvtTable>(); // cvt  - Control Value Table
+
             reader.GetTable<IndexLocationTable>(); // loca
             GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
             KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
@@ -332,6 +398,7 @@ namespace SixLabors.Fonts
             // DSIG - Digital signature
             return new FontMetrics(
                 nameTable,
+                maxp,
                 cmap,
                 glyphs,
                 os2,
@@ -344,7 +411,10 @@ namespace SixLabors.Fonts
                 gSub,
                 gPos,
                 colrTable,
-                cpalTable);
+                cpalTable,
+                fpgm,
+                cvt,
+                prep);
         }
 
         /// <summary>
@@ -446,7 +516,6 @@ namespace SixLabors.Fonts
                 advancedHeight,
                 lsb,
                 tsb,
-                this.UnitsPerEm,
                 glyphId,
                 glyphType,
                 color);

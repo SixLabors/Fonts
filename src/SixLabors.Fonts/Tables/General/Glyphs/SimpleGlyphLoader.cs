@@ -13,14 +13,16 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         private readonly bool[] onCurves;
         private readonly ushort[] endPoints;
         private readonly Bounds bounds;
+        private readonly byte[] instructions;
 
-        public SimpleGlyphLoader(short[] xs, short[] ys, bool[] onCurves, ushort[] endPoints, Bounds bounds)
+        public SimpleGlyphLoader(short[] xs, short[] ys, bool[] onCurves, ushort[] endPoints, Bounds bounds, byte[] instructions)
         {
             this.xs = xs;
             this.ys = ys;
             this.onCurves = onCurves;
             this.endPoints = endPoints;
             this.bounds = bounds;
+            this.instructions = instructions;
         }
 
         public SimpleGlyphLoader(Bounds bounds)
@@ -28,6 +30,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             this.ys = this.xs = Array.Empty<short>();
             this.onCurves = Array.Empty<bool>();
             this.endPoints = Array.Empty<ushort>();
+            this.instructions = Array.Empty<byte>();
             this.bounds = bounds;
         }
 
@@ -46,7 +49,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         public override GlyphVector CreateGlyph(GlyphTable table)
 
             // lets build some shapes ??? here from
-            => new GlyphVector(Convert(this.xs, this.ys), this.onCurves, this.endPoints, this.bounds);
+            => new GlyphVector(Convert(this.xs, this.ys), this.onCurves, this.endPoints, this.bounds, this.instructions);
 
         private static Vector2[] Convert(short[] xs, short[] ys)
         {
@@ -94,7 +97,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 onCurves[i] = flags[i].HasFlag(Flags.OnCurve);
             }
 
-            return new SimpleGlyphLoader(xs, ys, onCurves, endPoints, bounds);
+            return new SimpleGlyphLoader(xs, ys, onCurves, endPoints, bounds, instructions);
         }
 
         private static Flags[] ReadFlags(BigEndianBinaryReader reader, int flagCount)

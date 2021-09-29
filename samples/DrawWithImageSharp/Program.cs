@@ -175,8 +175,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 TextOptions = new TextOptions()
                 {
                     ApplyKerning = options.ApplyKerning,
-                    DpiX = options.DpiX,
-                    DpiY = options.DpiY,
+                    DpiX = options.Dpi,
+                    DpiY = options.Dpi,
                     TabWidth = options.TabWidth,
                     LineSpacing = options.LineSpacing,
                     HorizontalAlignment = options.HorizontalAlignment,
@@ -226,7 +226,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
 
             var font = new Font(fontFamily, pointSize);
-            var renderOptions = new RendererOptions(font, textOptions.DpiX, textOptions.DpiY)
+            var renderOptions = new RendererOptions(font, textOptions.DpiX)
             {
                 ApplyKerning = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
@@ -273,7 +273,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     }
 
                     var font = new Font(fontFamily, pointSize);
-                    var renderOptions = new RendererOptions(font, textOptions.DpiX, textOptions.DpiY)
+                    var renderOptions = new RendererOptions(font, textOptions.DpiX)
                     {
                         ApplyKerning = true,
                         ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,

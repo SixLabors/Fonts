@@ -129,6 +129,8 @@ namespace SixLabors.Fonts
 
         public short ReadFWORD() => this.ReadInt16();
 
+        public short[] ReadFWORDArray(int length) => this.ReadInt16Array(length);
+
         public ushort ReadUFWORD() => this.ReadUInt16();
 
         /// <summary>

@@ -62,7 +62,7 @@ namespace SixLabors.Fonts
         public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphBounds[] characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
 
-        internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
+        internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
         {
             if (glyphLayouts.Count == 0)
             {
@@ -81,7 +81,7 @@ namespace SixLabors.Fonts
             return new FontRectangle(0, 0, size.X, size.Y);
         }
 
-        internal static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
+        internal static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
         {
             if (glyphLayouts.Count == 0)
             {
@@ -119,7 +119,7 @@ namespace SixLabors.Fonts
             return FontRectangle.FromLTRB(left, top, right, bottom);
         }
 
-        internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi, out GlyphBounds[] characterBounds)
+        internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out GlyphBounds[] characterBounds)
         {
             bool hasSize = false;
             if (glyphLayouts.Count == 0)
@@ -174,7 +174,7 @@ namespace SixLabors.Fonts
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
-                return GetBounds(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
+                return GetBounds(glyphsToRender, options.Dpi);
             }
 
             /// <summary>
@@ -188,7 +188,7 @@ namespace SixLabors.Fonts
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
-                return TryGetCharacterBounds(glyphsToRender, new Vector2(options.DpiX, options.DpiY), out characterBounds);
+                return TryGetCharacterBounds(glyphsToRender, options.Dpi, out characterBounds);
             }
 
             /// <summary>
@@ -201,7 +201,7 @@ namespace SixLabors.Fonts
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
-                return GetSize(glyphsToRender, new Vector2(options.DpiX, options.DpiY));
+                return GetSize(glyphsToRender, options.Dpi);
             }
         }
     }

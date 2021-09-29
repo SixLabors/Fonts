@@ -430,10 +430,9 @@ namespace SixLabors.Fonts.Tables
 
             // TODO: store instructions.
             Read255UInt16(glyphStreamReader);
-
             // Calculate bounds later.
             Bounds bounds = default;
-            return new GlyphVector(glyphPoints, onCurves, endContours, bounds);
+            return new GlyphVector(glyphPoints, onCurves, endContours, bounds, Array.Empty<byte>());
         }
 
         private static bool CompositeHasInstructions(BigEndianBinaryReader reader)

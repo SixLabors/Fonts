@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts.Tables.General.Glyphs;
@@ -18,7 +19,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             bool[] onCurves = { true, false };
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
-            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
 
             // act
             var clone = (GlyphVector)glyphVector.DeepClone();
@@ -42,7 +43,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
             var expectedBounds = new Bounds(11.0f, 12.0f, 13.0f, 14.0f);
-            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
 
             // act
             Matrix3x2 matrix = Matrix3x2.Identity;
@@ -62,8 +63,8 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             bool[] onCurves = { true, false };
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
-            var glyphVector1 = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
-            var glyphVector2 = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            var glyphVector1 = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
+            var glyphVector2 = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
 
             // act
             var appended = GlyphVector.Append(glyphVector1, glyphVector2);
@@ -100,7 +101,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(16130.0f, 260.0f, 26624.0f, 28928.0f);
             var expectedBounds = new Bounds(19876f, 013684f, 89804.8f, 108083.2f);
-            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
 
             // act
             Matrix3x2 matrix = Matrix3x2.Identity;

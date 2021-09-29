@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -10,12 +11,14 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
     internal sealed class CompositeGlyphLoader : GlyphLoader
     {
         private readonly Bounds bounds;
+        private readonly byte[] instructions;
         private readonly Composite[] result;
 
-        public CompositeGlyphLoader(IEnumerable<Composite> result, Bounds bounds)
+        public CompositeGlyphLoader(IEnumerable<Composite> result, Bounds bounds, byte[] instructions)
         {
             this.result = result.ToArray();
             this.bounds = bounds;
+            this.instructions = instructions;
         }
 
         public override GlyphVector CreateGlyph(GlyphTable table)
@@ -43,7 +46,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 }
             }
 
-            return new GlyphVector(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds);
+            return new GlyphVector(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds, this.instructions);
         }
 
         public static CompositeGlyphLoader LoadCompositeGlyph(BigEndianBinaryReader reader, in Bounds bounds)
@@ -83,12 +86,13 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             }
             while (flags.HasFlag(CompositeGlyphFlags.MoreComponents));
 
+            byte[] instructions = Array.Empty<byte>();
             if (flags.HasFlag(CompositeGlyphFlags.WeHaveInstructions))
             {
                 // TODO deal with instructions
             }
 
-            return new CompositeGlyphLoader(result, bounds);
+            return new CompositeGlyphLoader(result, bounds, instructions);
         }
 
         public static void LoadArguments(BigEndianBinaryReader reader, CompositeGlyphFlags flags, out int dx, out int dy)

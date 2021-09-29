@@ -201,8 +201,11 @@ namespace SixLabors.Fonts
         }
 
         public bool TryGetReaderAtTablePosition(string tableName, [NotNullWhen(returnValue: true)] out BigEndianBinaryReader? reader)
+            => this.TryGetReaderAtTablePosition(tableName, out reader, out _);
+
+        public bool TryGetReaderAtTablePosition(string tableName, [NotNullWhen(returnValue: true)] out BigEndianBinaryReader? reader, [NotNullWhen(returnValue: true)] out TableHeader? header)
         {
-            TableHeader? header = this.GetHeader(tableName);
+            header = this.GetHeader(tableName);
             if (header == null)
             {
                 reader = null;

@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Tests
             };
 
             IReadOnlyList<GlyphLayout> glyphsToRender = new TextLayout().GenerateLayout(text.AsSpan(), span);
-            FontRectangle bound = TextMeasurer.GetBounds(glyphsToRender, new Vector2(span.DpiX, span.DpiY));
+            FontRectangle bound = TextMeasurer.GetBounds(glyphsToRender, span.Dpi);
 
             Assert.Equal(310, bound.Width, 3);
             Assert.Equal(40, bound.Height, 3);

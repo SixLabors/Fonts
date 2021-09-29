@@ -19,6 +19,7 @@ namespace SixLabors.Fonts.Tests.Fakes
         internal FakeFontInstance(List<FakeGlyphSource> glyphs)
             : base(
                   GenerateNameTable("name"),
+                  GenerateMaxpTable(glyphs),
                   GenerateCMapTable(glyphs),
                   new FakeGlyphTable(glyphs),
                   GenerateOS2Table(),
@@ -31,12 +32,16 @@ namespace SixLabors.Fonts.Tests.Fakes
                   null,
                   null,
                   null,
+                  null,
+                  null,
+                  null,
                   null)
         {
         }
 
         internal FakeFontInstance(
             NameTable nameTable,
+            MaximumProfileTable maxpTable,
             CMapTable cmap,
             GlyphTable glyphs,
             OS2Table os2,
@@ -48,6 +53,7 @@ namespace SixLabors.Fonts.Tests.Fakes
             KerningTable kern)
             : base(
                   nameTable,
+                  maxpTable,
                   cmap,
                   glyphs,
                   os2,
@@ -57,6 +63,9 @@ namespace SixLabors.Fonts.Tests.Fakes
                   verticalMetrics,
                   head,
                   kern,
+                  null,
+                  null,
+                  null,
                   null,
                   null,
                   null,
@@ -73,6 +82,7 @@ namespace SixLabors.Fonts.Tests.Fakes
 
             return new FakeFontInstance(
                 GenerateNameTable(name),
+                GenerateMaxpTable(glyphs),
                 GenerateCMapTable(glyphs),
                 new FakeGlyphTable(glyphs),
                 GenerateOS2TableWithVaryingVerticalFontMetrics(),
@@ -113,6 +123,9 @@ namespace SixLabors.Fonts.Tests.Fakes
 
         private static CMapTable GenerateCMapTable(List<FakeGlyphSource> glyphs)
             => new CMapTable(new[] { new FakeCmapSubtable(glyphs) });
+
+        private static MaximumProfileTable GenerateMaxpTable(List<FakeGlyphSource> glyphs)
+            => new MaximumProfileTable((ushort)glyphs.Count);
 
         private static HorizontalHeadTable GenerateHorizontalHeadTable()
             => new HorizontalHeadTable(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);

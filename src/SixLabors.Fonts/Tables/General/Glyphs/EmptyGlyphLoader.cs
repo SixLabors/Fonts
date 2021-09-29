@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             {
                 if (this.glyph is null)
                 {
-                    this.glyph = new GlyphVector(Array.Empty<Vector2>(), Array.Empty<bool>(), Array.Empty<ushort>(), this.fallbackEmptyBounds);
+                    this.glyph = GlyphVector.Empty(this.fallbackEmptyBounds);
                 }
 
                 return this.glyph.Value;

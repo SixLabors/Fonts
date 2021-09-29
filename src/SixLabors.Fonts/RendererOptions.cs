@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="font">The font.</param>
         public RendererOptions(Font font)
-            : this(font, 72, 72)
+            : this(font, 72)
         {
         }
 
@@ -27,18 +27,7 @@ namespace SixLabors.Fonts
         /// <param name="font">The font.</param>
         /// <param name="dpi">The dpi.</param>
         public RendererOptions(Font font, float dpi)
-            : this(font, dpi, dpi)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RendererOptions"/> class.
-        /// </summary>
-        /// <param name="font">The font.</param>
-        /// <param name="dpiX">The X dpi.</param>
-        /// <param name="dpiY">The Y dpi.</param>
-        public RendererOptions(Font font, float dpiX, float dpiY)
-            : this(font, dpiX, dpiY, Vector2.Zero)
+            : this(font, dpi, Vector2.Zero)
         {
         }
 
@@ -48,7 +37,7 @@ namespace SixLabors.Fonts
         /// <param name="font">The font.</param>
         /// <param name="origin">The origin location.</param>
         public RendererOptions(Font font, Vector2 origin)
-            : this(font, 72, 72, origin)
+            : this(font, 72, origin)
         {
         }
 
@@ -56,26 +45,13 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="RendererOptions"/> class.
         /// </summary>
         /// <param name="font">The font.</param>
-        /// <param name="dpi">The dpi.</param>
+        /// <param name="dpi">The X dpi.</param>
         /// <param name="origin">The origin location.</param>
         public RendererOptions(Font font, float dpi, Vector2 origin)
-            : this(font, dpi, dpi, origin)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RendererOptions"/> class.
-        /// </summary>
-        /// <param name="font">The font.</param>
-        /// <param name="dpiX">The X dpi.</param>
-        /// <param name="dpiY">The Y dpi.</param>
-        /// <param name="origin">The origin location.</param>
-        public RendererOptions(Font font, float dpiX, float dpiY, Vector2 origin)
         {
             this.Origin = origin;
             this.Font = font;
-            this.DpiX = dpiX;
-            this.DpiY = dpiY;
+            this.Dpi = dpi;
         }
 
         /// <summary>
@@ -100,14 +76,17 @@ namespace SixLabors.Fonts
         public bool ApplyKerning { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the current X DPI to render/measure the text at.
+        /// Gets or sets a value indicating whether to apply hinting.
         /// </summary>
-        public float DpiX { get; set; }
+        /// <value>
+        ///   <c>true</c> if we should apply hinting; otherwise, <c>false</c>.
+        /// </value>
+        public bool ApplyHinting { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the current Ys DPI to render/measure the text at.
+        /// Gets or sets the current DPI to render/measure the text at.
         /// </summary>
-        public float DpiY { get; set; }
+        public float Dpi { get; set; }
 
         /// <summary>
         /// Gets or sets the collection of fallback font families to try and use when a specific glyph is missing.

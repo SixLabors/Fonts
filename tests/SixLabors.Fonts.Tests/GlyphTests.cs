@@ -24,21 +24,21 @@ namespace SixLabors.Fonts.Tests
             const string text = "A";
             CodePoint codePoint = this.AsCodePoint(text);
             var font = (FontMetrics)CreateFont(text).FontMetrics;
+
             var glyph = new Glyph(
                 new GlyphMetrics(
-                font,
-                codePoint,
-                new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1)),
-                0,
-                0,
-                0,
-                0,
-                1,
-                0),
+                    font,
+                    codePoint,
+                    new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, font.UnitsPerEm, 0, font.UnitsPerEm), Array.Empty<byte>()),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0),
                 10);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
-            glyph.RenderTo(this.renderer, locationInFontSpace, 72, 0);
+            glyph.RenderTo(this.renderer, locationInFontSpace, new RendererOptions(null, 72));
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
@@ -189,12 +189,14 @@ namespace SixLabors.Fonts.Tests
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
             {
                 ApplyKerning = applyKerning,
+                ApplyHinting = false,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff2 = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
             {
                 ApplyKerning = applyKerning,
+                ApplyHinting = false,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 

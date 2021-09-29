@@ -14,14 +14,13 @@ namespace SixLabors.Fonts
     [DebuggerDisplay("GlyphIndex = {GlyphIndex}, PointSize = {PointSize}, DpiX = {DpiX}, DpiY = {DpiY}")]
     public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParameters>
     {
-        internal GlyphRendererParameters(GlyphMetrics glyph, float pointSize, Vector2 dpi)
+        internal GlyphRendererParameters(GlyphMetrics glyph, float pointSize, float dpi)
         {
             this.Font = glyph.FontMetrics.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
             this.FontStyle = glyph.FontMetrics.Description.Style;
             this.GlyphIndex = glyph.GlyphId;
             this.PointSize = pointSize;
-            this.DpiX = dpi.X;
-            this.DpiY = dpi.Y;
+            this.Dpi = dpi;
             this.GlyphType = glyph.GlyphType;
             this.GlyphColor = glyph.GlyphColor ?? default;
         }
@@ -59,12 +58,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the dpi along the X axis we are rendering at.
         /// </summary>
-        public float DpiX { get; }
-
-        /// <summary>
-        /// Gets the dpi along the Y axis we are rendering at.
-        /// </summary>
-        public float DpiY { get; }
+        public float Dpi { get; }
 
         /// <summary>
         /// Compares two <see cref="GlyphRendererParameters"/> objects for equality.
@@ -100,8 +94,7 @@ namespace SixLabors.Fonts
         public bool Equals(GlyphRendererParameters other)
             => other.PointSize == this.PointSize
             && other.FontStyle == this.FontStyle
-            && other.DpiX == this.DpiX
-            && other.DpiY == this.DpiY
+            && other.Dpi == this.Dpi
             && other.GlyphIndex == this.GlyphIndex
             && other.GlyphType == this.GlyphType
             && other.GlyphColor.Equals(this.GlyphColor)
@@ -120,7 +113,6 @@ namespace SixLabors.Fonts
                 this.GlyphType,
                 this.GlyphColor,
                 this.FontStyle,
-                this.DpiX,
-                this.DpiY);
+                this.Dpi);
     }
 }

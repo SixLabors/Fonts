@@ -8,12 +8,16 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 {
     internal struct GlyphVector : IDeepCloneable
     {
-        internal GlyphVector(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds)
+        internal static GlyphVector Empty(Bounds bounds = default)
+            => new GlyphVector(Array.Empty<Vector2>(), Array.Empty<bool>(), Array.Empty<ushort>(), bounds, Array.Empty<byte>());
+
+        internal GlyphVector(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ReadOnlyMemory<byte> instructions)
         {
             this.ControlPoints = controlPoints;
             this.OnCurves = onCurves;
             this.EndPoints = endPoints;
             this.Bounds = bounds;
+            this.Instructions = instructions;
         }
 
         private GlyphVector(GlyphVector other)
@@ -26,6 +30,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             other.EndPoints.CopyTo(this.EndPoints.AsSpan());
             Bounds origBounds = other.Bounds;
             this.Bounds = new Bounds(origBounds.Min.X, origBounds.Min.Y, origBounds.Max.X, origBounds.Max.Y);
+
+            this.Instructions = other.Instructions;
         }
 
         public int PointCount => this.ControlPoints.Length;
@@ -35,6 +41,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         public ushort[] EndPoints { get; }
 
         public bool[] OnCurves { get; }
+
+        public ReadOnlyMemory<byte> Instructions { get; }
 
         public Bounds Bounds { get; internal set; }
 
@@ -65,7 +73,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 Vector2.Transform(src.Bounds.Min, matrix),
                 Vector2.Transform(src.Bounds.Max, matrix));
 
-            return new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            return new GlyphVector(controlPoints, onCurves, endPoints, bounds, src.Instructions);
         }
 
         /// <summary>
@@ -86,6 +94,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         /// <returns>The new <see cref="GlyphVector"/>.</returns>
         public static GlyphVector Append(GlyphVector first, GlyphVector second)
         {
+            // should we be doing this at this level or should we be doing this at hinting stage ???
+
             // No IEquality<GlyphVector> implementation.
             if (first.ControlPoints is null)
             {
@@ -110,7 +120,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             }
 
             var bounds = new Bounds(first.Bounds.Min, first.Bounds.Max);
-            return new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            return new GlyphVector(controlPoints, onCurves, endPoints, bounds, first.Instructions);
         }
     }
 }

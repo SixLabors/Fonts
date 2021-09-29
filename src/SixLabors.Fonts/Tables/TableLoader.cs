@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.Hinting;
 
 namespace SixLabors.Fonts.Tables
 {
@@ -35,6 +36,9 @@ namespace SixLabors.Fonts.Tables
             this.Register(CpalTable.Load);
             this.Register(GPosTable.Load);
             this.Register(GSubTable.Load);
+            this.Register(CvtTable.Load);
+            this.Register(FpgmTable.Load);
+            this.Register(PrepTable.Load);
         }
 
         public static TableLoader Default { get; } = new TableLoader();
