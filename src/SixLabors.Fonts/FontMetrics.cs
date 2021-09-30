@@ -209,17 +209,16 @@ namespace SixLabors.Fonts
             ushort advance = this.horizontalMetrics?.GetAdvancedWidth(glyphIndex) ?? (ushort)this.AdvanceWidthMax;
             ushort verticalAdvance = this.verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)this.AdvanceHeightMax;
 
-            var pp1 = new Vector2(glyphVector.Bounds.Max.X - frontSideBearing, 0);
-
-            var pp2 = new Vector2(pp1.X + advance, 0);
-            var pp3 = new Vector2(0, glyphVector.Bounds.Max.Y + verticalFrontSideBearing);
-            var pp4 = new Vector2(0, pp3.Y - verticalAdvance);
+            var pp1 = new Vector2(glyphVector.Bounds.Min.X - (frontSideBearing * scale), 0);
+            var pp2 = new Vector2(pp1.X + (advance * scale), 0);
+            var pp3 = new Vector2(0, glyphVector.Bounds.Max.Y + (verticalFrontSideBearing * scale));
+            var pp4 = new Vector2(0, pp3.Y - (verticalAdvance * scale));
 
             var controlPoints = new Vector2[glyphVector.ControlPoints.Length + 4];
-            controlPoints[controlPoints.Length - 4] = pp1 * scale;
-            controlPoints[controlPoints.Length - 3] = pp2 * scale;
-            controlPoints[controlPoints.Length - 2] = pp3 * scale;
-            controlPoints[controlPoints.Length - 1] = pp4 * scale;
+            controlPoints[controlPoints.Length - 4] = pp1;
+            controlPoints[controlPoints.Length - 3] = pp2;
+            controlPoints[controlPoints.Length - 2] = pp3;
+            controlPoints[controlPoints.Length - 1] = pp4;
 
             glyphVector.ControlPoints.AsSpan().CopyTo(controlPoints.AsSpan());
 
