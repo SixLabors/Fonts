@@ -40,12 +40,13 @@ namespace SixLabors.Fonts
         private readonly PrepTable? prep;
 
         [ThreadStatic]
-        private Hinting.Interpreter interpreter;
+        private Hinting.Interpreter? interpreter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontMetrics"/> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
+        /// <param name="maximumProfileTable">The maximum profile table.</param>
         /// <param name="cmap">The cmap table.</param>
         /// <param name="glyphs">The glyph table.</param>
         /// <param name="os2">The os2 table.</param>
@@ -59,6 +60,9 @@ namespace SixLabors.Fonts
         /// <param name="gPosTable">The glyph positioning table.</param>
         /// <param name="colrTable">The COLR table</param>
         /// <param name="cpalTable">The CPAL table</param>
+        /// <param name="fpgm">The font program table.</param>
+        /// <param name="cvt">The control value table.</param>
+        /// <param name="prep">The control value program table.</param>
         internal FontMetrics(
             NameTable nameTable,
             MaximumProfileTable maximumProfileTable,
@@ -182,28 +186,28 @@ namespace SixLabors.Fonts
 
         internal GlyphVector ApplyHinting(GlyphVector glyphVector, float pixelSize, ushort glyphIndex)
         {
-            if (interpreter == null)
+            if (this.interpreter == null)
             {
-                interpreter = new Hinting.Interpreter(
-                    maximumProfileTable.MaxStackElements,
-                    maximumProfileTable.MaxStorage,
-                    maximumProfileTable.MaxFunctionDefs,
-                    maximumProfileTable.MaxInstructionDefs,
-                    maximumProfileTable.MaxTwilightPoints);
+                this.interpreter = new Hinting.Interpreter(
+                    this.maximumProfileTable.MaxStackElements,
+                    this.maximumProfileTable.MaxStorage,
+                    this.maximumProfileTable.MaxFunctionDefs,
+                    this.maximumProfileTable.MaxInstructionDefs,
+                    this.maximumProfileTable.MaxTwilightPoints);
 
-                if (fpgm != null)
+                if (this.fpgm != null)
                 {
-                    interpreter.InitializeFunctionDefs(fpgm.Instructions);
+                    this.interpreter.InitializeFunctionDefs(this.fpgm.Instructions);
                 }
             }
 
-            var scale = pixelSize / UnitsPerEm;
-            interpreter.SetControlValueTable(cvt?.ControlValues, scale, pixelSize, prep?.Instructions);
+            float scale = pixelSize / this.UnitsPerEm;
+            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scale, pixelSize, this.prep?.Instructions);
 
-            var frontSideBearing = horizontalMetrics?.GetLeftSideBearing(glyphIndex) ?? 0;
-            var verticalFrontSideBearing = verticalMetricsTable?.GetTopSideBearing(glyphIndex) ?? 0;
-            var advance = horizontalMetrics?.GetAdvancedWidth(glyphIndex) ?? (ushort)AdvanceWidthMax;
-            var verticalAdvance = verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)AdvanceHeightMax;
+            short frontSideBearing = this.horizontalMetrics?.GetLeftSideBearing(glyphIndex) ?? 0;
+            short verticalFrontSideBearing = this.verticalMetricsTable?.GetTopSideBearing(glyphIndex) ?? 0;
+            ushort advance = this.horizontalMetrics?.GetAdvancedWidth(glyphIndex) ?? (ushort)this.AdvanceWidthMax;
+            ushort verticalAdvance = this.verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)this.AdvanceHeightMax;
 
             var pp1 = new Vector2(glyphVector.Bounds.Max.X - frontSideBearing, 0);
 
@@ -221,7 +225,7 @@ namespace SixLabors.Fonts
 
             var withPhantomPoints = new GlyphVector(controlPoints, glyphVector.OnCurves, glyphVector.EndPoints, glyphVector.Bounds, glyphVector.Instructions);
 
-            interpreter.HintGlyph(withPhantomPoints);
+            this.interpreter.HintGlyph(withPhantomPoints);
 
             controlPoints.AsSpan(0, glyphVector.ControlPoints.Length).CopyTo(glyphVector.ControlPoints.AsSpan());
 
@@ -368,9 +372,9 @@ namespace SixLabors.Fonts
 
             CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
 
-            var fpgm = reader.TryGetTable<FpgmTable>(); // fpgm - Font Program
-            var prep = reader.TryGetTable<PrepTable>(); // prep -  Control Value Program
-            var cvt = reader.TryGetTable<CvtTable>(); // cvt  - Control Value Table
+            FpgmTable? fpgm = reader.TryGetTable<FpgmTable>(); // fpgm - Font Program
+            PrepTable? prep = reader.TryGetTable<PrepTable>(); // prep -  Control Value Program
+            CvtTable? cvt = reader.TryGetTable<CvtTable>(); // cvt  - Control Value Table
 
             reader.GetTable<IndexLocationTable>(); // loca
             GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf

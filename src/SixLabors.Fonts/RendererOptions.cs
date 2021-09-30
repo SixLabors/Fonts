@@ -45,6 +45,19 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="RendererOptions"/> class.
         /// </summary>
         /// <param name="font">The font.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <param name="unused">Not used. Just exists to satisfy the compiler.</param>
+        /// <param name="origin">The origin location.</param>
+        public RendererOptions(Font font, float dpi, float unused, Vector2 origin)
+            : this(font, dpi, origin)
+        {
+            // TODO: Remove this. It just exists to allow visual testing.
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RendererOptions"/> class.
+        /// </summary>
+        /// <param name="font">The font.</param>
         /// <param name="dpi">The X dpi.</param>
         /// <param name="origin">The origin location.</param>
         public RendererOptions(Font font, float dpi, Vector2 origin)

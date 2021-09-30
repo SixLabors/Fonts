@@ -1,20 +1,14 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
-
 namespace SixLabors.Fonts.Tables.Hinting
-
 {
     [TableName(TableName)]
     internal class FpgmTable : Table
     {
         internal const string TableName = "fpgm";
 
-        public FpgmTable(byte[] instructions)
-        {
-            this.Instructions = instructions;
-        }
+        public FpgmTable(byte[] instructions) => this.Instructions = instructions;
 
         public byte[] Instructions { get; }
 
@@ -38,8 +32,7 @@ namespace SixLabors.Fonts.Tables.Hinting
             // Type     | Description
             // ---------| ------------
             // uint8[n] | Instructions. n is the number of uint8 items that fit in the size of the table.
-
-            var instructions = reader.ReadUInt8Array((int)tableLength);
+            byte[] instructions = reader.ReadUInt8Array((int)tableLength);
 
             return new FpgmTable(instructions);
         }

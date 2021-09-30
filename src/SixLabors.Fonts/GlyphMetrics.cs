@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
     {
         private static readonly Vector2 MirrorScale = new(1, -1);
         private GlyphVector vector;
-        private Dictionary<float, GlyphVector> scaledVector = new Dictionary<float, GlyphVector>();
+        private readonly Dictionary<float, GlyphVector> scaledVector = new();
 
         internal GlyphMetrics(
             FontMetrics font,
@@ -191,17 +191,6 @@ namespace SixLabors.Fonts
             return new FontRectangle(loc.X, loc.Y, size.X, size.Y);
         }
 
-        internal GlyphVector Scale(float scaledPointSize)
-        {
-            if (!scaledVector.TryGetValue(scaledPointSize, out var scaled))
-            {
-                scaled = GlyphVector.Transform(vector, Matrix3x2.CreateScale(scaledPointSize));
-                scaledVector[scaledPointSize] = scaled;
-            }
-
-            return scaled;
-        }
-
         /// <summary>
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
         /// </summary>
@@ -212,10 +201,10 @@ namespace SixLabors.Fonts
         /// <exception cref="NotSupportedException">Too many control points</exception>
         public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, RendererOptions options)
         {
-            var dpi = options.Dpi;
+            float dpi = options.Dpi;
             location *= dpi;
 
-            var scaledPoint = dpi * pointSize;
+            float scaledPoint = dpi * pointSize;
 
             FontRectangle box = this.BoundingBox(location, scaledPoint);
 
@@ -228,7 +217,12 @@ namespace SixLabors.Fonts
                     colorSurface.SetColor(this.GlyphColor.Value);
                 }
 
-                var scaledVector = this.Scale(scaledPoint);
+                if (!this.scaledVector.TryGetValue(scaledPoint, out GlyphVector scaledVector))
+                {
+                    scaledVector = GlyphVector.Scale(this.vector, scaledPoint / this.ScaleFactor);
+                    this.scaledVector[scaledPoint] = scaledVector;
+                }
+
                 if (options.ApplyHinting)
                 {
                     this.FontMetrics.ApplyHinting(scaledVector, pointSize * dpi / 72, this.GlyphId);
@@ -242,8 +236,8 @@ namespace SixLabors.Fonts
                     endOfContour = this.vector.EndPoints[i];
 
                     Vector2 prev;
-                    Vector2 curr = GetPoint(ref scaledVector, endOfContour) + location;
-                    Vector2 next = GetPoint(ref scaledVector, startOfContour) + location;
+                    Vector2 curr = this.GetPoint(ref scaledVector, endOfContour) + location;
+                    Vector2 next = this.GetPoint(ref scaledVector, startOfContour) + location;
 
                     if (this.vector.OnCurves[endOfContour])
                     {
@@ -271,7 +265,7 @@ namespace SixLabors.Fonts
                         int currentIndex = startOfContour + p;
                         int nextIndex = startOfContour + ((p + 1) % length);
                         int prevIndex = startOfContour + ((length + p - 1) % length);
-                        next = GetPoint(ref scaledVector, nextIndex) + location;
+                        next = this.GetPoint(ref scaledVector, nextIndex) + location;
 
                         if (this.vector.OnCurves[currentIndex])
                         {

@@ -8,9 +8,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 {
     internal struct GlyphVector : IDeepCloneable
     {
-        internal static GlyphVector Empty(Bounds bounds = default)
-            => new GlyphVector(Array.Empty<Vector2>(), Array.Empty<bool>(), Array.Empty<ushort>(), bounds, Array.Empty<byte>());
-
         internal GlyphVector(Vector2[] controlPoints, bool[] onCurves, ushort[] endPoints, Bounds bounds, ReadOnlyMemory<byte> instructions)
         {
             this.ControlPoints = controlPoints;
@@ -46,6 +43,9 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public Bounds Bounds { get; internal set; }
 
+        internal static GlyphVector Empty(Bounds bounds = default)
+            => new(Array.Empty<Vector2>(), Array.Empty<bool>(), Array.Empty<ushort>(), bounds, Array.Empty<byte>());
+
         /// <inheritdoc/>
         public IDeepCloneable DeepClone() => new GlyphVector(this);
 
@@ -75,6 +75,15 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
             return new GlyphVector(controlPoints, onCurves, endPoints, bounds, src.Instructions);
         }
+
+        /// <summary>
+        /// Scales a glyph vector uniformly by a specified scale.
+        /// </summary>
+        /// <param name="src">The glyph vector to translate.</param>
+        /// <param name="scale">The uniform scale to use.</param>
+        /// <returns>The new <see cref="GlyphVector"/>.</returns>
+        public static GlyphVector Scale(GlyphVector src, float scale)
+            => Transform(src, Matrix3x2.CreateScale(scale));
 
         /// <summary>
         /// Translates a glyph vector by a specified x and y coordinates.

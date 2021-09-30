@@ -282,7 +282,8 @@ namespace SixLabors.Fonts.Tables
 
             for (ushort i = 0; i < numGlyphs; ++i)
             {
-                if (glyphs[i].Equals(default(GlyphVector)))
+                // No IEquality<GlyphVector> implementation
+                if (glyphs[i].ControlPoints is null)
                 {
                     glyphLoaders[i] = emptyGlyphLoader;
                     continue;
@@ -430,6 +431,7 @@ namespace SixLabors.Fonts.Tables
 
             // TODO: store instructions.
             Read255UInt16(glyphStreamReader);
+
             // Calculate bounds later.
             Bounds bounds = default;
             return new GlyphVector(glyphPoints, onCurves, endContours, bounds, Array.Empty<byte>());

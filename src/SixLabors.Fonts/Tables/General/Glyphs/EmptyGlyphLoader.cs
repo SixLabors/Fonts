@@ -1,9 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
-using System.Numerics;
-
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {
     internal class EmptyGlyphLoader : GlyphLoader
