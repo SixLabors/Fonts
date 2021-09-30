@@ -174,12 +174,70 @@ namespace SixLabors.Fonts.Tests
             "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。",
             160, // 30 actual line height * 2 + 10 actual height
             310)]
-        public void MeasureTextWordWrapping(string text, float height, float width)
+        public void MeasureTextWordWrappingHorizontalTopBottom(string text, float height, float width)
         {
             Font font = CreateFont(text);
             FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
             {
-                WrappingWidth = 350
+                WrappingWidth = 350,
+                LayoutMode = LayoutMode.HorizontalTopBottom
+            });
+
+            Assert.Equal(width, size.Width, 4);
+            Assert.Equal(height, size.Height, 4);
+        }
+
+        [Theory]
+        [InlineData("hello world", 10, 310)]
+        [InlineData(
+            "hello world hello world hello world",
+            70, // 30 actual line height * 2 + 10 actual height
+            310)]
+        [InlineData(// issue https://github.com/SixLabors/ImageSharp.Drawing/issues/115
+            "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。",
+            160, // 30 actual line height * 2 + 10 actual height
+            310)]
+        public void MeasureTextWordWrappingHorizontalBottomTop(string text, float height, float width)
+        {
+            Font font = CreateFont(text);
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
+            {
+                WrappingWidth = 350,
+                LayoutMode = LayoutMode.HorizontalBottomTop
+            });
+
+            Assert.Equal(width, size.Width, 4);
+            Assert.Equal(height, size.Height, 4);
+        }
+
+        [Theory]
+        [InlineData("hello world", 310, 30)]
+        [InlineData("hello world hello world hello world", 310, 90)]
+        [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+        public void MeasureTextWordWrappingVerticalLeftRight(string text, float height, float width)
+        {
+            Font font = CreateFont(text);
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
+            {
+                WrappingWidth = 350,
+                LayoutMode = LayoutMode.VerticalLeftRight
+            });
+
+            Assert.Equal(width, size.Width, 4);
+            Assert.Equal(height, size.Height, 4);
+        }
+
+        [Theory]
+        [InlineData("hello world", 310, 30)]
+        [InlineData("hello world hello world hello world", 310, 90)]
+        [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+        public void MeasureTextWordWrappingVerticalRightLeft(string text, float height, float width)
+        {
+            Font font = CreateFont(text);
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
+            {
+                WrappingWidth = 350,
+                LayoutMode = LayoutMode.VerticalRightLeft
             });
 
             Assert.Equal(width, size.Width, 4);
