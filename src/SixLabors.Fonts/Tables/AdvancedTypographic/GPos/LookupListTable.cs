@@ -130,7 +130,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 8 => LookupType8SubTable.Load(reader, offset),
 
                 // TODO: enable once TryUpdatePosition is implemented.
-                // 4 => LookupType4SubTable.Load(reader, offset),
                 // 5 => LookupType5SubTable.Load(reader, offset),
                 // 6 => LookupType6SubTable.Load(reader, offset),
                 _ => new NotImplementedSubTable()
