@@ -28,12 +28,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // | MarkRecord   | ligArray[markCount]    | Array of offsets to LigatureAttach tables. Offsets are from beginning of             |
             // |              |                        | LigatureArray table, ordered by ligatureCoverage index.                              |
             // +--------------+------------------------+--------------------------------------------------------------------------------------+
-            reader.BaseStream.Seek(offset, SeekOrigin.Begin);
+            reader.Seek(offset, SeekOrigin.Begin);
             ushort ligatureCount = reader.ReadUInt16();
             this.LigatureAttachTables = new LigatureAttachTable[ligatureCount];
             for (int i = 0; i < ligatureCount; i++)
             {
-                this.LigatureAttachTables[i] = new LigatureAttachTable(reader, markClassCount);
+                this.LigatureAttachTables[i] = new LigatureAttachTable(reader, markClassCount, offset);
             }
         }
 

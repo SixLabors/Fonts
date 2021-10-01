@@ -1,7 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -85,7 +87,58 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 Tag feature,
                 ushort index,
                 int count)
-                => throw new System.NotImplementedException();
+            {
+                // Mark-to-Ligature Attachment Positioning.
+                // Implements: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-5-mark-to-ligature-attachment-positioning-subtable
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
+                {
+                    return false;
+                }
+
+                int markIndex = this.markCoverage.CoverageIndexOf(glyphId);
+                if (markIndex == -1)
+                {
+                    return false;
+                }
+
+                // Search backward for a base glyph.
+                int baseGlyphIterator = index;
+                while (--baseGlyphIterator >= 0)
+                {
+                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
+                    if (!CodePoint.IsMark(data.CodePoint))
+                    {
+                        break;
+                    }
+                }
+
+                if (baseGlyphIterator < 0)
+                {
+                    return false;
+                }
+
+                ushort baseGlyphIndex = (ushort)baseGlyphIterator;
+                ushort baseGlyphId = collection[baseGlyphIndex][0];
+                int ligatureIndex = this.ligatureCoverage.CoverageIndexOf(baseGlyphId);
+                if (ligatureIndex < 0)
+                {
+                    return false;
+                }
+
+                LigatureAttachTable ligatureAttach = this.ligatureArrayTable.LigatureAttachTables[ligatureIndex];
+                ushort markGlyphId = glyphId;
+                ushort ligGlyphId = baseGlyphId;
+
+                // TODO: figure out how to calculate the compIndex, see fontKit.
+                int compIndex = 0;
+
+                MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
+                AnchorTable baseAnchor = ligatureAttach.ComponentRecords[compIndex].LigatureAnchorTables[markRecord.MarkClass];
+                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, baseGlyphIndex, baseGlyphId, glyphId);
+
+                return true;
+            }
         }
     }
 }
