@@ -23,11 +23,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             for (int i = 0; i < classCount; i++)
             {
                 ushort baseAnchorOffset = reader.ReadOffset16();
-
-                // Restore stream offset, after reading anchor table.
-                long readerPosition = reader.BaseStream.Position;
                 this.BaseAnchorTables[i] = AnchorTable.Load(reader, offset + baseAnchorOffset);
-                reader.BaseStream.Position = readerPosition;
             }
         }
 
