@@ -415,19 +415,20 @@ namespace SixLabors.Fonts
             GlyphType glyphType,
             ushort palleteIndex = 0)
         {
+            GlyphVector vector = this.glyphs.GetGlyph(glyphId);
+
             ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphId);
             short lsb = this.horizontalMetrics.GetLeftSideBearing(glyphId);
 
             // Provide a default for the advance height. This is overwritten for vertical fonts.
             ushort advancedHeight = (ushort)(this.Ascender - this.Descender);
-            short tsb = 0;
+            short tsb = (short)(this.Ascender - vector.Bounds.Max.Y);
             if (this.verticalMetricsTable != null)
             {
                 advancedHeight = this.verticalMetricsTable.GetAdvancedHeight(glyphId);
                 tsb = this.verticalMetricsTable.GetTopSideBearing(glyphId);
             }
 
-            GlyphVector vector = this.glyphs.GetGlyph(glyphId);
             GlyphColor? color = null;
             if (glyphType == GlyphType.ColrLayer)
             {

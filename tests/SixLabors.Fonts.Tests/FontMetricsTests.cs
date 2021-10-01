@@ -72,7 +72,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(1293, glyphMetrics.Width);
             Assert.Equal(1468, glyphMetrics.Height);
             Assert.Equal(0, glyphMetrics.LeftSideBearing);
-            Assert.Equal(0, glyphMetrics.TopSideBearing);
+            Assert.Equal(721, glyphMetrics.TopSideBearing);
             Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
         }
 
@@ -99,7 +99,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(1293, glyphMetrics.Width);
             Assert.Equal(1468, glyphMetrics.Height);
             Assert.Equal(0, glyphMetrics.LeftSideBearing);
-            Assert.Equal(0, glyphMetrics.TopSideBearing);
+            Assert.Equal(721, glyphMetrics.TopSideBearing);
             Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
         }
 
@@ -127,7 +127,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(1293, glyphMetrics.Width);
             Assert.Equal(1468, glyphMetrics.Height);
             Assert.Equal(0, glyphMetrics.LeftSideBearing);
-            Assert.Equal(0, glyphMetrics.TopSideBearing);
+            Assert.Equal(721, glyphMetrics.TopSideBearing);
             Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
         }
 #endif
