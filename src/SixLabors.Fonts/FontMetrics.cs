@@ -204,10 +204,10 @@ namespace SixLabors.Fonts
             float scale = pixelSize / this.UnitsPerEm;
             this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scale, pixelSize, this.prep?.Instructions);
 
-            short frontSideBearing = this.horizontalMetrics?.GetLeftSideBearing(glyphIndex) ?? 0;
-            short verticalFrontSideBearing = this.verticalMetricsTable?.GetTopSideBearing(glyphIndex) ?? 0;
+            short frontSideBearing = this.horizontalMetrics?.GetLeftSideBearing(glyphIndex) ?? (short)glyphVector.Bounds.Min.X;
+            short verticalFrontSideBearing = this.verticalMetricsTable?.GetTopSideBearing(glyphIndex) ?? (short)(this.Ascender - glyphVector.Bounds.Max.Y);
             ushort advance = this.horizontalMetrics?.GetAdvancedWidth(glyphIndex) ?? (ushort)this.AdvanceWidthMax;
-            ushort verticalAdvance = this.verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)this.AdvanceHeightMax;
+            ushort verticalAdvance = this.verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)this.LineHeight;
 
             var pp1 = new Vector2(glyphVector.Bounds.Min.X - (frontSideBearing * scale), 0);
             var pp2 = new Vector2(pp1.X + (advance * scale), 0);
@@ -488,19 +488,20 @@ namespace SixLabors.Fonts
             GlyphType glyphType,
             ushort palleteIndex = 0)
         {
+            GlyphVector vector = this.glyphs.GetGlyph(glyphId);
+
             ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphId);
             short lsb = this.horizontalMetrics.GetLeftSideBearing(glyphId);
 
             // Provide a default for the advance height. This is overwritten for vertical fonts.
             ushort advancedHeight = (ushort)(this.Ascender - this.Descender);
-            short tsb = 0;
+            short tsb = (short)(this.Ascender - vector.Bounds.Max.Y);
             if (this.verticalMetricsTable != null)
             {
                 advancedHeight = this.verticalMetricsTable.GetAdvancedHeight(glyphId);
                 tsb = this.verticalMetricsTable.GetTopSideBearing(glyphId);
             }
 
-            GlyphVector vector = this.glyphs.GetGlyph(glyphId);
             GlyphColor? color = null;
             if (glyphType == GlyphType.ColrLayer)
             {
