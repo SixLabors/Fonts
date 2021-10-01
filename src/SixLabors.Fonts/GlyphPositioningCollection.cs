@@ -32,15 +32,15 @@ namespace SixLabors.Fonts
         private readonly Dictionary<int, GlyphMetrics[]> map = new();
 
         /// <summary>
-        /// Whether the text layout mode is vertical.
-        /// </summary>
-        private readonly bool isVertical;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
         /// </summary>
         /// <param name="mode">The text layout mode.</param>
-        public GlyphPositioningCollection(LayoutMode mode) => this.isVertical = mode.IsVertical();
+        public GlyphPositioningCollection(LayoutMode mode) => this.IsVerticalLayoutMode = mode.IsVertical();
+
+        /// <summary>
+        /// Gets a value indicating whether the text layout mode is vertical.
+        /// </summary>
+        public bool IsVerticalLayoutMode { get; }
 
         /// <inheritdoc />
         public int Count => this.offsets.Count;
@@ -232,6 +232,27 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Gets the rectangluar advanced bounds of the glyph at the given index and id.
+        /// </summary>
+        /// <param name="fontMetrics">The font face with metrics.</param>
+        /// <param name="index">The zero-based index of the elements to offset.</param>
+        /// <param name="glyphId">The id of the glyph to offset.</param>
+        /// <returns>The rectangular advanced bounds.</returns>
+        internal FontRectangle GetAdvanceBounds(IFontMetrics fontMetrics, ushort index, ushort glyphId)
+        {
+            foreach (GlyphMetrics m in this.map[this.offsets[index]])
+            {
+                if (m.GlyphId == glyphId && m.FontMetrics == fontMetrics)
+                {
+                    // TODO: Use Left/Top Bearing?
+                    return FontRectangle.FromLTRB(m.Bounds.Min.X, m.Bounds.Min.Y, m.AdvanceWidth, m.AdvanceHeight);
+                }
+            }
+
+            return FontRectangle.Empty;
+        }
+
+        /// <summary>
         /// Updates the advanced metrics of the glyphs at the given index and id,
         /// adding dx and dy to the current advance.
         /// </summary>
@@ -246,7 +267,7 @@ namespace SixLabors.Fonts
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.ApplyAdvance(dx, this.isVertical ? dy : (short)0);
+                    m.ApplyAdvance(dx, this.IsVerticalLayoutMode ? dy : (short)0);
                 }
             }
         }

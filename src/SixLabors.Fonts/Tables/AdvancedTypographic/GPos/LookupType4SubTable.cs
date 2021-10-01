@@ -100,7 +100,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 // Search backward for a base glyph.
-                // TODO: It looks like we need an extra property "ligatureComponent" in our glyph shaping data.
+                // TODO: Fontkit stores an extra property "ligatureComponent" in our glyph shaping data?
                 int baseGlyphIterator = index;
                 while (--baseGlyphIterator >= 0)
                 {
@@ -132,13 +132,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 short markX = markRecord.MarkAnchorTable.XCoordinate;
                 short markY = markRecord.MarkAnchorTable.YCoordinate;
 
+                FontRectangle baseBounds = collection.GetAdvanceBounds(fontMetrics, baseGlyphIndex, baseGlyphId);
                 Vector2 glyphOffset = collection.GetOffset(fontMetrics, index, glyphId);
-                short markPosXOffset = (short)((-glyphOffset.X) + baseX - markX);
-                short markPosYOffset = (short)((-glyphOffset.Y) + baseY - markY);
 
-                collection.Offset(fontMetrics, index, glyphId, markPosXOffset, markPosYOffset);
+                // Negate original offset to reset position to 0,0.
+                short xo = (short)(glyphOffset.X * -1);
+                short yo = (short)(glyphOffset.Y * -1);
 
-                // TODO: We should be capturing the base glyph index as a mark attachment?
+                // Now offset to match the base position.
+                // Advance bounds width/height already include the bounds min offset
+                if (collection.IsVerticalLayoutMode)
+                {
+                    xo += (short)baseBounds.X;
+                    yo -= (short)baseBounds.Height;
+                }
+                else
+                {
+                    xo -= (short)baseBounds.Width;
+                    yo += (short)baseBounds.Y;
+                }
+
+                // Now add new offset.
+                xo += (short)(baseX - markX);
+                yo += (short)(baseY - markY);
+                collection.Offset(fontMetrics, index, glyphId, xo, yo);
+
                 return true;
             }
         }
