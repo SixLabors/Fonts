@@ -20,20 +20,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// <param name="markClassCount">Number of defined mark classes.</param>
         public LigatureArrayTable(BigEndianBinaryReader reader, long offset, ushort markClassCount)
         {
-            // +--------------+------------------------+--------------------------------------------------------------------------------------+
-            // | Type         | Name                   | Description                                                                          |
-            // +==============+========================+======================================================================================+
-            // | uint16       | ligatureCount          | Number of LigatureAttach table offsets                                               |
-            // +--------------+------------------------+--------------------------------------------------------------------------------------+
-            // | MarkRecord   | ligArray[markCount]    | Array of offsets to LigatureAttach tables. Offsets are from beginning of             |
-            // |              |                        | LigatureArray table, ordered by ligatureCoverage index.                              |
-            // +--------------+------------------------+--------------------------------------------------------------------------------------+
+            // +--------------+--------------------------------------+--------------------------------------------------------------------------------------+
+            // | Type         | Name                                 | Description                                                                          |
+            // +==============+======================================+======================================================================================+
+            // | uint16       | ligatureCount                        | Number of LigatureAttach table offsets                                               |
+            // +--------------+--------------------------------------+--------------------------------------------------------------------------------------+
+            // | Offset16     | ligatureAttachOffsets[ligatureCount] | Array of offsets to LigatureAttach tables. Offsets are from beginning of             |
+            // |              |                                      | LigatureArray table, ordered by ligatureCoverage index.                              |
+            // +--------------+--------------------------------------+--------------------------------------------------------------------------------------+
             reader.Seek(offset, SeekOrigin.Begin);
             ushort ligatureCount = reader.ReadUInt16();
             this.LigatureAttachTables = new LigatureAttachTable[ligatureCount];
+            ushort[] ligatureAttachOffsets = new ushort[ligatureCount];
             for (int i = 0; i < ligatureCount; i++)
             {
-                this.LigatureAttachTables[i] = new LigatureAttachTable(reader, markClassCount, offset);
+                ligatureAttachOffsets[i] = reader.ReadOffset16();
+            }
+
+            for (int i = 0; i < ligatureCount; i++)
+            {
+                this.LigatureAttachTables[i] = new LigatureAttachTable(reader, markClassCount, offset + ligatureAttachOffsets[i]);
             }
         }
 
