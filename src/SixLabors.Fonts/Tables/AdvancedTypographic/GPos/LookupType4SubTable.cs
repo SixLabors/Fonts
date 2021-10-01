@@ -141,20 +141,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 // Now offset to match the base position.
                 // Advance bounds width/height already include the bounds min offset
-                if (collection.IsVerticalLayoutMode)
-                {
-                    xo += (short)baseBounds.X;
-                    yo -= (short)baseBounds.Height;
-                }
-                else
-                {
-                    xo -= (short)baseBounds.Width;
-                    yo += (short)baseBounds.Y;
-                }
+                xo -= (short)baseBounds.Width;
+                yo += (short)baseBounds.Y;
 
                 // Now add new offset.
                 xo += (short)(baseX - markX);
                 yo += (short)(baseY - markY);
+
+                // TODO: Consider vertical layout modes. TTB and BBT
                 collection.Offset(fontMetrics, index, glyphId, xo, yo);
 
                 return true;
