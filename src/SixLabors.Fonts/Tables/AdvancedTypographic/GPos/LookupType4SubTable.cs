@@ -100,35 +100,23 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 // Search backward for a base glyph.
-                ushort baseGlyphIndex = index;
-                while (--baseGlyphIndex >= 0)
+                // TODO: Fontkit stores an extra property "ligatureComponent" in our glyph shaping data?
+                int baseGlyphIterator = index;
+                while (--baseGlyphIterator >= 0)
                 {
-                    if (!collection.TryGetGlyphMetricsAtOffset(baseGlyphIndex, out GlyphMetrics[]? metrics))
-                    {
-                        return false;
-                    }
-
-                    bool isMark = true;
-                    foreach (GlyphMetrics glyphMetrics in metrics)
-                    {
-                        if (!CodePoint.IsMark(glyphMetrics.CodePoint))
-                        {
-                            isMark = false;
-                            break;
-                        }
-                    }
-
-                    if (!isMark)
+                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
+                    if (!CodePoint.IsMark(data.CodePoint))
                     {
                         break;
                     }
                 }
 
-                if (baseGlyphIndex < 0)
+                if (baseGlyphIterator < 0)
                 {
                     return false;
                 }
 
+                ushort baseGlyphIndex = (ushort)baseGlyphIterator;
                 ushort baseGlyphId = collection[baseGlyphIndex][0];
                 int baseIndex = this.baseCoverage.CoverageIndexOf(baseGlyphId);
                 if (baseIndex < 0)
@@ -144,14 +132,24 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 short markX = markRecord.MarkAnchorTable.XCoordinate;
                 short markY = markRecord.MarkAnchorTable.YCoordinate;
 
-                int markPosXOffset = baseX - markX;
-                int markPosYOffset = baseY - markY;
-
-                Vector2 baseGlyphOffset = collection.GetOffset(fontMetrics, baseGlyphIndex, baseGlyphId);
+                FontRectangle baseBounds = collection.GetAdvanceBounds(fontMetrics, baseGlyphIndex, baseGlyphId);
                 Vector2 glyphOffset = collection.GetOffset(fontMetrics, index, glyphId);
 
-                // TODO: this is still wrong. We need to move the current glyph (at index) to the base glyph position and then apply the mark offsets.
-                collection.Offset(fontMetrics, index, glyphId, (short)(-baseGlyphOffset.X + markPosXOffset), (short)(-baseGlyphOffset.Y + markPosYOffset));
+                // Negate original offset to reset position to 0,0.
+                short xo = (short)(glyphOffset.X * -1);
+                short yo = (short)(glyphOffset.Y * -1);
+
+                // Now offset to match the base position.
+                // Advance bounds width/height already include the bounds min offset
+                xo -= (short)baseBounds.Width;
+                yo += (short)baseBounds.Y;
+
+                // Now add new offset.
+                xo += (short)(baseX - markX);
+                yo += (short)(baseY - markY);
+
+                // TODO: Consider vertical layout modes. TTB and BBT
+                collection.Offset(fontMetrics, index, glyphId, xo, yo);
 
                 return true;
             }

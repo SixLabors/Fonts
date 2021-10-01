@@ -250,7 +250,6 @@ namespace SixLabors.Fonts
                 TextLine.GlyphLayoutData info = textLine[i];
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
-                    float scale = info.PointSize / metric.ScaleFactor;
                     if (info.IsNewLine)
                     {
                         location.Y += textBox.ScaledMaxLineHeight * options.LineSpacing;
@@ -263,7 +262,7 @@ namespace SixLabors.Fonts
                         new Glyph(metric, info.PointSize),
                         location,
                         info.ScaledAdvance,
-                        metric.AdvanceHeight * scale,
+                        metric.AdvanceHeight * (info.PointSize / metric.ScaleFactor),
                         textBox.ScaledMaxLineHeight * options.LineSpacing,
                         i == 0));
                 }

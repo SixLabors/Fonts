@@ -20,15 +20,22 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // |              |                                   | Offsets are from beginning of BaseArray table, ordered by class (offsets may be NULL). |
             // +--------------+-----------------------------------+----------------------------------------------------------------------------------------+
             this.BaseAnchorTables = new AnchorTable[classCount];
+            ushort[] baseAnchorOffsets = new ushort[classCount];
             for (int i = 0; i < classCount; i++)
             {
-                ushort baseAnchorOffset = reader.ReadOffset16();
-
-                // Restore stream offset, after reading anchor table.
-                long readerPosition = reader.BaseStream.Position;
-                this.BaseAnchorTables[i] = AnchorTable.Load(reader, offset + baseAnchorOffset);
-                reader.BaseStream.Position = readerPosition;
+                baseAnchorOffsets[i] = reader.ReadOffset16();
             }
+
+            long position = reader.BaseStream.Position;
+            for (int i = 0; i < classCount; i++)
+            {
+                if (baseAnchorOffsets[i] is not 0)
+                {
+                    this.BaseAnchorTables[i] = AnchorTable.Load(reader, offset + baseAnchorOffsets[i]);
+                }
+            }
+
+            reader.BaseStream.Position = position;
         }
 
         /// <summary>
