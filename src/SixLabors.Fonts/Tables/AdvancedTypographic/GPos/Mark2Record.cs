@@ -14,7 +14,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// </summary>
         /// <param name="reader">The big endian binary reader.</param>
         /// <param name="markClassCount">The Number of Mark2 records.</param>
-        public Mark2Record(BigEndianBinaryReader reader, ushort markClassCount)
+        /// <param name="offset">Offset to the beginning of MarkArray table.</param>
+        public Mark2Record(BigEndianBinaryReader reader, ushort markClassCount, long offset)
         {
             // +--------------+------------------------------------+--------------------------------------------------------------------------------------+
             // | Type         | Name                               | Description                                                                          |
@@ -22,13 +23,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // | Offset16     | mark2AnchorOffsets[markClassCount] | Array of offsets (one per class) to Anchor tables. Offsets are from beginning of     |
             // |              |                                    | Mark2Array table, in class order (offsets may be NULL).                              |
             // +--------------+------------------------------------+--------------------------------------------------------------------------------------+
-            this.Mark2AnchorOffsets = new ushort[markClassCount];
+            ushort[] mark2AnchorOffsets = new ushort[markClassCount];
+            this.MarkAnchorTable = new AnchorTable[markClassCount];
             for (int i = 0; i < markClassCount; i++)
             {
-                this.Mark2AnchorOffsets[i] = reader.ReadOffset16();
+                mark2AnchorOffsets[i] = reader.ReadOffset16();
+            }
+
+            for (int i = 0; i < markClassCount; i++)
+            {
+                if (mark2AnchorOffsets[i] != 0)
+                {
+                    this.MarkAnchorTable[i] = AnchorTable.Load(reader, offset + mark2AnchorOffsets[i]);
+                }
             }
         }
 
-        public ushort[] Mark2AnchorOffsets { get; }
+        /// <summary>
+        /// Gets the mark anchor table.
+        /// </summary>
+        public AnchorTable[] MarkAnchorTable { get; }
     }
 }

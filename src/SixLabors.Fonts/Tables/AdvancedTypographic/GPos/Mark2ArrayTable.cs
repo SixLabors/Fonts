@@ -11,9 +11,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// Initializes a new instance of the <see cref="Mark2ArrayTable"/> class.
         /// </summary>
         /// <param name="reader">The big endian binary reader.</param>
-        /// <param name="offset">The offset to the start of the mark array table.</param>
         /// <param name="markClassCount">The number of mark classes.</param>
-        public Mark2ArrayTable(BigEndianBinaryReader reader, long offset, ushort markClassCount)
+        /// <param name="offset">The offset to the start of the mark array table.</param>
+        public Mark2ArrayTable(BigEndianBinaryReader reader, ushort markClassCount, long offset)
         {
             // +--------------+------------------------+--------------------------------------------------------------------------------------+
             // | Type         | Name                   | Description                                                                          |
@@ -27,7 +27,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             this.Mark2Records = new Mark2Record[markCount];
             for (int i = 0; i < markCount; i++)
             {
-                this.Mark2Records[i] = new Mark2Record(reader, markClassCount);
+                this.Mark2Records[i] = new Mark2Record(reader, markClassCount, offset);
             }
         }
 
