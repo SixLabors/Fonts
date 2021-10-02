@@ -224,6 +224,42 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             }
         }
 
+        // LookupType6SubTable, Format 1
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-6-mark-to-mark-attachment-positioning-subtable
+        [Fact]
+        public void MarkToMarkAttachmentPositioning_Format1_Works()
+        {
+            // arrange
+            Font gPosFont = new FontCollection().Add(TestFonts.GposLookupType6Format1).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "\u0012\u0013"; // "\u0012\u0013" characters should overlap.
+            int[] expectedGlyphIndices = { 20, 21 };
+            FontRectangle[] expectedFontRectangles =
+            {
+                new(3.04f, 12.8703995f, 5.28f, 4.6016f),
+                new(2.40000057f, 13.4463987f, 5.28f, 4.5376f),
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(gPosFont)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+
+            for (int i = 0; i < expectedFontRectangles.Length; i++)
+            {
+                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i]);
+            }
+        }
+
         // LookupType7SubTable, Format 1
         // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-7-contextual-positioning-subtables
         [Fact]
