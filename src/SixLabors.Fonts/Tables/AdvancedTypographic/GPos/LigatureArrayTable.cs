@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // +--------------+--------------------------------------+--------------------------------------------------------------------------------------+
             // | Type         | Name                                 | Description                                                                          |
             // +==============+======================================+======================================================================================+
-            // | uint16       | ligatureCount                        | Number of LigatureAttach table offsets                                               |
+            // | uint16       | ligatureCount                        | Number of LigatureAttach table offsets.                                              |
             // +--------------+--------------------------------------+--------------------------------------------------------------------------------------+
             // | Offset16     | ligatureAttachOffsets[ligatureCount] | Array of offsets to LigatureAttach tables. Offsets are from beginning of             |
             // |              |                                      | LigatureArray table, ordered by ligatureCoverage index.                              |
