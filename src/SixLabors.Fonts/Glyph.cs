@@ -30,7 +30,7 @@ namespace SixLabors.Fonts
         /// <param name="dpi">The dpi scale the bounds in relation to.</param>
         /// <returns>The bounding box</returns>
         public FontRectangle BoundingBox(Vector2 location, float dpi)
-            => this.GlyphMetrics.BoundingBox(location, this.pointSize * dpi);
+            => this.GlyphMetrics.GetBoundingBox(location, this.pointSize * dpi);
 
         /// <summary>
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)

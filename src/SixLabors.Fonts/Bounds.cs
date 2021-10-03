@@ -1,11 +1,12 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Numerics;
 
 namespace SixLabors.Fonts
 {
-    internal readonly struct Bounds
+    internal readonly struct Bounds : IEquatable<Bounds>
     {
         public Bounds(Vector2 min, Vector2 max)
         {
@@ -22,9 +23,13 @@ namespace SixLabors.Fonts
 
         public Vector2 Max { get; }
 
-        public Vector2 Size() => new Vector2(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
+        public static bool operator ==(Bounds left, Bounds right) => left.Equals(right);
 
-        internal static Bounds Load(BigEndianBinaryReader reader)
+        public static bool operator !=(Bounds left, Bounds right) => !(left == right);
+
+        public Vector2 Size() => new(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
+
+        public static Bounds Load(BigEndianBinaryReader reader)
         {
             short minX = reader.ReadInt16();
             short minY = reader.ReadInt16();
@@ -33,5 +38,14 @@ namespace SixLabors.Fonts
 
             return new Bounds(minX, minY, maxX, maxY);
         }
+
+        public static Bounds Transform(in Bounds bounds, Matrix3x2 matrix)
+            => new(Vector2.Transform(bounds.Min, matrix), Vector2.Transform(bounds.Max, matrix));
+
+        public override bool Equals(object? obj) => obj is Bounds bounds && this.Equals(bounds);
+
+        public bool Equals(Bounds other) => this.Min.Equals(other.Min) && this.Max.Equals(other.Max);
+
+        public override int GetHashCode() => HashCode.Combine(this.Min, this.Max);
     }
 }

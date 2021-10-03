@@ -90,7 +90,7 @@ namespace SixLabors.Fonts.Hinting
             }
         }
 
-        public void HintGlyph(GlyphVector glyphVector)
+        public void HintGlyph(GlyphTableEntry glyphVector)
         {
             var instructions = glyphVector.Instructions;
             if (instructions.Length == 0)
@@ -1679,24 +1679,24 @@ namespace SixLabors.Fonts.Hinting
 
         private struct Zone
         {
-            public GlyphVector Current;
-            public GlyphVector Original;
+            public GlyphTableEntry Current;
+            public GlyphTableEntry Original;
             public TouchState[] TouchState;
             public bool IsTwilight;
 
             public Zone(int maxTwilightPoints, bool isTwilight)
             {
                 IsTwilight = isTwilight;
-                Current = new GlyphVector(new Vector2[maxTwilightPoints], new bool[maxTwilightPoints], new ushort[maxTwilightPoints], default, default);
-                Original = (GlyphVector)Current.DeepClone();
+                Current = new GlyphTableEntry(new Vector2[maxTwilightPoints], new bool[maxTwilightPoints], new ushort[maxTwilightPoints], default, default);
+                Original = GlyphTableEntry.DeepClone(Current);
                 TouchState = new TouchState[maxTwilightPoints];
             }
 
-            public Zone(GlyphVector glyphVector, bool isTwilight)
+            public Zone(GlyphTableEntry glyphVector, bool isTwilight)
             {
                 IsTwilight = isTwilight;
                 Current = glyphVector;
-                Original = (GlyphVector)Current.DeepClone();
+                Original = GlyphTableEntry.DeepClone(Current);
                 TouchState = new TouchState[glyphVector.ControlPoints.Length];
             }
 

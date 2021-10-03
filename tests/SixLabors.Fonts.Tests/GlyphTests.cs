@@ -93,7 +93,7 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter A
             Glyph g = font.GetGlyphs(new CodePoint(41), ColorFontSupport.None).First();
-            GlyphMetrics instance = g.GlyphMetrics;
+            GlyphOutline instance = g.GlyphMetrics.GetOutline();
 
             Assert.Equal(20, instance.ControlPoints.Length);
             Assert.Equal(20, instance.OnCurves.Length);

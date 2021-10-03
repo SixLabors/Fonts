@@ -224,7 +224,7 @@ namespace SixLabors.Fonts
             {
                 if (m.GlyphId == glyphId && m.FontMetrics == fontMetrics)
                 {
-                    return m.Bounds.Min;
+                    return m.GetBounds().Min;
                 }
             }
 
@@ -245,7 +245,8 @@ namespace SixLabors.Fonts
                 if (m.GlyphId == glyphId && m.FontMetrics == fontMetrics)
                 {
                     // TODO: Use Left/Top Bearing?
-                    return FontRectangle.FromLTRB(m.Bounds.Min.X, m.Bounds.Min.Y, m.AdvanceWidth, m.AdvanceHeight);
+                    Bounds bounds = m.GetBounds();
+                    return FontRectangle.FromLTRB(bounds.Min.X, bounds.Min.Y, m.AdvanceWidth, m.AdvanceHeight);
                 }
             }
 

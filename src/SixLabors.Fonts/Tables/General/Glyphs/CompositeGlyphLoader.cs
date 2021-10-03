@@ -23,30 +23,16 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public override GlyphVector CreateGlyph(GlyphTable table)
         {
-            var controlPoints = new List<Vector2>();
-            var onCurves = new List<bool>();
-            var endPoints = new List<ushort>();
-
+            GlyphVector glyph = default;
             for (int resultIndex = 0; resultIndex < this.result.Length; resultIndex++)
             {
                 ref Composite composite = ref this.result[resultIndex];
-
-                GlyphVector glyph = table.GetGlyph(composite.GlyphIndex);
-                int pointCount = glyph.PointCount;
-                ushort endPointOffset = (ushort)controlPoints.Count;
-                for (int i = 0; i < pointCount; i++)
-                {
-                    controlPoints.Add(Vector2.Transform(glyph.ControlPoints[i], composite.Transformation));
-                    onCurves.Add(glyph.OnCurves[i]);
-                }
-
-                foreach (ushort p in glyph.EndPoints)
-                {
-                    endPoints.Add((ushort)(p + endPointOffset));
-                }
+                glyph = GlyphVector.Append(glyph, GlyphVector.Transform(table.GetGlyph(composite.GlyphIndex), composite.Transformation), this.bounds);
             }
 
-            return new GlyphVector(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds, this.instructions);
+            // TODO: We're ignoring any composite glyph instructions for now and
+            // instead are relying on the individual glyph instructions.
+            return glyph;
         }
 
         public static CompositeGlyphLoader LoadCompositeGlyph(BigEndianBinaryReader reader, in Bounds bounds)
@@ -89,7 +75,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             byte[] instructions = Array.Empty<byte>();
             if (flags.HasFlag(CompositeGlyphFlags.WeHaveInstructions))
             {
-                // TODO deal with instructions
+                ushort instructionSize = reader.ReadUInt16();
+                instructions = reader.ReadUInt8Array(instructionSize);
             }
 
             return new CompositeGlyphLoader(result, bounds, instructions);

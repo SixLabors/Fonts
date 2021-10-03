@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Unicode;
 
@@ -39,8 +38,9 @@ namespace SixLabors.Fonts
             this.AdvanceHeight = advanceHeight;
             this.GlyphId = glyphId;
 
-            this.Width = this.Bounds.Max.X - this.Bounds.Min.X;
-            this.Height = this.Bounds.Max.Y - this.Bounds.Min.Y;
+            Bounds bounds = this.vector.GetBounds();
+            this.Width = bounds.Max.X - bounds.Min.X;
+            this.Height = bounds.Max.Y - bounds.Min.Y;
             this.GlyphType = glyphType;
             this.LeftSideBearing = leftSideBearing;
             this.TopSideBearing = topSideBearing;
@@ -52,7 +52,7 @@ namespace SixLabors.Fonts
         {
             this.FontMetrics = other.FontMetrics;
             this.CodePoint = codePoint;
-            this.vector = (GlyphVector)other.vector.DeepClone();
+            this.vector = GlyphVector.DeepClone(other.vector);
 
             this.AdvanceWidth = other.AdvanceWidth;
             this.AdvanceHeight = other.AdvanceHeight;
@@ -124,29 +124,20 @@ namespace SixLabors.Fonts
         public float ScaleFactor { get; }
 
         /// <summary>
-        /// Gets the points defining the shape of this glyph
+        /// Gets the glyph Id.
         /// </summary>
-        public Vector2[] ControlPoints => this.vector.ControlPoints;
+        internal ushort GlyphId { get; }
 
         /// <summary>
-        /// Gets at value indicating whether the corresponding <see cref="ControlPoints"/> item is on a curve.
+        /// Gets the outline for the current glyph.
         /// </summary>
-        public bool[] OnCurves => this.vector.OnCurves;
-
-        /// <summary>
-        /// Gets the end points
-        /// </summary>
-        public ushort[] EndPoints => this.vector.EndPoints;
+        /// <returns>The <see cref="GlyphOutline"/>.</returns>
+        public GlyphOutline GetOutline() => this.vector.GetOutline();
 
         /// <summary>
         /// Gets the bounds.
         /// </summary>
-        internal Bounds Bounds => this.vector.Bounds;
-
-        /// <summary>
-        /// Gets the glyph Id.
-        /// </summary>
-        internal ushort GlyphId { get; }
+        internal Bounds GetBounds() => this.vector.GetBounds();
 
         /// <summary>
         /// Apply an offset to the glyph.
@@ -181,10 +172,11 @@ namespace SixLabors.Fonts
         /// <param name="y">The y-advance.</param>
         internal void SetAdvanceHeight(ushort y) => this.AdvanceHeight = y;
 
-        internal FontRectangle BoundingBox(Vector2 origin, float scaledPointSize)
+        internal FontRectangle GetBoundingBox(Vector2 origin, float scaledPointSize)
         {
-            Vector2 size = this.Bounds.Size() * scaledPointSize / this.ScaleFactor;
-            Vector2 loc = new Vector2(this.Bounds.Min.X, this.Bounds.Max.Y) * scaledPointSize / this.ScaleFactor * MirrorScale;
+            Bounds bounds = this.GetBounds();
+            Vector2 size = bounds.Size() * scaledPointSize / this.ScaleFactor;
+            Vector2 loc = new Vector2(bounds.Min.X, bounds.Max.Y) * scaledPointSize / this.ScaleFactor * MirrorScale;
 
             loc = origin + loc;
 
@@ -206,7 +198,7 @@ namespace SixLabors.Fonts
 
             float scaledPoint = dpi * pointSize;
 
-            FontRectangle box = this.BoundingBox(location, scaledPoint);
+            FontRectangle box = this.GetBoundingBox(location, scaledPoint);
 
             var parameters = new GlyphRendererParameters(this, pointSize, dpi);
 
@@ -228,24 +220,29 @@ namespace SixLabors.Fonts
                     this.FontMetrics.ApplyHinting(scaledVector, pointSize * dpi / 72, this.GlyphId);
                 }
 
+                GlyphOutline outline = scaledVector.GetOutline();
+                ReadOnlySpan<Vector2> controlPoints = outline.ControlPoints.Span;
+                ReadOnlySpan<ushort> endPoints = outline.EndPoints.Span;
+                ReadOnlySpan<bool> onCurves = outline.OnCurves.Span;
+
                 int endOfContour = -1;
-                for (int i = 0; i < this.vector.EndPoints.Length; i++)
+                for (int i = 0; i < outline.EndPoints.Length; i++)
                 {
                     surface.BeginFigure();
                     int startOfContour = endOfContour + 1;
-                    endOfContour = this.vector.EndPoints[i];
+                    endOfContour = endPoints[i];
 
                     Vector2 prev;
-                    Vector2 curr = this.GetPoint(ref scaledVector, endOfContour) + location;
-                    Vector2 next = this.GetPoint(ref scaledVector, startOfContour) + location;
+                    Vector2 curr = (MirrorScale * controlPoints[endOfContour]) + location;
+                    Vector2 next = (MirrorScale * controlPoints[startOfContour]) + location;
 
-                    if (this.vector.OnCurves[endOfContour])
+                    if (onCurves[endOfContour])
                     {
                         surface.MoveTo(curr);
                     }
                     else
                     {
-                        if (this.vector.OnCurves[startOfContour])
+                        if (onCurves[startOfContour])
                         {
                             surface.MoveTo(next);
                         }
@@ -265,9 +262,9 @@ namespace SixLabors.Fonts
                         int currentIndex = startOfContour + p;
                         int nextIndex = startOfContour + ((p + 1) % length);
                         int prevIndex = startOfContour + ((length + p - 1) % length);
-                        next = this.GetPoint(ref scaledVector, nextIndex) + location;
+                        next = (MirrorScale * controlPoints[nextIndex]) + location;
 
-                        if (this.vector.OnCurves[currentIndex])
+                        if (onCurves[currentIndex])
                         {
                             // This is a straight line.
                             surface.LineTo(curr);
@@ -277,13 +274,13 @@ namespace SixLabors.Fonts
                             Vector2 prev2 = prev;
                             Vector2 next2 = next;
 
-                            if (!this.vector.OnCurves[prevIndex])
+                            if (!onCurves[prevIndex])
                             {
                                 prev2 = (curr + prev) / 2;
                                 surface.LineTo(prev2);
                             }
 
-                            if (!this.vector.OnCurves[nextIndex])
+                            if (!onCurves[nextIndex])
                             {
                                 next2 = (curr + next) / 2;
                             }
@@ -299,12 +296,6 @@ namespace SixLabors.Fonts
 
             surface.EndGlyph();
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Vector2 GetPoint(ref GlyphVector glyphVector, int pointIndex)
-
-            // Scale each point as we go, we will now have the correct relative point size
-            => MirrorScale * glyphVector.ControlPoints[pointIndex];
 
         private static void AlignToGrid(ref Vector2 point)
         {

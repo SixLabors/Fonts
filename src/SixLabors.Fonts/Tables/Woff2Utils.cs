@@ -223,7 +223,7 @@ namespace SixLabors.Fonts.Tables
             int pntContourIndex = 0;
             for (int i = 0; i < allGlyphs.Length; ++i)
             {
-                var emptyGlyph = default(GlyphVector);
+                GlyphVector emptyGlyph = default;
                 glyphs[i] = BuildSimpleGlyphStructure(reader, ref allGlyphs[i], emptyGlyph, pntPerContours, ref pntContourIndex, flagStream, ref curFlagsIndex);
             }
 
@@ -239,30 +239,15 @@ namespace SixLabors.Fonts.Tables
             for (ushort i = 0; i < numGlyphs; ++i)
             {
                 TempGlyph tempGlyph = allGlyphs[i];
-
                 byte hasBbox = bboxBitmap[i];
                 if (hasBbox == 1)
                 {
                     // Read bbox from the bboxstream.
-                    short minX = reader.ReadInt16();
-                    short minY = reader.ReadInt16();
-                    short maxX = reader.ReadInt16();
-                    short maxY = reader.ReadInt16();
-
-                    glyphs[i].Bounds = new Bounds(minX, minY, maxX, maxY);
+                    glyphs[i] = GlyphVector.WithCompositeBounds(glyphs[i], Bounds.Load(reader));
                 }
-                else
+                else if (tempGlyph.NumContour < 0)
                 {
-                    if (tempGlyph.NumContour < 0)
-                    {
-                        throw new NotSupportedException("composite glyph must have a bounding box");
-                    }
-                    else if (tempGlyph.NumContour > 0)
-                    {
-                        // For simple glyphs, if the corresponding bit in the bounding box bit vector is not set,
-                        // then derive the bounding box by computing the minimum and maximum x and y coordinates in the outline, and storing that.
-                        glyphs[i].Bounds = FindSimpleGlyphBounds(glyphs[i]);
-                    }
+                    throw new NotSupportedException("Composite glyph must have a bounding box.");
                 }
             }
 
@@ -282,8 +267,7 @@ namespace SixLabors.Fonts.Tables
 
             for (ushort i = 0; i < numGlyphs; ++i)
             {
-                // No IEquality<GlyphVector> implementation
-                if (glyphs[i].ControlPoints is null)
+                if (!glyphs[i].HasValue())
                 {
                     glyphLoaders[i] = emptyGlyphLoader;
                     continue;
@@ -293,47 +277,6 @@ namespace SixLabors.Fonts.Tables
             }
 
             return glyphLoaders;
-        }
-
-        private static Bounds FindSimpleGlyphBounds(GlyphVector glyph)
-        {
-            Vector2[] glyphPoints = glyph.ControlPoints;
-
-            int j = glyphPoints.Length;
-            float xMin = float.MaxValue;
-            float yMin = float.MaxValue;
-            float xMax = float.MinValue;
-            float yMax = float.MinValue;
-
-            for (int i = 0; i < j; ++i)
-            {
-                Vector2 p = glyphPoints[i];
-                if (p.X < xMin)
-                {
-                    xMin = p.X;
-                }
-
-                if (p.X > xMax)
-                {
-                    xMax = p.X;
-                }
-
-                if (p.Y < yMin)
-                {
-                    yMin = p.Y;
-                }
-
-                if (p.Y > yMax)
-                {
-                    yMax = p.Y;
-                }
-            }
-
-            return new Bounds(
-                (float)Math.Round(xMin),
-                (float)Math.Round(yMin),
-                (float)Math.Round(xMax),
-                (float)Math.Round(yMax));
         }
 
         private static GlyphVector BuildSimpleGlyphStructure(
@@ -432,9 +375,9 @@ namespace SixLabors.Fonts.Tables
             // TODO: store instructions.
             Read255UInt16(glyphStreamReader);
 
-            // Calculate bounds later.
-            Bounds bounds = default;
-            return new GlyphVector(glyphPoints, onCurves, endContours, bounds, Array.Empty<byte>());
+            // Passing default here will cause the bounds to be calculated from the vector controls points.
+            // They can be overwritten later on for composite glyphs.
+            return new GlyphVector(glyphPoints, onCurves, endContours, default, Array.Empty<byte>());
         }
 
         private static bool CompositeHasInstructions(BigEndianBinaryReader reader)
@@ -499,7 +442,7 @@ namespace SixLabors.Fonts.Tables
                 ushort glyphIndex = reader.ReadUInt16();
 
                 // No IEquality<GlyphVector> implementation
-                if (createdGlyphs[glyphIndex].ControlPoints is null)
+                if (!createdGlyphs[glyphIndex].HasValue())
                 {
                     // This glyph is not read yet, resolve it first!
                     long storedOffset = reader.BaseStream.Position;
@@ -531,7 +474,8 @@ namespace SixLabors.Fonts.Tables
                     transform.M22 = reader.ReadF2dot14();
                 }
 
-                finalGlyph = GlyphVector.Append(finalGlyph, GlyphVector.Transform(createdGlyphs[glyphIndex], transform));
+                // Composite bounds are read after.
+                finalGlyph = GlyphVector.Append(finalGlyph, GlyphVector.Transform(createdGlyphs[glyphIndex], transform), default);
             }
             while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
