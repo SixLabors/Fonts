@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -30,14 +31,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         {
             private readonly CoverageTable mark1Coverage;
             private readonly CoverageTable mark2Coverage;
-            private readonly MarkArrayTable markArrayTable;
+            private readonly MarkArrayTable mark1ArrayTable;
             private readonly Mark2ArrayTable mark2ArrayTable;
 
-            public LookupType6Format1SubTable(CoverageTable mark1Coverage, CoverageTable mark2Coverage, MarkArrayTable markArrayTable, Mark2ArrayTable mark2ArrayTable)
+            public LookupType6Format1SubTable(CoverageTable mark1Coverage, CoverageTable mark2Coverage, MarkArrayTable mark1ArrayTable, Mark2ArrayTable mark2ArrayTable)
             {
                 this.mark1Coverage = mark1Coverage;
                 this.mark2Coverage = mark2Coverage;
-                this.markArrayTable = markArrayTable;
+                this.mark1ArrayTable = mark1ArrayTable;
                 this.mark2ArrayTable = mark2ArrayTable;
             }
 
@@ -72,7 +73,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 var mark1Coverage = CoverageTable.Load(reader, offset + mark1CoverageOffset);
                 var mark2Coverage = CoverageTable.Load(reader, offset + mark2CoverageOffset);
                 var mark1ArrayTable = new MarkArrayTable(reader, offset + mark1ArrayOffset);
-                var mark2ArrayTable = new Mark2ArrayTable(reader, offset + mark2ArrayOffset, markClassCount);
+                var mark2ArrayTable = new Mark2ArrayTable(reader, markClassCount, offset + mark2ArrayOffset);
 
                 return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable);
             }
@@ -84,7 +85,48 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 Tag feature,
                 ushort index,
                 int count)
-                => throw new System.NotImplementedException();
+            {
+                // Mark to mark positioning.
+                // Implements: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-6-mark-to-mark-attachment-positioning-subtable
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
+                {
+                    return false;
+                }
+
+                int mark1Index = this.mark1Coverage.CoverageIndexOf(glyphId);
+                if (mark1Index == -1)
+                {
+                    return false;
+                }
+
+                // Get the previous mark to attach to.
+                if (index < 1)
+                {
+                    return false;
+                }
+
+                // TODO: fontkit checks here, if Marks belonging to the same base or Marks belonging to the same ligature component.
+                int prevIdx = index - 1;
+                ushort prevGlyphId = collection[prevIdx][0];
+                GlyphShapingData prevData = collection.GetGlyphShapingData(prevIdx);
+                if (!CodePoint.IsMark(prevData.CodePoint))
+                {
+                    return false;
+                }
+
+                int mark2Index = this.mark2Coverage.CoverageIndexOf(prevGlyphId);
+                if (mark2Index == -1)
+                {
+                    return false;
+                }
+
+                MarkRecord markRecord = this.mark1ArrayTable.MarkRecords[mark1Index];
+                AnchorTable baseAnchor = this.mark2ArrayTable.Mark2Records[mark2Index].MarkAnchorTable[markRecord.MarkClass];
+                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, (ushort)prevIdx, prevGlyphId, glyphId);
+
+                return true;
+            }
         }
     }
 }
