@@ -12,9 +12,9 @@ namespace SixLabors.Fonts.Tables
 {
     internal class TableLoader
     {
-        private readonly Dictionary<string, Func<FontReader, Table?>> loaders = new Dictionary<string, Func<FontReader, Table?>>();
-        private readonly Dictionary<Type, string> types = new Dictionary<Type, string>();
-        private readonly Dictionary<Type, Func<FontReader, Table?>> typesLoaders = new Dictionary<Type, Func<FontReader, Table?>>();
+        private readonly Dictionary<string, Func<FontReader, Table?>> loaders = new();
+        private readonly Dictionary<Type, string> types = new();
+        private readonly Dictionary<Type, Func<FontReader, Table?>> typesLoaders = new();
 
         public TableLoader()
         {
@@ -35,9 +35,10 @@ namespace SixLabors.Fonts.Tables
             this.Register(CpalTable.Load);
             this.Register(GPosTable.Load);
             this.Register(GSubTable.Load);
+            this.Register(GlyphDefinitionTable.Load);
         }
 
-        public static TableLoader Default { get; } = new TableLoader();
+        public static TableLoader Default { get; } = new();
 
         public string? GetTag(Type type)
         {

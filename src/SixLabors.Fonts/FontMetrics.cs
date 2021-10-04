@@ -32,6 +32,7 @@ namespace SixLabors.Fonts
         private readonly GPosTable? gPosTable;
         private readonly ColrTable? colrTable;
         private readonly CpalTable? cpalTable;
+        private readonly GlyphDefinitionTable? glyphDefinitionTable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontMetrics"/> class.
@@ -50,6 +51,7 @@ namespace SixLabors.Fonts
         /// <param name="gPosTable">The glyph positioning table.</param>
         /// <param name="colrTable">The COLR table</param>
         /// <param name="cpalTable">The CPAL table</param>
+        /// <param name="glyphDefinitionTable">The glyph definition table.</param>
         internal FontMetrics(
             NameTable nameTable,
             CMapTable cmap,
@@ -64,7 +66,8 @@ namespace SixLabors.Fonts
             GSubTable? gSubTable,
             GPosTable? gPosTable,
             ColrTable? colrTable,
-            CpalTable? cpalTable)
+            CpalTable? cpalTable,
+            GlyphDefinitionTable? glyphDefinitionTable)
         {
             this.cmap = cmap;
             this.os2 = os2;
@@ -133,6 +136,7 @@ namespace SixLabors.Fonts
             this.gPosTable = gPosTable;
             this.colrTable = colrTable;
             this.cpalTable = cpalTable;
+            this.glyphDefinitionTable = glyphDefinitionTable;
             this.Description = new FontDescription(nameTable, os2, head);
         }
 
@@ -325,6 +329,7 @@ namespace SixLabors.Fonts
             // Advanced Typographics instructions.
             GSubTable? gSub = reader.TryGetTable<GSubTable>();
             GPosTable? gPos = reader.TryGetTable<GPosTable>();
+            GlyphDefinitionTable? glyphDefinitionTable = reader.TryGetTable<GlyphDefinitionTable>();
 
             // post - PostScript information
             // gasp - Grid-fitting/Scan-conversion (optional table)
@@ -344,7 +349,8 @@ namespace SixLabors.Fonts
                 gSub,
                 gPos,
                 colrTable,
-                cpalTable);
+                cpalTable,
+                glyphDefinitionTable);
         }
 
         /// <summary>

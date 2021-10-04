@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Fakes
@@ -27,7 +28,8 @@ namespace SixLabors.Fonts.Tests.Fakes
                   GenerateVerticalHeadTable(),
                   GenerateVerticalMetricsTable(glyphs),
                   GenerateHeadTable(),
-                  new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]),
+                  new KerningTable(Array.Empty<KerningSubTable>()),
+                  null,
                   null,
                   null,
                   null,
@@ -60,6 +62,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                   null,
                   null,
                   null,
+                  null,
                   null)
         {
         }
@@ -81,7 +84,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                 GenerateVerticalHeadTable(),
                 GenerateVerticalMetricsTable(glyphs),
                 GenerateHeadTable(),
-                new KerningTable(new Fonts.Tables.General.Kern.KerningSubTable[0]));
+                new KerningTable(Array.Empty<KerningSubTable>()));
         }
 
         private static List<FakeGlyphSource> GetGlyphs(string text)
@@ -103,7 +106,7 @@ namespace SixLabors.Fonts.Tests.Fakes
         }
 
         private static NameTable GenerateNameTable(string name)
-            => new NameTable(
+            => new(
                 new[]
                 {
                     new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.NameIds.FullFontName, name),
@@ -112,28 +115,28 @@ namespace SixLabors.Fonts.Tests.Fakes
                 Array.Empty<string>());
 
         private static CMapTable GenerateCMapTable(List<FakeGlyphSource> glyphs)
-            => new CMapTable(new[] { new FakeCmapSubtable(glyphs) });
+            => new(new[] { new FakeCmapSubtable(glyphs) });
 
         private static HorizontalHeadTable GenerateHorizontalHeadTable()
-            => new HorizontalHeadTable(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+            => new(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
         private static VerticalHeadTable GenerateVerticalHeadTable()
-            => new VerticalHeadTable(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+            => new(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
         private static OS2Table GenerateOS2Table()
-            => new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.USE_TYPO_METRICS, 1, 1, 20, 10, 20, 1, 1);
+            => new(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.USE_TYPO_METRICS, 1, 1, 20, 10, 20, 1, 1);
 
         private static OS2Table GenerateOS2TableWithVaryingVerticalFontMetrics()
-            => new OS2Table(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.USE_TYPO_METRICS, 1, 1, 35, 8, 12, 33, 11);
+            => new(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, new byte[0], 1, 1, 1, 1, string.Empty, OS2Table.FontStyleSelection.USE_TYPO_METRICS, 1, 1, 35, 8, 12, 33, 11);
 
         private static HorizontalMetricsTable GenerateHorizontalMetricsTable(List<FakeGlyphSource> glyphs)
-            => new HorizontalMetricsTable(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
+            => new(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
 
         private static VerticalMetricsTable GenerateVerticalMetricsTable(List<FakeGlyphSource> glyphs)
-            => new VerticalMetricsTable(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
+            => new(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
 
         private static HeadTable GenerateHeadTable()
-            => new HeadTable(
+            => new(
                 HeadTable.HeadFlags.ForcePPEMToInt,
                 HeadTable.HeadMacStyle.None,
                 30,
