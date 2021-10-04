@@ -12,6 +12,7 @@ namespace SixLabors.Fonts.Tables
 {
     // Source code is based on https://github.com/LayoutFarm/Typography
     // see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
+    // TODO: There's still some cleanup required here to bring the code up to a maintainable standard.
     internal static class Woff2Utils
     {
         // We don't reuse the const tag headers from our table types for clarity.
@@ -155,25 +156,24 @@ namespace SixLabors.Fonts.Tables
             uint bboxStreamSize = reader.ReadUInt32();
             uint instructionStreamSize = reader.ReadUInt32();
 
-            long expectedNCountStartAt = reader.BaseStream.Position;
-            long expectedNPointStartAt = expectedNCountStartAt + nContourStreamSize;
-            long expectedFlagStreamStartAt = expectedNPointStartAt + nPointsStreamSize;
-            long expectedGlyphStreamStartAt = expectedFlagStreamStartAt + flagStreamSize;
-            long expectedCompositeStreamStartAt = expectedGlyphStreamStartAt + glyphStreamSize;
+            long nCountStreamOffset = reader.BaseStream.Position;
+            long nPointStreamOffset = nCountStreamOffset + nContourStreamSize;
+            long flagStreamOffset = nPointStreamOffset + nPointsStreamSize;
+            long glyphStreamOffset = flagStreamOffset + flagStreamSize;
+            long compositeStreamOffset = glyphStreamOffset + glyphStreamSize;
 
-            long expectedBboxStreamStartAt = expectedCompositeStreamStartAt + compositeStreamSize;
-            long expectedInstructionStreamStartAt = expectedBboxStreamStartAt + bboxStreamSize;
-            long expectedEndAt = expectedInstructionStreamStartAt + instructionStreamSize;
+            long bboxStreamOffset = compositeStreamOffset + compositeStreamSize;
+            long instructionStreamOffset = bboxStreamOffset + bboxStreamSize;
 
             var glyphs = new GlyphVector[numGlyphs];
-            var allGlyphs = new TempGlyph[numGlyphs];
+            var allGlyphs = new GlyphData[numGlyphs];
             var glyphLoaders = new GlyphLoader[numGlyphs];
             var compositeGlyphs = new List<ushort>();
             int contourCount = 0;
-            for (ushort i = 0; i < numGlyphs; ++i)
+            for (ushort i = 0; i < numGlyphs; i++)
             {
                 short numContour = reader.ReadInt16();
-                allGlyphs[i] = new TempGlyph(i, numContour);
+                allGlyphs[i] = new GlyphData(i, numContour);
                 if (numContour > 0)
                 {
                     contourCount += numContour;
@@ -190,55 +190,62 @@ namespace SixLabors.Fonts.Tables
             }
 
             ushort[] pntPerContours = new ushort[contourCount];
-            for (int i = 0; i < contourCount; ++i)
+            for (int i = 0; i < contourCount; i++)
             {
                 // Each of these is the number of points of that contour.
                 pntPerContours[i] = Read255UInt16(reader);
             }
 
-            // 2) flagStream, flags value for each point.
+            // FlagStream, flags value for each point.
             // Each byte in flags stream represents one point.
             byte[] flagStream = reader.ReadBytes((int)flagStreamSize);
 
-            // Some composite glyphs have instructions=> so we must check all composite glyphs before read the glyph stream.
+            // Some composite glyphs have instructions so we must check all composite glyphs before read the glyph stream.
             using (var compositeMemoryStream = new MemoryStream())
             {
-                reader.BaseStream.Position = expectedCompositeStreamStartAt;
+                reader.BaseStream.Position = compositeStreamOffset;
                 compositeMemoryStream.Write(reader.ReadBytes((int)compositeStreamSize), 0, (int)compositeStreamSize);
                 compositeMemoryStream.Position = 0;
 
                 using (var compositeReader = new BigEndianBinaryReader(compositeMemoryStream, false))
                 {
-                    for (ushort i = 0; i < compositeGlyphs.Count; ++i)
+                    for (ushort i = 0; i < compositeGlyphs.Count; i++)
                     {
                         ushort compositeGlyphIndex = compositeGlyphs[i];
                         allGlyphs[compositeGlyphIndex].CompositeHasInstructions = CompositeHasInstructions(compositeReader);
                     }
                 }
 
-                reader.BaseStream.Position = expectedGlyphStreamStartAt;
+                reader.BaseStream.Position = glyphStreamOffset;
             }
 
             int curFlagsIndex = 0;
             int pntContourIndex = 0;
-            for (int i = 0; i < allGlyphs.Length; ++i)
+            long instructionsIndex = instructionStreamOffset;
+            for (int i = 0; i < allGlyphs.Length; i++)
             {
-                GlyphVector emptyGlyph = default;
-                glyphs[i] = BuildSimpleGlyphStructure(reader, ref allGlyphs[i], emptyGlyph, pntPerContours, ref pntContourIndex, flagStream, ref curFlagsIndex);
+                glyphs[i] = ReadSimpleGlyphData(
+                    reader,
+                    ref allGlyphs[i],
+                    pntPerContours,
+                    ref pntContourIndex,
+                    flagStream,
+                    ref curFlagsIndex,
+                    ref instructionsIndex);
             }
 
             // Now we read the composite stream again and create composite glyphs.
-            for (ushort i = 0; i < compositeGlyphs.Count; ++i)
+            for (ushort i = 0; i < compositeGlyphs.Count; i++)
             {
                 int compositeGlyphIndex = compositeGlyphs[i];
-                glyphs[compositeGlyphIndex] = ReadCompositeGlyph(glyphs, reader);
+                glyphs[compositeGlyphIndex] = ReadCompositeGlyphData(glyphs, reader);
             }
 
             int bitmapCount = (numGlyphs + 7) / 8;
             byte[] bboxBitmap = ExpandBitmap(reader.ReadBytes(bitmapCount));
-            for (ushort i = 0; i < numGlyphs; ++i)
+            for (ushort i = 0; i < numGlyphs; i++)
             {
-                TempGlyph tempGlyph = allGlyphs[i];
+                GlyphData tempGlyph = allGlyphs[i];
                 byte hasBbox = bboxBitmap[i];
                 if (hasBbox == 1)
                 {
@@ -251,21 +258,7 @@ namespace SixLabors.Fonts.Tables
                 }
             }
 
-            reader.BaseStream.Position = expectedInstructionStreamStartAt;
-
-            for (ushort i = 0; i < numGlyphs; ++i)
-            {
-                TempGlyph tempGlyph = allGlyphs[i];
-                if (tempGlyph.InstructionLen > 0)
-                {
-                    byte[] glyphInstructions = reader.ReadBytes(tempGlyph.InstructionLen);
-
-                    // TODO: use GlyphInstructions
-                    // glyphs[i].GlyphInstructions = glyphInstructions;
-                }
-            }
-
-            for (ushort i = 0; i < numGlyphs; ++i)
+            for (ushort i = 0; i < numGlyphs; i++)
             {
                 if (!glyphs[i].HasValue())
                 {
@@ -279,26 +272,28 @@ namespace SixLabors.Fonts.Tables
             return glyphLoaders;
         }
 
-        private static GlyphVector BuildSimpleGlyphStructure(
-            BigEndianBinaryReader glyphStreamReader,
-            ref TempGlyph tmpGlyph,
-            GlyphVector emptyGlyph,
+        private static GlyphVector ReadSimpleGlyphData(
+            BigEndianBinaryReader reader,
+            ref GlyphData glyphData,
             ushort[] pntPerContours,
             ref int pntContourIndex,
             byte[] flagStream,
-            ref int flagStreamIndex)
+            ref int flagStreamIndex,
+            ref long instructionStreamOffset)
         {
-            if (tmpGlyph.NumContour == 0)
+            if (glyphData.NumContour == 0)
             {
-                return emptyGlyph;
+                return default;
             }
 
-            if (tmpGlyph.NumContour < 0)
+            if (glyphData.NumContour < 0)
             {
-                // Composite glyph, check if this has instruction or not.
-                if (tmpGlyph.CompositeHasInstructions)
+                // Composite glyph. Check if this has instruction or not
+                // and read the length. We don't actually use the data but it ensures
+                // we maintain the correct location within the stream.
+                if (glyphData.CompositeHasInstructions)
                 {
-                    tmpGlyph.InstructionLen = Read255UInt16(glyphStreamReader);
+                    Read255UInt16(reader);
                 }
 
                 return default; // Skip composite glyph (resolve later).
@@ -306,25 +301,23 @@ namespace SixLabors.Fonts.Tables
 
             int curX = 0;
             int curY = 0;
-
-            int numContour = tmpGlyph.NumContour;
-
-            ushort[] endContours = new ushort[numContour];
+            int numContour = glyphData.NumContour;
+            ushort[] endPoints = new ushort[numContour];
             ushort pointCount = 0;
 
-            for (ushort i = 0; i < numContour; ++i)
+            for (ushort i = 0; i < numContour; i++)
             {
                 ushort numPoint = pntPerContours[pntContourIndex++];
                 pointCount += numPoint;
-                endContours[i] = (ushort)(pointCount - 1);
+                endPoints[i] = (ushort)(pointCount - 1);
             }
 
-            var glyphPoints = new Vector2[pointCount];
+            var controlPoints = new Vector2[pointCount];
             bool[] onCurves = new bool[pointCount];
             int n = 0;
-            for (int i = 0; i < numContour; ++i)
+            for (int i = 0; i < numContour; i++)
             {
-                int endContour = endContours[i];
+                int endContour = endPoints[i];
                 for (; n <= endContour; ++n)
                 {
                     byte f = flagStream[flagStreamIndex++];
@@ -334,7 +327,7 @@ namespace SixLabors.Fonts.Tables
 
                     TripleEncodingRecord enc = TripleEncodingTable.EncTable[xyFormat]; // 0-128
 
-                    byte[] packedXY = glyphStreamReader.ReadBytes(enc.ByteCount - 1); // byte count include 1 byte flags, so actual read=> byteCount-1
+                    byte[] packedXY = reader.ReadBytes(enc.ByteCount - 1); // byte count include 1 byte flags, so actual read=> byteCount-1
 
                     int x;
                     int y;
@@ -368,16 +361,21 @@ namespace SixLabors.Fonts.Tables
 
                     // Most significant 1 bit -> on/off curve.
                     onCurves[n] = (f >> 7) == 0;
-                    glyphPoints[n] = new Vector2(curX += x, curY += y);
+                    controlPoints[n] = new Vector2(curX += x, curY += y);
                 }
             }
 
-            // TODO: store instructions.
-            Read255UInt16(glyphStreamReader);
+            // Read the instructions
+            ushort instructionSize = Read255UInt16(reader);
+            long position = reader.BaseStream.Position;
+            reader.BaseStream.Position = instructionStreamOffset;
+            byte[] instructions = reader.ReadBytes(instructionSize);
+            instructionStreamOffset += instructionSize;
+            reader.BaseStream.Position = position;
 
             // Passing default here will cause the bounds to be calculated from the vector controls points.
             // They can be overwritten later on for composite glyphs.
-            return new GlyphVector(glyphPoints, onCurves, endContours, default, Array.Empty<byte>());
+            return new GlyphVector(controlPoints, onCurves, endPoints, default, instructions);
         }
 
         private static bool CompositeHasInstructions(BigEndianBinaryReader reader)
@@ -417,37 +415,20 @@ namespace SixLabors.Fonts.Tables
             return weHaveInstructions;
         }
 
-        private static GlyphVector ReadCompositeGlyph(GlyphVector[] createdGlyphs, BigEndianBinaryReader reader)
+        private static GlyphVector ReadCompositeGlyphData(GlyphVector[] createdGlyphs, BigEndianBinaryReader reader)
         {
-            // Decoding of Composite Glyphs
-            // For a composite glyph(nContour == -1), the following steps take the place of (Building Simple Glyph, steps 1 - 5 above):
-
-            // 1a.Read a UInt16 from compositeStream.
-            //  This is interpreted as a component flag word as in the TrueType spec.
-            //  Based on the flag values, there are between 4 and 14 additional argument bytes,
-            //  interpreted as glyph index, arg1, arg2, and optional scale or affine matrix.
-
-            // 2a.Read the number of argument bytes as determined in step 2a from the composite stream,
-            // and store these in the reconstructed glyph.
-            // If the flag word read in step 2a has the FLAG_MORE_COMPONENTS bit(bit 5) set, go back to step 2a.
-
-            // 3a.If any of the flag words had the FLAG_WE_HAVE_INSTRUCTIONS bit(bit 8) set,
-            // then read the instructions from the glyph and store them in the reconstructed glyph,
-            // using the same process as described in steps 4 and 5 above (see Building Simple Glyph).
-            GlyphVector finalGlyph = default;
+            GlyphVector composite = default;
             CompositeGlyphFlags flags;
             do
             {
                 flags = reader.ReadUInt16<CompositeGlyphFlags>();
                 ushort glyphIndex = reader.ReadUInt16();
-
-                // No IEquality<GlyphVector> implementation
                 if (!createdGlyphs[glyphIndex].HasValue())
                 {
-                    // This glyph is not read yet, resolve it first!
-                    long storedOffset = reader.BaseStream.Position;
-                    createdGlyphs[glyphIndex] = ReadCompositeGlyph(createdGlyphs, reader);
-                    reader.BaseStream.Position = storedOffset;
+                    // This glyph has not been read yet, resolve it first.
+                    long position = reader.BaseStream.Position;
+                    createdGlyphs[glyphIndex] = ReadCompositeGlyphData(createdGlyphs, reader);
+                    reader.BaseStream.Position = position;
                 }
 
                 CompositeGlyphLoader.LoadArguments(reader, flags, out int dx, out int dy);
@@ -457,7 +438,7 @@ namespace SixLabors.Fonts.Tables
 
                 if ((flags & CompositeGlyphFlags.WeHaveAScale) != 0)
                 {
-                    float scale = reader.ReadF2dot14(); // Format 2.14
+                    float scale = reader.ReadF2dot14();
                     transform.M11 = scale;
                     transform.M21 = scale;
                 }
@@ -474,20 +455,12 @@ namespace SixLabors.Fonts.Tables
                     transform.M22 = reader.ReadF2dot14();
                 }
 
-                // Composite bounds are read after.
-                finalGlyph = GlyphVector.Append(finalGlyph, GlyphVector.Transform(createdGlyphs[glyphIndex], transform), default);
+                // Composite bounds are read later.
+                composite = GlyphVector.Append(composite, GlyphVector.Transform(GlyphVector.DeepClone(createdGlyphs[glyphIndex]), transform), default);
             }
             while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
-            if ((flags & CompositeGlyphFlags.WeHaveInstructions) != 0)
-            {
-                // TODO: Read this later.
-                // ushort numInstr = reader.ReadUInt16();
-                // byte[] insts = reader.ReadBytes(numInstr);
-                // finalGlyph.GlyphInstructions = insts;
-            }
-
-            return finalGlyph;
+            return composite;
         }
 
         private static byte[] ExpandBitmap(byte[] orgBBoxBitmap)
@@ -495,7 +468,7 @@ namespace SixLabors.Fonts.Tables
             byte[] expandArr = new byte[orgBBoxBitmap.Length * 8];
 
             int index = 0;
-            for (int i = 0; i < orgBBoxBitmap.Length; ++i)
+            for (int i = 0; i < orgBBoxBitmap.Length; i++)
             {
                 byte b = orgBBoxBitmap[i];
                 expandArr[index++] = (byte)((b >> 7) & 0x1);
@@ -540,7 +513,7 @@ namespace SixLabors.Fonts.Tables
             // or if a UintBase128 - encoded value exceeds 232 - 1.
             uint accum = 0;
             result = 0;
-            for (int i = 0; i < 5; ++i)
+            for (int i = 0; i < 5; i++)
             {
                 byte data_byte = reader.ReadByte();
 
@@ -606,6 +579,20 @@ namespace SixLabors.Fonts.Tables
             else
             {
                 return code;
+            }
+        }
+
+        private struct GlyphData
+        {
+            public readonly ushort GlyphIndex;
+            public readonly short NumContour;
+            public bool CompositeHasInstructions;
+
+            public GlyphData(ushort glyphIndex, short contourCount)
+            {
+                this.GlyphIndex = glyphIndex;
+                this.NumContour = contourCount;
+                this.CompositeHasInstructions = false;
             }
         }
     }

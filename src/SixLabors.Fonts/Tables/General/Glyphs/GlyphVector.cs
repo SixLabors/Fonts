@@ -8,6 +8,10 @@ using SixLabors.Fonts.Hinting;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {
+    /// <summary>
+    /// Represents the raw glyph outlines for a given glyph comprised of a collection of glyph table entries.
+    /// The type is mutable by design to reduce copying during transformation.
+    /// </summary>
     internal struct GlyphVector
     {
         private readonly List<GlyphTableEntry> entries;
@@ -89,18 +93,18 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         {
             if (!first.HasValue())
             {
-                return DeepClone(second);
+                return second;
             }
 
             List<GlyphTableEntry> entries = new(first.entries.Count + second.entries.Count);
             for (int i = 0; i < first.entries.Count; i++)
             {
-                entries.Add(GlyphTableEntry.DeepClone(first.entries[i]));
+                entries.Add(first.entries[i]);
             }
 
             for (int i = 0; i < second.entries.Count; i++)
             {
-                entries.Add(GlyphTableEntry.DeepClone(second.entries[i]));
+                entries.Add(second.entries[i]);
             }
 
             return new(entries, compositeBounds);
@@ -193,15 +197,13 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             return new GlyphOutline(controlPoints.ToArray(), endPoints.ToArray(), onCurves.ToArray());
         }
 
+        /// <summary>
+        /// Returns a new instance with the composite bounds set to the specified value
+        /// </summary>
+        /// <param name="src">The src glyph vector.</param>
+        /// <param name="bounds">The composite bounds.</param>
+        /// <returns>The <see cref="GlyphVector"/>.</returns>
         public static GlyphVector WithCompositeBounds(GlyphVector src, Bounds bounds)
-        {
-            List<GlyphTableEntry> entries = new(src.entries.Count);
-            for (int i = 0; i < src.entries.Count; i++)
-            {
-                entries.Add(GlyphTableEntry.DeepClone(src.entries[i]));
-            }
-
-            return new(entries, bounds);
-        }
+            => new(src.entries, bounds);
     }
 }
