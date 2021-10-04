@@ -30,6 +30,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 mark2AnchorOffsets[i] = reader.ReadOffset16();
             }
 
+            long position = reader.BaseStream.Position;
             for (int i = 0; i < markClassCount; i++)
             {
                 if (mark2AnchorOffsets[i] != 0)
@@ -37,6 +38,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     this.MarkAnchorTable[i] = AnchorTable.Load(reader, offset + mark2AnchorOffsets[i]);
                 }
             }
+
+            reader.BaseStream.Position = position;
         }
 
         /// <summary>
