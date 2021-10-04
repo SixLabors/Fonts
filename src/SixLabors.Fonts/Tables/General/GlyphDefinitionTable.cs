@@ -25,10 +25,17 @@ namespace SixLabors.Fonts.Tables.General
 
         public MarkGlyphSetsTable? MarkGlyphSetsTable { get; private set; }
 
-        public static GlyphDefinitionTable Load(FontReader reader)
+        public static GlyphDefinitionTable? Load(FontReader reader)
         {
-            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
-            return Load(binaryReader);
+            if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
+            {
+                return null;
+            }
+
+            using (binaryReader)
+            {
+                return Load(binaryReader);
+            }
         }
 
         public static GlyphDefinitionTable Load(BigEndianBinaryReader reader)
