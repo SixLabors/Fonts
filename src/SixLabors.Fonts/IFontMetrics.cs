@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -92,6 +93,15 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the face contains a glyph for the specified codepoint; otherwise, <see langword="false"/>.
         /// </returns>
         bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint);
+
+        /// <summary>
+        /// Tries to get the glyph class for a given glyph id.
+        /// The font needs to have a GDEF table defined.
+        /// </summary>
+        /// <param name="glyphId">The glyph identifier.</param>
+        /// <param name="glyphClass">The glyph class.</param>
+        /// <returns>true, if the glyph class could be retrieved.</returns>
+        bool TryGetGlyphClass(ushort glyphId, out GlyphClassDef? glyphClass);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point.

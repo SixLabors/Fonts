@@ -176,6 +176,18 @@ namespace SixLabors.Fonts
             => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         /// <inheritdoc/>
+        public bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
+        {
+            glyphClass = null;
+            if (this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetGlyphClass(glyphId, out glyphClass))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc/>
         public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
         {
             this.TryGetGlyphId(codePoint, out ushort glyphId);

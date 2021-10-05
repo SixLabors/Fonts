@@ -110,7 +110,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 int prevIdx = index - 1;
                 ushort prevGlyphId = collection[prevIdx][0];
                 GlyphShapingData prevData = collection.GetGlyphShapingData(prevIdx);
-                if (!CodePoint.IsMark(prevData.CodePoint))
+                if (!fontMetrics.TryGetGlyphClass(prevGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(prevData.CodePoint))
+                {
+                    return false;
+                }
+
+                if (glyphClass != GlyphClassDef.MarkGlyph)
                 {
                     return false;
                 }

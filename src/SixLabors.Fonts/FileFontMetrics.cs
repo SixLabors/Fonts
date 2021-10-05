@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -79,6 +80,9 @@ namespace SixLabors.Fonts
             out ushort glyphId,
             out bool skipNextCodePoint)
             => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+
+        /// <inheritdoc/>
+        public bool TryGetGlyphClass(ushort glyphId, out GlyphClassDef? glyphClass) => this.metrics.Value.TryGetGlyphClass(glyphId, out glyphClass);
 
         /// <inheritdoc />
         public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)

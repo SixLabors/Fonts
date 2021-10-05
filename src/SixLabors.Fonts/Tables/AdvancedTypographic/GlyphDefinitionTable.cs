@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
@@ -36,6 +38,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             {
                 return Load(binaryReader);
             }
+        }
+
+        public bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
+        {
+            glyphClass = null;
+
+            if (this.GlyphClassDefinition is null)
+            {
+                return false;
+            }
+
+            glyphClass = (GlyphClassDef)this.GlyphClassDefinition.ClassIndexOf(glyphId);
+            return true;
         }
 
         public static GlyphDefinitionTable Load(BigEndianBinaryReader reader)
