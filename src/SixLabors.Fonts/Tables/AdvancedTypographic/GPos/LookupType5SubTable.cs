@@ -104,10 +104,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 // Search backward for a base glyph.
                 int baseGlyphIterator = index;
+                ushort baseGlyphId;
                 while (--baseGlyphIterator >= 0)
                 {
                     GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
-                    if (!CodePoint.IsMark(data.CodePoint))
+                    baseGlyphId = collection[baseGlyphIterator][0];
+                    if (!fontMetrics.TryGetGlyphClass(baseGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(data.CodePoint))
+                    {
+                        break;
+                    }
+
+                    if (glyphClass != GlyphClassDef.MarkGlyph)
                     {
                         break;
                     }
@@ -119,7 +126,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 ushort baseGlyphIndex = (ushort)baseGlyphIterator;
-                ushort baseGlyphId = collection[baseGlyphIndex][0];
+                baseGlyphId = collection[baseGlyphIndex][0];
                 int ligatureIndex = this.ligatureCoverage.CoverageIndexOf(baseGlyphId);
                 if (ligatureIndex < 0)
                 {
