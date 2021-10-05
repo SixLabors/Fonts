@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.IO;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
     /// <summary>
@@ -16,7 +18,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// </summary>
         /// <param name="reader">The big endian binary reader.</param>
         /// <param name="markClassCount">Number of defined mark classes.</param>
-        public LigatureAttachTable(BigEndianBinaryReader reader, ushort markClassCount)
+        /// <param name="offset">Offset from beginning of LigatureAttach table.</param>
+        public LigatureAttachTable(BigEndianBinaryReader reader, ushort markClassCount, long offset)
         {
             // +-------------------+---------------------------------+--------------------------------------------------------------------------------------+
             // | Type              | Name                            | Description                                                                          |
@@ -25,11 +28,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // +-------------------+---------------------------------+--------------------------------------------------------------------------------------+
             // | ComponentRecords  | componentRecords[componentCount]| Array of Component records, ordered in writing direction.                            |
             // +-------------------+---------------------------------+--------------------------------------------------------------------------------------+
+            reader.Seek(offset, SeekOrigin.Begin);
             ushort componentCount = reader.ReadUInt16();
             this.ComponentRecords = new ComponentRecord[componentCount];
             for (int i = 0; i < componentCount; i++)
             {
-                this.ComponentRecords[i] = new ComponentRecord(reader, markClassCount);
+                this.ComponentRecords[i] = new ComponentRecord(reader, markClassCount, offset);
             }
         }
 

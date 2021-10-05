@@ -16,7 +16,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     {
-        private readonly HashSet<IFontMetrics> metricsCollection = new HashSet<IFontMetrics>();
+        private readonly HashSet<IFontMetrics> metricsCollection = new();
 
         /// <inheritdoc/>
         public IEnumerable<FontFamily> Families => this.FamiliesByCultureImpl(CultureInfo.InvariantCulture);

@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Tables.General.Kern;
@@ -21,7 +22,7 @@ namespace SixLabors.Fonts.Tables.General
             if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
                 // this table is optional.
-                return new KerningTable(new KerningSubTable[0]);
+                return new KerningTable(Array.Empty<KerningSubTable>());
             }
 
             using (binaryReader)
@@ -41,10 +42,10 @@ namespace SixLabors.Fonts.Tables.General
             // | uint16 | nTables | Number of subtables in the kerning table. |
             // +--------+---------+-------------------------------------------+
             ushort version = reader.ReadUInt16();
-            ushort subtableCount = reader.ReadUInt16();
+            ushort subTableCount = reader.ReadUInt16();
 
-            var tables = new List<KerningSubTable>(subtableCount);
-            for (int i = 0; i < subtableCount; i++)
+            var tables = new List<KerningSubTable>(subTableCount);
+            for (int i = 0; i < subTableCount; i++)
             {
                 var t = KerningSubTable.Load(reader); // returns null for unknown/supported table format
                 if (t != null)

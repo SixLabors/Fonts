@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Diagnostics;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -135,23 +134,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             // Any glyph not included in the range of covered glyph IDs automatically belongs to Class 0.
             return 0;
-        }
-
-        [DebuggerDisplay("StartGlyphId: {StartGlyphId}, EndGlyphId: {EndGlyphId}, Class: {Class}")]
-        private readonly struct ClassRangeRecord
-        {
-            public ClassRangeRecord(ushort startGlyphId, ushort endGlyphId, ushort glyphClass)
-            {
-                this.StartGlyphId = startGlyphId;
-                this.EndGlyphId = endGlyphId;
-                this.Class = glyphClass;
-            }
-
-            public ushort StartGlyphId { get; }
-
-            public ushort EndGlyphId { get; }
-
-            public ushort Class { get; }
         }
     }
 }

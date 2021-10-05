@@ -71,10 +71,10 @@ namespace SixLabors.Fonts.Tables.General
             var palettes = new GlyphColor[numColorRecords];
             for (int n = 0; n < numColorRecords; n++)
             {
-                var blue = reader.ReadByte();
-                var green = reader.ReadByte();
-                var red = reader.ReadByte();
-                var alpha = reader.ReadByte();
+                byte blue = reader.ReadByte();
+                byte green = reader.ReadByte();
+                byte red = reader.ReadByte();
+                byte alpha = reader.ReadByte();
                 palettes[n] = new GlyphColor(blue, green, red, alpha);
             }
 

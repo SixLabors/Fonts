@@ -15,15 +15,34 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         /// </summary>
         /// <param name="reader">The big endian binary reader.</param>
         /// <param name="markClassCount">Number of defined mark classes.</param>
-        public ComponentRecord(BigEndianBinaryReader reader, ushort markClassCount)
+        /// <param name="offset">Offset from beginning of LigatureAttach table.</param>
+        public ComponentRecord(BigEndianBinaryReader reader, ushort markClassCount, long offset)
         {
-            this.LigatureAnchorOffsets = new ushort[markClassCount];
+            // +--------------+---------------------------------------+----------------------------------------------------------------------------------------+
+            // | Type         | Name                                  | Description                                                                            |
+            // +==============+=======================================+========================================================================================+
+            // | Offset16     | ligatureAnchorOffsets[markClassCount] | Array of offsets (one per class) to Anchor tables. Offsets are from                    |
+            // |              |                                       | beginning of LigatureAttach table, ordered by class (offsets may be NULL).             |
+            // +--------------+---------------------------------------+----------------------------------------------------------------------------------------+
+            this.LigatureAnchorTables = new AnchorTable[markClassCount];
+            ushort[] ligatureAnchorOffsets = new ushort[markClassCount];
             for (int i = 0; i < markClassCount; i++)
             {
-                this.LigatureAnchorOffsets[i] = reader.ReadOffset16();
+                ligatureAnchorOffsets[i] = reader.ReadOffset16();
             }
+
+            long position = reader.BaseStream.Position;
+            for (int i = 0; i < markClassCount; i++)
+            {
+                if (ligatureAnchorOffsets[i] is not 0)
+                {
+                    this.LigatureAnchorTables[i] = AnchorTable.Load(reader, offset + ligatureAnchorOffsets[i]);
+                }
+            }
+
+            reader.BaseStream.Position = position;
         }
 
-        public ushort[] LigatureAnchorOffsets { get; }
+        public AnchorTable[] LigatureAnchorTables { get; }
     }
 }

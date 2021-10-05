@@ -41,6 +41,7 @@ namespace SixLabors.Fonts
 
         [ThreadStatic]
         private Hinting.Interpreter? interpreter;
+        private readonly GlyphDefinitionTable? glyphDefinitionTable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FontMetrics"/> class.
@@ -63,6 +64,7 @@ namespace SixLabors.Fonts
         /// <param name="fpgm">The font program table.</param>
         /// <param name="cvt">The control value table.</param>
         /// <param name="prep">The control value program table.</param>
+        /// <param name="glyphDefinitionTable">The glyph definition table.</param>
         internal FontMetrics(
             NameTable nameTable,
             MaximumProfileTable maximumProfileTable,
@@ -81,7 +83,8 @@ namespace SixLabors.Fonts
             CpalTable? cpalTable,
             FpgmTable? fpgm,
             CvtTable? cvt,
-            PrepTable? prep)
+            PrepTable? prep,
+            GlyphDefinitionTable? glyphDefinitionTable)
         {
             this.maximumProfileTable = maximumProfileTable;
             this.cmap = cmap;
@@ -154,6 +157,7 @@ namespace SixLabors.Fonts
             this.fpgm = fpgm;
             this.cvt = cvt;
             this.prep = prep;
+            this.glyphDefinitionTable = glyphDefinitionTable;
             this.Description = new FontDescription(nameTable, os2, head);
         }
 
@@ -191,6 +195,18 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
             => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+
+        /// <inheritdoc/>
+        public bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
+        {
+            glyphClass = null;
+            if (this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetGlyphClass(glyphId, out glyphClass))
+            {
+                return true;
+            }
+
+            return false;
+        }
 
         /// <inheritdoc/>
         public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
@@ -347,6 +363,7 @@ namespace SixLabors.Fonts
             // Advanced Typographics instructions.
             GSubTable? gSub = reader.TryGetTable<GSubTable>();
             GPosTable? gPos = reader.TryGetTable<GPosTable>();
+            GlyphDefinitionTable? glyphDefinitionTable = reader.TryGetTable<GlyphDefinitionTable>();
 
             // post - PostScript information
             // gasp - Grid-fitting/Scan-conversion (optional table)
@@ -370,7 +387,8 @@ namespace SixLabors.Fonts
                 cpalTable,
                 fpgm,
                 cvt,
-                prep);
+                prep,
+                glyphDefinitionTable);
         }
 
         /// <summary>
