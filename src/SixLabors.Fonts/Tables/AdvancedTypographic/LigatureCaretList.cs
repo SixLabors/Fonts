@@ -2,9 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Tables.AdvancedTypographic;
 
-namespace SixLabors.Fonts.Tables.General
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     internal sealed class LigatureCaretList
     {

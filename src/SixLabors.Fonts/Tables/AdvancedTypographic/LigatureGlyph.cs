@@ -3,7 +3,7 @@
 
 using System.IO;
 
-namespace SixLabors.Fonts.Tables.General
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     internal sealed class LigatureGlyph
     {
