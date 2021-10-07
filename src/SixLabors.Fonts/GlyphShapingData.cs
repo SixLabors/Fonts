@@ -22,7 +22,7 @@ namespace SixLabors.Fonts
         /// <param name="direction">The text direction.</param>
         /// <param name="glyphIds">The collection of glyph ids.</param>
         public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
-            : this(codePoint, direction, glyphIds, new HashSet<Tag>())
+            : this(codePoint, direction, glyphIds, new HashSet<Tag>(), 0)
         {
         }
 
@@ -33,12 +33,14 @@ namespace SixLabors.Fonts
         /// <param name="direction">The text direction.</param>
         /// <param name="glyphIds">The collection of glyph ids.</param>
         /// <param name="features">The collection of features.</param>
-        public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds, HashSet<Tag> features)
+        /// <param name="ligatureId">The id of any ligature this glyph is a member of.</param>
+        public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds, HashSet<Tag> features, int ligatureId)
         {
             this.CodePoint = codePoint;
             this.Direction = direction;
             this.GlyphIds = glyphIds;
             this.Features = features;
+            this.LigatureId = ligatureId;
         }
 
         /// <summary>
@@ -55,6 +57,11 @@ namespace SixLabors.Fonts
         /// Gets the collection of glyph ids.
         /// </summary>
         public ushort[] GlyphIds { get; }
+
+        /// <summary>
+        /// Gets the id of any ligature this glyph is a member of.
+        /// </summary>
+        public int LigatureId { get; }
 
         /// <summary>
         /// Gets the collection of features.

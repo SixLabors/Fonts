@@ -30,6 +30,11 @@ namespace SixLabors.Fonts
         /// </summary>
         public int Count => this.offsets.Count;
 
+        /// <summary>
+        /// Gets or sets the running id of any ligature glyphs contained withing this collection are a member of.
+        /// </summary>
+        public int LigatureId { get; set; } = 1;
+
         /// <inheritdoc />
         public ReadOnlySpan<ushort> this[int index] => this.glyphs[this.offsets[index]].GlyphIds;
 
@@ -42,6 +47,9 @@ namespace SixLabors.Fonts
             offset = this.offsets[index];
             return this.glyphs[offset];
         }
+
+        internal void SetGlyphShapingData(int index, GlyphShapingData data)
+            => this.glyphs[this.offsets[index]] = data;
 
         /// <inheritdoc />
         public void AddShapingFeature(int index, Tag feature)
@@ -67,6 +75,7 @@ namespace SixLabors.Fonts
         {
             this.offsets.Clear();
             this.glyphs.Clear();
+            this.LigatureId = 1;
         }
 
         /// <summary>
@@ -94,7 +103,7 @@ namespace SixLabors.Fonts
         {
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, current.LigatureId);
         }
 
         /// <summary>
@@ -116,7 +125,7 @@ namespace SixLabors.Fonts
             this.offsets.RemoveRange(index, count);
 
             // Assign our new id at the index.
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, current.LigatureId);
             this.offsets.Insert(index, offset);
         }
 
@@ -129,7 +138,7 @@ namespace SixLabors.Fonts
         {
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, glyphIds.ToArray(), current.Features);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, glyphIds.ToArray(), current.Features, current.LigatureId);
         }
     }
 }

@@ -95,7 +95,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new GSubTable(scriptList, featureList, lookupList);
         }
 
-        public void ApplySubstitution(GlyphSubstitutionCollection collection, ushort index, int count)
+        public void ApplySubstitution(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, ushort index, int count)
         {
             GlyphShapingData data = collection.GetGlyphShapingData(index);
             if (data.Features.Count == 0)
@@ -118,14 +118,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
             if (defaultLangSysTable != null)
             {
-                this.ApplyFeatureSubstitution(collection, index, count, data.Features, defaultLangSysTable);
+                this.ApplyFeatureSubstitution(fontMetrics, collection, index, count, data.Features, defaultLangSysTable);
                 return;
             }
 
-            this.ApplyFeatureSubstitution(collection, index, count, data.Features, scriptListTable.LangSysTables);
+            this.ApplyFeatureSubstitution(fontMetrics, collection, index, count, data.Features, scriptListTable.LangSysTables);
         }
 
         private void ApplyFeatureSubstitution(
+            IFontMetrics fontMetrics,
             GlyphSubstitutionCollection collection,
             ushort index,
             int count,
@@ -152,7 +153,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         // TODO: Consider caching the relevant langtables per script.
                         // There's a lot of repetitive checks here.
                         LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
-                        lookupTable.TrySubstitution(this, collection, feature, index, count);
+                        lookupTable.TrySubstitution(fontMetrics, this, collection, feature, index, count);
                     }
                 }
             }

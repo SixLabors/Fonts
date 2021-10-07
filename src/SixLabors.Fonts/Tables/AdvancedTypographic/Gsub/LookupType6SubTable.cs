@@ -44,7 +44,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType6Format1SubTable(coverageTable, seqRuleSets);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
+        public override bool TrySubstitution(
+            IFontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count)
         {
             // Implements Chained Contexts Substitution, Format 1:
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#61-chained-contexts-substitution-format-1-simple-glyph-contexts
@@ -83,7 +89,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
                     LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
                     ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                    if (lookup.TrySubstitution(table, collection, feature, (ushort)(index + sequenceIndex), 1))
+                    if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
                     {
                         hasChanged = true;
                     }
@@ -131,7 +137,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType6Format2SubTable(seqRuleSets, backtrackClassDefTable, inputClassDefTable, lookaheadClassDefTable, coverageTable);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
+        public override bool TrySubstitution(
+            IFontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count)
         {
             // Implements Chained Contexts Substitution for Format 2:
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
@@ -171,7 +183,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
                     LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
                     ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                    if (lookup.TrySubstitution(table, collection, feature, (ushort)(index + sequenceIndex), 1))
+                    if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
                     {
                         hasChanged = true;
                     }
@@ -215,7 +227,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType6Format3SubTable(seqLookupRecords, backtrackCoverageTables, inputCoverageTables, lookaheadCoverageTables);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
+        public override bool TrySubstitution(
+            IFontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count)
         {
             ushort glyphId = collection[index][0];
             if (glyphId == 0)
@@ -236,7 +254,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 ushort lookupIndex = lookupRecord.LookupListIndex;
 
                 LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                if (lookup.TrySubstitution(table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                 {
                     hasChanged = true;
                 }

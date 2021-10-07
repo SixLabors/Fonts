@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 {
@@ -103,7 +104,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return new LookupType4Format1SubTable(ligatureSetTables, coverageTable);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
+        public override bool TrySubstitution(
+            IFontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count)
         {
             ushort glyphId = collection[index][0];
             if (glyphId == 0)
@@ -131,6 +138,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ligatureTable.ComponentGlyphs);
                 if (allMatched)
                 {
+                    GlyphShapingData data = collection.GetGlyphShapingData(index);
+                    fontMetrics.TryGetGlyphClass(glyphId, out GlyphClassDef? glyphClass);
+                    bool isMarkLigature = glyphClass == GlyphClassDef.MarkGlyph || CodePoint.IsMark(data.CodePoint);
+
+                    for (int j = 0; j < ligatureTable.ComponentGlyphs.Length && isMarkLigature; j++)
+                    {
+                        // TODO: FontKit does the folowing
+                        // isMarkLigature = this.glyphs[matched[i]].isMark;
+                        // But isn't that just checking the same collection since the match should be the same?
+                        fontMetrics.TryGetGlyphClass(ligatureTable.ComponentGlyphs[i], out glyphClass);
+                        isMarkLigature = glyphClass == GlyphClassDef.MarkGlyph;
+                    }
+
+                    int ligatureId = isMarkLigature ? 0 : collection.LigatureId++;
+                    int lastLigatureId = data.LigatureId;
+
+                    // TODO:
+                    // Set ligatureId and ligatureComponent on glyphs that were skipped in the matched sequence.
+                    // This allows GPOS to attach marks to the correct ligature components.
                     collection.Replace(index, compLength + 1, ligatureTable.GlyphId);
                     return true;
                 }

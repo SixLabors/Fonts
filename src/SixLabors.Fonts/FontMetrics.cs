@@ -76,7 +76,7 @@ namespace SixLabors.Fonts
             this.verticalMetricsTable = verticalMetrics;
             this.head = head;
             this.glyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
-            if (!(colrTable is null))
+            if (colrTable is not null)
             {
                 this.colorGlyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
             }
@@ -232,7 +232,7 @@ namespace SixLabors.Fonts
             {
                 for (ushort index = 0; index < collection.Count; index++)
                 {
-                    this.gSubTable.ApplySubstitution(collection, index, collection.Count - index);
+                    this.gSubTable.ApplySubstitution(this, collection, index, collection.Count - index);
                 }
             }
         }
