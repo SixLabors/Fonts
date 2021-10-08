@@ -10,7 +10,7 @@ using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Fakes
 {
-    internal class FakeFontInstance : FontMetrics
+    internal class FakeFontInstance : StreamFontMetrics
     {
         internal FakeFontInstance(string text)
             : this(GetGlyphs(text))

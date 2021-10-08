@@ -96,7 +96,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         }
 
         public bool TryUpdatePositions(
-            IFontShaper shaper,
+            FontMetrics fontMetrics,
             GlyphPositioningCollection collection,
             ushort index,
             int count)
@@ -121,14 +121,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
             if (defaultLangSysTable != null)
             {
-                return this.TryUpdateFeaturePositions(shaper, collection, index, count, data.Features, defaultLangSysTable);
+                return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, data.Features, defaultLangSysTable);
             }
 
-            return this.TryUpdateFeaturePositions(shaper, collection, index, count, data.Features, scriptListTable.LangSysTables);
+            return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, data.Features, scriptListTable.LangSysTables);
         }
 
         private bool TryUpdateFeaturePositions(
-            IFontShaper shaper,
+            FontMetrics fontMetrics,
             GlyphPositioningCollection collection,
             ushort index,
             int count,
@@ -156,7 +156,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         // TODO: Consider caching the relevant langtables per script.
                         // There's a lot of repetitive checks here.
                         LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
-                        updated |= lookupTable.TryUpdatePosition(shaper, this, collection, feature, index, count);
+                        updated |= lookupTable.TryUpdatePosition(fontMetrics, this, collection, feature, index, count);
                     }
                 }
             }

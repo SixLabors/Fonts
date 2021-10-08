@@ -45,7 +45,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
 
         public override bool TrySubstitution(
-            IFontShaper shaper,
+            FontMetrics fontMetrics,
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
@@ -89,7 +89,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
                     LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
                     ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                    if (lookup.TrySubstitution(shaper, table, collection, feature, (ushort)(index + sequenceIndex), 1))
+                    if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
                     {
                         hasChanged = true;
                     }
@@ -138,7 +138,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
 
         public override bool TrySubstitution(
-            IFontShaper shaper,
+            FontMetrics fontMetrics,
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
@@ -183,7 +183,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
                     LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
                     ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                    if (lookup.TrySubstitution(shaper, table, collection, feature, (ushort)(index + sequenceIndex), 1))
+                    if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
                     {
                         hasChanged = true;
                     }
@@ -228,7 +228,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
 
         public override bool TrySubstitution(
-            IFontShaper shaper,
+            FontMetrics fontMetrics,
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
@@ -254,7 +254,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 ushort lookupIndex = lookupRecord.LookupListIndex;
 
                 LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                if (lookup.TrySubstitution(shaper, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                 {
                     hasChanged = true;
                 }

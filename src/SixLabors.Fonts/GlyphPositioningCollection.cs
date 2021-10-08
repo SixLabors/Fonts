@@ -87,7 +87,7 @@ namespace SixLabors.Fonts
         /// <param name="collection">The glyph substitution collection.</param>
         /// <param name="options">The renderer options.</param>
         /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
-        public bool TryAddOrUpdate(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
+        public bool TryAddOrUpdate(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
         {
             if (this.Count == 0)
             {
@@ -156,7 +156,7 @@ namespace SixLabors.Fonts
             return !hasFallBacks;
         }
 
-        private bool Add(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
+        private bool Add(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
         {
             bool hasFallBacks = false;
             for (int i = 0; i < collection.Count; i++)
@@ -200,7 +200,7 @@ namespace SixLabors.Fonts
         /// <param name="glyphId">The id of the glyph to offset.</param>
         /// <param name="x">The x-offset.</param>
         /// <param name="y">The y-offset.</param>
-        public void Offset(IFontMetrics fontMetrics, ushort index, ushort glyphId, short x, short y)
+        public void Offset(FontMetrics fontMetrics, ushort index, ushort glyphId, short x, short y)
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
@@ -218,7 +218,7 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the elements to offset.</param>
         /// <param name="glyphId">The id of the glyph to offset.</param>
         /// <returns>The offset.</returns>
-        public Vector2 GetOffset(IFontMetrics fontMetrics, ushort index, ushort glyphId)
+        public Vector2 GetOffset(FontMetrics fontMetrics, ushort index, ushort glyphId)
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
@@ -238,7 +238,7 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the elements to offset.</param>
         /// <param name="glyphId">The id of the glyph to offset.</param>
         /// <returns>The rectangular advanced bounds.</returns>
-        internal FontRectangle GetAdvanceBounds(IFontMetrics fontMetrics, ushort index, ushort glyphId)
+        internal FontRectangle GetAdvanceBounds(FontMetrics fontMetrics, ushort index, ushort glyphId)
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
@@ -261,7 +261,7 @@ namespace SixLabors.Fonts
         /// <param name="glyphId">The id of the glyph to offset.</param>
         /// <param name="dx">The delta x-advance.</param>
         /// <param name="dy">The delta y-advance.</param>
-        public void Advance(IFontMetrics fontMetrics, ushort index, ushort glyphId, short dx, short dy)
+        public void Advance(FontMetrics fontMetrics, ushort index, ushort glyphId, short dx, short dy)
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
@@ -279,7 +279,7 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the elements to offset.</param>
         /// <param name="glyphId">The id of the glyph to offset.</param>
         /// <param name="x">The x advance to set.</param>
-        public void SetAdvanceWidth(IFontMetrics fontMetrics, ushort index, ushort glyphId, ushort x)
+        public void SetAdvanceWidth(FontMetrics fontMetrics, ushort index, ushort glyphId, ushort x)
         {
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {

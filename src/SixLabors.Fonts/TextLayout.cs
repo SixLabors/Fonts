@@ -45,11 +45,11 @@ namespace SixLabors.Fonts
         private static TextBox ProcessText(ReadOnlySpan<char> text, RendererOptions options)
         {
             // Gather the font and fallbacks.
-            IFontMetrics mainFont = options.Font.FontMetrics;
-            IFontMetrics[] fallbackFonts;
+            FontMetrics mainFont = options.Font.FontMetrics;
+            FontMetrics[] fallbackFonts;
             if (options.FallbackFontFamilies is null)
             {
-                fallbackFonts = Array.Empty<IFontMetrics>();
+                fallbackFonts = Array.Empty<FontMetrics>();
             }
             else
             {
@@ -95,7 +95,7 @@ namespace SixLabors.Fonts
                 positionings,
                 layoutMode))
             {
-                foreach (IFontMetrics font in fallbackFonts)
+                foreach (FontMetrics font in fallbackFonts)
                 {
                     substitutions.Clear();
                     if (DoFontRun(
@@ -120,10 +120,10 @@ namespace SixLabors.Fonts
                 // Update the positions of the glyphs in the completed collection.
                 // Each set of metrics is associated with single font and will only be updated
                 // by that font so it's safe to use a single collection.
-                mainFont.ToFontShaper().UpdatePositions(positionings);
-                foreach (IFontMetrics font in fallbackFonts)
+                mainFont.UpdatePositions(positionings);
+                foreach (FontMetrics font in fallbackFonts)
                 {
-                    font.ToFontShaper().UpdatePositions(positionings);
+                    font.UpdatePositions(positionings);
                 }
             }
 
@@ -396,7 +396,7 @@ namespace SixLabors.Fonts
         private static bool DoFontRun(
             ReadOnlySpan<char> text,
             RendererOptions options,
-            IFontMetrics fontMetrics,
+            FontMetrics fontMetrics,
             BidiRun[] bidiRuns,
             Dictionary<int, int> bidiMap,
             GlyphSubstitutionCollection substitutions,
@@ -458,13 +458,13 @@ namespace SixLabors.Fonts
             if (options.ApplyKerning)
             {
                 AssignShapingFeatures(substitutions);
-                fontMetrics.ToFontShaper().ApplySubstitution(substitutions);
+                fontMetrics.ApplySubstitution(substitutions);
             }
 
             return positionings.TryAddOrUpdate(fontMetrics, substitutions, options);
         }
 
-        private static void SubstituteBidiMirrors(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, LayoutMode layoutMode)
+        private static void SubstituteBidiMirrors(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, LayoutMode layoutMode)
         {
             for (int i = 0; i < collection.Count; i++)
             {

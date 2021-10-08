@@ -79,7 +79,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
 
         public override bool TrySubstitution(
-            IFontShaper shaper,
+            FontMetrics fontMetrics,
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,

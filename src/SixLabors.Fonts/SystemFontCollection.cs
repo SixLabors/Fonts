@@ -102,11 +102,11 @@ namespace SixLabors.Fonts
 #endif
 
         /// <inheritdoc/>
-        bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out IFontMetrics? metrics)
+        bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)
             => ((IReadOnlyFontMetricsCollection)this.collection).TryGetMetrics(name, culture, style, out metrics);
 
         /// <inheritdoc/>
-        IEnumerable<IFontMetrics> IReadOnlyFontMetricsCollection.GetAllMetrics(string name, CultureInfo culture)
+        IEnumerable<FontMetrics> IReadOnlyFontMetricsCollection.GetAllMetrics(string name, CultureInfo culture)
             => ((IReadOnlyFontMetricsCollection)this.collection).GetAllMetrics(name, culture);
 
         /// <inheritdoc/>
@@ -114,7 +114,7 @@ namespace SixLabors.Fonts
             => ((IReadOnlyFontMetricsCollection)this.collection).GetAllStyles(name, culture);
 
         /// <inheritdoc/>
-        IEnumerator<IFontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
+        IEnumerator<FontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
             => ((IReadOnlyFontMetricsCollection)this.collection).GetEnumerator();
     }
 }

@@ -170,7 +170,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         }
 
         internal static void ApplyAnchor(
-            IFontShaper shaper,
+            FontMetrics fontMetrics,
             GlyphPositioningCollection collection,
             ushort index,
             AnchorTable baseAnchor,
@@ -184,8 +184,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             short markX = markRecord.MarkAnchorTable.XCoordinate;
             short markY = markRecord.MarkAnchorTable.YCoordinate;
 
-            FontRectangle baseBounds = collection.GetAdvanceBounds(shaper, baseGlyphIndex, baseGlyphId);
-            Vector2 glyphOffset = collection.GetOffset(shaper, index, glyphId);
+            FontRectangle baseBounds = collection.GetAdvanceBounds(fontMetrics, baseGlyphIndex, baseGlyphId);
+            Vector2 glyphOffset = collection.GetOffset(fontMetrics, index, glyphId);
 
             // Negate original offset to reset position to 0,0.
             short xo = (short)(glyphOffset.X * -1);
@@ -201,7 +201,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             yo += (short)(baseY - markY);
 
             // TODO: Consider vertical layout modes. TTB and BBT
-            collection.Offset(shaper, index, glyphId, xo, yo);
+            collection.Offset(fontMetrics, index, glyphId, xo, yo);
         }
 
         private static bool CheckCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)

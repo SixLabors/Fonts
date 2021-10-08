@@ -120,7 +120,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
 
         public bool TrySubstitution(
-            IFontShaper shaper,
+            FontMetrics fontMetrics,
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
@@ -129,7 +129,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         {
             foreach (LookupSubTable subTable in this.LookupSubTables)
             {
-                if (subTable.TrySubstitution(shaper, table, collection, feature, index, count))
+                if (subTable.TrySubstitution(fontMetrics, table, collection, feature, index, count))
                 {
                     // A lookup is finished for a glyph after the client locates the target
                     // glyph or glyph context and performs a substitution, if specified.
@@ -158,7 +158,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     internal abstract class LookupSubTable
     {
         public abstract bool TrySubstitution(
-            IFontShaper shaper,
+            FontMetrics fontMetrics,
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,

@@ -15,7 +15,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class Font
     {
-        private readonly Lazy<IFontMetrics?> metrics;
+        private readonly Lazy<FontMetrics?> metrics;
         private readonly Lazy<string> fontName;
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace SixLabors.Fonts
             this.Family = family;
             this.RequestedStyle = style;
             this.Size = size;
-            this.metrics = new Lazy<IFontMetrics?>(this.LoadInstanceInternal);
+            this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal);
             this.fontName = new Lazy<string>(this.LoadFontName);
         }
 
@@ -97,7 +97,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the font metrics.
         /// </summary>
-        public IFontMetrics FontMetrics => this.metrics.Value ?? throw new FontException("Font instance not found.");
+        public FontMetrics FontMetrics => this.metrics.Value ?? throw new FontException("Font instance not found.");
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="Font"/> is bold.
@@ -159,9 +159,9 @@ namespace SixLabors.Fonts
         private string LoadFontName()
             => this.metrics.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;
 
-        private IFontMetrics? LoadInstanceInternal()
+        private FontMetrics? LoadInstanceInternal()
         {
-            if (this.Family.TryGetMetrics(this.RequestedStyle, out IFontMetrics? metrics))
+            if (this.Family.TryGetMetrics(this.RequestedStyle, out FontMetrics? metrics))
             {
                 return metrics;
             }

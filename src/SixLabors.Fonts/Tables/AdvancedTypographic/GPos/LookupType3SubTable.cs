@@ -74,7 +74,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(
-                IFontShaper shaper,
+                FontMetrics fontMetrics,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -117,34 +117,34 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         continue;
                     }
 
-                    Vector2 curOffset = collection.GetOffset(shaper, curIndex, glyphId);
-                    Vector2 nextOffset = collection.GetOffset(shaper, nextIndex, nextGlyphId);
+                    Vector2 curOffset = collection.GetOffset(fontMetrics, curIndex, glyphId);
+                    Vector2 nextOffset = collection.GetOffset(fontMetrics, nextIndex, nextGlyphId);
                     int curXOffset = (int)curOffset.X;
                     int nextXOffset = (int)nextOffset.X;
 
                     if (data.Direction == TextDirection.LeftToRight)
                     {
                         int curXAdvance = exit.XCoordinate + curXOffset;
-                        collection.SetAdvanceWidth(shaper, curIndex, glyphId, (ushort)curXAdvance);
+                        collection.SetAdvanceWidth(fontMetrics, curIndex, glyphId, (ushort)curXAdvance);
 
                         int nextDx = -(entry.XCoordinate + nextXOffset);
-                        collection.Advance(shaper, nextIndex, nextGlyphId, (short)nextDx, 0);
-                        collection.Offset(shaper, nextIndex, nextGlyphId, (short)nextDx, 0);
+                        collection.Advance(fontMetrics, nextIndex, nextGlyphId, (short)nextDx, 0);
+                        collection.Offset(fontMetrics, nextIndex, nextGlyphId, (short)nextDx, 0);
 
                         int curDy = -(exit.YCoordinate - entry.YCoordinate);
-                        collection.Offset(shaper, curIndex, glyphId, 0, (short)curDy);
+                        collection.Offset(fontMetrics, curIndex, glyphId, 0, (short)curDy);
                     }
                     else
                     {
                         int currDx = -(exit.XCoordinate + curXOffset);
-                        collection.Advance(shaper, curIndex, glyphId, (short)currDx, 0);
-                        collection.Offset(shaper, curIndex, glyphId, (short)currDx, 0);
+                        collection.Advance(fontMetrics, curIndex, glyphId, (short)currDx, 0);
+                        collection.Offset(fontMetrics, curIndex, glyphId, (short)currDx, 0);
 
                         int nextXAdvance = entry.XCoordinate + nextXOffset;
-                        collection.SetAdvanceWidth(shaper, nextIndex, nextGlyphId, (ushort)nextXAdvance);
+                        collection.SetAdvanceWidth(fontMetrics, nextIndex, nextGlyphId, (ushort)nextXAdvance);
 
                         int nextDy = -(entry.YCoordinate - exit.YCoordinate);
-                        collection.Offset(shaper, nextIndex, nextGlyphId, 0, (short)nextDy);
+                        collection.Offset(fontMetrics, nextIndex, nextGlyphId, 0, (short)nextDy);
                     }
 
                     updated = true;

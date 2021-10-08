@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(
-                IFontShaper shaper,
+                FontMetrics fontMetrics,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -112,12 +112,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         if (pairSet.TryGetPairValueRecord(glyphId2, out PairValueRecord pairValueRecord))
                         {
                             ValueRecord record1 = pairValueRecord.ValueRecord1;
-                            collection.Offset(shaper, i, glyphId, record1.XPlacement, record1.YPlacement);
-                            collection.Advance(shaper, i, glyphId, record1.XAdvance, record1.YAdvance);
+                            collection.Offset(fontMetrics, i, glyphId, record1.XPlacement, record1.YPlacement);
+                            collection.Advance(fontMetrics, i, glyphId, record1.XAdvance, record1.YAdvance);
 
                             ValueRecord record2 = pairValueRecord.ValueRecord2;
-                            collection.Offset(shaper, (ushort)(i + 1), glyphId2, record2.XPlacement, record2.YPlacement);
-                            collection.Advance(shaper, (ushort)(i + 1), glyphId2, record2.XAdvance, record2.YAdvance);
+                            collection.Offset(fontMetrics, (ushort)(i + 1), glyphId2, record2.XPlacement, record2.YPlacement);
+                            collection.Advance(fontMetrics, (ushort)(i + 1), glyphId2, record2.XAdvance, record2.YAdvance);
 
                             return true;
                         }
@@ -247,7 +247,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(
-                IFontShaper shaper,
+                FontMetrics fontMetrics,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -278,12 +278,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         Class2Record class2Record = class1Record.Class2Records[classDef2];
 
                         ValueRecord record1 = class2Record.ValueRecord1;
-                        collection.Offset(shaper, i, glyphId, record1.XPlacement, record1.YPlacement);
-                        collection.Advance(shaper, i, glyphId, record1.XAdvance, record1.YAdvance);
+                        collection.Offset(fontMetrics, i, glyphId, record1.XPlacement, record1.YPlacement);
+                        collection.Advance(fontMetrics, i, glyphId, record1.XAdvance, record1.YAdvance);
 
                         ValueRecord record2 = class2Record.ValueRecord2;
-                        collection.Offset(shaper, (ushort)(i + 1), glyphId2, record2.XPlacement, record2.YPlacement);
-                        collection.Advance(shaper, (ushort)(i + 1), glyphId2, record2.XAdvance, record2.YAdvance);
+                        collection.Offset(fontMetrics, (ushort)(i + 1), glyphId2, record2.XPlacement, record2.YPlacement);
+                        collection.Advance(fontMetrics, (ushort)(i + 1), glyphId2, record2.XAdvance, record2.YAdvance);
 
                         return true;
                     }
