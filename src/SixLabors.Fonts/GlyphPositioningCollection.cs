@@ -13,7 +13,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a collection of glyph metrics that are mapped to input codepoints.
     /// </summary>
-    public sealed class GlyphPositioningCollection : IGlyphShapingCollection
+    internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     {
         /// <summary>
         /// Contains a map between the index of a map within the collection, it's codepoint

@@ -13,7 +13,7 @@ namespace SixLabors.Fonts
     /// Contains supplemetary data that allows the shaping of glyphs.
     /// </summary>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public readonly struct GlyphShapingData
+    internal readonly struct GlyphShapingData
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphShapingData"/> struct.

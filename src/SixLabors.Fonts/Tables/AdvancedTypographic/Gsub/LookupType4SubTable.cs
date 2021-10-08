@@ -105,7 +105,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         }
 
         public override bool TrySubstitution(
-            IFontMetrics fontMetrics,
+            IFontShaper shaper,
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
@@ -139,7 +139,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 if (allMatched)
                 {
                     GlyphShapingData data = collection.GetGlyphShapingData(index);
-                    fontMetrics.TryGetGlyphClass(glyphId, out GlyphClassDef? glyphClass);
+                    shaper.TryGetGlyphClass(glyphId, out GlyphClassDef? glyphClass);
                     bool isMarkLigature = glyphClass == GlyphClassDef.MarkGlyph || CodePoint.IsMark(data.CodePoint);
 
                     for (int j = 0; j < ligatureTable.ComponentGlyphs.Length && isMarkLigature; j++)
@@ -147,7 +147,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                         // TODO: FontKit does the folowing
                         // isMarkLigature = this.glyphs[matched[i]].isMark;
                         // But isn't that just checking the same collection since the match should be the same?
-                        fontMetrics.TryGetGlyphClass(ligatureTable.ComponentGlyphs[i], out glyphClass);
+                        shaper.TryGetGlyphClass(ligatureTable.ComponentGlyphs[i], out glyphClass);
                         isMarkLigature = glyphClass == GlyphClassDef.MarkGlyph;
                     }
 

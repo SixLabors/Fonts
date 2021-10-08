@@ -9,7 +9,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Defines the contract for glyph shaping collections.
     /// </summary>
-    public interface IGlyphShapingCollection
+    internal interface IGlyphShapingCollection
     {
         /// <summary>
         /// Gets the collection count.

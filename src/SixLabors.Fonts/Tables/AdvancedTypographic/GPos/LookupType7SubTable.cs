@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(
-                IFontMetrics fontMetrics,
+                IFontShaper shaper,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         ushort lookupIndex = lookupRecord.LookupListIndex;
 
                         LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                        if (lookup.TryUpdatePosition(shaper, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                         {
                             hasChanged = true;
                         }
@@ -126,7 +126,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(
-                IFontMetrics fontMetrics,
+                IFontShaper shaper,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -173,7 +173,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                             ushort lookupIndex = lookupRecord.LookupListIndex;
 
                             LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                            if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                            if (lookup.TryUpdatePosition(shaper, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                             {
                                 hasChanged = true;
                             }
@@ -206,7 +206,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(
-                IFontMetrics fontMetrics,
+                IFontShaper shaper,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -237,7 +237,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         ushort lookupIndex = lookupRecord.LookupListIndex;
 
                         LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                        if (lookup.TryUpdatePosition(shaper, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
                         {
                             hasChanged = true;
                         }

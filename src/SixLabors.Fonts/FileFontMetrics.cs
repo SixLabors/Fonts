@@ -16,9 +16,9 @@ namespace SixLabors.Fonts
     /// </para>
     /// <para>The font source is a filesystem path.</para>
     /// </summary>
-    internal class FileFontMetrics : IFontMetrics
+    internal sealed class FileFontMetrics : IFontMetrics, IFontShaper
     {
-        private readonly Lazy<IFontMetrics> metrics;
+        private readonly Lazy<FontMetrics> metrics;
 
         public FileFontMetrics(string path)
             : this(path, 0)
@@ -34,7 +34,7 @@ namespace SixLabors.Fonts
         {
             this.Description = description;
             this.Path = path;
-            this.metrics = new Lazy<IFontMetrics>(() => FontMetrics.LoadFont(path, offset));
+            this.metrics = new Lazy<FontMetrics>(() => FontMetrics.LoadFont(path, offset));
         }
 
         /// <inheritdoc cref="IFontMetrics.Description"/>
@@ -82,7 +82,8 @@ namespace SixLabors.Fonts
             => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         /// <inheritdoc/>
-        public bool TryGetGlyphClass(ushort glyphId, out GlyphClassDef? glyphClass) => this.metrics.Value.TryGetGlyphClass(glyphId, out glyphClass);
+        bool IFontShaper.TryGetGlyphClass(ushort glyphId, out GlyphClassDef? glyphClass)
+            => ((IFontShaper)this.metrics.Value).TryGetGlyphClass(glyphId, out glyphClass);
 
         /// <inheritdoc />
         public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
@@ -93,12 +94,12 @@ namespace SixLabors.Fonts
             => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
 
         /// <inheritdoc/>
-        public void ApplySubstitution(GlyphSubstitutionCollection collection)
-            => this.metrics.Value.ApplySubstitution(collection);
+        void IFontShaper.ApplySubstitution(GlyphSubstitutionCollection collection)
+            => ((IFontShaper)this.metrics.Value).ApplySubstitution(collection);
 
         /// <inheritdoc/>
-        public void UpdatePositions(GlyphPositioningCollection collection)
-            => this.metrics.Value.UpdatePositions(collection);
+        void IFontShaper.UpdatePositions(GlyphPositioningCollection collection)
+            => ((IFontShaper)this.metrics.Value).UpdatePositions(collection);
 
         /// <summary>
         /// Reads a <see cref="FontMetrics"/> from the specified stream.

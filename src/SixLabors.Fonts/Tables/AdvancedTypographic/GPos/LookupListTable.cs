@@ -134,7 +134,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             };
 
         public bool TryUpdatePosition(
-            IFontMetrics fontMetrics,
+            IFontShaper shaper,
             GPosTable table,
             GlyphPositioningCollection collection,
             Tag feature,
@@ -145,7 +145,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // A lookup is finished for a glyph after the client locates the target
                 // glyph or glyph context and performs a positioning action, if specified.
-                if (subTable.TryUpdatePosition(fontMetrics, table, collection, feature, index, count))
+                if (subTable.TryUpdatePosition(shaper, table, collection, feature, index, count))
                 {
                     return true;
                 }
@@ -158,7 +158,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     internal abstract class LookupSubTable
     {
         public abstract bool TryUpdatePosition(
-            IFontMetrics fontMetrics,
+            IFontShaper shaper,
             GPosTable table,
             GlyphPositioningCollection collection,
             Tag feature,

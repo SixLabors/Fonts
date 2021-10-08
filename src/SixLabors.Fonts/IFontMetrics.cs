@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -95,15 +94,6 @@ namespace SixLabors.Fonts
         bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint);
 
         /// <summary>
-        /// Tries to get the glyph class for a given glyph id.
-        /// The font needs to have a GDEF table defined.
-        /// </summary>
-        /// <param name="glyphId">The glyph identifier.</param>
-        /// <param name="glyphClass">The glyph class.</param>
-        /// <returns>true, if the glyph class could be retrieved.</returns>
-        bool TryGetGlyphClass(ushort glyphId, out GlyphClassDef? glyphClass);
-
-        /// <summary>
         /// Gets the glyph metrics for a given code point.
         /// </summary>
         /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
@@ -122,17 +112,5 @@ namespace SixLabors.Fonts
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
         IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support);
-
-        /// <summary>
-        /// Applies any available substitutions to the collection of glyphs.
-        /// </summary>
-        /// <param name="collection">The glyph substitution collection.</param>
-        void ApplySubstitution(GlyphSubstitutionCollection collection);
-
-        /// <summary>
-        /// Applies any available positioning updates to the collection of glyphs.
-        /// </summary>
-        /// <param name="collection">The glyph positioning collection.</param>
-        void UpdatePositions(GlyphPositioningCollection collection);
     }
 }

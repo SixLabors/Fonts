@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.IO;
 using SixLabors.Fonts.Unicode;
 
@@ -81,7 +80,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             }
 
             public override bool TryUpdatePosition(
-                IFontMetrics fontMetrics,
+                IFontShaper shaper,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -109,7 +108,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
                     baseGlyphId = collection[baseGlyphIterator][0];
-                    if (!fontMetrics.TryGetGlyphClass(baseGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(data.CodePoint))
+                    if (!shaper.TryGetGlyphClass(baseGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(data.CodePoint))
                     {
                         break;
                     }
@@ -142,7 +141,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
                 AnchorTable baseAnchor = ligatureAttach.ComponentRecords[compIndex].LigatureAnchorTables[markRecord.MarkClass];
-                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, baseGlyphIndex, baseGlyphId, glyphId);
+                AdvancedTypographicUtils.ApplyAnchor(shaper, collection, index, baseAnchor, markRecord, baseGlyphIndex, baseGlyphId, glyphId);
 
                 return true;
             }

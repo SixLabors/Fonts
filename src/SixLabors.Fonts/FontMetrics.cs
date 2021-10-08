@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a font face with metrics, which is a set of glyphs with a specific style (regular, italic, bold etc).
     /// </summary>
-    public class FontMetrics : IFontMetrics
+    public class FontMetrics : IFontMetrics, IFontShaper
     {
         private readonly CMapTable cmap;
         private readonly GlyphTable glyphs;
@@ -176,10 +176,10 @@ namespace SixLabors.Fonts
             => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         /// <inheritdoc/>
-        public bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
+        bool IFontShaper.TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
         {
             glyphClass = null;
-            if (this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetGlyphClass(glyphId, out glyphClass))
+            if (this.glyphDefinitionTable?.TryGetGlyphClass(glyphId, out glyphClass) == true)
             {
                 return true;
             }
@@ -226,7 +226,7 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public void ApplySubstitution(GlyphSubstitutionCollection collection)
+        void IFontShaper.ApplySubstitution(GlyphSubstitutionCollection collection)
         {
             if (this.gSubTable != null)
             {
@@ -238,7 +238,7 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public void UpdatePositions(GlyphPositioningCollection collection)
+        void IFontShaper.UpdatePositions(GlyphPositioningCollection collection)
         {
             bool updated = false;
             if (this.gPosTable != null)

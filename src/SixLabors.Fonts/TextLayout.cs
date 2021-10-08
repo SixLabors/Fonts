@@ -120,10 +120,10 @@ namespace SixLabors.Fonts
                 // Update the positions of the glyphs in the completed collection.
                 // Each set of metrics is associated with single font and will only be updated
                 // by that font so it's safe to use a single collection.
-                mainFont.UpdatePositions(positionings);
+                mainFont.ToFontShaper().UpdatePositions(positionings);
                 foreach (IFontMetrics font in fallbackFonts)
                 {
-                    font.UpdatePositions(positionings);
+                    font.ToFontShaper().UpdatePositions(positionings);
                 }
             }
 
@@ -458,7 +458,7 @@ namespace SixLabors.Fonts
             if (options.ApplyKerning)
             {
                 AssignShapingFeatures(substitutions);
-                fontMetrics.ApplySubstitution(substitutions);
+                fontMetrics.ToFontShaper().ApplySubstitution(substitutions);
             }
 
             return positionings.TryAddOrUpdate(fontMetrics, substitutions, options);

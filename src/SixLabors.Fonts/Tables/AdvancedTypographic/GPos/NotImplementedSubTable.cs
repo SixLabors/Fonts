@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     internal class NotImplementedSubTable : LookupSubTable
     {
         public override bool TryUpdatePosition(
-            IFontMetrics fontMetrics,
+            IFontShaper shaper,
             GPosTable table,
             GlyphPositioningCollection collection,
             Tag feature,

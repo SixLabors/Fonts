@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a collection of glyph indices that are mapped to input codepoints.
     /// </summary>
-    public sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
+    internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     {
         /// <summary>
         /// Contains a map between the index of a map within the collection and its offset.

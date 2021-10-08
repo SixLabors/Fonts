@@ -66,7 +66,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         }
 
         public override bool TryUpdatePosition(
-            IFontMetrics fontMetrics,
+            IFontShaper shaper,
             GPosTable table,
             GlyphPositioningCollection collection,
             Tag feature,
@@ -85,8 +85,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 if (coverage > -1)
                 {
                     ValueRecord record = this.valueRecord;
-                    collection.Offset(fontMetrics, (ushort)(i + index), glyphId, record.XPlacement, record.YPlacement);
-                    collection.Advance(fontMetrics, (ushort)(i + index), glyphId, record.XAdvance, record.YAdvance);
+                    collection.Offset(shaper, (ushort)(i + index), glyphId, record.XPlacement, record.YPlacement);
+                    collection.Advance(shaper, (ushort)(i + index), glyphId, record.XAdvance, record.YAdvance);
                     return true;
                 }
             }
@@ -139,7 +139,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         }
 
         public override bool TryUpdatePosition(
-            IFontMetrics fontMetrics,
+            IFontShaper shaper,
             GPosTable table,
             GlyphPositioningCollection collection,
             Tag feature,
@@ -158,8 +158,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 if (coverage > -1)
                 {
                     ValueRecord record = this.valueRecords[coverage];
-                    collection.Offset(fontMetrics, i, glyphId, record.XPlacement, record.YPlacement);
-                    collection.Advance(fontMetrics, i, glyphId, record.XAdvance, record.YAdvance);
+                    collection.Offset(shaper, i, glyphId, record.XPlacement, record.YPlacement);
+                    collection.Advance(shaper, i, glyphId, record.XAdvance, record.YAdvance);
                     return true;
                 }
             }
