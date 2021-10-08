@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 using SixLabors.Fonts.Unicode;
 
@@ -133,11 +134,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 LigatureAttachTable ligatureAttach = this.ligatureArrayTable.LigatureAttachTables[ligatureIndex];
-                ushort markGlyphId = glyphId;
-                ushort ligGlyphId = baseGlyphId;
-
-                // TODO: figure out how to calculate the compIndex, see fontKit.
-                int compIndex = 0;
+                int markGlyphIdx = markIndex;
+                int ligGlyphIndex = ligatureIndex;
+                GlyphShapingData shapingDataMarkGlyph = collection.GetGlyphShapingData(markGlyphIdx);
+                GlyphShapingData shapingDataLigGlyph = collection.GetGlyphShapingData(ligGlyphIndex);
+                int compIndex = shapingDataLigGlyph.LigatureId != 0 && shapingDataLigGlyph.LigatureId == shapingDataMarkGlyph.LigatureId && shapingDataMarkGlyph.LigatureComponentCount > 0
+                    ? Math.Min(shapingDataMarkGlyph.LigatureComponentCount, shapingDataLigGlyph.GlyphIds.Length) - 1
+                    : shapingDataLigGlyph.GlyphIds.Length - 1;
 
                 MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
                 AnchorTable baseAnchor = ligatureAttach.ComponentRecords[compIndex].LigatureAnchorTables[markRecord.MarkClass];
