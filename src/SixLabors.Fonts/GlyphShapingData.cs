@@ -22,7 +22,7 @@ namespace SixLabors.Fonts
         /// <param name="direction">The text direction.</param>
         /// <param name="glyphIds">The collection of glyph ids.</param>
         public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
-            : this(codePoint, direction, glyphIds, new HashSet<Tag>(), 0)
+            : this(codePoint, direction, glyphIds, new HashSet<Tag>(), 0, 0)
         {
         }
 
@@ -34,13 +34,21 @@ namespace SixLabors.Fonts
         /// <param name="glyphIds">The collection of glyph ids.</param>
         /// <param name="features">The collection of features.</param>
         /// <param name="ligatureId">The id of any ligature this glyph is a member of.</param>
-        public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds, HashSet<Tag> features, int ligatureId)
+        /// <param name="ligatureComponents">The component count of the glyph as a ligature.</param>
+        public GlyphShapingData(
+            CodePoint codePoint,
+            TextDirection direction,
+            ushort[] glyphIds,
+            HashSet<Tag> features,
+            int ligatureId,
+            int ligatureComponents)
         {
             this.CodePoint = codePoint;
             this.Direction = direction;
             this.GlyphIds = glyphIds;
             this.Features = features;
             this.LigatureId = ligatureId;
+            this.LigatureComponentCount = ligatureComponents;
         }
 
         /// <summary>
@@ -64,12 +72,17 @@ namespace SixLabors.Fonts
         public int LigatureId { get; }
 
         /// <summary>
+        /// Gets the component count of the glyph as a ligature.
+        /// </summary>
+        public int LigatureComponentCount { get; }
+
+        /// <summary>
         /// Gets the collection of features.
         /// </summary>
         public HashSet<Tag> Features { get; }
 
         private string DebuggerDisplay
             => FormattableString
-            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScript(this.CodePoint)} : {this.Direction} : [{string.Join(",", this.GlyphIds)}]");
+            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScript(this.CodePoint)} : {this.Direction} : {this.LigatureId} : {this.LigatureComponentCount} : [{string.Join(",", this.GlyphIds)}]");
     }
 }

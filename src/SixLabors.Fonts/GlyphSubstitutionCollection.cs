@@ -42,12 +42,23 @@ namespace SixLabors.Fonts
         public GlyphShapingData GetGlyphShapingData(int index)
             => this.glyphs[this.offsets[index]];
 
+        /// <summary>
+        /// Gets the shaping data at the specified position.
+        /// </summary>
+        /// <param name="index">The zero-based index of the elements to get.</param>
+        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        /// <returns>The <see cref="GlyphShapingData"/>.</returns>
         internal GlyphShapingData GetGlyphShapingData(int index, out int offset)
         {
             offset = this.offsets[index];
             return this.glyphs[offset];
         }
 
+        /// <summary>
+        /// Sets the shaping data at the specified position.
+        /// </summary>
+        /// <param name="index">The zero-based index of the elements to get.</param>
+        /// <param name="data">The shaping data.</param>
         internal void SetGlyphShapingData(int index, GlyphShapingData data)
             => this.glyphs[this.offsets[index]] = data;
 
@@ -103,7 +114,7 @@ namespace SixLabors.Fonts
         {
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, current.LigatureId);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, current.LigatureId, current.LigatureComponentCount);
         }
 
         /// <summary>
@@ -112,7 +123,8 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based starting index of the range of elements to replace.</param>
         /// <param name="count">The number of elements to replace.</param>
         /// <param name="glyphId">The replacement glyph id.</param>
-        public void Replace(int index, int count, ushort glyphId)
+        /// <param name="ligatureId">The ligature id.</param>
+        public void Replace(int index, int count, ushort glyphId, int ligatureId)
         {
             // Remove the count starting at the at index.
             int offset = this.offsets[index];
@@ -125,7 +137,7 @@ namespace SixLabors.Fonts
             this.offsets.RemoveRange(index, count);
 
             // Assign our new id at the index.
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, current.LigatureId);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, ligatureId, current.LigatureComponentCount);
             this.offsets.Insert(index, offset);
         }
 
@@ -138,7 +150,7 @@ namespace SixLabors.Fonts
         {
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, glyphIds.ToArray(), current.Features, current.LigatureId);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, glyphIds.ToArray(), current.Features, current.LigatureId, current.LigatureComponentCount);
         }
     }
 }

@@ -157,7 +157,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     // TODO:
                     // Set ligatureId and ligatureComponent on glyphs that were skipped in the matched sequence.
                     // This allows GPOS to attach marks to the correct ligature components.
-                    collection.Replace(index, compLength + 1, ligatureTable.GlyphId);
+                    collection.Replace(index, compLength + 1, ligatureTable.GlyphId, ligatureId);
                     return true;
                 }
             }
