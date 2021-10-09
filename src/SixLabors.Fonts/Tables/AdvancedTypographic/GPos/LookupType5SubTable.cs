@@ -133,6 +133,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
+                // We must now check whether the ligature ID of the current mark glyph
+                // is identical to the ligature ID of the found ligature.
+                // If yes, we can directly use the component index. If not, we attach the mark
+                // glyph to the last component of the ligature.
                 LigatureAttachTable ligatureAttach = this.ligatureArrayTable.LigatureAttachTables[ligatureIndex];
                 int markGlyphIdx = markIndex;
                 int ligGlyphIndex = ligatureIndex;
