@@ -106,16 +106,48 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                // TODO: fontkit checks here, if Marks belonging to the same base or Marks belonging to the same ligature component.
                 int prevIdx = index - 1;
                 ushort prevGlyphId = collection[prevIdx][0];
-                GlyphShapingData prevData = collection.GetGlyphShapingData(prevIdx);
-                if (!fontMetrics.TryGetGlyphClass(prevGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(prevData.CodePoint))
+                GlyphShapingData shapingDataPrevGlyph = collection.GetGlyphShapingData(prevIdx);
+                if (!fontMetrics.TryGetGlyphClass(prevGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(shapingDataPrevGlyph.CodePoint))
                 {
                     return false;
                 }
 
                 if (glyphClass != GlyphClassDef.MarkGlyph)
+                {
+                    return false;
+                }
+
+                // The following logic was borrowed from Harfbuzz,
+                // see: https://github.com/harfbuzz/harfbuzz/blob/3e635cf5e26e33d6210d3092256a49291752deec/src/hb-ot-layout-gpos-table.hh#L2525
+                bool good = false;
+                GlyphShapingData shapingDataCurGlyph = collection.GetGlyphShapingData(mark1Index);
+                if (shapingDataCurGlyph.LigatureId == shapingDataPrevGlyph.LigatureId)
+                {
+                    if (shapingDataCurGlyph.LigatureId > 0)
+                    {
+                        // Marks belonging to the same base.
+                        good = true;
+                    }
+                    else if (shapingDataCurGlyph.LigatureComponentCount == shapingDataPrevGlyph.LigatureComponentCount)
+                    {
+                        // Marks belonging to the same ligature component.
+                        good = true;
+                    }
+                }
+                else
+                {
+                    // If ligature ids don't match, it may be the case that one of the marks
+                    // itself is a ligature, in which case match.
+                    if ((shapingDataCurGlyph.LigatureId > 0 && shapingDataCurGlyph.LigatureComponentCount > 0)
+                        || (shapingDataPrevGlyph.LigatureId > 0 && shapingDataPrevGlyph.LigatureComponentCount > 0))
+                    {
+                        good = true;
+                    }
+                }
+
+                if (!good)
                 {
                     return false;
                 }
