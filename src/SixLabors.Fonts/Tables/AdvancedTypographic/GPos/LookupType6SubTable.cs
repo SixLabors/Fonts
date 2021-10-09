@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -109,12 +108,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 int prevIdx = index - 1;
                 ushort prevGlyphId = collection[prevIdx][0];
                 GlyphShapingData shapingDataPrevGlyph = collection.GetGlyphShapingData(prevIdx);
-                if (!fontMetrics.TryGetGlyphClass(prevGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(shapingDataPrevGlyph.CodePoint))
-                {
-                    return false;
-                }
-
-                if (glyphClass != GlyphClassDef.MarkGlyph)
+                if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, prevGlyphId, shapingDataPrevGlyph))
                 {
                     return false;
                 }

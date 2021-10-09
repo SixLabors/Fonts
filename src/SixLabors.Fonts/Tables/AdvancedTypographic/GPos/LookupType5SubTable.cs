@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -109,12 +108,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
                     baseGlyphId = collection[baseGlyphIterator][0];
-                    if (!fontMetrics.TryGetGlyphClass(baseGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(data.CodePoint))
-                    {
-                        break;
-                    }
-
-                    if (glyphClass != GlyphClassDef.MarkGlyph)
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, baseGlyphId, data))
                     {
                         break;
                     }

@@ -4,6 +4,7 @@
 using System;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
@@ -202,6 +203,22 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             // TODO: Consider vertical layout modes. TTB and BBT
             collection.Offset(fontMetrics, index, glyphId, xo, yo);
+        }
+
+        internal static bool IsMarkGlyph(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
+        {
+            if (!fontMetrics.TryGetGlyphClass(glyphId, out GlyphClassDef? glyphClass) &&
+                !CodePoint.IsMark(shapingData.CodePoint))
+            {
+                return false;
+            }
+
+            if (glyphClass != GlyphClassDef.MarkGlyph)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private static bool CheckCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
