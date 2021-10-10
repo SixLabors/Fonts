@@ -1,8 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 {
@@ -125,6 +125,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             LigatureSetTable ligatureSetTable = this.ligatureSetTables[offset];
+            Span<int> matches = stackalloc int[AdvancedTypographicUtils.MaxContextLength];
             for (int i = 0; i < ligatureSetTable.Ligatures.Length; i++)
             {
                 LigatureTable ligatureTable = ligatureSetTable.Ligatures[i];
@@ -135,28 +136,99 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ligatureTable.ComponentGlyphs);
+                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ligatureTable.ComponentGlyphs, matches);
                 if (allMatched)
                 {
+                    // From Harfbuzz:
+                    // - If it *is* a mark ligature, we don't allocate a new ligature id, and leave
+                    //   the ligature to keep its old ligature id.  This will allow it to attach to
+                    //   a base ligature in GPOS.  Eg. if the sequence is: LAM,LAM,SHADDA,FATHA,HEH,
+                    //   and LAM,LAM,HEH for a ligature, they will leave SHADDA and FATHA with a
+                    //   ligature id and component value of 2.  Then if SHADDA,FATHA form a ligature
+                    //   later, we don't want them to lose their ligature id/component, otherwise
+                    //   GPOS will fail to correctly position the mark ligature on top of the
+                    //   LAM,LAM,HEH ligature. See https://bugzilla.gnome.org/show_bug.cgi?id=676343
+                    //
+                    // - If a ligature is formed of components that some of which are also ligatures
+                    //   themselves, and those ligature components had marks attached to *their*
+                    //   components, we have to attach the marks to the new ligature component
+                    //   positions!  Now *that*'s tricky!  And these marks may be following the
+                    //   last component of the whole sequence, so we should loop forward looking
+                    //   for them and update them.
+                    //
+                    //   Eg. the sequence is LAM,LAM,SHADDA,FATHA,HEH, and the font first forms a
+                    //   'calt' ligature of LAM,HEH, leaving the SHADDA and FATHA with a ligature
+                    //   id and component == 1.  Now, during 'liga', the LAM and the LAM-HEH ligature
+                    //   form a LAM-LAM-HEH ligature.  We need to reassign the SHADDA and FATHA to
+                    //   the new ligature with a component value of 2.
+                    //
+                    //   This in fact happened to a font...  See https://bugzilla.gnome.org/show_bug.cgi?id=437633
                     GlyphShapingData data = collection.GetGlyphShapingData(index);
-                    fontMetrics.TryGetGlyphClass(glyphId, out GlyphClassDef? glyphClass);
-                    bool isMarkLigature = glyphClass == GlyphClassDef.MarkGlyph || CodePoint.IsMark(data.CodePoint);
+                    bool isMarkLigature = AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, glyphId, data);
 
-                    for (int j = 0; j < ligatureTable.ComponentGlyphs.Length && isMarkLigature; j++)
+                    matches = matches.Slice(0, Math.Min(ligatureTable.ComponentGlyphs.Length, matches.Length));
+                    for (int j = 0; j < matches.Length && isMarkLigature; j++)
                     {
-                        // TODO: FontKit does the folowing
-                        // isMarkLigature = this.glyphs[matched[i]].isMark;
-                        // But isn't that just checking the same collection since the match should be the same?
-                        fontMetrics.TryGetGlyphClass(ligatureTable.ComponentGlyphs[i], out glyphClass);
-                        isMarkLigature = glyphClass == GlyphClassDef.MarkGlyph;
+                        int matchIndex = matches[j];
+                        ushort matchId = collection[matchIndex][0];
+                        GlyphShapingData match = collection.GetGlyphShapingData(matchIndex);
+                        isMarkLigature = AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, matchId, match);
                     }
 
                     int ligatureId = isMarkLigature ? 0 : collection.LigatureId++;
                     int lastLigatureId = data.LigatureId;
+                    int lastComponentCount = data.LigatureComponentCount;
+                    int currentComponentCount = lastComponentCount;
+                    int idx = index + 1;
 
-                    // TODO:
-                    // Set ligatureId and ligatureComponent on glyphs that were skipped in the matched sequence.
+                    // Set ligatureID and ligatureComponent on glyphs that were skipped in the matched sequence.
                     // This allows GPOS to attach marks to the correct ligature components.
+                    foreach (int matchIndex in matches)
+                    {
+                        // Don't assign new ligature components for mark ligatures (see above).
+                        if (isMarkLigature)
+                        {
+                            idx = matchIndex;
+                        }
+                        else
+                        {
+                            while (idx < matchIndex)
+                            {
+                                GlyphShapingData current = collection.GetGlyphShapingData(idx);
+                                int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(current.LigatureComponentCount, lastComponentCount);
+                                current = new GlyphShapingData(current.CodePoint, current.Direction, current.GlyphIds, current.Features, ligatureId, ligatureComponent);
+                                collection.SetGlyphShapingData(idx, current);
+                                idx++;
+                            }
+                        }
+
+                        GlyphShapingData last = collection.GetGlyphShapingData(idx);
+                        lastLigatureId = last.LigatureId;
+                        lastComponentCount = last.LigatureComponentCount;
+                        currentComponentCount += lastComponentCount;
+                        idx++; // Skip base glyph
+                    }
+
+                    // Adjust ligature components for any marks following
+                    if (lastLigatureId > 0 && !isMarkLigature)
+                    {
+                        for (int j = idx; j < collection.Count; j++)
+                        {
+                            GlyphShapingData current = collection.GetGlyphShapingData(j);
+                            if (current.LigatureId == lastLigatureId)
+                            {
+                                int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(current.LigatureComponentCount, lastComponentCount);
+                                current = new GlyphShapingData(current.CodePoint, current.Direction, current.GlyphIds, current.Features, current.LigatureId, ligatureComponent);
+                                collection.SetGlyphShapingData(j, current);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    // Delete the matched glyphs, and replace the current glyph with the ligature glyph
                     collection.Replace(index, compLength + 1, ligatureTable.GlyphId, ligatureId);
                     return true;
                 }

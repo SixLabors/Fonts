@@ -10,11 +10,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     internal static class AdvancedTypographicUtils
     {
-        internal static bool MatchInputSequence(IGlyphShapingCollection collection, Tag feature, ushort index, ushort[] inputSequence)
+        /// <summary>
+        /// The maximum length of a context. Taken from HarfBuzz - hb-ot-layout-common.hh
+        /// </summary>
+        public const int MaxContextLength = 64;
+
+        internal static bool MatchInputSequence(
+            IGlyphShapingCollection collection,
+            Tag feature,
+            ushort index,
+            ushort[] inputSequence,
+            Span<int> matches)
         {
             int startIdx = index + 1;
             int i = 0;
-            while (i < inputSequence.Length)
+            while (i < inputSequence.Length && i < MaxContextLength)
             {
                 int collectionIdx = startIdx + i;
                 if (collectionIdx == collection.Count)
@@ -28,12 +38,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     return false;
                 }
 
-                if (data.GlyphIds[0] != inputSequence[i])
+                ushort glyphId = data.GlyphIds[0];
+                if (glyphId != inputSequence[i])
                 {
                     return false;
                 }
 
-                i++;
+                matches[i++] = collectionIdx;
             }
 
             return i == inputSequence.Length;
@@ -102,8 +113,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 return false;
             }
 
+            Span<int> matches = stackalloc int[MaxContextLength];
             if (rule.InputSequence.Length > 0
-                && !MatchInputSequence(collection, feature, index, rule.InputSequence))
+                && !MatchInputSequence(collection, feature, index, rule.InputSequence, matches))
             {
                 return false;
             }

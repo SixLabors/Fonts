@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
@@ -69,6 +70,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // TODO: Check this.
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
                 SequenceRuleSetTable ruleSetTable = this.seqRuleSetTables[offset];
+                Span<int> matches = stackalloc int[AdvancedTypographicUtils.MaxContextLength];
                 foreach (SequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
                 {
                     int remaining = count - 1;
@@ -78,7 +80,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         continue;
                     }
 
-                    bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ruleTable.InputSequence);
+                    bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ruleTable.InputSequence, matches);
                     if (!allMatched)
                     {
                         continue;

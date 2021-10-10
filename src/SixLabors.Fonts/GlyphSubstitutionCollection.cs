@@ -137,7 +137,7 @@ namespace SixLabors.Fonts
             this.offsets.RemoveRange(index, count);
 
             // Assign our new id at the index.
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, ligatureId, current.LigatureComponentCount);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, ligatureId, count);
             this.offsets.Insert(index, offset);
         }
 
