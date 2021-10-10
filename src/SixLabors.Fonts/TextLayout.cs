@@ -511,7 +511,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < collection.Count; i++)
             {
                 GlyphShapingData data = collection.GetGlyphShapingData(i);
-                Script current = CodePoint.GetScript(data.CodePoint);
+                ScriptClass current = CodePoint.GetScript(data.CodePoint);
 
                 // Choose a shaper based on the script.
                 // This determines which features to apply to which glyphs.
@@ -524,8 +524,8 @@ namespace SixLabors.Fonts
                     // than the text as a whole to ensure that different language shapers do not interfere
                     // with each other when the text contains multiple languages.
                     GlyphShapingData nextData = collection.GetGlyphShapingData(i + 1);
-                    Script next = CodePoint.GetScript(nextData.CodePoint);
-                    if (next is not Script.Common and not Script.Unknown and not Script.Inherited && next != current)
+                    ScriptClass next = CodePoint.GetScript(nextData.CodePoint);
+                    if (next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited && next != current)
                     {
                         break;
                     }

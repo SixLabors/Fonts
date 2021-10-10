@@ -12,10 +12,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         /// </summary>
         /// <param name="script">The script language.</param>
         /// <returns>A shaper for the given script.</returns>
-        public static BaseShaper Create(Script script)
+        public static BaseShaper Create(ScriptClass script)
             => script switch
             {
-                Script.Arabic or Script.Mongolian or Script.Syriac or Script.Nko or Script.PhagsPa or Script.Mandaic or Script.Manichaean or Script.PsalterPahlavi => new ArabicShaper(),
+                ScriptClass.Arabic or ScriptClass.Mongolian or ScriptClass.Syriac or ScriptClass.Nko or ScriptClass.PhagsPa or ScriptClass.Mandaic or ScriptClass.Manichaean or ScriptClass.PsalterPahlavi => new ArabicShaper(),
                 _ => new DefaultShaper(),
             };
     }

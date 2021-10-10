@@ -343,13 +343,13 @@ namespace SixLabors.Fonts.Tests.Unicode
 
         // TODO: Add more cases from Script.txt
         [Theory]
-        [InlineData(0x0041, 0x005A, Script.Latin)]
-        [InlineData(0xFF41, 0xFF5A, Script.Latin)]
-        [InlineData(0x0370, 0x0373, Script.Greek)]
-        [InlineData(0x1D242, 0x1D245, Script.Greek)]
-        [InlineData(0x620, 0x063F, Script.Arabic)]
-        [InlineData(0x1EEF0, 0x1EEF1, Script.Arabic)]
-        public static void CodePointIsScript(uint min, uint max, Script script)
+        [InlineData(0x0041, 0x005A, ScriptClass.Latin)]
+        [InlineData(0xFF41, 0xFF5A, ScriptClass.Latin)]
+        [InlineData(0x0370, 0x0373, ScriptClass.Greek)]
+        [InlineData(0x1D242, 0x1D245, ScriptClass.Greek)]
+        [InlineData(0x620, 0x063F, ScriptClass.Arabic)]
+        [InlineData(0x1EEF0, 0x1EEF1, ScriptClass.Arabic)]
+        public static void CodePointIsScript(uint min, uint max, ScriptClass script)
         {
             for (uint i = min; i <= max; i++)
             {

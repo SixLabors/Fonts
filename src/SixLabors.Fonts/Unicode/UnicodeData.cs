@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Unicode
         public static LineBreakClass GetLineBreakClass(int codePoint) => (LineBreakClass)LazyLinebreakTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Script GetScript(int codePoint) => (Script)LazyScriptTrie.Value.Get(codePoint);
+        public static ScriptClass GetScriptClass(int codePoint) => (ScriptClass)LazyScriptTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetJoiningClass(int codePoint) => LazyShapingTrie.Value.Get(codePoint);
