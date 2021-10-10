@@ -136,7 +136,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 int ligGlyphIndex = ligatureIndex;
                 GlyphShapingData shapingDataMarkGlyph = collection.GetGlyphShapingData(markGlyphIdx);
                 GlyphShapingData shapingDataLigGlyph = collection.GetGlyphShapingData(ligGlyphIndex);
-                int compIndex = shapingDataLigGlyph.LigatureId != 0 && shapingDataLigGlyph.LigatureId == shapingDataMarkGlyph.LigatureId && shapingDataMarkGlyph.LigatureComponentCount > 0
+                int compIndex = shapingDataLigGlyph.LigatureId > 0 && shapingDataLigGlyph.LigatureId == shapingDataMarkGlyph.LigatureId && shapingDataMarkGlyph.LigatureComponentCount > 0
                     ? Math.Min(shapingDataMarkGlyph.LigatureComponentCount, shapingDataLigGlyph.GlyphIds.Length) - 1
                     : shapingDataLigGlyph.GlyphIds.Length - 1;
 
