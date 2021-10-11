@@ -650,14 +650,6 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    if (glyphAdvance == 0)
-                    {
-                        // Nothing to render.
-                        codePointIndex++;
-                        graphemeCodePointIndex++;
-                        continue;
-                    }
-
                     glyphAdvance *= pointSize / glyph.ScaleFactor;
 
                     // Should we start a new line?
