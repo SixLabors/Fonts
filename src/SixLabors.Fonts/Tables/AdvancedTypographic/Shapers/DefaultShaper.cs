@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using SixLabors.Fonts.Unicode;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 {
     /// <summary>
@@ -47,6 +49,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static readonly Tag KernTag = Tag.Parse("kern");
 
+        private static readonly CodePoint Slash1 = new(0x2044);
+
+        private static readonly CodePoint Slash2 = new(0x002F);
+
         /// <inheritdoc />
         public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
         {
@@ -58,11 +64,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             AddFeature(collection, index, count, LtrmTag);
             AddFeature(collection, index, count, RtlaTag);
             AddFeature(collection, index, count, RtlmTag);
-
-            // Add fractional features.
-            AddFeature(collection, index, count, FracTag);
-            AddFeature(collection, index, count, NumrTag);
-            AddFeature(collection, index, count, DnomTag);
 
             // Add common features.
             AddFeature(collection, index, count, CcmpTag);
@@ -79,7 +80,38 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             AddFeature(collection, index, count, CursTag);
             AddFeature(collection, index, count, KernTag);
 
-            // TODO: Enable contextual fractions
+            // Enable contextual fractions.
+            for (int i = 0; i < collection.Count; i++)
+            {
+                GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
+                if (shapingData.CodePoint == Slash1 || shapingData.CodePoint == Slash2)
+                {
+                    int start = i;
+                    int end = i + 1;
+
+                    // Apply numerator.
+                    shapingData = collection.GetGlyphShapingData(start - 1);
+                    while (start > 0 && CodePoint.IsDigit(shapingData.CodePoint))
+                    {
+                        AddFeature(collection, start - 1, 1, NumrTag);
+                        AddFeature(collection, start - 1, 1, FracTag);
+                        start--;
+                    }
+
+                    // Apply denominator.
+                    shapingData = collection.GetGlyphShapingData(end);
+                    while (end < collection.Count && CodePoint.IsDigit(shapingData.CodePoint))
+                    {
+                        AddFeature(collection, end, 1, DnomTag);
+                        AddFeature(collection, end, 1, FracTag);
+                        end++;
+                    }
+
+                    // Apply fraction slash.
+                    AddFeature(collection, i, 1, FracTag);
+                    i = end - 1;
+                }
+            }
         }
 
         private static void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures)
