@@ -101,10 +101,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // Search backward for a base glyph.
                 // TODO: Fontkit stores an extra property "ligatureComponent" in our glyph shaping data?
                 int baseGlyphIterator = index;
+                ushort baseGlyphId;
+                ushort baseGlyphIndex;
                 while (--baseGlyphIterator >= 0)
                 {
                     GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
-                    if (!CodePoint.IsMark(data.CodePoint))
+                    baseGlyphIndex = (ushort)baseGlyphIterator;
+                    baseGlyphId = collection[baseGlyphIndex][0];
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, baseGlyphId, data))
                     {
                         break;
                     }
@@ -115,8 +119,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                ushort baseGlyphIndex = (ushort)baseGlyphIterator;
-                ushort baseGlyphId = collection[baseGlyphIndex][0];
+                baseGlyphIndex = (ushort)baseGlyphIterator;
+                baseGlyphId = collection[baseGlyphIndex][0];
                 int baseIndex = this.baseCoverage.CoverageIndexOf(baseGlyphId);
                 if (baseIndex < 0)
                 {
