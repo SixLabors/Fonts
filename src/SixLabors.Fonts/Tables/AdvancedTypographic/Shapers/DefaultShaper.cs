@@ -49,9 +49,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static readonly Tag KernTag = Tag.Parse("kern");
 
-        private static readonly CodePoint Slash1 = new(0x2044);
+        private static readonly CodePoint FractionSlash = new(0x2044);
 
-        private static readonly CodePoint Slash2 = new(0x002F);
+        private static readonly CodePoint Slash = new(0x002F);
 
         /// <inheritdoc />
         public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             for (int i = 0; i < collection.Count; i++)
             {
                 GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
-                if (shapingData.CodePoint == Slash1 || shapingData.CodePoint == Slash2)
+                if (shapingData.CodePoint == FractionSlash || shapingData.CodePoint == Slash)
                 {
                     int start = i;
                     int end = i + 1;
@@ -116,7 +116,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures)
         {
-            for (int i = index; i < count; i++)
+            int end = index + count;
+            for (int i = index; i < end; i++)
             {
                 collection.AddShapingFeature(i, variationFeatures);
             }

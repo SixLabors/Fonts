@@ -130,7 +130,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             GlyphSubstitutionCollection collection,
             ushort index,
             int count,
-            HashSet<Tag> featureTags,
+            HashSet<Tag> featuresToApply,
             params LangSysTable[] langSysTables)
         {
             for (int i = 0; i < langSysTables.Length; i++)
@@ -142,7 +142,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     Tag feature = featureTable.FeatureTag;
 
                     // Check tag against all features, which should be applied to the given glyph.
-                    if (!featureTags.Contains(feature))
+                    if (!featuresToApply.Contains(feature))
                     {
                         continue;
                     }
