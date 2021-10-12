@@ -182,6 +182,8 @@ namespace SixLabors.Fonts.Tests
         /// </summary>
         public static string GposLookupType8Format3 => GetFullPath("GposLookupType8Format3.ttf");
 
+        public static string RobotoRegular => GetFullPath("Roboto-Regular.ttf");
+
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
