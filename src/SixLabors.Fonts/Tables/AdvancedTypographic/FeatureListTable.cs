@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -61,6 +62,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new FeatureListTable(featureTables);
         }
 
+        [DebuggerDisplay("FeatureTag: {FeatureTag}, Offset: {FeatureOffset}")]
         private readonly struct FeatureRecord
         {
             public FeatureRecord(uint featureTag, ushort featureOffset)
@@ -75,6 +77,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         }
     }
 
+    [DebuggerDisplay("Tag: {FeatureTag}")]
     internal sealed class FeatureTable
     {
         private FeatureTable(Tag featureTag, ushort[] lookupListIndices)
