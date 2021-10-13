@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
@@ -9,6 +10,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// Defines a mark record used in a mark array table:
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#mark-array-table"/>
     /// </summary>
+    [DebuggerDisplay("MarkClass: {MarkClass}, AnchorTable: {MarkAnchorTable}")]
     internal readonly struct MarkRecord
     {
         /// <summary>

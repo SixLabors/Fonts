@@ -60,14 +60,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             // |          |                  | lookup subtable, PairSet table within a                                              |
             // |          |                  | PairPosFormat1 lookup subtable) — may be NULL.                                       |
             // +----------+------------------+--------------------------------------------------------------------------------------+
-            this.XPlacement = ((valueFormat & ValueFormat.XPlacement) != 0) ? reader.ReadInt16() : (short)0;
-            this.YPlacement = ((valueFormat & ValueFormat.YPlacement) != 0) ? reader.ReadInt16() : (short)0;
-            this.XAdvance = ((valueFormat & ValueFormat.XAdvance) != 0) ? reader.ReadInt16() : (short)0;
-            this.YAdvance = ((valueFormat & ValueFormat.YAdvance) != 0) ? reader.ReadInt16() : (short)0;
-            this.XPlacementDeviceOffset = ((valueFormat & ValueFormat.XPlacementDevice) != 0) ? reader.ReadInt16() : (short)0;
-            this.YPlacementDeviceOffset = ((valueFormat & ValueFormat.YPlacementDevice) != 0) ? reader.ReadInt16() : (short)0;
-            this.XAdvanceDeviceOffset = ((valueFormat & ValueFormat.XAdvanceDevice) != 0) ? reader.ReadInt16() : (short)0;
-            this.YAdvanceDeviceOffset = ((valueFormat & ValueFormat.YAdvanceDevice) != 0) ? reader.ReadInt16() : (short)0;
+            this.XPlacement = (valueFormat & ValueFormat.XPlacement) != 0 ? reader.ReadInt16() : (short)0;
+            this.YPlacement = (valueFormat & ValueFormat.YPlacement) != 0 ? reader.ReadInt16() : (short)0;
+            this.XAdvance = (valueFormat & ValueFormat.XAdvance) != 0 ? reader.ReadInt16() : (short)0;
+            this.YAdvance = (valueFormat & ValueFormat.YAdvance) != 0 ? reader.ReadInt16() : (short)0;
+            this.XPlacementDeviceOffset = (valueFormat & ValueFormat.XPlacementDevice) != 0 ? reader.ReadInt16() : (short)0;
+            this.YPlacementDeviceOffset = (valueFormat & ValueFormat.YPlacementDevice) != 0 ? reader.ReadInt16() : (short)0;
+            this.XAdvanceDeviceOffset = (valueFormat & ValueFormat.XAdvanceDevice) != 0 ? reader.ReadInt16() : (short)0;
+            this.YAdvanceDeviceOffset = (valueFormat & ValueFormat.YAdvanceDevice) != 0 ? reader.ReadInt16() : (short)0;
         }
 
         public short XPlacement { get; }
