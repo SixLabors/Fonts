@@ -102,6 +102,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     int coverageNext = this.coverageTable.CoverageIndexOf(nextGlyphId);
+                    if (coverageNext < 0)
+                    {
+                        continue;
+                    }
+
                     EntryExitAnchors nextRecord = this.entryExitAnchors[coverageNext];
                     AnchorTable? entry = nextRecord.EntryAnchor;
                     if (entry is null)
@@ -110,6 +115,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     }
 
                     int coverage = this.coverageTable.CoverageIndexOf(glyphId);
+                    if (coverage < 0)
+                    {
+                        continue;
+                    }
+
                     EntryExitAnchors curRecord = this.entryExitAnchors[coverage];
                     AnchorTable? exit = curRecord.ExitAnchor;
                     if (exit is null)
