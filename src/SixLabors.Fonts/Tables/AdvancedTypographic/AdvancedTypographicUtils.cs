@@ -154,11 +154,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         internal static bool CheckAllCoverages(IGlyphShapingCollection collection, ushort index, int count, CoverageTable[] input, CoverageTable[] backtrack, CoverageTable[] lookahead)
         {
-            int inputLength = input.Length;
-
             // Check that there are enough context glyphs.
-            if (index < backtrack.Length
-                || inputLength + lookahead.Length > count)
+            if (index - backtrack.Length < 0 || input.Length + lookahead.Length > count)
             {
                 return false;
             }
@@ -169,12 +166,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 return false;
             }
 
-            if (!CheckBacktrackCoverage(collection, backtrack, index - 1))
+            if (!CheckCoverage(collection, backtrack, index - backtrack.Length))
             {
                 return false;
             }
 
-            if (!CheckCoverage(collection, lookahead, index + inputLength))
+            if (!CheckCoverage(collection, lookahead, index + input.Length))
             {
                 return false;
             }
@@ -235,23 +232,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         private static bool CheckCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
         {
-            for (int i = 0; i < coverageTable.Length; ++i)
+            for (int i = 0; i < coverageTable.Length; i++)
             {
                 ushort id = collection[offset + i][0];
-                if (id == 0 || coverageTable[i].CoverageIndexOf(id) < 0)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private static bool CheckBacktrackCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
-        {
-            for (int i = 0; i < coverageTable.Length; ++i)
-            {
-                ushort id = collection[offset - i][0];
                 if (id == 0 || coverageTable[i].CoverageIndexOf(id) < 0)
                 {
                     return false;
