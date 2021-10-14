@@ -114,7 +114,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             }
         }
 
-        private static void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures)
+        protected static void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures)
         {
             int end = index + count;
             for (int i = index; i < end; i++)

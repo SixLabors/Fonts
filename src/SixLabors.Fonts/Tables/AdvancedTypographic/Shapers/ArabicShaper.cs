@@ -12,6 +12,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
     /// </summary>
     internal sealed class ArabicShaper : DefaultShaper
     {
+        private static readonly Tag CcmpTag = Tag.Parse("ccmp");
+
+        private static readonly Tag LoclTag = Tag.Parse("locl");
+
+        private static readonly Tag MsetTag = Tag.Parse("mset");
+
         private static readonly Tag FinaTag = Tag.Parse("fina");
 
         private static readonly Tag Fin2Tag = Tag.Parse("fin2");
@@ -71,6 +77,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         /// <inheritdoc/>
         public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
         {
+            // Add plan features
+            AddFeature(collection, index, count, CcmpTag);
+            AddFeature(collection, index, count, LoclTag);
+            AddFeature(collection, index, count, MsetTag);
+
             base.AssignFeatures(collection, index, count);
 
             int prev = -1;

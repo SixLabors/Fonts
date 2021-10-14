@@ -233,10 +233,7 @@ namespace SixLabors.Fonts
         {
             if (this.gSubTable != null)
             {
-                for (ushort index = 0; index < collection.Count; index++)
-                {
-                    this.gSubTable.ApplySubstitution(this, collection, index, collection.Count - index);
-                }
+                this.gSubTable.ApplySubstitution(this, collection);
             }
         }
 
@@ -246,10 +243,7 @@ namespace SixLabors.Fonts
             bool updated = false;
             if (this.gPosTable != null)
             {
-                for (ushort index = 0; index < collection.Count; index++)
-                {
-                    updated = this.gPosTable.TryUpdatePositions(this, collection, index, collection.Count - index);
-                }
+                updated = this.gPosTable.TryUpdatePositions(this, collection);
             }
 
             if (!updated && this.kerningTable != null)

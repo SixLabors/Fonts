@@ -575,7 +575,7 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="ScriptClass"/>.</returns>
-        internal static ScriptClass GetScript(CodePoint codePoint)
+        internal static ScriptClass GetScriptClass(CodePoint codePoint)
             => UnicodeData.GetScriptClass(codePoint.Value);
 
         /// <summary>

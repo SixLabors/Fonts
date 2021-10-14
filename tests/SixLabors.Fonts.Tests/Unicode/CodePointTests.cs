@@ -353,7 +353,7 @@ namespace SixLabors.Fonts.Tests.Unicode
         {
             for (uint i = min; i <= max; i++)
             {
-                Assert.Equal(script, CodePoint.GetScript(new CodePoint(i)));
+                Assert.Equal(script, CodePoint.GetScriptClass(new CodePoint(i)));
             }
         }
 

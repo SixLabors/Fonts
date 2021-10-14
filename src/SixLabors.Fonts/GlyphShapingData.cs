@@ -83,6 +83,6 @@ namespace SixLabors.Fonts
 
         private string DebuggerDisplay
             => FormattableString
-            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScript(this.CodePoint)} : {this.Direction} : {this.LigatureId} : {this.LigatureComponentCount} : [{string.Join(",", this.GlyphIds)}]");
+            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.LigatureId} : {this.LigatureComponentCount} : [{string.Join(",", this.GlyphIds)}]");
     }
 }
