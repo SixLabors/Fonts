@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 using SixLabors.Fonts.Unicode;
@@ -33,7 +34,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 }
 
                 GlyphShapingData data = collection.GetGlyphShapingData(collectionIdx);
-                if (!data.Features.Contains(feature))
+                if (!ContainsFeatureTag(data.Features, feature))
                 {
                     return false;
                 }
@@ -48,6 +49,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
 
             return i == inputSequence.Length;
+        }
+
+        internal static bool ContainsFeatureTag(List<TagEntry> featureList, Tag feature)
+        {
+            foreach (TagEntry tagEntry in featureList)
+            {
+                if (tagEntry.Tag == feature)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal static bool MatchSequence(IGlyphShapingCollection collection, int glyphSequenceIndex, ushort[] sequenceToMatch)

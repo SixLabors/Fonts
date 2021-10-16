@@ -120,24 +120,35 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 }
 
                 int currentCount = collection.Count;
-                foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
+
+                for (ushort j = 0; j < count; j++)
                 {
-                    for (ushort j = 0; j < count; j++)
+                    ushort offset = (ushort)(j + index);
+
+                    // Apply features in order.
+                    List<TagEntry> featuresToApply = collection.GetGlyphShapingData(offset).Features;
+                    foreach (TagEntry featureToApply in featuresToApply)
                     {
-                        ushort offset = (ushort)(j + index);
-                        HashSet<Tag> features = collection.GetGlyphShapingData(offset).Features;
-                        if (!features.Contains(featureLookup.Feature))
+                        if (!featureToApply.Enabled)
                         {
                             continue;
                         }
 
-                        featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, offset, count - j);
-
-                        // Account for substitutions changing the length of the collection.
-                        if (collection.Count != currentCount)
+                        foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
                         {
-                            count = (ushort)(count - (currentCount - collection.Count));
-                            currentCount = collection.Count;
+                            if (featureLookup.Feature != featureToApply.Tag)
+                            {
+                                continue;
+                            }
+
+                            featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, offset, count - j);
+
+                            // Account for substitutions changing the length of the collection.
+                            if (collection.Count != currentCount)
+                            {
+                                count = (ushort)(count - (currentCount - collection.Count));
+                                currentCount = collection.Count;
+                            }
                         }
                     }
                 }

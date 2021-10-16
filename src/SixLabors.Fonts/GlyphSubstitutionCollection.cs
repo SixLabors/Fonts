@@ -63,8 +63,22 @@ namespace SixLabors.Fonts
             => this.glyphs[this.offsets[index]] = data;
 
         /// <inheritdoc />
-        public void AddShapingFeature(int index, Tag feature)
+        public void AddShapingFeature(int index, TagEntry feature)
             => this.glyphs[this.offsets[index]].Features.Add(feature);
+
+        /// <inheritdoc />
+        public void EnableShapingFeature(int index, Tag feature)
+        {
+            List<TagEntry> features = this.glyphs[this.offsets[index]].Features;
+            foreach (TagEntry tagEntry in features)
+            {
+                if (tagEntry.Tag == feature)
+                {
+                    tagEntry.Enabled = true;
+                    break;
+                }
+            }
+        }
 
         /// <summary>
         /// Adds the glyph id and the codepoint it represents to the collection.
