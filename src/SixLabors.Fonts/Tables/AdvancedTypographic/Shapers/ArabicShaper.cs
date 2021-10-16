@@ -77,9 +77,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         /// <inheritdoc/>
         public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
         {
-            // Add plan features
             AddFeature(collection, index, count, CcmpTag);
             AddFeature(collection, index, count, LoclTag);
+            AddFeature(collection, index, count, IsolTag, false);
+            AddFeature(collection, index, count, FinaTag, false);
+            AddFeature(collection, index, count, Fin2Tag, false);
+            AddFeature(collection, index, count, Fin3Tag, false);
+            AddFeature(collection, index, count, MediTag, false);
+            AddFeature(collection, index, count, Med2Tag, false);
+            AddFeature(collection, index, count, InitTag, false);
             AddFeature(collection, index, count, MsetTag);
 
             base.AssignFeatures(collection, index, count);
@@ -121,25 +127,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 switch (actions[i])
                 {
                     case Fina:
-                        collection.AddShapingFeature(i + index, FinaTag);
+                        collection.EnableShapingFeature(i + index, FinaTag);
                         break;
                     case Fin2:
-                        collection.AddShapingFeature(i + index, Fin2Tag);
+                        collection.EnableShapingFeature(i + index, Fin2Tag);
                         break;
                     case Fin3:
-                        collection.AddShapingFeature(i + index, Fin3Tag);
+                        collection.EnableShapingFeature(i + index, Fin3Tag);
                         break;
                     case Isol:
-                        collection.AddShapingFeature(i + index, IsolTag);
+                        collection.EnableShapingFeature(i + index, IsolTag);
                         break;
                     case Init:
-                        collection.AddShapingFeature(i + index, InitTag);
+                        collection.EnableShapingFeature(i + index, InitTag);
                         break;
                     case Medi:
-                        collection.AddShapingFeature(i + index, MediTag);
+                        collection.EnableShapingFeature(i + index, MediTag);
                         break;
                     case Med2:
-                        collection.AddShapingFeature(i + index, Med2Tag);
+                        collection.EnableShapingFeature(i + index, Med2Tag);
                         break;
                 }
             }

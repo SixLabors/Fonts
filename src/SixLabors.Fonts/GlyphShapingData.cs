@@ -10,7 +10,7 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Contains supplemetary data that allows the shaping of glyphs.
+    /// Contains supplementary data that allows the shaping of glyphs.
     /// </summary>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     internal readonly struct GlyphShapingData
@@ -22,7 +22,7 @@ namespace SixLabors.Fonts
         /// <param name="direction">The text direction.</param>
         /// <param name="glyphIds">The collection of glyph ids.</param>
         public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
-            : this(codePoint, direction, glyphIds, new HashSet<Tag>(), 0, 1)
+            : this(codePoint, direction, glyphIds, new List<TagEntry>(), 0, 1)
         {
         }
 
@@ -39,7 +39,7 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             TextDirection direction,
             ushort[] glyphIds,
-            HashSet<Tag> features,
+            List<TagEntry> features,
             int ligatureId,
             int ligatureComponents)
         {
@@ -79,7 +79,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the collection of features.
         /// </summary>
-        public HashSet<Tag> Features { get; }
+        public List<TagEntry> Features { get; }
 
         private string DebuggerDisplay
             => FormattableString

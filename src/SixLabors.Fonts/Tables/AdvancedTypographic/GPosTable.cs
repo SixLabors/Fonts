@@ -120,18 +120,28 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     count++;
                 }
 
-                foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
+                for (ushort j = 0; j < count; j++)
                 {
-                    for (ushort j = 0; j < count; j++)
+                    ushort offset = (ushort)(j + index);
+
+                    // Apply features in order.
+                    List<TagEntry> featuresToApply = collection.GetGlyphShapingData(offset).Features;
+                    foreach (TagEntry featureToApply in featuresToApply)
                     {
-                        ushort offset = (ushort)(j + index);
-                        HashSet<Tag> features = collection.GetGlyphShapingData(offset).Features;
-                        if (!features.Contains(featureLookup.Feature))
+                        if (!featureToApply.Enabled)
                         {
                             continue;
                         }
 
-                        updated |= featureLookup.LookupTable.TryUpdatePosition(fontMetrics, this, collection, featureLookup.Feature, offset, count - j);
+                        foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
+                        {
+                            if (featureLookup.Feature != featureToApply.Tag)
+                            {
+                                continue;
+                            }
+
+                            updated |= featureLookup.LookupTable.TryUpdatePosition(fontMetrics, this, collection, featureLookup.Feature, offset, count - j);
+                        }
                     }
                 }
             }

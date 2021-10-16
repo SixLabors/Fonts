@@ -114,12 +114,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             }
         }
 
-        protected static void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures)
+        protected static void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures, bool enabled = true)
         {
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                collection.AddShapingFeature(i, variationFeatures);
+                collection.AddShapingFeature(i, new TagEntry(variationFeatures, enabled));
             }
         }
     }

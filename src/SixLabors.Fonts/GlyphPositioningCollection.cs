@@ -52,8 +52,22 @@ namespace SixLabors.Fonts
         public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index];
 
         /// <inheritdoc />
-        public void AddShapingFeature(int index, Tag feature)
+        public void AddShapingFeature(int index, TagEntry feature)
             => this.glyphs[index].Features.Add(feature);
+
+        /// <inheritdoc />
+        public void EnableShapingFeature(int index, Tag feature)
+        {
+            List<TagEntry> features = this.glyphs[index].Features;
+            foreach (TagEntry tagEntry in features)
+            {
+                if (tagEntry.Tag == feature)
+                {
+                    tagEntry.Enabled = true;
+                    break;
+                }
+            }
+        }
 
         /// <summary>
         /// Removes all elements from the collection.
@@ -137,7 +151,7 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs[i] = new GlyphShapingData(codePoint, data.Direction, glyphIds, new HashSet<Tag>(), data.LigatureId, data.LigatureComponentCount);
+                    this.glyphs[i] = new GlyphShapingData(codePoint, data.Direction, glyphIds, new List<TagEntry>(), data.LigatureId, data.LigatureComponentCount);
                     this.offsets[i] = offset;
                     this.map[offset] = m.ToArray();
                 }
@@ -183,7 +197,7 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs.Add(new GlyphShapingData(codePoint, data.Direction, glyphIds, new HashSet<Tag>(), data.LigatureId, data.LigatureComponentCount));
+                    this.glyphs.Add(new GlyphShapingData(codePoint, data.Direction, glyphIds, new List<TagEntry>(), data.LigatureId, data.LigatureComponentCount));
                     this.offsets.Add(offset);
                     this.map[offset] = m.ToArray();
                 }
@@ -232,7 +246,7 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Gets the rectangluar advanced bounds of the glyph at the given index and id.
+        /// Gets the rectangular advanced bounds of the glyph at the given index and id.
         /// </summary>
         /// <param name="fontMetrics">The font face with metrics.</param>
         /// <param name="index">The zero-based index of the elements to offset.</param>
