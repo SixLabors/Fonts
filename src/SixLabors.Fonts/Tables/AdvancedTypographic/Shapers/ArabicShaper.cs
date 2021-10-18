@@ -77,16 +77,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         /// <inheritdoc/>
         public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
         {
-            AddFeature(collection, index, count, CcmpTag);
-            AddFeature(collection, index, count, LoclTag);
-            AddFeature(collection, index, count, IsolTag, false);
-            AddFeature(collection, index, count, FinaTag, false);
-            AddFeature(collection, index, count, Fin2Tag, false);
-            AddFeature(collection, index, count, Fin3Tag, false);
-            AddFeature(collection, index, count, MediTag, false);
-            AddFeature(collection, index, count, Med2Tag, false);
-            AddFeature(collection, index, count, InitTag, false);
-            AddFeature(collection, index, count, MsetTag);
+            this.AddFeature(collection, index, count, CcmpTag);
+            this.AddFeature(collection, index, count, LoclTag);
+            this.AddFeature(collection, index, count, IsolTag, false);
+            this.AddFeature(collection, index, count, FinaTag, false);
+            this.AddFeature(collection, index, count, Fin2Tag, false);
+            this.AddFeature(collection, index, count, Fin3Tag, false);
+            this.AddFeature(collection, index, count, MediTag, false);
+            this.AddFeature(collection, index, count, Med2Tag, false);
+            this.AddFeature(collection, index, count, InitTag, false);
+            this.AddFeature(collection, index, count, MsetTag);
 
             base.AssignFeatures(collection, index, count);
 

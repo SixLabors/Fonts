@@ -115,8 +115,7 @@ namespace SixLabors.Fonts
 
             if (options.ApplyKerning)
             {
-                AssignShapingFeatures(positionings);
-
+                // AssignShapingFeatures(positionings);
                 // Update the positions of the glyphs in the completed collection.
                 // Each set of metrics is associated with single font and will only be updated
                 // by that font so it's safe to use a single collection.
@@ -457,7 +456,7 @@ namespace SixLabors.Fonts
 
             if (options.ApplyKerning)
             {
-                AssignShapingFeatures(substitutions);
+                // AssignShapingFeatures(substitutions);
                 fontMetrics.ApplySubstitution(substitutions);
             }
 
