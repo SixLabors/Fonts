@@ -13,13 +13,12 @@ namespace SixLabors.Fonts.Tables
         private bool ignoreBaseGlypghs;
         private bool ignoreLigatures;
         private ushort markAttachmentType;
-        private ushort index;
 
         public SkippingGlyphIterator(FontMetrics fontMetrics, IGlyphShapingCollection collection, ushort index, LookupFlags lookupFlags)
         {
             this.fontMetrics = fontMetrics;
             this.Collection = collection;
-            this.index = index;
+            this.Index = index;
             this.ignoreMarks = (lookupFlags & LookupFlags.IgnoreMarks) != 0;
             this.ignoreBaseGlypghs = (lookupFlags & LookupFlags.IgnoreBaseGlypghs) != 0;
             this.ignoreLigatures = (lookupFlags & LookupFlags.IgnoreLigatures) != 0;
@@ -28,10 +27,12 @@ namespace SixLabors.Fonts.Tables
 
         public IGlyphShapingCollection Collection { get; }
 
+        public ushort Index { get; set; }
+
         public ushort Next()
         {
             this.Move(1);
-            return this.index;
+            return this.Index;
         }
 
         public ushort Increment(int count = 1)
@@ -43,12 +44,12 @@ namespace SixLabors.Fonts.Tables
                 this.Move(direction);
             }
 
-            return this.index;
+            return this.Index;
         }
 
         public void Reset(ushort index, LookupFlags lookupFlags)
         {
-            this.index = index;
+            this.Index = index;
             this.ignoreMarks = (lookupFlags & LookupFlags.IgnoreMarks) != 0;
             this.ignoreBaseGlypghs = (lookupFlags & LookupFlags.IgnoreBaseGlypghs) != 0;
             this.ignoreLigatures = (lookupFlags & LookupFlags.IgnoreLigatures) != 0;
@@ -57,15 +58,15 @@ namespace SixLabors.Fonts.Tables
 
         private void Move(int direction)
         {
-            this.index = (ushort)(this.index + direction);
-            while (this.index >= 0 && this.index < this.Collection.Count)
+            this.Index = (ushort)(this.Index + direction);
+            while (this.Index >= 0 && this.Index < this.Collection.Count)
             {
-                if (!this.ShouldIgnore(this.index))
+                if (!this.ShouldIgnore(this.Index))
                 {
                     break;
                 }
 
-                this.index = (ushort)(this.index + direction);
+                this.Index = (ushort)(this.Index + direction);
             }
         }
 

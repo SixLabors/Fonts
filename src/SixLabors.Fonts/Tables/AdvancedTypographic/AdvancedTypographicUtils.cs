@@ -309,5 +309,33 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             ushort sequenceEntryClassId = sequence[idx];
             return glyphIdClass == sequenceEntryClassId;
         }
+
+        private static bool Match<T>(
+            int sequenceIndex,
+            T[] sequence,
+            SkippingGlyphIterator iterator,
+            Func<T, GlyphShapingData, bool> condition,
+            Span<int> matches)
+        {
+            ushort position = iterator.Index;
+            ushort offset = iterator.Increment(sequenceIndex);
+            IGlyphShapingCollection collection = iterator.Collection;
+
+            int i = 0;
+            while (i < sequence.Length && i < MaxContextLength && offset < collection.Count)
+            {
+                GlyphShapingData data = collection.GetGlyphShapingData(offset);
+                if (!condition.Invoke(sequence[i], data))
+                {
+                    break;
+                }
+
+                matches[i++] = iterator.Index;
+                offset = iterator.Next();
+            }
+
+            iterator.Index = position;
+            return i == sequence.Length;
+        }
     }
 }
