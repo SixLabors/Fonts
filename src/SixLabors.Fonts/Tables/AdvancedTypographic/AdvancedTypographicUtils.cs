@@ -189,13 +189,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 return false;
             }
 
-            iterator.Reset(index, lookupFlags);
             if (!CheckCoverage(iterator, backtrack, -backtrack.Length))
             {
                 return false;
             }
 
-            iterator.Reset(index, lookupFlags);
             if (!CheckCoverage(iterator, lookahead, input.Length))
             {
                 return false;
@@ -289,7 +287,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 offset,
                 coverageTable,
                 iterator,
-                (component, data) => component.CoverageIndexOf(data.GlyphIds[0]) > 0,
+                (component, data) => component.CoverageIndexOf(data.GlyphIds[0]) >= 0,
                 default);
 
         private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, ReadOnlySpan<ushort> glyphIds)
