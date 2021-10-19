@@ -285,22 +285,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             SkippingGlyphIterator iterator,
             CoverageTable[] coverageTable,
             int offset)
-        {
-            IGlyphShapingCollection collection = iterator.Collection;
-            offset = iterator.Increment(offset);
-            for (int i = 0; i < coverageTable.Length && offset < collection.Count; i++)
-            {
-                ushort id = collection[offset][0];
-                if (id == 0 || coverageTable[i].CoverageIndexOf(id) < 0)
-                {
-                    return false;
-                }
-
-                offset = iterator.Next();
-            }
-
-            return true;
-        }
+            => Match(
+                offset,
+                coverageTable,
+                iterator,
+                (component, data) => component.CoverageIndexOf(data.GlyphIds[0]) > 0,
+                default);
 
         private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, ReadOnlySpan<ushort> glyphIds)
         {
@@ -330,7 +320,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     break;
                 }
 
-                matches[i++] = iterator.Index;
+                if (matches.Length == MaxContextLength)
+                {
+                    matches[i] = iterator.Index;
+                }
+
+                i++;
                 offset = iterator.Next();
             }
 
