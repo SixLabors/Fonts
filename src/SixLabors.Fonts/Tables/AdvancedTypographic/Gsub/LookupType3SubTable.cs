@@ -12,14 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// </summary>
     internal static class LookupType3SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort substFormat = reader.ReadUInt16();
 
             return substFormat switch
             {
-                1 => LookupType3Format1SubTable.Load(reader, offset),
+                1 => LookupType3Format1SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1'."),
             };
         }
@@ -30,13 +30,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly AlternateSetTable[] alternateSetTables;
         private readonly CoverageTable coverageTable;
 
-        private LookupType3Format1SubTable(AlternateSetTable[] alternateSetTables, CoverageTable coverageTable)
+        private LookupType3Format1SubTable(AlternateSetTable[] alternateSetTables, CoverageTable coverageTable, LookupFlags lookupFlags)
         {
             this.alternateSetTables = alternateSetTables;
             this.coverageTable = coverageTable;
+            this.LookupFlags = lookupFlags;
         }
 
-        public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             // Alternate Substitution Format 1
             // +----------+----------------------------------------+---------------------------------------------------------------+
@@ -74,7 +75,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType3Format1SubTable(alternateTables, coverageTable);
+            return new LookupType3Format1SubTable(alternateTables, coverageTable, lookupFlags);
         }
 
         public override bool TrySubstitution(

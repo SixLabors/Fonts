@@ -13,16 +13,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// </summary>
     internal static class LookupType5SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort subTableFormat = reader.ReadUInt16();
 
             return subTableFormat switch
             {
-                1 => LookupType5Format1SubTable.Load(reader, offset),
-                2 => LookupType5Format2SubTable.Load(reader, offset),
-                3 => LookupType5Format3SubTable.Load(reader, offset),
+                1 => LookupType5Format1SubTable.Load(reader, offset, lookupFlags),
+                2 => LookupType5Format2SubTable.Load(reader, offset, lookupFlags),
+                3 => LookupType5Format3SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {subTableFormat}. Should be '1', '2', or '3'."),
             };
         }
@@ -33,17 +33,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly CoverageTable coverageTable;
         private readonly SequenceRuleSetTable[] seqRuleSetTables;
 
-        private LookupType5Format1SubTable(CoverageTable coverageTable, SequenceRuleSetTable[] seqRuleSetTables)
+        private LookupType5Format1SubTable(CoverageTable coverageTable, SequenceRuleSetTable[] seqRuleSetTables, LookupFlags lookupFlags)
         {
             this.coverageTable = coverageTable;
             this.seqRuleSetTables = seqRuleSetTables;
+            this.LookupFlags = lookupFlags;
         }
 
-        public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             SequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
 
-            return new LookupType5Format1SubTable(coverageTable, seqRuleSets);
+            return new LookupType5Format1SubTable(coverageTable, seqRuleSets, lookupFlags);
         }
 
         public override bool TrySubstitution(
@@ -115,18 +116,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private LookupType5Format2SubTable(
             ClassSequenceRuleSetTable[] sequenceRuleSetTables,
             ClassDefinitionTable classDefinitionTable,
-            CoverageTable coverageTable)
+            CoverageTable coverageTable,
+            LookupFlags lookupFlags)
         {
             this.sequenceRuleSetTables = sequenceRuleSetTables;
             this.classDefinitionTable = classDefinitionTable;
             this.coverageTable = coverageTable;
+            this.LookupFlags = lookupFlags;
         }
 
-        public static LookupType5Format2SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType5Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             CoverageTable coverageTable = TableLoadingUtils.LoadSequenceContextFormat2(reader, offset, out ClassDefinitionTable classDefTable, out ClassSequenceRuleSetTable[] classSeqRuleSets);
 
-            return new LookupType5Format2SubTable(classSeqRuleSets, classDefTable, coverageTable);
+            return new LookupType5Format2SubTable(classSeqRuleSets, classDefTable, coverageTable, lookupFlags);
         }
 
         public override bool TrySubstitution(
@@ -198,17 +201,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly CoverageTable[] coverageTables;
         private readonly SequenceLookupRecord[] sequenceLookupRecords;
 
-        private LookupType5Format3SubTable(CoverageTable[] coverageTables, SequenceLookupRecord[] sequenceLookupRecords)
+        private LookupType5Format3SubTable(CoverageTable[] coverageTables, SequenceLookupRecord[] sequenceLookupRecords, LookupFlags lookupFlags)
         {
             this.coverageTables = coverageTables;
             this.sequenceLookupRecords = sequenceLookupRecords;
+            this.LookupFlags = lookupFlags;
         }
 
-        public static LookupType5Format3SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType5Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             SequenceLookupRecord[] seqLookupRecords = TableLoadingUtils.LoadSequenceContextFormat3(reader, offset, out CoverageTable[] coverageTables);
 
-            return new LookupType5Format3SubTable(coverageTables, seqLookupRecords);
+            return new LookupType5Format3SubTable(coverageTables, seqLookupRecords, lookupFlags);
         }
 
         public override bool TrySubstitution(

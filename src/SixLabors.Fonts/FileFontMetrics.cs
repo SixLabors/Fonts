@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
@@ -82,7 +83,12 @@ namespace SixLabors.Fonts
             => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
         /// <inheritdoc/>
-        internal override bool TryGetGlyphClass(ushort glyphId, out GlyphClassDef? glyphClass) => this.metrics.Value.TryGetGlyphClass(glyphId, out glyphClass);
+        internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
+            => this.metrics.Value.TryGetGlyphClass(glyphId, out glyphClass);
+
+        /// <inheritdoc/>
+        internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
+            => this.metrics.Value.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
 
         /// <inheritdoc />
         public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)

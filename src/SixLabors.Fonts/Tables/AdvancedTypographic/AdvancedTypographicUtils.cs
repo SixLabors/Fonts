@@ -166,7 +166,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static bool CheckAllCoverages(IGlyphShapingCollection collection, ushort index, int count, CoverageTable[] input, CoverageTable[] backtrack, CoverageTable[] lookahead)
+        internal static bool CheckAllCoverages(
+            FontMetrics fontMetrics,
+            LookupFlags lookupFlags,
+            IGlyphShapingCollection collection,
+            ushort index,
+            int count,
+            CoverageTable[] input,
+            CoverageTable[] backtrack,
+            CoverageTable[] lookahead)
         {
             // Check that there are enough context glyphs.
             if (index - backtrack.Length < 0 || input.Length + lookahead.Length > count)
@@ -175,17 +183,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
 
             // Check all coverages: if any of them does not match, abort update.
-            if (!CheckCoverage(collection, input, index))
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+            if (!CheckCoverage(iterator, input, 0))
             {
                 return false;
             }
 
-            if (!CheckCoverage(collection, backtrack, index - backtrack.Length))
+            iterator.Reset(index, lookupFlags);
+            if (!CheckCoverage(iterator, backtrack, -backtrack.Length))
             {
                 return false;
             }
 
-            if (!CheckCoverage(collection, lookahead, index + input.Length))
+            iterator.Reset(index, lookupFlags);
+            if (!CheckCoverage(iterator, lookahead, input.Length))
             {
                 return false;
             }
@@ -244,15 +255,48 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        private static bool CheckCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
+        internal static GlyphShapingClass GetGlyphShapingClass(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
         {
-            for (int i = 0; i < coverageTable.Length; i++)
+            bool isMark;
+            bool isBase;
+            bool isLigature;
+            ushort markAttachmentType = 0;
+            if (fontMetrics.TryGetGlyphClass(glyphId, out GlyphClassDef? glyphClass))
             {
-                ushort id = collection[offset + i][0];
+                isMark = glyphClass == GlyphClassDef.MarkGlyph;
+                isBase = glyphClass == GlyphClassDef.BaseGlyph;
+                isLigature = glyphClass == GlyphClassDef.LigatureGlyph;
+                if (fontMetrics.TryGetMarkAttachmentClass(glyphId, out GlyphClassDef? markAttachmentClass))
+                {
+                    markAttachmentType = (ushort)markAttachmentClass;
+                }
+            }
+            else
+            {
+                isMark = CodePoint.IsMark(shapingData.CodePoint);
+                isBase = !isMark;
+                isLigature = shapingData.LigatureComponentCount > 1;
+            }
+
+            return new GlyphShapingClass(isMark, isBase, isLigature, markAttachmentType);
+        }
+
+        private static bool CheckCoverage(
+            SkippingGlyphIterator iterator,
+            CoverageTable[] coverageTable,
+            int offset)
+        {
+            IGlyphShapingCollection collection = iterator.Collection;
+            offset = iterator.Increment(offset);
+            for (int i = 0; i < coverageTable.Length && offset < collection.Count; i++)
+            {
+                ushort id = collection[offset][0];
                 if (id == 0 || coverageTable[i].CoverageIndexOf(id) < 0)
                 {
                     return false;
                 }
+
+                offset = iterator.Next();
             }
 
             return true;

@@ -14,14 +14,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// </summary>
     internal static class LookupType4SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort substFormat = reader.ReadUInt16();
 
             return substFormat switch
             {
-                1 => LookupType4Format1SubTable.Load(reader, offset),
+                1 => LookupType4Format1SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1'."),
             };
         }
@@ -32,13 +32,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly LigatureSetTable[] ligatureSetTables;
         private readonly CoverageTable coverageTable;
 
-        private LookupType4Format1SubTable(LigatureSetTable[] ligatureSetTables, CoverageTable coverageTable)
+        private LookupType4Format1SubTable(LigatureSetTable[] ligatureSetTables, CoverageTable coverageTable, LookupFlags lookupFlags)
         {
             this.ligatureSetTables = ligatureSetTables;
             this.coverageTable = coverageTable;
+            this.LookupFlags = lookupFlags;
         }
 
-        public static LookupType4Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType4Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             // Ligature Substitution Format 1
             // +----------+--------------------------------------+--------------------------------------------------------------------+
@@ -101,7 +102,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType4Format1SubTable(ligatureSetTables, coverageTable);
+            return new LookupType4Format1SubTable(ligatureSetTables, coverageTable, lookupFlags);
         }
 
         public override bool TrySubstitution(

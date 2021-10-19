@@ -53,6 +53,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
+        public bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
+        {
+            markAttachmentClass = null;
+
+            if (this.MarkAttachmentClassDef is null)
+            {
+                return false;
+            }
+
+            markAttachmentClass = (GlyphClassDef)this.MarkAttachmentClassDef.ClassIndexOf(glyphId);
+            return true;
+        }
+
         public static GlyphDefinitionTable Load(BigEndianBinaryReader reader)
         {
             // Header version 1.0

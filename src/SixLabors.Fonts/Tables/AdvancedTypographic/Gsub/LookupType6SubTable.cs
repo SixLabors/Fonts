@@ -12,16 +12,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// </summary>
     internal static class LookupType6SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort substFormat = reader.ReadUInt16();
 
             return substFormat switch
             {
-                1 => LookupType6Format1SubTable.Load(reader, offset),
-                2 => LookupType6Format2SubTable.Load(reader, offset),
-                3 => LookupType6Format3SubTable.Load(reader, offset),
+                1 => LookupType6Format1SubTable.Load(reader, offset, lookupFlags),
+                2 => LookupType6Format2SubTable.Load(reader, offset, lookupFlags),
+                3 => LookupType6Format3SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {substFormat}. Should be '1', '2', or '3'."),
             };
         }
@@ -32,16 +32,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly CoverageTable coverageTable;
         private readonly ChainedSequenceRuleSetTable[] seqRuleSetTables;
 
-        private LookupType6Format1SubTable(CoverageTable coverageTable, ChainedSequenceRuleSetTable[] seqRuleSetTables)
+        private LookupType6Format1SubTable(CoverageTable coverageTable, ChainedSequenceRuleSetTable[] seqRuleSetTables, LookupFlags lookupFlags)
         {
             this.coverageTable = coverageTable;
             this.seqRuleSetTables = seqRuleSetTables;
+            this.LookupFlags = lookupFlags;
         }
 
-        public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             ChainedSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
-            return new LookupType6Format1SubTable(coverageTable, seqRuleSets);
+            return new LookupType6Format1SubTable(coverageTable, seqRuleSets, lookupFlags);
         }
 
         public override bool TrySubstitution(
@@ -115,16 +116,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ClassDefinitionTable backtrackClassDefinitionTable,
             ClassDefinitionTable inputClassDefinitionTable,
             ClassDefinitionTable lookaheadClassDefinitionTable,
-            CoverageTable coverageTable)
+            CoverageTable coverageTable,
+            LookupFlags lookupFlags)
         {
             this.sequenceRuleSetTables = sequenceRuleSetTables;
             this.backtrackClassDefinitionTable = backtrackClassDefinitionTable;
             this.inputClassDefinitionTable = inputClassDefinitionTable;
             this.lookaheadClassDefinitionTable = lookaheadClassDefinitionTable;
             this.coverageTable = coverageTable;
+            this.LookupFlags = lookupFlags;
         }
 
-        public static LookupType6Format2SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType6Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             ChainedClassSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat2(
                 reader,
@@ -134,7 +137,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 out ClassDefinitionTable inputClassDefTable,
                 out ClassDefinitionTable lookaheadClassDefTable);
 
-            return new LookupType6Format2SubTable(seqRuleSets, backtrackClassDefTable, inputClassDefTable, lookaheadClassDefTable, coverageTable);
+            return new LookupType6Format2SubTable(seqRuleSets, backtrackClassDefTable, inputClassDefTable, lookaheadClassDefTable, coverageTable, lookupFlags);
         }
 
         public override bool TrySubstitution(
@@ -207,15 +210,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             SequenceLookupRecord[] seqLookupRecords,
             CoverageTable[] backtrackCoverageTables,
             CoverageTable[] inputCoverageTables,
-            CoverageTable[] lookaheadCoverageTables)
+            CoverageTable[] lookaheadCoverageTables,
+            LookupFlags lookupFlags)
         {
             this.seqLookupRecords = seqLookupRecords;
             this.backtrackCoverageTables = backtrackCoverageTables;
             this.inputCoverageTables = inputCoverageTables;
             this.lookaheadCoverageTables = lookaheadCoverageTables;
+            this.LookupFlags = lookupFlags;
         }
 
-        public static LookupType6Format3SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType6Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             SequenceLookupRecord[] seqLookupRecords = TableLoadingUtils.LoadChainedSequenceContextFormat3(
                 reader,
@@ -224,7 +229,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 out CoverageTable[] inputCoverageTables,
                 out CoverageTable[] lookaheadCoverageTables);
 
-            return new LookupType6Format3SubTable(seqLookupRecords, backtrackCoverageTables, inputCoverageTables, lookaheadCoverageTables);
+            return new LookupType6Format3SubTable(seqLookupRecords, backtrackCoverageTables, inputCoverageTables, lookaheadCoverageTables, lookupFlags);
         }
 
         public override bool TrySubstitution(
@@ -241,7 +246,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 return false;
             }
 
-            if (!AdvancedTypographicUtils.CheckAllCoverages(collection, index, count, this.inputCoverageTables, this.backtrackCoverageTables, this.lookaheadCoverageTables))
+            if (!AdvancedTypographicUtils.CheckAllCoverages(
+                fontMetrics,
+                this.LookupFlags,
+                collection,
+                index,
+                count,
+                this.inputCoverageTables,
+                this.backtrackCoverageTables,
+                this.lookaheadCoverageTables))
             {
                 return false;
             }

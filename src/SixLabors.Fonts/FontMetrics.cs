@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
@@ -105,7 +106,16 @@ namespace SixLabors.Fonts
         /// <param name="glyphId">The glyph identifier.</param>
         /// <param name="glyphClass">The glyph class.</param>
         /// <returns>true, if the glyph class could be retrieved.</returns>
-        internal abstract bool TryGetGlyphClass(ushort glyphId, out GlyphClassDef? glyphClass);
+        internal abstract bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass);
+
+        /// <summary>
+        /// Tries to get the mark attachment class for a given glyph id.
+        /// The font needs to have a GDEF table defined.
+        /// </summary>
+        /// <param name="glyphId">The glyph identifier.</param>
+        /// <param name="markAttachmentClass">The mark attachment class.</param>
+        /// <returns>true, if the mark attachement class could be retrieved.</returns>
+        internal abstract bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point.

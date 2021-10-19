@@ -248,7 +248,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                if (!AdvancedTypographicUtils.CheckAllCoverages(collection, index, count, this.inputCoverageTables, this.backtrackCoverageTables, this.lookaheadCoverageTables))
+                // TODO: Implement LookupFlags
+                if (!AdvancedTypographicUtils.CheckAllCoverages(fontMetrics, default, collection, index, count, this.inputCoverageTables, this.backtrackCoverageTables, this.lookaheadCoverageTables))
                 {
                     return false;
                 }

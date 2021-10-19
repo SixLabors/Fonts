@@ -18,14 +18,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         public static LookupSubTable Load(
             BigEndianBinaryReader reader,
             long offset,
-            Func<ushort, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
+            LookupFlags lookupFlags,
+            Func<ushort, LookupFlags, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort substFormat = reader.ReadUInt16();
 
             return substFormat switch
             {
-                1 => LookupType7Format1SubTable.Load(reader, offset, subTableLoader),
+                1 => LookupType7Format1SubTable.Load(reader, offset, lookupFlags, subTableLoader),
                 _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1'."),
             };
         }
@@ -36,7 +37,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         public static LookupSubTable Load(
             BigEndianBinaryReader reader,
             long offset,
-            Func<ushort, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
+            LookupFlags lookupFlags,
+            Func<ushort, LookupFlags, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
         {
             // +----------+---------------------+------------------------------------------------------------------------------------------------------------------------------------+
             // | Type     | Name                | Description                                                                                                                        |
@@ -59,7 +61,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             // Read the lookup table again with the updated offset.
-            return subTableLoader.Invoke(extensionLookupType, reader, offset + extensionOffset);
+            return subTableLoader.Invoke(extensionLookupType, lookupFlags, reader, offset + extensionOffset);
         }
     }
 }

@@ -191,6 +191,18 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
+        internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
+        {
+            markAttachmentClass = null;
+            if (this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc/>
         public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
         {
             this.TryGetGlyphId(codePoint, out ushort glyphId);
