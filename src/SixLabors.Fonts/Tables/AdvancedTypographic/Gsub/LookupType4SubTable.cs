@@ -127,7 +127,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             LigatureSetTable ligatureSetTable = this.ligatureSetTables[offset];
             SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
-            Span<int> matches = stackalloc int[AdvancedTypographicUtils.MaxContextLength];
+            Span<int> matchBuffer = stackalloc int[AdvancedTypographicUtils.MaxContextLength];
             for (int i = 0; i < ligatureSetTable.Ligatures.Length; i++)
             {
                 LigatureTable ligatureTable = ligatureSetTable.Ligatures[i];
@@ -138,7 +138,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(iterator, feature, 1, ligatureTable.ComponentGlyphs, matches);
+                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(iterator, feature, 1, ligatureTable.ComponentGlyphs, matchBuffer);
                 if (!allMatched)
                 {
                     continue;
@@ -171,13 +171,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 GlyphShapingData data = collection.GetGlyphShapingData(index);
                 bool isMarkLigature = AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, glyphId, data);
 
-                matches = matches.Slice(0, Math.Min(ligatureTable.ComponentGlyphs.Length, matches.Length));
+                Span<int> matches = matchBuffer.Slice(0, Math.Min(ligatureTable.ComponentGlyphs.Length, matchBuffer.Length));
                 for (int j = 0; j < matches.Length && isMarkLigature; j++)
                 {
-                    int matchIndex = matches[j];
-                    ushort matchId = collection[matchIndex][0];
-                    GlyphShapingData match = collection.GetGlyphShapingData(matchIndex);
-                    isMarkLigature = AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, matchId, match);
+                    GlyphShapingData match = collection.GetGlyphShapingData(matches[j]);
+                    isMarkLigature = AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, match.GlyphIds[0], match);
                 }
 
                 int ligatureId = isMarkLigature ? 0 : collection.LigatureId++;

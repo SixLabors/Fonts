@@ -79,25 +79,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ChainedSequenceRuleTable[] rules = seqRuleSet.SequenceRuleTables;
             for (int i = 0; i < rules.Length; i++)
             {
-                ChainedSequenceRuleTable rule = rules[i];
-                if (!AdvancedTypographicUtils.ApplyChainedSequenceRule(iterator, rule))
+                ChainedSequenceRuleTable ruleTable = rules[i];
+                if (!AdvancedTypographicUtils.ApplyChainedSequenceRule(iterator, ruleTable))
                 {
                     continue;
                 }
 
-                bool hasChanged = false;
-                for (int j = 0; j < rule.SequenceLookupRecords.Length; j++)
-                {
-                    SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
-                    LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
-                    ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                    if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
-                    {
-                        hasChanged = true;
-                    }
-                }
-
-                return hasChanged;
+                return AdvancedTypographicUtils.ApplyLookupList(
+                    fontMetrics,
+                    table,
+                    feature,
+                    this.LookupFlags,
+                    ruleTable.SequenceLookupRecords,
+                    collection,
+                    index,
+                    count);
             }
 
             return false;
@@ -176,25 +172,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
             for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
             {
-                ChainedClassSequenceRuleTable rule = rules[lookupIndex];
-                if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, rule, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
+                ChainedClassSequenceRuleTable ruleTable = rules[lookupIndex];
+                if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, ruleTable, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
                 {
                     continue;
                 }
 
-                bool hasChanged = false;
-                for (int j = 0; j < rule.SequenceLookupRecords.Length; j++)
-                {
-                    SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
-                    LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
-                    ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                    if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
-                    {
-                        hasChanged = true;
-                    }
-                }
-
-                return hasChanged;
+                return AdvancedTypographicUtils.ApplyLookupList(
+                    fontMetrics,
+                    table,
+                    feature,
+                    this.LookupFlags,
+                    ruleTable.SequenceLookupRecords,
+                    collection,
+                    index,
+                    count);
             }
 
             return false;
@@ -203,7 +195,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
     internal sealed class LookupType6Format3SubTable : LookupSubTable
     {
-        private readonly SequenceLookupRecord[] seqLookupRecords;
+        private readonly SequenceLookupRecord[] sequenceLookupRecords;
         private readonly CoverageTable[] backtrackCoverageTables;
         private readonly CoverageTable[] inputCoverageTables;
         private readonly CoverageTable[] lookaheadCoverageTables;
@@ -216,7 +208,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             LookupFlags lookupFlags)
             : base(lookupFlags)
         {
-            this.seqLookupRecords = seqLookupRecords;
+            this.sequenceLookupRecords = seqLookupRecords;
             this.backtrackCoverageTables = backtrackCoverageTables;
             this.inputCoverageTables = inputCoverageTables;
             this.lookaheadCoverageTables = lookaheadCoverageTables;
@@ -262,20 +254,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             // It's a match. Perform substitutions and return true if anything changed.
-            bool hasChanged = false;
-            foreach (SequenceLookupRecord lookupRecord in this.seqLookupRecords)
-            {
-                ushort sequenceIndex = lookupRecord.SequenceIndex;
-                ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                {
-                    hasChanged = true;
-                }
-            }
-
-            return hasChanged;
+            return AdvancedTypographicUtils.ApplyLookupList(
+                fontMetrics,
+                table,
+                feature,
+                this.LookupFlags,
+                this.sequenceLookupRecords,
+                collection,
+                index,
+                count);
         }
     }
 }

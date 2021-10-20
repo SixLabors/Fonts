@@ -7,7 +7,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -115,7 +114,6 @@ namespace SixLabors.Fonts
 
             if (options.ApplyKerning)
             {
-                // AssignShapingFeatures(positionings);
                 // Update the positions of the glyphs in the completed collection.
                 // Each set of metrics is associated with single font and will only be updated
                 // by that font so it's safe to use a single collection.
@@ -456,7 +454,6 @@ namespace SixLabors.Fonts
 
             if (options.ApplyKerning)
             {
-                // AssignShapingFeatures(substitutions);
                 fontMetrics.ApplySubstitution(substitutions);
             }
 
@@ -502,39 +499,6 @@ namespace SixLabors.Fonts
                         collection.Replace(i, glyphId);
                     }
                 }
-            }
-        }
-
-        private static void AssignShapingFeatures(IGlyphShapingCollection collection)
-        {
-            for (int i = 0; i < collection.Count; i++)
-            {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
-                ScriptClass current = CodePoint.GetScriptClass(data.CodePoint);
-
-                // Choose a shaper based on the script.
-                // This determines which features to apply to which glyphs.
-                BaseShaper shaper = ShaperFactory.Create(current);
-                int index = i;
-                int count = 1;
-                while (i < collection.Count - 1)
-                {
-                    // We want to assign the same shaper to individual sections of the text rather
-                    // than the text as a whole to ensure that different language shapers do not interfere
-                    // with each other when the text contains multiple languages.
-                    GlyphShapingData nextData = collection.GetGlyphShapingData(i + 1);
-                    ScriptClass next = CodePoint.GetScriptClass(nextData.CodePoint);
-                    if (next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited && next != current)
-                    {
-                        break;
-                    }
-
-                    i++;
-                    count++;
-                }
-
-                // Assign Substitution features to each glyph.
-                shaper.AssignFeatures(collection, index, count);
             }
         }
 

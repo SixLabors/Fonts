@@ -86,20 +86,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 }
 
                 // It's a match. Perform substitutions and return true if anything changed.
-                bool hasChanged = false;
-                foreach (SequenceLookupRecord lookupRecord in ruleTable.SequenceLookupRecords)
-                {
-                    ushort sequenceIndex = lookupRecord.SequenceIndex;
-                    ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                    {
-                        hasChanged = true;
-                    }
-                }
-
-                return hasChanged;
+                return AdvancedTypographicUtils.ApplyLookupList(
+                    fontMetrics,
+                    table,
+                    feature,
+                    this.LookupFlags,
+                    ruleTable.SequenceLookupRecords,
+                    collection,
+                    index,
+                    count);
             }
 
             return false;
@@ -160,36 +155,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
             SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
-            foreach (ClassSequenceRuleTable rule in ruleSetTable.SequenceRuleTables)
+            foreach (ClassSequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
             {
                 int remaining = count - 1;
-                int seqLength = rule.InputSequence.Length;
+                int seqLength = ruleTable.InputSequence.Length;
                 if (seqLength > remaining)
                 {
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchClassSequence(iterator, 1, rule.InputSequence, this.classDefinitionTable);
+                bool allMatched = AdvancedTypographicUtils.MatchClassSequence(iterator, 1, ruleTable.InputSequence, this.classDefinitionTable);
                 if (!allMatched)
                 {
                     continue;
                 }
 
                 // It's a match. Perform substitutions and return true if anything changed.
-                bool hasChanged = false;
-                foreach (SequenceLookupRecord lookupRecord in rule.SequenceLookupRecords)
-                {
-                    ushort sequenceIndex = lookupRecord.SequenceIndex;
-                    ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                    {
-                        hasChanged = true;
-                    }
-                }
-
-                return hasChanged;
+                return AdvancedTypographicUtils.ApplyLookupList(
+                    fontMetrics,
+                    table,
+                    feature,
+                    this.LookupFlags,
+                    ruleTable.SequenceLookupRecords,
+                    collection,
+                    index,
+                    count);
             }
 
             return false;
@@ -240,20 +230,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 }
 
                 // It's a match. Perform substitutions and return true if anything changed.
-                bool hasChanged = false;
-                foreach (SequenceLookupRecord lookupRecord in this.sequenceLookupRecords)
-                {
-                    ushort sequenceIndex = lookupRecord.SequenceIndex;
-                    ushort lookupIndex = lookupRecord.LookupListIndex;
-
-                    LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TrySubstitution(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
-                    {
-                        hasChanged = true;
-                    }
-                }
-
-                return hasChanged;
+                return AdvancedTypographicUtils.ApplyLookupList(
+                    fontMetrics,
+                    table,
+                    feature,
+                    this.LookupFlags,
+                    this.sequenceLookupRecords,
+                    collection,
+                    index,
+                    count);
             }
 
             return false;

@@ -151,7 +151,7 @@ namespace SixLabors.Fonts
             this.offsets.RemoveRange(index, count);
 
             // Assign our new id at the index.
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, ligatureId, count);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, ligatureId, 1);
             this.offsets.Insert(index, offset);
         }
 
@@ -164,7 +164,8 @@ namespace SixLabors.Fonts
         {
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, glyphIds.ToArray(), current.Features, current.LigatureId, current.LigatureComponentCount);
+            ushort[] ids = glyphIds.ToArray();
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, ids, current.Features, current.LigatureId, ids.Length);
         }
     }
 }

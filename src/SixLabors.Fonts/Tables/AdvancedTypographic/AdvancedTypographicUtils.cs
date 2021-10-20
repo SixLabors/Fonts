@@ -16,7 +16,41 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         /// </summary>
         public const int MaxContextLength = 64;
 
-        internal static bool MatchInputSequence(SkippingGlyphIterator iterator, Tag feature, ushort increment, ushort[] sequence, Span<int> matches)
+        public static bool ApplyLookupList(
+            FontMetrics fontMetrics,
+            GSubTable table,
+            Tag feature,
+            LookupFlags lookupFlags,
+            SequenceLookupRecord[] records,
+            GlyphSubstitutionCollection collection,
+            ushort index,
+            int count)
+        {
+            bool hasChanged = false;
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+            int currentCount = collection.Count;
+
+            foreach (SequenceLookupRecord lookupRecord in records)
+            {
+                ushort sequenceIndex = lookupRecord.SequenceIndex;
+                ushort lookupIndex = lookupRecord.LookupListIndex;
+                iterator.Index = index;
+                iterator.Increment(sequenceIndex);
+                Gsub.LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                hasChanged |= lookup.TrySubstitution(fontMetrics, table, collection, feature, iterator.Index, count - iterator.Index);
+
+                // Account for substitutions changing the length of the collection.
+                if (collection.Count != currentCount)
+                {
+                    count -= currentCount - collection.Count;
+                    currentCount = collection.Count;
+                }
+            }
+
+            return hasChanged;
+        }
+
+        public static bool MatchInputSequence(SkippingGlyphIterator iterator, Tag feature, ushort increment, ushort[] sequence, Span<int> matches)
             => Match(
                 increment,
                 sequence,
@@ -45,7 +79,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return false;
         }
 
-        internal static bool MatchSequence(SkippingGlyphIterator iterator, int increment, ushort[] sequence)
+        public static bool MatchSequence(SkippingGlyphIterator iterator, int increment, ushort[] sequence)
             => Match(
                 increment,
                 sequence,
@@ -53,7 +87,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 (component, data) => component == data.GlyphIds[0],
                 default);
 
-        internal static bool MatchClassSequence(
+        public static bool MatchClassSequence(
             SkippingGlyphIterator iterator,
             int increment,
             ushort[] sequence,
@@ -65,7 +99,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 (component, data) => component == classDefinitionTable.ClassIndexOf(data.GlyphIds[0]),
                 default);
 
-        internal static bool ApplyChainedSequenceRule(SkippingGlyphIterator iterator, ChainedSequenceRuleTable rule)
+        public static bool ApplyChainedSequenceRule(SkippingGlyphIterator iterator, ChainedSequenceRuleTable rule)
         {
             if (rule.BacktrackSequence.Length > 0
                 && !MatchSequence(iterator, -rule.BacktrackSequence.Length, rule.BacktrackSequence))
@@ -88,7 +122,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static bool ApplyChainedClassSequenceRule(
+        public static bool ApplyChainedClassSequenceRule(
             SkippingGlyphIterator iterator,
             ChainedClassSequenceRuleTable rule,
             ClassDefinitionTable inputClassDefinitionTable,
@@ -116,7 +150,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static bool CheckAllCoverages(
+        public static bool CheckAllCoverages(
             FontMetrics fontMetrics,
             LookupFlags lookupFlags,
             IGlyphShapingCollection collection,
@@ -152,7 +186,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static void ApplyAnchor(
+        public static void ApplyAnchor(
             FontMetrics fontMetrics,
             GlyphPositioningCollection collection,
             ushort index,
@@ -187,7 +221,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             collection.Offset(fontMetrics, index, glyphId, xo, yo);
         }
 
-        internal static bool IsMarkGlyph(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
+        public static bool IsMarkGlyph(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
         {
             if (!fontMetrics.TryGetGlyphClass(glyphId, out GlyphClassDef? glyphClass) &&
                 !CodePoint.IsMark(shapingData.CodePoint))
@@ -203,7 +237,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static GlyphShapingClass GetGlyphShapingClass(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
+        public static GlyphShapingClass GetGlyphShapingClass(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
         {
             bool isMark;
             bool isBase;
