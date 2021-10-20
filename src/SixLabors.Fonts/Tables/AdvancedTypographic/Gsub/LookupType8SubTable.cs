@@ -38,12 +38,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             CoverageTable[] backtrackCoverageTables,
             CoverageTable[] lookaheadCoverageTables,
             LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.substituteGlyphIds = substituteGlyphIds;
             this.coverageTable = coverageTable;
             this.backtrackCoverageTables = backtrackCoverageTables;
             this.lookaheadCoverageTables = lookaheadCoverageTables;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType8Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)

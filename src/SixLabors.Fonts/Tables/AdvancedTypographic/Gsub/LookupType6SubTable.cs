@@ -33,10 +33,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly ChainedSequenceRuleSetTable[] seqRuleSetTables;
 
         private LookupType6Format1SubTable(CoverageTable coverageTable, ChainedSequenceRuleSetTable[] seqRuleSetTables, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.coverageTable = coverageTable;
             this.seqRuleSetTables = seqRuleSetTables;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
@@ -74,12 +74,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             // Apply ruleset for the given glyph id.
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
             ChainedSequenceRuleSetTable seqRuleSet = this.seqRuleSetTables[offset];
             ChainedSequenceRuleTable[] rules = seqRuleSet.SequenceRuleTables;
             for (int i = 0; i < rules.Length; i++)
             {
                 ChainedSequenceRuleTable rule = rules[i];
-                if (!AdvancedTypographicUtils.ApplyChainedSequenceRule(collection, feature, index, rule))
+                if (!AdvancedTypographicUtils.ApplyChainedSequenceRule(iterator, rule))
                 {
                     continue;
                 }
@@ -118,13 +119,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ClassDefinitionTable lookaheadClassDefinitionTable,
             CoverageTable coverageTable,
             LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.sequenceRuleSetTables = sequenceRuleSetTables;
             this.backtrackClassDefinitionTable = backtrackClassDefinitionTable;
             this.inputClassDefinitionTable = inputClassDefinitionTable;
             this.lookaheadClassDefinitionTable = lookaheadClassDefinitionTable;
             this.coverageTable = coverageTable;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType6Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
@@ -172,10 +173,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             // Apply ruleset for the given glyph class id.
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
             for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
             {
                 ChainedClassSequenceRuleTable rule = rules[lookupIndex];
-                if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(collection, index, rule, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
+                if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, rule, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
                 {
                     continue;
                 }
@@ -212,12 +214,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             CoverageTable[] inputCoverageTables,
             CoverageTable[] lookaheadCoverageTables,
             LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.seqLookupRecords = seqLookupRecords;
             this.backtrackCoverageTables = backtrackCoverageTables;
             this.inputCoverageTables = inputCoverageTables;
             this.lookaheadCoverageTables = lookaheadCoverageTables;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType6Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)

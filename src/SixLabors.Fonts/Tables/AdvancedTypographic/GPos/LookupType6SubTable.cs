@@ -14,14 +14,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal static class LookupType6SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort subTableFormat = reader.ReadUInt16();
 
             return subTableFormat switch
             {
-                1 => LookupType6Format1SubTable.Load(reader, offset),
+                1 => LookupType6Format1SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {subTableFormat}. Should be '1'."),
             };
         }
@@ -33,7 +33,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             private readonly MarkArrayTable mark1ArrayTable;
             private readonly Mark2ArrayTable mark2ArrayTable;
 
-            public LookupType6Format1SubTable(CoverageTable mark1Coverage, CoverageTable mark2Coverage, MarkArrayTable mark1ArrayTable, Mark2ArrayTable mark2ArrayTable)
+            public LookupType6Format1SubTable(
+                CoverageTable mark1Coverage,
+                CoverageTable mark2Coverage,
+                MarkArrayTable mark1ArrayTable,
+                Mark2ArrayTable mark2ArrayTable,
+                LookupFlags lookupFlags)
+                : base(lookupFlags)
             {
                 this.mark1Coverage = mark1Coverage;
                 this.mark2Coverage = mark2Coverage;
@@ -41,7 +47,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 this.mark2ArrayTable = mark2ArrayTable;
             }
 
-            public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
             {
                 // MarkMarkPosFormat1 Subtable.
                 // +--------------------+---------------------------------+------------------------------------------------------+
@@ -74,7 +80,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 var mark1ArrayTable = new MarkArrayTable(reader, offset + mark1ArrayOffset);
                 var mark2ArrayTable = new Mark2ArrayTable(reader, markClassCount, offset + mark2ArrayOffset);
 
-                return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable);
+                return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable, lookupFlags);
             }
 
             public override bool TryUpdatePosition(

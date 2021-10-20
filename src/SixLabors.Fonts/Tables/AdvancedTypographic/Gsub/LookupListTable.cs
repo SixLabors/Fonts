@@ -157,7 +157,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
     internal abstract class LookupSubTable
     {
-        public LookupFlags LookupFlags { get; protected set; }
+        protected LookupSubTable(LookupFlags lookupFlags) => this.LookupFlags = lookupFlags;
+
+        public LookupFlags LookupFlags { get; }
 
         public abstract bool TrySubstitution(
             FontMetrics fontMetrics,

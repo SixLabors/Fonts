@@ -61,7 +61,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             // Read the lookup table again with the updated offset.
-            return subTableLoader.Invoke(extensionLookupType, lookupFlags, reader, offset + extensionOffset);
+            return subTableLoader(extensionLookupType, lookupFlags, reader, offset + extensionOffset);
         }
     }
 }

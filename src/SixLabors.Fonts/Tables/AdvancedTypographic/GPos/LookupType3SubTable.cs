@@ -15,14 +15,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal static class LookupType3SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort posFormat = reader.ReadUInt16();
 
             return posFormat switch
             {
-                1 => LookupType3Format1SubTable.Load(reader, offset),
+                1 => LookupType3Format1SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException(
                     $"Invalid value for 'posFormat' {posFormat}. Should be '1'.")
             };
@@ -33,13 +33,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             private readonly CoverageTable coverageTable;
             private readonly EntryExitAnchors[] entryExitAnchors;
 
-            public LookupType3Format1SubTable(CoverageTable coverageTable, EntryExitAnchors[] entryExitAnchors)
+            public LookupType3Format1SubTable(CoverageTable coverageTable, EntryExitAnchors[] entryExitAnchors, LookupFlags lookupFlags)
+                : base(lookupFlags)
             {
                 this.coverageTable = coverageTable;
                 this.entryExitAnchors = entryExitAnchors;
             }
 
-            public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
             {
                 // Cursive Attachment Positioning Format1.
                 // +--------------------+---------------------------------+------------------------------------------------------+
@@ -70,7 +71,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-                return new LookupType3Format1SubTable(coverageTable, entryExitAnchors);
+                return new LookupType3Format1SubTable(coverageTable, entryExitAnchors, lookupFlags);
             }
 
             public override bool TryUpdatePosition(

@@ -31,10 +31,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly CoverageTable coverageTable;
 
         private LookupType3Format1SubTable(AlternateSetTable[] alternateSetTables, CoverageTable coverageTable, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.alternateSetTables = alternateSetTables;
             this.coverageTable = coverageTable;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)

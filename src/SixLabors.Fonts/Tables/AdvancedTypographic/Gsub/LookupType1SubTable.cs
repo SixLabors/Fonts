@@ -34,10 +34,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly CoverageTable coverageTable;
 
         private LookupType1Format1SubTable(ushort deltaGlyphId, CoverageTable coverageTable, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.deltaGlyphId = deltaGlyphId;
             this.coverageTable = coverageTable;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
@@ -90,10 +90,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly ushort[] substituteGlyphs;
 
         private LookupType1Format2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.substituteGlyphs = substituteGlyphs;
             this.coverageTable = coverageTable;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)

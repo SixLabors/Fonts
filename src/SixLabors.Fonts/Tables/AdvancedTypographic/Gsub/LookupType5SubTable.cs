@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
@@ -34,10 +33,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly SequenceRuleSetTable[] seqRuleSetTables;
 
         private LookupType5Format1SubTable(CoverageTable coverageTable, SequenceRuleSetTable[] seqRuleSetTables, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.coverageTable = coverageTable;
             this.seqRuleSetTables = seqRuleSetTables;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
@@ -70,7 +69,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             // TODO: Check this.
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
             SequenceRuleSetTable ruleSetTable = this.seqRuleSetTables[offset];
-            Span<int> matches = stackalloc int[AdvancedTypographicUtils.MaxContextLength];
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
             foreach (SequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
             {
                 int remaining = count - 1;
@@ -80,7 +79,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ruleTable.InputSequence, matches);
+                bool allMatched = AdvancedTypographicUtils.MatchSequence(iterator, 1, ruleTable.InputSequence);
                 if (!allMatched)
                 {
                     continue;
@@ -118,11 +117,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ClassDefinitionTable classDefinitionTable,
             CoverageTable coverageTable,
             LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.sequenceRuleSetTables = sequenceRuleSetTables;
             this.classDefinitionTable = classDefinitionTable;
             this.coverageTable = coverageTable;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType5Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
@@ -160,6 +159,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
             foreach (ClassSequenceRuleTable rule in ruleSetTable.SequenceRuleTables)
             {
                 int remaining = count - 1;
@@ -169,7 +169,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchClassSequence(collection, index, rule.InputSequence, this.classDefinitionTable);
+                bool allMatched = AdvancedTypographicUtils.MatchClassSequence(iterator, 1, rule.InputSequence, this.classDefinitionTable);
                 if (!allMatched)
                 {
                     continue;
@@ -202,10 +202,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly SequenceLookupRecord[] sequenceLookupRecords;
 
         private LookupType5Format3SubTable(CoverageTable[] coverageTables, SequenceLookupRecord[] sequenceLookupRecords, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.coverageTables = coverageTables;
             this.sequenceLookupRecords = sequenceLookupRecords;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType5Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)

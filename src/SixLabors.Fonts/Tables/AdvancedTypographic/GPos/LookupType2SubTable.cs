@@ -17,15 +17,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal static class LookupType2SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort posFormat = reader.ReadUInt16();
 
             return posFormat switch
             {
-                1 => LookupType2Format1SubTable.Load(reader, offset),
-                2 => LookupType2Format2SubTable.Load(reader, offset),
+                1 => LookupType2Format1SubTable.Load(reader, offset, lookupFlags),
+                2 => LookupType2Format2SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException(
                     $"Invalid value for 'posFormat' {posFormat}. Should be '1' or '2'.")
             };
@@ -36,13 +36,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             private readonly CoverageTable coverageTable;
             private readonly PairSetTable[] pairSets;
 
-            public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets)
+            public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets, LookupFlags lookupFlags)
+                : base(lookupFlags)
             {
                 this.coverageTable = coverageTable;
                 this.pairSets = pairSets;
             }
 
-            public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
             {
                 // Pair Adjustment Positioning Subtable format 1.
                 // +-------------+------------------------------+------------------------------------------------+
@@ -80,7 +81,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-                return new LookupType2Format1SubTable(coverageTable, pairSets);
+                return new LookupType2Format1SubTable(coverageTable, pairSets, lookupFlags);
             }
 
             public override bool TryUpdatePosition(
@@ -183,7 +184,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 CoverageTable coverageTable,
                 Class1Record[] class1Records,
                 ClassDefinitionTable classDefinitionTable1,
-                ClassDefinitionTable classDefinitionTable2)
+                ClassDefinitionTable classDefinitionTable2,
+                LookupFlags lookupFlags)
+                : base(lookupFlags)
             {
                 this.coverageTable = coverageTable;
                 this.class1Records = class1Records;
@@ -191,7 +194,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 this.classDefinitionTable2 = classDefinitionTable2;
             }
 
-            public static LookupType2Format2SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType2Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
             {
                 // Pair Adjustment Positioning Subtable format 2.
                 // +-------------+------------------------------+------------------------------------------------+
@@ -243,7 +246,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 var classDefTable1 = ClassDefinitionTable.Load(reader, offset + classDef1Offset);
                 var classDefTable2 = ClassDefinitionTable.Load(reader, offset + classDef2Offset);
 
-                return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2);
+                return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2, lookupFlags);
             }
 
             public override bool TryUpdatePosition(

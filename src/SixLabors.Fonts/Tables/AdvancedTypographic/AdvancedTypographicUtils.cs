@@ -16,46 +16,27 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         /// </summary>
         public const int MaxContextLength = 64;
 
-        internal static bool MatchInputSequence(
-            IGlyphShapingCollection collection,
-            Tag feature,
-            ushort index,
-            ushort[] inputSequence,
-            Span<int> matches)
-        {
-            int startIdx = index + 1;
-            int i = 0;
-            while (i < inputSequence.Length && i < MaxContextLength)
-            {
-                int collectionIdx = startIdx + i;
-                if (collectionIdx == collection.Count)
+        internal static bool MatchInputSequence(SkippingGlyphIterator iterator, Tag feature, ushort increment, ushort[] sequence, Span<int> matches)
+            => Match(
+                increment,
+                sequence,
+                iterator,
+                (component, data) =>
                 {
-                    return false;
-                }
+                    if (!ContainsFeatureTag(data.Features, feature))
+                    {
+                        return false;
+                    }
 
-                GlyphShapingData data = collection.GetGlyphShapingData(collectionIdx);
-                if (!ContainsFeatureTag(data.Features, feature))
-                {
-                    return false;
-                }
+                    return component == data.GlyphIds[0];
+                },
+                matches);
 
-                ushort glyphId = data.GlyphIds[0];
-                if (glyphId != inputSequence[i])
-                {
-                    return false;
-                }
-
-                matches[i++] = collectionIdx;
-            }
-
-            return i == inputSequence.Length;
-        }
-
-        internal static bool ContainsFeatureTag(List<TagEntry> featureList, Tag feature)
+        private static bool ContainsFeatureTag(List<TagEntry> featureList, Tag feature)
         {
             foreach (TagEntry tagEntry in featureList)
             {
-                if (tagEntry.Tag == feature)
+                if (tagEntry.Tag == feature && tagEntry.Enabled)
                 {
                     return true;
                 }
@@ -64,72 +45,42 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return false;
         }
 
-        internal static bool MatchSequence(IGlyphShapingCollection collection, int glyphSequenceIndex, ushort[] sequenceToMatch)
-        {
-            int sequenceToMatchIdx = 0;
-            int glyphCollectionIdx = glyphSequenceIndex + 1;
-
-            while (sequenceToMatchIdx < sequenceToMatch.Length)
-            {
-                if (glyphCollectionIdx >= collection.Count)
-                {
-                    return false;
-                }
-
-                ReadOnlySpan<ushort> glyphIds = collection[glyphCollectionIdx++];
-                ushort glyphId = glyphIds[0];
-                if (glyphId != sequenceToMatch[sequenceToMatchIdx++])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        internal static bool MatchSequence(SkippingGlyphIterator iterator, int increment, ushort[] sequence)
+            => Match(
+                increment,
+                sequence,
+                iterator,
+                (component, data) => component == data.GlyphIds[0],
+                default);
 
         internal static bool MatchClassSequence(
-            IGlyphShapingCollection collection,
-            int glyphSequenceIndex,
-            ushort[] sequenceToMatch,
+            SkippingGlyphIterator iterator,
+            int increment,
+            ushort[] sequence,
             ClassDefinitionTable classDefinitionTable)
-        {
-            int sequenceToMatchIdx = 0;
-            int glyphCollectionIdx = glyphSequenceIndex + 1;
+            => Match(
+                increment,
+                sequence,
+                iterator,
+                (component, data) => component == classDefinitionTable.ClassIndexOf(data.GlyphIds[0]),
+                default);
 
-            while (sequenceToMatchIdx < sequenceToMatch.Length)
-            {
-                if (glyphCollectionIdx >= collection.Count)
-                {
-                    return false;
-                }
-
-                ReadOnlySpan<ushort> glyphIds = collection[glyphCollectionIdx++];
-                if (!MatchClass(sequenceToMatchIdx++, sequenceToMatch, classDefinitionTable, glyphIds))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        internal static bool ApplyChainedSequenceRule(IGlyphShapingCollection collection, Tag feature, ushort index, ChainedSequenceRuleTable rule)
+        internal static bool ApplyChainedSequenceRule(SkippingGlyphIterator iterator, ChainedSequenceRuleTable rule)
         {
             if (rule.BacktrackSequence.Length > 0
-                && !MatchSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence))
+                && !MatchSequence(iterator, -rule.BacktrackSequence.Length, rule.BacktrackSequence))
+            {
+                return false;
+            }
+
+            if (rule.InputSequence.Length > 0
+                && !MatchSequence(iterator, 1, rule.InputSequence))
             {
                 return false;
             }
 
             if (rule.LookaheadSequence.Length > 0
-                && !MatchSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
-            {
-                return false;
-            }
-
-            Span<int> matches = stackalloc int[MaxContextLength];
-            if (rule.InputSequence.Length > 0
-                && !MatchInputSequence(collection, feature, index, rule.InputSequence, matches))
+                && !MatchSequence(iterator, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
             {
                 return false;
             }
@@ -138,27 +89,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         }
 
         internal static bool ApplyChainedClassSequenceRule(
-            IGlyphShapingCollection collection,
-            ushort index,
+            SkippingGlyphIterator iterator,
             ChainedClassSequenceRuleTable rule,
             ClassDefinitionTable inputClassDefinitionTable,
             ClassDefinitionTable backtrackClassDefinitionTable,
             ClassDefinitionTable lookaheadClassDefinitionTable)
         {
             if (rule.BacktrackSequence.Length > 0
-                && !MatchClassSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence, backtrackClassDefinitionTable))
+                && !MatchClassSequence(iterator, -rule.BacktrackSequence.Length, rule.BacktrackSequence, backtrackClassDefinitionTable))
             {
                 return false;
             }
 
             if (rule.InputSequence.Length > 0 &&
-                !MatchClassSequence(collection, index, rule.InputSequence, inputClassDefinitionTable))
+                !MatchClassSequence(iterator, 1, rule.InputSequence, inputClassDefinitionTable))
             {
                 return false;
             }
 
             if (rule.LookaheadSequence.Length > 0
-                && !MatchClassSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence, lookaheadClassDefinitionTable))
+                && !MatchClassSequence(iterator, 1 + rule.InputSequence.Length, rule.LookaheadSequence, lookaheadClassDefinitionTable))
             {
                 return false;
             }
@@ -184,12 +134,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             // Check all coverages: if any of them does not match, abort update.
             SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
-            if (!CheckCoverage(iterator, input, 0))
+            if (!CheckCoverage(iterator, backtrack, -backtrack.Length))
             {
                 return false;
             }
 
-            if (!CheckCoverage(iterator, backtrack, -backtrack.Length))
+            if (!CheckCoverage(iterator, input, 0))
             {
                 return false;
             }
@@ -282,38 +232,30 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         private static bool CheckCoverage(
             SkippingGlyphIterator iterator,
             CoverageTable[] coverageTable,
-            int offset)
+            int increment)
             => Match(
-                offset,
+                increment,
                 coverageTable,
                 iterator,
                 (component, data) => component.CoverageIndexOf(data.GlyphIds[0]) >= 0,
                 default);
 
-        private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, ReadOnlySpan<ushort> glyphIds)
-        {
-            ushort glyphId = glyphIds[0];
-            int glyphIdClass = classDefinitionTable.ClassIndexOf(glyphId);
-            ushort sequenceEntryClassId = sequence[idx];
-            return glyphIdClass == sequenceEntryClassId;
-        }
-
         private static bool Match<T>(
-            int sequenceIndex,
+            int increment,
             T[] sequence,
             SkippingGlyphIterator iterator,
             Func<T, GlyphShapingData, bool> condition,
             Span<int> matches)
         {
             ushort position = iterator.Index;
-            ushort offset = iterator.Increment(sequenceIndex);
+            ushort offset = iterator.Increment(increment);
             IGlyphShapingCollection collection = iterator.Collection;
 
             int i = 0;
             while (i < sequence.Length && i < MaxContextLength && offset < collection.Count)
             {
                 GlyphShapingData data = collection.GetGlyphShapingData(offset);
-                if (!condition.Invoke(sequence[i], data))
+                if (!condition(sequence[i], data))
                 {
                     break;
                 }

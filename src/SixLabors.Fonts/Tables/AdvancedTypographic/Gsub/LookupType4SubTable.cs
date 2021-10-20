@@ -33,10 +33,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly CoverageTable coverageTable;
 
         private LookupType4Format1SubTable(LigatureSetTable[] ligatureSetTables, CoverageTable coverageTable, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.ligatureSetTables = ligatureSetTables;
             this.coverageTable = coverageTable;
-            this.LookupFlags = lookupFlags;
         }
 
         public static LookupType4Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
@@ -126,6 +126,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             }
 
             LigatureSetTable ligatureSetTable = this.ligatureSetTables[offset];
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
             Span<int> matches = stackalloc int[AdvancedTypographicUtils.MaxContextLength];
             for (int i = 0; i < ligatureSetTable.Ligatures.Length; i++)
             {
@@ -137,7 +138,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(collection, feature, index, ligatureTable.ComponentGlyphs, matches);
+                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(iterator, feature, 1, ligatureTable.ComponentGlyphs, matches);
                 if (!allMatched)
                 {
                     continue;
