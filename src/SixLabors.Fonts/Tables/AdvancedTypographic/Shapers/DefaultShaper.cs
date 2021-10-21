@@ -63,10 +63,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.AddFeature(collection, index, count, RvnrTag);
 
             // Add directional features.
-            this.AddFeature(collection, index, count, LtraTag);
-            this.AddFeature(collection, index, count, LtrmTag);
-            this.AddFeature(collection, index, count, RtlaTag);
-            this.AddFeature(collection, index, count, RtlmTag);
+            for (int i = index; i < count; i++)
+            {
+                GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
+                if (shapingData.Direction == TextDirection.LeftToRight)
+                {
+                    this.AddFeature(collection, i, 1, LtraTag);
+                    this.AddFeature(collection, i, 1, LtrmTag);
+                }
+                else
+                {
+                    this.AddFeature(collection, i, 1, RtlaTag);
+                    this.AddFeature(collection, i, 1, RtlmTag);
+                }
+            }
 
             // Add common features.
             this.AddFeature(collection, index, count, CcmpTag);
@@ -84,7 +94,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.AddFeature(collection, index, count, KernTag);
 
             // Enable contextual fractions.
-            for (int i = 0; i < collection.Count; i++)
+            for (int i = index; i < count; i++)
             {
                 GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
                 if (shapingData.CodePoint == FractionSlash || shapingData.CodePoint == Slash)
