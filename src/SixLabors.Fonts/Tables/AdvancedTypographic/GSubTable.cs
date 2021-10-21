@@ -125,45 +125,41 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
                 // Assign Substitution features to each glyph.
                 shaper.AssignFeatures(collection, index, count);
+                IEnumerable<Tag> stageFeatures = shaper.GetShapingStageFeatures();
 
-                foreach (Tag stageFeature in shaper.GetShapingStageFeatures())
+                int currentCount = collection.Count;
+                SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
+                foreach (Tag stageFeature in stageFeatures)
                 {
-                    List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = this.GetFeatureLookups(stageFeature, current);
+                    List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = this.GetFeatureLookups(in stageFeature, current);
                     if (lookups.Count == 0)
                     {
                         continue;
                     }
 
-                    int currentCount = collection.Count;
-
-                    for (ushort j = 0; j < count; j++)
+                    // Apply features in order.
+                    foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
                     {
-                        ushort offset = (ushort)(j + index);
+                        Tag feature = featureLookup.Feature;
+                        iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
 
-                        // Apply features in order.
-                        List<TagEntry> featuresToApply = collection.GetGlyphShapingData(offset).Features;
-                        foreach (TagEntry featureToApply in featuresToApply)
+                        while (iterator.Index < index + count)
                         {
-                            if (!featureToApply.Enabled)
+                            List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
+                            if (!HasFeature(glyphFeatures, in feature))
                             {
+                                iterator.Next();
                                 continue;
                             }
 
-                            foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
+                            featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
+                            iterator.Next();
+
+                            // Account for substitutions changing the length of the collection.
+                            if (collection.Count != currentCount)
                             {
-                                if (featureLookup.Feature != featureToApply.Tag)
-                                {
-                                    continue;
-                                }
-
-                                featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, offset, count - j);
-
-                                // Account for substitutions changing the length of the collection.
-                                if (collection.Count != currentCount)
-                                {
-                                    count = (ushort)(count - (currentCount - collection.Count));
-                                    currentCount = collection.Count;
-                                }
+                                count = (ushort)(count - (currentCount - collection.Count));
+                                currentCount = collection.Count;
                             }
                         }
                     }
@@ -171,7 +167,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
         }
 
-        private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(Tag stageFeature, ScriptClass script)
+        private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, ScriptClass script)
         {
             ScriptListTable scriptListTable = this.ScriptList.Default();
             Tag[] tags = UnicodeScriptTagMap.Instance[script];
@@ -193,7 +189,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return this.GetFeatureLookups(stageFeature, scriptListTable.LangSysTables);
         }
 
-        private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(Tag stageFeature, params LangSysTable[] langSysTables)
+        private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, params LangSysTable[] langSysTables)
         {
             List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = new();
             for (int i = 0; i < langSysTables.Length; i++)
@@ -221,6 +217,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             lookups.Sort((x, y) => x.Index - y.Index);
             return lookups;
+        }
+
+        private static bool HasFeature(List<TagEntry> glyphFeatures, in Tag feature)
+        {
+            for (int i = 0; i < glyphFeatures.Count; i++)
+            {
+                TagEntry entry = glyphFeatures[i];
+                if (entry.Tag == feature && entry.Enabled)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
