@@ -37,7 +37,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 iterator.Index = index;
                 iterator.Increment(sequenceIndex);
                 Gsub.LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                hasChanged |= lookup.TrySubstitution(fontMetrics, table, collection, feature, iterator.Index, count - iterator.Index);
+                hasChanged |= lookup.TrySubstitution(fontMetrics, table, collection, feature, iterator.Index, count - (iterator.Index - index));
 
                 // Account for substitutions changing the length of the collection.
                 if (collection.Count != currentCount)
