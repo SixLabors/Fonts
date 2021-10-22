@@ -175,7 +175,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 for (int j = 0; j < matches.Length && isMarkLigature; j++)
                 {
                     GlyphShapingData match = collection.GetGlyphShapingData(matches[j]);
-                    isMarkLigature = AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, match.GlyphIds[0], match);
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, match.GlyphIds[0], match))
+                    {
+                        isMarkLigature = false;
+                        break;
+                    }
                 }
 
                 int ligatureId = isMarkLigature ? 0 : collection.LigatureId++;
@@ -232,7 +236,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 }
 
                 // Delete the matched glyphs, and replace the current glyph with the ligature glyph
-                collection.Replace(index, compLength + 1, ligatureTable.GlyphId, ligatureId);
+                collection.Replace(index, matches, ligatureTable.GlyphId, ligatureId);
                 return true;
             }
 

@@ -132,27 +132,28 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Replaces a series of glyph ids starting at the given position with a new id.
+        /// Performs a 1:1 replacement of a glyph id at the given position while removing a series of glyph ids at the given positions within the sequence.
         /// </summary>
-        /// <param name="index">The zero-based starting index of the range of elements to replace.</param>
-        /// <param name="count">The number of elements to replace.</param>
+        /// <param name="index">The zero-based index of the element to replace.</param>
+        /// <param name="removalIndices">The indices at which to remove elements.</param>
         /// <param name="glyphId">The replacement glyph id.</param>
         /// <param name="ligatureId">The ligature id.</param>
-        public void Replace(int index, int count, ushort glyphId, int ligatureId)
+        public void Replace(int index, ReadOnlySpan<int> removalIndices, ushort glyphId, int ligatureId)
         {
-            // Remove the count starting at the at index.
-            int offset = this.offsets[index];
-            GlyphShapingData current = this.glyphs[offset];
-            for (int i = 0; i < count; i++)
+            // Remove the glyphs at each index.
+            // TODO: We will have to offset these indices by the leading index of the collection
+            // that the current shaper is working against.
+            for (int i = removalIndices.Length - 1; i >= 0; i--)
             {
-                this.glyphs.Remove(this.offsets[i + index]);
+                int match = removalIndices[i];
+                this.glyphs.Remove(this.offsets[match]);
+                this.offsets.RemoveAt(match);
             }
 
-            this.offsets.RemoveRange(index, count);
-
             // Assign our new id at the index.
+            int offset = this.offsets[index];
+            GlyphShapingData current = this.glyphs[offset];
             this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, ligatureId, 1);
-            this.offsets.Insert(index, offset);
         }
 
         /// <summary>
