@@ -108,25 +108,22 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 // Search backward for a base glyph.
-                int baseGlyphIterator = index;
-                ushort baseGlyphId;
-                while (--baseGlyphIterator >= 0)
+                int baseGlyphIndex = index;
+                while (--baseGlyphIndex >= 0)
                 {
-                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
-                    baseGlyphId = collection[baseGlyphIterator][0];
-                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, baseGlyphId, data))
+                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIndex);
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphIds[0], data))
                     {
                         break;
                     }
                 }
 
-                if (baseGlyphIterator < 0)
+                if (baseGlyphIndex < 0)
                 {
                     return false;
                 }
 
-                ushort baseGlyphIndex = (ushort)baseGlyphIterator;
-                baseGlyphId = collection[baseGlyphIndex][0];
+                ushort baseGlyphId = collection[baseGlyphIndex][0];
                 int ligatureIndex = this.ligatureCoverage.CoverageIndexOf(baseGlyphId);
                 if (ligatureIndex < 0)
                 {
@@ -138,15 +135,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // If yes, we can directly use the component index. If not, we attach the mark
                 // glyph to the last component of the ligature.
                 LigatureAttachTable ligatureAttach = this.ligatureArrayTable.LigatureAttachTables[ligatureIndex];
-                GlyphShapingData shapingDataMarkGlyph = collection.GetGlyphShapingData(index);
-                GlyphShapingData shapingDataLigGlyph = collection.GetGlyphShapingData(baseGlyphIndex);
-                int compIndex = shapingDataLigGlyph.LigatureId > 0 && shapingDataLigGlyph.LigatureId == shapingDataMarkGlyph.LigatureId && shapingDataMarkGlyph.LigatureComponentCount > 0
-                    ? Math.Min(shapingDataMarkGlyph.LigatureComponentCount, shapingDataLigGlyph.GlyphIds.Length) - 1
-                    : shapingDataLigGlyph.GlyphIds.Length - 1;
+                GlyphShapingData markGlyph = collection.GetGlyphShapingData(index);
+                GlyphShapingData ligGlyph = collection.GetGlyphShapingData(baseGlyphIndex);
+                int compIndex = ligGlyph.LigatureId > 0 && ligGlyph.LigatureId == markGlyph.LigatureId && markGlyph.LigatureComponentCount > 0
+                    ? Math.Min(Math.Max(markGlyph.LigatureComponentCount, 1), ligGlyph.GlyphIds.Length) - 1
+                    : ligGlyph.GlyphIds.Length - 1;
 
                 MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
                 AnchorTable baseAnchor = ligatureAttach.ComponentRecords[compIndex].LigatureAnchorTables[markRecord.MarkClass];
-                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, baseGlyphIndex, baseGlyphId, glyphId);
+                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, (ushort)baseGlyphIndex, baseGlyphId, glyphId);
 
                 return true;
             }

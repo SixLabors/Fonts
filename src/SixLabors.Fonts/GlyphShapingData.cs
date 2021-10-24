@@ -22,7 +22,7 @@ namespace SixLabors.Fonts
         /// <param name="direction">The text direction.</param>
         /// <param name="glyphIds">The collection of glyph ids.</param>
         public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
-            : this(codePoint, direction, glyphIds, new List<TagEntry>(), 0, 1)
+            : this(codePoint, direction, glyphIds, new List<TagEntry>(), 0, 0)
         {
         }
 

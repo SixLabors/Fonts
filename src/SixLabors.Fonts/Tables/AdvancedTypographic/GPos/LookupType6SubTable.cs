@@ -140,8 +140,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     // If ligature ids don't match, it may be the case that one of the marks
                     // itself is a ligature, in which case match.
-                    if ((shapingDataCurGlyph.LigatureId > 0 && shapingDataCurGlyph.LigatureComponentCount > 0)
-                        || (shapingDataPrevGlyph.LigatureId > 0 && shapingDataPrevGlyph.LigatureComponentCount > 0))
+                    if ((shapingDataCurGlyph.LigatureId > 0 && shapingDataCurGlyph.LigatureComponentCount <= 0)
+                        || (shapingDataPrevGlyph.LigatureId > 0 && shapingDataPrevGlyph.LigatureComponentCount <= 0))
                     {
                         good = true;
                     }

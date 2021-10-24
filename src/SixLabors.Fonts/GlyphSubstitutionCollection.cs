@@ -153,7 +153,7 @@ namespace SixLabors.Fonts
             // Assign our new id at the index.
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, ligatureId, 1);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, new[] { glyphId }, current.Features, ligatureId, 0);
         }
 
         /// <summary>
@@ -161,12 +161,12 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphIds">The collection of replacement glyph ids.</param>
-        public void Replace(int index, IEnumerable<ushort> glyphIds)
+        public void Replace(int index, ReadOnlySpan<ushort> glyphIds)
         {
+            // TODO: FontKit stores the ids in sequence with increasing ligature component values.
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            ushort[] ids = glyphIds.ToArray();
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, ids, current.Features, current.LigatureId, ids.Length);
+            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.Direction, glyphIds.ToArray(), current.Features, current.LigatureId, 0);
         }
     }
 }
