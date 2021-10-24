@@ -102,7 +102,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 int markIndex = this.markCoverage.CoverageIndexOf(glyphId);
-                if (markIndex == -1)
+                if (markIndex < 0)
                 {
                     return false;
                 }
@@ -138,10 +138,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // If yes, we can directly use the component index. If not, we attach the mark
                 // glyph to the last component of the ligature.
                 LigatureAttachTable ligatureAttach = this.ligatureArrayTable.LigatureAttachTables[ligatureIndex];
-                int markGlyphIdx = markIndex;
-                int ligGlyphIndex = ligatureIndex;
-                GlyphShapingData shapingDataMarkGlyph = collection.GetGlyphShapingData(markGlyphIdx);
-                GlyphShapingData shapingDataLigGlyph = collection.GetGlyphShapingData(ligGlyphIndex);
+                GlyphShapingData shapingDataMarkGlyph = collection.GetGlyphShapingData(index);
+                GlyphShapingData shapingDataLigGlyph = collection.GetGlyphShapingData(baseGlyphIndex);
                 int compIndex = shapingDataLigGlyph.LigatureId > 0 && shapingDataLigGlyph.LigatureId == shapingDataMarkGlyph.LigatureId && shapingDataMarkGlyph.LigatureComponentCount > 0
                     ? Math.Min(shapingDataMarkGlyph.LigatureComponentCount, shapingDataLigGlyph.GlyphIds.Length) - 1
                     : shapingDataLigGlyph.GlyphIds.Length - 1;
