@@ -255,9 +255,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
             else
             {
+                // TODO: We may have to store each codepoint. FontKit checks all.
                 isMark = CodePoint.IsMark(shapingData.CodePoint);
                 isBase = !isMark;
-                isLigature = shapingData.LigatureComponentCount > 1;
+                isLigature = shapingData.CodePointCount > 1;
             }
 
             return new GlyphShapingClass(isMark, isBase, isLigature, markAttachmentType);

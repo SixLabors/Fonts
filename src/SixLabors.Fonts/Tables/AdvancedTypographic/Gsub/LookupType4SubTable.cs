@@ -183,8 +183,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 }
 
                 int ligatureId = isMarkLigature ? 0 : collection.LigatureId++;
+
                 int lastLigatureId = data.LigatureId;
-                int lastComponentCount = data.LigatureComponentCount;
+                int lastComponentCount = data.CodePointCount;
                 int currentComponentCount = lastComponentCount;
                 int idx = index + 1;
 
@@ -202,8 +203,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                         while (idx < matchIndex)
                         {
                             GlyphShapingData current = collection.GetGlyphShapingData(idx);
-                            int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(current.LigatureComponentCount, lastComponentCount);
-                            current = new GlyphShapingData(current.CodePoint, current.Direction, current.GlyphIds, current.Features, ligatureId, ligatureComponent);
+                            int currentLC = current.LigatureComponent == -1 ? 1 : current.LigatureComponent;
+                            int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(currentLC, lastComponentCount);
+                            current = new GlyphShapingData(current.CodePoint, current.CodePointCount, current.Direction, current.GlyphIds, current.Features, ligatureId, ligatureComponent);
                             collection.SetGlyphShapingData(idx, current);
                             idx++;
                         }
@@ -211,7 +213,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
                     GlyphShapingData last = collection.GetGlyphShapingData(idx);
                     lastLigatureId = last.LigatureId;
-                    lastComponentCount = last.LigatureComponentCount;
+                    lastComponentCount = last.CodePointCount;
                     currentComponentCount += lastComponentCount;
                     idx++; // Skip base glyph
                 }
@@ -219,13 +221,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 // Adjust ligature components for any marks following
                 if (lastLigatureId > 0 && !isMarkLigature)
                 {
-                    for (int j = idx; j < collection.Count; j++)
+                    // Only check glyphs managed by current shaper.
+                    int followingCount = count - (idx - index);
+                    for (int j = idx; j < followingCount; j++)
                     {
                         GlyphShapingData current = collection.GetGlyphShapingData(j);
                         if (current.LigatureId == lastLigatureId)
                         {
-                            int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(current.LigatureComponentCount, lastComponentCount);
-                            current = new GlyphShapingData(current.CodePoint, current.Direction, current.GlyphIds, current.Features, current.LigatureId, ligatureComponent);
+                            int currentLC = current.LigatureComponent == -1 ? 1 : current.LigatureComponent;
+                            int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(currentLC, lastComponentCount);
+                            current = new GlyphShapingData(current.CodePoint, current.CodePointCount, current.Direction, current.GlyphIds, current.Features, current.LigatureId, ligatureComponent);
                             collection.SetGlyphShapingData(j, current);
                         }
                         else

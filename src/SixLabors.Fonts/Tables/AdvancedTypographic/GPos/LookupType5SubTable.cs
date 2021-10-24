@@ -137,9 +137,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 LigatureAttachTable ligatureAttach = this.ligatureArrayTable.LigatureAttachTables[ligatureIndex];
                 GlyphShapingData markGlyph = collection.GetGlyphShapingData(index);
                 GlyphShapingData ligGlyph = collection.GetGlyphShapingData(baseGlyphIndex);
-                int compIndex = ligGlyph.LigatureId > 0 && ligGlyph.LigatureId == markGlyph.LigatureId && markGlyph.LigatureComponentCount > 0
-                    ? Math.Min(Math.Max(markGlyph.LigatureComponentCount, 1), ligGlyph.GlyphIds.Length) - 1
-                    : ligGlyph.GlyphIds.Length - 1;
+                int compIndex = ligGlyph.LigatureId > 0 && ligGlyph.LigatureId == markGlyph.LigatureId && markGlyph.LigatureComponent > 0
+                    ? Math.Min(markGlyph.LigatureComponent, ligGlyph.CodePointCount) - 1
+                    : ligGlyph.CodePointCount - 1;
 
                 MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
                 AnchorTable baseAnchor = ligatureAttach.ComponentRecords[compIndex].LigatureAnchorTables[markRecord.MarkClass];

@@ -151,7 +151,7 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs[i] = new GlyphShapingData(codePoint, data.Direction, glyphIds, new List<TagEntry>(), data.LigatureId, data.LigatureComponentCount);
+                    this.glyphs[i] = new GlyphShapingData(codePoint, data.CodePointCount, data.Direction, glyphIds, new List<TagEntry>(), data.LigatureId, data.LigatureComponent);
                     this.offsets[i] = offset;
                     this.map[offset] = m.ToArray();
                 }
@@ -197,7 +197,7 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs.Add(new GlyphShapingData(codePoint, data.Direction, glyphIds, new List<TagEntry>(), data.LigatureId, data.LigatureComponentCount));
+                    this.glyphs.Add(new GlyphShapingData(codePoint, data.CodePointCount, data.Direction, glyphIds, new List<TagEntry>(), data.LigatureId, data.LigatureComponent));
                     this.offsets.Add(offset);
                     this.map[offset] = m.ToArray();
                 }

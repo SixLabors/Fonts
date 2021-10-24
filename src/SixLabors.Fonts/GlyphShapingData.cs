@@ -18,18 +18,19 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphShapingData"/> struct.
         /// </summary>
-        /// <param name="codePoint">The codepoint.</param>
+        /// <param name="codePoint">The leading codepoint.</param>
         /// <param name="direction">The text direction.</param>
         /// <param name="glyphIds">The collection of glyph ids.</param>
         public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
-            : this(codePoint, direction, glyphIds, new List<TagEntry>(), 0, 0)
+            : this(codePoint, 1, direction, glyphIds, new List<TagEntry>(), 0, -1)
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphShapingData"/> struct.
         /// </summary>
-        /// <param name="codePoint">The codepoint.</param>
+        /// <param name="codePoint">The leading codepoint.</param>
+        /// <param name="codePointCount">The codepoint count represented by this glyph.</param>
         /// <param name="direction">The text direction.</param>
         /// <param name="glyphIds">The collection of glyph ids.</param>
         /// <param name="features">The collection of features.</param>
@@ -37,6 +38,7 @@ namespace SixLabors.Fonts
         /// <param name="ligatureComponents">The component count of the glyph.</param>
         public GlyphShapingData(
             CodePoint codePoint,
+            int codePointCount,
             TextDirection direction,
             ushort[] glyphIds,
             List<TagEntry> features,
@@ -44,17 +46,23 @@ namespace SixLabors.Fonts
             int ligatureComponents)
         {
             this.CodePoint = codePoint;
+            this.CodePointCount = codePointCount;
             this.Direction = direction;
             this.GlyphIds = glyphIds;
             this.Features = features;
             this.LigatureId = ligatureId;
-            this.LigatureComponentCount = ligatureComponents;
+            this.LigatureComponent = ligatureComponents;
         }
 
         /// <summary>
-        /// Gets the codepoint.
+        /// Gets the leading codepoint.
         /// </summary>
         public CodePoint CodePoint { get; }
+
+        /// <summary>
+        /// Gets the codepoint count represented by this glyph.
+        /// </summary>
+        public int CodePointCount { get; }
 
         /// <summary>
         /// Gets the text direction.
@@ -72,9 +80,9 @@ namespace SixLabors.Fonts
         public int LigatureId { get; }
 
         /// <summary>
-        /// Gets the component count of the glyph.
+        /// Gets the ligature component index of the glyph.
         /// </summary>
-        public int LigatureComponentCount { get; }
+        public int LigatureComponent { get; }
 
         /// <summary>
         /// Gets the collection of features.
@@ -83,6 +91,6 @@ namespace SixLabors.Fonts
 
         private string DebuggerDisplay
             => FormattableString
-            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.LigatureId} : {this.LigatureComponentCount} : [{string.Join(",", this.GlyphIds)}]");
+            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.LigatureId} : {this.LigatureComponent} : [{string.Join(",", this.GlyphIds)}]");
     }
 }
