@@ -104,28 +104,22 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 // Search backward for a base glyph.
-                // TODO: Fontkit stores an extra property "ligatureComponent" in our glyph shaping data?
-                int baseGlyphIterator = index;
-                ushort baseGlyphId;
-                ushort baseGlyphIndex;
-                while (--baseGlyphIterator >= 0)
+                int baseGlyphIndex = index;
+                while (--baseGlyphIndex >= 0)
                 {
-                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
-                    baseGlyphIndex = (ushort)baseGlyphIterator;
-                    baseGlyphId = collection[baseGlyphIndex][0];
-                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, baseGlyphId, data))
+                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIndex);
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphIds[0], data) && !(data.LigatureComponent > 0))
                     {
                         break;
                     }
                 }
 
-                if (baseGlyphIterator < 0)
+                if (baseGlyphIndex < 0)
                 {
                     return false;
                 }
 
-                baseGlyphIndex = (ushort)baseGlyphIterator;
-                baseGlyphId = collection[baseGlyphIndex][0];
+                ushort baseGlyphId = collection[baseGlyphIndex][0];
                 int baseIndex = this.baseCoverage.CoverageIndexOf(baseGlyphId);
                 if (baseIndex < 0)
                 {
@@ -134,7 +128,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
                 AnchorTable baseAnchor = this.baseArrayTable.BaseRecords[baseIndex].BaseAnchorTables[markRecord.MarkClass];
-                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, baseGlyphIndex, baseGlyphId, glyphId);
+                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, (ushort)baseGlyphIndex, glyphId);
 
                 return true;
             }

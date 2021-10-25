@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
@@ -123,6 +124,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     count++;
                 }
 
+                if (shaper.MarkZeroingMode == MarkZeroingMode.PreGPos)
+                {
+                    ZeroMarkAdvances(fontMetrics, collection, index, count);
+                }
+
                 // Assign Substitution features to each glyph.
                 shaper.AssignFeatures(collection, index, count);
                 IEnumerable<Tag> stageFeatures = shaper.GetShapingStageFeatures();
@@ -155,6 +161,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         }
                     }
                 }
+
+                if (shaper.MarkZeroingMode == MarkZeroingMode.PostGpos)
+                {
+                    ZeroMarkAdvances(fontMetrics, collection, index, count);
+                }
+
+                FixMarkAttachment(fontMetrics, collection, index, count);
             }
 
             return updated;
@@ -224,6 +237,57 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
 
             return false;
+        }
+
+        private static void FixMarkAttachment(FontMetrics fontMetrics, GlyphPositioningCollection collection, ushort index, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                int currentIndex = i + index;
+                GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
+                if (data.MarkAttachment != -1)
+                {
+                    int j = data.MarkAttachment;
+                    GlyphShapingData markData = collection.GetGlyphShapingData(j);
+                    Vector2 curOffset = collection.GetOffset(fontMetrics, (ushort)currentIndex, data.GlyphIds[0]);
+                    Vector2 xy = Vector2.Zero;// collection.GetOffset(fontMetrics, (ushort)j, markData.GlyphIds[0]);
+
+                    if (data.Direction == TextDirection.LeftToRight)
+                    {
+                        for (int k = j; k < i; k++)
+                        {
+                            markData = collection.GetGlyphShapingData(k);
+                            Vector2 advance = collection.GetAdvance(fontMetrics, (ushort)k, markData.GlyphIds[0]);
+                            xy -= advance;
+                        }
+                    }
+                    else
+                    {
+                        for (int k = j + 1; k < i + 1; k++)
+                        {
+                            markData = collection.GetGlyphShapingData(k);
+                            Vector2 advance = collection.GetAdvance(fontMetrics, (ushort)k, markData.GlyphIds[0]);
+                            xy += advance;
+                        }
+                    }
+
+                    collection.Offset(fontMetrics, (ushort)currentIndex, data.GlyphIds[0], (short)xy.X, (short)xy.Y);
+                }
+            }
+        }
+
+        private static void ZeroMarkAdvances(FontMetrics fontMetrics, GlyphPositioningCollection collection, ushort index, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                int currentIndex = i + index;
+                GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
+                ushort glyphId = data.GlyphIds[0];
+                if (AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphIds[0], data))
+                {
+                    collection.SetAdvance(fontMetrics, (ushort)currentIndex, glyphId, 0, 0);
+                }
+            }
         }
     }
 }

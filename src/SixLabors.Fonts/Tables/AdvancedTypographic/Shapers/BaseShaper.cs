@@ -7,6 +7,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 {
     internal abstract class BaseShaper
     {
+        public MarkZeroingMode MarkZeroingMode { get; protected set; }
+
         /// <summary>
         /// Assigns the substitution features to each glyph within the collection.
         /// </summary>

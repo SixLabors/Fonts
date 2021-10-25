@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
@@ -128,7 +127,16 @@ namespace SixLabors.Fonts
         {
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.CodePointCount, current.Direction, new[] { glyphId }, current.Features, current.LigatureId, current.LigatureComponent);
+            this.glyphs[offset] = new GlyphShapingData(
+                current.CodePoint,
+                current.CodePointCount,
+                current.Direction,
+                new[] { glyphId },
+                current.Features,
+                current.LigatureId,
+                current.LigatureComponent,
+                current.MarkAttachment,
+                current.CursiveAttachment);
         }
 
         /// <summary>
@@ -156,7 +164,16 @@ namespace SixLabors.Fonts
             // Assign our new id at the index.
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.CodePointCount + codePointCount, current.Direction, new[] { glyphId }, current.Features, ligatureId, -1);
+            this.glyphs[offset] = new GlyphShapingData(
+                current.CodePoint,
+                current.CodePointCount + codePointCount,
+                current.Direction,
+                new[] { glyphId },
+                current.Features,
+                ligatureId,
+                -1,
+                -1,
+                -1);
         }
 
         /// <summary>
@@ -169,7 +186,16 @@ namespace SixLabors.Fonts
             // TODO: FontKit stores the ids in sequence with increasing ligature component values.
             int offset = this.offsets[index];
             GlyphShapingData current = this.glyphs[offset];
-            this.glyphs[offset] = new GlyphShapingData(current.CodePoint, current.CodePointCount, current.Direction, glyphIds.ToArray(), current.Features, current.LigatureId, 0);
+            this.glyphs[offset] = new GlyphShapingData(
+                current.CodePoint,
+                current.CodePointCount,
+                current.Direction,
+                glyphIds.ToArray(),
+                current.Features,
+                current.LigatureId,
+                0,
+                -1,
+                -1);
         }
     }
 }

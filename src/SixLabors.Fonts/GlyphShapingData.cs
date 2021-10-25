@@ -22,7 +22,7 @@ namespace SixLabors.Fonts
         /// <param name="direction">The text direction.</param>
         /// <param name="glyphIds">The collection of glyph ids.</param>
         public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
-            : this(codePoint, 1, direction, glyphIds, new List<TagEntry>(), 0, -1)
+            : this(codePoint, 1, direction, glyphIds, new List<TagEntry>(), 0, -1, -1, -1)
         {
         }
 
@@ -36,6 +36,8 @@ namespace SixLabors.Fonts
         /// <param name="features">The collection of features.</param>
         /// <param name="ligatureId">The id of any ligature this glyph is a member of.</param>
         /// <param name="ligatureComponents">The component count of the glyph.</param>
+        /// <param name="markAttachment">The index of any mark attachment.</param>
+        /// <param name="cursiveAttachment">The index of any cursive attachment.</param>
         public GlyphShapingData(
             CodePoint codePoint,
             int codePointCount,
@@ -43,7 +45,9 @@ namespace SixLabors.Fonts
             ushort[] glyphIds,
             List<TagEntry> features,
             int ligatureId,
-            int ligatureComponents)
+            int ligatureComponents,
+            int markAttachment,
+            int cursiveAttachment)
         {
             this.CodePoint = codePoint;
             this.CodePointCount = codePointCount;
@@ -52,6 +56,8 @@ namespace SixLabors.Fonts
             this.Features = features;
             this.LigatureId = ligatureId;
             this.LigatureComponent = ligatureComponents;
+            this.MarkAttachment = markAttachment;
+            this.CursiveAttachment = cursiveAttachment;
         }
 
         /// <summary>
@@ -83,6 +89,16 @@ namespace SixLabors.Fonts
         /// Gets the ligature component index of the glyph.
         /// </summary>
         public int LigatureComponent { get; }
+
+        /// <summary>
+        /// Gets the index of any mark attachment.
+        /// </summary>
+        public int MarkAttachment { get; }
+
+        /// <summary>
+        /// Gets the index of any cursive attachment.
+        /// </summary>
+        public int CursiveAttachment { get; }
 
         /// <summary>
         /// Gets the collection of features.

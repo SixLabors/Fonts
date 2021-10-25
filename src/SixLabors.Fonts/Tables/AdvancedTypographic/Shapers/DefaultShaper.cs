@@ -54,7 +54,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static readonly CodePoint Slash = new(0x002F);
 
-        private List<Tag> stageFeatures = new();
+        private readonly List<Tag> stageFeatures = new();
+
+        internal DefaultShaper() => this.MarkZeroingMode = MarkZeroingMode.PostGpos;
+
+        protected DefaultShaper(MarkZeroingMode markZeroingMode)
+            => this.MarkZeroingMode = markZeroingMode;
 
         /// <inheritdoc />
         public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)

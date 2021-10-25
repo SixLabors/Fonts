@@ -193,7 +193,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             AnchorTable baseAnchor,
             MarkRecord markRecord,
             ushort baseGlyphIndex,
-            ushort baseGlyphId,
             ushort glyphId)
         {
             short baseX = baseAnchor.XCoordinate;
@@ -201,24 +200,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             short markX = markRecord.MarkAnchorTable.XCoordinate;
             short markY = markRecord.MarkAnchorTable.YCoordinate;
 
-            FontRectangle baseBounds = collection.GetAdvanceBounds(fontMetrics, baseGlyphIndex, baseGlyphId);
-            Vector2 glyphOffset = collection.GetOffset(fontMetrics, index, glyphId);
-
-            // Negate original offset to reset position to 0,0.
-            short xo = (short)(glyphOffset.X * -1);
-            short yo = (short)(glyphOffset.Y * -1);
-
-            // Now offset to match the base position.
-            // Advance bounds width/height already include the bounds min offset
-            xo -= (short)baseBounds.Width;
-            yo += (short)baseBounds.Y;
-
-            // Now add new offset.
-            xo += (short)(baseX - markX);
-            yo += (short)(baseY - markY);
-
-            // TODO: Consider vertical layout modes. TTB and BBT
-            collection.Offset(fontMetrics, index, glyphId, xo, yo);
+            collection.Offset(fontMetrics, index, glyphId, (short)(baseX - markX), (short)(baseY - markY));
+            collection.SetMarkAttachment(index, baseGlyphIndex);
         }
 
         public static bool IsMarkGlyph(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
