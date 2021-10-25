@@ -248,9 +248,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 if (data.MarkAttachment != -1)
                 {
                     int j = data.MarkAttachment;
-                    GlyphShapingData markData = collection.GetGlyphShapingData(j);
-                    Vector2 curOffset = collection.GetOffset(fontMetrics, (ushort)currentIndex, data.GlyphIds[0]);
-                    Vector2 xy = Vector2.Zero;// collection.GetOffset(fontMetrics, (ushort)j, markData.GlyphIds[0]);
+                    GlyphShapingData markData;
+                    Vector2 xy = Vector2.Zero;
 
                     if (data.Direction == TextDirection.LeftToRight)
                     {

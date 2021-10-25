@@ -165,7 +165,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             FontRectangle[] expectedFontRectangles =
             {
                 new(3.04f, 12.8703995f, 5.28f, 4.6016f),
-                new(2.40000057f, 13.4463987f, 5.28f, 4.5376f),
+                new(2.40000057f, 13.184f, 5.28f, 4.5376f),
             };
 
             // act
@@ -201,7 +201,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             FontRectangle[] expectedFontRectangles =
             {
                 new(3.04f, 12.8703995f, 5.28f, 4.6016f),
-                new(2.40000057f, 13.4463987f, 5.28f, 4.5376f),
+                new(2.40000057f, 13.184f, 5.28f, 4.5376f),
             };
 
             // act
@@ -237,7 +237,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             FontRectangle[] expectedFontRectangles =
             {
                 new(3.04f, 12.8703995f, 5.28f, 4.6016f),
-                new(2.40000057f, 13.4463987f, 5.28f, 4.5376f),
+                new(2.40000057f, 13.376f, 5.28f, 4.5376f),
             };
 
             // act
