@@ -526,6 +526,42 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             }
         }
 
+        [Fact]
+        public void MarkToMarkAttachment_Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.MeQuranFile).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+
+            string testStr = "\u0631\u0651\u064E";
+            int[] expectedGlyphIndices = { 47, 50, 23 };
+            FontRectangle[] expectedFontRectangles =
+            {
+                new(1.34765625f, 5.4609375f, 2.19140625f, 1.80078125f),
+                new(1.640625f, 7.17578125f, 1.74609375f, 1.6171875f),
+                new(0.15625f, 9.8203125f, 3.9140625f, 3.8515625f),
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+
+            for (int i = 0; i < expectedFontRectangles.Length; i++)
+            {
+                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i]);
+            }
+        }
+
         private static void CompareRectangle(FontRectangle expected, FontRectangle actual, int precision = 4)
         {
             Assert.Equal(expected.X, actual.X, precision);
