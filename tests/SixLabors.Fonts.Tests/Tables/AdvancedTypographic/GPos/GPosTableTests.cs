@@ -15,12 +15,12 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             // arrange
             Font gPosFont = new FontCollection().Add(TestFonts.GposLookupType1Format1).CreateFont(8);
             var renderer = new ColorGlyphRenderer();
-            string testStr = "\u0015\u0014"; // second character XPlacement should be adjusted by minus 200
-            int[] expectedGlyphIndices = { 23, 22 };
+            string testStr = "\u0012\u0014"; // XPlacement should be adjusted by minus 200 for both glyphs.
+            int[] expectedGlyphIndices = { 20, 22 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(2.0608f, 12.8703995f, 6.2592f, 4.5312f),
-                new(9.10080051f, 12.8639984f, 6.2592f, 4.5056f),
+                new(1.76f, 12.8703995f, 5.28f, 4.6016f),
+                new(10.3808f, 12.8639984f, 6.2592f, 4.5056f),
             };
 
             // act
