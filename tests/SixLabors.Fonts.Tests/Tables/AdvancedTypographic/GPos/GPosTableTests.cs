@@ -491,6 +491,41 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             }
         }
 
+        [Fact]
+        public void MarkAnchoring_Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.TimesNewRomanFile).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+
+            string testStr = "\u0644\u0651"; // /lam-arab/arabicshaddacomb
+            int[] expectedGlyphIndices = { 759, 989 };
+            FontRectangle[] expectedFontRectangles =
+            {
+                new(0.9609375f, 1.03124952f, 1.41796875f, 1.2578125f),
+                new(0.27734375f, 1.26953077f, 3.7734375f, 6.14453125f),
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font)
+            {
+                ApplyKerning = true
+            });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+
+            for (int i = 0; i < expectedFontRectangles.Length; i++)
+            {
+                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i]);
+            }
+        }
+
         private static void CompareRectangle(FontRectangle expected, FontRectangle actual, int precision = 4)
         {
             Assert.Equal(expected.X, actual.X, precision);
