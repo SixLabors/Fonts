@@ -74,22 +74,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             ushort index,
             int count)
         {
-            for (ushort i = 0; i < count; i++)
+            ushort glyphId = collection[index][0];
+            if (glyphId == 0)
             {
-                ushort glyphId = collection[i + index][0];
-                if (glyphId == 0)
-                {
-                    return false;
-                }
+                return false;
+            }
 
-                int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-                if (coverage > -1)
-                {
-                    ValueRecord record = this.valueRecord;
-                    collection.Offset(fontMetrics, (ushort)(i + index), glyphId, record.XPlacement, record.YPlacement);
-                    collection.Advance(fontMetrics, (ushort)(i + index), glyphId, record.XAdvance, record.YAdvance);
-                    return true;
-                }
+            int coverage = this.coverageTable.CoverageIndexOf(glyphId);
+            if (coverage > -1)
+            {
+                ValueRecord record = this.valueRecord;
+                AdvancedTypographicUtils.ApplyPosition(collection, index, record);
+
+                return true;
             }
 
             return false;
@@ -148,22 +145,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             ushort index,
             int count)
         {
-            for (ushort i = 0; i < count; i++)
+            ushort glyphId = collection[index][0];
+            if (glyphId == 0)
             {
-                ushort glyphId = collection[i + index][0];
-                if (glyphId == 0)
-                {
-                    return false;
-                }
+                return false;
+            }
 
-                int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-                if (coverage > -1)
-                {
-                    ValueRecord record = this.valueRecords[coverage];
-                    collection.Offset(fontMetrics, i, glyphId, record.XPlacement, record.YPlacement);
-                    collection.Advance(fontMetrics, i, glyphId, record.XAdvance, record.YAdvance);
-                    return true;
-                }
+            int coverage = this.coverageTable.CoverageIndexOf(glyphId);
+            if (coverage > -1)
+            {
+                ValueRecord record = this.valueRecords[coverage];
+                AdvancedTypographicUtils.ApplyPosition(collection, index, record);
+
+                return true;
             }
 
             return false;

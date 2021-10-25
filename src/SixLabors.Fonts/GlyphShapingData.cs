@@ -13,97 +13,88 @@ namespace SixLabors.Fonts
     /// Contains supplementary data that allows the shaping of glyphs.
     /// </summary>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    internal readonly struct GlyphShapingData
+    internal class GlyphShapingData
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlyphShapingData"/> struct.
+        /// Initializes a new instance of the <see cref="GlyphShapingData"/> class.
         /// </summary>
-        /// <param name="codePoint">The leading codepoint.</param>
-        /// <param name="direction">The text direction.</param>
-        /// <param name="glyphIds">The collection of glyph ids.</param>
-        public GlyphShapingData(CodePoint codePoint, TextDirection direction, ushort[] glyphIds)
-            : this(codePoint, 1, direction, glyphIds, new List<TagEntry>(), 0, -1, -1, -1)
+        public GlyphShapingData()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlyphShapingData"/> struct.
+        /// Initializes a new instance of the <see cref="GlyphShapingData"/> class.
         /// </summary>
-        /// <param name="codePoint">The leading codepoint.</param>
-        /// <param name="codePointCount">The codepoint count represented by this glyph.</param>
-        /// <param name="direction">The text direction.</param>
-        /// <param name="glyphIds">The collection of glyph ids.</param>
-        /// <param name="features">The collection of features.</param>
-        /// <param name="ligatureId">The id of any ligature this glyph is a member of.</param>
-        /// <param name="ligatureComponents">The component count of the glyph.</param>
-        /// <param name="markAttachment">The index of any mark attachment.</param>
-        /// <param name="cursiveAttachment">The index of any cursive attachment.</param>
-        public GlyphShapingData(
-            CodePoint codePoint,
-            int codePointCount,
-            TextDirection direction,
-            ushort[] glyphIds,
-            List<TagEntry> features,
-            int ligatureId,
-            int ligatureComponents,
-            int markAttachment,
-            int cursiveAttachment)
+        /// <param name="data">The data to copy properties from.</param>
+        /// <param name="clearFeatures">Whether to clear features.</param>
+        public GlyphShapingData(GlyphShapingData data, bool clearFeatures = false)
         {
-            this.CodePoint = codePoint;
-            this.CodePointCount = codePointCount;
-            this.Direction = direction;
-            this.GlyphIds = glyphIds;
-            this.Features = features;
-            this.LigatureId = ligatureId;
-            this.LigatureComponent = ligatureComponents;
-            this.MarkAttachment = markAttachment;
-            this.CursiveAttachment = cursiveAttachment;
+            this.CodePoint = data.CodePoint;
+            this.CodePointCount = data.CodePointCount;
+            this.Direction = data.Direction;
+            this.GlyphIds = data.GlyphIds;
+            this.LigatureId = data.LigatureId;
+            this.LigatureComponent = data.LigatureComponent;
+            this.MarkAttachment = data.MarkAttachment;
+            this.CursiveAttachment = data.CursiveAttachment;
+
+            if (!clearFeatures)
+            {
+                this.Features = data.Features;
+            }
+
+            this.Bounds = data.Bounds;
         }
 
         /// <summary>
-        /// Gets the leading codepoint.
+        /// Gets or sets the leading codepoint.
         /// </summary>
-        public CodePoint CodePoint { get; }
+        public CodePoint CodePoint { get; set; }
 
         /// <summary>
-        /// Gets the codepoint count represented by this glyph.
+        /// Gets or sets the codepoint count represented by this glyph.
         /// </summary>
-        public int CodePointCount { get; }
+        public int CodePointCount { get; set; } = 1;
 
         /// <summary>
-        /// Gets the text direction.
+        /// Gets or sets the text direction.
         /// </summary>
-        public TextDirection Direction { get; }
+        public TextDirection Direction { get; set; }
 
         /// <summary>
-        /// Gets the collection of glyph ids.
+        /// Gets or sets the collection of glyph ids.
         /// </summary>
-        public ushort[] GlyphIds { get; }
+        public ushort[] GlyphIds { get; set; } = Array.Empty<ushort>();
 
         /// <summary>
-        /// Gets the id of any ligature this glyph is a member of.
+        /// Gets or sets the id of any ligature this glyph is a member of.
         /// </summary>
-        public int LigatureId { get; }
+        public int LigatureId { get; set; } = 0;
 
         /// <summary>
-        /// Gets the ligature component index of the glyph.
+        /// Gets or sets the ligature component index of the glyph.
         /// </summary>
-        public int LigatureComponent { get; }
+        public int LigatureComponent { get; set; } = -1;
 
         /// <summary>
-        /// Gets the index of any mark attachment.
+        /// Gets or sets the index of any mark attachment.
         /// </summary>
-        public int MarkAttachment { get; }
+        public int MarkAttachment { get; set; } = -1;
 
         /// <summary>
-        /// Gets the index of any cursive attachment.
+        /// Gets or sets the index of any cursive attachment.
         /// </summary>
-        public int CursiveAttachment { get; }
+        public int CursiveAttachment { get; set; } = -1;
 
         /// <summary>
-        /// Gets the collection of features.
+        /// Gets or sets the collection of features.
         /// </summary>
-        public List<TagEntry> Features { get; }
+        public List<TagEntry> Features { get; set; } = new List<TagEntry>();
+
+        /// <summary>
+        /// Gets or sets the shaping bounds.
+        /// </summary>
+        public GlyphShapingBounds Bounds { get; set; } = new(0, 0, 0, 0);
 
         private string DebuggerDisplay
             => FormattableString

@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
@@ -50,14 +49,6 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc />
         public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index];
-
-        /// <summary>
-        /// Sets the shaping data at the specified position.
-        /// </summary>
-        /// <param name="index">The zero-based index of the elements to get.</param>
-        /// <param name="data">The shaping data.</param>
-        internal void SetGlyphShapingData(int index, GlyphShapingData data)
-            => this.glyphs[index] = data;
 
         /// <inheritdoc />
         public void AddShapingFeature(int index, TagEntry feature)
@@ -121,11 +112,12 @@ namespace SixLabors.Fonts
             for (int i = 0; i < this.offsets.Count; i++)
             {
                 int offset = this.offsets[i];
-                if (!collection.TryGetGlyphShapingDataAtOffset(offset, out GlyphShapingData data))
+                if (!collection.TryGetGlyphShapingDataAtOffset(offset, out GlyphShapingData? data))
                 {
                     // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
                     // then we end up with orphaned fallbacks. We need to remove them.
                     orphans.Add(i);
+                    continue;
                 }
 
                 GlyphMetrics[] metrics = this.map[offset];
@@ -159,30 +151,20 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs[i] = new GlyphShapingData(
-                        codePoint,
-                        data.CodePointCount,
-                        data.Direction,
-                        glyphIds,
-                        new List<TagEntry>(),
-                        data.LigatureId,
-                        data.LigatureComponent,
-                        data.MarkAttachment,
-                        data.CursiveAttachment);
-
+                    GlyphMetrics[] gm = m.ToArray();
+                    this.map[offset] = gm;
+                    this.glyphs[i] = new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, gm[0].AdvanceHeight) };
                     this.offsets[i] = offset;
-                    this.map[offset] = m.ToArray();
                 }
             }
 
             // Remove any orphans.
-            int shift = 0;
-            foreach (int idx in orphans)
+            for (int i = orphans.Count - 1; i >= 0; i--)
             {
-                this.map.Remove(this.offsets[idx - shift]);
-                this.offsets.RemoveAt(idx - shift);
-                this.glyphs.RemoveAt(idx - shift);
-                shift++;
+                int idx = orphans[i];
+                this.map.Remove(this.offsets[idx]);
+                this.offsets.RemoveAt(idx);
+                this.glyphs.RemoveAt(idx);
             }
 
             return !hasFallBacks;
@@ -215,19 +197,18 @@ namespace SixLabors.Fonts
 
                 if (m.Count > 0)
                 {
-                    this.glyphs.Add(new GlyphShapingData(
-                        codePoint,
-                        data.CodePointCount,
-                        data.Direction,
-                        glyphIds,
-                        new List<TagEntry>(),
-                        data.LigatureId,
-                        data.LigatureComponent,
-                        data.MarkAttachment,
-                        data.CursiveAttachment));
+                    GlyphMetrics[] gm = m.ToArray();
+                    this.map[offset] = gm;
+                    if (this.isVerticalLayoutMode)
+                    {
+                        this.glyphs.Add(new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) });
+                    }
+                    else
+                    {
+                        this.glyphs.Add(new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, 0) });
+                    }
 
                     this.offsets.Add(offset);
-                    this.map[offset] = m.ToArray();
                 }
             }
 
@@ -235,90 +216,23 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Applies an offset to the glyphs at the given index and id.
+        /// Updates the position of the glyph at the specified index.
         /// </summary>
-        /// <param name="fontMetrics">The font face with metrics.</param>
-        /// <param name="index">The zero-based index of the elements to offset.</param>
-        /// <param name="glyphId">The id of the glyph to offset.</param>
-        /// <param name="x">The x-offset.</param>
-        /// <param name="y">The y-offset.</param>
-        public void Offset(FontMetrics fontMetrics, ushort index, ushort glyphId, short x, short y)
+        /// <param name="fontMetrics">The font metrics.</param>
+        /// <param name="index">The zero-based index of the element to advance.</param>
+        public void UpdatePosition(FontMetrics fontMetrics, ushort index)
         {
+            GlyphShapingData data = this.GetGlyphShapingData(index);
+            ushort glyphId = data.GlyphIds[0];
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
-                if (m.GlyphId == glyphId && m.FontMetrics == fontMetrics)
+                if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.ApplyOffset(x, y);
+                    m.ApplyOffset((short)data.Bounds.X, (short)data.Bounds.Y);
+                    m.SetAdvanceWidth((ushort)data.Bounds.Width);
+                    m.SetAdvanceHeight((ushort)data.Bounds.Height);
                 }
             }
-        }
-
-        /// <summary>
-        /// Gets the offset of the glyph at the given index and id.
-        /// </summary>
-        /// <param name="fontMetrics">The font face with metrics.</param>
-        /// <param name="index">The zero-based index of the element.</param>
-        /// <param name="glyphId">The id of the glyph to offset.</param>
-        /// <returns>The offset.</returns>
-        public Vector2 GetOffset(FontMetrics fontMetrics, ushort index, ushort glyphId)
-        {
-            foreach (GlyphMetrics m in this.map[this.offsets[index]])
-            {
-                if (m.GlyphId == glyphId && m.FontMetrics == fontMetrics)
-                {
-                    return m.Bounds.Min;
-                }
-            }
-
-            return Vector2.Zero;
-        }
-
-        /// <summary>
-        /// Gets the advanced of the glyph at the given index and id.
-        /// </summary>
-        /// <param name="fontMetrics">The font face with metrics.</param>
-        /// <param name="index">The zero-based index of the element.</param>
-        /// <param name="glyphId">The id of the glyph to offset.</param>
-        /// <returns>The glyph advance.</returns>
-        internal Vector2 GetAdvance(FontMetrics fontMetrics, ushort index, ushort glyphId)
-        {
-            // Advances can be set to zero during shaping to allow calculating correct offsets
-            // but we actually want the min XY depending on the layout mode.
-            foreach (GlyphMetrics m in this.map[this.offsets[index]])
-            {
-                if (m.GlyphId == glyphId && m.FontMetrics == fontMetrics)
-                {
-                    if (this.isVerticalLayoutMode)
-                    {
-                        return new Vector2(m.AdvanceWidth == 0 ? 0 : m.Bounds.Min.X, m.AdvanceHeight);
-                    }
-
-                    return new Vector2(m.AdvanceWidth, m.AdvanceHeight == 0 ? 0 : m.Bounds.Min.Y);
-                }
-            }
-
-            return Vector2.Zero;
-        }
-
-        /// <summary>
-        /// Gets the rectangular advanced bounds of the glyph at the given index and id.
-        /// </summary>
-        /// <param name="fontMetrics">The font face with metrics.</param>
-        /// <param name="index">The zero-based index of the elements to offset.</param>
-        /// <param name="glyphId">The id of the glyph to offset.</param>
-        /// <returns>The rectangular advanced bounds.</returns>
-        internal FontRectangle GetAdvanceBounds(FontMetrics fontMetrics, ushort index, ushort glyphId)
-        {
-            foreach (GlyphMetrics m in this.map[this.offsets[index]])
-            {
-                if (m.GlyphId == glyphId && m.FontMetrics == fontMetrics)
-                {
-                    // TODO: Use Left/Top Bearing?
-                    return FontRectangle.FromLTRB(m.Bounds.Min.X, m.Bounds.Min.Y, m.AdvanceWidth, m.AdvanceHeight);
-                }
-            }
-
-            return FontRectangle.Empty;
         }
 
         /// <summary>
@@ -339,66 +253,6 @@ namespace SixLabors.Fonts
                     m.ApplyAdvance(dx, this.isVerticalLayoutMode ? dy : (short)0);
                 }
             }
-        }
-
-        /// <summary>
-        /// Sets a new advance width.
-        /// </summary>
-        /// <param name="fontMetrics">The font metrics.</param>
-        /// <param name="index">The zero-based index of the element to advance.</param>
-        /// <param name="glyphId">The id of the glyph to offset.</param>
-        /// <param name="x">The x advance to set.</param>
-        public void SetAdvanceWidth(FontMetrics fontMetrics, ushort index, ushort glyphId, ushort x)
-        {
-            foreach (GlyphMetrics m in this.map[this.offsets[index]])
-            {
-                if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
-                {
-                    m.SetAdvanceWidth(x);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sets a new advance width and height.
-        /// </summary>
-        /// <param name="fontMetrics">The font metrics.</param>
-        /// <param name="index">The zero-based index of the element to advance.</param>
-        /// <param name="glyphId">The id of the glyph to offset.</param>
-        /// <param name="x">The x-advance to set.</param>
-        /// <param name="y">The y-advance to set.</param>
-        public void SetAdvance(FontMetrics fontMetrics, ushort index, ushort glyphId, ushort x, ushort y)
-        {
-            foreach (GlyphMetrics m in this.map[this.offsets[index]])
-            {
-                if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
-                {
-                    m.SetAdvanceWidth(x);
-                    m.SetAdvanceHeight(y);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sets the mark attachment.
-        /// </summary>
-        /// <param name="index">The zero-based index of the element to set.</param>
-        /// <param name="markIndex">The zero-based index of the mark element.</param>
-        public void SetMarkAttachment(ushort index, ushort markIndex)
-        {
-            GlyphShapingData data = this.GetGlyphShapingData(index);
-            data = new(
-                data.CodePoint,
-                data.CodePointCount,
-                data.Direction,
-                data.GlyphIds,
-                data.Features,
-                data.LigatureId,
-                data.LigatureComponent,
-                markIndex,
-                data.CursiveAttachment);
-
-            this.SetGlyphShapingData(index, data);
         }
     }
 }

@@ -187,21 +187,33 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         }
 
         public static void ApplyAnchor(
-            FontMetrics fontMetrics,
             GlyphPositioningCollection collection,
             ushort index,
             AnchorTable baseAnchor,
             MarkRecord markRecord,
-            ushort baseGlyphIndex,
-            ushort glyphId)
+            int baseGlyphIndex)
         {
             short baseX = baseAnchor.XCoordinate;
             short baseY = baseAnchor.YCoordinate;
             short markX = markRecord.MarkAnchorTable.XCoordinate;
             short markY = markRecord.MarkAnchorTable.YCoordinate;
 
-            collection.Offset(fontMetrics, index, glyphId, (short)(baseX - markX), (short)(baseY - markY));
-            collection.SetMarkAttachment(index, baseGlyphIndex);
+            GlyphShapingData data = collection.GetGlyphShapingData(index);
+            data.Bounds.X = baseX - markX;
+            data.Bounds.Y = baseY - markY;
+            data.MarkAttachment = baseGlyphIndex;
+        }
+
+        public static void ApplyPosition(
+            GlyphPositioningCollection collection,
+            ushort index,
+            ValueRecord record)
+        {
+            GlyphShapingData current = collection.GetGlyphShapingData(index);
+            current.Bounds.Width += record.XAdvance;
+            current.Bounds.Height += record.YAdvance;
+            current.Bounds.X += record.XPlacement;
+            current.Bounds.Y += record.YPlacement;
         }
 
         public static bool IsMarkGlyph(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
@@ -272,8 +284,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             int i = 0;
             while (i < sequence.Length && i < MaxContextLength && offset < collection.Count)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(offset);
-                if (!condition(sequence[i], data))
+                if (!condition(sequence[i], collection.GetGlyphShapingData(offset)))
                 {
                     break;
                 }

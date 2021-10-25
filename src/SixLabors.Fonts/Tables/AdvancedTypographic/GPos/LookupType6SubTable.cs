@@ -140,8 +140,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     // If ligature ids don't match, it may be the case that one of the marks
                     // itself is a ligature, in which case match.
-                    if ((curGlyph.LigatureId > 0 && curGlyph.LigatureComponent < 0)
-                        || (prevGlyph.LigatureId > 0 && prevGlyph.LigatureComponent < 0))
+                    if ((curGlyph.LigatureId > 0 && curGlyph.LigatureComponent <= 0)
+                        || (prevGlyph.LigatureId > 0 && prevGlyph.LigatureComponent <= 0))
                     {
                         good = true;
                     }
@@ -160,7 +160,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 MarkRecord markRecord = this.mark1ArrayTable.MarkRecords[mark1Index];
                 AnchorTable baseAnchor = this.mark2ArrayTable.Mark2Records[mark2Index].MarkAnchorTable[markRecord.MarkClass];
-                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, (ushort)prevIdx, glyphId);
+                AdvancedTypographicUtils.ApplyAnchor(collection, index, baseAnchor, markRecord, prevIdx);
 
                 return true;
             }

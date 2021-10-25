@@ -205,18 +205,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                             GlyphShapingData current = collection.GetGlyphShapingData(idx);
                             int currentLC = current.LigatureComponent == -1 ? 1 : current.LigatureComponent;
                             int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(currentLC, lastComponentCount);
-                            current = new GlyphShapingData(
-                                current.CodePoint,
-                                current.CodePointCount,
-                                current.Direction,
-                                current.GlyphIds,
-                                current.Features,
-                                ligatureId,
-                                ligatureComponent,
-                                current.MarkAttachment,
-                                current.CursiveAttachment);
+                            current.LigatureId = ligatureId;
+                            current.LigatureComponent = ligatureComponent;
 
-                            collection.SetGlyphShapingData(idx, current);
                             idx++;
                         }
                     }
@@ -240,18 +231,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                         {
                             int currentLC = current.LigatureComponent == -1 ? 1 : current.LigatureComponent;
                             int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(currentLC, lastComponentCount);
-                            current = new GlyphShapingData(
-                                current.CodePoint,
-                                current.CodePointCount,
-                                current.Direction,
-                                current.GlyphIds,
-                                current.Features,
-                                current.LigatureId,
-                                ligatureComponent,
-                                current.MarkAttachment,
-                                current.CursiveAttachment);
-
-                            collection.SetGlyphShapingData(j, current);
+                            current.LigatureComponent = ligatureComponent;
                         }
                         else
                         {

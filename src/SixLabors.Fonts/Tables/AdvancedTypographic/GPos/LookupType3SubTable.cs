@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -82,86 +81,78 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 ushort index,
                 int count)
             {
-                // Implements Cursive Attachment Positioning Subtable:
-                // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
-                bool updated = false;
-                for (ushort i = 0; i < count - 1; i++)
+                if (count <= 1)
                 {
-                    ushort curIndex = (ushort)(i + index);
-                    GlyphShapingData data = collection.GetGlyphShapingData(curIndex);
-                    ushort glyphId = data.GlyphIds[0];
-                    if (glyphId == 0)
-                    {
-                        continue;
-                    }
-
-                    ushort nextIndex = (ushort)(i + index + 1);
-                    ushort nextGlyphId = collection[nextIndex][0];
-                    if (nextGlyphId == 0)
-                    {
-                        continue;
-                    }
-
-                    int coverageNext = this.coverageTable.CoverageIndexOf(nextGlyphId);
-                    if (coverageNext < 0)
-                    {
-                        continue;
-                    }
-
-                    EntryExitAnchors nextRecord = this.entryExitAnchors[coverageNext];
-                    AnchorTable? entry = nextRecord.EntryAnchor;
-                    if (entry is null)
-                    {
-                        continue;
-                    }
-
-                    int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-                    if (coverage < 0)
-                    {
-                        continue;
-                    }
-
-                    EntryExitAnchors curRecord = this.entryExitAnchors[coverage];
-                    AnchorTable? exit = curRecord.ExitAnchor;
-                    if (exit is null)
-                    {
-                        continue;
-                    }
-
-                    Vector2 curOffset = collection.GetOffset(fontMetrics, curIndex, glyphId);
-                    Vector2 nextOffset = collection.GetOffset(fontMetrics, nextIndex, nextGlyphId);
-                    int curXOffset = (int)curOffset.X;
-                    int nextXOffset = (int)nextOffset.X;
-
-                    if (data.Direction == TextDirection.LeftToRight)
-                    {
-                        int curXAdvance = exit.XCoordinate + curXOffset;
-                        collection.SetAdvanceWidth(fontMetrics, curIndex, glyphId, (ushort)curXAdvance);
-
-                        int nextDx = -(entry.XCoordinate + nextXOffset);
-                        collection.Advance(fontMetrics, nextIndex, nextGlyphId, (short)nextDx, 0);
-                        collection.Offset(fontMetrics, nextIndex, nextGlyphId, (short)nextDx, 0);
-
-                        int curDy = -(exit.YCoordinate - entry.YCoordinate);
-                        collection.Offset(fontMetrics, curIndex, glyphId, 0, (short)curDy);
-                    }
-                    else
-                    {
-                        int currDx = -(exit.XCoordinate + curXOffset);
-                        collection.Advance(fontMetrics, curIndex, glyphId, (short)currDx, 0);
-                        collection.Offset(fontMetrics, curIndex, glyphId, (short)currDx, 0);
-
-                        int nextXAdvance = entry.XCoordinate + nextXOffset;
-                        collection.SetAdvanceWidth(fontMetrics, nextIndex, nextGlyphId, (ushort)nextXAdvance);
-
-                        int nextDy = -(entry.YCoordinate - exit.YCoordinate);
-                        collection.Offset(fontMetrics, nextIndex, nextGlyphId, 0, (short)nextDy);
-                    }
-
-                    updated = true;
+                    return false;
                 }
 
-                return updated;
+                // Implements Cursive Attachment Positioning Subtable:
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
+                {
+                    return false;
+                }
+
+                ushort nextIndex = (ushort)(index + 1);
+                ushort nextGlyphId = collection[nextIndex][0];
+                if (nextGlyphId == 0)
+                {
+                    return false;
+                }
+
+                int coverageNext = this.coverageTable.CoverageIndexOf(nextGlyphId);
+                if (coverageNext < 0)
+                {
+                    return false;
+                }
+
+                EntryExitAnchors nextRecord = this.entryExitAnchors[coverageNext];
+                AnchorTable? entry = nextRecord.EntryAnchor;
+                if (entry is null)
+                {
+                    return false;
+                }
+
+                int coverage = this.coverageTable.CoverageIndexOf(glyphId);
+                if (coverage < 0)
+                {
+                    return false;
+                }
+
+                EntryExitAnchors curRecord = this.entryExitAnchors[coverage];
+                AnchorTable? exit = curRecord.ExitAnchor;
+                if (exit is null)
+                {
+                    return false;
+                }
+
+                GlyphShapingData current = collection.GetGlyphShapingData(index);
+                GlyphShapingData next = collection.GetGlyphShapingData(nextIndex);
+                if (current.Direction == TextDirection.LeftToRight)
+                {
+                    current.Bounds.Width = exit.XCoordinate + current.Bounds.X;
+
+                    int delta = entry.XCoordinate + next.Bounds.X;
+                    next.Bounds.Width -= delta;
+                    next.Bounds.X -= (short)delta;
+
+                    next.CursiveAttachment = index;
+                    current.Bounds.Y = exit.YCoordinate - entry.YCoordinate;
+                }
+                else
+                {
+                    int delta = exit.XCoordinate + current.Bounds.X;
+                    current.Bounds.Width -= delta;
+                    current.Bounds.X -= delta;
+
+                    next.Bounds.Width = entry.XCoordinate + next.Bounds.X;
+
+                    current.CursiveAttachment = nextIndex;
+                    current.Bounds.Y = entry.YCoordinate - exit.YCoordinate;
+                }
+
+                return true;
             }
         }
     }
