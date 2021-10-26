@@ -43,56 +43,56 @@ namespace SixLabors.Fonts.Tests
         /// - Multiple Substitution: C -> D
         /// - Alternate Substitution: E -> F
         /// </summary>
-        public static string GsubTestFontFile1 => GetFullPath("GsubTestFont1.ttf");
+        public static string GSubTestFontFile1 => GetFullPath("GsubTestFont1.ttf");
 
         /// <summary>
         /// Gets a gsub test font file which has the following substitution for unit tests:
         /// - Chained Context Substitution, Format 3: x=y -> x>y
         /// - Reverse Chaining Contextual Single Substitution: X89 -> XYZ
         /// </summary>
-        public static string GsubTestFontFile2 => GetFullPath("GsubTestFont2.ttf");
+        public static string GSubTestFontFile2 => GetFullPath("GsubTestFont2.ttf");
 
         /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
         /// - Chained Context Substitution, Format 2:
         /// "\u1361\u136B\u1361" -> The character in the middle should be replaced with the final form.
         /// </summary>
-        public static string GsubTestFontFile3 => GetFullPath("TestShapeEthi.ttf");
+        public static string GSubTestFontFile3 => GetFullPath("TestShapeEthi.ttf");
 
         /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
         /// - Context Substitution Format 1:
         /// "6566" ("\u0041\u0042") -> "6576"
         /// </summary>
-        public static string GsubLookupType5Format1 => GetFullPath("GsubLookupType5Format1.ttf");
+        public static string GSubLookupType5Format1 => GetFullPath("GsubLookupType5Format1.ttf");
 
         /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
         /// - Context Substitution Format 3:
         /// "65666768" ("\u0041\u0042\u0043\u0044") -> "657678"
         /// </summary>
-        public static string GsubLookupType5Format3 => GetFullPath("GsubLookupType5Format3.ttf");
+        public static string GSubLookupType5Format3 => GetFullPath("GsubLookupType5Format3.ttf");
 
         /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
         /// - Context Substitution Format 2:
         /// "6566" ("\u0041\u0042") -> "6576"
         /// </summary>
-        public static string GsubLookupType5Format2 => GetFullPath("GsubLookupType5Format2.ttf");
+        public static string GSubLookupType5Format2 => GetFullPath("GsubLookupType5Format2.ttf");
 
         /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
         /// - Chained Contexts Substitution Subtable Format 1:
         /// "20212223" ("\u0014\u0015\u0016\u0017") -> "20636423"
         /// </summary>
-        public static string GsubLookupType6Format1 => GetFullPath("GsubLookupType6Format1.ttf");
+        public static string GSubLookupType6Format1 => GetFullPath("GsubLookupType6Format1.ttf");
 
         /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
         /// - Chained Contexts Substitution Subtable Format 2:
         /// "20212223" ("\u0014\u0015\u0016\u0017") -> "20216423"
         /// </summary>
-        public static string GsubLookupType6Format2 => GetFullPath("GsubLookupType6Format2.ttf");
+        public static string GSubLookupType6Format2 => GetFullPath("GsubLookupType6Format2.ttf");
 
         /// <summary>
         /// Gets a gsub test font file which has the following substitution for unit tests:

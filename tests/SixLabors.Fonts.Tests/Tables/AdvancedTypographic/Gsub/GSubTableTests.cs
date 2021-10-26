@@ -3,7 +3,7 @@
 
 using Xunit;
 
-namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
+namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
 {
     public class GSubTableTests
     {
@@ -57,7 +57,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void SingleSubstitution_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile1).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "A";
             int expectedGlyphIndex = 38; // we expect A to be mapped to B.
@@ -116,7 +116,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void MultipleSubstitution_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile1).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "C";
             int expectedGlyphIndex = 40; // we expect C to be mapped to D.
@@ -135,7 +135,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void AlternateSubstitution_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile1).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "E";
             int expectedGlyphIndex = 42; // we expect E to be mapped to F.
@@ -154,7 +154,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void LigatureSubstitution_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile1).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "ffi";
             int expectedGlyphIndex = 229;
@@ -173,7 +173,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ContextualSubstitution_Format1_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubLookupType5Format1).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubLookupType5Format1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "\u0041\u0042"; // "6566" (\u0041\u0042) -> "6576"
             int[] expectedGlyphIndices = { 3, 7 };
@@ -195,7 +195,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ContextualSubstitution_Format2_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubLookupType5Format2).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubLookupType5Format2).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "\u0041\u0042"; // "6566" (\u0041\u0042) -> "6576"
             int[] expectedGlyphIndices = { 3, 7 };
@@ -217,7 +217,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ContextualSubstitution_Format3_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubLookupType5Format3).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubLookupType5Format3).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "\u0041\u0042\u0043\u0044"; // "65666768" -> "657678"
             int[] expectedGlyphIndices = { 67, 78, 80 };
@@ -239,7 +239,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ChainedContextsSubstitution_Format1_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubLookupType6Format1).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubLookupType6Format1).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "\u0014\u0015\u0016\u0017"; // "20212223" -> "20636423"
             int[] expectedGlyphIndices = { 22, 63, 64, 25 };
@@ -261,7 +261,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ChainedContextsSubstitution_Format2_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubLookupType6Format2).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubLookupType6Format2).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "\u0014\u0015\u0016\u0017"; // "20212223" -> "20216423"
             int[] expectedGlyphIndices = { 22, 23, 64, 25 };
@@ -283,7 +283,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ChainedContextsSubstitution_Format3_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile2).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubTestFontFile2).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "x=y"; // This should be replaced with "x>y".
             int[] expectedGlyphIndices = { 89, 31, 90 };
@@ -327,7 +327,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         public void ReverseChainingContextualSingleSubstitution_Works()
         {
             // arrange
-            Font font = new FontCollection().Add(TestFonts.GsubTestFontFile2).CreateFont(12);
+            Font font = new FontCollection().Add(TestFonts.GSubTestFontFile2).CreateFont(12);
             var renderer = new ColorGlyphRenderer();
             string testStr = "X89"; // X89 -> XYZ
             int[] expectedGlyphIndices = { 57, 58, 59 };
