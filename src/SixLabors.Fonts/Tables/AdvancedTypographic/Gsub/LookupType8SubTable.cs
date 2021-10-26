@@ -3,7 +3,7 @@
 
 using System.IO;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
+namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
 {
     /// <summary>
     /// An Alternate Substitution (AlternateSubst) subtable identifies any number of aesthetic alternatives

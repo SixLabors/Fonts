@@ -3,7 +3,7 @@
 
 using System.IO;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
+namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
 {
     /// <summary>
     /// Single substitution (SingleSubst) subtables tell a client to replace a single glyph with another glyph.

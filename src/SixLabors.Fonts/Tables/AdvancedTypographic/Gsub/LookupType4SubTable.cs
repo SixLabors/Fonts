@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
+namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
 {
     /// <summary>
     /// A Ligature Substitution (LigatureSubst) subtable identifies ligature substitutions where a single glyph replaces multiple glyphs.

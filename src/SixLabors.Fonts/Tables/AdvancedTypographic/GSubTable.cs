@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using SixLabors.Fonts.Tables.AdvancedTypographic.Gsub;
+using SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
 

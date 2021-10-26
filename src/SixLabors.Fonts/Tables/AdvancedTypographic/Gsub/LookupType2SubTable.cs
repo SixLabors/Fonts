@@ -3,7 +3,7 @@
 
 using System.IO;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
+namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
 {
     /// <summary>
     /// A Multiple Substitution (MultipleSubst) subtable replaces a single glyph with more than one glyph,
