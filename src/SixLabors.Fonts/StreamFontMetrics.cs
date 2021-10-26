@@ -5,11 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.Hinting;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -22,6 +24,7 @@ namespace SixLabors.Fonts
     /// </summary>
     internal class StreamFontMetrics : FontMetrics
     {
+        private readonly MaximumProfileTable maximumProfileTable;
         private readonly CMapTable cmap;
         private readonly GlyphTable glyphs;
         private readonly HeadTable head;
@@ -36,11 +39,18 @@ namespace SixLabors.Fonts
         private readonly ColrTable? colrTable;
         private readonly CpalTable? cpalTable;
         private readonly GlyphDefinitionTable? glyphDefinitionTable;
+        private readonly FpgmTable? fpgm;
+        private readonly CvtTable? cvt;
+        private readonly PrepTable? prep;
+
+        [ThreadStatic]
+        private Hinting.Interpreter? interpreter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
         /// </summary>
         /// <param name="nameTable">The name table.</param>
+        /// <param name="maximumProfileTable">The maximum profile table.</param>
         /// <param name="cmap">The cmap table.</param>
         /// <param name="glyphs">The glyph table.</param>
         /// <param name="os2">The os2 table.</param>
@@ -54,9 +64,13 @@ namespace SixLabors.Fonts
         /// <param name="gPosTable">The glyph positioning table.</param>
         /// <param name="colrTable">The COLR table</param>
         /// <param name="cpalTable">The CPAL table</param>
+        /// <param name="fpgm">The font program table.</param>
+        /// <param name="cvt">The control value table.</param>
+        /// <param name="prep">The control value program table.</param>
         /// <param name="glyphDefinitionTable">The glyph definition table.</param>
         internal StreamFontMetrics(
             NameTable nameTable,
+            MaximumProfileTable maximumProfileTable,
             CMapTable cmap,
             GlyphTable glyphs,
             OS2Table os2,
@@ -70,8 +84,12 @@ namespace SixLabors.Fonts
             GPosTable? gPosTable,
             ColrTable? colrTable,
             CpalTable? cpalTable,
+            FpgmTable? fpgm,
+            CvtTable? cvt,
+            PrepTable? prep,
             GlyphDefinitionTable? glyphDefinitionTable)
         {
+            this.maximumProfileTable = maximumProfileTable;
             this.cmap = cmap;
             this.os2 = os2;
             this.glyphs = glyphs;
@@ -139,6 +157,9 @@ namespace SixLabors.Fonts
             this.gPosTable = gPosTable;
             this.colrTable = colrTable;
             this.cpalTable = cpalTable;
+            this.fpgm = fpgm;
+            this.cvt = cvt;
+            this.prep = prep;
             this.glyphDefinitionTable = glyphDefinitionTable;
             this.Description = new FontDescription(nameTable, os2, head);
         }
@@ -309,7 +330,7 @@ namespace SixLabors.Fonts
             // recommended order
             HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
             HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>(); // hhea
-            reader.GetTable<MaximumProfileTable>(); // maxp
+            MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>(); // maxp
             OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
 
             // LTSH - Linear threshold data
@@ -328,9 +349,10 @@ namespace SixLabors.Fonts
 
             CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
 
-            // fpgm - Font Program
-            // prep - Control Value Program
-            // cvt  - Control Value Table
+            FpgmTable? fpgm = reader.TryGetTable<FpgmTable>(); // fpgm - Font Program
+            PrepTable? prep = reader.TryGetTable<PrepTable>(); // prep -  Control Value Program
+            CvtTable? cvt = reader.TryGetTable<CvtTable>(); // cvt  - Control Value Table
+
             reader.GetTable<IndexLocationTable>(); // loca
             GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
             KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
@@ -358,6 +380,7 @@ namespace SixLabors.Fonts
             // DSIG - Digital signature
             return new StreamFontMetrics(
                 nameTable,
+                maxp,
                 cmap,
                 glyphs,
                 os2,
@@ -371,6 +394,9 @@ namespace SixLabors.Fonts
                 gPos,
                 colrTable,
                 cpalTable,
+                fpgm,
+                cvt,
+                prep,
                 glyphDefinitionTable);
         }
 
@@ -404,6 +430,42 @@ namespace SixLabors.Fonts
             }
 
             return fonts;
+        }
+
+        internal GlyphVector ApplyHinting(GlyphVector glyphVector, float pixelSize, ushort glyphIndex)
+        {
+            if (this.interpreter == null)
+            {
+                this.interpreter = new Hinting.Interpreter(
+                    this.maximumProfileTable.MaxStackElements,
+                    this.maximumProfileTable.MaxStorage,
+                    this.maximumProfileTable.MaxFunctionDefs,
+                    this.maximumProfileTable.MaxInstructionDefs,
+                    this.maximumProfileTable.MaxTwilightPoints);
+
+                if (this.fpgm != null)
+                {
+                    this.interpreter.InitializeFunctionDefs(this.fpgm.Instructions);
+                }
+            }
+
+            float scale = pixelSize / this.UnitsPerEm;
+            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scale, pixelSize, this.prep?.Instructions);
+
+            Bounds bounds = glyphVector.GetBounds();
+            short leftSideBearing = this.horizontalMetrics.GetLeftSideBearing(glyphIndex);
+            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphIndex);
+            short topSideBearing = this.verticalMetricsTable?.GetTopSideBearing(glyphIndex) ?? (short)(this.Ascender - bounds.Max.Y);
+            ushort advanceHeight = this.verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)this.LineHeight;
+
+            var pp1 = new Vector2(bounds.Min.X - (leftSideBearing * scale), 0);
+            var pp2 = new Vector2(pp1.X + (advanceWidth * scale), 0);
+            var pp3 = new Vector2(0, bounds.Max.Y + (topSideBearing * scale));
+            var pp4 = new Vector2(0, pp3.Y - (advanceHeight * scale));
+
+            GlyphVector.Hint(ref glyphVector, this.interpreter, pp1, pp2, pp3, pp4);
+
+            return glyphVector;
         }
 
         private bool TryGetColoredVectors(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
@@ -443,13 +505,13 @@ namespace SixLabors.Fonts
             ushort palleteIndex = 0)
         {
             GlyphVector vector = this.glyphs.GetGlyph(glyphId);
-
+            Bounds bounds = vector.GetBounds();
             ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphId);
             short lsb = this.horizontalMetrics.GetLeftSideBearing(glyphId);
 
             // Provide a default for the advance height. This is overwritten for vertical fonts.
             ushort advancedHeight = (ushort)(this.Ascender - this.Descender);
-            short tsb = (short)(this.Ascender - vector.Bounds.Max.Y);
+            short tsb = (short)(this.Ascender - bounds.Max.Y);
             if (this.verticalMetricsTable != null)
             {
                 advancedHeight = this.verticalMetricsTable.GetAdvancedHeight(glyphId);
@@ -474,7 +536,6 @@ namespace SixLabors.Fonts
                 advancedHeight,
                 lsb,
                 tsb,
-                this.UnitsPerEm,
                 glyphId,
                 glyphType,
                 color);
