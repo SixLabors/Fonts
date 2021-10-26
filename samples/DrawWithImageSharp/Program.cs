@@ -41,12 +41,16 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             FontFamily tahoma = SystemFonts.Get("Tahoma");
             RenderText(font2, "\uFB01", pointSize: 11.25F);
-            RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
-            RenderText(tahoma, "p", pointSize: 11.25F);
-            RenderText(tahoma, "Lorem ipsum dolor sit amet", pointSize: 11.25F);
+            //RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
+            //RenderText(tahoma, "p", pointSize: 11.25F);
+            //RenderText(tahoma, "Lorem ipsum dolor sit amet", pointSize: 11.25F);
             return;
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
+            FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
+            //RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
+            RenderText(bugzilla, "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ", pointSize: 72);
+            return;
             // TODO: Test and fix tomorrow. Gsub Lookup 4.
             RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { font2 });
 
@@ -207,7 +211,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 new RendererOptions(new Font(font, pointSize), 96)
                 {
                     ApplyKerning = true,
-                    WrappingWidth = 400,
+                    //WrappingWidth = 400,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
                     ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
                 },

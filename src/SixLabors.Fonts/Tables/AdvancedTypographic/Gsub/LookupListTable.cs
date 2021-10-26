@@ -113,17 +113,23 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             for (int i = 0; i < lookupSubTables.Length; i++)
             {
-                lookupSubTables[i] = LoadLookupSubTable(lookupType, reader, offset + subTableOffsets[i]);
+                lookupSubTables[i] = LoadLookupSubTable(lookupType, lookupFlags, reader, offset + subTableOffsets[i]);
             }
 
             return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);
         }
 
-        public bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
+        public bool TrySubstitution(
+            FontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count)
         {
             foreach (LookupSubTable subTable in this.LookupSubTables)
             {
-                if (subTable.TrySubstitution(table, collection, feature, index, count))
+                if (subTable.TrySubstitution(fontMetrics, table, collection, feature, index, count))
                 {
                     // A lookup is finished for a glyph after the client locates the target
                     // glyph or glyph context and performs a substitution, if specified.
@@ -134,23 +140,33 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             return false;
         }
 
-        private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
+        private static LookupSubTable LoadLookupSubTable(ushort lookupType, LookupFlags lookupFlags, BigEndianBinaryReader reader, long offset)
             => lookupType switch
             {
-                1 => LookupType1SubTable.Load(reader, offset),
-                2 => LookupType2SubTable.Load(reader, offset),
-                3 => LookupType3SubTable.Load(reader, offset),
-                4 => LookupType4SubTable.Load(reader, offset),
-                5 => LookupType5SubTable.Load(reader, offset),
-                6 => LookupType6SubTable.Load(reader, offset),
-                7 => LookupType7SubTable.Load(reader, offset, LoadLookupSubTable),
-                8 => LookupType8SubTable.Load(reader, offset),
+                1 => LookupType1SubTable.Load(reader, offset, lookupFlags),
+                2 => LookupType2SubTable.Load(reader, offset, lookupFlags),
+                3 => LookupType3SubTable.Load(reader, offset, lookupFlags),
+                4 => LookupType4SubTable.Load(reader, offset, lookupFlags),
+                5 => LookupType5SubTable.Load(reader, offset, lookupFlags),
+                6 => LookupType6SubTable.Load(reader, offset, lookupFlags),
+                7 => LookupType7SubTable.Load(reader, offset, lookupFlags, LoadLookupSubTable),
+                8 => LookupType8SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'lookupType' {lookupType}. Should be between '1' and '8' inclusive.")
             };
     }
 
     internal abstract class LookupSubTable
     {
-        public abstract bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count);
+        protected LookupSubTable(LookupFlags lookupFlags) => this.LookupFlags = lookupFlags;
+
+        public LookupFlags LookupFlags { get; }
+
+        public abstract bool TrySubstitution(
+            FontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count);
     }
 }

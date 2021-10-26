@@ -131,7 +131,7 @@ namespace SixLabors.Fonts
             var filePaths = new List<string>();
             foreach (FontStyle style in this.GetAvailableStyles())
             {
-                if (this.collection.TryGetMetrics(this.Name, this.Culture, style, out IFontMetrics? metrics)
+                if (this.collection.TryGetMetrics(this.Name, this.Culture, style, out FontMetrics? metrics)
                     && metrics is FileFontMetrics fileMetrics)
                 {
                     filePaths.Add(fileMetrics.Path);
@@ -155,7 +155,7 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the <see cref="FontFamily"/> contains font metrics
         /// with the specified name; otherwise, <see langword="false"/>.
         /// </returns>
-        internal bool TryGetMetrics(FontStyle style, [NotNullWhen(true)] out IFontMetrics? metrics)
+        internal bool TryGetMetrics(FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)
         {
             if (this == default)
             {

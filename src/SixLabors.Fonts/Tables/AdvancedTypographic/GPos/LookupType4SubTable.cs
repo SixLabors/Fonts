@@ -2,8 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using System.Numerics;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -14,14 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal static class LookupType4SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort format = reader.ReadUInt16();
 
             return format switch
             {
-                1 => LookupType4Format1SubTable.Load(reader, offset),
+                1 => LookupType4Format1SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid MarkBasePos table format {format}, only format '1' is supported.")
             };
         }
@@ -33,7 +31,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             private readonly MarkArrayTable markArrayTable;
             private readonly BaseArrayTable baseArrayTable;
 
-            public LookupType4Format1SubTable(CoverageTable markCoverage, CoverageTable baseCoverage, MarkArrayTable markArrayTable, BaseArrayTable baseArrayTable)
+            public LookupType4Format1SubTable(
+                CoverageTable markCoverage,
+                CoverageTable baseCoverage,
+                MarkArrayTable markArrayTable,
+                BaseArrayTable baseArrayTable,
+                LookupFlags lookupFlags)
+                : base(lookupFlags)
             {
                 this.markCoverage = markCoverage;
                 this.baseCoverage = baseCoverage;
@@ -41,7 +45,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 this.baseArrayTable = baseArrayTable;
             }
 
-            public static LookupType4Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType4Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
             {
                 // MarkBasePosFormat1 Subtable.
                 // +--------------------+---------------------------------+------------------------------------------------------+
@@ -74,11 +78,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 var markArrayTable = new MarkArrayTable(reader, offset + markArrayOffset);
                 var baseArrayTable = new BaseArrayTable(reader, offset + baseArrayOffset, markClassCount);
 
-                return new LookupType4Format1SubTable(markCoverage, baseCoverage, markArrayTable, baseArrayTable);
+                return new LookupType4Format1SubTable(markCoverage, baseCoverage, markArrayTable, baseArrayTable, lookupFlags);
             }
 
             public override bool TryUpdatePosition(
-                IFontMetrics fontMetrics,
+                FontMetrics fontMetrics,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -100,23 +104,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 // Search backward for a base glyph.
-                // TODO: Fontkit stores an extra property "ligatureComponent" in our glyph shaping data?
-                int baseGlyphIterator = index;
-                while (--baseGlyphIterator >= 0)
+                int baseGlyphIndex = index;
+                while (--baseGlyphIndex >= 0)
                 {
-                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
-                    if (!CodePoint.IsMark(data.CodePoint))
+                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIndex);
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphIds[0], data) && !(data.LigatureComponent > 0))
                     {
                         break;
                     }
                 }
 
-                if (baseGlyphIterator < 0)
+                if (baseGlyphIndex < 0)
                 {
                     return false;
                 }
 
-                ushort baseGlyphIndex = (ushort)baseGlyphIterator;
                 ushort baseGlyphId = collection[baseGlyphIndex][0];
                 int baseIndex = this.baseCoverage.CoverageIndexOf(baseGlyphId);
                 if (baseIndex < 0)
@@ -126,7 +128,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
                 AnchorTable baseAnchor = this.baseArrayTable.BaseRecords[baseIndex].BaseAnchorTables[markRecord.MarkClass];
-                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, baseGlyphIndex, baseGlyphId, glyphId);
+                AdvancedTypographicUtils.ApplyAnchor(collection, index, baseAnchor, markRecord, baseGlyphIndex);
 
                 return true;
             }

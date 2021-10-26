@@ -12,6 +12,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
     /// </summary>
     internal sealed class ArabicShaper : DefaultShaper
     {
+        private static readonly Tag CcmpTag = Tag.Parse("ccmp");
+
+        private static readonly Tag LoclTag = Tag.Parse("locl");
+
+        private static readonly Tag MsetTag = Tag.Parse("mset");
+
         private static readonly Tag FinaTag = Tag.Parse("fina");
 
         private static readonly Tag Fin2Tag = Tag.Parse("fin2");
@@ -68,9 +74,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 2 }, new byte[] { None, Fin3, 5 }, new byte[] { None, Isol, 6 } },
         };
 
+        public ArabicShaper()
+            : base(MarkZeroingMode.PostGpos)
+        {
+        }
+
         /// <inheritdoc/>
         public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
         {
+            this.AddFeature(collection, index, count, CcmpTag);
+            this.AddFeature(collection, index, count, LoclTag);
+            this.AddFeature(collection, index, count, IsolTag, false);
+            this.AddFeature(collection, index, count, FinaTag, false);
+            this.AddFeature(collection, index, count, Fin2Tag, false);
+            this.AddFeature(collection, index, count, Fin3Tag, false);
+            this.AddFeature(collection, index, count, MediTag, false);
+            this.AddFeature(collection, index, count, Med2Tag, false);
+            this.AddFeature(collection, index, count, InitTag, false);
+            this.AddFeature(collection, index, count, MsetTag);
+
             base.AssignFeatures(collection, index, count);
 
             int prev = -1;
@@ -110,25 +132,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 switch (actions[i])
                 {
                     case Fina:
-                        collection.AddShapingFeature(i + index, FinaTag);
+                        collection.EnableShapingFeature(i + index, FinaTag);
                         break;
                     case Fin2:
-                        collection.AddShapingFeature(i + index, Fin2Tag);
+                        collection.EnableShapingFeature(i + index, Fin2Tag);
                         break;
                     case Fin3:
-                        collection.AddShapingFeature(i + index, Fin3Tag);
+                        collection.EnableShapingFeature(i + index, Fin3Tag);
                         break;
                     case Isol:
-                        collection.AddShapingFeature(i + index, IsolTag);
+                        collection.EnableShapingFeature(i + index, IsolTag);
                         break;
                     case Init:
-                        collection.AddShapingFeature(i + index, InitTag);
+                        collection.EnableShapingFeature(i + index, InitTag);
                         break;
                     case Medi:
-                        collection.AddShapingFeature(i + index, MediTag);
+                        collection.EnableShapingFeature(i + index, MediTag);
                         break;
                     case Med2:
-                        collection.AddShapingFeature(i + index, Med2Tag);
+                        collection.EnableShapingFeature(i + index, Med2Tag);
                         break;
                 }
             }

@@ -113,28 +113,29 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             for (int i = 0; i < lookupSubTables.Length; i++)
             {
-                lookupSubTables[i] = LoadLookupSubTable(lookupType, reader, offset + subTableOffsets[i]);
+                lookupSubTables[i] = LoadLookupSubTable(lookupType, lookupFlags, reader, offset + subTableOffsets[i]);
             }
 
             return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);
         }
 
-        private static LookupSubTable LoadLookupSubTable(ushort lookupType, BigEndianBinaryReader reader, long offset)
+        private static LookupSubTable LoadLookupSubTable(ushort lookupType, LookupFlags lookupFlags, BigEndianBinaryReader reader, long offset)
             => lookupType switch
             {
-                1 => LookupType1SubTable.Load(reader, offset),
-                2 => LookupType2SubTable.Load(reader, offset),
-                3 => LookupType3SubTable.Load(reader, offset),
-                4 => LookupType4SubTable.Load(reader, offset),
-                5 => LookupType5SubTable.Load(reader, offset),
-                6 => LookupType6SubTable.Load(reader, offset),
-                7 => LookupType7SubTable.Load(reader, offset),
-                8 => LookupType8SubTable.Load(reader, offset),
+                1 => LookupType1SubTable.Load(reader, offset, lookupFlags),
+                2 => LookupType2SubTable.Load(reader, offset, lookupFlags),
+                3 => LookupType3SubTable.Load(reader, offset, lookupFlags),
+                4 => LookupType4SubTable.Load(reader, offset, lookupFlags),
+                5 => LookupType5SubTable.Load(reader, offset, lookupFlags),
+                6 => LookupType6SubTable.Load(reader, offset, lookupFlags),
+                7 => LookupType7SubTable.Load(reader, offset, lookupFlags),
+                8 => LookupType8SubTable.Load(reader, offset, lookupFlags),
+                9 => LookupType9SubTable.Load(reader, offset, lookupFlags, LoadLookupSubTable),
                 _ => new NotImplementedSubTable()
             };
 
         public bool TryUpdatePosition(
-            IFontMetrics fontMetrics,
+            FontMetrics fontMetrics,
             GPosTable table,
             GlyphPositioningCollection collection,
             Tag feature,
@@ -157,8 +158,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
     internal abstract class LookupSubTable
     {
+        protected LookupSubTable(LookupFlags lookupFlags) => this.LookupFlags = lookupFlags;
+
+        public LookupFlags LookupFlags { get; }
+
         public abstract bool TryUpdatePosition(
-            IFontMetrics fontMetrics,
+            FontMetrics fontMetrics,
             GPosTable table,
             GlyphPositioningCollection collection,
             Tag feature,

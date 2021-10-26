@@ -9,7 +9,7 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Defines the contract for glyph shaping collections.
     /// </summary>
-    public interface IGlyphShapingCollection
+    internal interface IGlyphShapingCollection
     {
         /// <summary>
         /// Gets the collection count.
@@ -35,6 +35,13 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the element.</param>
         /// <param name="feature">The feature to apply.</param>
-        void AddShapingFeature(int index, Tag feature);
+        void AddShapingFeature(int index, TagEntry feature);
+
+        /// <summary>
+        /// Enables a previously added shaping feature.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element.</param>
+        /// <param name="feature">The feature to enable.</param>
+        void EnableShapingFeature(int index, Tag feature);
     }
 }

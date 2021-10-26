@@ -2,107 +2,154 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Numerics;
+using System.Collections.Generic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     internal static class AdvancedTypographicUtils
     {
-        internal static bool MatchInputSequence(IGlyphShapingCollection collection, Tag feature, ushort index, ushort[] inputSequence)
+        /// <summary>
+        /// The maximum length of a context. Taken from HarfBuzz - hb-ot-layout-common.hh
+        /// </summary>
+        public const int MaxContextLength = 64;
+
+        public static bool ApplyLookupList(
+            FontMetrics fontMetrics,
+            GSubTable table,
+            Tag feature,
+            LookupFlags lookupFlags,
+            SequenceLookupRecord[] records,
+            GlyphSubstitutionCollection collection,
+            ushort index,
+            int count)
         {
-            int startIdx = index + 1;
-            int i = 0;
-            while (i < inputSequence.Length)
+            bool hasChanged = false;
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+            int currentCount = collection.Count;
+
+            foreach (SequenceLookupRecord lookupRecord in records)
             {
-                int collectionIdx = startIdx + i;
-                if (collectionIdx == collection.Count)
+                ushort sequenceIndex = lookupRecord.SequenceIndex;
+                ushort lookupIndex = lookupRecord.LookupListIndex;
+                iterator.Index = index;
+                iterator.Increment(sequenceIndex);
+                Gsub.LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                hasChanged |= lookup.TrySubstitution(fontMetrics, table, collection, feature, iterator.Index, count - (iterator.Index - index));
+
+                // Account for substitutions changing the length of the collection.
+                if (collection.Count != currentCount)
                 {
-                    return false;
-                }
-
-                GlyphShapingData data = collection.GetGlyphShapingData(collectionIdx);
-                if (!data.Features.Contains(feature))
-                {
-                    return false;
-                }
-
-                if (data.GlyphIds[0] != inputSequence[i])
-                {
-                    return false;
-                }
-
-                i++;
-            }
-
-            return i == inputSequence.Length;
-        }
-
-        internal static bool MatchSequence(IGlyphShapingCollection collection, int glyphSequenceIndex, ushort[] sequenceToMatch)
-        {
-            int sequenceToMatchIdx = 0;
-            int glyphCollectionIdx = glyphSequenceIndex + 1;
-
-            while (sequenceToMatchIdx < sequenceToMatch.Length)
-            {
-                if (glyphCollectionIdx >= collection.Count)
-                {
-                    return false;
-                }
-
-                ReadOnlySpan<ushort> glyphIds = collection[glyphCollectionIdx++];
-                ushort glyphId = glyphIds[0];
-                if (glyphId != sequenceToMatch[sequenceToMatchIdx++])
-                {
-                    return false;
+                    count -= currentCount - collection.Count;
+                    currentCount = collection.Count;
                 }
             }
 
-            return true;
+            return hasChanged;
         }
 
-        internal static bool MatchClassSequence(
-            IGlyphShapingCollection collection,
-            int glyphSequenceIndex,
-            ushort[] sequenceToMatch,
+        public static bool ApplyLookupList(
+            FontMetrics fontMetrics,
+            GPosTable table,
+            Tag feature,
+            LookupFlags lookupFlags,
+            SequenceLookupRecord[] records,
+            GlyphPositioningCollection collection,
+            ushort index,
+            int count)
+        {
+            bool hasChanged = false;
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+            foreach (SequenceLookupRecord lookupRecord in records)
+            {
+                ushort sequenceIndex = lookupRecord.SequenceIndex;
+                ushort lookupIndex = lookupRecord.LookupListIndex;
+                iterator.Index = index;
+                iterator.Increment(sequenceIndex);
+                LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                hasChanged |= lookup.TryUpdatePosition(fontMetrics, table, collection, feature, iterator.Index, count - (iterator.Index - index));
+            }
+
+            return hasChanged;
+        }
+
+        public static bool MatchInputSequence(SkippingGlyphIterator iterator, Tag feature, ushort increment, ushort[] sequence, Span<int> matches)
+            => Match(
+                increment,
+                sequence,
+                iterator,
+                (component, data) =>
+                {
+                    if (!ContainsFeatureTag(data.Features, feature))
+                    {
+                        return false;
+                    }
+
+                    return component == data.GlyphIds[0];
+                },
+                matches);
+
+        private static bool ContainsFeatureTag(List<TagEntry> featureList, Tag feature)
+        {
+            foreach (TagEntry tagEntry in featureList)
+            {
+                if (tagEntry.Tag == feature && tagEntry.Enabled)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool MatchSequence(SkippingGlyphIterator iterator, int increment, ushort[] sequence)
+            => Match(
+                increment,
+                sequence,
+                iterator,
+                (component, data) => component == data.GlyphIds[0],
+                default);
+
+        public static bool MatchClassSequence(
+            SkippingGlyphIterator iterator,
+            int increment,
+            ushort[] sequence,
             ClassDefinitionTable classDefinitionTable)
-        {
-            int sequenceToMatchIdx = 0;
-            int glyphCollectionIdx = glyphSequenceIndex + 1;
+            => Match(
+                increment,
+                sequence,
+                iterator,
+                (component, data) => component == classDefinitionTable.ClassIndexOf(data.GlyphIds[0]),
+                default);
 
-            while (sequenceToMatchIdx < sequenceToMatch.Length)
-            {
-                if (glyphCollectionIdx >= collection.Count)
-                {
-                    return false;
-                }
+        public static bool MatchCoverageSequence(
+            SkippingGlyphIterator iterator,
+            CoverageTable[] coverageTable,
+            int increment)
+            => Match(
+                increment,
+                coverageTable,
+                iterator,
+                (component, data) => component.CoverageIndexOf(data.GlyphIds[0]) >= 0,
+                default);
 
-                ReadOnlySpan<ushort> glyphIds = collection[glyphCollectionIdx++];
-                if (!MatchClass(sequenceToMatchIdx++, sequenceToMatch, classDefinitionTable, glyphIds))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        internal static bool ApplyChainedSequenceRule(IGlyphShapingCollection collection, Tag feature, ushort index, ChainedSequenceRuleTable rule)
+        public static bool ApplyChainedSequenceRule(SkippingGlyphIterator iterator, ChainedSequenceRuleTable rule)
         {
             if (rule.BacktrackSequence.Length > 0
-                && !MatchSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence))
-            {
-                return false;
-            }
-
-            if (rule.LookaheadSequence.Length > 0
-                && !MatchSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
+                && !MatchSequence(iterator, -rule.BacktrackSequence.Length, rule.BacktrackSequence))
             {
                 return false;
             }
 
             if (rule.InputSequence.Length > 0
-                && !MatchInputSequence(collection, feature, index, rule.InputSequence))
+                && !MatchSequence(iterator, 1, rule.InputSequence))
+            {
+                return false;
+            }
+
+            if (rule.LookaheadSequence.Length > 0
+                && !MatchSequence(iterator, 1 + rule.InputSequence.Length, rule.LookaheadSequence))
             {
                 return false;
             }
@@ -110,28 +157,27 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static bool ApplyChainedClassSequenceRule(
-            IGlyphShapingCollection collection,
-            ushort index,
+        public static bool ApplyChainedClassSequenceRule(
+            SkippingGlyphIterator iterator,
             ChainedClassSequenceRuleTable rule,
             ClassDefinitionTable inputClassDefinitionTable,
             ClassDefinitionTable backtrackClassDefinitionTable,
             ClassDefinitionTable lookaheadClassDefinitionTable)
         {
             if (rule.BacktrackSequence.Length > 0
-                && !MatchClassSequence(collection, -rule.BacktrackSequence.Length, rule.BacktrackSequence, backtrackClassDefinitionTable))
+                && !MatchClassSequence(iterator, -rule.BacktrackSequence.Length, rule.BacktrackSequence, backtrackClassDefinitionTable))
             {
                 return false;
             }
 
             if (rule.InputSequence.Length > 0 &&
-                !MatchClassSequence(collection, index, rule.InputSequence, inputClassDefinitionTable))
+                !MatchClassSequence(iterator, 1, rule.InputSequence, inputClassDefinitionTable))
             {
                 return false;
             }
 
             if (rule.LookaheadSequence.Length > 0
-                && !MatchClassSequence(collection, 1 + rule.InputSequence.Length, rule.LookaheadSequence, lookaheadClassDefinitionTable))
+                && !MatchClassSequence(iterator, 1 + rule.InputSequence.Length, rule.LookaheadSequence, lookaheadClassDefinitionTable))
             {
                 return false;
             }
@@ -139,29 +185,35 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static bool CheckAllCoverages(IGlyphShapingCollection collection, ushort index, int count, CoverageTable[] input, CoverageTable[] backtrack, CoverageTable[] lookahead)
+        public static bool CheckAllCoverages(
+            FontMetrics fontMetrics,
+            LookupFlags lookupFlags,
+            IGlyphShapingCollection collection,
+            ushort index,
+            int count,
+            CoverageTable[] input,
+            CoverageTable[] backtrack,
+            CoverageTable[] lookahead)
         {
-            int inputLength = input.Length;
-
             // Check that there are enough context glyphs.
-            if (index < backtrack.Length
-                || inputLength + lookahead.Length > count)
+            if (index - backtrack.Length < 0 || input.Length + lookahead.Length > count)
             {
                 return false;
             }
 
             // Check all coverages: if any of them does not match, abort update.
-            if (!CheckCoverage(collection, input, index))
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+            if (!MatchCoverageSequence(iterator, backtrack, -backtrack.Length))
             {
                 return false;
             }
 
-            if (!CheckBacktrackCoverage(collection, backtrack, index - 1))
+            if (!MatchCoverageSequence(iterator, input, 0))
             {
                 return false;
             }
 
-            if (!CheckCoverage(collection, lookahead, index + inputLength))
+            if (!MatchCoverageSequence(iterator, lookahead, input.Length))
             {
                 return false;
             }
@@ -169,75 +221,109 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return true;
         }
 
-        internal static void ApplyAnchor(
-            IFontMetrics fontMetrics,
+        public static void ApplyAnchor(
             GlyphPositioningCollection collection,
             ushort index,
             AnchorTable baseAnchor,
             MarkRecord markRecord,
-            ushort baseGlyphIndex,
-            ushort baseGlyphId,
-            ushort glyphId)
+            int baseGlyphIndex)
         {
             short baseX = baseAnchor.XCoordinate;
             short baseY = baseAnchor.YCoordinate;
             short markX = markRecord.MarkAnchorTable.XCoordinate;
             short markY = markRecord.MarkAnchorTable.YCoordinate;
 
-            FontRectangle baseBounds = collection.GetAdvanceBounds(fontMetrics, baseGlyphIndex, baseGlyphId);
-            Vector2 glyphOffset = collection.GetOffset(fontMetrics, index, glyphId);
-
-            // Negate original offset to reset position to 0,0.
-            short xo = (short)(glyphOffset.X * -1);
-            short yo = (short)(glyphOffset.Y * -1);
-
-            // Now offset to match the base position.
-            // Advance bounds width/height already include the bounds min offset
-            xo -= (short)baseBounds.Width;
-            yo += (short)baseBounds.Y;
-
-            // Now add new offset.
-            xo += (short)(baseX - markX);
-            yo += (short)(baseY - markY);
-
-            // TODO: Consider vertical layout modes. TTB and BBT
-            collection.Offset(fontMetrics, index, glyphId, xo, yo);
+            GlyphShapingData data = collection.GetGlyphShapingData(index);
+            data.Bounds.X = baseX - markX;
+            data.Bounds.Y = baseY - markY;
+            data.MarkAttachment = baseGlyphIndex;
         }
 
-        private static bool CheckCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
+        public static void ApplyPosition(
+            GlyphPositioningCollection collection,
+            ushort index,
+            ValueRecord record)
         {
-            for (int i = 0; i < coverageTable.Length; ++i)
+            GlyphShapingData current = collection.GetGlyphShapingData(index);
+            current.Bounds.Width += record.XAdvance;
+            current.Bounds.Height += record.YAdvance;
+            current.Bounds.X += record.XPlacement;
+            current.Bounds.Y += record.YPlacement;
+        }
+
+        public static bool IsMarkGlyph(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
+        {
+            if (!fontMetrics.TryGetGlyphClass(glyphId, out GlyphClassDef? glyphClass) &&
+                !CodePoint.IsMark(shapingData.CodePoint))
             {
-                ushort id = collection[offset + i][0];
-                if (id == 0 || coverageTable[i].CoverageIndexOf(id) < 0)
-                {
-                    return false;
-                }
+                return false;
+            }
+
+            if (glyphClass != GlyphClassDef.MarkGlyph)
+            {
+                return false;
             }
 
             return true;
         }
 
-        private static bool CheckBacktrackCoverage(IGlyphShapingCollection collection, CoverageTable[] coverageTable, int offset)
+        public static GlyphShapingClass GetGlyphShapingClass(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)
         {
-            for (int i = 0; i < coverageTable.Length; ++i)
+            bool isMark;
+            bool isBase;
+            bool isLigature;
+            ushort markAttachmentType = 0;
+            if (fontMetrics.TryGetGlyphClass(glyphId, out GlyphClassDef? glyphClass))
             {
-                ushort id = collection[offset - i][0];
-                if (id == 0 || coverageTable[i].CoverageIndexOf(id) < 0)
+                isMark = glyphClass == GlyphClassDef.MarkGlyph;
+                isBase = glyphClass == GlyphClassDef.BaseGlyph;
+                isLigature = glyphClass == GlyphClassDef.LigatureGlyph;
+                if (fontMetrics.TryGetMarkAttachmentClass(glyphId, out GlyphClassDef? markAttachmentClass))
                 {
-                    return false;
+                    markAttachmentType = (ushort)markAttachmentClass;
                 }
             }
+            else
+            {
+                // TODO: We may have to store each codepoint. FontKit checks all.
+                isMark = CodePoint.IsMark(shapingData.CodePoint);
+                isBase = !isMark;
+                isLigature = shapingData.CodePointCount > 1;
+            }
 
-            return true;
+            return new GlyphShapingClass(isMark, isBase, isLigature, markAttachmentType);
         }
 
-        private static bool MatchClass(int idx, ushort[] sequence, ClassDefinitionTable classDefinitionTable, ReadOnlySpan<ushort> glyphIds)
+        private static bool Match<T>(
+            int increment,
+            T[] sequence,
+            SkippingGlyphIterator iterator,
+            Func<T, GlyphShapingData, bool> condition,
+            Span<int> matches)
         {
-            ushort glyphId = glyphIds[0];
-            int glyphIdClass = classDefinitionTable.ClassIndexOf(glyphId);
-            ushort sequenceEntryClassId = sequence[idx];
-            return glyphIdClass == sequenceEntryClassId;
+            ushort position = iterator.Index;
+            ushort offset = iterator.Increment(increment);
+            IGlyphShapingCollection collection = iterator.Collection;
+
+            int i = 0;
+            while (i < sequence.Length && i < MaxContextLength && offset < collection.Count)
+            {
+                if (!condition(sequence[i], collection.GetGlyphShapingData(offset)))
+                {
+                    break;
+                }
+
+                if (matches.Length == MaxContextLength)
+                {
+                    matches[i] = iterator.Index;
+                }
+
+                i++;
+                offset = iterator.Next();
+            }
+
+            iterator.Index = position;
+            return i == sequence.Length;
         }
     }
 }

@@ -7,7 +7,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -45,11 +44,11 @@ namespace SixLabors.Fonts
         private static TextBox ProcessText(ReadOnlySpan<char> text, RendererOptions options)
         {
             // Gather the font and fallbacks.
-            IFontMetrics mainFont = options.Font.FontMetrics;
-            IFontMetrics[] fallbackFonts;
+            FontMetrics mainFont = options.Font.FontMetrics;
+            FontMetrics[] fallbackFonts;
             if (options.FallbackFontFamilies is null)
             {
-                fallbackFonts = Array.Empty<IFontMetrics>();
+                fallbackFonts = Array.Empty<FontMetrics>();
             }
             else
             {
@@ -95,7 +94,7 @@ namespace SixLabors.Fonts
                 positionings,
                 layoutMode))
             {
-                foreach (IFontMetrics font in fallbackFonts)
+                foreach (FontMetrics font in fallbackFonts)
                 {
                     substitutions.Clear();
                     if (DoFontRun(
@@ -115,13 +114,11 @@ namespace SixLabors.Fonts
 
             if (options.ApplyKerning)
             {
-                AssignShapingFeatures(positionings);
-
                 // Update the positions of the glyphs in the completed collection.
                 // Each set of metrics is associated with single font and will only be updated
                 // by that font so it's safe to use a single collection.
                 mainFont.UpdatePositions(positionings);
-                foreach (IFontMetrics font in fallbackFonts)
+                foreach (FontMetrics font in fallbackFonts)
                 {
                     font.UpdatePositions(positionings);
                 }
@@ -396,7 +393,7 @@ namespace SixLabors.Fonts
         private static bool DoFontRun(
             ReadOnlySpan<char> text,
             RendererOptions options,
-            IFontMetrics fontMetrics,
+            FontMetrics fontMetrics,
             BidiRun[] bidiRuns,
             Dictionary<int, int> bidiMap,
             GlyphSubstitutionCollection substitutions,
@@ -457,14 +454,13 @@ namespace SixLabors.Fonts
 
             if (options.ApplyKerning)
             {
-                AssignShapingFeatures(substitutions);
                 fontMetrics.ApplySubstitution(substitutions);
             }
 
             return positionings.TryAddOrUpdate(fontMetrics, substitutions, options);
         }
 
-        private static void SubstituteBidiMirrors(IFontMetrics fontMetrics, GlyphSubstitutionCollection collection, LayoutMode layoutMode)
+        private static void SubstituteBidiMirrors(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, LayoutMode layoutMode)
         {
             for (int i = 0; i < collection.Count; i++)
             {
@@ -503,39 +499,6 @@ namespace SixLabors.Fonts
                         collection.Replace(i, glyphId);
                     }
                 }
-            }
-        }
-
-        private static void AssignShapingFeatures(IGlyphShapingCollection collection)
-        {
-            for (int i = 0; i < collection.Count; i++)
-            {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
-                Script current = CodePoint.GetScript(data.CodePoint);
-
-                // Choose a shaper based on the script.
-                // This determines which features to apply to which glyphs.
-                BaseShaper shaper = ShaperFactory.Create(current);
-                int index = i;
-                int count = 1;
-                while (i < collection.Count - 1)
-                {
-                    // We want to assign the same shaper to individual sections of the text rather
-                    // than the text as a whole to ensure that different language shapers do not interfere
-                    // with each other when the text contains multiple languages.
-                    GlyphShapingData nextData = collection.GetGlyphShapingData(i + 1);
-                    Script next = CodePoint.GetScript(nextData.CodePoint);
-                    if (next is not Script.Common and not Script.Unknown and not Script.Inherited && next != current)
-                    {
-                        break;
-                    }
-
-                    i++;
-                    count++;
-                }
-
-                // Assign Substitution features to each glyph.
-                shaper.AssignFeatures(collection, index, count);
             }
         }
 
@@ -648,14 +611,6 @@ namespace SixLabors.Fonts
                                 }
                             }
                         }
-                    }
-
-                    if (glyphAdvance == 0)
-                    {
-                        // Nothing to render.
-                        codePointIndex++;
-                        graphemeCodePointIndex++;
-                        continue;
                     }
 
                     glyphAdvance *= pointSize / glyph.ScaleFactor;

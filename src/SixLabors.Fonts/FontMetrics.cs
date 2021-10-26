@@ -1,17 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Numerics;
-using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
-using SixLabors.Fonts.Tables.General;
-using SixLabors.Fonts.Tables.General.Colr;
-using SixLabors.Fonts.Tables.General.Glyphs;
-using SixLabors.Fonts.Tables.Hinting;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -19,517 +11,142 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a font face with metrics, which is a set of glyphs with a specific style (regular, italic, bold etc).
     /// </summary>
-    public class FontMetrics : IFontMetrics
+    public abstract class FontMetrics
     {
-        private readonly MaximumProfileTable maximumProfileTable;
-        private readonly CMapTable cmap;
-        private readonly GlyphTable glyphs;
-        private readonly HeadTable head;
-        private readonly OS2Table os2;
-        private readonly HorizontalMetricsTable horizontalMetrics;
-        private readonly VerticalMetricsTable? verticalMetricsTable;
-        private readonly GlyphMetrics[][] glyphCache;
-        private readonly GlyphMetrics[][]? colorGlyphCache;
-        private readonly KerningTable kerningTable;
-        private readonly GSubTable? gSubTable;
-        private readonly GPosTable? gPosTable;
-        private readonly ColrTable? colrTable;
-        private readonly CpalTable? cpalTable;
-        private readonly FpgmTable? fpgm;
-        private readonly CvtTable? cvt;
-        private readonly PrepTable? prep;
-
-        [ThreadStatic]
-        private Hinting.Interpreter? interpreter;
-        private readonly GlyphDefinitionTable? glyphDefinitionTable;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FontMetrics"/> class.
-        /// </summary>
-        /// <param name="nameTable">The name table.</param>
-        /// <param name="maximumProfileTable">The maximum profile table.</param>
-        /// <param name="cmap">The cmap table.</param>
-        /// <param name="glyphs">The glyph table.</param>
-        /// <param name="os2">The os2 table.</param>
-        /// <param name="horizontalHeadTable">The horizontal head table.</param>
-        /// <param name="horizontalMetrics">The horizontal metrics table.</param>
-        /// <param name="verticalHeadTable">The vertical head table.</param>
-        /// <param name="verticalMetrics">The vertical metrics table.</param>
-        /// <param name="head">The head table.</param>
-        /// <param name="kern">The kerning table.</param>
-        /// <param name="gSubTable">The glyph substitution table.</param>
-        /// <param name="gPosTable">The glyph positioning table.</param>
-        /// <param name="colrTable">The COLR table</param>
-        /// <param name="cpalTable">The CPAL table</param>
-        /// <param name="fpgm">The font program table.</param>
-        /// <param name="cvt">The control value table.</param>
-        /// <param name="prep">The control value program table.</param>
-        /// <param name="glyphDefinitionTable">The glyph definition table.</param>
-        internal FontMetrics(
-            NameTable nameTable,
-            MaximumProfileTable maximumProfileTable,
-            CMapTable cmap,
-            GlyphTable glyphs,
-            OS2Table os2,
-            HorizontalHeadTable horizontalHeadTable,
-            HorizontalMetricsTable horizontalMetrics,
-            VerticalHeadTable? verticalHeadTable,
-            VerticalMetricsTable? verticalMetrics,
-            HeadTable head,
-            KerningTable kern,
-            GSubTable? gSubTable,
-            GPosTable? gPosTable,
-            ColrTable? colrTable,
-            CpalTable? cpalTable,
-            FpgmTable? fpgm,
-            CvtTable? cvt,
-            PrepTable? prep,
-            GlyphDefinitionTable? glyphDefinitionTable)
+        internal FontMetrics()
         {
-            this.maximumProfileTable = maximumProfileTable;
-            this.cmap = cmap;
-            this.os2 = os2;
-            this.glyphs = glyphs;
-            this.horizontalMetrics = horizontalMetrics;
-            this.verticalMetricsTable = verticalMetrics;
-            this.head = head;
-            this.glyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
-            if (!(colrTable is null))
-            {
-                this.colorGlyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
-            }
-
-            // https://www.microsoft.com/typography/otspec/recom.htm#tad
-            // We use the same approach as FreeType for calculating the the global  ascender, descender,  and
-            // height of  OpenType fonts for consistency.
-            //
-            // 1.If the OS/ 2 table exists and the fsSelection bit 7 is set (USE_TYPO_METRICS), trust the font
-            //   and use the Typo* metrics.
-            // 2.Otherwise, use the HorizontalHeadTable "hhea" table's metrics.
-            // 3.If they are zero and the OS/ 2 table exists,
-            //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
-            //    - Otherwise, use the OS / 2 table's usWin* metrics.
-            bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
-            if (useTypoMetrics)
-            {
-                this.Ascender = os2.TypoAscender;
-                this.Descender = os2.TypoDescender;
-                this.LineGap = os2.TypoLineGap;
-                this.LineHeight = (short)(this.Ascender - this.Descender + this.LineGap);
-            }
-            else
-            {
-                this.Ascender = horizontalHeadTable.Ascender;
-                this.Descender = horizontalHeadTable.Descender;
-                this.LineGap = horizontalHeadTable.LineGap;
-                this.LineHeight = (short)(this.Ascender - this.Descender + this.LineGap);
-            }
-
-            if (this.Ascender == 0 || this.Descender == 0)
-            {
-                if (os2.TypoAscender != 0 || os2.TypoDescender != 0)
-                {
-                    this.Ascender = os2.TypoAscender;
-                    this.Descender = os2.TypoDescender;
-                    this.LineGap = os2.TypoLineGap;
-                    this.LineHeight = (short)(this.Ascender - this.Descender + this.LineGap);
-                }
-                else
-                {
-                    this.Ascender = (short)os2.WinAscent;
-                    this.Descender = (short)-os2.WinDescent;
-                    this.LineHeight = (short)(this.Ascender - this.Descender);
-                }
-            }
-
-            this.UnitsPerEm = this.head.UnitsPerEm;
-
-            // 72 * UnitsPerEm means 1pt = 1px
-            this.ScaleFactor = this.UnitsPerEm * 72F;
-            this.AdvanceWidthMax = (short)horizontalHeadTable.AdvanceWidthMax;
-            this.AdvanceHeightMax = verticalHeadTable == null ? this.LineHeight : verticalHeadTable.AdvanceHeightMax;
-
-            this.kerningTable = kern;
-            this.gSubTable = gSubTable;
-            this.gPosTable = gPosTable;
-            this.colrTable = colrTable;
-            this.cpalTable = cpalTable;
-            this.fpgm = fpgm;
-            this.cvt = cvt;
-            this.prep = prep;
-            this.glyphDefinitionTable = glyphDefinitionTable;
-            this.Description = new FontDescription(nameTable, os2, head);
-        }
-
-        /// <inheritdoc/>
-        public FontDescription Description { get; }
-
-        /// <inheritdoc/>
-        public ushort UnitsPerEm { get; }
-
-        /// <inheritdoc/>
-        public float ScaleFactor { get; }
-
-        /// <inheritdoc/>
-        public short Ascender { get; }
-
-        /// <inheritdoc/>
-        public short Descender { get; }
-
-        /// <inheritdoc/>
-        public short LineGap { get; }
-
-        /// <inheritdoc/>
-        public short LineHeight { get; }
-
-        /// <inheritdoc/>
-        public short AdvanceWidthMax { get; }
-
-        /// <inheritdoc/>
-        public short AdvanceHeightMax { get; }
-
-        /// <inheritdoc/>
-        public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
-            => this.TryGetGlyphId(codePoint, null, out glyphId, out bool _);
-
-        /// <inheritdoc/>
-        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
-            => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
-
-        /// <inheritdoc/>
-        public bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
-        {
-            glyphClass = null;
-            if (this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetGlyphClass(glyphId, out glyphClass))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
-        {
-            this.TryGetGlyphId(codePoint, out ushort glyphId);
-            return this.GetGlyphMetrics(codePoint, glyphId, support);
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
-        {
-            GlyphType glyphType = GlyphType.Standard;
-            if (glyphId == 0)
-            {
-                // A glyph was not found in this face for the previously matched
-                // codepoint. Set to fallback.
-                glyphType = GlyphType.Fallback;
-            }
-
-            if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredVectors(codePoint, glyphId, out GlyphMetrics[]? metrics))
-            {
-                return metrics;
-            }
-
-            if (this.glyphCache[glyphId] is null)
-            {
-                this.glyphCache[glyphId] = new[]
-                {
-                    this.CreateGlyphMetrics(
-                    codePoint,
-                    glyphId,
-                    glyphType)
-                };
-            }
-
-            return this.glyphCache[glyphId];
-        }
-
-        /// <inheritdoc/>
-        public void ApplySubstitution(GlyphSubstitutionCollection collection)
-        {
-            if (this.gSubTable != null)
-            {
-                for (ushort index = 0; index < collection.Count; index++)
-                {
-                    this.gSubTable.ApplySubstitution(collection, index, collection.Count - index);
-                }
-            }
-        }
-
-        /// <inheritdoc/>
-        public void UpdatePositions(GlyphPositioningCollection collection)
-        {
-            bool updated = false;
-            if (this.gPosTable != null)
-            {
-                for (ushort index = 0; index < collection.Count; index++)
-                {
-                    updated = this.gPosTable.TryUpdatePositions(this, collection, index, collection.Count - index);
-                }
-            }
-
-            if (!updated && this.kerningTable != null)
-            {
-                for (ushort index = 1; index < collection.Count; index++)
-                {
-                    this.kerningTable.UpdatePositions(this, collection, (ushort)(index - 1), index);
-                }
-            }
         }
 
         /// <summary>
-        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// Gets the basic description of the face.
         /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <returns>a <see cref="FontMetrics"/>.</returns>
-        public static FontMetrics LoadFont(string path)
-        {
-            using FileStream fs = File.OpenRead(path);
-            var reader = new FontReader(fs);
-            return LoadFont(reader);
-        }
+        public abstract FontDescription Description { get; }
 
         /// <summary>
-        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// Gets the number of font units per EM square for this face.
         /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <param name="offset">Position in the stream to read the font from.</param>
-        /// <returns>a <see cref="FontMetrics"/>.</returns>
-        public static FontMetrics LoadFont(string path, long offset)
-        {
-            using FileStream fs = File.OpenRead(path);
-            fs.Position = offset;
-            return LoadFont(fs);
-        }
+        public abstract ushort UnitsPerEm { get; }
 
         /// <summary>
-        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// Gets the scale factor that is applied to all glyphs in this face.
+        /// Calculated as 72 * <see cref="UnitsPerEm"/> so that 1pt = 1px.
         /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>a <see cref="FontMetrics"/>.</returns>
-        public static FontMetrics LoadFont(Stream stream)
-        {
-            var reader = new FontReader(stream);
-            return LoadFont(reader);
-        }
-
-        internal static FontMetrics LoadFont(FontReader reader)
-        {
-            // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
-            // recommended order
-            HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
-            HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>(); // hhea
-            MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>(); // maxp
-            OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
-
-            // LTSH - Linear threshold data
-            // VDMX - Vertical device metrics
-            // hdmx - Horizontal device metrics
-            HorizontalMetricsTable horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
-
-            VerticalHeadTable? vhea = reader.TryGetTable<VerticalHeadTable>();
-
-            // Vertical metrics are optional. Supported by AAF fonts.
-            VerticalMetricsTable? verticalMetrics = null;
-            if (vhea != null)
-            {
-                verticalMetrics = reader.GetTable<VerticalMetricsTable>();
-            }
-
-            CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
-
-            FpgmTable? fpgm = reader.TryGetTable<FpgmTable>(); // fpgm - Font Program
-            PrepTable? prep = reader.TryGetTable<PrepTable>(); // prep -  Control Value Program
-            CvtTable? cvt = reader.TryGetTable<CvtTable>(); // cvt  - Control Value Table
-
-            reader.GetTable<IndexLocationTable>(); // loca
-            GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
-            KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
-            NameTable nameTable = reader.GetTable<NameTable>(); // name
-
-            ColrTable? colrTable = reader.TryGetTable<ColrTable>(); // colr
-            CpalTable? cpalTable;
-            if (colrTable != null)
-            {
-                cpalTable = reader.GetTable<CpalTable>(); // CPAL - required if COLR is provided
-            }
-            else
-            {
-                cpalTable = reader.TryGetTable<CpalTable>(); // colr
-            }
-
-            // Advanced Typographics instructions.
-            GSubTable? gSub = reader.TryGetTable<GSubTable>();
-            GPosTable? gPos = reader.TryGetTable<GPosTable>();
-            GlyphDefinitionTable? glyphDefinitionTable = reader.TryGetTable<GlyphDefinitionTable>();
-
-            // post - PostScript information
-            // gasp - Grid-fitting/Scan-conversion (optional table)
-            // PCLT - PCL 5 data
-            // DSIG - Digital signature
-            return new FontMetrics(
-                nameTable,
-                maxp,
-                cmap,
-                glyphs,
-                os2,
-                hhea,
-                horizontalMetrics,
-                vhea,
-                verticalMetrics,
-                head,
-                kern,
-                gSub,
-                gPos,
-                colrTable,
-                cpalTable,
-                fpgm,
-                cvt,
-                prep,
-                glyphDefinitionTable);
-        }
+        public abstract float ScaleFactor { get; }
 
         /// <summary>
-        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// Gets the typographic ascender of the face, expressed in font units.
         /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <returns>a <see cref="FontMetrics"/>.</returns>
-        public static FontMetrics[] LoadFontCollection(string path)
-        {
-            using FileStream fs = File.OpenRead(path);
-            return LoadFontCollection(fs);
-        }
+        public abstract short Ascender { get; }
 
         /// <summary>
-        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// Gets the typographic descender of the face, expressed in font units.
         /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>a <see cref="FontMetrics"/>.</returns>
-        public static FontMetrics[] LoadFontCollection(Stream stream)
-        {
-            long startPos = stream.Position;
-            var reader = new BigEndianBinaryReader(stream, true);
-            var ttcHeader = TtcHeader.Read(reader);
-            var fonts = new FontMetrics[(int)ttcHeader.NumFonts];
+        public abstract short Descender { get; }
 
-            for (int i = 0; i < ttcHeader.NumFonts; ++i)
-            {
-                stream.Position = startPos + ttcHeader.OffsetTable[i];
-                fonts[i] = LoadFont(stream);
-            }
+        /// <summary>
+        /// Gets the typographic line gap of the face, expressed in font units.
+        /// This field should be combined with the <see cref="Ascender"/> and <see cref="Descender"/>
+        /// values to determine default line spacing.
+        /// </summary>
+        public abstract short LineGap { get; }
 
-            return fonts;
-        }
+        /// <summary>
+        /// Gets the typographic line spacing of the face, expressed in font units.
+        /// </summary>
+        public abstract short LineHeight { get; }
 
-        internal GlyphVector ApplyHinting(GlyphVector glyphVector, float pixelSize, ushort glyphIndex)
-        {
-            if (this.interpreter == null)
-            {
-                this.interpreter = new Hinting.Interpreter(
-                    this.maximumProfileTable.MaxStackElements,
-                    this.maximumProfileTable.MaxStorage,
-                    this.maximumProfileTable.MaxFunctionDefs,
-                    this.maximumProfileTable.MaxInstructionDefs,
-                    this.maximumProfileTable.MaxTwilightPoints);
+        /// <summary>
+        /// Gets the maximum advance width, in font units, for all glyphs in this face.
+        /// </summary>
+        public abstract short AdvanceWidthMax { get; }
 
-                if (this.fpgm != null)
-                {
-                    this.interpreter.InitializeFunctionDefs(this.fpgm.Instructions);
-                }
-            }
+        /// <summary>
+        /// Gets the maximum advance height, in font units, for all glyphs in this
+        /// face.This is only relevant for vertical layouts, and is set to <see cref="LineHeight"/> for
+        /// fonts that do not provide vertical metrics.
+        /// </summary>
+        public abstract short AdvanceHeightMax { get; }
 
-            float scale = pixelSize / this.UnitsPerEm;
-            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scale, pixelSize, this.prep?.Instructions);
+        /// <summary>
+        /// Gets the specified glyph id matching the codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint.</param>
+        /// <param name="glyphId">
+        /// When this method returns, contains the glyph id associated with the specified codepoint,
+        /// if the codepoint is found; otherwise, <value>0</value>.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains a glyph for the specified codepoint; otherwise, <see langword="false"/>.
+        /// </returns>
+        internal abstract bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId);
 
-            Bounds bounds = glyphVector.GetBounds();
-            short leftSideBearing = this.horizontalMetrics.GetLeftSideBearing(glyphIndex);
-            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphIndex);
-            short topSideBearing = this.verticalMetricsTable?.GetTopSideBearing(glyphIndex) ?? (short)(this.Ascender - bounds.Max.Y);
-            ushort advanceHeight = this.verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)this.LineHeight;
+        /// <summary>
+        /// Gets the specified glyph id matching the codepoint pair.
+        /// </summary>
+        /// <param name="codePoint">The codepoint.</param>
+        /// <param name="nextCodePoint">The next codepoint. Can be null.</param>
+        /// <param name="glyphId">
+        /// When this method returns, contains the glyph id associated with the specified codepoint,
+        /// if the codepoint is found; otherwise, <value>0</value>.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <param name="skipNextCodePoint">
+        /// When this method return, contains a value indicating whether the next codepoint should be skipped.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains a glyph for the specified codepoint; otherwise, <see langword="false"/>.
+        /// </returns>
+        internal abstract bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint);
 
-            var pp1 = new Vector2(bounds.Min.X - (leftSideBearing * scale), 0);
-            var pp2 = new Vector2(pp1.X + (advanceWidth * scale), 0);
-            var pp3 = new Vector2(0, bounds.Max.Y + (topSideBearing * scale));
-            var pp4 = new Vector2(0, pp3.Y - (advanceHeight * scale));
+        /// <summary>
+        /// Tries to get the glyph class for a given glyph id.
+        /// The font needs to have a GDEF table defined.
+        /// </summary>
+        /// <param name="glyphId">The glyph identifier.</param>
+        /// <param name="glyphClass">The glyph class.</param>
+        /// <returns>true, if the glyph class could be retrieved.</returns>
+        internal abstract bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass);
 
-            GlyphVector.Hint(ref glyphVector, this.interpreter, pp1, pp2, pp3, pp4);
+        /// <summary>
+        /// Tries to get the mark attachment class for a given glyph id.
+        /// The font needs to have a GDEF table defined.
+        /// </summary>
+        /// <param name="glyphId">The glyph identifier.</param>
+        /// <param name="markAttachmentClass">The mark attachment class.</param>
+        /// <returns>true, if the mark attachment class could be retrieved.</returns>
+        internal abstract bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass);
 
-            return glyphVector;
-        }
+        /// <summary>
+        /// Gets the glyph metrics for a given code point.
+        /// </summary>
+        /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
+        /// <param name="support">Options for enabling color font support during layout and rendering.</param>
+        /// <returns>The glyph metrics to find.</returns>
+        public abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support);
 
-        private bool TryGetColoredVectors(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
-        {
-            if (this.colrTable == null || this.colorGlyphCache == null)
-            {
-                vectors = null;
-                return false;
-            }
+        /// <summary>
+        /// Gets the glyph metrics for a given code point and glyph id.
+        /// </summary>
+        /// <param name="codePoint">The Unicode codepoint.</param>
+        /// <param name="glyphId">
+        /// The previously matched or substituted glyph id for the codepoint in the face.
+        /// If this value equals <value>0</value> the default fallback metrics are returned.
+        /// </param>
+        /// <param name="support">Options for enabling color font support during layout and rendering.</param>
+        /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
+        internal abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support);
 
-            vectors = this.colorGlyphCache[glyphId];
-            if (vectors is null)
-            {
-                Span<LayerRecord> indexes = this.colrTable.GetLayers(glyphId);
-                if (indexes.Length > 0)
-                {
-                    vectors = new GlyphMetrics[indexes.Length];
-                    for (int i = 0; i < indexes.Length; i++)
-                    {
-                        LayerRecord? layer = indexes[i];
+        /// <summary>
+        /// Applies any available substitutions to the collection of glyphs.
+        /// </summary>
+        /// <param name="collection">The glyph substitution collection.</param>
+        internal abstract void ApplySubstitution(GlyphSubstitutionCollection collection);
 
-                        vectors[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PaletteIndex);
-                    }
-                }
-
-                vectors ??= Array.Empty<GlyphMetrics>();
-                this.colorGlyphCache[glyphId] = vectors;
-            }
-
-            return vectors.Length > 0;
-        }
-
-        private GlyphMetrics CreateGlyphMetrics(
-            CodePoint codePoint,
-            ushort glyphId,
-            GlyphType glyphType,
-            ushort palleteIndex = 0)
-        {
-            GlyphVector vector = this.glyphs.GetGlyph(glyphId);
-            Bounds bounds = vector.GetBounds();
-            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphId);
-            short lsb = this.horizontalMetrics.GetLeftSideBearing(glyphId);
-
-            // Provide a default for the advance height. This is overwritten for vertical fonts.
-            ushort advancedHeight = (ushort)(this.Ascender - this.Descender);
-            short tsb = (short)(this.Ascender - bounds.Max.Y);
-            if (this.verticalMetricsTable != null)
-            {
-                advancedHeight = this.verticalMetricsTable.GetAdvancedHeight(glyphId);
-                tsb = this.verticalMetricsTable.GetTopSideBearing(glyphId);
-            }
-
-            GlyphColor? color = null;
-            if (glyphType == GlyphType.ColrLayer)
-            {
-                // 0xFFFF is special index meaning use foreground color and thus leave unset
-                if (palleteIndex != 0xFFFF)
-                {
-                    color = this.cpalTable?.GetGlyphColor(0, palleteIndex);
-                }
-            }
-
-            return new GlyphMetrics(
-                this,
-                codePoint,
-                vector,
-                advanceWidth,
-                advancedHeight,
-                lsb,
-                tsb,
-                glyphId,
-                glyphType,
-                color);
-        }
+        /// <summary>
+        /// Applies any available positioning updates to the collection of glyphs.
+        /// </summary>
+        /// <param name="collection">The glyph positioning collection.</param>
+        internal abstract void UpdatePositions(GlyphPositioningCollection collection);
     }
 }

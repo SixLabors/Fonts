@@ -12,14 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// </summary>
     internal static class LookupType2SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort substFormat = reader.ReadUInt16();
 
             return substFormat switch
             {
-                1 => LookupType2Format1SubTable.Load(reader, offset),
+                1 => LookupType2Format1SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1'."),
             };
         }
@@ -30,13 +30,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly SequenceTable[] sequenceTables;
         private readonly CoverageTable coverageTable;
 
-        private LookupType2Format1SubTable(SequenceTable[] sequenceTables, CoverageTable coverageTable)
+        private LookupType2Format1SubTable(SequenceTable[] sequenceTables, CoverageTable coverageTable, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.sequenceTables = sequenceTables;
             this.coverageTable = coverageTable;
         }
 
-        public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             // Multiple Substitution Format 1
             // +----------+--------------------------------+-----------------------------------------------------------------+
@@ -75,10 +76,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType2Format1SubTable(sequenceTables, coverageTable);
+            return new LookupType2Format1SubTable(sequenceTables, coverageTable, lookupFlags);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
+        public override bool TrySubstitution(
+            FontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count)
         {
             ushort glyphId = collection[index][0];
             if (glyphId == 0)
@@ -90,6 +97,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 
             if (offset > -1)
             {
+                // TODO: Looks like we should remove the glyph if the substitutes
+                // length = 0;
                 collection.Replace(index, this.sequenceTables[offset].SubstituteGlyphs);
                 return true;
             }

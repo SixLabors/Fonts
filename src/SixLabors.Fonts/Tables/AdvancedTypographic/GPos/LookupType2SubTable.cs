@@ -17,15 +17,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal static class LookupType2SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort posFormat = reader.ReadUInt16();
 
             return posFormat switch
             {
-                1 => LookupType2Format1SubTable.Load(reader, offset),
-                2 => LookupType2Format2SubTable.Load(reader, offset),
+                1 => LookupType2Format1SubTable.Load(reader, offset, lookupFlags),
+                2 => LookupType2Format2SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException(
                     $"Invalid value for 'posFormat' {posFormat}. Should be '1' or '2'.")
             };
@@ -36,13 +36,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             private readonly CoverageTable coverageTable;
             private readonly PairSetTable[] pairSets;
 
-            public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets)
+            public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets, LookupFlags lookupFlags)
+                : base(lookupFlags)
             {
                 this.coverageTable = coverageTable;
                 this.pairSets = pairSets;
             }
 
-            public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
             {
                 // Pair Adjustment Positioning Subtable format 1.
                 // +-------------+------------------------------+------------------------------------------------+
@@ -80,47 +81,47 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-                return new LookupType2Format1SubTable(coverageTable, pairSets);
+                return new LookupType2Format1SubTable(coverageTable, pairSets, lookupFlags);
             }
 
             public override bool TryUpdatePosition(
-                IFontMetrics fontMetrics,
+                FontMetrics fontMetrics,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
                 ushort index,
                 int count)
             {
-                for (ushort i = 0; i < count - 1; i++)
+                if (count <= 1)
                 {
-                    ushort glyphId = collection[i + index][0];
-                    if (glyphId == 0)
+                    return false;
+                }
+
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
+                {
+                    return false;
+                }
+
+                int coverage = this.coverageTable.CoverageIndexOf(glyphId);
+                if (coverage > -1)
+                {
+                    PairSetTable pairSet = this.pairSets[coverage];
+                    ushort glyphId2 = collection[index + 1][0];
+                    if (glyphId2 == 0)
                     {
                         return false;
                     }
 
-                    int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-                    if (coverage > -1)
+                    if (pairSet.TryGetPairValueRecord(glyphId2, out PairValueRecord pairValueRecord))
                     {
-                        PairSetTable pairSet = this.pairSets[coverage];
-                        ushort glyphId2 = collection[i + 1 + index][0];
-                        if (glyphId2 == 0)
-                        {
-                            return false;
-                        }
+                        ValueRecord record1 = pairValueRecord.ValueRecord1;
+                        AdvancedTypographicUtils.ApplyPosition(collection, index, record1);
 
-                        if (pairSet.TryGetPairValueRecord(glyphId2, out PairValueRecord pairValueRecord))
-                        {
-                            ValueRecord record1 = pairValueRecord.ValueRecord1;
-                            collection.Offset(fontMetrics, i, glyphId, record1.XPlacement, record1.YPlacement);
-                            collection.Advance(fontMetrics, i, glyphId, record1.XAdvance, record1.YAdvance);
+                        ValueRecord record2 = pairValueRecord.ValueRecord2;
+                        AdvancedTypographicUtils.ApplyPosition(collection, (ushort)(index + 1), record2);
 
-                            ValueRecord record2 = pairValueRecord.ValueRecord2;
-                            collection.Offset(fontMetrics, (ushort)(i + 1), glyphId2, record2.XPlacement, record2.YPlacement);
-                            collection.Advance(fontMetrics, (ushort)(i + 1), glyphId2, record2.XAdvance, record2.YAdvance);
-
-                            return true;
-                        }
+                        return true;
                     }
                 }
 
@@ -183,7 +184,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 CoverageTable coverageTable,
                 Class1Record[] class1Records,
                 ClassDefinitionTable classDefinitionTable1,
-                ClassDefinitionTable classDefinitionTable2)
+                ClassDefinitionTable classDefinitionTable2,
+                LookupFlags lookupFlags)
+                : base(lookupFlags)
             {
                 this.coverageTable = coverageTable;
                 this.class1Records = class1Records;
@@ -191,7 +194,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 this.classDefinitionTable2 = classDefinitionTable2;
             }
 
-            public static LookupType2Format2SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType2Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
             {
                 // Pair Adjustment Positioning Subtable format 2.
                 // +-------------+------------------------------+------------------------------------------------+
@@ -243,50 +246,50 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 var classDefTable1 = ClassDefinitionTable.Load(reader, offset + classDef1Offset);
                 var classDefTable2 = ClassDefinitionTable.Load(reader, offset + classDef2Offset);
 
-                return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2);
+                return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2, lookupFlags);
             }
 
             public override bool TryUpdatePosition(
-                IFontMetrics fontMetrics,
+                FontMetrics fontMetrics,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
                 ushort index,
                 int count)
             {
-                for (ushort i = 0; i < count - 1; i++)
+                if (count <= 1)
                 {
-                    ushort glyphId = collection[i + index][0];
-                    if (glyphId == 0)
+                    return false;
+                }
+
+                ushort glyphId = collection[index][0];
+                if (glyphId == 0)
+                {
+                    return false;
+                }
+
+                int coverage = this.coverageTable.CoverageIndexOf(glyphId);
+                if (coverage > -1)
+                {
+                    int classDef1 = this.classDefinitionTable1.ClassIndexOf(glyphId);
+                    ushort glyphId2 = collection[index + 1][0];
+                    if (glyphId2 == 0)
                     {
                         return false;
                     }
 
-                    int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-                    if (coverage > -1)
-                    {
-                        int classDef1 = this.classDefinitionTable1.ClassIndexOf(glyphId);
-                        ushort glyphId2 = collection[i + 1 + index][0];
-                        if (glyphId2 == 0)
-                        {
-                            return false;
-                        }
+                    int classDef2 = this.classDefinitionTable2.ClassIndexOf(glyphId2);
 
-                        int classDef2 = this.classDefinitionTable2.ClassIndexOf(glyphId2);
+                    Class1Record class1Record = this.class1Records[classDef1];
+                    Class2Record class2Record = class1Record.Class2Records[classDef2];
 
-                        Class1Record class1Record = this.class1Records[classDef1];
-                        Class2Record class2Record = class1Record.Class2Records[classDef2];
+                    ValueRecord record1 = class2Record.ValueRecord1;
+                    AdvancedTypographicUtils.ApplyPosition(collection, index, record1);
 
-                        ValueRecord record1 = class2Record.ValueRecord1;
-                        collection.Offset(fontMetrics, i, glyphId, record1.XPlacement, record1.YPlacement);
-                        collection.Advance(fontMetrics, i, glyphId, record1.XAdvance, record1.YAdvance);
+                    ValueRecord record2 = class2Record.ValueRecord2;
+                    AdvancedTypographicUtils.ApplyPosition(collection, (ushort)(index + 1), record2);
 
-                        ValueRecord record2 = class2Record.ValueRecord2;
-                        collection.Offset(fontMetrics, (ushort)(i + 1), glyphId2, record2.XPlacement, record2.YPlacement);
-                        collection.Advance(fontMetrics, (ushort)(i + 1), glyphId2, record2.XAdvance, record2.YAdvance);
-
-                        return true;
-                    }
+                    return true;
                 }
 
                 return false;

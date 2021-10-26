@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -95,20 +96,92 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new GPosTable(scriptList, featureList, lookupList);
         }
 
-        public bool TryUpdatePositions(
-            IFontMetrics fontMetrics,
-            GlyphPositioningCollection collection,
-            ushort index,
-            int count)
+        public bool TryUpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection)
         {
-            GlyphShapingData data = collection.GetGlyphShapingData(index);
-            if (data.Features.Count == 0)
+            bool updated = false;
+            for (ushort i = 0; i < collection.Count; i++)
             {
-                return false;
+                if (!collection.ShouldProcess(fontMetrics, i))
+                {
+                    continue;
+                }
+
+                ScriptClass current = CodePoint.GetScriptClass(collection.GetGlyphShapingData(i).CodePoint);
+                BaseShaper shaper = ShaperFactory.Create(current);
+
+                ushort index = i;
+                ushort count = 1;
+                while (i < collection.Count - 1)
+                {
+                    // We want to assign the same feature lookups to individual sections of the text rather
+                    // than the text as a whole to ensure that different language shapers do not interfere
+                    // with each other when the text contains multiple languages.
+                    GlyphShapingData nextData = collection.GetGlyphShapingData(i + 1);
+                    ScriptClass next = CodePoint.GetScriptClass(nextData.CodePoint);
+                    if (next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited && next != current)
+                    {
+                        break;
+                    }
+
+                    i++;
+                    count++;
+                }
+
+                if (shaper.MarkZeroingMode == MarkZeroingMode.PreGPos)
+                {
+                    ZeroMarkAdvances(fontMetrics, collection, index, count);
+                }
+
+                // Assign Substitution features to each glyph.
+                shaper.AssignFeatures(collection, index, count);
+                IEnumerable<Tag> stageFeatures = shaper.GetShapingStageFeatures();
+                SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
+                foreach (Tag stageFeature in stageFeatures)
+                {
+                    List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = this.GetFeatureLookups(in stageFeature, current);
+                    if (lookups.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    // Apply features in order.
+                    foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
+                    {
+                        Tag feature = featureLookup.Feature;
+                        iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
+
+                        while (iterator.Index < index + count)
+                        {
+                            List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
+                            if (!HasFeature(glyphFeatures, in feature))
+                            {
+                                iterator.Next();
+                                continue;
+                            }
+
+                            updated |= featureLookup.LookupTable.TryUpdatePosition(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
+                            iterator.Next();
+                        }
+                    }
+                }
+
+                if (shaper.MarkZeroingMode == MarkZeroingMode.PostGpos)
+                {
+                    ZeroMarkAdvances(fontMetrics, collection, index, count);
+                }
+
+                FixCursiveAttachment(collection, index, count);
+                FixMarkAttachment(collection, index, count);
+                UpdatePositions(fontMetrics, collection, index, count);
             }
 
+            return updated;
+        }
+
+        private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, ScriptClass script)
+        {
             ScriptListTable scriptListTable = this.ScriptList.Default();
-            Tag[] tags = UnicodeScriptTagMap.Instance[CodePoint.GetScript(data.CodePoint)];
+            Tag[] tags = UnicodeScriptTagMap.Instance[script];
             for (int i = 0; i < tags.Length; i++)
             {
                 if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? table))
@@ -121,21 +194,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
             if (defaultLangSysTable != null)
             {
-                return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, data.Features, defaultLangSysTable);
+                return this.GetFeatureLookups(stageFeature, defaultLangSysTable);
             }
 
-            return this.TryUpdateFeaturePositions(fontMetrics, collection, index, count, data.Features, scriptListTable.LangSysTables);
+            return this.GetFeatureLookups(stageFeature, scriptListTable.LangSysTables);
         }
 
-        private bool TryUpdateFeaturePositions(
-            IFontMetrics fontMetrics,
-            GlyphPositioningCollection collection,
-            ushort index,
-            int count,
-            HashSet<Tag> featureTags,
-            params LangSysTable[] langSysTables)
+        private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, params LangSysTable[] langSysTables)
         {
-            bool updated = false;
+            List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = new();
             for (int i = 0; i < langSysTables.Length; i++)
             {
                 ushort[] featureIndices = langSysTables[i].FeatureIndices;
@@ -144,24 +211,123 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     FeatureTable featureTable = this.FeatureList.FeatureTables[featureIndices[j]];
                     Tag feature = featureTable.FeatureTag;
 
-                    // Check tag against all features, which should be applied to the given glyph.
-                    if (!featureTags.Contains(feature))
+                    if (stageFeature != feature)
                     {
                         continue;
                     }
 
-                    ushort[] lookupListIndices = this.FeatureList.FeatureTables[featureIndices[j]].LookupListIndices;
+                    ushort[] lookupListIndices = featureTable.LookupListIndices;
                     for (int k = 0; k < lookupListIndices.Length; k++)
                     {
-                        // TODO: Consider caching the relevant langtables per script.
-                        // There's a lot of repetitive checks here.
-                        LookupTable lookupTable = this.LookupList.LookupTables[lookupListIndices[k]];
-                        updated |= lookupTable.TryUpdatePosition(fontMetrics, this, collection, feature, index, count);
+                        ushort lookupIndex = lookupListIndices[k];
+                        LookupTable lookupTable = this.LookupList.LookupTables[lookupIndex];
+                        lookups.Add(new(feature, lookupIndex, lookupTable));
                     }
                 }
             }
 
-            return updated;
+            lookups.Sort((x, y) => x.Index - y.Index);
+            return lookups;
+        }
+
+        private static bool HasFeature(List<TagEntry> glyphFeatures, in Tag feature)
+        {
+            for (int i = 0; i < glyphFeatures.Count; i++)
+            {
+                TagEntry entry = glyphFeatures[i];
+                if (entry.Tag == feature && entry.Enabled)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void FixCursiveAttachment(GlyphPositioningCollection collection, ushort index, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                int currentIndex = i + index;
+                GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
+                if (data.CursiveAttachment != -1)
+                {
+                    int j = data.CursiveAttachment + i;
+                    if (j > count)
+                    {
+                        return;
+                    }
+
+                    GlyphShapingData cursiveData = collection.GetGlyphShapingData(j);
+
+                    if (!collection.IsVerticalLayoutMode)
+                    {
+                        data.Bounds.Y += cursiveData.Bounds.Y;
+                    }
+                    else
+                    {
+                        data.Bounds.X += cursiveData.Bounds.X;
+                    }
+                }
+            }
+        }
+
+        private static void FixMarkAttachment(GlyphPositioningCollection collection, ushort index, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                int currentIndex = i + index;
+                GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
+                if (data.MarkAttachment != -1)
+                {
+                    int j = data.MarkAttachment;
+                    GlyphShapingData markData = collection.GetGlyphShapingData(j);
+                    data.Bounds.X += markData.Bounds.X;
+                    data.Bounds.Y += markData.Bounds.Y;
+
+                    if (data.Direction == TextDirection.LeftToRight)
+                    {
+                        for (int k = j; k < i; k++)
+                        {
+                            markData = collection.GetGlyphShapingData(k);
+                            data.Bounds.X -= markData.Bounds.Width;
+                            data.Bounds.Y -= markData.Bounds.Height;
+                        }
+                    }
+                    else
+                    {
+                        for (int k = j + 1; k < i + 1; k++)
+                        {
+                            markData = collection.GetGlyphShapingData(k);
+                            data.Bounds.X += markData.Bounds.Width;
+                            data.Bounds.Y += markData.Bounds.Height;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void ZeroMarkAdvances(FontMetrics fontMetrics, GlyphPositioningCollection collection, ushort index, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                int currentIndex = i + index;
+                GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
+                if (AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphIds[0], data))
+                {
+                    data.Bounds.Width = 0;
+                    data.Bounds.Height = 0;
+                }
+            }
+        }
+
+        private static void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, ushort index, int count)
+        {
+            for (ushort i = 0; i < count; i++)
+            {
+                ushort currentIndex = (ushort)(i + index);
+                collection.UpdatePosition(fontMetrics, currentIndex);
+            }
         }
     }
 }

@@ -19,7 +19,7 @@ namespace SixLabors.Fonts
         private readonly Dictionary<float, GlyphVector> scaledVector = new();
 
         internal GlyphMetrics(
-            FontMetrics font,
+            StreamFontMetrics font,
             CodePoint codePoint,
             GlyphVector vector,
             ushort advanceWidth,
@@ -70,7 +70,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the font metrics.
         /// </summary>
-        internal FontMetrics FontMetrics { get; }
+        internal StreamFontMetrics FontMetrics { get; }
 
         /// <summary>
         /// Gets the Unicode codepoint of the glyph.
@@ -117,10 +117,10 @@ namespace SixLabors.Fonts
         /// </summary>
         public GlyphColor? GlyphColor { get; }
 
-        /// <inheritdoc cref="IFontMetrics.UnitsPerEm"/>
-        public ushort UnitsPerEm => this.FontMetrics.UnitsPerEm;
+        /// <inheritdoc cref="FontMetrics.UnitsPerEm"/>
+        public ushort UnitsPerEm { get; }
 
-        /// <inheritdoc cref="IFontMetrics.ScaleFactor"/>
+        /// <inheritdoc cref="FontMetrics.ScaleFactor"/>
         public float ScaleFactor { get; }
 
         /// <summary>

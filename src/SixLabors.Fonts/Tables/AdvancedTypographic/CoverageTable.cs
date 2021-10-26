@@ -144,21 +144,5 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             return new CoverageFormat2Table(records);
         }
-
-        private readonly struct CoverageRangeRecord
-        {
-            public CoverageRangeRecord(ushort startGlyphId, ushort endGlyphId, ushort startCoverageIndex)
-            {
-                this.StartGlyphId = startGlyphId;
-                this.EndGlyphId = endGlyphId;
-                this.Index = startCoverageIndex;
-            }
-
-            public ushort StartGlyphId { get; }
-
-            public ushort EndGlyphId { get; }
-
-            public ushort Index { get; }
-        }
     }
 }

@@ -71,7 +71,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void CanEnumerateSystemFontMetrics()
         {
-            IEnumerator<IFontMetrics> enumerator = ((IReadOnlyFontMetricsCollection)SysFontCollection).GetEnumerator();
+            IEnumerator<FontMetrics> enumerator = ((IReadOnlyFontMetricsCollection)SysFontCollection).GetEnumerator();
 
             int count = 0;
             while (enumerator.MoveNext())
@@ -103,18 +103,18 @@ namespace SixLabors.Fonts.Tests
         {
             var collection = (IReadOnlyFontMetricsCollection)SysFontCollection;
             FontFamily family = SysFontCollection.Families.First();
-            IEnumerable<IFontMetrics> metrics = collection.GetAllMetrics(family.Name, family.Culture);
+            IEnumerable<FontMetrics> metrics = collection.GetAllMetrics(family.Name, family.Culture);
 
             Assert.True(metrics.Any());
 
-            foreach (IFontMetrics item in metrics)
+            foreach (FontMetrics item in metrics)
             {
-                Assert.True(family.TryGetMetrics(item.Description.Style, out IFontMetrics familyMetrics));
+                Assert.True(family.TryGetMetrics(item.Description.Style, out FontMetrics familyMetrics));
                 Assert.True(collection.TryGetMetrics(
                     family.Name,
                     family.Culture,
                     item.Description.Style,
-                    out IFontMetrics fontMetrics));
+                    out FontMetrics fontMetrics));
 
                 Assert.Equal(familyMetrics, fontMetrics);
             }

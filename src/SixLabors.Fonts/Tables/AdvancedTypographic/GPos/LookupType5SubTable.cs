@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -17,14 +16,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal static class LookupType5SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort subTableFormat = reader.ReadUInt16();
 
             return subTableFormat switch
             {
-                1 => LookupType5Format1SubTable.Load(reader, offset),
+                1 => LookupType5Format1SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {subTableFormat}. Should be '1'."),
             };
         }
@@ -36,7 +35,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             private readonly MarkArrayTable markArrayTable;
             private readonly LigatureArrayTable ligatureArrayTable;
 
-            public LookupType5Format1SubTable(CoverageTable markCoverage, CoverageTable ligatureCoverage, MarkArrayTable markArrayTable, LigatureArrayTable ligatureArrayTable)
+            public LookupType5Format1SubTable(
+                CoverageTable markCoverage,
+                CoverageTable ligatureCoverage,
+                MarkArrayTable markArrayTable,
+                LigatureArrayTable ligatureArrayTable,
+                LookupFlags lookupFlags)
+                : base(lookupFlags)
             {
                 this.markCoverage = markCoverage;
                 this.ligatureCoverage = ligatureCoverage;
@@ -44,7 +49,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 this.ligatureArrayTable = ligatureArrayTable;
             }
 
-            public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
             {
                 // MarkLigPosFormat1 Subtable.
                 // +--------------------+---------------------------------+------------------------------------------------------+
@@ -77,11 +82,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 var markArrayTable = new MarkArrayTable(reader, offset + markArrayOffset);
                 var ligatureArrayTable = new LigatureArrayTable(reader, offset + ligatureArrayOffset, markClassCount);
 
-                return new LookupType5Format1SubTable(markCoverage, ligatureCoverage, markArrayTable, ligatureArrayTable);
+                return new LookupType5Format1SubTable(markCoverage, ligatureCoverage, markArrayTable, ligatureArrayTable, lookupFlags);
             }
 
             public override bool TryUpdatePosition(
-                IFontMetrics fontMetrics,
+                FontMetrics fontMetrics,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -97,52 +102,48 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 int markIndex = this.markCoverage.CoverageIndexOf(glyphId);
-                if (markIndex == -1)
+                if (markIndex < 0)
                 {
                     return false;
                 }
 
                 // Search backward for a base glyph.
-                int baseGlyphIterator = index;
-                ushort baseGlyphId;
-                while (--baseGlyphIterator >= 0)
+                int baseGlyphIndex = index;
+                while (--baseGlyphIndex >= 0)
                 {
-                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIterator);
-                    baseGlyphId = collection[baseGlyphIterator][0];
-                    if (!fontMetrics.TryGetGlyphClass(baseGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(data.CodePoint))
-                    {
-                        break;
-                    }
-
-                    if (glyphClass != GlyphClassDef.MarkGlyph)
+                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIndex);
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphIds[0], data))
                     {
                         break;
                     }
                 }
 
-                if (baseGlyphIterator < 0)
+                if (baseGlyphIndex < 0)
                 {
                     return false;
                 }
 
-                ushort baseGlyphIndex = (ushort)baseGlyphIterator;
-                baseGlyphId = collection[baseGlyphIndex][0];
+                ushort baseGlyphId = collection[baseGlyphIndex][0];
                 int ligatureIndex = this.ligatureCoverage.CoverageIndexOf(baseGlyphId);
                 if (ligatureIndex < 0)
                 {
                     return false;
                 }
 
+                // We must now check whether the ligature ID of the current mark glyph
+                // is identical to the ligature ID of the found ligature.
+                // If yes, we can directly use the component index. If not, we attach the mark
+                // glyph to the last component of the ligature.
                 LigatureAttachTable ligatureAttach = this.ligatureArrayTable.LigatureAttachTables[ligatureIndex];
-                ushort markGlyphId = glyphId;
-                ushort ligGlyphId = baseGlyphId;
-
-                // TODO: figure out how to calculate the compIndex, see fontKit.
-                int compIndex = 0;
+                GlyphShapingData markGlyph = collection.GetGlyphShapingData(index);
+                GlyphShapingData ligGlyph = collection.GetGlyphShapingData(baseGlyphIndex);
+                int compIndex = ligGlyph.LigatureId > 0 && ligGlyph.LigatureId == markGlyph.LigatureId && markGlyph.LigatureComponent > 0
+                    ? Math.Min(markGlyph.LigatureComponent, ligGlyph.CodePointCount) - 1
+                    : ligGlyph.CodePointCount - 1;
 
                 MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
                 AnchorTable baseAnchor = ligatureAttach.ComponentRecords[compIndex].LigatureAnchorTables[markRecord.MarkClass];
-                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, baseGlyphIndex, baseGlyphId, glyphId);
+                AdvancedTypographicUtils.ApplyAnchor(collection, index, baseAnchor, markRecord, baseGlyphIndex);
 
                 return true;
             }

@@ -1,6 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
+using SixLabors.Fonts.Unicode;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 {
     /// <summary>
@@ -47,47 +50,102 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static readonly Tag KernTag = Tag.Parse("kern");
 
+        private static readonly CodePoint FractionSlash = new(0x2044);
+
+        private static readonly CodePoint Slash = new(0x002F);
+
+        private readonly List<Tag> stageFeatures = new();
+
+        internal DefaultShaper() => this.MarkZeroingMode = MarkZeroingMode.PostGpos;
+
+        protected DefaultShaper(MarkZeroingMode markZeroingMode)
+            => this.MarkZeroingMode = markZeroingMode;
+
         /// <inheritdoc />
         public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
         {
             // Add variation Features.
-            AddFeature(collection, index, count, RvnrTag);
+            this.AddFeature(collection, index, count, RvnrTag);
 
             // Add directional features.
-            AddFeature(collection, index, count, LtraTag);
-            AddFeature(collection, index, count, LtrmTag);
-            AddFeature(collection, index, count, RtlaTag);
-            AddFeature(collection, index, count, RtlmTag);
-
-            // Add fractional features.
-            AddFeature(collection, index, count, FracTag);
-            AddFeature(collection, index, count, NumrTag);
-            AddFeature(collection, index, count, DnomTag);
-
-            // Add common features.
-            AddFeature(collection, index, count, CcmpTag);
-            AddFeature(collection, index, count, LoclTag);
-            AddFeature(collection, index, count, RligTag);
-            AddFeature(collection, index, count, MarkTag);
-            AddFeature(collection, index, count, MkmkTag);
-
-            // Add horizontal features.
-            AddFeature(collection, index, count, CaltTag);
-            AddFeature(collection, index, count, CligTag);
-            AddFeature(collection, index, count, LigaTag);
-            AddFeature(collection, index, count, RcltTag);
-            AddFeature(collection, index, count, CursTag);
-            AddFeature(collection, index, count, KernTag);
-
-            // TODO: Enable contextual fractions
-        }
-
-        private static void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures)
-        {
             for (int i = index; i < count; i++)
             {
-                collection.AddShapingFeature(i, variationFeatures);
+                GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
+                if (shapingData.Direction == TextDirection.LeftToRight)
+                {
+                    this.AddFeature(collection, i, 1, LtraTag);
+                    this.AddFeature(collection, i, 1, LtrmTag);
+                }
+                else
+                {
+                    this.AddFeature(collection, i, 1, RtlaTag);
+                    this.AddFeature(collection, i, 1, RtlmTag);
+                }
+            }
+
+            // Add common features.
+            this.AddFeature(collection, index, count, CcmpTag);
+            this.AddFeature(collection, index, count, LoclTag);
+            this.AddFeature(collection, index, count, RligTag);
+            this.AddFeature(collection, index, count, MarkTag);
+            this.AddFeature(collection, index, count, MkmkTag);
+
+            // Add horizontal features.
+            this.AddFeature(collection, index, count, CaltTag);
+            this.AddFeature(collection, index, count, CligTag);
+            this.AddFeature(collection, index, count, LigaTag);
+            this.AddFeature(collection, index, count, RcltTag);
+            this.AddFeature(collection, index, count, CursTag);
+            this.AddFeature(collection, index, count, KernTag);
+
+            // Enable contextual fractions.
+            for (int i = index; i < count; i++)
+            {
+                GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
+                if (shapingData.CodePoint == FractionSlash || shapingData.CodePoint == Slash)
+                {
+                    int start = i;
+                    int end = i + 1;
+
+                    // Apply numerator.
+                    shapingData = collection.GetGlyphShapingData(start - 1);
+                    while (start > 0 && CodePoint.IsDigit(shapingData.CodePoint))
+                    {
+                        this.AddFeature(collection, start - 1, 1, NumrTag);
+                        this.AddFeature(collection, start - 1, 1, FracTag);
+                        start--;
+                    }
+
+                    // Apply denominator.
+                    shapingData = collection.GetGlyphShapingData(end);
+                    while (end < collection.Count && CodePoint.IsDigit(shapingData.CodePoint))
+                    {
+                        this.AddFeature(collection, end, 1, DnomTag);
+                        this.AddFeature(collection, end, 1, FracTag);
+                        end++;
+                    }
+
+                    // Apply fraction slash.
+                    this.AddFeature(collection, i, 1, FracTag);
+                    i = end - 1;
+                }
             }
         }
+
+        protected void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures, bool enabled = true)
+        {
+            int end = index + count;
+            for (int i = index; i < end; i++)
+            {
+                collection.AddShapingFeature(i, new TagEntry(variationFeatures, enabled));
+            }
+
+            if (!this.stageFeatures.Contains(variationFeatures))
+            {
+                this.stageFeatures.Add(variationFeatures);
+            }
+        }
+
+        public override IEnumerable<Tag> GetShapingStageFeatures() => this.stageFeatures;
     }
 }

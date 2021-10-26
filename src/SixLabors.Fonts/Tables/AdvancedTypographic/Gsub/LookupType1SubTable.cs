@@ -14,15 +14,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
     /// </summary>
     internal static class LookupType1SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort substFormat = reader.ReadUInt16();
 
             return substFormat switch
             {
-                1 => LookupType1Format1SubTable.Load(reader, offset),
-                2 => LookupType1Format2SubTable.Load(reader, offset),
+                1 => LookupType1Format1SubTable.Load(reader, offset, lookupFlags),
+                2 => LookupType1Format2SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1' or '2'.")
             };
         }
@@ -33,13 +33,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly ushort deltaGlyphId;
         private readonly CoverageTable coverageTable;
 
-        private LookupType1Format1SubTable(ushort deltaGlyphId, CoverageTable coverageTable)
+        private LookupType1Format1SubTable(ushort deltaGlyphId, CoverageTable coverageTable, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.deltaGlyphId = deltaGlyphId;
             this.coverageTable = coverageTable;
         }
 
-        public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             // SingleSubstFormat1
             // +----------+----------------+----------------------------------------------------------+
@@ -56,10 +57,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ushort deltaGlyphId = reader.ReadUInt16();
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType1Format1SubTable(deltaGlyphId, coverageTable);
+            return new LookupType1Format1SubTable(deltaGlyphId, coverageTable, lookupFlags);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
+        public override bool TrySubstitution(
+            FontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count)
         {
             ushort glyphId = collection[index][0];
             if (glyphId == 0)
@@ -82,13 +89,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
         private readonly CoverageTable coverageTable;
         private readonly ushort[] substituteGlyphs;
 
-        private LookupType1Format2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable)
+        private LookupType1Format2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.substituteGlyphs = substituteGlyphs;
             this.coverageTable = coverageTable;
         }
 
-        public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             // SingleSubstFormat2
             // +----------+--------------------------------+-----------------------------------------------------------+
@@ -108,10 +116,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
             ushort[] substituteGlyphIds = reader.ReadUInt16Array(glyphCount);
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType1Format2SubTable(substituteGlyphIds, coverageTable);
+            return new LookupType1Format2SubTable(substituteGlyphIds, coverageTable, lookupFlags);
         }
 
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
+        public override bool TrySubstitution(
+            FontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count)
         {
             ushort glyphId = collection[index][0];
             if (glyphId == 0)

@@ -30,16 +30,16 @@ namespace SixLabors.Fonts
         /// with the specified name; otherwise, <see langword="false"/>.
         /// </returns>
         /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
-        bool TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out IFontMetrics? metrics);
+        bool TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics);
 
         /// <summary>
         /// Gets the collection of available font metrics for a given culture and font family name.
         /// </summary>
         /// <param name="name">The font family name.</param>
         /// <param name="culture">The culture to use when searching for a match.</param>
-        /// <returns>The <see cref="IEnumerable{IFontMetrics}"/>.</returns>
+        /// <returns>The <see cref="IEnumerable{FontMetrics}"/>.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
-        IEnumerable<IFontMetrics> GetAllMetrics(string name, CultureInfo culture);
+        IEnumerable<FontMetrics> GetAllMetrics(string name, CultureInfo culture);
 
         /// <summary>
         /// Gets the collection of available font styles for a given culture and font family name.
@@ -51,6 +51,6 @@ namespace SixLabors.Fonts
         IEnumerable<FontStyle> GetAllStyles(string name, CultureInfo culture);
 
         /// <inheritdoc cref="IEnumerable{T}.GetEnumerator"/>
-        IEnumerator<IFontMetrics> GetEnumerator();
+        IEnumerator<FontMetrics> GetEnumerator();
     }
 }

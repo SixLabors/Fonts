@@ -70,6 +70,46 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
         }
 
+        [Fact]
+        public void ContextualFractions_WithFractionSlash_Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.RobotoRegular).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "9⁄2";
+            int[] expectedGlyphIndices = { 580, 404, 453 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void ContextualFractions_WithSlash_Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.RobotoRegular).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "9/2";
+            int[] expectedGlyphIndices = { 580, 404, 453 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font) { ApplyKerning = true });
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
         // LookupType2SubTable
         // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#21-multiple-substitution-format-1
         [Fact]

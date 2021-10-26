@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -15,14 +14,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal static class LookupType6SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort subTableFormat = reader.ReadUInt16();
 
             return subTableFormat switch
             {
-                1 => LookupType6Format1SubTable.Load(reader, offset),
+                1 => LookupType6Format1SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {subTableFormat}. Should be '1'."),
             };
         }
@@ -34,7 +33,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             private readonly MarkArrayTable mark1ArrayTable;
             private readonly Mark2ArrayTable mark2ArrayTable;
 
-            public LookupType6Format1SubTable(CoverageTable mark1Coverage, CoverageTable mark2Coverage, MarkArrayTable mark1ArrayTable, Mark2ArrayTable mark2ArrayTable)
+            public LookupType6Format1SubTable(
+                CoverageTable mark1Coverage,
+                CoverageTable mark2Coverage,
+                MarkArrayTable mark1ArrayTable,
+                Mark2ArrayTable mark2ArrayTable,
+                LookupFlags lookupFlags)
+                : base(lookupFlags)
             {
                 this.mark1Coverage = mark1Coverage;
                 this.mark2Coverage = mark2Coverage;
@@ -42,7 +47,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 this.mark2ArrayTable = mark2ArrayTable;
             }
 
-            public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+            public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
             {
                 // MarkMarkPosFormat1 Subtable.
                 // +--------------------+---------------------------------+------------------------------------------------------+
@@ -75,11 +80,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 var mark1ArrayTable = new MarkArrayTable(reader, offset + mark1ArrayOffset);
                 var mark2ArrayTable = new Mark2ArrayTable(reader, markClassCount, offset + mark2ArrayOffset);
 
-                return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable);
+                return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable, lookupFlags);
             }
 
             public override bool TryUpdatePosition(
-                IFontMetrics fontMetrics,
+                FontMetrics fontMetrics,
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
@@ -106,16 +111,43 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                // TODO: fontkit checks here, if Marks belonging to the same base or Marks belonging to the same ligature component.
                 int prevIdx = index - 1;
                 ushort prevGlyphId = collection[prevIdx][0];
-                GlyphShapingData prevData = collection.GetGlyphShapingData(prevIdx);
-                if (!fontMetrics.TryGetGlyphClass(prevGlyphId, out GlyphClassDef? glyphClass) && !CodePoint.IsMark(prevData.CodePoint))
+                GlyphShapingData prevGlyph = collection.GetGlyphShapingData(prevIdx);
+                if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, prevGlyphId, prevGlyph))
                 {
                     return false;
                 }
 
-                if (glyphClass != GlyphClassDef.MarkGlyph)
+                // The following logic was borrowed from Harfbuzz,
+                // see: https://github.com/harfbuzz/harfbuzz/blob/3e635cf5e26e33d6210d3092256a49291752deec/src/hb-ot-layout-gpos-table.hh#L2525
+                bool good = false;
+                GlyphShapingData curGlyph = collection.GetGlyphShapingData(index);
+                if (curGlyph.LigatureId == prevGlyph.LigatureId)
+                {
+                    if (curGlyph.LigatureId > 0)
+                    {
+                        // Marks belonging to the same base.
+                        good = true;
+                    }
+                    else if (curGlyph.LigatureComponent == prevGlyph.LigatureComponent)
+                    {
+                        // Marks belonging to the same ligature component.
+                        good = true;
+                    }
+                }
+                else
+                {
+                    // If ligature ids don't match, it may be the case that one of the marks
+                    // itself is a ligature, in which case match.
+                    if ((curGlyph.LigatureId > 0 && curGlyph.LigatureComponent <= 0)
+                        || (prevGlyph.LigatureId > 0 && prevGlyph.LigatureComponent <= 0))
+                    {
+                        good = true;
+                    }
+                }
+
+                if (!good)
                 {
                     return false;
                 }
@@ -128,7 +160,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 MarkRecord markRecord = this.mark1ArrayTable.MarkRecords[mark1Index];
                 AnchorTable baseAnchor = this.mark2ArrayTable.Mark2Records[mark2Index].MarkAnchorTable[markRecord.MarkClass];
-                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, (ushort)prevIdx, prevGlyphId, glyphId);
+                AdvancedTypographicUtils.ApplyAnchor(collection, index, baseAnchor, markRecord, prevIdx);
 
                 return true;
             }

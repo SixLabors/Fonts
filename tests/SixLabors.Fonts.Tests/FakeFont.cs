@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tests
         public void TestFontMetricProperties()
         {
             Font fakeFont = CreateFont("A");
-            IFontMetrics metrics = fakeFont.FontMetrics;
+            FontMetrics metrics = fakeFont.FontMetrics;
             Assert.Equal(30, metrics.UnitsPerEm);
             Assert.Equal(35, metrics.Ascender);
             Assert.Equal(8, metrics.Descender);

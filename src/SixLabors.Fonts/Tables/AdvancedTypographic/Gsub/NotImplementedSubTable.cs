@@ -5,7 +5,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
 {
     internal class NotImplementedSubTable : LookupSubTable
     {
-        public override bool TrySubstitution(GSubTable table, GlyphSubstitutionCollection collection, Tag feature, ushort index, int count)
+        public NotImplementedSubTable()
+            : base(default)
+        {
+        }
+
+        public override bool TrySubstitution(
+            FontMetrics fontMetrics,
+            GSubTable table,
+            GlyphSubstitutionCollection collection,
+            Tag feature,
+            ushort index,
+            int count)
             => false;
     }
 }

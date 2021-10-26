@@ -571,12 +571,12 @@ namespace SixLabors.Fonts.Unicode
             => new(codePoint);
 
         /// <summary>
-        /// Gets the <see cref="Script"/> for the given codepoint.
+        /// Gets the <see cref="ScriptClass"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
-        /// <returns>The <see cref="Script"/>.</returns>
-        internal static Script GetScript(CodePoint codePoint)
-            => UnicodeData.GetScript(codePoint.Value);
+        /// <returns>The <see cref="ScriptClass"/>.</returns>
+        internal static ScriptClass GetScriptClass(CodePoint codePoint)
+            => UnicodeData.GetScriptClass(codePoint.Value);
 
         /// <summary>
         /// Gets the <see cref="UnicodeCategory"/> for the given codepoint.

@@ -14,15 +14,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
     /// </summary>
     internal static class LookupType1SubTable
     {
-        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             reader.Seek(offset, SeekOrigin.Begin);
             ushort posFormat = reader.ReadUInt16();
 
             return posFormat switch
             {
-                1 => LookupType1Format1SubTable.Load(reader, offset),
-                2 => LookupType1Format2SubTable.Load(reader, offset),
+                1 => LookupType1Format1SubTable.Load(reader, offset, lookupFlags),
+                2 => LookupType1Format2SubTable.Load(reader, offset, lookupFlags),
                 _ => throw new InvalidFontFileException(
                     $"Invalid value for 'posFormat' {posFormat}. Should be '1' or '2'.")
             };
@@ -34,13 +34,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         private readonly ValueRecord valueRecord;
         private readonly CoverageTable coverageTable;
 
-        private LookupType1Format1SubTable(ValueRecord valueRecord, CoverageTable coverageTable)
+        private LookupType1Format1SubTable(ValueRecord valueRecord, CoverageTable coverageTable, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.valueRecord = valueRecord;
             this.coverageTable = coverageTable;
         }
 
-        public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             // SinglePosFormat1
             // +-------------+----------------+-----------------------------------------------+
@@ -62,33 +63,30 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType1Format1SubTable(valueRecord, coverageTable);
+            return new LookupType1Format1SubTable(valueRecord, coverageTable, lookupFlags);
         }
 
         public override bool TryUpdatePosition(
-            IFontMetrics fontMetrics,
+            FontMetrics fontMetrics,
             GPosTable table,
             GlyphPositioningCollection collection,
             Tag feature,
             ushort index,
             int count)
         {
-            for (ushort i = 0; i < count; i++)
+            ushort glyphId = collection[index][0];
+            if (glyphId == 0)
             {
-                ushort glyphId = collection[i + index][0];
-                if (glyphId == 0)
-                {
-                    return false;
-                }
+                return false;
+            }
 
-                int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-                if (coverage > -1)
-                {
-                    ValueRecord record = this.valueRecord;
-                    collection.Offset(fontMetrics, (ushort)(i + index), glyphId, record.XPlacement, record.YPlacement);
-                    collection.Advance(fontMetrics, (ushort)(i + index), glyphId, record.XAdvance, record.YAdvance);
-                    return true;
-                }
+            int coverage = this.coverageTable.CoverageIndexOf(glyphId);
+            if (coverage > -1)
+            {
+                ValueRecord record = this.valueRecord;
+                AdvancedTypographicUtils.ApplyPosition(collection, index, record);
+
+                return true;
             }
 
             return false;
@@ -100,13 +98,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
         private readonly CoverageTable coverageTable;
         private readonly ValueRecord[] valueRecords;
 
-        private LookupType1Format2SubTable(ValueRecord[] valueRecords, CoverageTable coverageTable)
+        private LookupType1Format2SubTable(ValueRecord[] valueRecords, CoverageTable coverageTable, LookupFlags lookupFlags)
+            : base(lookupFlags)
         {
             this.valueRecords = valueRecords;
             this.coverageTable = coverageTable;
         }
 
-        public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset)
+        public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
         {
             // SinglePosFormat2
             // +-------------+--------------------------+-----------------------------------------------+
@@ -135,33 +134,30 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType1Format2SubTable(valueRecords, coverageTable);
+            return new LookupType1Format2SubTable(valueRecords, coverageTable, lookupFlags);
         }
 
         public override bool TryUpdatePosition(
-            IFontMetrics fontMetrics,
+            FontMetrics fontMetrics,
             GPosTable table,
             GlyphPositioningCollection collection,
             Tag feature,
             ushort index,
             int count)
         {
-            for (ushort i = 0; i < count; i++)
+            ushort glyphId = collection[index][0];
+            if (glyphId == 0)
             {
-                ushort glyphId = collection[i + index][0];
-                if (glyphId == 0)
-                {
-                    return false;
-                }
+                return false;
+            }
 
-                int coverage = this.coverageTable.CoverageIndexOf(glyphId);
-                if (coverage > -1)
-                {
-                    ValueRecord record = this.valueRecords[coverage];
-                    collection.Offset(fontMetrics, i, glyphId, record.XPlacement, record.YPlacement);
-                    collection.Advance(fontMetrics, i, glyphId, record.XAdvance, record.YAdvance);
-                    return true;
-                }
+            int coverage = this.coverageTable.CoverageIndexOf(glyphId);
+            if (coverage > -1)
+            {
+                ValueRecord record = this.valueRecords[coverage];
+                AdvancedTypographicUtils.ApplyPosition(collection, index, record);
+
+                return true;
             }
 
             return false;

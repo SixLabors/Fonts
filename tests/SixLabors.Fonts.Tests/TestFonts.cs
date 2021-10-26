@@ -182,6 +182,8 @@ namespace SixLabors.Fonts.Tests
         /// </summary>
         public static string GposLookupType8Format3 => GetFullPath("GposLookupType8Format3.ttf");
 
+        public static string RobotoRegular => GetFullPath("Roboto-Regular.ttf");
+
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
@@ -191,6 +193,8 @@ namespace SixLabors.Fonts.Tests
         public static string NotoSansSCThinFile => GetFullPath("NotoSansSC-Thin.ttf");
 
         public static string HelveticaTTCFile => GetFullPath("Helvetica.ttc");
+
+        public static string MeQuranFile => GetFullPath("me_quran_volt_newmet.ttf");
 
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 

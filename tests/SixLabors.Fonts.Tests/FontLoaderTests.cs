@@ -37,7 +37,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFont_WithTtfFormat()
         {
-            IFontMetrics font = FontMetrics.LoadFont(TestFonts.OpenSansFile);
+            FontMetrics font = StreamFontMetrics.LoadFont(TestFonts.OpenSansFile);
 
             GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
@@ -51,7 +51,8 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFont_WithWoff1Format()
         {
-            IFontMetrics font = FontMetrics.LoadFont(TestFonts.OpenSansFileWoff1);
+            FontMetrics font = StreamFontMetrics.LoadFont(TestFonts.OpenSansFileWoff1);
+
             GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
             glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new RendererOptions(null, 72));
@@ -83,7 +84,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFont_WithWoff2Format()
         {
-            IFontMetrics font = FontMetrics.LoadFont(TestFonts.OpensSansWoff2Data());
+            FontMetrics font = StreamFontMetrics.LoadFont(TestFonts.OpensSansWoff2Data());
 
             GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
@@ -98,7 +99,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFont()
         {
-            IFontMetrics font = FontMetrics.LoadFont(TestFonts.SimpleFontFileData());
+            FontMetrics font = StreamFontMetrics.LoadFont(TestFonts.SimpleFontFileData());
 
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
@@ -114,7 +115,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void LoadFontWoff()
         {
-            IFontMetrics font = FontMetrics.LoadFont(TestFonts.SimpleFontFileWoffData());
+            FontMetrics font = StreamFontMetrics.LoadFont(TestFonts.SimpleFontFileWoffData());
 
             Assert.Equal("SixLaborsSampleAB regular", font.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.Description.FontSubFamilyNameInvariantCulture);
