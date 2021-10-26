@@ -231,6 +231,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                         {
                             int currentLC = current.LigatureComponent == -1 ? 1 : current.LigatureComponent;
                             int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(currentLC, lastComponentCount);
+                            current.LigatureId = ligatureId;
                             current.LigatureComponent = ligatureComponent;
                         }
                         else
