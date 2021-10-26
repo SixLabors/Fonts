@@ -136,8 +136,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 20, 20 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(3.04f, 13.5103989f, 5.28f, 4.6016f),
-                new(3.68000031f, 12.8703995f, 5.28f, 4.6016f),
+                new(475, 2111, 825, 719),
+                new(575, 2011, 825, 719),
             };
 
             // act
@@ -146,7 +146,6 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
                 ApplyKerning = true
             });
 
-            // TODO: Test is failing: compare output to Harfbuzz and review rectangles again.
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
@@ -175,8 +174,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 20, 21 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(3.04f, 12.8703995f, 5.28f, 4.6016f),
-                new(2.40000057f, 13.184f, 5.28f, 4.5376f),
+                new(475, 2011, 825, 719),
+                new(375, 2090, 825, 709),
             };
 
             // act
@@ -185,7 +184,6 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
                 ApplyKerning = true
             });
 
-            // TODO: Test is failing: compare output to Harfbuzz and review rectangles again.
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
@@ -214,8 +212,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 20, 21 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(3.04f, 12.8703995f, 5.28f, 4.6016f),
-                new(2.40000057f, 13.184f, 5.28f, 4.5376f),
+                new(475, 2011, 825, 719),
+                new(375, 2090, 825, 709),
             };
 
             // act
@@ -224,7 +222,6 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
                 ApplyKerning = true
             });
 
-            // TODO: Test is failing: compare output to Harfbuzz and review rectangles again.
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             Assert.Equal(expectedFontRectangles.Length, renderer.GlyphRects.Count);
@@ -355,7 +352,6 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             }
         }
 
-        // TODO: review test again, test fails with index out of bounds.
         // LookupType7SubTable, Format 3
         // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-7-contextual-positioning-subtables
         [Fact]
@@ -369,12 +365,11 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             string testStr = "\u0014\u0015\u0016"; // "\u0014\u0015\u0016" XPlacement plus 20.
             int[] expectedGlyphIndices = { 22, 23, 24 };
 
-            // TODO: adjust expected rectangles once the test past, due to upem change.
             FontRectangle[] expectedFontRectangles =
             {
-                new(2.1888f, 12.8639984f, 6.2592f, 4.5056f),
-                new(11.9168005f, 12.8703995f, 6.2592f, 4.5312f),
-                new(21.6448f, 13.0175991f, 6.2592f, 4.2688f),
+                new(342, 2010, 978, 704),
+                new(1842, 2011, 978, 708),
+                new(3342, 2034, 978, 667),
             };
 
             // act

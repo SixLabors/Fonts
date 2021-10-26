@@ -2,8 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
@@ -103,6 +101,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             bool updated = false;
             for (ushort i = 0; i < collection.Count; i++)
             {
+                if (!collection.ShouldProcess(fontMetrics, i))
+                {
+                    continue;
+                }
+
                 ScriptClass current = CodePoint.GetScriptClass(collection.GetGlyphShapingData(i).CodePoint);
                 BaseShaper shaper = ShaperFactory.Create(current);
 
@@ -167,6 +170,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     ZeroMarkAdvances(fontMetrics, collection, index, count);
                 }
 
+                FixCursiveAttachment(collection, index, count);
                 FixMarkAttachment(collection, index, count);
                 UpdatePositions(fontMetrics, collection, index, count);
             }
@@ -238,6 +242,34 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
 
             return false;
+        }
+
+        private static void FixCursiveAttachment(GlyphPositioningCollection collection, ushort index, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                int currentIndex = i + index;
+                GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
+                if (data.CursiveAttachment != -1)
+                {
+                    int j = data.CursiveAttachment + i;
+                    if (j > count)
+                    {
+                        return;
+                    }
+
+                    GlyphShapingData cursiveData = collection.GetGlyphShapingData(j);
+
+                    if (!collection.IsVerticalLayoutMode)
+                    {
+                        data.Bounds.Y += cursiveData.Bounds.Y;
+                    }
+                    else
+                    {
+                        data.Bounds.X += cursiveData.Bounds.X;
+                    }
+                }
+            }
         }
 
         private static void FixMarkAttachment(GlyphPositioningCollection collection, ushort index, int count)

@@ -129,16 +129,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 GlyphShapingData current = collection.GetGlyphShapingData(index);
                 GlyphShapingData next = collection.GetGlyphShapingData(nextIndex);
+
+                // TODO: Vertical.
                 if (current.Direction == TextDirection.LeftToRight)
                 {
                     current.Bounds.Width = exit.XCoordinate + current.Bounds.X;
 
                     int delta = entry.XCoordinate + next.Bounds.X;
                     next.Bounds.Width -= delta;
-                    next.Bounds.X -= (short)delta;
-
-                    next.CursiveAttachment = index;
-                    current.Bounds.Y = exit.YCoordinate - entry.YCoordinate;
+                    next.Bounds.X -= delta;
                 }
                 else
                 {
@@ -147,12 +146,87 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     current.Bounds.X -= delta;
 
                     next.Bounds.Width = entry.XCoordinate + next.Bounds.X;
+                }
 
-                    current.CursiveAttachment = nextIndex;
-                    current.Bounds.Y = entry.YCoordinate - exit.YCoordinate;
+                int child = index;
+                int parent = nextIndex;
+                int xOffset = entry.XCoordinate - exit.XCoordinate;
+                int yOffset = entry.YCoordinate - exit.YCoordinate;
+                if (this.LookupFlags.HasFlag(LookupFlags.RightToLeft))
+                {
+                    int temp = child;
+                    child = parent;
+                    parent = temp;
+
+                    xOffset = -xOffset;
+                    yOffset = -yOffset;
+                }
+
+                // If child was already connected to someone else, walk through its old
+                // chain and reverse the link direction, such that the whole tree of its
+                // previous connection now attaches to new parent.Watch out for case
+                // where new parent is on the path from old chain...
+                bool horizontal = !collection.IsVerticalLayoutMode;
+                ReverseCursiveMinorOffset(collection, index, child, horizontal, parent);
+
+                GlyphShapingData c = collection.GetGlyphShapingData(child);
+                c.CursiveAttachment = parent - child;
+                if (horizontal)
+                {
+                    c.Bounds.Y = yOffset;
+                }
+                else
+                {
+                    c.Bounds.X = xOffset;
+                }
+
+                // If parent was attached to child, separate them.
+                GlyphShapingData p = collection.GetGlyphShapingData(parent);
+                if (p.CursiveAttachment == -c.CursiveAttachment)
+                {
+                    p.CursiveAttachment = 0;
                 }
 
                 return true;
+            }
+
+            private static void ReverseCursiveMinorOffset(
+                GlyphPositioningCollection collection,
+                int position,
+                int i,
+                bool horizontal,
+                int parent)
+            {
+                GlyphShapingData c = collection.GetGlyphShapingData(i);
+                int chain = c.CursiveAttachment;
+                if (chain <= 0)
+                {
+                    return;
+                }
+
+                c.CursiveAttachment = 0;
+
+                int j = i + chain;
+
+                // Stop if we see new parent in the chain.
+                if (j == parent)
+                {
+                    return;
+                }
+
+                ReverseCursiveMinorOffset(collection, position, j, horizontal, parent);
+
+                GlyphShapingData p = collection.GetGlyphShapingData(j);
+                if (horizontal)
+                {
+                    p.Bounds.Y = -c.Bounds.Y;
+                }
+                else
+                {
+                    p.Bounds.X = -c.Bounds.X;
+                }
+
+                p.CursiveAttachment = -chain;
             }
         }
     }

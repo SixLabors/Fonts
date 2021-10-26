@@ -31,18 +31,18 @@ namespace SixLabors.Fonts
         private readonly Dictionary<int, GlyphMetrics[]> map = new();
 
         /// <summary>
-        /// Whether the text layout mode is vertical.
-        /// </summary>
-        private readonly bool isVerticalLayoutMode;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
         /// </summary>
         /// <param name="mode">The text layout mode.</param>
-        public GlyphPositioningCollection(LayoutMode mode) => this.isVerticalLayoutMode = mode.IsVertical();
+        public GlyphPositioningCollection(LayoutMode mode) => this.IsVerticalLayoutMode = mode.IsVertical();
 
         /// <inheritdoc />
         public int Count => this.offsets.Count;
+
+        /// <summary>
+        /// Gets a value indicating whether the text layout mode is vertical.
+        /// </summary>
+        public bool IsVerticalLayoutMode { get; }
 
         /// <inheritdoc />
         public ReadOnlySpan<ushort> this[int index] => this.glyphs[index].GlyphIds;
@@ -199,7 +199,7 @@ namespace SixLabors.Fonts
                 {
                     GlyphMetrics[] gm = m.ToArray();
                     this.map[offset] = gm;
-                    if (this.isVerticalLayoutMode)
+                    if (this.IsVerticalLayoutMode)
                     {
                         this.glyphs.Add(new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) });
                     }
@@ -219,7 +219,7 @@ namespace SixLabors.Fonts
         /// Updates the position of the glyph at the specified index.
         /// </summary>
         /// <param name="fontMetrics">The font metrics.</param>
-        /// <param name="index">The zero-based index of the element to advance.</param>
+        /// <param name="index">The zero-based index of the element.</param>
         public void UpdatePosition(FontMetrics fontMetrics, ushort index)
         {
             GlyphShapingData data = this.GetGlyphShapingData(index);
@@ -240,7 +240,7 @@ namespace SixLabors.Fonts
         /// adding dx and dy to the current advance.
         /// </summary>
         /// <param name="fontMetrics">The font face with metrics.</param>
-        /// <param name="index">The zero-based index of the elements to offset.</param>
+        /// <param name="index">The zero-based index of the element.</param>
         /// <param name="glyphId">The id of the glyph to offset.</param>
         /// <param name="dx">The delta x-advance.</param>
         /// <param name="dy">The delta y-advance.</param>
@@ -250,9 +250,18 @@ namespace SixLabors.Fonts
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.ApplyAdvance(dx, this.isVerticalLayoutMode ? dy : (short)0);
+                    m.ApplyAdvance(dx, this.IsVerticalLayoutMode ? dy : (short)0);
                 }
             }
         }
+
+        /// <summary>
+        /// Returns a value indicating whether the element at the given index should be processed.
+        /// </summary>
+        /// <param name="fontMetrics">The font face with metrics.</param>
+        /// <param name="index">The zero-based index of the elements to offset.</param>
+        /// <returns><see langword="true"/> if the element should be processed; otherwise, <see langword="false"/>.</returns>
+        public bool ShouldProcess(FontMetrics fontMetrics, ushort index)
+            => this.map[this.offsets[index]][0].FontMetrics == fontMetrics;
     }
 }
