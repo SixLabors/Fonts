@@ -26,12 +26,14 @@ namespace SixLabors.Fonts
             ushort advanceHeight,
             short leftSideBearing,
             short topSideBearing,
+            ushort unitsPerEM,
             ushort glyphId,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
         {
             this.FontMetrics = font;
             this.CodePoint = codePoint;
+            this.UnitsPerEm = unitsPerEM;
             this.vector = vector;
 
             this.AdvanceWidth = advanceWidth;
@@ -52,6 +54,7 @@ namespace SixLabors.Fonts
         {
             this.FontMetrics = other.FontMetrics;
             this.CodePoint = codePoint;
+            this.UnitsPerEm = other.UnitsPerEm;
             this.vector = GlyphVector.DeepClone(other.vector);
 
             this.AdvanceWidth = other.AdvanceWidth;

@@ -41,9 +41,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             FontFamily tahoma = SystemFonts.Get("Tahoma");
             RenderText(font2, "\uFB01", pointSize: 11.25F);
-            //RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
-            //RenderText(tahoma, "p", pointSize: 11.25F);
-            //RenderText(tahoma, "Lorem ipsum dolor sit amet", pointSize: 11.25F);
+            RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
+            RenderText(tahoma, "p", pointSize: 11.25F);
+            RenderText(tahoma, "Lorem ipsum dolor sit amet", pointSize: 11.25F);
             return;
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
             FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");

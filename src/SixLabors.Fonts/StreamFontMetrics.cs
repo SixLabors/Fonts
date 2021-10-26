@@ -536,6 +536,7 @@ namespace SixLabors.Fonts
                 advancedHeight,
                 lsb,
                 tsb,
+                this.UnitsPerEm,
                 glyphId,
                 glyphType,
                 color);
