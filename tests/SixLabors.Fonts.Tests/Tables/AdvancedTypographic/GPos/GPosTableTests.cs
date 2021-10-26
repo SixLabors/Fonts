@@ -156,7 +156,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
 
             for (int i = 0; i < expectedFontRectangles.Length; i++)
             {
-                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i]);
+                CompareRectangleExact(expectedFontRectangles[i], renderer.GlyphRects[i]);
             }
         }
 
@@ -194,7 +194,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
 
             for (int i = 0; i < expectedFontRectangles.Length; i++)
             {
-                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i]);
+                CompareRectangleExact(expectedFontRectangles[i], renderer.GlyphRects[i]);
             }
         }
 
@@ -232,7 +232,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
 
             for (int i = 0; i < expectedFontRectangles.Length; i++)
             {
-                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i]);
+                CompareRectangleExact(expectedFontRectangles[i], renderer.GlyphRects[i]);
             }
         }
 
@@ -388,7 +388,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
 
             for (int i = 0; i < expectedFontRectangles.Length; i++)
             {
-                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i]);
+                CompareRectangleExact(expectedFontRectangles[i], renderer.GlyphRects[i]);
             }
         }
 
