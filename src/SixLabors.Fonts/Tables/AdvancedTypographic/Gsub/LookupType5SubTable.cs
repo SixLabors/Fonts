@@ -79,8 +79,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchSequence(iterator, 1, ruleTable.InputSequence);
-                if (!allMatched)
+                if (!AdvancedTypographicUtils.MatchSequence(iterator, 1, ruleTable.InputSequence))
                 {
                     continue;
                 }
@@ -164,8 +163,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchClassSequence(iterator, 1, ruleTable.InputSequence, this.classDefinitionTable);
-                if (!allMatched)
+                if (!AdvancedTypographicUtils.MatchClassSequence(iterator, 1, ruleTable.InputSequence, this.classDefinitionTable))
                 {
                     continue;
                 }
@@ -219,29 +217,23 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Gsub
                 return false;
             }
 
-            // TODO: Check this
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#53-context-substitution-format-3-coverage-based-glyph-contexts
-            foreach (CoverageTable coverageTable in this.coverageTables)
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
+            if (!AdvancedTypographicUtils.MatchCoverageSequence(iterator, this.coverageTables, 0))
             {
-                int offset = coverageTable.CoverageIndexOf(glyphId);
-                if (offset <= -1)
-                {
-                    continue;
-                }
-
-                // It's a match. Perform substitutions and return true if anything changed.
-                return AdvancedTypographicUtils.ApplyLookupList(
-                    fontMetrics,
-                    table,
-                    feature,
-                    this.LookupFlags,
-                    this.sequenceLookupRecords,
-                    collection,
-                    index,
-                    count);
+                return false;
             }
 
-            return false;
+            // It's a match. Perform substitutions and return true if anything changed.
+            return AdvancedTypographicUtils.ApplyLookupList(
+                fontMetrics,
+                table,
+                feature,
+                this.LookupFlags,
+                this.sequenceLookupRecords,
+                collection,
+                index,
+                count);
         }
     }
 }

@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 using SixLabors.Fonts.Unicode;
 
@@ -45,6 +44,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     count -= currentCount - collection.Count;
                     currentCount = collection.Count;
                 }
+            }
+
+            return hasChanged;
+        }
+
+        public static bool ApplyLookupList(
+            FontMetrics fontMetrics,
+            GPosTable table,
+            Tag feature,
+            LookupFlags lookupFlags,
+            SequenceLookupRecord[] records,
+            GlyphPositioningCollection collection,
+            ushort index,
+            int count)
+        {
+            bool hasChanged = false;
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+            foreach (SequenceLookupRecord lookupRecord in records)
+            {
+                ushort sequenceIndex = lookupRecord.SequenceIndex;
+                ushort lookupIndex = lookupRecord.LookupListIndex;
+                iterator.Index = index;
+                iterator.Increment(sequenceIndex);
+                LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
+                hasChanged |= lookup.TryUpdatePosition(fontMetrics, table, collection, feature, iterator.Index, count - (iterator.Index - index));
             }
 
             return hasChanged;
@@ -97,6 +121,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 sequence,
                 iterator,
                 (component, data) => component == classDefinitionTable.ClassIndexOf(data.GlyphIds[0]),
+                default);
+
+        public static bool MatchCoverageSequence(
+            SkippingGlyphIterator iterator,
+            CoverageTable[] coverageTable,
+            int increment)
+            => Match(
+                increment,
+                coverageTable,
+                iterator,
+                (component, data) => component.CoverageIndexOf(data.GlyphIds[0]) >= 0,
                 default);
 
         public static bool ApplyChainedSequenceRule(SkippingGlyphIterator iterator, ChainedSequenceRuleTable rule)
@@ -168,17 +203,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             // Check all coverages: if any of them does not match, abort update.
             SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
-            if (!CheckCoverage(iterator, backtrack, -backtrack.Length))
+            if (!MatchCoverageSequence(iterator, backtrack, -backtrack.Length))
             {
                 return false;
             }
 
-            if (!CheckCoverage(iterator, input, 0))
+            if (!MatchCoverageSequence(iterator, input, 0))
             {
                 return false;
             }
 
-            if (!CheckCoverage(iterator, lookahead, input.Length))
+            if (!MatchCoverageSequence(iterator, lookahead, input.Length))
             {
                 return false;
             }
@@ -258,17 +293,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             return new GlyphShapingClass(isMark, isBase, isLigature, markAttachmentType);
         }
-
-        private static bool CheckCoverage(
-            SkippingGlyphIterator iterator,
-            CoverageTable[] coverageTable,
-            int increment)
-            => Match(
-                increment,
-                coverageTable,
-                iterator,
-                (component, data) => component.CoverageIndexOf(data.GlyphIds[0]) >= 0,
-                default);
 
         private static bool Match<T>(
             int increment,
