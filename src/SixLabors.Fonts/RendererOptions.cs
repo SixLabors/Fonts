@@ -81,9 +81,6 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the font.
         /// </summary>
-        /// <value>
-        /// The font.
-        /// </value>
         public Font Font { get; }
 
         /// <summary>
@@ -92,11 +89,8 @@ namespace SixLabors.Fonts
         public float TabWidth { get; set; } = 4;
 
         /// <summary>
-        /// Gets or sets a value indicating whether [apply kerning].
+        /// Gets or sets a value indicating whether to apply kerning.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if [apply kerning]; otherwise, <c>false</c>.
-        /// </value>
         public bool ApplyKerning { get; set; } = true;
 
         /// <summary>
