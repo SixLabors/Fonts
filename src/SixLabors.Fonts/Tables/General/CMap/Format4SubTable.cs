@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.WellKnownIds;
@@ -77,12 +78,24 @@ namespace SixLabors.Fonts.Tables.General.CMap
             ushort entrySelector = reader.ReadUInt16();
             ushort rangeShift = reader.ReadUInt16();
             int segCount = segCountX2 / 2;
-            ushort[] endCounts = reader.ReadUInt16Array(segCount);
+
+            using Buffer<ushort> endCountBuffer = new(segCount);
+            Span<ushort> endCounts = endCountBuffer.GetSpan();
+            reader.ReadUInt16Array(endCounts);
+
             ushort reserved = reader.ReadUInt16();
 
-            ushort[] startCounts = reader.ReadUInt16Array(segCount);
-            short[] idDelta = reader.ReadInt16Array(segCount);
-            ushort[] idRangeOffset = reader.ReadUInt16Array(segCount);
+            using Buffer<ushort> startCountsBuffer = new(segCount);
+            Span<ushort> startCounts = startCountsBuffer.GetSpan();
+            reader.ReadUInt16Array(startCounts);
+
+            using Buffer<short> idDeltaBuffer = new(segCount);
+            Span<short> idDelta = idDeltaBuffer.GetSpan();
+            reader.ReadInt16Array(idDelta);
+
+            using Buffer<ushort> idRangeOffsetBuffer = new(segCount);
+            Span<ushort> idRangeOffset = idRangeOffsetBuffer.GetSpan();
+            reader.ReadUInt16Array(idRangeOffset);
 
             // table length thus far
             int headerLength = 16 + (segCount * 8);
@@ -91,6 +104,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
             ushort[] glyphIds = reader.ReadUInt16Array(glyphIdCount);
 
             Segment[] segments = Segment.Create(endCounts, startCounts, idDelta, idRangeOffset);
+
             foreach (EncodingRecord encoding in encodings)
             {
                 yield return new Format4SubTable(language, encoding.PlatformID, encoding.EncodingID, segments, glyphIds);
@@ -118,7 +132,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
             public ushort Start { get; }
 
-            public static Segment[] Create(ushort[] endCounts, ushort[] startCode, short[] idDelta, ushort[] idRangeOffset)
+            public static Segment[] Create(ReadOnlySpan<ushort> endCounts, ReadOnlySpan<ushort> startCode, ReadOnlySpan<short> idDelta, ReadOnlySpan<ushort> idRangeOffset)
             {
                 int count = endCounts.Length;
                 var segments = new Segment[count];

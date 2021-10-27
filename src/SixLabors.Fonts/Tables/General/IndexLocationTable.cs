@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
+
 namespace SixLabors.Fonts.Tables.General
 {
     [TableName(TableName)]
@@ -40,7 +42,10 @@ namespace SixLabors.Fonts.Tables.General
                 // Type     | Name        | Description
                 // ---------|-------------|---------------------------------------
                 // Offset16 | offsets[n]  | The actual local offset divided by 2 is stored. The value of n is numGlyphs + 1. The value for numGlyphs is found in the 'maxp' table.
-                ushort[] data = reader.ReadUInt16Array(entryCount);
+                using Buffer<ushort> dataBuffer = new(entryCount);
+                Span<ushort> data = dataBuffer.GetSpan();
+                reader.ReadUInt16Array(data);
+
                 uint[] convertedData = new uint[entryCount];
                 for (int i = 0; i < entryCount; i++)
                 {

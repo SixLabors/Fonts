@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             };
         }
 
-        public static CoverageTable[] LoadArray(BigEndianBinaryReader reader, long offset, ushort[] coverageOffsets)
+        public static CoverageTable[] LoadArray(BigEndianBinaryReader reader, long offset, ReadOnlySpan<ushort> coverageOffsets)
         {
             var tables = new CoverageTable[coverageOffsets.Length];
             for (int i = 0; i < tables.Length; i++)

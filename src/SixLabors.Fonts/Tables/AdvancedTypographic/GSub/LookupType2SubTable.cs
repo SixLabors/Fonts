@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
@@ -55,7 +56,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             // +----------+--------------------------------+-----------------------------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
             ushort sequenceCount = reader.ReadUInt16();
-            ushort[] sequenceOffsets = reader.ReadUInt16Array(sequenceCount);
+
+            using Buffer<ushort> sequenceOffsetsBuffer = new(sequenceCount);
+            Span<ushort> sequenceOffsets = sequenceOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(sequenceOffsets);
 
             var sequenceTables = new SequenceTable[sequenceCount];
             for (int i = 0; i < sequenceTables.Length; i++)

@@ -26,7 +26,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             // +----------+------------------------------------+---------------------------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
             ushort seqRuleSetCount = reader.ReadUInt16();
-            ushort[] seqRuleSetOffsets = reader.ReadUInt16Array(seqRuleSetCount);
+
+            using Buffer<ushort> seqRuleSetOffsetsBuffer = new(seqRuleSetCount);
+            Span<ushort> seqRuleSetOffsets = seqRuleSetOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(seqRuleSetOffsets);
+
             var seqRuleSets = new SequenceRuleSetTable[seqRuleSetCount];
 
             for (int i = 0; i < seqRuleSets.Length; i++)
@@ -61,7 +65,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             ushort coverageOffset = reader.ReadOffset16();
             ushort classDefOffset = reader.ReadOffset16();
             ushort classSeqRuleSetCount = reader.ReadUInt16();
-            ushort[] classSeqRuleSetOffsets = reader.ReadUInt16Array(classSeqRuleSetCount);
+
+            using Buffer<ushort> classSeqRuleSetOffsetsBuffer = new(classSeqRuleSetCount);
+            Span<ushort> classSeqRuleSetOffsets = classSeqRuleSetOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(classSeqRuleSetOffsets);
 
             var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
             classDefTable = ClassDefinitionTable.Load(reader, offset + classDefOffset);
@@ -133,7 +140,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             // +----------+--------------------------------------------------+------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
             ushort chainedSeqRuleSetCount = reader.ReadUInt16();
-            ushort[] chainedSeqRuleSetOffsets = reader.ReadUInt16Array(chainedSeqRuleSetCount);
+
+            using Buffer<ushort> chainedSeqRuleSetOffsetsBuffer = new(chainedSeqRuleSetCount);
+            Span<ushort> chainedSeqRuleSetOffsets = chainedSeqRuleSetOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(chainedSeqRuleSetOffsets);
 
             var seqRuleSets = new ChainedSequenceRuleSetTable[chainedSeqRuleSetCount];
 
