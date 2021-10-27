@@ -99,7 +99,11 @@ namespace SixLabors.Fonts
         }
 
         public TEnum ReadInt16<TEnum>()
-            where TEnum : Enum => CastTo<TEnum>.From(this.ReadInt16());
+            where TEnum : struct, Enum
+        {
+            TryConvert(this.ReadUInt16(), out TEnum value);
+            return value;
+        }
 
         public short ReadFWORD() => this.ReadInt16();
 
@@ -150,7 +154,12 @@ namespace SixLabors.Fonts
         /// <returns>The 16-bit unsigned integer read.</returns>
         public ushort ReadOffset16() => this.ReadUInt16();
 
-        public TEnum ReadUInt16<TEnum>() => CastTo<TEnum>.From(this.ReadUInt16());
+        public TEnum ReadUInt16<TEnum>()
+            where TEnum : struct, Enum
+        {
+            TryConvert(this.ReadUInt16(), out TEnum value);
+            return value;
+        }
 
         /// <summary>
         /// Reads array of 16-bit unsigned integers from the stream.
@@ -349,32 +358,19 @@ namespace SixLabors.Fonts
             }
         }
 
-        /// <summary>
-        /// Class to cast to type <typeparamref name="TTarget"/>
-        /// </summary>
-        /// <typeparam name="TTarget">Target type.</typeparam>
-        private static class CastTo<TTarget>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryConvert<T, TEnum>(T input, out TEnum value)
+            where T : struct, IConvertible, IFormattable, IComparable
+            where TEnum : struct, Enum
         {
-            /// <summary>
-            /// Casts <typeparamref name="TSource" /> to <typeparamref name="TTarget" />.
-            /// This does not cause boxing for value types.
-            /// Useful in generic methods.
-            /// </summary>
-            /// <typeparam name="TSource">Source type to cast from. Usually a generic type.</typeparam>
-            /// <param name="s">The source.</param>
-            public static TTarget From<TSource>(TSource s) => Cache<TSource>.Caster(s);
-
-            private static class Cache<TSource>
+            if (Unsafe.SizeOf<T>() == Unsafe.SizeOf<TEnum>())
             {
-                public static readonly Func<TSource, TTarget> Caster = Get();
-
-                private static Func<TSource, TTarget> Get()
-                {
-                    System.Linq.Expressions.ParameterExpression p = System.Linq.Expressions.Expression.Parameter(typeof(TSource));
-                    System.Linq.Expressions.UnaryExpression c = System.Linq.Expressions.Expression.ConvertChecked(p, typeof(TTarget));
-                    return System.Linq.Expressions.Expression.Lambda<Func<TSource, TTarget>>(c, p).Compile();
-                }
+                value = Unsafe.As<T, TEnum>(ref input);
+                return true;
             }
+
+            value = default;
+            return false;
         }
     }
 }
