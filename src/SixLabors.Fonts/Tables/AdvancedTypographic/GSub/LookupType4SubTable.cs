@@ -138,8 +138,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                     continue;
                 }
 
-                bool allMatched = AdvancedTypographicUtils.MatchInputSequence(iterator, feature, 1, ligatureTable.ComponentGlyphs, matchBuffer);
-                if (!allMatched)
+                if (!AdvancedTypographicUtils.MatchInputSequence(iterator, feature, 1, ligatureTable.ComponentGlyphs, matchBuffer))
                 {
                     continue;
                 }
@@ -169,7 +168,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                 //
                 //   This in fact happened to a font...  See https://bugzilla.gnome.org/show_bug.cgi?id=437633
                 GlyphShapingData data = collection.GetGlyphShapingData(index);
-                bool isMarkLigature = AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, glyphId, data);
+                GlyphShapingClass shapingClass = AdvancedTypographicUtils.GetGlyphShapingClass(fontMetrics, glyphId, data);
+                bool isBaseLigature = shapingClass.IsBase;
+                bool isMarkLigature = shapingClass.IsMark;
 
                 Span<int> matches = matchBuffer.Slice(0, Math.Min(ligatureTable.ComponentGlyphs.Length, matchBuffer.Length));
                 for (int j = 0; j < matches.Length && isMarkLigature; j++)
@@ -177,13 +178,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                     GlyphShapingData match = collection.GetGlyphShapingData(matches[j]);
                     if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, match.GlyphIds[0], match))
                     {
+                        isBaseLigature = false;
                         isMarkLigature = false;
                         break;
                     }
                 }
 
-                int ligatureId = isMarkLigature ? 0 : collection.LigatureId++;
+                bool isLigature = !isBaseLigature && !isMarkLigature;
 
+                int ligatureId = isLigature ? 0 : collection.LigatureId++;
                 int lastLigatureId = data.LigatureId;
                 int lastComponentCount = data.CodePointCount;
                 int currentComponentCount = lastComponentCount;
@@ -194,7 +197,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                 foreach (int matchIndex in matches)
                 {
                     // Don't assign new ligature components for mark ligatures (see above).
-                    if (isMarkLigature)
+                    if (isLigature)
                     {
                         idx = matchIndex;
                     }
@@ -220,7 +223,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                 }
 
                 // Adjust ligature components for any marks following
-                if (lastLigatureId > 0 && !isMarkLigature)
+                if (lastLigatureId > 0 && !isLigature)
                 {
                     // Only check glyphs managed by current shaper.
                     int followingCount = count - (idx - index);
