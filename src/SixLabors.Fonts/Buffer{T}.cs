@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// An disposable buffer that is backed by an array pool.
     /// </summary>
     /// <typeparam name="T">The type of buffer element.</typeparam>
-    internal sealed class Buffer<T> : IDisposable
+    internal struct Buffer<T> : IDisposable
         where T : struct
     {
         private int length;
@@ -26,6 +26,7 @@ namespace SixLabors.Fonts
             int bufferSizeInBytes = length * itemSizeBytes;
             this.buffer = ArrayPool<byte>.Shared.Rent(bufferSizeInBytes);
             this.length = length;
+            this.isDisposed = false;
         }
 
         public Span<T> GetSpan()
