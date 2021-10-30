@@ -20,8 +20,8 @@ SixLabors.Fonts
 **SixLabors.Fonts** is a new cross-platform font loading and drawing library.
 
 ## License
-  
-- Fonts is licensed under the [Apache License, Version 2.0](https://opensource.org/licenses/Apache-2.0)  
+
+- Fonts is licensed under the [Apache License, Version 2.0](https://opensource.org/licenses/Apache-2.0)
 - An alternative Commercial Support License can be purchased **for projects and applications requiring support**.
 Please visit https://sixlabors.com/pricing for details.
 
@@ -42,7 +42,7 @@ Support the efforts of the development of the Six Labors projects.
 - Do you have questions? We are happy to help! Please [join our Discussions Forum](https://github.com/SixLabors/Fonts/discussions/category_choices).
 - Please read our [Contribution Guide](https://github.com/SixLabors/Fonts/blob/master/.github/CONTRIBUTING.md) before opening issues or pull requests!
 
-## Code of Conduct  
+## Code of Conduct
 This project has adopted the code of conduct defined by the [Contributor Covenant](https://contributor-covenant.org/) to clarify expected behavior in our community.
 For more information, see the [.NET Foundation Code of Conduct](https://dotnetfoundation.org/code-of-conduct).
 
@@ -88,11 +88,14 @@ git submodule update --init --recursive
 ```
 
 ### Features
-- Reading font description (name, family, subname etc plus other string metadata)
-- Loading True type fonts
-- Loading [WOFF fonts](https://www.w3.org/Submission/WOFF/)
-- Loading [WOFF2 fonts](https://www.w3.org/TR/WOFF2)
-- Load all compatible fonts from local machine store
+- Reading font description (name, family, subname etc plus other string metadata).
+- Loading True type fonts.
+- Loading [WOFF fonts](https://www.w3.org/Submission/WOFF/).
+- Loading [WOFF2 fonts](https://www.w3.org/TR/WOFF2).
+- Load all compatible fonts from local machine store.
+- Support for rendering left to right, right to left and bidirectional text.
+- Support for ligatures.
+- Support for advanced OpenType features glyph substitution ([GSUB](https://docs.microsoft.com/en-us/typography/opentype/spec/gsub)) and glyph positioning ([GPOS](https://docs.microsoft.com/en-us/typography/opentype/spec/gpos))
 
 #### Limitations
 We currently only support otf and woff/woff2 fonts with True Type outlines.
