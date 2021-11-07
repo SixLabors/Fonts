@@ -105,10 +105,13 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
             Segment[] segments = Segment.Create(endCounts, startCounts, idDelta, idRangeOffset);
 
+            List<Format4SubTable> table = new();
             foreach (EncodingRecord encoding in encodings)
             {
-                yield return new Format4SubTable(language, encoding.PlatformID, encoding.EncodingID, segments, glyphIds);
+                table.Add(new Format4SubTable(language, encoding.PlatformID, encoding.EncodingID, segments, glyphIds));
             }
+
+            return table;
         }
 
         internal readonly struct Segment

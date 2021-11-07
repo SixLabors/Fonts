@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
     /// An disposable buffer that is backed by an array pool.
     /// </summary>
     /// <typeparam name="T">The type of buffer element.</typeparam>
-    internal struct Buffer<T> : IDisposable
+    internal ref struct Buffer<T>
         where T : struct
     {
         private int length;
