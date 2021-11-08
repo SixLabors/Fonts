@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tests
         private static void VerifyPropertyDefault(RendererOptions options)
         {
             Assert.Equal(4, options.TabWidth);
-            Assert.True(options.ApplyKerning);
+            Assert.Equal(KerningMode.Normal, options.KerningMode);
             Assert.Equal(-1, options.WrappingWidth);
             Assert.Equal(HorizontalAlignment.Left, options.HorizontalAlignment);
             Assert.Equal(VerticalAlignment.Top, options.VerticalAlignment);

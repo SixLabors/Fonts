@@ -17,6 +17,11 @@ namespace SixLabors.Fonts
         int Count { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the text layout mode is vertical.
+        /// </summary>
+        public bool IsVerticalLayoutMode { get; }
+
+        /// <summary>
         /// Gets the glyph ids at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index of the elements to get.</param>

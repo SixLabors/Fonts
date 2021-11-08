@@ -58,7 +58,7 @@ namespace SixLabors.Fonts
             }
 
             LayoutMode layoutMode = options.LayoutMode;
-            var substitutions = new GlyphSubstitutionCollection();
+            var substitutions = new GlyphSubstitutionCollection(layoutMode);
             var positionings = new GlyphPositioningCollection(layoutMode);
 
             // Analyse the text for bidi directional runs.
@@ -91,12 +91,11 @@ namespace SixLabors.Fonts
                 bidiRuns,
                 bidiMap,
                 substitutions,
-                positionings,
-                layoutMode))
+                positionings))
             {
                 foreach (FontMetrics font in fallbackFonts)
                 {
-                    substitutions.Clear();
+                    substitutions.Clear(layoutMode);
                     if (DoFontRun(
                         text,
                         options,
@@ -104,24 +103,20 @@ namespace SixLabors.Fonts
                         bidiRuns,
                         bidiMap,
                         substitutions,
-                        positionings,
-                        layoutMode))
+                        positionings))
                     {
                         break;
                     }
                 }
             }
 
-            if (options.ApplyKerning)
+            // Update the positions of the glyphs in the completed collection.
+            // Each set of metrics is associated with single font and will only be updated
+            // by that font so it's safe to use a single collection.
+            mainFont.UpdatePositions(positionings, options.KerningMode);
+            foreach (FontMetrics font in fallbackFonts)
             {
-                // Update the positions of the glyphs in the completed collection.
-                // Each set of metrics is associated with single font and will only be updated
-                // by that font so it's safe to use a single collection.
-                mainFont.UpdatePositions(positionings);
-                foreach (FontMetrics font in fallbackFonts)
-                {
-                    font.UpdatePositions(positionings);
-                }
+                font.UpdatePositions(positionings, options.KerningMode);
             }
 
             return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
@@ -397,8 +392,7 @@ namespace SixLabors.Fonts
             BidiRun[] bidiRuns,
             Dictionary<int, int> bidiMap,
             GlyphSubstitutionCollection substitutions,
-            GlyphPositioningCollection positionings,
-            LayoutMode layoutMode)
+            GlyphPositioningCollection positionings)
         {
             // Enumerate through each grapheme in the text.
             int graphemeIndex;
@@ -448,19 +442,15 @@ namespace SixLabors.Fonts
                 }
             }
 
-            // We always do this, with or without kerning so that bidi mirrored types
-            // are substituted correctly.
-            SubstituteBidiMirrors(fontMetrics, substitutions, layoutMode);
-
-            if (options.ApplyKerning)
-            {
-                fontMetrics.ApplySubstitution(substitutions);
-            }
+            // Apply the simple and complex substitutions.
+            // TODO: Investigate HarfBuzz normlizer.
+            SubstituteBidiMirrors(fontMetrics, substitutions);
+            fontMetrics.ApplySubstitution(substitutions, options.KerningMode);
 
             return positionings.TryAddOrUpdate(fontMetrics, substitutions, options);
         }
 
-        private static void SubstituteBidiMirrors(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, LayoutMode layoutMode)
+        private static void SubstituteBidiMirrors(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
         {
             for (int i = 0; i < collection.Count; i++)
             {
@@ -484,7 +474,7 @@ namespace SixLabors.Fonts
 
             // TODO: This only replaces certain glyphs. We should investigate the specification further.
             // https://www.unicode.org/reports/tr50/#vertical_alternates
-            if (layoutMode.IsVertical())
+            if (collection.IsVerticalLayoutMode)
             {
                 for (int i = 0; i < collection.Count; i++)
                 {

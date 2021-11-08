@@ -280,13 +280,13 @@ namespace SixLabors.Fonts.Tests
         [InlineData("ab", 477, 1081, true)]
         [InlineData("AB", 465, 1033, false)] // width changes between kerning enabled or not
         [InlineData("AB", 465, 654, true)]
-        public void MeasureTextWithKerning(string text, float height, float width, bool enableKerning)
+        public void MeasureTextWithKerning(string text, float height, float width, bool applyKerning)
         {
             var c = new FontCollection();
             Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
             FontRectangle size = TextMeasurer.MeasureBounds(
                 text,
-                new RendererOptions(new Font(font, 1), font.FontMetrics.ScaleFactor) { ApplyKerning = enableKerning });
+                new RendererOptions(new Font(font, 1), font.FontMetrics.ScaleFactor) { KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None, });
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
