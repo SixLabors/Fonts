@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<RuleSet Name="Fonts" ToolsVersion="16.0">
+<RuleSet Name="Fonts" ToolsVersion="17.0">
   <Include Path="..\shared-infrastructure\sixlabors.ruleset" Action="Default" />
   <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp.Features" RuleNamespace="Microsoft.CodeAnalysis.CSharp.Features">
     <Rule Id="IDE0010" Action="None" />
+    <Rule Id="IDE0072" Action="None" />
   </Rules>
   <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
     <Rule Id="SA1011" Action="Info" />

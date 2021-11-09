@@ -16,13 +16,6 @@ namespace SixLabors.Fonts.Tables.General
     {
         internal const string TableName = "cmap";
 
-        private static readonly Dictionary<PlatformIDs, int> PreferredPlatformOrder = new()
-        {
-            [PlatformIDs.Windows] = 0,
-            [PlatformIDs.Unicode] = 1,
-            [PlatformIDs.Macintosh] = 2,
-        };
-
         private readonly Format14SubTable[] format14SubTables = Array.Empty<Format14SubTable>();
 
         public CMapTable(IEnumerable<CMapSubTable> tables)
@@ -34,7 +27,13 @@ namespace SixLabors.Fonts.Tables.General
         internal CMapSubTable[] Tables { get; }
 
         private static int GetPreferredPlatformOrder(PlatformIDs platform)
-            => PreferredPlatformOrder.TryGetValue(platform, out int order) ? order : int.MaxValue;
+            => platform switch
+            {
+                PlatformIDs.Windows => 0,
+                PlatformIDs.Unicode => 1,
+                PlatformIDs.Macintosh => 2,
+                _ => int.MaxValue
+            };
 
         public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
         {
