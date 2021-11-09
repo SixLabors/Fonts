@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -25,7 +26,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             // +----------+------------------------------+----------------------------------------------------------------+
             reader.Seek(offset, SeekOrigin.Begin);
             ushort seqRuleCount = reader.ReadUInt16();
-            ushort[] seqRuleOffsets = reader.ReadUInt16Array(seqRuleCount);
+
+            using Buffer<ushort> seqRuleOffsetsBuffer = new(seqRuleCount);
+            Span<ushort> seqRuleOffsets = seqRuleOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(seqRuleOffsets);
 
             var sequenceRuleTables = new SequenceRuleTable[seqRuleCount];
             for (int i = 0; i < sequenceRuleTables.Length; i++)

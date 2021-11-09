@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -26,7 +27,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             ushort coverageOffset = reader.ReadUInt16();
             ushort ligGlyphCount = reader.ReadUInt16();
-            ushort[] ligGlyphOffsets = reader.ReadUInt16Array(ligGlyphCount);
+
+            using Buffer<ushort> ligGlyphOffsetsBuffer = new(ligGlyphCount);
+            Span<ushort> ligGlyphOffsets = ligGlyphOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(ligGlyphOffsets);
 
             var ligatureCaretList = new LigatureCaretList()
             {
@@ -34,7 +38,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             };
 
             ligatureCaretList.LigatureGlyphs = new LigatureGlyph[ligGlyphCount];
-            for (int i = 0; i < ligGlyphCount; ++i)
+            for (int i = 0; i < ligatureCaretList.LigatureGlyphs.Length; i++)
             {
                 ligatureCaretList.LigatureGlyphs[i] = LigatureGlyph.Load(reader, ligGlyphOffsets[i]);
             }

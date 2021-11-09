@@ -57,7 +57,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             // +----------+--------------------------------------+--------------------------------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
             ushort ligatureSetCount = reader.ReadUInt16();
-            ushort[] ligatureSetOffsets = reader.ReadUInt16Array(ligatureSetCount);
+
+            using Buffer<ushort> ligatureSetOffsetsBuffer = new(ligatureSetCount);
+            Span<ushort> ligatureSetOffsets = ligatureSetOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(ligatureSetOffsets);
 
             var ligatureSetTables = new LigatureSetTable[ligatureSetCount];
             for (int i = 0; i < ligatureSetTables.Length; i++)
@@ -74,7 +77,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                 long ligatureSetOffset = offset + ligatureSetOffsets[i];
                 reader.Seek(ligatureSetOffset, SeekOrigin.Begin);
                 ushort ligatureCount = reader.ReadUInt16();
-                ushort[] ligatureOffsets = reader.ReadUInt16Array(ligatureCount);
+
+                using Buffer<ushort> ligatureOffsetsBuffer = new(ligatureCount);
+                Span<ushort> ligatureOffsets = ligatureOffsetsBuffer.GetSpan();
+                reader.ReadUInt16Array(ligatureOffsets);
+
                 var ligatureTables = new LigatureTable[ligatureCount];
 
                 // Ligature Table

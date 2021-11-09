@@ -99,12 +99,12 @@ namespace SixLabors.Fonts
             => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
 
         /// <inheritdoc/>
-        internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
-            => this.metrics.Value.ApplySubstitution(collection);
+        internal override void ApplySubstitution(GlyphSubstitutionCollection collection, KerningMode kerningMode)
+            => this.metrics.Value.ApplySubstitution(collection, kerningMode);
 
         /// <inheritdoc/>
-        internal override void UpdatePositions(GlyphPositioningCollection collection)
-            => this.metrics.Value.UpdatePositions(collection);
+        internal override void UpdatePositions(GlyphPositioningCollection collection, KerningMode kerningMode)
+            => this.metrics.Value.UpdatePositions(collection, kerningMode);
 
         /// <summary>
         /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.

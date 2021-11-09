@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
@@ -36,7 +37,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             reader.Seek(offset, SeekOrigin.Begin);
 
             ushort lookupCount = reader.ReadUInt16();
-            ushort[] lookupOffsets = reader.ReadUInt16Array(lookupCount);
+            using Buffer<ushort> lookupOffsetsBuffer = new(lookupCount);
+            Span<ushort> lookupOffsets = lookupOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(lookupOffsets);
 
             var lookupTables = new LookupTable[lookupCount];
 
@@ -102,7 +105,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             LookupFlags lookupFlags = reader.ReadUInt16<LookupFlags>();
             ushort subTableCount = reader.ReadUInt16();
 
-            ushort[] subTableOffsets = reader.ReadUInt16Array(subTableCount);
+            using Buffer<ushort> subTableOffsetsBuffer = new(subTableCount);
+            Span<ushort> subTableOffsets = subTableOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(subTableOffsets);
 
             // The fifth bit indicates the presence of a MarkFilteringSet field in the Lookup table.
             ushort markFilteringSet = ((lookupFlags & LookupFlags.UseMarkFilteringSet) != 0)

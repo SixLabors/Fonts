@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tests
         public void Issue21_LoopDetectedLoadingGlyphs()
         {
             Font font = new FontCollection().Add(TestFonts.CarterOneFileData()).CreateFont(12);
-            GlyphMetrics _ = font.FontMetrics.GetGlyphMetrics(new CodePoint('\0'), ColorFontSupport.None).First();
+            font.FontMetrics.GetGlyphMetrics(new CodePoint('\0'), ColorFontSupport.None).First();
         }
 
         [Fact]

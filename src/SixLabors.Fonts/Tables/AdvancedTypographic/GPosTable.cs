@@ -16,6 +16,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     [TableName(TableName)]
     internal class GPosTable : Table
     {
+        private static readonly Tag KernTag = Tag.Parse("kern");
+
+        private static readonly Tag VKernTag = Tag.Parse("vkrn");
+
         internal const string TableName = "GPOS";
 
         public GPosTable(ScriptList scriptList, FeatureListTable featureList, LookupListTable lookupList)
@@ -96,8 +100,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new GPosTable(scriptList, featureList, lookupList);
         }
 
-        public bool TryUpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection)
+        public bool TryUpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, KerningMode kerningMode, out bool kerned)
         {
+            kerned = false;
             bool updated = false;
             for (ushort i = 0; i < collection.Count; i++)
             {
@@ -107,7 +112,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 }
 
                 ScriptClass current = CodePoint.GetScriptClass(collection.GetGlyphShapingData(i).CodePoint);
-                BaseShaper shaper = ShaperFactory.Create(current);
+                BaseShaper shaper = ShaperFactory.Create(current, kerningMode);
 
                 ushort index = i;
                 ushort count = 1;
@@ -159,7 +164,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                                 continue;
                             }
 
-                            updated |= featureLookup.LookupTable.TryUpdatePosition(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
+                            bool success = featureLookup.LookupTable.TryUpdatePosition(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
+                            kerned |= success && (feature == KernTag || feature == VKernTag);
+                            updated |= success;
                             iterator.Next();
                         }
                     }

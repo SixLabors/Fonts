@@ -39,9 +39,7 @@ namespace SixLabors.Fonts
         /// <inheritdoc />
         public int Count => this.offsets.Count;
 
-        /// <summary>
-        /// Gets a value indicating whether the text layout mode is vertical.
-        /// </summary>
+        /// <inheritdoc />
         public bool IsVerticalLayoutMode { get; }
 
         /// <inheritdoc />
@@ -66,16 +64,6 @@ namespace SixLabors.Fonts
                     break;
                 }
             }
-        }
-
-        /// <summary>
-        /// Removes all elements from the collection.
-        /// </summary>
-        public void Clear()
-        {
-            this.glyphs.Clear();
-            this.offsets.Clear();
-            this.map.Clear();
         }
 
         /// <summary>

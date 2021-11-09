@@ -187,14 +187,14 @@ namespace SixLabors.Fonts.Tests
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
             {
-                ApplyKerning = applyKerning,
+                KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
                 ApplyHinting = false,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff2 = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
             {
-                ApplyKerning = applyKerning,
+                KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
                 ApplyHinting = false,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });

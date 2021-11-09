@@ -70,9 +70,6 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the font.
         /// </summary>
-        /// <value>
-        /// The font.
-        /// </value>
         public Font Font { get; }
 
         /// <summary>
@@ -81,12 +78,10 @@ namespace SixLabors.Fonts
         public float TabWidth { get; set; } = 4;
 
         /// <summary>
-        /// Gets or sets a value indicating whether [apply kerning].
+        /// Gets or sets the kerning mode indicating whether to apply kerning (character spacing adjustments)
+        /// to the glyph positions from information found within the font.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if [apply kerning]; otherwise, <c>false</c>.
-        /// </value>
-        public bool ApplyKerning { get; set; } = true;
+        public KerningMode KerningMode { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to apply hinting.

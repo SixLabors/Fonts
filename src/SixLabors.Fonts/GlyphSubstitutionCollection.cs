@@ -25,10 +25,19 @@ namespace SixLabors.Fonts
         private readonly Dictionary<int, GlyphShapingData> glyphs = new();
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="GlyphSubstitutionCollection"/> class.
+        /// </summary>
+        /// <param name="mode">The text layout mode.</param>
+        public GlyphSubstitutionCollection(LayoutMode mode) => this.IsVerticalLayoutMode = mode.IsVertical();
+
+        /// <summary>
         /// Gets the number of glyphs ids contained in the collection.
         /// This may be more or less than original input codepoint count (due to substitution process).
         /// </summary>
         public int Count => this.offsets.Count;
+
+        /// <inheritdoc />
+        public bool IsVerticalLayoutMode { get; private set; }
 
         /// <summary>
         /// Gets or sets the running id of any ligature glyphs contained withing this collection are a member of.
@@ -93,11 +102,13 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Removes all elements from the collection.
         /// </summary>
-        public void Clear()
+        /// <param name="mode">The text layout mode.</param>
+        public void Clear(LayoutMode mode)
         {
             this.offsets.Clear();
             this.glyphs.Clear();
             this.LigatureId = 1;
+            this.IsVerticalLayoutMode = mode.IsVertical();
         }
 
         /// <summary>

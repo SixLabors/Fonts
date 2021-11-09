@@ -45,13 +45,6 @@ namespace SixLabors.Fonts
         public Stream BaseStream { get; }
 
         /// <summary>
-        /// Closes the reader, including the underlying stream.
-        /// </summary>
-        public void Close()
-        {
-        }
-
-        /// <summary>
         /// Seeks within the stream.
         /// </summary>
         /// <param name="offset">Offset to seek to.</param>
@@ -66,13 +59,6 @@ namespace SixLabors.Fonts
 
             this.BaseStream.Seek(offset, origin);
         }
-
-        /// <summary>
-        /// Seeks within the stream.
-        /// </summary>
-        /// <param name="header">The header.</param>
-        public void Seek(Tables.TableHeader header)
-            => this.BaseStream.Seek(header.Offset, SeekOrigin.Begin);
 
         /// <summary>
         /// Reads a single byte from the stream.
@@ -94,22 +80,10 @@ namespace SixLabors.Fonts
             return unchecked((sbyte)this.buffer[0]);
         }
 
-        /// <summary>
-        /// Reads a boolean from the stream. 1 byte is read.
-        /// </summary>
-        /// <returns>The boolean read</returns>
-        public bool ReadBoolean()
-        {
-            this.ReadInternal(this.buffer, 1);
-
-            return BitConverter.ToBoolean(this.buffer, 0);
-        }
-
         public float ReadF2dot14()
         {
-            const float F2Dot14ToFloat = 16384.0f;
-
-            return this.ReadInt16() / F2Dot14ToFloat;
+            const float f2Dot14ToFloat = 16384.0f;
+            return this.ReadInt16() / f2Dot14ToFloat;
         }
 
         /// <summary>
@@ -125,7 +99,11 @@ namespace SixLabors.Fonts
         }
 
         public TEnum ReadInt16<TEnum>()
-            where TEnum : Enum => CastTo<TEnum>.From(this.ReadInt16());
+            where TEnum : struct, Enum
+        {
+            TryConvert(this.ReadUInt16(), out TEnum value);
+            return value;
+        }
 
         public short ReadFWORD() => this.ReadInt16();
 
@@ -178,11 +156,15 @@ namespace SixLabors.Fonts
         /// <returns>The 16-bit unsigned integer read.</returns>
         public ushort ReadOffset16() => this.ReadUInt16();
 
-        public TEnum ReadUInt16<TEnum>() => CastTo<TEnum>.From(this.ReadUInt16());
+        public TEnum ReadUInt16<TEnum>()
+            where TEnum : struct, Enum
+        {
+            TryConvert(this.ReadUInt16(), out TEnum value);
+            return value;
+        }
 
         /// <summary>
         /// Reads array of 16-bit unsigned integers from the stream.
-        /// 2 bytes are read.
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
@@ -200,8 +182,19 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Reads array of 16-bit unsigned integers from the stream to the buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to read to.</param>
+        public void ReadUInt16Array(Span<ushort> buffer)
+        {
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                buffer[i] = this.ReadUInt16();
+            }
+        }
+
+        /// <summary>
         /// Reads array or 32-bit unsigned integers from the stream.
-        /// 4 bytes are read.
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns>
@@ -218,26 +211,6 @@ namespace SixLabors.Fonts
             return data;
         }
 
-        /// <summary>
-        /// Reads array or 16-bit unsigned integers from the stream.
-        /// 2 bytes are read.
-        /// </summary>
-        /// <param name="length">The length.</param>
-        /// <returns>
-        /// The 16-bit unsigned integer read.
-        /// </returns>
-        public ushort[] Offset16Array(int length) => this.ReadUInt16Array(length);
-
-        /// <summary>
-        /// Reads array or 16-bit unsigned integers from the stream.
-        /// 2 bytes are read.
-        /// </summary>
-        /// <param name="length">The length.</param>
-        /// <returns>
-        /// The 16-bit unsigned integer read.
-        /// </returns>
-        public uint[] Offset32Array(int length) => this.ReadUInt32Array(length);
-
         public byte[] ReadUInt8Array(int length)
         {
             byte[] data = new byte[length];
@@ -247,35 +220,16 @@ namespace SixLabors.Fonts
             return data;
         }
 
-        public TEnum[] ReadUInt8Array<TEnum>(int length)
-             where TEnum : Enum
-        {
-            var data = new TEnum[length];
-            for (int i = 0; i < length; i++)
-            {
-                data[i] = CastTo<TEnum>.From(this.ReadUInt8());
-            }
-
-            return data;
-        }
-
         /// <summary>
-        /// Reads a 16-bit unsigned integer from the stream, using the bit converter
-        /// for this reader. 2 bytes are read.
+        /// Reads an array of 16-bit signed integers from the stream to the buffer.
         /// </summary>
-        /// <param name="length">The length.</param>
-        /// <returns>
-        /// The 16-bit unsigned integer read.
-        /// </returns>
-        public short[] ReadInt16Array(int length)
+        /// <param name="buffer">The buffer to read to.</param>
+        public void ReadInt16Array(Span<short> buffer)
         {
-            short[] data = new short[length];
-            for (int i = 0; i < length; i++)
+            for (int i = 0; i < buffer.Length; i++)
             {
-                data[i] = this.ReadInt16();
+                buffer[i] = this.ReadInt16();
             }
-
-            return data;
         }
 
         /// <summary>
@@ -318,58 +272,6 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <returns>The 32-bit unsigned integer read.</returns>
         public uint ReadOffset32() => this.ReadUInt32();
-
-        /// <summary>
-        /// Reads a 64-bit unsigned integer from the stream.
-        /// 8 bytes are read.
-        /// </summary>
-        /// <returns>The 64-bit unsigned integer read.</returns>
-        public ulong ReadUInt64()
-        {
-            this.ReadInternal(this.buffer, 8);
-            return BinaryPrimitives.ReadUInt64BigEndian(this.buffer);
-        }
-
-        /// <summary>
-        /// Reads a single-precision floating-point value from the stream.
-        /// 4 bytes are read.
-        /// </summary>
-        /// <returns>The floating point value read.</returns>
-        public float ReadSingle()
-        {
-            uint value = this.ReadUInt32();
-
-            return Unsafe.As<uint, float>(ref value);
-        }
-
-        /// <summary>
-        /// Reads the specified number of bytes into the given buffer, starting at
-        /// the given index.
-        /// </summary>
-        /// <param name="buffer">The buffer to copy data into.</param>
-        /// <param name="index">The first index to copy data into.</param>
-        /// <param name="count">The number of bytes to read</param>
-        /// <returns>The number of bytes actually read. This will only be less than
-        /// the requested number of bytes if the end of the stream is reached.
-        /// </returns>
-        public int Read(byte[] buffer, int index, int count)
-        {
-            int read = 0;
-            while (count > 0)
-            {
-                int block = this.BaseStream.Read(buffer, index, count);
-                if (block == 0)
-                {
-                    return read;
-                }
-
-                index += block;
-                read += block;
-                count -= block;
-            }
-
-            return read;
-        }
 
         /// <summary>
         /// Reads the specified number of bytes, returning them in a new byte array.
@@ -450,31 +352,6 @@ namespace SixLabors.Fonts
             }
         }
 
-        /// <summary>
-        /// Reads the given number of bytes from the stream if possible, returning
-        /// the number of bytes actually read, which may be less than requested if
-        /// (and only if) the end of the stream is reached.
-        /// </summary>
-        /// <param name="data">Buffer to read into.</param>
-        /// <param name="size">Number of bytes to read.</param>
-        /// <returns>Number of bytes actually read.</returns>
-        private int TryReadInternal(byte[] data, int size)
-        {
-            int index = 0;
-            while (index < size)
-            {
-                int read = this.BaseStream.Read(data, index, size - index);
-                if (read == 0)
-                {
-                    return index;
-                }
-
-                index += read;
-            }
-
-            return index;
-        }
-
         public void Dispose()
         {
             if (!this.leaveOpen)
@@ -483,32 +360,19 @@ namespace SixLabors.Fonts
             }
         }
 
-        /// <summary>
-        /// Class to cast to type <typeparamref name="TTarget"/>
-        /// </summary>
-        /// <typeparam name="TTarget">Target type.</typeparam>
-        private static class CastTo<TTarget>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryConvert<T, TEnum>(T input, out TEnum value)
+            where T : struct, IConvertible, IFormattable, IComparable
+            where TEnum : struct, Enum
         {
-            /// <summary>
-            /// Casts <typeparamref name="TSource" /> to <typeparamref name="TTarget" />.
-            /// This does not cause boxing for value types.
-            /// Useful in generic methods.
-            /// </summary>
-            /// <typeparam name="TSource">Source type to cast from. Usually a generic type.</typeparam>
-            /// <param name="s">The source.</param>
-            public static TTarget From<TSource>(TSource s) => Cache<TSource>.Caster(s);
-
-            private static class Cache<TSource>
+            if (Unsafe.SizeOf<T>() == Unsafe.SizeOf<TEnum>())
             {
-                public static readonly Func<TSource, TTarget> Caster = Get();
-
-                private static Func<TSource, TTarget> Get()
-                {
-                    System.Linq.Expressions.ParameterExpression p = System.Linq.Expressions.Expression.Parameter(typeof(TSource));
-                    System.Linq.Expressions.UnaryExpression c = System.Linq.Expressions.Expression.ConvertChecked(p, typeof(TTarget));
-                    return System.Linq.Expressions.Expression.Lambda<Func<TSource, TTarget>>(c, p).Compile();
-                }
+                value = Unsafe.As<T, TEnum>(ref input);
+                return true;
             }
+
+            value = default;
+            return false;
         }
     }
 }

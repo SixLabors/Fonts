@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -26,7 +27,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             ushort coverageOffset = reader.ReadUInt16();
             ushort glyphCount = reader.ReadUInt16();
-            ushort[] attachPointOffsets = reader.ReadUInt16Array(glyphCount);
+
+            using Buffer<ushort> attachPointOffsetsBuffer = new(glyphCount);
+            Span<ushort> attachPointOffsets = attachPointOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(attachPointOffsets);
 
             var attachmentListTable = new AttachmentListTable
             {

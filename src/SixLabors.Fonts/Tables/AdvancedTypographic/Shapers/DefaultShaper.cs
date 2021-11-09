@@ -50,16 +50,28 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static readonly Tag KernTag = Tag.Parse("kern");
 
+        private static readonly Tag VertTag = Tag.Parse("vert");
+
+        private static readonly Tag VKernTag = Tag.Parse("vkrn");
+
         private static readonly CodePoint FractionSlash = new(0x2044);
 
         private static readonly CodePoint Slash = new(0x002F);
 
         private readonly List<Tag> stageFeatures = new();
 
-        internal DefaultShaper() => this.MarkZeroingMode = MarkZeroingMode.PostGpos;
+        private readonly KerningMode kerningMode;
 
-        protected DefaultShaper(MarkZeroingMode markZeroingMode)
-            => this.MarkZeroingMode = markZeroingMode;
+        internal DefaultShaper(KerningMode kerningMode)
+            : this(MarkZeroingMode.PostGpos, kerningMode)
+        {
+        }
+
+        protected DefaultShaper(MarkZeroingMode markZeroingMode, KerningMode kerningMode)
+        {
+            this.MarkZeroingMode = markZeroingMode;
+            this.kerningMode = kerningMode;
+        }
 
         /// <inheritdoc />
         public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
@@ -90,13 +102,28 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.AddFeature(collection, index, count, MarkTag);
             this.AddFeature(collection, index, count, MkmkTag);
 
-            // Add horizontal features.
-            this.AddFeature(collection, index, count, CaltTag);
-            this.AddFeature(collection, index, count, CligTag);
-            this.AddFeature(collection, index, count, LigaTag);
-            this.AddFeature(collection, index, count, RcltTag);
-            this.AddFeature(collection, index, count, CursTag);
-            this.AddFeature(collection, index, count, KernTag);
+            if (!collection.IsVerticalLayoutMode)
+            {
+                // Add horizontal features.
+                this.AddFeature(collection, index, count, CaltTag);
+                this.AddFeature(collection, index, count, CligTag);
+                this.AddFeature(collection, index, count, LigaTag);
+                this.AddFeature(collection, index, count, RcltTag);
+                this.AddFeature(collection, index, count, CursTag);
+                this.AddFeature(collection, index, count, KernTag);
+            }
+            else
+            {
+                // We only apply `vert` feature.See:
+                // https://github.com/harfbuzz/harfbuzz/commit/d71c0df2d17f4590d5611239577a6cb532c26528
+                // https://lists.freedesktop.org/archives/harfbuzz/2013-August/003490.html
+
+                // We really want to find a 'vert' feature if there's any in the font, no
+                // matter which script/langsys it is listed (or not) under.
+                // See various bugs referenced from:
+                // https://github.com/harfbuzz/harfbuzz/issues/63
+                this.AddFeature(collection, index, count, VertTag);
+            }
 
             // Enable contextual fractions.
             for (int i = index; i < count; i++)
@@ -132,17 +159,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             }
         }
 
-        protected void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag variationFeatures, bool enabled = true)
+        protected void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag feature, bool enabled = true)
         {
+            if (this.kerningMode == KerningMode.None)
+            {
+                if (feature == KernTag || feature == VKernTag)
+                {
+                    return;
+                }
+            }
+
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                collection.AddShapingFeature(i, new TagEntry(variationFeatures, enabled));
+                collection.AddShapingFeature(i, new TagEntry(feature, enabled));
             }
 
-            if (!this.stageFeatures.Contains(variationFeatures))
+            if (!this.stageFeatures.Contains(feature))
             {
-                this.stageFeatures.Add(variationFeatures);
+                this.stageFeatures.Add(feature);
             }
         }
 

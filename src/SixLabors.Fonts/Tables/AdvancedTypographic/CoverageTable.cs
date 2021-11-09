@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
@@ -19,8 +18,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     {
         public abstract int CoverageIndexOf(ushort glyphId);
 
-        public abstract IEnumerator<ushort> GetEnumerator();
-
         public static CoverageTable Load(BigEndianBinaryReader reader, long offset)
         {
             reader.Seek(offset, SeekOrigin.Begin);
@@ -33,7 +30,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             };
         }
 
-        public static CoverageTable[] LoadArray(BigEndianBinaryReader reader, long offset, ushort[] coverageOffsets)
+        public static CoverageTable[] LoadArray(BigEndianBinaryReader reader, long offset, ReadOnlySpan<ushort> coverageOffsets)
         {
             var tables = new CoverageTable[coverageOffsets.Length];
             for (int i = 0; i < tables.Length; i++)
@@ -57,9 +54,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             int n = Array.BinarySearch(this.glyphArray, glyphId);
             return n < 0 ? -1 : n;
         }
-
-        public override IEnumerator<ushort> GetEnumerator()
-            => ((IEnumerable<ushort>)this.glyphArray).GetEnumerator();
 
         public static CoverageFormat1Table Load(BigEndianBinaryReader reader)
         {
@@ -98,17 +92,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
 
             return -1;
-        }
-
-        public override IEnumerator<ushort> GetEnumerator()
-        {
-            foreach (CoverageRangeRecord record in this.records)
-            {
-                for (ushort i = record.StartGlyphId; i <= record.EndGlyphId; i++)
-                {
-                    yield return i;
-                }
-            }
         }
 
         public static CoverageFormat2Table Load(BigEndianBinaryReader reader)

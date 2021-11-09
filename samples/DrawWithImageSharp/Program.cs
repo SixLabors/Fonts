@@ -48,10 +48,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
             FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
-            //RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
+            RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
             RenderText(bugzilla, "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ", pointSize: 72);
-            return;
-            // TODO: Test and fix tomorrow. Gsub Lookup 4.
+
             RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { font2 });
 
             RenderText(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
@@ -185,7 +184,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 TextOptions = new TextOptions()
                 {
-                    ApplyKerning = options.ApplyKerning,
+                    ApplyKerning = options.KerningMode != KerningMode.None,
                     DpiX = options.Dpi,
                     DpiY = options.Dpi,
                     TabWidth = options.TabWidth,
@@ -210,8 +209,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             => RenderText(
                 new RendererOptions(new Font(font, pointSize), 96)
                 {
-                    ApplyKerning = true,
-                    //WrappingWidth = 400,
+                    // WrappingWidth = 400,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
                     ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
                 },
@@ -239,7 +237,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var font = new Font(fontFamily, pointSize);
             var renderOptions = new RendererOptions(font, textOptions.DpiX)
             {
-                ApplyKerning = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                 FallbackFontFamilies = textOptions.FallbackFonts?.ToArray()
             };
@@ -286,7 +283,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     var font = new Font(fontFamily, pointSize);
                     var renderOptions = new RendererOptions(font, textOptions.DpiX)
                     {
-                        ApplyKerning = true,
                         ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                         FallbackFontFamilies = textOptions.FallbackFonts?.ToArray(),
                         VerticalAlignment = va,

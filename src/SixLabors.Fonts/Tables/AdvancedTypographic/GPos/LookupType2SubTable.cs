@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
@@ -70,7 +71,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 ValueFormat valueFormat1 = reader.ReadUInt16<ValueFormat>();
                 ValueFormat valueFormat2 = reader.ReadUInt16<ValueFormat>();
                 ushort pairSetCount = reader.ReadUInt16();
-                ushort[] pairSetOffsets = reader.ReadUInt16Array(pairSetCount);
+
+                using Buffer<ushort> pairSetOffsetsBuffer = new(pairSetCount);
+                Span<ushort> pairSetOffsets = pairSetOffsetsBuffer.GetSpan();
+                reader.ReadUInt16Array(pairSetOffsets);
 
                 var pairSets = new PairSetTable[pairSetCount];
                 for (int i = 0; i < pairSetCount; i++)

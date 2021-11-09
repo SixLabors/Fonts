@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
@@ -76,10 +77,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             // +----------+-----------------------------------------------+----------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
             ushort backtrackGlyphCount = reader.ReadUInt16();
-            ushort[] backtrackCoverageOffsets = reader.ReadUInt16Array(backtrackGlyphCount);
+
+            using Buffer<ushort> backtrackCoverageOffsetsBuffer = new(backtrackGlyphCount);
+            Span<ushort> backtrackCoverageOffsets = backtrackCoverageOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(backtrackCoverageOffsets);
 
             ushort lookaheadGlyphCount = reader.ReadUInt16();
-            ushort[] lookaheadCoverageOffsets = reader.ReadUInt16Array(lookaheadGlyphCount);
+
+            using Buffer<ushort> lookaheadCoverageOffsetsBuffer = new(lookaheadGlyphCount);
+            Span<ushort> lookaheadCoverageOffsets = lookaheadCoverageOffsetsBuffer.GetSpan();
+            reader.ReadUInt16Array(lookaheadCoverageOffsets);
 
             ushort glyphCount = reader.ReadUInt16();
             ushort[] substituteGlyphIds = reader.ReadUInt16Array(glyphCount);
