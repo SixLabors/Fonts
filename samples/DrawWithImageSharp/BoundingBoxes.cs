@@ -37,7 +37,7 @@ namespace DrawWithImageSharp
         /// <param name="text">The text to generate glyphs for</param>
         /// <param name="style">The style and settings to use while rendering the glyphs</param>
         /// <returns>The paths, boxes, and text box.</returns>
-        private static (IPathCollection paths, IPathCollection boxes) GenerateGlyphsWithBox(string text, RendererOptions style)
+        private static (IPathCollection Paths, IPathCollection Boxes) GenerateGlyphsWithBox(string text, RendererOptions style)
         {
             var glyphBuilder = new CustomGlyphBuilder(Vector2.Zero);
 

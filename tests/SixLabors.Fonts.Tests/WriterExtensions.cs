@@ -99,10 +99,10 @@ namespace SixLabors.Fonts.Tests
         public static void WriteNameTable(this BigEndianBinaryWriter writer, Dictionary<NameIds, string> names, List<string> languages = null)
             => writer.WriteNameTable(names.Select(x => (x.Key, x.Value, CultureInfo.InvariantCulture)).ToList(), languages);
 
-        public static void WriteNameTable(this BigEndianBinaryWriter writer, params (NameIds nameId, string value, CultureInfo culture)[] names)
+        public static void WriteNameTable(this BigEndianBinaryWriter writer, params (NameIds NameId, string Value, CultureInfo Culture)[] names)
             => writer.WriteNameTable(names.ToList());
 
-        public static void WriteNameTable(this BigEndianBinaryWriter writer, List<(NameIds nameId, string value, CultureInfo culture)> names, List<string> languages = null)
+        public static void WriteNameTable(this BigEndianBinaryWriter writer, List<(NameIds NameId, string Value, CultureInfo Culture)> names, List<string> languages = null)
         {
             // Type          | Name                        | Description
             // --------------|-----------------------------|--------------------------------------------------------

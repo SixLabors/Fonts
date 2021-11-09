@@ -40,10 +40,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
-            //RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
+            RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
             RenderText(bugzilla, "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ", pointSize: 72);
-            return;
-            // TODO: Test and fix tomorrow. Gsub Lookup 4.
+
             RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { font2 });
 
             RenderText(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
