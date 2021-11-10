@@ -33,6 +33,7 @@ namespace SixLabors.Fonts.Tests
                     0,
                     0,
                     0,
+                    font.UnitsPerEm,
                     0),
                 10);
 

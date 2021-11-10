@@ -70,7 +70,7 @@ namespace SixLabors.Fonts
             float left = glyphLayouts.Min(x => x.Location.X);
 
             // Avoid trimming zero-width marks that extend past the bounds of their base.
-            float right = glyphLayouts.Max(x => Math.Max(x.Location.X + x.Width, x.BoundingBox(Vector2.One).Right));
+            float right = glyphLayouts.Max(x => Math.Max(x.Location.X + x.Width, x.BoundingBox(1F).Right));
             float bottom = glyphLayouts.Max(x => x.Location.Y + x.LineHeight);
 
             Vector2 topLeft = new Vector2(left, top) * dpi;
