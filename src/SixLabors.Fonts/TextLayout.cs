@@ -249,8 +249,6 @@ namespace SixLabors.Fonts
                     }
 
                     glyphs.Add(new GlyphLayout(
-                        info.GraphemeIndex,
-                        metric.CodePoint,
                         new Glyph(metric, info.PointSize),
                         location,
                         info.ScaledAdvance,
@@ -363,8 +361,6 @@ namespace SixLabors.Fonts
                     }
 
                     glyphs.Add(new GlyphLayout(
-                        info.GraphemeIndex,
-                        metric.CodePoint,
                         new Glyph(metric, info.PointSize),
                         location + new Vector2((xLineAdvance - (metric.AdvanceWidth * (info.PointSize / metric.ScaleFactor))) * .5F, 0),
                         textBox.ScaledMaxLineHeight,

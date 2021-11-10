@@ -131,8 +131,8 @@ namespace SixLabors.Fonts
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
                 GlyphLayout g = glyphLayouts[i];
-                hasSize |= !g.StartOfLine;
-                characterBoundsList[i] = new GlyphBounds(g.CodePoint, g.BoundingBox(dpi));
+                hasSize |= !g.IsStartOfLine;
+                characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, g.BoundingBox(dpi));
             }
 
             characterBounds = characterBoundsList;
