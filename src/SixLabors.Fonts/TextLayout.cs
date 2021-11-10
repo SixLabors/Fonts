@@ -127,7 +127,7 @@ namespace SixLabors.Fonts
             LayoutMode layoutMode = options.LayoutMode;
             List<GlyphLayout> glyphs = new();
 
-            Vector2 location = options.Origin / new Vector2(options.DpiX, options.DpiY);
+            Vector2 location = options.Origin / options.Dpi;
             float maxScaledAdvance = textBox.TextLines.Max(x => x.ScaledLineAdvance());
             TextDirection direction = textBox.TextDirection();
             if (layoutMode == LayoutMode.HorizontalTopBottom)
@@ -498,7 +498,7 @@ namespace SixLabors.Fonts
         {
             float pointSize = options.Font.Size;
             bool shouldWrap = options.WrappingWidth > 0;
-            float wrappingLength = shouldWrap ? options.WrappingWidth / options.DpiX : float.MaxValue;
+            float wrappingLength = shouldWrap ? options.WrappingWidth / options.Dpi : float.MaxValue;
             bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
             bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
             bool isHorizontal = (layoutMode & LayoutMode.VerticalLeftRight) == 0;

@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.IO;
 using SixLabors.Fonts.Tables.General.Glyphs;
 
 namespace SixLabors.Fonts.Tables.General
@@ -47,14 +48,13 @@ namespace SixLabors.Fonts.Tables.General
             {
                 if (locations[i] == locations[i + 1])
                 {
-                    // this is an empty glyphs;
+                    // This is an empty glyph;
                     glyphs[i] = empty;
                 }
                 else
                 {
                     // Move to start of glyph.
-                    reader.Seek(locations[i], System.IO.SeekOrigin.Begin);
-
+                    reader.Seek(locations[i], SeekOrigin.Begin);
                     glyphs[i] = GlyphLoader.Load(reader);
                 }
             }

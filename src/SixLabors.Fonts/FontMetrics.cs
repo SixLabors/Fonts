@@ -114,7 +114,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="glyphId">The glyph identifier.</param>
         /// <param name="markAttachmentClass">The mark attachment class.</param>
-        /// <returns>true, if the mark attachement class could be retrieved.</returns>
+        /// <returns>true, if the mark attachment class could be retrieved.</returns>
         internal abstract bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass);
 
         /// <summary>

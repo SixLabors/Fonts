@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts.Tables.General.Glyphs;
@@ -18,19 +19,19 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             bool[] onCurves = { true, false };
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
-            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
+            GlyphOutline outline = glyphVector.GetOutline();
 
             // act
-            var clone = (GlyphVector)glyphVector.DeepClone();
+            GlyphOutline clone = GlyphVector.DeepClone(glyphVector).GetOutline();
 
             // assert
-            Assert.False(glyphVector.ControlPoints.Equals(clone.ControlPoints));
-            Assert.True(glyphVector.ControlPoints.SequenceEqual(clone.ControlPoints));
-            Assert.False(glyphVector.OnCurves.Equals(clone.OnCurves));
-            Assert.True(glyphVector.OnCurves.SequenceEqual(clone.OnCurves));
-            Assert.False(glyphVector.EndPoints.Equals(clone.EndPoints));
-            Assert.True(glyphVector.EndPoints.SequenceEqual(clone.EndPoints));
-            Assert.True(glyphVector.Bounds.Equals(clone.Bounds));
+            Assert.False(outline.ControlPoints.Equals(clone.ControlPoints));
+            Assert.True(outline.ControlPoints.Span.SequenceEqual(clone.ControlPoints.Span));
+            Assert.False(outline.OnCurves.Equals(clone.OnCurves));
+            Assert.True(outline.OnCurves.Span.SequenceEqual(clone.OnCurves.Span));
+            Assert.False(outline.EndPoints.Equals(clone.EndPoints));
+            Assert.True(outline.EndPoints.Span.SequenceEqual(clone.EndPoints.Span));
         }
 
         [Fact]
@@ -42,7 +43,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
             var expectedBounds = new Bounds(11.0f, 12.0f, 13.0f, 14.0f);
-            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
 
             // act
             Matrix3x2 matrix = Matrix3x2.Identity;
@@ -50,7 +51,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var transformed = GlyphVector.Transform(glyphVector, matrix);
 
             // assert
-            Assert.Equal(expectedBounds, transformed.Bounds);
+            Assert.Equal(expectedBounds, transformed.GetBounds());
         }
 
         [Fact]
@@ -62,14 +63,14 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             bool[] onCurves = { true, false };
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
-            var glyphVector1 = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
-            var glyphVector2 = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            var glyphVector1 = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
+            var glyphVector2 = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
 
             // act
-            var appended = GlyphVector.Append(glyphVector1, glyphVector2);
+            var appended = GlyphVector.Append(glyphVector1, glyphVector2, default);
 
             // assert
-            Assert.True(expectedControlPoints.SequenceEqual(appended.ControlPoints));
+            Assert.True(expectedControlPoints.AsSpan().SequenceEqual(appended.GetOutline().ControlPoints.Span));
         }
 
         [Fact]
@@ -100,7 +101,7 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             ushort[] endPoints = { 1, 2, 3 };
             var bounds = new Bounds(16130.0f, 260.0f, 26624.0f, 28928.0f);
             var expectedBounds = new Bounds(19876f, 013684f, 89804.8f, 108083.2f);
-            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds);
+            var glyphVector = new GlyphVector(controlPoints, onCurves, endPoints, bounds, Array.Empty<byte>());
 
             // act
             Matrix3x2 matrix = Matrix3x2.Identity;
@@ -111,10 +112,11 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var transformed = GlyphVector.Transform(glyphVector, matrix);
 
             // assert
-            Assert.Equal(expectedBounds.Min.X, transformed.Bounds.Min.X, precision);
-            Assert.Equal(expectedBounds.Min.Y, transformed.Bounds.Min.Y, precision);
-            Assert.Equal(expectedBounds.Max.X, transformed.Bounds.Max.X, precision);
-            Assert.Equal(expectedBounds.Max.Y, transformed.Bounds.Max.Y, precision);
+            Bounds transformedBounds = transformed.GetBounds();
+            Assert.Equal(expectedBounds.Min.X, transformedBounds.Min.X, precision);
+            Assert.Equal(expectedBounds.Min.Y, transformedBounds.Min.Y, precision);
+            Assert.Equal(expectedBounds.Max.X, transformedBounds.Max.X, precision);
+            Assert.Equal(expectedBounds.Max.Y, transformedBounds.Max.Y, precision);
         }
     }
 }

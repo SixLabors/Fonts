@@ -20,30 +20,16 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
         public override GlyphVector CreateGlyph(GlyphTable table)
         {
-            var controlPoints = new List<Vector2>();
-            var onCurves = new List<bool>();
-            var endPoints = new List<ushort>();
-
+            GlyphVector glyph = default;
             for (int resultIndex = 0; resultIndex < this.result.Length; resultIndex++)
             {
                 ref Composite composite = ref this.result[resultIndex];
-
-                GlyphVector glyph = table.GetGlyph(composite.GlyphIndex);
-                int pointCount = glyph.PointCount;
-                ushort endPointOffset = (ushort)controlPoints.Count;
-                for (int i = 0; i < pointCount; i++)
-                {
-                    controlPoints.Add(Vector2.Transform(glyph.ControlPoints[i], composite.Transformation));
-                    onCurves.Add(glyph.OnCurves[i]);
-                }
-
-                foreach (ushort p in glyph.EndPoints)
-                {
-                    endPoints.Add((ushort)(p + endPointOffset));
-                }
+                glyph = GlyphVector.Append(glyph, GlyphVector.Transform(GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex)), composite.Transformation), this.bounds);
             }
 
-            return new GlyphVector(controlPoints.ToArray(), onCurves.ToArray(), endPoints.ToArray(), this.bounds);
+            // We ignore any composite glyph instructions and
+            // instead rely on the individual glyph instructions.
+            return glyph;
         }
 
         public static CompositeGlyphLoader LoadCompositeGlyph(BigEndianBinaryReader reader, in Bounds bounds)
@@ -60,18 +46,18 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 Matrix3x2 transform = Matrix3x2.Identity;
                 transform.Translation = new Vector2(dx, dy);
 
-                if (flags.HasFlag(CompositeGlyphFlags.WeHaveAScale))
+                if ((flags & CompositeGlyphFlags.WeHaveAScale) != 0)
                 {
                     float scale = reader.ReadF2dot14(); // Format 2.14
                     transform.M11 = scale;
                     transform.M21 = scale;
                 }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveXAndYScale))
+                else if ((flags & CompositeGlyphFlags.WeHaveXAndYScale) != 0)
                 {
                     transform.M11 = reader.ReadF2dot14();
                     transform.M22 = reader.ReadF2dot14();
                 }
-                else if (flags.HasFlag(CompositeGlyphFlags.WeHaveATwoByTwo))
+                else if ((flags & CompositeGlyphFlags.WeHaveATwoByTwo) != 0)
                 {
                     transform.M11 = reader.ReadF2dot14();
                     transform.M12 = reader.ReadF2dot14();
@@ -81,11 +67,14 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 
                 result.Add(new Composite(glyphIndex, transform));
             }
-            while (flags.HasFlag(CompositeGlyphFlags.MoreComponents));
+            while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
-            if (flags.HasFlag(CompositeGlyphFlags.WeHaveInstructions))
+            if ((flags & CompositeGlyphFlags.WeHaveInstructions) != 0)
             {
-                // TODO deal with instructions
+                // Read the instructions if they exist.
+                // We don't actually use them though and rely on individual glyph instructions.
+                ushort instructionSize = reader.ReadUInt16();
+                reader.ReadUInt8Array(instructionSize);
             }
 
             return new CompositeGlyphLoader(result, bounds);
@@ -94,11 +83,11 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         public static void LoadArguments(BigEndianBinaryReader reader, CompositeGlyphFlags flags, out int dx, out int dy)
         {
             // are we 16 or 8 bits values?
-            if (flags.HasFlag(CompositeGlyphFlags.Args1And2AreWords))
+            if ((flags & CompositeGlyphFlags.Args1And2AreWords) != 0)
             {
                 // 16 bit
                 // are we int or unit?
-                if (flags.HasFlag(CompositeGlyphFlags.ArgsAreXYValues))
+                if ((flags & CompositeGlyphFlags.ArgsAreXYValues) != 0)
                 {
                     // signed
                     dx = reader.ReadInt16();
@@ -115,7 +104,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             {
                 // 8 bit
                 // are we sbyte or byte?
-                if (flags.HasFlag(CompositeGlyphFlags.ArgsAreXYValues))
+                if ((flags & CompositeGlyphFlags.ArgsAreXYValues) != 0)
                 {
                     // signed
                     dx = reader.ReadSByte();

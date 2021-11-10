@@ -23,9 +23,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         public static void Main(string[] args)
         {
             var fonts = new FontCollection();
+            var woffFonts = new FontCollection();
             FontFamily font = fonts.Add(@"Fonts\SixLaborsSampleAB.ttf");
-            FontFamily fontWoff = fonts.Add(@"Fonts\SixLaborsSampleAB.woff");
-            FontFamily fontWoff2 = fonts.Add(@"Fonts\OpenSans-Regular.woff2");
+            FontFamily fontWoff = woffFonts.Add(@"Fonts\SixLaborsSampleAB.woff");
+            FontFamily fontWoff2 = woffFonts.Add(@"Fonts\OpenSans-Regular.woff2");
             FontFamily carter = fonts.Add(@"Fonts\CarterOne.ttf");
             FontFamily wendyOne = fonts.Add(@"Fonts\WendyOne-Regular.ttf");
             FontFamily whitneyBook = fonts.Add(@"Fonts\whitney-book.ttf");
@@ -38,6 +39,13 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
             FontFamily arabicFont = SystemFonts.Get("Dubai");
 
+            FontFamily tahoma = SystemFonts.Get("Tahoma");
+            RenderText(font2, "\uFB01", pointSize: 11.25F);
+            RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
+            RenderText(tahoma, "p", pointSize: 11.25F);
+            RenderText(tahoma, "Lorem ipsum dolor sit amet", pointSize: 11.25F);
+            return;
+            RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
             FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
@@ -177,8 +185,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 TextOptions = new TextOptions()
                 {
                     ApplyKerning = options.KerningMode != KerningMode.None,
-                    DpiX = options.DpiX,
-                    DpiY = options.DpiY,
+                    DpiX = options.Dpi,
+                    DpiY = options.Dpi,
                     TabWidth = options.TabWidth,
                     LineSpacing = options.LineSpacing,
                     HorizontalAlignment = options.HorizontalAlignment,
@@ -227,7 +235,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
 
             var font = new Font(fontFamily, pointSize);
-            var renderOptions = new RendererOptions(font, textOptions.DpiX, textOptions.DpiY)
+            var renderOptions = new RendererOptions(font, textOptions.DpiX)
             {
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                 FallbackFontFamilies = textOptions.FallbackFonts?.ToArray()
@@ -273,7 +281,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     }
 
                     var font = new Font(fontFamily, pointSize);
-                    var renderOptions = new RendererOptions(font, textOptions.DpiX, textOptions.DpiY)
+                    var renderOptions = new RendererOptions(font, textOptions.DpiX)
                     {
                         ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                         FallbackFontFamilies = textOptions.FallbackFonts?.ToArray(),
@@ -331,7 +339,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             using var img = new Image<Rgba32>(width, height);
             img.Mutate(x => x.Fill(Color.Black));
 
-            img.Mutate(x => x.DrawText(options, text, font, Color.Yellow, origin));
+            img.Mutate(x => x.DrawText(options, text, font, Color.White, origin));
 
             // Ensure directory exists
             Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));

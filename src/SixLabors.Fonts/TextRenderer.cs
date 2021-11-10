@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace SixLabors.Fonts
 {
@@ -64,10 +63,7 @@ namespace SixLabors.Fonts
         public void RenderText(ReadOnlySpan<char> text, RendererOptions options)
         {
             IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
-
-            var dpi = new Vector2(options.DpiX, options.DpiY);
-
-            FontRectangle rect = TextMeasurer.GetBounds(glyphsToRender, dpi);
+            FontRectangle rect = TextMeasurer.GetBounds(glyphsToRender, options.Dpi);
 
             this.renderer.BeginText(rect);
 
@@ -78,7 +74,7 @@ namespace SixLabors.Fonts
                     continue;
                 }
 
-                g.Glyph.RenderTo(this.renderer, g.Location, options.DpiX, options.DpiY, g.LineHeight);
+                g.Glyph.RenderTo(this.renderer, g.Location, options);
             }
 
             this.renderer.EndText();

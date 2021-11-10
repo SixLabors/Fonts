@@ -64,13 +64,13 @@ namespace SixLabors.Fonts
         /// <returns>The <see cref="bool"/>.</returns>
         public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.Glyph.GlyphMetrics.CodePoint);
 
-        internal FontRectangle BoundingBox(Vector2 dpi)
+        internal FontRectangle BoundingBox(float dpi)
         {
             FontRectangle box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
 
             if (this.IsWhiteSpace())
             {
-                box = new FontRectangle(box.X, box.Y, this.Width * dpi.X, box.Height);
+                box = new FontRectangle(box.X, box.Y, this.Width * dpi, box.Height);
             }
 
             return box;

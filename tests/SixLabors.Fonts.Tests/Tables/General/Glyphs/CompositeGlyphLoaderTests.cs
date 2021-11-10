@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Numerics;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Glyphs;
@@ -27,12 +28,12 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var tbl = new GlyphTable(new[]
             {
                 new SimpleGlyphLoader(bounds), // padding
-                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds)
+                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
             });
 
             GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
-            Vector2 point = Assert.Single(finalGlyph.ControlPoints);
+            Vector2 point = Assert.Single(finalGlyph.GetOutline().ControlPoints.ToArray());
             Assert.Equal(new Vector2(short.MaxValue + 1 + 20, short.MaxValue + 2 + 21), point);
         }
 
@@ -53,12 +54,12 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var tbl = new GlyphTable(new[]
             {
                 new SimpleGlyphLoader(bounds), // padding
-                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds)
+                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
             });
 
             GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
-            Vector2 point = Assert.Single(finalGlyph.ControlPoints);
+            Vector2 point = Assert.Single(finalGlyph.GetOutline().ControlPoints.ToArray());
             Assert.Equal(new Vector2(short.MinValue + 1 + 20, short.MinValue + 2 + 21), point);
         }
 
@@ -79,12 +80,12 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var tbl = new GlyphTable(new[]
             {
                 new SimpleGlyphLoader(bounds), // padding
-                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds)
+                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
             });
 
             GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
-            Vector2 point = Assert.Single(finalGlyph.ControlPoints);
+            Vector2 point = Assert.Single(finalGlyph.GetOutline().ControlPoints.ToArray());
             Assert.Equal(new Vector2(sbyte.MaxValue + 1 + 20, sbyte.MaxValue + 2 + 21), point);
         }
 
@@ -105,12 +106,12 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var tbl = new GlyphTable(new[]
             {
                 new SimpleGlyphLoader(bounds), // padding
-                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds)
+                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
             });
 
             GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
-            Vector2 point = Assert.Single(finalGlyph.ControlPoints);
+            Vector2 point = Assert.Single(finalGlyph.GetOutline().ControlPoints.ToArray());
             Assert.Equal(new Vector2(sbyte.MinValue + 1 + 20, sbyte.MinValue + 2 + 21), point);
         }
     }

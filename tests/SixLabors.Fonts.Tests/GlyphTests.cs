@@ -26,19 +26,19 @@ namespace SixLabors.Fonts.Tests
             var font = (StreamFontMetrics)CreateFont(text).FontMetrics;
             var glyph = new Glyph(
                 new GlyphMetrics(
-                font,
-                codePoint,
-                new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, 1, 0, 1)),
-                0,
-                0,
-                0,
-                0,
-                1,
-                0),
+                    font,
+                    codePoint,
+                    new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, font.UnitsPerEm, 0, font.UnitsPerEm), Array.Empty<byte>()),
+                    0,
+                    0,
+                    0,
+                    0,
+                    font.UnitsPerEm,
+                    0),
                 10);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
-            glyph.RenderTo(this.renderer, locationInFontSpace, 72, 0);
+            glyph.RenderTo(this.renderer, locationInFontSpace, new RendererOptions(null, 72));
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
@@ -93,7 +93,7 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter A
             Glyph g = font.GetGlyphs(new CodePoint(41), ColorFontSupport.None).First();
-            GlyphMetrics instance = g.GlyphMetrics;
+            GlyphOutline instance = g.GlyphMetrics.GetOutline();
 
             Assert.Equal(20, instance.ControlPoints.Length);
             Assert.Equal(20, instance.OnCurves.Length);
@@ -126,26 +126,33 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(3, renderer.Colors.Count);
         }
 
-        [Fact]
-        public void RenderWoffGlyphs_IsEqualToTtfGlyphs()
+        [Theory]
+        [InlineData(false, false, 1238)]
+        [InlineData(false, true, 1238)]
+        [InlineData(true, false, 1238)]
+        [InlineData(true, true, 1238)]
+        public void RenderWoffGlyphs_IsEqualToTtfGlyphs(bool applyKerning, bool applyHinting, int expectedControlPoint)
         {
             Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
             Font fontWoff = new FontCollection().Add(TestFonts.OpenSansFileWoff1).CreateFont(12);
             string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            int expectedControlPointsCount = 1238;
 
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
             {
+                KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                ApplyHinting = applyHinting,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererWoff, testStr, new RendererOptions(fontWoff)
             {
+                KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                ApplyHinting = applyHinting,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 
-            Assert.Equal(expectedControlPointsCount, rendererWoff.ControlPoints.Count);
+            Assert.Equal(expectedControlPoint, rendererWoff.ControlPoints.Count);
             Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff.ControlPoints));
         }
 
@@ -163,11 +170,13 @@ namespace SixLabors.Fonts.Tests
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
             {
+                ApplyHinting = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererWoff, testStr, new RendererOptions(fontWoff)
             {
+                ApplyHinting = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 
@@ -177,9 +186,11 @@ namespace SixLabors.Fonts.Tests
 
 #if NETCOREAPP3_0_OR_GREATER
         [Theory]
-        [InlineData(false, 1238)]
-        [InlineData(true, 1238)]
-        public void RenderWoff2Glyphs_IsEqualToTtfGlyphs(bool applyKerning, int expectedControlPoints)
+        [InlineData(false, false, 1238)]
+        [InlineData(false, true, 1238)]
+        [InlineData(true, false, 1238)]
+        [InlineData(true, true, 1238)]
+        public void RenderWoff2Glyphs_IsEqualToTtfGlyphs(bool applyKerning, bool applyHinting, int expectedControlPoints)
         {
             Font fontTtf = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
             Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
@@ -189,12 +200,14 @@ namespace SixLabors.Fonts.Tests
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
             {
                 KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                ApplyHinting = applyHinting,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff2 = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
             {
                 KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                ApplyHinting = applyHinting,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 
@@ -216,11 +229,13 @@ namespace SixLabors.Fonts.Tests
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
             {
+                ApplyHinting = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff2 = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
             {
+                ApplyHinting = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
 

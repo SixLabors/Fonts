@@ -107,6 +107,8 @@ namespace SixLabors.Fonts
 
         public short ReadFWORD() => this.ReadInt16();
 
+        public short[] ReadFWORDArray(int length) => this.ReadInt16Array(length);
+
         public ushort ReadUFWORD() => this.ReadUInt16();
 
         /// <summary>
@@ -214,6 +216,24 @@ namespace SixLabors.Fonts
             byte[] data = new byte[length];
 
             this.ReadInternal(data, length);
+
+            return data;
+        }
+
+        /// <summary>
+        /// Reads array of 16-bit unsigned integers from the stream.
+        /// </summary>
+        /// <param name="length">The length.</param>
+        /// <returns>
+        /// The 16-bit signed integer read.
+        /// </returns>
+        public short[] ReadInt16Array(int length)
+        {
+            short[] data = new short[length];
+            for (int i = 0; i < length; i++)
+            {
+                data[i] = this.ReadInt16();
+            }
 
             return data;
         }
