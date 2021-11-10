@@ -96,10 +96,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets a value indicating whether to apply hinting.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if we should apply hinting; otherwise, <c>false</c>.
-        /// </value>
-        public bool ApplyHinting { get; set; } = true;
+        public bool ApplyHinting { get; set; }
 
         /// <summary>
         /// Gets or sets the current DPI to render/measure the text at.
