@@ -68,6 +68,16 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to apply kerning.
+        /// Obsolete. Use <see cref="KerningMode"/>.
+        /// </summary>
+        public bool ApplyKerning
+        {
+            get => this.KerningMode != KerningMode.None;
+            set => this.KerningMode = KerningMode.Normal;
+        }
+
+        /// <summary>
         /// Gets the font.
         /// </summary>
         public Font Font { get; }

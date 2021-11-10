@@ -13,29 +13,20 @@ namespace SixLabors.Fonts
     internal readonly struct GlyphLayout
     {
         internal GlyphLayout(
-            int graphemeIndex,
-            CodePoint codePoint,
             Glyph glyph,
             Vector2 location,
             float width,
             float height,
             float lineHeight,
-            bool startOfLine)
+            bool isStartOfLine)
         {
-            this.GraphemeIndex = graphemeIndex;
             this.LineHeight = lineHeight;
-            this.CodePoint = codePoint;
             this.Glyph = glyph;
             this.Location = location;
             this.Width = width;
             this.Height = height;
-            this.StartOfLine = startOfLine;
+            this.IsStartOfLine = isStartOfLine;
         }
-
-        /// <summary>
-        /// Gets the index of the grapheme in the combined text that the glyph is a member of.
-        /// </summary>
-        public int GraphemeIndex { get; }
 
         /// <summary>
         /// Gets the glyph.
@@ -58,25 +49,20 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this glyph is the first glyph on a new line.
-        /// </summary>
-        public bool StartOfLine { get; }
-
-        /// <summary>
-        /// Gets the Unicode code point of the glyph.
-        /// </summary>
-        public CodePoint CodePoint { get; }
-
-        /// <summary>
         /// Gets the line height of the glyph.
         /// </summary>
         public float LineHeight { get; }
 
         /// <summary>
+        /// Gets a value indicating whether this glyph is the first glyph on a new line.
+        /// </summary>
+        public bool IsStartOfLine { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the glyph represents a whitespace character.
         /// </summary>
         /// <returns>The <see cref="bool"/>.</returns>
-        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.CodePoint);
+        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.Glyph.GlyphMetrics.CodePoint);
 
         internal FontRectangle BoundingBox(float dpi)
         {
@@ -94,7 +80,7 @@ namespace SixLabors.Fonts
         public override string ToString()
         {
             var sb = new StringBuilder();
-            if (this.StartOfLine)
+            if (this.IsStartOfLine)
             {
                 sb.Append('@');
                 sb.Append(' ');
@@ -106,7 +92,7 @@ namespace SixLabors.Fonts
             }
 
             sb.Append('\'');
-            sb.Append(this.CodePoint.ToDebuggerDisplay());
+            sb.Append(this.Glyph.GlyphMetrics.CodePoint.ToDebuggerDisplay());
 
             sb.Append('\'');
             sb.Append(' ');

@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
@@ -14,8 +13,6 @@ namespace SixLabors.Fonts
     /// </summary>
     public static class TextMeasurer
     {
-        private static readonly GlyphBounds[] EmptyGlyphMetricArray = new GlyphBounds[0];
-
         /// <summary>
         /// Measures the text.
         /// </summary>
@@ -126,23 +123,16 @@ namespace SixLabors.Fonts
             bool hasSize = false;
             if (glyphLayouts.Count == 0)
             {
-                characterBounds = EmptyGlyphMetricArray;
+                characterBounds = Array.Empty<GlyphBounds>();
                 return hasSize;
             }
 
             var characterBoundsList = new GlyphBounds[glyphLayouts.Count];
-
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
-                GlyphLayout c = glyphLayouts[i];
-
-                // TODO: This sets the hasSize value to the last layout... is this correct?
-                if (!CodePoint.IsNewLine(c.CodePoint))
-                {
-                    hasSize = true;
-                }
-
-                characterBoundsList[i] = new GlyphBounds(c.CodePoint, c.BoundingBox(dpi));
+                GlyphLayout g = glyphLayouts[i];
+                hasSize |= !g.IsStartOfLine;
+                characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, g.BoundingBox(dpi));
             }
 
             characterBounds = characterBoundsList;
