@@ -74,7 +74,6 @@ namespace DrawWithImageSharp
 
             var style = new RendererOptions(font, 72, location)
             {
-                ApplyKerning = true,
                 TabWidth = 4,
                 WrappingWidth = wrappingWidth,
                 HorizontalAlignment = horiz,

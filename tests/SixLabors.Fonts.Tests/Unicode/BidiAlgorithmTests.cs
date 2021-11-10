@@ -18,6 +18,139 @@ namespace SixLabors.Fonts.Tests.Unicode
         public BidiAlgorithmTests(ITestOutputHelper output) => this.output = output;
 
         [Fact]
+        public void RendersKurdishTextCorrect()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "نەما خانی هەتا چیڕۆکی عیشقی ئێمە داڕێژێ";
+            int[] expectedGlyphIndices =
+            {
+                0, 214, 0, 0, 139, 197, 0, 289, 0, 333, 336, 266, 221, 337, 242, 336, 276, 0, 0, 337, 188, 140, 170,
+                0, 301, 336, 294, 140, 196, 140, 290, 0, 294
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void RendersFarsiTextCorrect()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "زناب فارسی را تک کمی سخت است";
+            int[] expectedGlyphIndices =
+            {
+                168, 218, 139, 168, 195, 218, 336, 289, 276, 274, 170, 139, 203, 336, 218, 203, 140, 250, 157, 140,
+                294, 207
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void RendersArabicTextWithPunctuationCorrectly()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.TimesNewRomanFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "زۆرمان باس کرد؛ باسی ئاو، کەش، هەوای کوردستان.";
+            int[] expectedGlyphIndices =
+            {
+                17, 997, 910, 920, 947, 937, 941, 1006, 815, 821, 909, 1005, 1002, 1003, 748,
+                949, 1002, 815, 748, 1005, 910, 907, 822, 947, 910, 913, 749, 937, 942, 815,
+                945, 910, 913, 997, 910, 995, 941, 1574, 943
+            };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void RendersArabicNumbersFromLeftToRight()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "٠١٢٣٤٥٦٧٨٩";
+            int[] expectedGlyphIndices = { 403, 405, 407, 409, 411, 413, 415, 417, 419, 421 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void MixingArabicWordsWithNumbers_Works()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.SegeouiFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "لە ساڵی ١٢٣٤ ڕوویدا";
+            int[] expectedGlyphIndices = { 2317, 3631, 2380, 2345, 2345, 2485, 2264, 2265, 2266, 2267, 2379, 2540, 2247, 2260, 2842, 2286 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void MathematicalFormulasWithArabicText_Works()
+        {
+            // arrange
+            Font arabicFont = new FontCollection().Add(TestFonts.SegeouiFontFile).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "١١س + ٨ج = ٨٥١";
+            int[] expectedGlyphIndices = { 2271, 2268, 2264, 32, 2322, 2271, 14, 2329, 2264, 2264 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
         public void ICUTests() => Assert.True(this.ICUTestsImpl());
 
         private bool ICUTestsImpl()

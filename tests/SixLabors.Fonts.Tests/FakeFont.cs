@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tests
         public void TestFontMetricProperties()
         {
             Font fakeFont = CreateFont("A");
-            IFontMetrics metrics = fakeFont.FontMetrics;
+            FontMetrics metrics = fakeFont.FontMetrics;
             Assert.Equal(30, metrics.UnitsPerEm);
             Assert.Equal(35, metrics.Ascender);
             Assert.Equal(8, metrics.Descender);
@@ -21,13 +21,13 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(35 - 8 + 12, metrics.LineHeight);
         }
 
-        public static Font CreateFont(string text)
-            => CreateFontWithInstance(text, out _);
+        public static Font CreateFont(string text, string name = "name")
+            => CreateFontWithInstance(text, name, out _);
 
-        internal static Font CreateFontWithInstance(string text, out FakeFontInstance instance)
+        internal static Font CreateFontWithInstance(string text, string name, out FakeFontInstance instance)
         {
             var fc = (IFontMetricsCollection)new FontCollection();
-            instance = FakeFontInstance.CreateFontWithVaryingVerticalFontMetrics(text);
+            instance = FakeFontInstance.CreateFontWithVaryingVerticalFontMetrics(text, name);
             Font d = fc.AddMetrics(instance, CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
         }

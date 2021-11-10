@@ -2,23 +2,24 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Numerics;
 using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
     /// <summary>
     /// <para>
-    /// Represents a font face with metrics, which is
-    /// a set of glyphs with a specific style (regular, italic, bold etc).
+    /// Represents a font face with metrics, which is a set of glyphs with a specific style (regular, italic, bold etc).
     /// </para>
     /// <para>The font source is a filesystem path.</para>
     /// </summary>
-    internal class FileFontMetrics : IFontMetrics
+    internal sealed class FileFontMetrics : FontMetrics
     {
-        private readonly Lazy<IFontMetrics> metrics;
+        private readonly Lazy<StreamFontMetrics> metrics;
 
         public FileFontMetrics(string path)
             : this(path, 0)
@@ -34,11 +35,11 @@ namespace SixLabors.Fonts
         {
             this.Description = description;
             this.Path = path;
-            this.metrics = new Lazy<IFontMetrics>(() => FontMetrics.LoadFont(path, offset));
+            this.metrics = new Lazy<StreamFontMetrics>(() => StreamFontMetrics.LoadFont(path, offset));
         }
 
-        /// <inheritdoc cref="IFontMetrics.Description"/>
-        public FontDescription Description { get; }
+        /// <inheritdoc cref="FontMetrics.Description"/>
+        public override FontDescription Description { get; }
 
         /// <summary>
         /// Gets the filesystem path to the font face source.
@@ -46,42 +47,70 @@ namespace SixLabors.Fonts
         public string Path { get; }
 
         /// <inheritdoc />
-        public ushort UnitsPerEm => this.metrics.Value.UnitsPerEm;
+        public override ushort UnitsPerEm => this.metrics.Value.UnitsPerEm;
 
         /// <inheritdoc />
-        public float ScaleFactor => this.metrics.Value.ScaleFactor;
+        public override float ScaleFactor => this.metrics.Value.ScaleFactor;
 
         /// <inheritdoc />
-        public short Ascender => this.metrics.Value.Ascender;
+        public override short Ascender => this.metrics.Value.Ascender;
 
         /// <inheritdoc />
-        public short Descender => this.metrics.Value.Descender;
+        public override short Descender => this.metrics.Value.Descender;
 
         /// <inheritdoc />
-        public short LineGap => this.metrics.Value.LineGap;
+        public override short LineGap => this.metrics.Value.LineGap;
 
         /// <inheritdoc />
-        public short LineHeight => this.metrics.Value.LineHeight;
+        public override short LineHeight => this.metrics.Value.LineHeight;
 
         /// <inheritdoc/>
-        public short AdvanceWidthMax => this.metrics.Value.AdvanceWidthMax;
+        public override short AdvanceWidthMax => this.metrics.Value.AdvanceWidthMax;
 
         /// <inheritdoc/>
-        public short AdvanceHeightMax => this.metrics.Value.AdvanceHeightMax;
+        public override short AdvanceHeightMax => this.metrics.Value.AdvanceHeightMax;
+
+        /// <inheritdoc/>
+        internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
+            => this.metrics.Value.TryGetGlyphId(codePoint, out glyphId);
+
+        /// <inheritdoc/>
+        internal override bool TryGetGlyphId(
+            CodePoint codePoint,
+            CodePoint? nextCodePoint,
+            out ushort glyphId,
+            out bool skipNextCodePoint)
+            => this.metrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+
+        /// <inheritdoc/>
+        internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
+            => this.metrics.Value.TryGetGlyphClass(glyphId, out glyphClass);
+
+        /// <inheritdoc/>
+        internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
+            => this.metrics.Value.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
 
         /// <inheritdoc />
-        public GlyphMetrics GetGlyphMetrics(CodePoint codePoint)
-              => this.metrics.Value.GetGlyphMetrics(codePoint);
+        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
+              => this.metrics.Value.GetGlyphMetrics(codePoint, support);
 
         /// <inheritdoc />
-        public Vector2 GetOffset(GlyphMetrics glyph, GlyphMetrics previousGlyph)
-            => this.metrics.Value.GetOffset(glyph, previousGlyph);
+        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
+            => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
+
+        /// <inheritdoc/>
+        internal override void ApplySubstitution(GlyphSubstitutionCollection collection, KerningMode kerningMode)
+            => this.metrics.Value.ApplySubstitution(collection, kerningMode);
+
+        /// <inheritdoc/>
+        internal override void UpdatePositions(GlyphPositioningCollection collection, KerningMode kerningMode)
+            => this.metrics.Value.UpdatePositions(collection, kerningMode);
 
         /// <summary>
-        /// Reads a <see cref="FontMetrics"/> from the specified stream.
+        /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
         /// </summary>
         /// <param name="path">The file path.</param>
-        /// <returns>a <see cref="FontMetrics"/>.</returns>
+        /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
         public static FileFontMetrics[] LoadFontCollection(string path)
         {
             using FileStream fs = File.OpenRead(path);

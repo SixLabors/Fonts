@@ -36,6 +36,25 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 #if OS_WINDOWS
             FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
+            FontFamily arabicFont = SystemFonts.Get("Dubai");
+
+            FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
+
+            RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
+            RenderText(bugzilla, "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ", pointSize: 72);
+
+            RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { font2 });
+
+            RenderText(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
+            RenderText(uiFont, "Testing", pointSize: 20);
+            RenderText(emojiFont, "👩🏽‍🚒a", pointSize: 72, fallbackFonts: new[] { font2 });
+            RenderText(arabicFont, "English اَلْعَرَبِيَّةُ English", pointSize: 20);
+            RenderText(arabicFont, "English English", pointSize: 20);
+            RenderText(arabicFont, "اَلْعَرَبِيَّةُ اَلْعَرَبِيَّةُ", pointSize: 20);
+            RenderText(arabicFont, "اَلْعَرَبِيَّةُ", pointSize: 20);
+            RenderText(arabicFont, "SS ص", pointSize: 20);
+            RenderText(arabicFont, "S ص", pointSize: 20);
+            RenderText(arabicFont, "English اَلْعَرَبِيَّةُ", pointSize: 20);
 
             RenderTextProcessorWithAlignment(emojiFont, "😀A😀", pointSize: 20, fallbackFonts: new[] { colorEmoji });
             RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { font2 });
@@ -45,6 +64,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(font2, string.Empty, pointSize: 72, fallbackFonts: new[] { emojiFont });
             RenderText(font2, "😀 Hello World! 😀", pointSize: 72, fallbackFonts: new[] { emojiFont });
 #endif
+
             // fallback font tests
             RenderTextProcessor(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
             RenderText(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
@@ -91,7 +111,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(new Font(SystemFonts.Get("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
             RenderText(new RendererOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
             BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
-            TextAlignment.Generate(SystemFonts.CreateFont("arial", 50f));
+            TextAlignmentSample.Generate(SystemFonts.CreateFont("arial", 50f));
             TextAlignmentWrapped.Generate(SystemFonts.CreateFont("arial", 50f));
 
             FontFamily simsum = SystemFonts.Get("SimSun");
@@ -144,43 +164,48 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             img.SaveAsPng(fs);
         }
 
-        public static void RenderText(RendererOptions font, string text)
+        public static void RenderText(RendererOptions options, string text)
         {
-            FontRectangle size = TextMeasurer.Measure(text, font);
+            FontRectangle size = TextMeasurer.Measure(text, options);
+            if (size == FontRectangle.Empty)
+            {
+                return;
+            }
 
-            var options = new DrawingOptions
+            var drawingOptions = new DrawingOptions
             {
                 TextOptions = new TextOptions()
                 {
-                    ApplyKerning = font.ApplyKerning,
-                    DpiX = font.DpiX,
-                    DpiY = font.DpiY,
-                    TabWidth = font.TabWidth,
-                    LineSpacing = font.LineSpacing,
-                    HorizontalAlignment = font.HorizontalAlignment,
-                    VerticalAlignment = font.VerticalAlignment,
-                    WrapTextWidth = font.WrappingWidth,
-                    RenderColorFonts = font.ColorFontSupport != ColorFontSupport.None
+                    ApplyKerning = options.KerningMode != KerningMode.None,
+                    DpiX = options.DpiX,
+                    DpiY = options.DpiY,
+                    TabWidth = options.TabWidth,
+                    LineSpacing = options.LineSpacing,
+                    HorizontalAlignment = options.HorizontalAlignment,
+                    VerticalAlignment = options.VerticalAlignment,
+                    WrapTextWidth = options.WrappingWidth,
+                    RenderColorFonts = options.ColorFontSupport != ColorFontSupport.None,
+                    WordBreaking = options.WordBreaking
                 }
             };
 
-            if (font.FallbackFontFamilies != null)
+            if (options.FallbackFontFamilies != null)
             {
-                options.TextOptions.FallbackFonts.AddRange(font.FallbackFontFamilies);
+                drawingOptions.TextOptions.FallbackFonts.AddRange(options.FallbackFontFamilies);
             }
 
-            SaveImage(options, text, font.Font, (int)size.Width + 20, (int)size.Height + 20, font.Origin, font.Font.Name, text + ".png");
+            SaveImage(drawingOptions, text, options.Font, (int)size.Width, (int)size.Height, options.Origin, options.Font.Name, text + ".png");
         }
 
         public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
             => RenderText(
                 new RendererOptions(new Font(font, pointSize), 96)
                 {
-                    ApplyKerning = true,
-                    WrappingWidth = 340,
+                    // WrappingWidth = 400,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
                     ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
-                }, text);
+                },
+                text);
 
         public static void RenderTextProcessor(
             FontFamily fontFamily,
@@ -204,7 +229,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             var font = new Font(fontFamily, pointSize);
             var renderOptions = new RendererOptions(font, textOptions.DpiX, textOptions.DpiY)
             {
-                ApplyKerning = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                 FallbackFontFamilies = textOptions.FallbackFonts?.ToArray()
             };
@@ -251,7 +275,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     var font = new Font(fontFamily, pointSize);
                     var renderOptions = new RendererOptions(font, textOptions.DpiX, textOptions.DpiY)
                     {
-                        ApplyKerning = true,
                         ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                         FallbackFontFamilies = textOptions.FallbackFonts?.ToArray(),
                         VerticalAlignment = va,
@@ -267,16 +290,16 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     };
 
                     Size size = img.Size();
-                    img.Mutate(x => x.Fill(Color.White).ApplyProcessor(
+                    img.Mutate(x => x.Fill(Color.Black).ApplyProcessor(
                         new DrawTextProcessor(
                             options,
                             text,
                             font,
-                            new SolidBrush(Color.Black),
+                            new SolidBrush(Color.Yellow),
                             null,
                             new PointF(size.Width / 2F, size.Height / 2F))));
 
-                    img[size.Width / 2, size.Height / 2] = Color.Black;
+                    img[size.Width / 2, size.Height / 2] = Color.White;
 
                     string h = ha.ToString().Replace(nameof(HorizontalAlignment), string.Empty).ToLower();
                     string v = va.ToString().Replace(nameof(VerticalAlignment), string.Empty).ToLower();
@@ -306,9 +329,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             string fullPath = CreatePath(path);
 
             using var img = new Image<Rgba32>(width, height);
-            img.Mutate(x => x.Fill(Color.White));
+            img.Mutate(x => x.Fill(Color.Black));
 
-            img.Mutate(x => x.DrawText(options, text, font, Color.HotPink, origin));
+            img.Mutate(x => x.DrawText(options, text, font, Color.Yellow, origin));
 
             // Ensure directory exists
             Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));

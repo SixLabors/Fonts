@@ -16,7 +16,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     {
-        private readonly HashSet<IFontMetrics> metricsCollection = new HashSet<IFontMetrics>();
+        private readonly HashSet<FontMetrics> metricsCollection = new();
 
         /// <inheritdoc/>
         public IEnumerable<FontFamily> Families => this.FamiliesByCultureImpl(CultureInfo.InvariantCulture);
@@ -114,20 +114,20 @@ namespace SixLabors.Fonts
 #endif
 
         /// <inheritdoc/>
-        FontFamily IFontMetricsCollection.AddMetrics(IFontMetrics metrics, CultureInfo culture)
+        FontFamily IFontMetricsCollection.AddMetrics(FontMetrics metrics, CultureInfo culture)
         {
             ((IFontMetricsCollection)this).AddMetrics(metrics);
             return new FontFamily(metrics.Description.FontFamily(culture), this, culture);
         }
 
         /// <inheritdoc/>
-        void IFontMetricsCollection.AddMetrics(IFontMetrics metrics)
+        void IFontMetricsCollection.AddMetrics(FontMetrics metrics)
         {
             Guard.NotNull(metrics, nameof(metrics));
 
             if (metrics.Description is null)
             {
-                throw new ArgumentException($"{nameof(IFontMetrics)} must have a Description.", nameof(metrics));
+                throw new ArgumentException($"{nameof(FontMetrics)} must have a Description.", nameof(metrics));
             }
 
             lock (this.metricsCollection)
@@ -137,7 +137,7 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out IFontMetrics? metrics)
+        bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)
         {
             metrics = ((IReadOnlyFontMetricsCollection)this).GetAllMetrics(name, culture)
                 .FirstOrDefault(x => x.Description.Style == style);
@@ -146,7 +146,7 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        IEnumerable<IFontMetrics> IReadOnlyFontMetricsCollection.GetAllMetrics(string name, CultureInfo culture)
+        IEnumerable<FontMetrics> IReadOnlyFontMetricsCollection.GetAllMetrics(string name, CultureInfo culture)
         {
             Guard.NotNull(name, nameof(name));
             StringComparer comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(culture);
@@ -161,7 +161,7 @@ namespace SixLabors.Fonts
             => ((IReadOnlyFontMetricsCollection)this).GetAllMetrics(name, culture).Select(x => x.Description.Style).ToArray();
 
         /// <inheritdoc/>
-        IEnumerator<IFontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
+        IEnumerator<FontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
             => this.metricsCollection.GetEnumerator();
 
         private FontFamily AddImpl(string path, CultureInfo culture, out FontDescription description)
@@ -173,7 +173,7 @@ namespace SixLabors.Fonts
 
         private FontFamily AddImpl(Stream stream, CultureInfo culture, out FontDescription description)
         {
-            var metrics = FontMetrics.LoadFont(stream);
+            var metrics = StreamFontMetrics.LoadFont(stream);
             description = metrics.Description;
 
             return ((IFontMetricsCollection)this).AddMetrics(metrics, culture);
@@ -212,7 +212,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < ttcHeader.NumFonts; ++i)
             {
                 stream.Position = startPos + ttcHeader.OffsetTable[i];
-                var instance = FontMetrics.LoadFont(stream);
+                var instance = StreamFontMetrics.LoadFont(stream);
                 installedFamilies.Add(((IFontMetricsCollection)this).AddMetrics(instance, culture));
                 FontDescription fontDescription = instance.Description;
                 result.Add(fontDescription);

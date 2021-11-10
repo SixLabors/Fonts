@@ -17,7 +17,7 @@ namespace SixLabors.Fonts
         {
             // This cast is safe because our underlying SystemFontCollection implements
             // both interfaces separately.
-            foreach (IFontMetrics? metric in (IReadOnlyFontMetricsCollection)SystemFonts.Collection)
+            foreach (FontMetrics? metric in (IReadOnlyFontMetricsCollection)SystemFonts.Collection)
             {
                 ((IFontMetricsCollection)collection).AddMetrics(metric);
             }

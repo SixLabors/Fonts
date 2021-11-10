@@ -30,7 +30,7 @@ namespace SixLabors.Fonts.Tables.General.CMap
 
                 if (charAsInt >= seg.StartCodePoint && charAsInt <= seg.EndCodePoint)
                 {
-                    glyphId = (ushort)((charAsInt - seg.StartCodePoint) + seg.StartGlyphId);
+                    glyphId = (ushort)(charAsInt - seg.StartCodePoint + seg.StartGlyphId);
                     return true;
                 }
             }

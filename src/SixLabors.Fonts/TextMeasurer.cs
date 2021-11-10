@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
@@ -14,8 +13,6 @@ namespace SixLabors.Fonts
     /// </summary>
     public static class TextMeasurer
     {
-        private static readonly GlyphBounds[] EmptyGlyphMetricArray = new GlyphBounds[0];
-
         /// <summary>
         /// Measures the text.
         /// </summary>
@@ -69,18 +66,18 @@ namespace SixLabors.Fonts
                 return FontRectangle.Empty;
             }
 
+            float top = glyphLayouts.Min(x => x.Location.Y);
             float left = glyphLayouts.Min(x => x.Location.X);
-            float right = glyphLayouts.Max(x => x.Location.X + x.Width);
 
-            // Location is bottom left of the line. We offset the bottom by the top to handle the ascender
-            float top = glyphLayouts.Min(x => x.Location.Y - x.LineHeight);
-            float bottom = glyphLayouts.Max(x => x.Location.Y - x.LineHeight + x.Height) - top;
+            // Avoid trimming zero-width marks that extend past the bounds of their base.
+            float right = glyphLayouts.Max(x => Math.Max(x.Location.X + x.Width, x.BoundingBox(Vector2.One).Right));
+            float bottom = glyphLayouts.Max(x => x.Location.Y + x.LineHeight);
 
             Vector2 topLeft = new Vector2(left, top) * dpi;
             Vector2 bottomRight = new Vector2(right, bottom) * dpi;
-
             Vector2 size = bottomRight - topLeft;
-            return new FontRectangle(topLeft.X, topLeft.Y, size.X, size.Y);
+
+            return new FontRectangle(0, 0, size.X, size.Y);
         }
 
         internal static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi)
@@ -90,51 +87,35 @@ namespace SixLabors.Fonts
                 return FontRectangle.Empty;
             }
 
-            bool hasSize = false;
-
             float left = int.MaxValue;
             float top = int.MaxValue;
             float bottom = int.MinValue;
             float right = int.MinValue;
-
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
-                GlyphLayout c = glyphLayouts[i];
-                if (!CodePoint.IsNewLine(c.CodePoint))
+                FontRectangle box = glyphLayouts[i].BoundingBox(dpi);
+                if (left > box.Left)
                 {
-                    hasSize = true;
-                    FontRectangle box = c.BoundingBox(dpi);
-                    if (left > box.Left)
-                    {
-                        left = box.Left;
-                    }
+                    left = box.Left;
+                }
 
-                    if (top > box.Top)
-                    {
-                        top = box.Top;
-                    }
+                if (top > box.Top)
+                {
+                    top = box.Top;
+                }
 
-                    if (bottom < box.Bottom)
-                    {
-                        bottom = box.Bottom;
-                    }
+                if (bottom < box.Bottom)
+                {
+                    bottom = box.Bottom;
+                }
 
-                    if (right < box.Right)
-                    {
-                        right = box.Right;
-                    }
+                if (right < box.Right)
+                {
+                    right = box.Right;
                 }
             }
 
-            if (!hasSize)
-            {
-                return FontRectangle.Empty;
-            }
-
-            float width = right - left;
-            float height = bottom - top;
-
-            return new FontRectangle(left, top, width, height);
+            return FontRectangle.FromLTRB(left, top, right, bottom);
         }
 
         internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, Vector2 dpi, out GlyphBounds[] characterBounds)
@@ -142,23 +123,16 @@ namespace SixLabors.Fonts
             bool hasSize = false;
             if (glyphLayouts.Count == 0)
             {
-                characterBounds = EmptyGlyphMetricArray;
+                characterBounds = Array.Empty<GlyphBounds>();
                 return hasSize;
             }
 
             var characterBoundsList = new GlyphBounds[glyphLayouts.Count];
-
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
-                GlyphLayout c = glyphLayouts[i];
-
-                // TODO: This sets the hasSize value to the last layout... is this correct?
-                if (!CodePoint.IsNewLine(c.CodePoint))
-                {
-                    hasSize = true;
-                }
-
-                characterBoundsList[i] = new GlyphBounds(c.CodePoint, c.BoundingBox(dpi));
+                GlyphLayout g = glyphLayouts[i];
+                hasSize |= !g.IsStartOfLine;
+                characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, g.BoundingBox(dpi));
             }
 
             characterBounds = characterBoundsList;

@@ -67,9 +67,9 @@ namespace SixLabors.Fonts.Unicode
             // Essentially, if we saw Prepend data, we can't have Control | CR | LF data afterward (rule GB5).
             if (processor.CharsConsumed > 0)
             {
-                if (processor.CurrentType == GraphemeClusterClass.Control
-                    || processor.CurrentType == GraphemeClusterClass.CarriageReturn
-                    || processor.CurrentType == GraphemeClusterClass.LineFeed)
+                if (processor.CurrentType is GraphemeClusterClass.Control
+                    or GraphemeClusterClass.CarriageReturn
+                    or GraphemeClusterClass.LineFeed)
                 {
                     goto Return;
                 }
@@ -187,9 +187,9 @@ namespace SixLabors.Fonts.Unicode
             }
 
             // rules GB9, GB9a
-            while (processor.CurrentType == GraphemeClusterClass.Extend
-                || processor.CurrentType == GraphemeClusterClass.ZeroWidthJoiner
-                || processor.CurrentType == GraphemeClusterClass.SpacingMark)
+            while (processor.CurrentType is GraphemeClusterClass.Extend
+                or GraphemeClusterClass.ZeroWidthJoiner
+                or GraphemeClusterClass.SpacingMark)
             {
                 processor.MoveNext();
             }

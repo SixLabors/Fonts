@@ -74,6 +74,6 @@ namespace SixLabors.Fonts.Tests
 
         [Fact]
         public void Throws_FontException_TryGetMetrics_WhenDefault()
-            => Assert.Throws<FontException>(() => default(FontFamily).TryGetMetrics(FontStyle.Regular, out IFontMetrics _));
+            => Assert.Throws<FontException>(() => default(FontFamily).TryGetMetrics(FontStyle.Regular, out FontMetrics _));
     }
 }

@@ -14,11 +14,11 @@ namespace SixLabors.Fonts
     /// </summary>
     public class GlyphMetrics
     {
-        private static readonly Vector2 Scale = new Vector2(1, -1);
-        private readonly GlyphVector vector;
+        private static readonly Vector2 Scale = new(1, -1);
+        private GlyphVector vector;
 
         internal GlyphMetrics(
-            FontMetrics font,
+            StreamFontMetrics font,
             CodePoint codePoint,
             GlyphVector vector,
             ushort advanceWidth,
@@ -26,7 +26,7 @@ namespace SixLabors.Fonts
             short leftSideBearing,
             short topSideBearing,
             ushort unitsPerEM,
-            ushort index,
+            ushort glyphId,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
         {
@@ -37,7 +37,7 @@ namespace SixLabors.Fonts
 
             this.AdvanceWidth = advanceWidth;
             this.AdvanceHeight = advanceHeight;
-            this.Index = index;
+            this.GlyphId = glyphId;
 
             this.Width = this.Bounds.Max.X - this.Bounds.Min.X;
             this.Height = this.Bounds.Max.Y - this.Bounds.Min.Y;
@@ -48,10 +48,30 @@ namespace SixLabors.Fonts
             this.GlyphColor = glyphColor;
         }
 
+        internal GlyphMetrics(GlyphMetrics other, CodePoint codePoint)
+        {
+            this.FontMetrics = other.FontMetrics;
+            this.CodePoint = codePoint;
+            this.UnitsPerEm = other.UnitsPerEm;
+            this.vector = (GlyphVector)other.vector.DeepClone();
+
+            this.AdvanceWidth = other.AdvanceWidth;
+            this.AdvanceHeight = other.AdvanceHeight;
+            this.GlyphId = other.GlyphId;
+
+            this.Width = other.Width;
+            this.Height = other.Height;
+            this.GlyphType = other.GlyphType;
+            this.LeftSideBearing = other.LeftSideBearing;
+            this.TopSideBearing = other.TopSideBearing;
+            this.ScaleFactor = other.ScaleFactor;
+            this.GlyphColor = other.GlyphColor;
+        }
+
         /// <summary>
         /// Gets the font metrics.
         /// </summary>
-        internal FontMetrics FontMetrics { get; }
+        internal StreamFontMetrics FontMetrics { get; }
 
         /// <summary>
         /// Gets the Unicode codepoint of the glyph.
@@ -61,12 +81,12 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the advance width for horizontal layout, expressed in font units.
         /// </summary>
-        public ushort AdvanceWidth { get; }
+        public ushort AdvanceWidth { get; private set; }
 
         /// <summary>
         /// Gets the advance height for vertical layout, expressed in font units.
         /// </summary>
-        public ushort AdvanceHeight { get; }
+        public ushort AdvanceHeight { get; private set; }
 
         /// <summary>
         /// Gets the left side bearing for horizontal layout, expressed in font units.
@@ -98,10 +118,10 @@ namespace SixLabors.Fonts
         /// </summary>
         public GlyphColor? GlyphColor { get; }
 
-        /// <inheritdoc cref="IFontMetrics.UnitsPerEm"/>
+        /// <inheritdoc cref="FontMetrics.UnitsPerEm"/>
         public ushort UnitsPerEm { get; }
 
-        /// <inheritdoc cref="IFontMetrics.ScaleFactor"/>
+        /// <inheritdoc cref="FontMetrics.ScaleFactor"/>
         public float ScaleFactor { get; }
 
         /// <summary>
@@ -125,9 +145,42 @@ namespace SixLabors.Fonts
         internal Bounds Bounds => this.vector.Bounds;
 
         /// <summary>
-        /// Gets the index.
+        /// Gets the glyph Id.
         /// </summary>
-        internal ushort Index { get; }
+        internal ushort GlyphId { get; }
+
+        /// <summary>
+        /// Apply an offset to the glyph.
+        /// </summary>
+        /// <param name="x">The x-offset.</param>
+        /// <param name="y">The y-offset.</param>
+        internal void ApplyOffset(short x, short y)
+            => this.vector = GlyphVector.Translate(this.vector, x, y);
+
+        /// <summary>
+        /// Applies an advance to the glyph.
+        /// </summary>
+        /// <param name="x">The x-advance.</param>
+        /// <param name="y">The y-advance.</param>
+        internal void ApplyAdvance(short x, short y)
+        {
+            this.AdvanceWidth = (ushort)(this.AdvanceWidth + x);
+
+            // AdvanceHeight values grow downward but font-space grows upward, hence negation
+            this.AdvanceHeight = (ushort)(this.AdvanceHeight - y);
+        }
+
+        /// <summary>
+        /// Sets a new advance width.
+        /// </summary>
+        /// <param name="x">The x-advance.</param>
+        internal void SetAdvanceWidth(ushort x) => this.AdvanceWidth = x;
+
+        /// <summary>
+        /// Sets a new advance height.
+        /// </summary>
+        /// <param name="y">The y-advance.</param>
+        internal void SetAdvanceHeight(ushort y) => this.AdvanceHeight = y;
 
         internal FontRectangle BoundingBox(Vector2 origin, Vector2 scaledPointSize)
         {
@@ -152,8 +205,6 @@ namespace SixLabors.Fonts
         {
             location *= dpi;
 
-            Vector2 firstPoint = Vector2.Zero;
-
             Vector2 scaledPoint = dpi * pointSize;
 
             FontRectangle box = this.BoundingBox(location, scaledPoint);
@@ -174,7 +225,7 @@ namespace SixLabors.Fonts
                     int startOfContour = endOfContour + 1;
                     endOfContour = this.vector.EndPoints[i];
 
-                    Vector2 prev = Vector2.Zero;
+                    Vector2 prev;
                     Vector2 curr = this.GetPoint(ref scaledPoint, endOfContour) + location;
                     Vector2 next = this.GetPoint(ref scaledPoint, startOfContour) + location;
 
@@ -241,11 +292,9 @@ namespace SixLabors.Fonts
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector2 GetPoint(ref Vector2 scaledPoint, int pointIndex)
-        {
-            Vector2 point = Scale * (this.vector.ControlPoints[pointIndex] * scaledPoint / this.ScaleFactor); // scale each point as we go, w will now have the correct relative point size
 
-            return point;
-        }
+            // Scale each point as we go, we will now have the correct relative point size
+            => Scale * (this.vector.ControlPoints[pointIndex] * scaledPoint / this.ScaleFactor);
 
         private static void AlignToGrid(ref Vector2 point)
         {

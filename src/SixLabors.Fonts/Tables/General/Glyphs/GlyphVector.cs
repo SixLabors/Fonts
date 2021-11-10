@@ -69,6 +69,16 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         }
 
         /// <summary>
+        /// Translates a glyph vector by a specified x and y coordinates.
+        /// </summary>
+        /// <param name="src">The glyph vector to translate.</param>
+        /// <param name="dx">The x-offset.</param>
+        /// <param name="dy">The y-offset.</param>
+        /// <returns>The new <see cref="GlyphVector"/>.</returns>
+        public static GlyphVector Translate(GlyphVector src, float dx, float dy)
+            => Transform(src, Matrix3x2.CreateTranslation(dx, dy));
+
+        /// <summary>
         /// Appends the second glyph vector's control points to the first.
         /// </summary>
         /// <param name="first">The first glyph vector.</param>

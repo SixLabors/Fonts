@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         public override GlyphVector CreateGlyph(GlyphTable table)
 
             // lets build some shapes ??? here from
-            => new GlyphVector(Convert(this.xs, this.ys), this.onCurves, this.endPoints, this.bounds);
+            => new(Convert(this.xs, this.ys), this.onCurves, this.endPoints, this.bounds);
 
         private static Vector2[] Convert(short[] xs, short[] ys)
         {

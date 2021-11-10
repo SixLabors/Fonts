@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 
 namespace SixLabors.Fonts
@@ -80,36 +79,38 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to apply kerning.
+        /// Obsolete. Use <see cref="KerningMode"/>.
+        /// </summary>
+        public bool ApplyKerning
+        {
+            get => this.KerningMode != KerningMode.None;
+            set => this.KerningMode = KerningMode.Normal;
+        }
+
+        /// <summary>
         /// Gets the font.
         /// </summary>
-        /// <value>
-        /// The font.
-        /// </value>
         public Font Font { get; }
 
         /// <summary>
-        /// Gets or sets the width of the tab.
+        /// Gets or sets the width of the tab. Measured as the distance in spaces.
         /// </summary>
-        /// <value>
-        /// The width of the tab.
-        /// </value>
         public float TabWidth { get; set; } = 4;
 
         /// <summary>
-        /// Gets or sets a value indicating whether [apply kerning].
+        /// Gets or sets the kerning mode indicating whether to apply kerning (character spacing adjustments)
+        /// to the glyph positions from information found within the font.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if [apply kerning]; otherwise, <c>false</c>.
-        /// </value>
-        public bool ApplyKerning { get; set; } = true;
+        public KerningMode KerningMode { get; set; }
 
         /// <summary>
-        /// Gets or sets the the current X DPI to render/measure the text at.
+        /// Gets or sets the current X DPI to render/measure the text at.
         /// </summary>
         public float DpiX { get; set; }
 
         /// <summary>
-        /// Gets or sets the the current Ys DPI to render/measure the text at.
+        /// Gets or sets the current Ys DPI to render/measure the text at.
         /// </summary>
         public float DpiY { get; set; }
 
@@ -124,7 +125,7 @@ namespace SixLabors.Fonts
         /// <remarks>
         /// If value is -1 then wrapping is disabled.
         /// </remarks>
-        public float WrappingWidth { get; set; } = -1;
+        public float WrappingWidth { get; set; } = -1F;
 
         /// <summary>
         /// Gets or sets the word breaking mode to use when wrapping text.
@@ -134,17 +135,32 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the line spacing. Applied as a multiple of the line height.
         /// </summary>
-        public float LineSpacing { get; set; } = 1;
+        public float LineSpacing { get; set; } = 1F;
 
         /// <summary>
-        /// Gets or sets the Horizontal alignment of the text.
+        /// Gets or sets the text direction.
+        /// </summary>
+        public TextDirection TextDirection { get; set; } = TextDirection.Auto;
+
+        /// <summary>
+        /// Gets or sets the text alignment of the text within the box.
+        /// </summary>
+        public TextAlignment TextAlignment { get; set; }
+
+        /// <summary>
+        /// Gets or sets the horizontal alignment of the text box.
         /// </summary>
         public HorizontalAlignment HorizontalAlignment { get; set; }
 
         /// <summary>
-        /// Gets or sets the Vertical alignment of the text.
+        /// Gets or sets the vertical alignment of the text box.
         /// </summary>
         public VerticalAlignment VerticalAlignment { get; set; }
+
+        /// <summary>
+        /// Gets or sets the layout mode for the text lines.
+        /// </summary>
+        public LayoutMode LayoutMode { get; set; }
 
         /// <summary>
         /// Gets or sets the rendering origin.
@@ -154,38 +170,6 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets a value indicating whether we enable various color font formats.
         /// </summary>
-        public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.None;
-
-        /// <summary>
-        /// Gets the style. In derived classes this could switch out to different fonts mid stream
-        /// </summary>
-        /// <param name="index">The index.</param>
-        /// <param name="length">The length.</param>
-        /// <returns>
-        /// The Font style that applies to a region of text.
-        /// </returns>
-        internal AppliedFontStyle GetStyle(int index, int length)
-        {
-            IFontMetrics[] fallbackFontInstances;
-            if (this.FallbackFontFamilies is null)
-            {
-                fallbackFontInstances = Array.Empty<IFontMetrics>();
-            }
-            else
-            {
-                fallbackFontInstances = this.FallbackFontFamilies.Select(x => new Font(x, this.Font.Size, this.Font.RequestedStyle).FontMetrics).ToArray();
-            }
-
-            return new AppliedFontStyle
-            {
-                Start = 0,
-                End = length - 1,
-                PointSize = this.Font.Size,
-                MainFont = this.Font.FontMetrics,
-                FallbackFonts = fallbackFontInstances,
-                TabWidth = this.TabWidth,
-                ApplyKerning = this.ApplyKerning
-            };
-        }
+        public ColorFontSupport ColorFontSupport { get; set; }
     }
 }

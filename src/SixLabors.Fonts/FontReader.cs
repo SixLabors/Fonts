@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     internal sealed class FontReader
     {
         private readonly Stream stream;
-        private readonly Dictionary<Type, Table> loadedTables = new Dictionary<Type, Table>();
+        private readonly Dictionary<Type, Table> loadedTables = new();
         private readonly TableLoader loader;
 
         internal FontReader(Stream stream, TableLoader loader)

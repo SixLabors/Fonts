@@ -11,19 +11,31 @@ namespace SixLabors.Fonts.Unicode
 {
     internal static class UnicodeData
     {
-        private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new Lazy<UnicodeTrie>(() => GetTrie("Bidi.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new Lazy<UnicodeTrie>(() => GetTrie("Grapheme.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyLinebreakTrie = new Lazy<UnicodeTrie>(() => GetTrie("LineBreak.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new Lazy<UnicodeTrie>(() => GetTrie("UnicodeCategory.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new(() => GetTrie("Bidi.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyBidiMirrorTrie = new(() => GetTrie("BidiMirror.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new(() => GetTrie("Grapheme.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyLinebreakTrie = new(() => GetTrie("LineBreak.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetTrie("Script.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new(() => GetTrie("UnicodeCategory.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyShapingTrie = new(() => GetTrie("ArabicShaping.trie"));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetBidiData(int codePoint) => LazyBidiTrie.Value.Get(codePoint);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint GetBidiMirror(int codePoint) => LazyBidiMirrorTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static GraphemeClusterClass GetGraphemeClusterClass(int codePoint) => (GraphemeClusterClass)LazyGraphemeTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static LineBreakClass GetLineBreakClass(int codePoint) => (LineBreakClass)LazyLinebreakTrie.Value.Get(codePoint);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ScriptClass GetScriptClass(int codePoint) => (ScriptClass)LazyScriptTrie.Value.Get(codePoint);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint GetJoiningClass(int codePoint) => LazyShapingTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UnicodeCategory GetUnicodeCategory(int codePoint) => (UnicodeCategory)LazyCategoryTrie.Value.Get(codePoint);

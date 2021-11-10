@@ -16,16 +16,20 @@ namespace SixLabors.Fonts.Tests.Issues
                 .AddCollection(TestFonts.HelveticaTTCFile)
                 .First(x => x.GetAvailableStyles().Contains(FontStyle.Regular)).CreateFont(12);
 
-            Glyph a = font.GetGlyph(new CodePoint('A'));
-            Glyph x = font.GetGlyph(new CodePoint('x'));
+            const ColorFontSupport support = ColorFontSupport.None;
 
-            Assert.NotEqual(a, x);
+            Glyph[] a = font.GetGlyphs(new CodePoint('A'), support).ToArray();
+            Glyph[] x = font.GetGlyphs(new CodePoint('x'), support).ToArray();
 
-            Assert.Equal(1366, a.GlyphMetrics.AdvanceWidth);
-            Assert.Equal(2048, a.GlyphMetrics.AdvanceHeight);
+            Glyph ga = Assert.Single(a);
+            Glyph gx = Assert.Single(x);
+            Assert.NotEqual(ga, gx);
 
-            Assert.Equal(1024, x.GlyphMetrics.AdvanceWidth);
-            Assert.Equal(2048, x.GlyphMetrics.AdvanceHeight);
+            Assert.Equal(1366, ga.GlyphMetrics.AdvanceWidth);
+            Assert.Equal(2048, ga.GlyphMetrics.AdvanceHeight);
+
+            Assert.Equal(1024, gx.GlyphMetrics.AdvanceWidth);
+            Assert.Equal(2048, gx.GlyphMetrics.AdvanceHeight);
         }
     }
 }

@@ -155,7 +155,7 @@ namespace SixLabors.Fonts.Unicode
             get
             {
                 int codeUnitCount = UnicodeUtility.GetUtf16SequenceLength(this.value);
-                Debug.Assert(codeUnitCount > 0 && codeUnitCount <= MaxUtf16CharsPerCodePoint, $"Invalid Utf16SequenceLength {codeUnitCount}.");
+                Debug.Assert(codeUnitCount is > 0 and <= MaxUtf16CharsPerCodePoint, $"Invalid Utf16SequenceLength {codeUnitCount}.");
                 return codeUnitCount;
             }
         }
@@ -172,7 +172,7 @@ namespace SixLabors.Fonts.Unicode
             get
             {
                 int codeUnitCount = UnicodeUtility.GetUtf8SequenceLength(this.value);
-                Debug.Assert(codeUnitCount > 0 && codeUnitCount <= MaxUtf8BytesPerCodePoint, $"Invalid Utf8SequenceLength {codeUnitCount}.");
+                Debug.Assert(codeUnitCount is > 0 and <= MaxUtf8BytesPerCodePoint, $"Invalid Utf8SequenceLength {codeUnitCount}.");
                 return codeUnitCount;
             }
         }
@@ -185,11 +185,11 @@ namespace SixLabors.Fonts.Unicode
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
         // Operators below are explicit because they may throw.
-        public static explicit operator CodePoint(char ch) => new CodePoint(ch);
+        public static explicit operator CodePoint(char ch) => new(ch);
 
-        public static explicit operator CodePoint(uint value) => new CodePoint(value);
+        public static explicit operator CodePoint(uint value) => new(value);
 
-        public static explicit operator CodePoint(int value) => new CodePoint(value);
+        public static explicit operator CodePoint(int value) => new(value);
 
         public static bool operator ==(CodePoint left, CodePoint right) => left.value == right.value;
 
@@ -236,6 +236,30 @@ namespace SixLabors.Fonts.Unicode
             // if the incoming value is within the BMP.
             return codePoint.IsBmp && char.IsWhiteSpace((char)codePoint.Value);
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the given codepoint is a non-breaking space.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a non-breaking space character; otherwise, <see langword="false"/></returns>
+        public static bool IsNonBreakingSpace(CodePoint codePoint)
+            => codePoint.Value == 0x00A0;
+
+        /// <summary>
+        /// Gets a value indicating whether the given codepoint is a zero-width-non-joiner.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a zero-width-non-joiner character; otherwise, <see langword="false"/></returns>
+        public static bool IsZeroWidthNonJoiner(CodePoint codePoint)
+            => codePoint.Value == 0x200C;
+
+        /// <summary>
+        /// Gets a value indicating whether the given codepoint is a zero-width-joiner.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a zero-width-joiner character; otherwise, <see langword="false"/></returns>
+        public static bool IsZeroWidthJoiner(CodePoint codePoint)
+            => codePoint.Value == 0x200D;
 
         /// <summary>
         /// Gets a value indicating whether the given codepoint is a control character.
@@ -364,6 +388,14 @@ namespace SixLabors.Fonts.Unicode
             => IsCategorySymbol(GetGeneralCategory(codePoint));
 
         /// <summary>
+        /// Returns a value that indicates whether the specified codepoint is categorized as a mark.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a symbol; otherwise, <see langword="false"/></returns>
+        public static bool IsMark(CodePoint codePoint)
+            => IsCategoryMark(GetGeneralCategory(codePoint));
+
+        /// <summary>
         /// Returns a value that indicates whether the specified codepoint is categorized as an uppercase letter.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
@@ -379,6 +411,14 @@ namespace SixLabors.Fonts.Unicode
                 return GetGeneralCategory(codePoint) == UnicodeCategory.UppercaseLetter;
             }
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the given codepoint is a tabulation indicator.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a tabulation indicator; otherwise, <see langword="false"/></returns>
+        public static bool IsTabulation(CodePoint codePoint)
+            => codePoint.value == 0x0009;
 
         /// <summary>
         /// Gets a value indicating whether the given codepoint is a new line indicator.
@@ -426,12 +466,85 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
+        /// Gets the canonical representation of a given codepoint.
+        /// <see href="http://www.unicode.org/L2/L2013/13123-norm-and-bpa.pdf"/>
+        /// </summary>
+        /// <param name="codePoint">The code point to be mapped.</param>
+        /// <returns>The mapped canonical code point, or the passed <paramref name="codePoint"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static CodePoint GetCanonicalType(CodePoint codePoint)
+        {
+            if (codePoint.Value == 0x3008)
+            {
+                return new CodePoint(0x2329);
+            }
+
+            if (codePoint.Value == 0x3009)
+            {
+                return new CodePoint(0x232A);
+            }
+
+            return codePoint;
+        }
+
+        /// <summary>
         /// Gets the <see cref="BidiClass"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="BidiClass"/>.</returns>
-        internal static BidiClass GetBidiClass(CodePoint codePoint)
-            => new BidiClass(codePoint);
+        public static BidiClass GetBidiClass(CodePoint codePoint)
+            => new(codePoint);
+
+        /// <summary>
+        /// Gets the codepoint representing the bidi mirror for this instance.
+        /// <see href="http://www.unicode.org/reports/tr44/#Bidi_Mirrored"/>
+        /// </summary>
+        /// <param name="codePoint">The code point to be mapped.</param>
+        /// <param name="mirror">
+        /// When this method returns, contains the codepoint representing the bidi mirror for this instance;
+        /// otherwise, the default value for the type of the <paramref name="codePoint"/> parameter.
+        /// This parameter is passed uninitialized.
+        /// .</param>
+        /// <returns><see langword="true"/> if this instance has a mirror; otherwise, <see langword="false"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryGetBidiMirror(CodePoint codePoint, out CodePoint mirror)
+        {
+            uint value = UnicodeData.GetBidiMirror(codePoint.Value);
+
+            if (value == 0u)
+            {
+                mirror = default;
+                return false;
+            }
+
+            mirror = new CodePoint(value);
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the codepoint representing the vertical mirror for this instance.
+        /// <see href="https://www.unicode.org/reports/tr50/#vertical_alternates"/>
+        /// </summary>
+        /// <param name="codePoint">The code point to be mapped.</param>
+        /// <param name="mirror">
+        /// When this method returns, contains the codepoint representing the vertical mirror for this instance;
+        /// otherwise, the default value for the type of the <paramref name="codePoint"/> parameter.
+        /// This parameter is passed uninitialized.
+        /// .</param>
+        /// <returns><see langword="true"/> if this instance has a mirror; otherwise, <see langword="false"/></returns>
+        public static bool TryGetVerticalMirror(CodePoint codePoint, out CodePoint mirror)
+        {
+            uint value = UnicodeUtility.GetVerticalMirror((uint)codePoint.Value);
+
+            if (value == 0u)
+            {
+                mirror = default;
+                return false;
+            }
+
+            mirror = new CodePoint(value);
+            return true;
+        }
 
         /// <summary>
         /// Gets the <see cref="LineBreakClass"/> for the given codepoint.
@@ -448,6 +561,22 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="GraphemeClusterClass"/>.</returns>
         public static GraphemeClusterClass GetGraphemeClusterClass(CodePoint codePoint)
             => UnicodeData.GetGraphemeClusterClass(codePoint.Value);
+
+        /// <summary>
+        /// Gets the <see cref="JoiningClass"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="BidiClass"/>.</returns>
+        internal static JoiningClass GetJoiningClass(CodePoint codePoint)
+            => new(codePoint);
+
+        /// <summary>
+        /// Gets the <see cref="ScriptClass"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="ScriptClass"/>.</returns>
+        internal static ScriptClass GetScriptClass(CodePoint codePoint)
+            => UnicodeData.GetScriptClass(codePoint.Value);
 
         /// <summary>
         /// Gets the <see cref="UnicodeCategory"/> for the given codepoint.
@@ -605,6 +734,10 @@ namespace SixLabors.Fonts.Unicode
         // Returns true if this Unicode category represents a symbol
         private static bool IsCategorySymbol(UnicodeCategory category)
             => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.MathSymbol, (uint)UnicodeCategory.OtherSymbol);
+
+        // Returns true if this Unicode category represents a mark
+        private static bool IsCategoryMark(UnicodeCategory category)
+            => UnicodeUtility.IsInRangeInclusive((uint)category, (uint)UnicodeCategory.NonSpacingMark, (uint)UnicodeCategory.EnclosingMark);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowArgumentOutOfRange(uint value, string paramName, string message)

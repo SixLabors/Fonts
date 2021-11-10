@@ -1,7 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.Unicode;
@@ -14,29 +16,62 @@ namespace SixLabors.Fonts.Tables.General
     {
         internal const string TableName = "cmap";
 
-        private static readonly Dictionary<PlatformIDs, int> PreferredPlatformOrder = new Dictionary<PlatformIDs, int>
-        {
-            [PlatformIDs.Windows] = 0,
-            [PlatformIDs.Unicode] = 1,
-            [PlatformIDs.Macintosh] = 2,
-        };
+        private readonly Format14SubTable[] format14SubTables = Array.Empty<Format14SubTable>();
 
         public CMapTable(IEnumerable<CMapSubTable> tables)
         {
             this.Tables = tables.OrderBy(t => GetPreferredPlatformOrder(t.Platform)).ToArray();
+            this.format14SubTables = this.Tables.OfType<Format14SubTable>().ToArray();
         }
 
         internal CMapSubTable[] Tables { get; }
 
         private static int GetPreferredPlatformOrder(PlatformIDs platform)
-            => PreferredPlatformOrder.TryGetValue(platform, out var order) ? order : int.MaxValue;
+            => platform switch
+            {
+                PlatformIDs.Windows => 0,
+                PlatformIDs.Unicode => 1,
+                PlatformIDs.Macintosh => 2,
+                _ => int.MaxValue
+            };
 
-        public bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
+        public bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+        {
+            skipNextCodePoint = false;
+            if (this.TryGetGlyphId(codePoint, out glyphId))
+            {
+                // If there is a second codepoint, we are asked whether this is an UVS sequence
+                // - If true, return a glyph Id.
+                // - Otherwise, return 0.
+                if (nextCodePoint != null && this.format14SubTables.Length > 0)
+                {
+                    foreach (Format14SubTable? cmap14 in this.format14SubTables)
+                    {
+                        ushort pairGlyphId = cmap14.CharacterPairToGlyphId(codePoint, glyphId, nextCodePoint.Value);
+                        if (pairGlyphId > 0)
+                        {
+                            glyphId = pairGlyphId;
+                            skipNextCodePoint = true;
+                            return true;
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
         {
             foreach (CMapSubTable t in this.Tables)
             {
-                // keep looking until we have an index that's not the fallback.
-                if (t.TryGetGlyphId(codePoint, out glyphId))
+                // Keep looking until we have an index that's not the fallback.
+                // Regardless of the encoding scheme, character codes that do
+                // not correspond to any glyph in the font should be mapped to glyph index 0.
+                // The glyph at this location must be a special glyph representing a missing character, commonly known as .notdef.
+                if (t.TryGetGlyphId(codePoint, out glyphId) && glyphId > 0)
                 {
                     return true;
                 }
@@ -48,10 +83,8 @@ namespace SixLabors.Fonts.Tables.General
 
         public static CMapTable Load(FontReader reader)
         {
-            using (BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
-            {
-                return Load(binaryReader);
-            }
+            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
+            return Load(binaryReader);
         }
 
         public static CMapTable Load(BigEndianBinaryReader reader)
@@ -65,11 +98,12 @@ namespace SixLabors.Fonts.Tables.General
                 encodings[i] = EncodingRecord.Read(reader);
             }
 
-            // foreach encoding we move forward looking for th subtables
+            // foreach encoding we move forward looking for the subtables
             var tables = new List<CMapSubTable>(numTables);
             foreach (IGrouping<uint, EncodingRecord> encoding in encodings.GroupBy(x => x.Offset))
             {
-                reader.Seek(encoding.Key, System.IO.SeekOrigin.Begin);
+                long offset = encoding.Key;
+                reader.Seek(offset, SeekOrigin.Begin);
 
                 // Subtable format.
                 switch (reader.ReadUInt16())
@@ -82,6 +116,9 @@ namespace SixLabors.Fonts.Tables.General
                         break;
                     case 12:
                         tables.AddRange(Format12SubTable.Load(encoding, reader));
+                        break;
+                    case 14:
+                        tables.AddRange(Format14SubTable.Load(encoding, reader, offset));
                         break;
                 }
             }

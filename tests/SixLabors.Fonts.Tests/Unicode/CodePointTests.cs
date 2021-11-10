@@ -340,5 +340,35 @@ namespace SixLabors.Fonts.Tests.Unicode
             Assert.True(CodePoint.IsWhiteSpace(new CodePoint('\t')));
             Assert.False(CodePoint.IsNewLine(new CodePoint('\t')));
         }
+
+        // TODO: Add more cases from Script.txt
+        [Theory]
+        [InlineData(0x0041, 0x005A, ScriptClass.Latin)]
+        [InlineData(0xFF41, 0xFF5A, ScriptClass.Latin)]
+        [InlineData(0x0370, 0x0373, ScriptClass.Greek)]
+        [InlineData(0x1D242, 0x1D245, ScriptClass.Greek)]
+        [InlineData(0x620, 0x063F, ScriptClass.Arabic)]
+        [InlineData(0x1EEF0, 0x1EEF1, ScriptClass.Arabic)]
+        public static void CodePointIsScript(uint min, uint max, ScriptClass script)
+        {
+            for (uint i = min; i <= max; i++)
+            {
+                Assert.Equal(script, CodePoint.GetScriptClass(new CodePoint(i)));
+            }
+        }
+
+        [Theory]
+        [InlineData(0x10ACD, JoiningType.LeftJoining, JoiningGroup.ManichaeanHeth)]
+        [InlineData(0x0715, JoiningType.RightJoining, JoiningGroup.DalathRish)]
+        [InlineData(0x1886, JoiningType.Transparent, JoiningGroup.NoJoiningGroup)]
+        [InlineData(0x18A6, JoiningType.DualJoining, JoiningGroup.NoJoiningGroup)]
+        [InlineData(0x200C, JoiningType.NonJoining, JoiningGroup.NoJoiningGroup)]
+        public static void CodePointIsJoiningClass(uint codePoint, JoiningType type, JoiningGroup group)
+        {
+            JoiningClass join = CodePoint.GetJoiningClass(new CodePoint(codePoint));
+
+            Assert.Equal(type, join.JoiningType);
+            Assert.Equal(group, join.JoiningGroup);
+        }
     }
 }

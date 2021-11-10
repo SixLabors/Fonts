@@ -53,27 +53,5 @@ namespace SixLabors.Fonts.Unicode
             codePoint = new CodePoint(this.bidiValue & 0xFFFF);
             return true;
         }
-
-        /// <summary>
-        /// Map bracket types to their canonical equivalents.
-        /// <see href="http://www.unicode.org/L2/L2013/13123-norm-and-bpa.pdf"/>
-        /// </summary>
-        /// <param name="codePoint">The code point to be mapped.</param>
-        /// <returns>The mapped canonical code point, or the passed <paramref name="codePoint"/>.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static CodePoint MapCanonicalType(CodePoint codePoint)
-        {
-            if (codePoint.Value == 0x3008)
-            {
-                return new CodePoint(0x2329);
-            }
-
-            if (codePoint.Value == 0x3009)
-            {
-                return new CodePoint(0x232A);
-            }
-
-            return codePoint;
-        }
     }
 }

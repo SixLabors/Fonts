@@ -31,7 +31,7 @@ namespace SixLabors.Fonts.Tests
             var sut = new FontCollection();
             IEnumerable<FontFamily> collectionFromPath = sut.AddCollection(TestFonts.SimpleTrueTypeCollection, out IEnumerable<FontDescription> descriptions);
 
-            IEnumerable<IFontMetrics> allInstances = sut.Families.SelectMany(x => ((IReadOnlyFontMetricsCollection)sut).GetAllMetrics(x.Name, CultureInfo.InvariantCulture));
+            IEnumerable<FontMetrics> allInstances = sut.Families.SelectMany(x => ((IReadOnlyFontMetricsCollection)sut).GetAllMetrics(x.Name, CultureInfo.InvariantCulture));
 
             Assert.All(allInstances, i =>
             {

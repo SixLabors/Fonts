@@ -13,29 +13,20 @@ namespace SixLabors.Fonts
     internal readonly struct GlyphLayout
     {
         internal GlyphLayout(
-            int graphemeIndex,
-            CodePoint codePoint,
             Glyph glyph,
             Vector2 location,
             float width,
             float height,
             float lineHeight,
-            bool startOfLine)
+            bool isStartOfLine)
         {
-            this.GraphemeIndex = graphemeIndex;
             this.LineHeight = lineHeight;
-            this.CodePoint = codePoint;
             this.Glyph = glyph;
             this.Location = location;
             this.Width = width;
             this.Height = height;
-            this.StartOfLine = startOfLine;
+            this.IsStartOfLine = isStartOfLine;
         }
-
-        /// <summary>
-        /// Gets the index of the grapheme in the combined text that the glyph is a member of.
-        /// </summary>
-        public int GraphemeIndex { get; }
 
         /// <summary>
         /// Gets the glyph.
@@ -58,43 +49,20 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this glyph is the first glyph on a new line.
-        /// </summary>
-        public bool StartOfLine { get; }
-
-        /// <summary>
-        /// Gets the Unicode code point of the glyph.
-        /// </summary>
-        public CodePoint CodePoint { get; }
-
-        /// <summary>
         /// Gets the line height of the glyph.
         /// </summary>
         public float LineHeight { get; }
 
         /// <summary>
+        /// Gets a value indicating whether this glyph is the first glyph on a new line.
+        /// </summary>
+        public bool IsStartOfLine { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the glyph represents a whitespace character.
         /// </summary>
         /// <returns>The <see cref="bool"/>.</returns>
-        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.CodePoint);
-
-        /// <summary>
-        /// Create a new <see cref="GlyphLayout"/> from the given layout offset by the specifid amount.
-        /// </summary>
-        /// <param name="glyphLayout">The glyph layout.</param>
-        /// <param name="offset">The vector to offset the layout by.</param>
-        /// <param name="startOfLine">Whether the glyph should be considered to fall at the start of a line.</param>
-        /// <returns>The <see cref="GlyphLayout"/>.</returns>
-        public static GlyphLayout Offset(GlyphLayout glyphLayout, Vector2 offset, bool startOfLine)
-            => new GlyphLayout(
-                glyphLayout.GraphemeIndex,
-                glyphLayout.CodePoint,
-                glyphLayout.Glyph,
-                glyphLayout.Location + offset,
-                glyphLayout.Width,
-                glyphLayout.Height,
-                glyphLayout.LineHeight,
-                startOfLine);
+        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.Glyph.GlyphMetrics.CodePoint);
 
         internal FontRectangle BoundingBox(Vector2 dpi)
         {
@@ -112,7 +80,7 @@ namespace SixLabors.Fonts
         public override string ToString()
         {
             var sb = new StringBuilder();
-            if (this.StartOfLine)
+            if (this.IsStartOfLine)
             {
                 sb.Append('@');
                 sb.Append(' ');
@@ -124,7 +92,7 @@ namespace SixLabors.Fonts
             }
 
             sb.Append('\'');
-            sb.Append(this.CodePoint.ToDebuggerDisplay());
+            sb.Append(this.Glyph.GlyphMetrics.CodePoint.ToDebuggerDisplay());
 
             sb.Append('\'');
             sb.Append(' ');

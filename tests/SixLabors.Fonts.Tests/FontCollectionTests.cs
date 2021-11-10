@@ -29,7 +29,7 @@ namespace SixLabors.Fonts.Tests
             var sut = new FontCollection();
             FontFamily family = sut.Add(TestFonts.CarterOneFile, out FontDescription descriptions);
 
-            IEnumerable<IFontMetrics> allInstances = ((IReadOnlyFontMetricsCollection)sut).GetAllMetrics(family.Name, CultureInfo.InvariantCulture);
+            IEnumerable<FontMetrics> allInstances = ((IReadOnlyFontMetricsCollection)sut).GetAllMetrics(family.Name, CultureInfo.InvariantCulture);
 
             Assert.All(allInstances, i =>
             {
