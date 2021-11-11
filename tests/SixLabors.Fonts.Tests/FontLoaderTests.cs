@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.Tests
 
             GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
-            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new RendererOptions(null, 72));
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new TextOptions(null, 72));
 
             Assert.Equal(37, r.ControlPoints.Count());
             Assert.Single(r.GlyphKeys);
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tests
 
             GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
-            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new RendererOptions(null, 72));
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new TextOptions(null, 72));
 
             Assert.Equal(37, r.ControlPoints.Count());
             Assert.Single(r.GlyphKeys);
@@ -88,7 +88,7 @@ namespace SixLabors.Fonts.Tests
 
             GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('A'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
-            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new RendererOptions(null, 72));
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new TextOptions(null, 72));
 
             Assert.Equal(37, r.ControlPoints.Count());
             Assert.Single(r.GlyphKeys);
@@ -106,7 +106,7 @@ namespace SixLabors.Fonts.Tests
 
             GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
-            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new RendererOptions(null, 72));
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new TextOptions(null, 72));
 
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());
@@ -122,7 +122,7 @@ namespace SixLabors.Fonts.Tests
 
             GlyphMetrics glyph = font.GetGlyphMetrics(new CodePoint('a'), ColorFontSupport.None).First();
             var r = new GlyphRenderer();
-            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new RendererOptions(null, 72));
+            glyph.RenderTo(r, 12, System.Numerics.Vector2.Zero, new TextOptions(null, 72));
 
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());

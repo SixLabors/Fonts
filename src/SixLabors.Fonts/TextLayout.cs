@@ -18,14 +18,14 @@ namespace SixLabors.Fonts
     {
         internal static TextLayout Default { get; set; } = new();
 
-        public IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, RendererOptions options)
+        public IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
         {
             if (text.IsEmpty)
             {
                 return Array.Empty<GlyphLayout>();
             }
 
-            if (options.WrappingWidth > 0)
+            if (options.WrappingLength > 0)
             {
                 // Trim trailing white spaces from the text
                 text = text.TrimEnd(null);
@@ -41,12 +41,12 @@ namespace SixLabors.Fonts
             return LayoutText(textBox, options);
         }
 
-        private static TextBox ProcessText(ReadOnlySpan<char> text, RendererOptions options)
+        private static TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
         {
             // Gather the font and fallbacks.
             FontMetrics mainFont = options.Font.FontMetrics;
             FontMetrics[] fallbackFonts;
-            if (options.FallbackFontFamilies is null)
+            if (options.FallbackFontFamilies?.Count == 0)
             {
                 fallbackFonts = Array.Empty<FontMetrics>();
             }
@@ -122,7 +122,7 @@ namespace SixLabors.Fonts
             return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
         }
 
-        private static IReadOnlyList<GlyphLayout> LayoutText(TextBox textBox, RendererOptions options)
+        private static IReadOnlyList<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
         {
             LayoutMode layoutMode = options.LayoutMode;
             List<GlyphLayout> glyphs = new();
@@ -167,7 +167,7 @@ namespace SixLabors.Fonts
             TextLine textLine,
             TextDirection direction,
             float maxScaledAdvance,
-            RendererOptions options,
+            TextOptions options,
             bool first,
             ref Vector2 location)
         {
@@ -274,7 +274,7 @@ namespace SixLabors.Fonts
             TextLine textLine,
             TextDirection direction,
             float maxScaledAdvance,
-            RendererOptions options,
+            TextOptions options,
             bool first,
             ref Vector2 location)
         {
@@ -383,7 +383,7 @@ namespace SixLabors.Fonts
 
         private static bool DoFontRun(
             ReadOnlySpan<char> text,
-            RendererOptions options,
+            TextOptions options,
             FontMetrics fontMetrics,
             BidiRun[] bidiRuns,
             Dictionary<int, int> bidiMap,
@@ -490,15 +490,15 @@ namespace SixLabors.Fonts
 
         private static TextBox BreakLines(
             ReadOnlySpan<char> text,
-            RendererOptions options,
+            TextOptions options,
             BidiRun[] bidiRuns,
             Dictionary<int, int> bidiMap,
             GlyphPositioningCollection positionings,
             LayoutMode layoutMode)
         {
             float pointSize = options.Font.Size;
-            bool shouldWrap = options.WrappingWidth > 0;
-            float wrappingLength = shouldWrap ? options.WrappingWidth / options.Dpi : float.MaxValue;
+            bool shouldWrap = options.WrappingLength > 0;
+            float wrappingLength = shouldWrap ? options.WrappingLength / options.Dpi : float.MaxValue;
             bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
             bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
             bool isHorizontal = (layoutMode & LayoutMode.VerticalLeftRight) == 0;
@@ -543,22 +543,8 @@ namespace SixLabors.Fonts
                         continue;
                     }
 
-                    CodePoint codePoint = codePointEnumerator.Current;
-
-                    // Do not start a line following a break with breaking whitespace.
-                    if (textLine.Count == 0 && textLines.Count > 0)
-                    {
-                        if (CodePoint.IsWhiteSpace(codePoint)
-                            && !CodePoint.IsNonBreakingSpace(codePoint)
-                            && !CodePoint.IsTabulation(codePoint))
-                        {
-                            codePointIndex++;
-                            graphemeCodePointIndex++;
-                            continue;
-                        }
-                    }
-
                     // Calculate the advance for the current codepoint.
+                    CodePoint codePoint = codePointEnumerator.Current;
                     GlyphMetrics glyph = metrics[0];
                     float glyphAdvance = isHorizontal ? glyph.AdvanceWidth : glyph.AdvanceHeight;
                     if (CodePoint.IsTabulation(codePoint))
@@ -602,6 +588,7 @@ namespace SixLabors.Fonts
                     glyphAdvance *= pointSize / glyph.ScaleFactor;
 
                     // Should we start a new line?
+                    bool requiredBreak = false;
                     if (graphemeCodePointIndex == 0)
                     {
                         // Mandatory wrap at index.
@@ -611,6 +598,7 @@ namespace SixLabors.Fonts
                             glyphCount += textLine.Count;
                             textLine = new();
                             lineAdvance = 0;
+                            requiredBreak = true;
                         }
                         else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
                         {
@@ -665,7 +653,10 @@ namespace SixLabors.Fonts
                     }
 
                     // Do not start a line following a break with breaking whitespace
-                    if (textLine.Count == 0 && textLines.Count > 0
+                    // unless the break was required.
+                    if (textLine.Count == 0
+                        && textLines.Count > 0
+                        && !requiredBreak
                         && CodePoint.IsWhiteSpace(codePoint)
                         && !CodePoint.IsNonBreakingSpace(codePoint)
                         && !CodePoint.IsTabulation(codePoint)

@@ -19,7 +19,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static FontRectangle Measure(string text, RendererOptions options)
+        public static FontRectangle Measure(string text, TextOptions options)
             => TextMeasurerInt.Default.Measure(text.AsSpan(), options);
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static FontRectangle Measure(ReadOnlySpan<char> text, RendererOptions options)
+        public static FontRectangle Measure(ReadOnlySpan<char> text, TextOptions options)
             => TextMeasurerInt.Default.Measure(text, options);
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static FontRectangle MeasureBounds(string text, RendererOptions options)
+        public static FontRectangle MeasureBounds(string text, TextOptions options)
             => TextMeasurerInt.Default.MeasureBounds(text.AsSpan(), options);
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace SixLabors.Fonts
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
-        public static FontRectangle MeasureBounds(ReadOnlySpan<char> text, RendererOptions options)
+        public static FontRectangle MeasureBounds(ReadOnlySpan<char> text, TextOptions options)
             => TextMeasurerInt.Default.MeasureBounds(text, options);
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The style.</param>
         /// <param name="characterBounds">The list of character bounds of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty bounds.</returns>
-        public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphBounds[] characterBounds)
+        public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
 
         internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
@@ -162,7 +162,7 @@ namespace SixLabors.Fonts
             /// <param name="text">The text.</param>
             /// <param name="options">The style.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal FontRectangle MeasureBounds(ReadOnlySpan<char> text, RendererOptions options)
+            internal FontRectangle MeasureBounds(ReadOnlySpan<char> text, TextOptions options)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
@@ -176,7 +176,7 @@ namespace SixLabors.Fonts
             /// <param name="options">The style.</param>
             /// <param name="characterBounds">The character bounds list.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, RendererOptions options, out GlyphBounds[] characterBounds)
+            internal bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] characterBounds)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
@@ -189,7 +189,7 @@ namespace SixLabors.Fonts
             /// <param name="text">The text.</param>
             /// <param name="options">The style.</param>
             /// <returns>The size of the text if it was to be rendered.</returns>
-            internal FontRectangle Measure(ReadOnlySpan<char> text, RendererOptions options)
+            internal FontRectangle Measure(ReadOnlySpan<char> text, TextOptions options)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 

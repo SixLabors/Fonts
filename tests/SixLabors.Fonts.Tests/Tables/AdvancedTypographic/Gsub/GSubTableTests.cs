@@ -44,7 +44,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             var renderer = new ColorGlyphRenderer();
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -63,7 +63,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int expectedGlyphIndex = 38; // we expect A to be mapped to B.
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -80,7 +80,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 580, 404, 453 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -100,7 +100,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 580, 404, 453 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -122,7 +122,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int expectedGlyphIndex = 40; // we expect C to be mapped to D.
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -141,7 +141,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int expectedGlyphIndex = 42; // we expect E to be mapped to F.
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -160,7 +160,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int expectedGlyphIndex = 229;
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
@@ -179,7 +179,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 3, 7 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -201,7 +201,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 3, 7 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -223,7 +223,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 67, 78, 80 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -245,7 +245,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 22, 63, 64, 25 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -267,7 +267,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 22, 23, 64, 25 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -289,7 +289,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 89, 31, 90 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -311,7 +311,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 69, 102 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -333,7 +333,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 57, 58, 59 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);

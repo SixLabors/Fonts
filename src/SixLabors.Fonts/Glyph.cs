@@ -39,7 +39,7 @@ namespace SixLabors.Fonts
         /// <param name="location">The location.</param>
         /// <param name="options">The options to render using.</param>
         /// <exception cref="System.NotSupportedException">Too many control points.</exception>
-        internal void RenderTo(IGlyphRenderer surface, Vector2 location, RendererOptions options)
+        internal void RenderTo(IGlyphRenderer surface, Vector2 location, TextOptions options)
             => this.GlyphMetrics.RenderTo(surface, this.pointSize, location, options);
     }
 }

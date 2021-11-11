@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             string text = "Hello\tworld";
             Font font = CreateFont(text);
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font, font.FontMetrics.ScaleFactor)
             {
                 TabWidth = 0
             });

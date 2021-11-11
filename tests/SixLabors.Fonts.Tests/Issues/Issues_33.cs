@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Tests.Issues
         public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height)
         {
             Font font = CreateFont(text);
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font, font.FontMetrics.ScaleFactor));
 
             Assert.Equal(height, size.Height, 2);
             Assert.Equal(width, size.Width, 2);

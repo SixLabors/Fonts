@@ -26,7 +26,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -61,7 +61,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -97,7 +97,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -132,7 +132,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -167,7 +167,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -202,7 +202,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -237,7 +237,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -273,7 +273,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -309,7 +309,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -346,7 +346,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -385,7 +385,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -424,7 +424,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -463,7 +463,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -497,7 +497,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -532,7 +532,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);

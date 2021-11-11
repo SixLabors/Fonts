@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            new TextRenderer(r).RenderText("o", new RendererOptions(new Font(font, 30), 72));
+            new TextRenderer(r).RenderText("o", new TextOptions(new Font(font, 30), 72));
 
             Assert.DoesNotContain(System.Numerics.Vector2.Zero, r.ControlPoints);
         }

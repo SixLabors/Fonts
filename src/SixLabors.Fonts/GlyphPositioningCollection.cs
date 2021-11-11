@@ -88,7 +88,7 @@ namespace SixLabors.Fonts
         /// <param name="collection">The glyph substitution collection.</param>
         /// <param name="options">The renderer options.</param>
         /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
-        public bool TryAddOrUpdate(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
+        public bool TryAddOrUpdate(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, TextOptions options)
         {
             if (this.Count == 0)
             {
@@ -158,7 +158,7 @@ namespace SixLabors.Fonts
             return !hasFallBacks;
         }
 
-        private bool Add(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, RendererOptions options)
+        private bool Add(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, TextOptions options)
         {
             bool hasFallBacks = false;
             for (int i = 0; i < collection.Count; i++)

@@ -31,7 +31,7 @@ namespace SixLabors.Fonts.Tests.Unicode
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tests.Unicode
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -80,7 +80,7 @@ namespace SixLabors.Fonts.Tests.Unicode
             };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -100,7 +100,7 @@ namespace SixLabors.Fonts.Tests.Unicode
             int[] expectedGlyphIndices = { 403, 405, 407, 409, 411, 413, 415, 417, 419, 421 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -120,7 +120,7 @@ namespace SixLabors.Fonts.Tests.Unicode
             int[] expectedGlyphIndices = { 2317, 3631, 2380, 2345, 2345, 2485, 2264, 2265, 2266, 2267, 2379, 2540, 2247, 2260, 2842, 2286 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -140,7 +140,7 @@ namespace SixLabors.Fonts.Tests.Unicode
             int[] expectedGlyphIndices = { 2271, 2268, 2264, 32, 2322, 2271, 14, 2329, 2264, 2264 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new RendererOptions(arabicFont));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
