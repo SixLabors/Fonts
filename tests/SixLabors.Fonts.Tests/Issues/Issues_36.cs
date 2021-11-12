@@ -19,9 +19,9 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             Font font = CreateFont("\t x");
 
-            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new TextOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
             string tabString = string.Empty.PadRight(tabCount, '\t');
-            FontRectangle tabCountWidth = TextMeasurer.MeasureBounds(tabString, new TextOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle tabCountWidth = TextMeasurer.MeasureBounds(tabString, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
             Assert.Equal(tabWidth.Width * tabCount, tabCountWidth.Width, 2);
         }
@@ -36,10 +36,10 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             Font font = CreateFont("\t x");
 
-            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\tx", new TextOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
             string tabString = "x".PadLeft(tabCount + 1, '\t');
-            FontRectangle tabCountWidth = TextMeasurer.MeasureBounds(tabString, new TextOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle tabCountWidth = TextMeasurer.MeasureBounds(tabString, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
             float singleTabWidth = tabWidth.Width - xWidth.Width;
             float finalTabWidth = tabCountWidth.Width - xWidth.Width;

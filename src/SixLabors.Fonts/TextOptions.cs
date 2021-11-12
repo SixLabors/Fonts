@@ -11,30 +11,15 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class TextOptions
     {
-        private const float DefaultDpi = 72F;
         private float tabWidth = 4F;
-        private float dpi = DefaultDpi;
+        private float dpi = 72F;
         private float lineSpacing = 1F;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TextOptions"/> class.
         /// </summary>
         /// <param name="font">The font.</param>
-        public TextOptions(Font font)
-            : this(font, DefaultDpi)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TextOptions"/> class.
-        /// </summary>
-        /// <param name="font">The font to render.</param>
-        /// <param name="dpi">The DPI (Dots Per Inch) to render/measure the text at.</param>
-        public TextOptions(Font font, float dpi)
-        {
-            this.Font = font;
-            this.Dpi = dpi;
-        }
+        public TextOptions(Font font) => this.Font = font;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TextOptions"/> class from properties

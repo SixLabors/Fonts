@@ -37,8 +37,8 @@ namespace SixLabors.Fonts.Tests
         public void ConstructorTest_FontWithSingleDpi()
         {
             Font font = FakeFont.CreateFont("ABC");
-            float dpi = 123;
-            var options = new TextOptions(font, dpi);
+            const float dpi = 123;
+            var options = new TextOptions(font) { Dpi = dpi };
 
             Assert.Equal(dpi, options.Dpi);
             Assert.Empty(options.FallbackFontFamilies);
@@ -66,8 +66,8 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = FakeFont.CreateFont("ABC");
             var origin = new Vector2(123, 345);
-            float dpi = 123;
-            TextOptions options = new(font, dpi) { Origin = origin };
+            const float dpi = 123;
+            TextOptions options = new(font) { Dpi = dpi, Origin = origin };
 
             Assert.Equal(dpi, options.Dpi);
             Assert.Empty(options.FallbackFontFamilies);
@@ -108,9 +108,10 @@ namespace SixLabors.Fonts.Tests
                 FakeFont.CreateFont("GHI").Family
             };
 
-            float dpi = 123;
-            var options = new TextOptions(font, dpi)
+            const float dpi = 123;
+            var options = new TextOptions(font)
             {
+                Dpi = dpi,
                 FallbackFontFamilies = fontFamilies
             };
 
@@ -156,9 +157,10 @@ namespace SixLabors.Fonts.Tests
             };
 
             var origin = new Vector2(123, 345);
-            float dpi = 123;
-            TextOptions options = new(font, dpi)
+            const float dpi = 123;
+            TextOptions options = new(font)
             {
+                Dpi = dpi,
                 FallbackFontFamilies = fontFamilies,
                 Origin = origin
             };

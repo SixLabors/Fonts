@@ -72,7 +72,7 @@ namespace DrawWithImageSharp
 
             var renderer = new TextRenderer(glyphBuilder);
 
-            var style = new SixLabors.Fonts.TextOptions(font, 72)
+            var style = new SixLabors.Fonts.TextOptions(font)
             {
                 TabWidth = 4,
                 WrappingLength = wrappingWidth,

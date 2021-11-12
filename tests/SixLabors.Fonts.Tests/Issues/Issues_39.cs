@@ -16,7 +16,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            new TextRenderer(r).RenderText(string.Empty, new TextOptions(new Font(font, 30), 72));
+            new TextRenderer(r).RenderText(string.Empty, new TextOptions(new Font(font, 30)));
         }
 
         public static Font CreateFont(string text)

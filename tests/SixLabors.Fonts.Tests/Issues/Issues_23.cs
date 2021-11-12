@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors.
+// Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
 using Xunit;
@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            new TextRenderer(r).RenderText("o", new TextOptions(new Font(font, 30), 72));
+            new TextRenderer(r).RenderText("o", new TextOptions(new Font(font, 30)));
 
             Assert.DoesNotContain(System.Numerics.Vector2.Zero, r.ControlPoints);
         }

@@ -164,7 +164,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             // using var img = new Image<Rgba32>(width, height);
             // img.Mutate(x => x.Fill(Color.White));
 
-            // IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new TextOptions(font, 72));
+            // IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new TextOptions(font));
             // img.Mutate(x => x.Fill(Color.Black, shapes));
 
             // Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
@@ -208,9 +208,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
             => RenderText(
-                new TextOptions(new Font(font, pointSize), 96)
+                new TextOptions(new Font(font, pointSize))
                 {
-                    // WrappingWidth = 400,
+                    Dpi = 96,
+                    WrappingLength = 400,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
                     ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
                 },
@@ -222,6 +223,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             float pointSize = 12,
             IEnumerable<FontFamily> fallbackFonts = null)
         {
+            // TODO: Fix once we have a single TextOptions type.
             var textOptions = new ImageSharp.Drawing.Processing.TextOptions
             {
                 ApplyKerning = true,
@@ -236,8 +238,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
 
             var font = new Font(fontFamily, pointSize);
-            var renderOptions = new TextOptions(font, textOptions.DpiX)
+            var renderOptions = new TextOptions(font)
             {
+                Dpi = textOptions.DpiX,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                 FallbackFontFamilies = textOptions.FallbackFonts?.ToArray()
             };
@@ -266,6 +269,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 foreach (HorizontalAlignment ha in (HorizontalAlignment[])Enum.GetValues(typeof(HorizontalAlignment)))
                 {
+                    // TODO: Fix once we have a single TextOptions type.
                     var textOptions = new ImageSharp.Drawing.Processing.TextOptions
                     {
                         ApplyKerning = true,
@@ -282,8 +286,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     }
 
                     var font = new Font(fontFamily, pointSize);
-                    var renderOptions = new TextOptions(font, textOptions.DpiX)
+                    var renderOptions = new TextOptions(font)
                     {
+                        Dpi = textOptions.DpiX,
                         ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                         FallbackFontFamilies = textOptions.FallbackFonts?.ToArray(),
                         VerticalAlignment = va,

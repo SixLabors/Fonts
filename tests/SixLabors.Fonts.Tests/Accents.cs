@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tests
             FontFamily arial = new FontCollection().Add(TestFonts.OpenSansFile);
             var font = new Font(arial, 1f, FontStyle.Regular);
 
-            FontRectangle size = TextMeasurer.Measure(c.ToString(), new TextOptions(font, 72));
+            FontRectangle size = TextMeasurer.Measure(c.ToString(), new TextOptions(font));
         }
 
         [Theory]
@@ -38,7 +38,7 @@ namespace SixLabors.Fonts.Tests
             FontFamily arial = new FontCollection().Add(TestFonts.OpenSansFile);
             var font = new Font(arial, 1f, FontStyle.Regular);
 
-            FontRectangle size = TextMeasurer.Measure($"abc{c}def", new TextOptions(font, 72));
+            FontRectangle size = TextMeasurer.Measure($"abc{c}def", new TextOptions(font));
         }
     }
 }
