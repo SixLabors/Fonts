@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -14,6 +15,7 @@ namespace SixLabors.Fonts
         private float tabWidth = 4F;
         private float dpi = 72F;
         private float lineSpacing = 1F;
+        private Font? font;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TextOptions"/> class.
@@ -29,11 +31,7 @@ namespace SixLabors.Fonts
         public TextOptions(TextOptions options)
         {
             this.Font = options.Font;
-            foreach (FontFamily family in options.FallbackFontFamilies)
-            {
-                this.FallbackFontFamilies.Add(family);
-            }
-
+            this.FallbackFontFamilies = new List<FontFamily>(options.FallbackFontFamilies);
             this.TabWidth = options.TabWidth;
             this.ApplyHinting = options.ApplyHinting;
             this.Dpi = options.Dpi;
@@ -53,13 +51,21 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the font.
         /// </summary>
-        public Font Font { get; set; }
+        public Font Font
+        {
+            get => this.font!;
+            set
+            {
+                Guard.NotNull(value, nameof(this.Font));
+                this.font = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the collection of fallback font families to use when
         /// a specific glyph is missing from <see cref="Font"/>.
         /// </summary>
-        public ICollection<FontFamily> FallbackFontFamilies { get; set; } = new HashSet<FontFamily>();
+        public IReadOnlyList<FontFamily> FallbackFontFamilies { get; set; } = Array.Empty<FontFamily>();
 
         /// <summary>
         /// Gets or sets the DPI (Dots Per Inch) to render/measure the text at.
@@ -72,7 +78,7 @@ namespace SixLabors.Fonts
 
             set
             {
-                Guard.MustBeGreaterThanOrEqualTo(value, 0, nameof(this.dpi));
+                Guard.MustBeGreaterThanOrEqualTo(value, 0, nameof(this.Dpi));
                 this.dpi = value;
             }
         }

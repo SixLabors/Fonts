@@ -23,22 +23,23 @@ namespace SixLabors.Fonts.Tests
         {
             const string text = "A";
             CodePoint codePoint = this.AsCodePoint(text);
-            var font = (StreamFontMetrics)CreateFont(text).FontMetrics;
+            Font font = CreateFont(text);
+            FontMetrics metrics = font.FontMetrics;
             var glyph = new Glyph(
                 new GlyphMetrics(
-                    font,
+                    (StreamFontMetrics)metrics,
                     codePoint,
-                    new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, font.UnitsPerEm, 0, font.UnitsPerEm), Array.Empty<byte>()),
+                    new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, metrics.UnitsPerEm, 0, metrics.UnitsPerEm), Array.Empty<byte>()),
                     0,
                     0,
                     0,
                     0,
-                    font.UnitsPerEm,
+                    metrics.UnitsPerEm,
                     0),
                 10);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
-            glyph.RenderTo(this.renderer, locationInFontSpace, new TextOptions((Font)null));
+            glyph.RenderTo(this.renderer, locationInFontSpace, new TextOptions(font));
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
