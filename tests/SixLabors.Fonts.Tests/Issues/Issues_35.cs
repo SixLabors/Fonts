@@ -13,9 +13,9 @@ namespace SixLabors.Fonts.Tests.Issues
         public void RenderingTabAtStartOrLineTooShort()
         {
             Font font = CreateFont("\t x");
-            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new RendererOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle tabWithXWidth = TextMeasurer.MeasureBounds("\tx", new RendererOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            FontRectangle tabWithXWidth = TextMeasurer.MeasureBounds("\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
             Assert.Equal(tabWidth.Width + xWidth.Width, tabWithXWidth.Width, 2);
         }
@@ -24,9 +24,9 @@ namespace SixLabors.Fonts.Tests.Issues
         public void Rendering2TabsAtStartOfLineTooShort()
         {
             Font font = CreateFont("\t x");
-            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t\t", new RendererOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle tabWithXWidth = TextMeasurer.MeasureBounds("\t\tx", new RendererOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            FontRectangle tabWithXWidth = TextMeasurer.MeasureBounds("\t\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
             Assert.Equal(tabWidth.Width + xWidth.Width, tabWithXWidth.Width, 2);
         }
@@ -35,9 +35,9 @@ namespace SixLabors.Fonts.Tests.Issues
         public void TwoTabsAreDoubleWidthOfOneTab()
         {
             Font font = CreateFont("\t x");
-            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new RendererOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle twoTabWidth = TextMeasurer.MeasureBounds("\t\t", new RendererOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            FontRectangle twoTabWidth = TextMeasurer.MeasureBounds("\t\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
             Assert.Equal(twoTabWidth.Width, tabWidth.Width * 2, 2);
         }
@@ -46,9 +46,9 @@ namespace SixLabors.Fonts.Tests.Issues
         public void TwoTabsAreDoubleWidthOfOneTabMinusXWidth()
         {
             Font font = CreateFont("\t x");
-            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new RendererOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\tx", new RendererOptions(font, font.FontMetrics.ScaleFactor));
-            FontRectangle twoTabWidth = TextMeasurer.MeasureBounds("\t\tx", new RendererOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            FontRectangle tabWidth = TextMeasurer.MeasureBounds("\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+            FontRectangle twoTabWidth = TextMeasurer.MeasureBounds("\t\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
             Assert.Equal(twoTabWidth.Width - xWidth.Width, (tabWidth.Width - xWidth.Width) * 2, 2);
         }

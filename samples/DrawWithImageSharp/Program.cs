@@ -98,26 +98,26 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(whitneyBook, "Hello\0World", 72);
             RenderText(sunflower, "í", 30);
 
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\tx");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\t\tx");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\tx");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\t\tx");
 
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
 
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
-            RenderText(new RendererOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
+            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
 
 #if OS_WINDOWS
             RenderText(new Font(SystemFonts.Get("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
             RenderText(new Font(SystemFonts.Get("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
-            RenderText(new RendererOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
+            RenderText(new TextOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
             BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
             TextAlignmentSample.Generate(SystemFonts.CreateFont("arial", 50f));
             TextAlignmentWrapped.Generate(SystemFonts.CreateFont("arial", 50f));
@@ -157,22 +157,23 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderText(Font font, string text, int width, int height)
         {
-            string path = IOPath.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
-            string fullPath = IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
+            // TODO: Enable and update once we have updated ImageSharp.Drawing
+            // string path = IOPath.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
+            // string fullPath = IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
 
-            using var img = new Image<Rgba32>(width, height);
-            img.Mutate(x => x.Fill(Color.White));
+            // using var img = new Image<Rgba32>(width, height);
+            // img.Mutate(x => x.Fill(Color.White));
 
-            IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new RendererOptions(font, 72));
-            img.Mutate(x => x.Fill(Color.Black, shapes));
+            // IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new TextOptions(font));
+            // img.Mutate(x => x.Fill(Color.Black, shapes));
 
-            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
+            // Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
 
-            using FileStream fs = File.Create(fullPath + ".png");
-            img.SaveAsPng(fs);
+            // using FileStream fs = File.Create(fullPath + ".png");
+            // img.SaveAsPng(fs);
         }
 
-        public static void RenderText(RendererOptions options, string text)
+        public static void RenderText(TextOptions options, string text)
         {
             FontRectangle size = TextMeasurer.Measure(text, options);
             if (size == FontRectangle.Empty)
@@ -182,7 +183,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             var drawingOptions = new DrawingOptions
             {
-                TextOptions = new TextOptions()
+                TextOptions = new ImageSharp.Drawing.Processing.TextOptions()
                 {
                     ApplyKerning = options.KerningMode != KerningMode.None,
                     DpiX = options.Dpi,
@@ -191,7 +192,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     LineSpacing = options.LineSpacing,
                     HorizontalAlignment = options.HorizontalAlignment,
                     VerticalAlignment = options.VerticalAlignment,
-                    WrapTextWidth = options.WrappingWidth,
+                    WrapTextWidth = options.WrappingLength,
                     RenderColorFonts = options.ColorFontSupport != ColorFontSupport.None,
                     WordBreaking = options.WordBreaking
                 }
@@ -207,9 +208,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
             => RenderText(
-                new RendererOptions(new Font(font, pointSize), 96)
+                new TextOptions(new Font(font, pointSize))
                 {
-                    // WrappingWidth = 400,
+                    Dpi = 96,
+                    WrappingLength = 400,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
                     ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
                 },
@@ -221,7 +223,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             float pointSize = 12,
             IEnumerable<FontFamily> fallbackFonts = null)
         {
-            var textOptions = new TextOptions
+            // TODO: Fix once we have a single TextOptions type.
+            var textOptions = new ImageSharp.Drawing.Processing.TextOptions
             {
                 ApplyKerning = true,
                 DpiX = 96,
@@ -235,8 +238,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             }
 
             var font = new Font(fontFamily, pointSize);
-            var renderOptions = new RendererOptions(font, textOptions.DpiX)
+            var renderOptions = new TextOptions(font)
             {
+                Dpi = textOptions.DpiX,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                 FallbackFontFamilies = textOptions.FallbackFonts?.ToArray()
             };
@@ -265,7 +269,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 foreach (HorizontalAlignment ha in (HorizontalAlignment[])Enum.GetValues(typeof(HorizontalAlignment)))
                 {
-                    var textOptions = new TextOptions
+                    // TODO: Fix once we have a single TextOptions type.
+                    var textOptions = new ImageSharp.Drawing.Processing.TextOptions
                     {
                         ApplyKerning = true,
                         DpiX = 96,
@@ -281,8 +286,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                     }
 
                     var font = new Font(fontFamily, pointSize);
-                    var renderOptions = new RendererOptions(font, textOptions.DpiX)
+                    var renderOptions = new TextOptions(font)
                     {
+                        Dpi = textOptions.DpiX,
                         ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
                         FallbackFontFamilies = textOptions.FallbackFonts?.ToArray(),
                         VerticalAlignment = va,

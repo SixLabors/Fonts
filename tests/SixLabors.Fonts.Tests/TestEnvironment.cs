@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests
 
         private const string UnicodeTestDataRelativePath = @"tests\UnicodeTestData\";
 
-        private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new Lazy<string>(GetSolutionDirectoryFullPathImpl);
+        private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new(GetSolutionDirectoryFullPathImpl);
 
         internal static string SolutionDirectoryFullPath => SolutionDirectoryFullPathLazy.Value;
 

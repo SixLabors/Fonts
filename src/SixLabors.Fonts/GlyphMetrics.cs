@@ -194,7 +194,7 @@ namespace SixLabors.Fonts
         /// <param name="location">The location.</param>
         /// <param name="options">The options used to influence the rendering of this glyph.</param>
         /// <exception cref="NotSupportedException">Too many control points</exception>
-        public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, RendererOptions options)
+        public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, TextOptions options)
         {
             float dpi = options.Dpi;
             location *= dpi;

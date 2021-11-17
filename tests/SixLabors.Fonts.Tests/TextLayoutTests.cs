@@ -77,8 +77,9 @@ namespace SixLabors.Fonts.Tests
             string text = "hello world\nhello";
             Font font = CreateFont(text);
 
-            var span = new RendererOptions(font, font.FontMetrics.ScaleFactor)
+            var span = new TextOptions(font)
             {
+                Dpi = font.FontMetrics.ScaleFactor,
                 HorizontalAlignment = horizontal,
                 VerticalAlignment = vertical
             };
@@ -107,7 +108,7 @@ namespace SixLabors.Fonts.Tests
             };
 
             // 72 * emSize means 1pt = 1px
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
             Assert.Equal(10, size.Height, 4);
             Assert.Equal(130, size.Width, 4);
@@ -124,7 +125,7 @@ namespace SixLabors.Fonts.Tests
         public void MeasureText(string text, float height, float width)
         {
             Font font = CreateFont(text);
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor));
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
@@ -145,7 +146,7 @@ namespace SixLabors.Fonts.Tests
 
             Assert.True(TextMeasurer.TryMeasureCharacterBounds(
                 text.AsSpan(),
-                new RendererOptions(font, font.FontMetrics.ScaleFactor),
+                new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor },
                 out GlyphBounds[] glyphMetrics));
 
             // Newline should not be returned.
@@ -177,9 +178,10 @@ namespace SixLabors.Fonts.Tests
         public void MeasureTextWordWrappingHorizontalTopBottom(string text, float height, float width)
         {
             Font font = CreateFont(text);
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
             {
-                WrappingWidth = 350,
+                Dpi = font.FontMetrics.ScaleFactor,
+                WrappingLength = 350,
                 LayoutMode = LayoutMode.HorizontalTopBottom
             });
 
@@ -200,9 +202,10 @@ namespace SixLabors.Fonts.Tests
         public void MeasureTextWordWrappingHorizontalBottomTop(string text, float height, float width)
         {
             Font font = CreateFont(text);
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
             {
-                WrappingWidth = 350,
+                Dpi = font.FontMetrics.ScaleFactor,
+                WrappingLength = 350,
                 LayoutMode = LayoutMode.HorizontalBottomTop
             });
 
@@ -217,9 +220,10 @@ namespace SixLabors.Fonts.Tests
         public void MeasureTextWordWrappingVerticalLeftRight(string text, float height, float width)
         {
             Font font = CreateFont(text);
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
             {
-                WrappingWidth = 350,
+                Dpi = font.FontMetrics.ScaleFactor,
+                WrappingLength = 350,
                 LayoutMode = LayoutMode.VerticalLeftRight
             });
 
@@ -234,9 +238,10 @@ namespace SixLabors.Fonts.Tests
         public void MeasureTextWordWrappingVerticalRightLeft(string text, float height, float width)
         {
             Font font = CreateFont(text);
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new RendererOptions(font, font.FontMetrics.ScaleFactor)
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
             {
-                WrappingWidth = 350,
+                Dpi = font.FontMetrics.ScaleFactor,
+                WrappingLength = 350,
                 LayoutMode = LayoutMode.VerticalRightLeft
             });
 
@@ -262,9 +267,9 @@ namespace SixLabors.Fonts.Tests
             Font font = arial.CreateFont(20);
             FontRectangle size = TextMeasurer.Measure(
                 text,
-                new RendererOptions(font, 72)
+                new TextOptions(font)
                 {
-                    WrappingWidth = 400,
+                    WrappingLength = 400,
                     LayoutMode = layoutMode,
                     WordBreaking = wordBreaking,
                     FallbackFontFamilies = new[] { jhengHei }
@@ -286,7 +291,11 @@ namespace SixLabors.Fonts.Tests
             Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
             FontRectangle size = TextMeasurer.MeasureBounds(
                 text,
-                new RendererOptions(new Font(font, 1), font.FontMetrics.ScaleFactor) { KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None, });
+                new TextOptions(new Font(font, 1))
+                {
+                    Dpi = font.FontMetrics.ScaleFactor,
+                    KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                });
 
             Assert.Equal(height, size.Height, 4);
             Assert.Equal(width, size.Width, 4);
@@ -303,7 +312,11 @@ namespace SixLabors.Fonts.Tests
             var renderer = new TextRenderer(glyphRenderer);
             renderer.RenderText(
                 text,
-                new RendererOptions(new Font(font, 1), font.FontMetrics.ScaleFactor, new Vector2(x, y)));
+                new TextOptions(new Font(font, 1))
+                {
+                    Dpi = font.FontMetrics.ScaleFactor,
+                    Origin = new Vector2(x, y)
+                });
 
             Assert.Equal(expectedX, glyphRenderer.GlyphRects[0].Location.X, 2);
             Assert.Equal(expectedY, glyphRenderer.GlyphRects[0].Location.Y, 2);

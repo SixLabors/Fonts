@@ -18,8 +18,8 @@ namespace DrawWithImageSharp
             using var img = new Image<Rgba32>(1000, 1000);
             img.Mutate(x => x.Fill(Color.White));
 
-            FontRectangle box = TextMeasurer.MeasureBounds(text, new RendererOptions(font));
-            (IPathCollection paths, IPathCollection boxes) = GenerateGlyphsWithBox(text, new RendererOptions(font));
+            FontRectangle box = TextMeasurer.MeasureBounds(text, new SixLabors.Fonts.TextOptions(font));
+            (IPathCollection paths, IPathCollection boxes) = GenerateGlyphsWithBox(text, new SixLabors.Fonts.TextOptions(font));
 
             Rgba32 f = Color.Fuchsia;
             f.A = 128;
@@ -37,7 +37,7 @@ namespace DrawWithImageSharp
         /// <param name="text">The text to generate glyphs for</param>
         /// <param name="style">The style and settings to use while rendering the glyphs</param>
         /// <returns>The paths, boxes, and text box.</returns>
-        private static (IPathCollection Paths, IPathCollection Boxes) GenerateGlyphsWithBox(string text, RendererOptions style)
+        private static (IPathCollection Paths, IPathCollection Boxes) GenerateGlyphsWithBox(string text, SixLabors.Fonts.TextOptions style)
         {
             var glyphBuilder = new CustomGlyphBuilder(Vector2.Zero);
 

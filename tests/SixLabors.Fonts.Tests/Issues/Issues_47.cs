@@ -19,9 +19,9 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
             {
-                WrappingWidth = 350,
+                WrappingLength = 350,
                 HorizontalAlignment = HorizontalAlignment.Left
             });
 
@@ -47,9 +47,9 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
             {
-                WrappingWidth = 350,
+                WrappingLength = 350,
                 HorizontalAlignment = horizontalAlignment
             });
 
@@ -74,9 +74,9 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
             {
-                WrappingWidth = 350
+                WrappingLength = 350
             });
 
             Assert.True(layout[0].IsWhiteSpace());
@@ -92,9 +92,9 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new RendererOptions(new Font(font, 30), 72)
+            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
             {
-                WrappingWidth = 350
+                WrappingLength = 350
             });
 
             Assert.False(layout[layout.Count - 1].IsWhiteSpace());

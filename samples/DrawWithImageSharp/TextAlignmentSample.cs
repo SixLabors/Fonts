@@ -69,12 +69,13 @@ namespace DrawWithImageSharp
 
             var renderer = new TextRenderer(glyphBuilder);
 
-            var style = new RendererOptions(font, 72, location)
+            var style = new SixLabors.Fonts.TextOptions(font)
             {
                 TabWidth = 4,
-                WrappingWidth = 0,
+                WrappingLength = 0,
                 HorizontalAlignment = horiz,
-                VerticalAlignment = vert
+                VerticalAlignment = vert,
+                Origin = location
             };
 
             string text = $"{horiz} x y z\n{vert} x y z";

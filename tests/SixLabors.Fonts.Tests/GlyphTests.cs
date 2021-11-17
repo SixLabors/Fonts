@@ -23,22 +23,23 @@ namespace SixLabors.Fonts.Tests
         {
             const string text = "A";
             CodePoint codePoint = this.AsCodePoint(text);
-            var font = (StreamFontMetrics)CreateFont(text).FontMetrics;
+            Font font = CreateFont(text);
+            FontMetrics metrics = font.FontMetrics;
             var glyph = new Glyph(
                 new GlyphMetrics(
-                    font,
+                    (StreamFontMetrics)metrics,
                     codePoint,
-                    new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, font.UnitsPerEm, 0, font.UnitsPerEm), Array.Empty<byte>()),
+                    new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, metrics.UnitsPerEm, 0, metrics.UnitsPerEm), Array.Empty<byte>()),
                     0,
                     0,
                     0,
                     0,
-                    font.UnitsPerEm,
+                    metrics.UnitsPerEm,
                     0),
                 10);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
-            glyph.RenderTo(this.renderer, locationInFontSpace, new RendererOptions(null, 72));
+            glyph.RenderTo(this.renderer, locationInFontSpace, new TextOptions(font));
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
@@ -49,7 +50,7 @@ namespace SixLabors.Fonts.Tests
             Font fakeFont = CreateFont("AB");
             var textRenderer = new TextRenderer(this.renderer);
 
-            textRenderer.RenderText("ABA", new RendererOptions(fakeFont));
+            textRenderer.RenderText("ABA", new TextOptions(fakeFont));
 
             Assert.Equal(this.renderer.GlyphKeys[0], this.renderer.GlyphKeys[2]);
             Assert.NotEqual(this.renderer.GlyphKeys[1], this.renderer.GlyphKeys[2]);
@@ -63,7 +64,7 @@ namespace SixLabors.Fonts.Tests
             Font fakeFont = CreateFont("A");
             var textRenderer = new TextRenderer(renderer.Object);
 
-            textRenderer.RenderText("ABA", new RendererOptions(fakeFont));
+            textRenderer.RenderText("ABA", new TextOptions(fakeFont));
             renderer.Verify(x => x.BeginFigure(), Times.Never);
         }
 
@@ -75,7 +76,7 @@ namespace SixLabors.Fonts.Tests
             Font fakeFont = CreateFont("A");
             var textRenderer = new TextRenderer(renderer.Object);
 
-            textRenderer.RenderText("ABA", new RendererOptions(fakeFont));
+            textRenderer.RenderText("ABA", new TextOptions(fakeFont));
             renderer.Verify(x => x.BeginFigure(), Times.Exactly(3));
         }
 
@@ -118,7 +119,7 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Add(TestFonts.TwemojiMozillaData()).CreateFont(12);
 
             var renderer = new ColorGlyphRenderer();
-            TextRenderer.RenderTextTo(renderer, "😀", new RendererOptions(font)
+            TextRenderer.RenderTextTo(renderer, "😀", new TextOptions(font)
             {
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
@@ -138,14 +139,14 @@ namespace SixLabors.Fonts.Tests
             string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
             var rendererTtf = new ColorGlyphRenderer();
-            TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
+            TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
             {
                 KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
                 ApplyHinting = applyHinting,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff = new ColorGlyphRenderer();
-            TextRenderer.RenderTextTo(rendererWoff, testStr, new RendererOptions(fontWoff)
+            TextRenderer.RenderTextTo(rendererWoff, testStr, new TextOptions(fontWoff)
             {
                 KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
                 ApplyHinting = applyHinting,
@@ -168,13 +169,13 @@ namespace SixLabors.Fonts.Tests
             Font fontWoff = new FontCollection().Add(TestFonts.OpenSansFileWoff1).CreateFont(12);
 
             var rendererTtf = new ColorGlyphRenderer();
-            TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
+            TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
             {
                 ApplyHinting = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff = new ColorGlyphRenderer();
-            TextRenderer.RenderTextTo(rendererWoff, testStr, new RendererOptions(fontWoff)
+            TextRenderer.RenderTextTo(rendererWoff, testStr, new TextOptions(fontWoff)
             {
                 ApplyHinting = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
@@ -197,14 +198,14 @@ namespace SixLabors.Fonts.Tests
             string testStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
             var rendererTtf = new ColorGlyphRenderer();
-            TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
+            TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
             {
                 KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
                 ApplyHinting = applyHinting,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff2 = new ColorGlyphRenderer();
-            TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
+            TextRenderer.RenderTextTo(rendererWoff2, testStr, new TextOptions(fontWoff2)
             {
                 KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
                 ApplyHinting = applyHinting,
@@ -227,13 +228,13 @@ namespace SixLabors.Fonts.Tests
             Font fontWoff2 = new FontCollection().Add(TestFonts.OpenSansFileWoff2).CreateFont(12);
 
             var rendererTtf = new ColorGlyphRenderer();
-            TextRenderer.RenderTextTo(rendererTtf, testStr, new RendererOptions(fontTtf)
+            TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
             {
                 ApplyHinting = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff2 = new ColorGlyphRenderer();
-            TextRenderer.RenderTextTo(rendererWoff2, testStr, new RendererOptions(fontWoff2)
+            TextRenderer.RenderTextTo(rendererWoff2, testStr, new TextOptions(fontWoff2)
             {
                 ApplyHinting = true,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
