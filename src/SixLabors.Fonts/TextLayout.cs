@@ -46,15 +46,15 @@ namespace SixLabors.Fonts
             // Gather the font and fallbacks.
             FontMetrics mainFont = options.Font.FontMetrics;
             FontMetrics[] fallbackFonts;
-            if (options.FallbackFontFamilies?.Count == 0)
-            {
-                fallbackFonts = Array.Empty<FontMetrics>();
-            }
-            else
+            if (options.FallbackFontFamilies?.Count > 0)
             {
                 fallbackFonts = options.FallbackFontFamilies
                     .Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle).FontMetrics)
                     .ToArray();
+            }
+            else
+            {
+                fallbackFonts = Array.Empty<FontMetrics>();
             }
 
             LayoutMode layoutMode = options.LayoutMode;
@@ -240,14 +240,14 @@ namespace SixLabors.Fonts
             for (int i = 0; i < textLine.Count; i++)
             {
                 TextLine.GlyphLayoutData info = textLine[i];
+                if (info.IsNewLine)
+                {
+                    location.Y += textBox.ScaledMaxLineHeight * options.LineSpacing;
+                    continue;
+                }
+
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
-                    if (info.IsNewLine)
-                    {
-                        location.Y += textBox.ScaledMaxLineHeight * options.LineSpacing;
-                        continue;
-                    }
-
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, info.PointSize),
                         location,
@@ -347,25 +347,32 @@ namespace SixLabors.Fonts
             location.X += offsetX;
 
             List<GlyphLayout> glyphs = new();
-            float xLineAdvance = textBox.ScaledMaxLineHeight * (first ? 1F : options.LineSpacing);
+            float xWidth = textBox.ScaledMaxLineHeight * (first ? 1F : options.LineSpacing);
+            float xLineAdvance = textBox.ScaledMaxLineHeight * options.LineSpacing;
+
+            if (first)
+            {
+                xLineAdvance -= (xLineAdvance - textBox.ScaledMaxLineHeight) * .5F;
+            }
+
             for (int i = 0; i < textLine.Count; i++)
             {
                 TextLine.GlyphLayoutData info = textLine[i];
+                if (info.IsNewLine)
+                {
+                    location.X += xLineAdvance;
+                    location.Y = originY;
+                    continue;
+                }
+
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
-                    if (info.IsNewLine)
-                    {
-                        location.X += xLineAdvance;
-                        location.Y = originY;
-                        continue;
-                    }
-
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, info.PointSize),
-                        location + new Vector2((xLineAdvance - (metric.AdvanceWidth * (info.PointSize / metric.ScaleFactor))) * .5F, 0),
-                        textBox.ScaledMaxLineHeight,
+                        location + new Vector2((xWidth - (metric.AdvanceWidth * (info.PointSize / metric.ScaleFactor))) * .5F, 0),
+                        xLineAdvance,
                         info.ScaledAdvance,
-                        textBox.ScaledMaxLineHeight * options.LineSpacing,
+                        textBox.ScaledMaxLineHeight,
                         i == 0));
                 }
 

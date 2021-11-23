@@ -69,7 +69,7 @@ namespace DrawWithImageSharp
 
             var renderer = new TextRenderer(glyphBuilder);
 
-            var style = new SixLabors.Fonts.TextOptions(font)
+            TextOptions textOptions = new(font)
             {
                 TabWidth = 4,
                 WrappingLength = 0,
@@ -79,7 +79,7 @@ namespace DrawWithImageSharp
             };
 
             string text = $"{horiz} x y z\n{vert} x y z";
-            renderer.RenderText(text, style);
+            renderer.RenderText(text, textOptions);
 
             IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
             img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
