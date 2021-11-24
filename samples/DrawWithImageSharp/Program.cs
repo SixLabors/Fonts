@@ -157,20 +157,19 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderText(Font font, string text, int width, int height)
         {
-            // TODO: Enable and update once we have updated ImageSharp.Drawing
-            // string path = IOPath.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
-            // string fullPath = IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
+            string path = IOPath.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
+            string fullPath = IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
 
-            // using var img = new Image<Rgba32>(width, height);
-            // img.Mutate(x => x.Fill(Color.White));
+            using var img = new Image<Rgba32>(width, height);
+            img.Mutate(x => x.Fill(Color.White));
 
-            // IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new Vector2(50f, 4f), new TextOptions(font));
-            // img.Mutate(x => x.Fill(Color.Black, shapes));
+            IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new TextOptions(font) { Origin = new Vector2(50f, 4f) });
+            img.Mutate(x => x.Fill(Color.Black, shapes));
 
-            // Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
+            Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
 
-            // using FileStream fs = File.Create(fullPath + ".png");
-            // img.SaveAsPng(fs);
+            using FileStream fs = File.Create(fullPath + ".png");
+            img.SaveAsPng(fs);
         }
 
         public static void RenderText(TextOptions options, string text)
@@ -181,39 +180,15 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 return;
             }
 
-            var drawingOptions = new DrawingOptions
-            {
-                TextOptions = new ImageSharp.Drawing.Processing.TextOptions()
-                {
-                    ApplyKerning = options.KerningMode != KerningMode.None,
-                    DpiX = options.Dpi,
-                    DpiY = options.Dpi,
-                    TabWidth = options.TabWidth,
-                    LineSpacing = options.LineSpacing,
-                    HorizontalAlignment = options.HorizontalAlignment,
-                    VerticalAlignment = options.VerticalAlignment,
-                    WrapTextWidth = options.WrappingLength,
-                    RenderColorFonts = options.ColorFontSupport != ColorFontSupport.None,
-                    WordBreaking = options.WordBreaking
-                }
-            };
-
-            if (options.FallbackFontFamilies != null)
-            {
-                drawingOptions.TextOptions.FallbackFonts.AddRange(options.FallbackFontFamilies);
-            }
-
-            SaveImage(drawingOptions, text, options.Font, (int)size.Width, (int)size.Height, options.Origin, options.Font.Name, text + ".png");
+            SaveImage(options, text, (int)size.Width, (int)size.Height, options.Font.Name, text + ".png");
         }
 
         public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
             => RenderText(
                 new TextOptions(new Font(font, pointSize))
                 {
-                    Dpi = 96,
                     WrappingLength = 400,
-                    FallbackFontFamilies = fallbackFonts?.ToArray(),
-                    ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
+                    FallbackFontFamilies = fallbackFonts?.ToArray()
                 },
                 text);
 
@@ -223,36 +198,22 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             float pointSize = 12,
             IEnumerable<FontFamily> fallbackFonts = null)
         {
-            // TODO: Fix once we have a single TextOptions type.
-            var textOptions = new ImageSharp.Drawing.Processing.TextOptions
+            Font font = new(fontFamily, pointSize);
+            TextOptions textOptions = new(font)
             {
-                ApplyKerning = true,
-                DpiX = 96,
-                DpiY = 96,
-                RenderColorFonts = true,
+                Dpi = 96,
             };
 
             if (fallbackFonts != null)
             {
-                textOptions.FallbackFonts.AddRange(fallbackFonts);
+                textOptions.FallbackFontFamilies = fallbackFonts.ToArray();
             }
 
-            var font = new Font(fontFamily, pointSize);
-            var renderOptions = new TextOptions(font)
-            {
-                Dpi = textOptions.DpiX,
-                ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
-                FallbackFontFamilies = textOptions.FallbackFonts?.ToArray()
-            };
+            FontRectangle textSize = TextMeasurer.Measure(text, textOptions);
+            textOptions.Origin = new PointF(5, 5);
 
-            var options = new DrawingOptions
-            {
-                TextOptions = textOptions
-            };
-
-            FontRectangle textSize = TextMeasurer.Measure(text, renderOptions);
             using var img = new Image<Rgba32>((int)Math.Ceiling(textSize.Width) + 20, (int)Math.Ceiling(textSize.Height) + 20);
-            img.Mutate(x => x.Fill(Color.White).ApplyProcessor(new DrawTextProcessor(options, text, font, new SolidBrush(Color.Black), null, new PointF(5, 5))));
+            img.Mutate(x => x.Fill(Color.White).ApplyProcessor(new DrawTextProcessor(x.GetDrawingOptions(), textOptions, text, new SolidBrush(Color.Black), null)));
 
             string fullPath = CreatePath(font.Name, text + ".caching.png");
             Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
@@ -269,49 +230,31 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             {
                 foreach (HorizontalAlignment ha in (HorizontalAlignment[])Enum.GetValues(typeof(HorizontalAlignment)))
                 {
-                    // TODO: Fix once we have a single TextOptions type.
-                    var textOptions = new ImageSharp.Drawing.Processing.TextOptions
+                    Font font = new(fontFamily, pointSize);
+                    TextOptions textOptions = new(font)
                     {
-                        ApplyKerning = true,
-                        DpiX = 96,
-                        DpiY = 96,
-                        RenderColorFonts = true,
+                        Dpi = 96,
                         VerticalAlignment = va,
-                        HorizontalAlignment = ha
+                        HorizontalAlignment = ha,
                     };
 
                     if (fallbackFonts != null)
                     {
-                        textOptions.FallbackFonts.AddRange(fallbackFonts);
+                        textOptions.FallbackFontFamilies = fallbackFonts.ToArray();
                     }
 
-                    var font = new Font(fontFamily, pointSize);
-                    var renderOptions = new TextOptions(font)
-                    {
-                        Dpi = textOptions.DpiX,
-                        ColorFontSupport = ColorFontSupport.MicrosoftColrFormat,
-                        FallbackFontFamilies = textOptions.FallbackFonts?.ToArray(),
-                        VerticalAlignment = va,
-                        HorizontalAlignment = ha
-                    };
-
-                    FontRectangle textSize = TextMeasurer.Measure(text, renderOptions);
+                    FontRectangle textSize = TextMeasurer.Measure(text, textOptions);
                     using var img = new Image<Rgba32>(((int)textSize.Width * 2) + 20, ((int)textSize.Height * 2) + 20);
-
-                    var options = new DrawingOptions
-                    {
-                        TextOptions = textOptions
-                    };
-
                     Size size = img.Size();
+                    textOptions.Origin = new PointF(size.Width / 2F, size.Height / 2F);
+
                     img.Mutate(x => x.Fill(Color.Black).ApplyProcessor(
                         new DrawTextProcessor(
-                            options,
+                            x.GetDrawingOptions(),
+                            textOptions,
                             text,
-                            font,
                             new SolidBrush(Color.Yellow),
-                            null,
-                            new PointF(size.Width / 2F, size.Height / 2F))));
+                            null)));
 
                     img[size.Width / 2, size.Height / 2] = Color.White;
 
@@ -332,12 +275,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         }
 
         private static void SaveImage(
-            DrawingOptions options,
+            TextOptions options,
             string text,
-            Font font,
             int width,
             int height,
-            Vector2 origin,
             params string[] path)
         {
             string fullPath = CreatePath(path);
@@ -345,7 +286,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             using var img = new Image<Rgba32>(width, height);
             img.Mutate(x => x.Fill(Color.Black));
 
-            img.Mutate(x => x.DrawText(options, text, font, Color.White, origin));
+            img.Mutate(x => x.DrawText(options, text, Color.White));
 
             // Ensure directory exists
             Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));

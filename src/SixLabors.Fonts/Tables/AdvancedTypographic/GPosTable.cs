@@ -179,7 +179,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
                 FixCursiveAttachment(collection, index, count);
                 FixMarkAttachment(collection, index, count);
-                UpdatePositions(fontMetrics, collection, index, count);
+                if (updated)
+                {
+                    UpdatePositions(fontMetrics, collection, index, count);
+                }
             }
 
             return updated;
