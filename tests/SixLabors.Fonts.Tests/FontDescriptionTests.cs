@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Globalization;
+using SixLabors.Fonts.WellKnownIds;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -16,11 +17,11 @@ namespace SixLabors.Fonts.Tests
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(
-                new Dictionary<WellKnownIds.NameIds, string>
+                new Dictionary<KnownNameIds, string>
                 {
-                    { WellKnownIds.NameIds.FullFontName, "name" },
-                    { WellKnownIds.NameIds.FontSubfamilyName, "sub" },
-                    { WellKnownIds.NameIds.FontFamilyName, "fam" }
+                    { KnownNameIds.FullFontName, "name" },
+                    { KnownNameIds.FontSubfamilyName, "sub" },
+                    { KnownNameIds.FontFamilyName, "fam" }
                 });
 
             var description = FontDescription.LoadDescription(writer.GetStream());
@@ -40,12 +41,12 @@ namespace SixLabors.Fonts.Tests
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(
-                (WellKnownIds.NameIds.FullFontName, "name_c1", c1),
-                (WellKnownIds.NameIds.FontSubfamilyName, "sub_c1", c1),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_c1", c1),
-                (WellKnownIds.NameIds.FullFontName, "name_c2", c2),
-                (WellKnownIds.NameIds.FontSubfamilyName, "sub_c2", c2),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_c2", c2));
+                (KnownNameIds.FullFontName, "name_c1", c1),
+                (KnownNameIds.FontSubfamilyName, "sub_c1", c1),
+                (KnownNameIds.FontFamilyName, "fam_c1", c1),
+                (KnownNameIds.FullFontName, "name_c2", c2),
+                (KnownNameIds.FontSubfamilyName, "sub_c2", c2),
+                (KnownNameIds.FontFamilyName, "fam_c2", c2));
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
@@ -66,15 +67,15 @@ namespace SixLabors.Fonts.Tests
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(
-                (WellKnownIds.NameIds.FullFontName, "name_c1", c1),
-                (WellKnownIds.NameIds.FontSubfamilyName, "sub_c1", c1),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_c1", c1),
-                (WellKnownIds.NameIds.FullFontName, "name_c2", c2),
-                (WellKnownIds.NameIds.FontSubfamilyName, "sub_c2", c2),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_c2", c2),
-                (WellKnownIds.NameIds.FullFontName, "name_us", usCulture),
-                (WellKnownIds.NameIds.FontSubfamilyName, "sub_us", usCulture),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_us", usCulture));
+                (KnownNameIds.FullFontName, "name_c1", c1),
+                (KnownNameIds.FontSubfamilyName, "sub_c1", c1),
+                (KnownNameIds.FontFamilyName, "fam_c1", c1),
+                (KnownNameIds.FullFontName, "name_c2", c2),
+                (KnownNameIds.FontSubfamilyName, "sub_c2", c2),
+                (KnownNameIds.FontFamilyName, "fam_c2", c2),
+                (KnownNameIds.FullFontName, "name_us", usCulture),
+                (KnownNameIds.FontSubfamilyName, "sub_us", usCulture),
+                (KnownNameIds.FontFamilyName, "fam_us", usCulture));
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
@@ -95,15 +96,15 @@ namespace SixLabors.Fonts.Tests
             writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
             writer.WriteTableHeader("name", 0, 28, 999);
             writer.WriteNameTable(
-                (WellKnownIds.NameIds.FullFontName, "name_c1", c1),
-                (WellKnownIds.NameIds.FontSubfamilyName, "sub_c1", c1),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_c1", c1),
-                (WellKnownIds.NameIds.FullFontName, "name_c2", c2),
-                (WellKnownIds.NameIds.FontSubfamilyName, "sub_c2", c2),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_c2", c2),
-                (WellKnownIds.NameIds.FullFontName, "name_us", usCulture),
-                (WellKnownIds.NameIds.FontSubfamilyName, "sub_us", usCulture),
-                (WellKnownIds.NameIds.FontFamilyName, "fam_us", usCulture));
+                (KnownNameIds.FullFontName, "name_c1", c1),
+                (KnownNameIds.FontSubfamilyName, "sub_c1", c1),
+                (KnownNameIds.FontFamilyName, "fam_c1", c1),
+                (KnownNameIds.FullFontName, "name_c2", c2),
+                (KnownNameIds.FontSubfamilyName, "sub_c2", c2),
+                (KnownNameIds.FontFamilyName, "fam_c2", c2),
+                (KnownNameIds.FullFontName, "name_us", usCulture),
+                (KnownNameIds.FontSubfamilyName, "sub_us", usCulture),
+                (KnownNameIds.FontFamilyName, "fam_us", usCulture));
 
             var description = FontDescription.LoadDescription(writer.GetStream());
 
@@ -131,6 +132,34 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("Open Sans", description.FontNameInvariantCulture);
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
             Assert.Equal(FontStyle.Regular, description.Style);
+        }
+
+        [Fact]
+        public void LoadFontDescription_GetNameById()
+        {
+            var c1 = new CultureInfo(1034); // spanish - international
+            var c2 = new CultureInfo(3082); // spanish - traditional
+
+            var writer = new BigEndianBinaryWriter();
+            writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
+            writer.WriteTableHeader("name", 0, 28, 999);
+            writer.WriteNameTable(
+                (KnownNameIds.FullFontName, "name_c1", c1),
+                (KnownNameIds.FontSubfamilyName, "sub_c1", c1),
+                (KnownNameIds.FontFamilyName, "fam_c1", c1),
+                (KnownNameIds.FullFontName, "name_c2", c2),
+                (KnownNameIds.FontSubfamilyName, "sub_c2", c2),
+                (KnownNameIds.FontFamilyName, "fam_c2", c2));
+
+            var description = FontDescription.LoadDescription(writer.GetStream());
+
+            Assert.Equal("name_c1", description.GetNameById(c1, KnownNameIds.FullFontName));
+            Assert.Equal("sub_c1", description.GetNameById(c1, KnownNameIds.FontSubfamilyName));
+            Assert.Equal("fam_c1", description.GetNameById(c1, KnownNameIds.FontFamilyName));
+
+            Assert.Equal("name_c2", description.GetNameById(c2, KnownNameIds.FullFontName));
+            Assert.Equal("sub_c2", description.GetNameById(c2, KnownNameIds.FontSubfamilyName));
+            Assert.Equal("fam_c2", description.GetNameById(c2, KnownNameIds.FontFamilyName));
         }
 
         [Fact]

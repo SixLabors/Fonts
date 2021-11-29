@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tables.General.Name
     {
         private readonly string value;
 
-        public NameRecord(PlatformIDs platform, ushort languageId, NameIds nameId, string value)
+        public NameRecord(PlatformIDs platform, ushort languageId, KnownNameIds nameId, string value)
         {
             this.Platform = platform;
             this.LanguageID = languageId;
@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Tables.General.Name
 
         public ushort LanguageID { get; }
 
-        public NameIds NameID { get; }
+        public KnownNameIds NameID { get; }
 
         internal StringLoader? StringReader { get; private set; }
 
@@ -35,7 +35,7 @@ namespace SixLabors.Fonts.Tables.General.Name
             EncodingIDs encodingId = reader.ReadUInt16<EncodingIDs>();
             Encoding encoding = encodingId.AsEncoding();
             ushort languageID = reader.ReadUInt16();
-            NameIds nameID = reader.ReadUInt16<NameIds>();
+            KnownNameIds nameID = reader.ReadUInt16<KnownNameIds>();
 
             var stringReader = StringLoader.Create(reader, encoding);
 

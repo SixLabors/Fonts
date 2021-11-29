@@ -96,13 +96,13 @@ namespace SixLabors.Fonts.Tests
             writer.WriteUInt16(rangeShift);
         }
 
-        public static void WriteNameTable(this BigEndianBinaryWriter writer, Dictionary<NameIds, string> names, List<string> languages = null)
+        public static void WriteNameTable(this BigEndianBinaryWriter writer, Dictionary<KnownNameIds, string> names, List<string> languages = null)
             => writer.WriteNameTable(names.Select(x => (x.Key, x.Value, CultureInfo.InvariantCulture)).ToList(), languages);
 
-        public static void WriteNameTable(this BigEndianBinaryWriter writer, params (NameIds NameId, string Value, CultureInfo Culture)[] names)
+        public static void WriteNameTable(this BigEndianBinaryWriter writer, params (KnownNameIds NameId, string Value, CultureInfo Culture)[] names)
             => writer.WriteNameTable(names.ToList());
 
-        public static void WriteNameTable(this BigEndianBinaryWriter writer, List<(NameIds NameId, string Value, CultureInfo Culture)> names, List<string> languages = null)
+        public static void WriteNameTable(this BigEndianBinaryWriter writer, List<(KnownNameIds NameId, string Value, CultureInfo Culture)> names, List<string> languages = null)
         {
             // Type          | Name                        | Description
             // --------------|-----------------------------|--------------------------------------------------------
@@ -142,7 +142,7 @@ namespace SixLabors.Fonts.Tests
             Encoding encoding = Encoding.BigEndianUnicode; // this is Unicode2
             int stringOffset = 0;
             var offsets = new List<int>();
-            foreach ((NameIds name, string value, CultureInfo culture) in names)
+            foreach ((KnownNameIds name, string value, CultureInfo culture) in names)
             {
                 writer.WriteUInt16((ushort)PlatformIDs.Windows); // hard code platform
                 writer.WriteUInt16((ushort)EncodingIDs.Unicode2); // hard code encoding
@@ -175,7 +175,7 @@ namespace SixLabors.Fonts.Tests
 
             int currentItem = 0;
 
-            foreach ((NameIds name, string value, CultureInfo culture) in names)
+            foreach ((KnownNameIds name, string value, CultureInfo culture) in names)
             {
                 int expectedPosition = offsets[currentItem];
                 currentItem++;

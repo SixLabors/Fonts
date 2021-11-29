@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tables.General
         /// The name of the font.
         /// </value>
         public string Id(CultureInfo culture)
-            => this.GetNameById(culture, NameIds.UniqueFontID);
+            => this.GetNameById(culture, KnownNameIds.UniqueFontID);
 
         /// <summary>
         /// Gets the name of the font.
@@ -37,7 +37,7 @@ namespace SixLabors.Fonts.Tables.General
         /// The name of the font.
         /// </value>
         public string FontName(CultureInfo culture)
-            => this.GetNameById(culture, NameIds.FullFontName);
+            => this.GetNameById(culture, KnownNameIds.FullFontName);
 
         /// <summary>
         /// Gets the name of the font.
@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tables.General
         /// The name of the font.
         /// </value>
         public string FontFamilyName(CultureInfo culture)
-            => this.GetNameById(culture, NameIds.FontFamilyName);
+            => this.GetNameById(culture, KnownNameIds.FontFamilyName);
 
         /// <summary>
         /// Gets the name of the font.
@@ -55,9 +55,9 @@ namespace SixLabors.Fonts.Tables.General
         /// The name of the font.
         /// </value>
         public string FontSubFamilyName(CultureInfo culture)
-            => this.GetNameById(culture, NameIds.FontSubfamilyName);
+            => this.GetNameById(culture, KnownNameIds.FontSubfamilyName);
 
-        public string GetNameById(CultureInfo culture, NameIds nameId)
+        public string GetNameById(CultureInfo culture, KnownNameIds nameId)
         {
 #if SUPPORTS_CULTUREINFO_LCID
             int languageId = culture.LCID;
@@ -99,7 +99,7 @@ namespace SixLabors.Fonts.Tables.General
         }
 
         public string GetNameById(CultureInfo culture, ushort nameId)
-            => this.GetNameById(culture, (NameIds)nameId);
+            => this.GetNameById(culture, (KnownNameIds)nameId);
 
         public static NameTable? Load(FontReader fontReader)
         {

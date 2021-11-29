@@ -17,15 +17,15 @@ namespace SixLabors.Fonts.Tests.Tables.General
             var writer = new BigEndianBinaryWriter();
 
             writer.WriteNameTable(
-                new Dictionary<NameIds, string>
+                new Dictionary<KnownNameIds, string>
                 {
-                    { NameIds.CopyrightNotice, "copyright" },
-                    { NameIds.FullFontName, "fullname" },
-                    { NameIds.FontFamilyName, "family" },
-                    { NameIds.FontSubfamilyName, "subfamily" },
-                    { NameIds.UniqueFontID, "id" },
-                    { (NameIds)90, "other1" },
-                    { (NameIds)91, "other2" }
+                    { KnownNameIds.CopyrightNotice, "copyright" },
+                    { KnownNameIds.FullFontName, "fullname" },
+                    { KnownNameIds.FontFamilyName, "family" },
+                    { KnownNameIds.FontSubfamilyName, "subfamily" },
+                    { KnownNameIds.UniqueFontID, "id" },
+                    { (KnownNameIds)90, "other1" },
+                    { (KnownNameIds)91, "other2" }
                 });
 
             var table = NameTable.Load(writer.GetReader());
@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
             Assert.Equal("family", table.FontFamilyName(CultureInfo.InvariantCulture));
             Assert.Equal("subfamily", table.FontSubFamilyName(CultureInfo.InvariantCulture));
             Assert.Equal("id", table.Id(CultureInfo.InvariantCulture));
-            Assert.Equal("copyright", table.GetNameById(CultureInfo.InvariantCulture, NameIds.CopyrightNotice));
+            Assert.Equal("copyright", table.GetNameById(CultureInfo.InvariantCulture, KnownNameIds.CopyrightNotice));
             Assert.Equal("other1", table.GetNameById(CultureInfo.InvariantCulture, 90));
             Assert.Equal("other2", table.GetNameById(CultureInfo.InvariantCulture, 91));
         }
@@ -45,15 +45,15 @@ namespace SixLabors.Fonts.Tests.Tables.General
             var writer = new BigEndianBinaryWriter();
 
             writer.WriteNameTable(
-                new Dictionary<NameIds, string>
+                new Dictionary<KnownNameIds, string>
                 {
-                    { NameIds.CopyrightNotice, "copyright" },
-                    { NameIds.FullFontName, "fullname" },
-                    { NameIds.FontFamilyName, "family" },
-                    { NameIds.FontSubfamilyName, "subfamily" },
-                    { NameIds.UniqueFontID, "id" },
-                    { (NameIds)90, "other1" },
-                    { (NameIds)91, "other2" }
+                    { KnownNameIds.CopyrightNotice, "copyright" },
+                    { KnownNameIds.FullFontName, "fullname" },
+                    { KnownNameIds.FontFamilyName, "family" },
+                    { KnownNameIds.FontSubfamilyName, "subfamily" },
+                    { KnownNameIds.UniqueFontID, "id" },
+                    { (KnownNameIds)90, "other1" },
+                    { (KnownNameIds)91, "other2" }
                 },
                 new List<string>
                 {
@@ -67,7 +67,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
             Assert.Equal("family", table.FontFamilyName(CultureInfo.InvariantCulture));
             Assert.Equal("subfamily", table.FontSubFamilyName(CultureInfo.InvariantCulture));
             Assert.Equal("id", table.Id(CultureInfo.InvariantCulture));
-            Assert.Equal("copyright", table.GetNameById(CultureInfo.InvariantCulture, NameIds.CopyrightNotice));
+            Assert.Equal("copyright", table.GetNameById(CultureInfo.InvariantCulture, KnownNameIds.CopyrightNotice));
             Assert.Equal("other1", table.GetNameById(CultureInfo.InvariantCulture, 90));
             Assert.Equal("other2", table.GetNameById(CultureInfo.InvariantCulture, 91));
         }

@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts
 {
@@ -71,6 +72,14 @@ namespace SixLabors.Fonts
         /// <param name="culture">The culture to load metadata in.</param>
         /// <returns>The font sub family name.</returns>
         public string FontSubFamilyName(CultureInfo culture) => this.nameTable.FontSubFamilyName(culture);
+
+        /// <summary>
+        /// Gets the name id matching the given <see cref="KnownNameIds"/> instance.
+        /// </summary>
+        /// <param name="culture">The culture to load metadata in.</param>
+        /// <param name="nameId">The name id to match.</param>
+        /// <returns>The <see cref="string"/> name.</returns>
+        public string GetNameById(CultureInfo culture, KnownNameIds nameId) => this.nameTable.GetNameById(culture, nameId);
 
         /// <summary>
         /// Reads a <see cref="FontDescription"/> from the specified stream.
