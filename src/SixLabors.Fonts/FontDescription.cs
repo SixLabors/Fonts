@@ -74,7 +74,8 @@ namespace SixLabors.Fonts
         public string FontSubFamilyName(CultureInfo culture) => this.nameTable.FontSubFamilyName(culture);
 
         /// <summary>
-        /// Gets the name id matching the given <see cref="KnownNameIds"/> instance.
+        /// Gets the name matching the given culture and id.
+        /// If <see cref="CultureInfo.InvariantCulture"/> is passed this method will return the first name matching the id.
         /// </summary>
         /// <param name="culture">The culture to load metadata in.</param>
         /// <param name="nameId">The name id to match.</param>
