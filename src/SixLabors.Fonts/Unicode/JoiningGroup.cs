@@ -480,6 +480,16 @@ namespace SixLabors.Fonts.Unicode
         Teth,
 
         /// <summary>
+        /// Thin_Yeh
+        /// </summary>
+        ThinYeh,
+
+        /// <summary>
+        /// Vertical_Tail
+        /// </summary>
+        VerticalTail,
+
+        /// <summary>
         /// Waw
         /// </summary>
         Waw,

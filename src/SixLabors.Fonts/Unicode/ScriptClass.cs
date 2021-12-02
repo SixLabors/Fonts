@@ -149,6 +149,11 @@ namespace SixLabors.Fonts.Unicode
         Coptic,
 
         /// <summary>
+        /// Shortcode: Cpmn
+        /// </summary>
+        CyproMinoan,
+
+        /// <summary>
         /// Shortcode: Cprt
         /// </summary>
         Cypriot,
@@ -544,6 +549,11 @@ namespace SixLabors.Fonts.Unicode
         Osmanya,
 
         /// <summary>
+        /// Shortcode: Ougr
+        /// </summary>
+        OldUyghur,
+
+        /// <summary>
         /// Shortcode: Palm
         /// </summary>
         Palmyrene,
@@ -754,6 +764,16 @@ namespace SixLabors.Fonts.Unicode
         Tirhuta,
 
         /// <summary>
+        /// Shortcode: Tnsa
+        /// </summary>
+        Tangsa,
+
+        /// <summary>
+        /// Shortcode: Toto
+        /// </summary>
+        Toto,
+
+        /// <summary>
         /// Shortcode: Ugar
         /// </summary>
         Ugaritic,
@@ -762,6 +782,11 @@ namespace SixLabors.Fonts.Unicode
         /// Shortcode: Vaii
         /// </summary>
         Vai,
+
+        /// <summary>
+        /// Shortcode: Vith
+        /// </summary>
+        Vithkuqi,
 
         /// <summary>
         /// Shortcode: Wara

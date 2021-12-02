@@ -149,7 +149,7 @@ namespace SixLabors.Fonts.Unicode
 
                 case LineBreakClass.SA:
                     UnicodeCategory category = CodePoint.GetGeneralCategory(cp);
-                    return (category == UnicodeCategory.NonSpacingMark || category == UnicodeCategory.SpacingCombiningMark)
+                    return (category is UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark)
                         ? LineBreakClass.CM
                         : LineBreakClass.AL;
 
@@ -162,25 +162,17 @@ namespace SixLabors.Fonts.Unicode
         }
 
         private LineBreakClass MapFirst(LineBreakClass c)
-        {
-            switch (c)
+            => c switch
             {
-                case LineBreakClass.LF:
-                case LineBreakClass.NL:
-                    return LineBreakClass.BK;
-
-                case LineBreakClass.SP:
-                    return LineBreakClass.WJ;
-
-                default:
-                    return c;
-            }
-        }
+                LineBreakClass.LF or LineBreakClass.NL => LineBreakClass.BK,
+                LineBreakClass.SP => LineBreakClass.WJ,
+                _ => c,
+            };
 
         private bool IsAlphaNumeric(LineBreakClass cls)
-            => cls == LineBreakClass.AL
-            || cls == LineBreakClass.HL
-            || cls == LineBreakClass.NU;
+            => cls is LineBreakClass.AL
+            or LineBreakClass.HL
+            or LineBreakClass.NU;
 
         private LineBreakClass PeekNextCharClass()
         {
@@ -279,10 +271,10 @@ namespace SixLabors.Fonts.Unicode
                 this.lb25ex = true;
             }
 
-            if (cls == LineBreakClass.SP || cls == LineBreakClass.WJ || cls == LineBreakClass.AL)
+            if (cls is LineBreakClass.SP or LineBreakClass.WJ or LineBreakClass.AL)
             {
                 LineBreakClass next = this.PeekNextCharClass();
-                if (next == LineBreakClass.CL || next == LineBreakClass.IS || next == LineBreakClass.SY)
+                if (next is LineBreakClass.CL or LineBreakClass.IS or LineBreakClass.SY)
                 {
                     this.lb25ex = true;
                 }
@@ -458,6 +450,19 @@ namespace SixLabors.Fonts.Unicode
                 this.lb30a = 0;
             }
 
+            // Rule LB30b
+            if (this.nextClass == LineBreakClass.EM && this.lastPosition > 0)
+            {
+                // Mahjong Tiles (Unicode block) are extended pictographics but have a class of ID
+                // Unassigned codepoints with Line_Break=ID in some blocks are also assigned the Extended_Pictographic property.
+                // Those blocks are intended for future allocation of emoji characters.
+                var cp = CodePoint.DecodeFromUtf16At(this.source, this.lastPosition - 1, out int _);
+                if (UnicodeUtility.IsInRangeInclusive((uint)cp.Value, 0x1F000, 0x1F02F))
+                {
+                    shouldBreak = false;
+                }
+            }
+
             this.currentClass = this.nextClass;
 
             return shouldBreak;
@@ -470,7 +475,7 @@ namespace SixLabors.Fonts.Unicode
                 var cp = CodePoint.DecodeFromUtf16At(this.source, from - 1, out int count);
                 LineBreakClass cls = CodePoint.GetLineBreakClass(cp);
 
-                if (cls == LineBreakClass.BK || cls == LineBreakClass.LF || cls == LineBreakClass.CR)
+                if (cls is LineBreakClass.BK or LineBreakClass.LF or LineBreakClass.CR)
                 {
                     from -= count;
                 }
