@@ -77,11 +77,6 @@ namespace SixLabors.Fonts.Unicode
         private ArrayBuilder<BidiCharacterType> workingTypesBuffer;
 
         /// <summary>
-        /// A slice of the resolved levels.
-        /// </summary>
-        private ArraySlice<sbyte> resolvedLevels;
-
-        /// <summary>
         /// The buffer underlying resolvedLevels
         /// </summary>
         private ArrayBuilder<sbyte> resolvedLevelsBuffer;
@@ -195,7 +190,7 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Gets the resolved levels.
         /// </summary>
-        public ArraySlice<sbyte> ResolvedLevels => this.resolvedLevels;
+        public ArraySlice<sbyte> ResolvedLevels { get; private set; }
 
         /// <summary>
         /// Gets the resolved paragraph embedding level
@@ -270,12 +265,12 @@ namespace SixLabors.Fonts.Unicode
                     throw new ArgumentException("Out levels must be the same length as the input data");
                 }
 
-                this.resolvedLevels = outLevels.Value;
+                this.ResolvedLevels = outLevels.Value;
             }
             else
             {
-                this.resolvedLevels = this.resolvedLevelsBuffer.Add(this.originalTypes.Length);
-                this.resolvedLevels.Fill(this.paragraphEmbeddingLevel);
+                this.ResolvedLevels = this.resolvedLevelsBuffer.Add(this.originalTypes.Length);
+                this.ResolvedLevels.Fill(this.paragraphEmbeddingLevel);
             }
 
             // Resolve explicit embedding levels (Rules X1-X8)
@@ -419,7 +414,7 @@ namespace SixLabors.Fonts.Unicode
                         if (newLevel <= maxStackDepth && overflowIsolateCount == 0 && overflowEmbeddingCount == 0)
                         {
                             this.statusStack.Push(new Status(newLevel, BidiCharacterType.OtherNeutral, false));
-                            this.resolvedLevels[i] = newLevel;
+                            this.ResolvedLevels[i] = newLevel;
                         }
                         else if (overflowIsolateCount == 0)
                         {
@@ -436,7 +431,7 @@ namespace SixLabors.Fonts.Unicode
                         if (newLevel < maxStackDepth && overflowIsolateCount == 0 && overflowEmbeddingCount == 0)
                         {
                             this.statusStack.Push(new Status(newLevel, BidiCharacterType.OtherNeutral, false));
-                            this.resolvedLevels[i] = newLevel;
+                            this.ResolvedLevels[i] = newLevel;
                         }
                         else if (overflowIsolateCount == 0)
                         {
@@ -453,7 +448,7 @@ namespace SixLabors.Fonts.Unicode
                         if (newLevel <= maxStackDepth && overflowIsolateCount == 0 && overflowEmbeddingCount == 0)
                         {
                             this.statusStack.Push(new Status(newLevel, BidiCharacterType.RightToLeft, false));
-                            this.resolvedLevels[i] = newLevel;
+                            this.ResolvedLevels[i] = newLevel;
                         }
                         else if (overflowIsolateCount == 0)
                         {
@@ -470,7 +465,7 @@ namespace SixLabors.Fonts.Unicode
                         if (newLevel <= maxStackDepth && overflowIsolateCount == 0 && overflowEmbeddingCount == 0)
                         {
                             this.statusStack.Push(new Status(newLevel, BidiCharacterType.LeftToRight, false));
-                            this.resolvedLevels[i] = newLevel;
+                            this.ResolvedLevels[i] = newLevel;
                         }
                         else if (overflowIsolateCount == 0)
                         {
@@ -507,7 +502,7 @@ namespace SixLabors.Fonts.Unicode
 
                         // Replace RLI's level with current embedding level
                         Status tos = this.statusStack.Peek();
-                        this.resolvedLevels[i] = tos.EmbeddingLevel;
+                        this.ResolvedLevels[i] = tos.EmbeddingLevel;
 
                         // Apply override
                         if (tos.OverrideStatus != BidiCharacterType.OtherNeutral)
@@ -551,7 +546,7 @@ namespace SixLabors.Fonts.Unicode
                     {
                         // Rule X6
                         Status tos = this.statusStack.Peek();
-                        this.resolvedLevels[i] = tos.EmbeddingLevel;
+                        this.ResolvedLevels[i] = tos.EmbeddingLevel;
                         if (tos.OverrideStatus != BidiCharacterType.OtherNeutral)
                         {
                             this.workingTypes[i] = tos.OverrideStatus;
@@ -580,7 +575,7 @@ namespace SixLabors.Fonts.Unicode
                         }
 
                         Status tos = this.statusStack.Peek();
-                        this.resolvedLevels[i] = tos.EmbeddingLevel;
+                        this.ResolvedLevels[i] = tos.EmbeddingLevel;
                         if (tos.OverrideStatus != BidiCharacterType.OtherNeutral)
                         {
                             this.workingTypes[i] = tos.OverrideStatus;
@@ -610,7 +605,7 @@ namespace SixLabors.Fonts.Unicode
                     case BidiCharacterType.ParagraphSeparator:
                     {
                         // Rule X8
-                        this.resolvedLevels[i] = this.paragraphEmbeddingLevel;
+                        this.ResolvedLevels[i] = this.paragraphEmbeddingLevel;
                         break;
                     }
                 }
@@ -681,7 +676,7 @@ namespace SixLabors.Fonts.Unicode
                 i--;
             }
 
-            sbyte prevLevel = i < 0 ? this.paragraphEmbeddingLevel : this.resolvedLevels[i];
+            sbyte prevLevel = i < 0 ? this.paragraphEmbeddingLevel : this.ResolvedLevels[i];
             BidiCharacterType sos = DirectionFromLevel(Math.Max(prevLevel, level));
 
             // Work out eos
@@ -701,7 +696,7 @@ namespace SixLabors.Fonts.Unicode
                     i++;
                 }
 
-                nextLevel = i >= this.originalTypes.Length ? this.paragraphEmbeddingLevel : this.resolvedLevels[i];
+                nextLevel = i >= this.originalTypes.Length ? this.paragraphEmbeddingLevel : this.ResolvedLevels[i];
             }
 
             BidiCharacterType eos = DirectionFromLevel(Math.Max(nextLevel, level));
@@ -720,7 +715,7 @@ namespace SixLabors.Fonts.Unicode
             int runStart = 0;
             for (int i = 0; i < this.x9Map.Length; ++i)
             {
-                int level = this.resolvedLevels[this.MapX9(i)];
+                int level = this.ResolvedLevels[this.MapX9(i)];
                 if (level != currentLevel)
                 {
                     if (currentLevel != -1)
@@ -831,7 +826,7 @@ namespace SixLabors.Fonts.Unicode
             // Create mappings onto the underlying data
             this.runResolvedTypes = new MappedArraySlice<BidiCharacterType>(this.workingTypes, this.isolatedRunMapping.AsSlice());
             this.runOriginalTypes = new MappedArraySlice<BidiCharacterType>(this.originalTypes, this.isolatedRunMapping.AsSlice());
-            this.runLevels = new MappedArraySlice<sbyte>(this.resolvedLevels, this.isolatedRunMapping.AsSlice());
+            this.runLevels = new MappedArraySlice<sbyte>(this.ResolvedLevels, this.isolatedRunMapping.AsSlice());
             if (this.hasBrackets)
             {
                 this.runBidiPairedBracketTypes = new MappedArraySlice<BidiPairedBracketType>(this.pairedBracketTypes, this.isolatedRunMapping.AsSlice());
@@ -1328,13 +1323,15 @@ namespace SixLabors.Fonts.Unicode
             this.runResolvedTypes[pb.ClosingIndex] = dir;
 
             // Set the directionality of NSM's inside the brackets
+            // BN  characters (such as ZWJ or ZWSP) that appear between the base bracket character
+            // and the nonspacing mark should be ignored.
             for (int i = pb.OpeningIndex + 1; i < pb.ClosingIndex; i++)
             {
                 if (this.runOriginalTypes[i] == BidiCharacterType.NonspacingMark)
                 {
                     this.runOriginalTypes[i] = dir;
                 }
-                else
+                else if (this.runOriginalTypes[i] != BidiCharacterType.BoundaryNeutral)
                 {
                     break;
                 }
@@ -1347,7 +1344,7 @@ namespace SixLabors.Fonts.Unicode
                 {
                     this.runResolvedTypes[i] = dir;
                 }
-                else
+                else if (this.runOriginalTypes[i] != BidiCharacterType.BoundaryNeutral)
                 {
                     break;
                 }
@@ -1359,13 +1356,13 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         private void ResetWhitespaceLevels()
         {
-            for (int i = 0; i < this.resolvedLevels.Length; i++)
+            for (int i = 0; i < this.ResolvedLevels.Length; i++)
             {
                 BidiCharacterType t = this.originalTypes[i];
                 if (t is BidiCharacterType.ParagraphSeparator or BidiCharacterType.SegmentSeparator)
                 {
                     // Rule L1, clauses one and two.
-                    this.resolvedLevels[i] = this.paragraphEmbeddingLevel;
+                    this.ResolvedLevels[i] = this.paragraphEmbeddingLevel;
 
                     // Rule L1, clause three.
                     for (int j = i - 1; j >= 0; --j)
@@ -1373,7 +1370,7 @@ namespace SixLabors.Fonts.Unicode
                         if (IsWhitespace(this.originalTypes[j]))
                         {
                             // including format codes
-                            this.resolvedLevels[j] = this.paragraphEmbeddingLevel;
+                            this.ResolvedLevels[j] = this.paragraphEmbeddingLevel;
                         }
                         else
                         {
@@ -1384,11 +1381,11 @@ namespace SixLabors.Fonts.Unicode
             }
 
             // Rule L1, clause four.
-            for (int j = this.resolvedLevels.Length - 1; j >= 0; j--)
+            for (int j = this.ResolvedLevels.Length - 1; j >= 0; j--)
             {
                 if (IsWhitespace(this.originalTypes[j]))
                 { // including format codes
-                    this.resolvedLevels[j] = this.paragraphEmbeddingLevel;
+                    this.ResolvedLevels[j] = this.paragraphEmbeddingLevel;
                 }
                 else
                 {
@@ -1418,9 +1415,9 @@ namespace SixLabors.Fonts.Unicode
             }
 
             // Fix up first character
-            if (this.resolvedLevels[0] < 0)
+            if (this.ResolvedLevels[0] < 0)
             {
-                this.resolvedLevels[0] = this.paragraphEmbeddingLevel;
+                this.ResolvedLevels[0] = this.paragraphEmbeddingLevel;
             }
 
             if (IsRemovedByX9(this.originalTypes[0]))
@@ -1434,7 +1431,7 @@ namespace SixLabors.Fonts.Unicode
                 if (IsRemovedByX9(t))
                 {
                     this.workingTypes[i] = t;
-                    this.resolvedLevels[i] = this.resolvedLevels[i - 1];
+                    this.ResolvedLevels[i] = this.ResolvedLevels[i - 1];
                 }
             }
         }

@@ -169,7 +169,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                 foundBreaks.Clear();
 
                 // Run the line breaker and build a list of break points
-                var text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
+                string text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
 
                 var enumerator = new LineBreakEnumerator(text.AsSpan());
                 while (enumerator.MoveNext())
