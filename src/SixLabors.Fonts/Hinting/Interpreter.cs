@@ -1675,41 +1675,50 @@ namespace SixLabors.Fonts.Hinting
 
             public void Move(int index)
             {
+                int c = count;
+                var a = s;
                 var val = Peek(index);
-                for (int i = count - index - 1; i < count - 1; i++)
-                    s[i] = s[i + 1];
-                s[count - 1] = val;
+                for (int i = c - index - 1; i < c - 1; i++)
+                    a[i] = a[i + 1];
+                a[c - 1] = val;
             }
 
             public void Swap()
             {
-                if (count < 2)
-                    throw new Exception("stack overflow");
+                int c = count;
+                if (c < 2)
+                    ThrowStackOverflow();
 
-                var tmp = s[count - 1];
-                s[count - 1] = s[count - 2];
-                s[count - 2] = tmp;
+                var a = s;
+                var tmp = a[c - 1];
+                a[c - 1] = a[c - 2];
+                a[c - 2] = tmp;
             }
 
             public void Push(int value)
             {
                 if (count == s.Length)
-                    throw new Exception("stack overflow");
+                    ThrowStackOverflow();
                 s[count++] = value;
             }
 
             public int Pop()
             {
                 if (count == 0)
-                    throw new Exception("stack overflow");
+                    ThrowStackOverflow();
                 return s[--count];
             }
 
             public int Peek(int index)
             {
                 if (index < 0 || index >= count)
-                    throw new Exception("stack overflow");
+                    ThrowStackOverflow();
                 return s[count - index - 1];
+            }
+
+            private static void ThrowStackOverflow()
+            {
+                throw new Exception("stack overflow");
             }
         }
 
