@@ -45,7 +45,7 @@ namespace SixLabors.Fonts.Hinting
             twilight = new Zone(maxTwilightPoints, isTwilight: true);
         }
 
-        public void InitializeFunctionDefs(byte[] instructions) => Execute(new InstructionStream(instructions), false, true);
+        public void InitializeFunctionDefs(byte[] instructions) => Execute(new StackInstructionStream(instructions, 0), false, true);
 
         // TODO: Remove suppression. Once file is cleaned up.
 #pragma warning disable CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
@@ -72,7 +72,7 @@ namespace SixLabors.Fonts.Hinting
 
             if (cvProgram != null)
             {
-                Execute(new InstructionStream(cvProgram), false, false);
+                Execute(new StackInstructionStream(cvProgram, 0), false, false);
 
                 // save off the CVT graphics state so that we can restore it for each glyph we hint
                 if ((state.InstructionControl & InstructionControlFlags.UseDefaultGraphicsState) != 0)
@@ -125,12 +125,12 @@ namespace SixLabors.Fonts.Hinting
                     break;
             }
 
-            Execute(new InstructionStream(instructions), false, false);
+            Execute(new StackInstructionStream(instructions, 0), false, false);
         }
 
         private System.Collections.Generic.List<OpCode> debugList = new System.Collections.Generic.List<OpCode>();
 
-        private void Execute(InstructionStream stream, bool inFunction, bool allowFunctionDefs)
+        private void Execute(StackInstructionStream stream, bool inFunction, bool allowFunctionDefs)
         {
             // dispatch each instruction in the stream
             while (!stream.Done)
@@ -944,7 +944,7 @@ namespace SixLabors.Fonts.Hinting
                         if (!allowFunctionDefs || inFunction)
                             throw new Exception("Can't define functions here.");
 
-                        functions[stack.Pop()] = stream;
+                        functions[stack.Pop()] = stream.ToMemory();
                         while (SkipNext(ref stream) != OpCode.ENDF)
                             ;
                     }
@@ -954,7 +954,7 @@ namespace SixLabors.Fonts.Hinting
                         if (!allowFunctionDefs || inFunction)
                             throw new Exception("Can't define functions here.");
 
-                        instructionDefs[stack.Pop()] = stream;
+                        instructionDefs[stack.Pop()] = stream.ToMemory();
                         while (SkipNext(ref stream) != OpCode.ENDF)
                             ;
                     }
@@ -975,7 +975,7 @@ namespace SixLabors.Fonts.Hinting
                         var function = functions[stack.Pop()];
                         var count = opcode == OpCode.LOOPCALL ? stack.Pop() : 1;
                         for (int i = 0; i < count; i++)
-                            Execute(function, true, false);
+                            Execute(function.ToStack(), true, false);
                         callStackSize--;
                     }
                     break;
@@ -1105,7 +1105,7 @@ namespace SixLabors.Fonts.Hinting
                             if (callStackSize > MaxCallStack)
                                 throw new Exception("Stack overflow; infinite recursion?");
 
-                            Execute(instructionDefs[index], true, false);
+                            Execute(instructionDefs[index].ToStack(), true, false);
                             callStackSize--;
                         }
                         break;
@@ -1452,7 +1452,7 @@ namespace SixLabors.Fonts.Hinting
         private float Project(Vector2 point) => Vector2.Dot(point, state.Projection);
         private float DualProject(Vector2 point) => Vector2.Dot(point, state.DualProjection);
 
-        private static OpCode SkipNext(ref InstructionStream stream)
+        private static OpCode SkipNext(ref StackInstructionStream stream)
         {
             // grab the next opcode, and if it's one of the push instructions skip over its arguments
             var opcode = stream.NextOpCode();
@@ -1469,8 +1469,7 @@ namespace SixLabors.Fonts.Hinting
                 case OpCode.PUSHB8:
                 {
                     var count = opcode == OpCode.NPUSHB ? stream.NextByte() : opcode - OpCode.PUSHB1 + 1;
-                    for (int i = 0; i < count; i++)
-                        stream.NextByte();
+                    stream.Skip(count);
                 }
                 break;
                 case OpCode.NPUSHW:
@@ -1484,8 +1483,7 @@ namespace SixLabors.Fonts.Hinting
                 case OpCode.PUSHW8:
                 {
                     var count = opcode == OpCode.NPUSHW ? stream.NextByte() : opcode - OpCode.PUSHW1 + 1;
-                    for (int i = 0; i < count; i++)
-                        stream.NextWord();
+                    stream.SkipWord(count);
                 }
                 break;
             }
@@ -1555,24 +1553,62 @@ namespace SixLabors.Fonts.Hinting
             private int ip;
 
             public bool IsValid => !instructions.IsEmpty;
-            public bool Done => ip >= instructions.Length;
 
-            public InstructionStream(ReadOnlyMemory<byte> instructions)
+            public InstructionStream(ReadOnlyMemory<byte> instructions, int offset)
             {
                 this.instructions = instructions;
-                ip = 0;
+                ip = offset;
+            }
+
+            public StackInstructionStream ToStack() => new StackInstructionStream(instructions, ip);
+        }
+
+        private ref struct StackInstructionStream
+        {
+            private ReadOnlyMemory<byte> origin;
+            private ReadOnlySpan<byte> instructions;
+            private int ip;
+
+            public bool IsValid => !instructions.IsEmpty;
+            public bool Done => ip >= instructions.Length;
+
+            public StackInstructionStream(ReadOnlyMemory<byte> instructions, int offset)
+            {
+                this.origin = instructions;
+                this.instructions = instructions.Span;
+                ip = offset;
             }
 
             public int NextByte()
             {
-                if (Done)
-                    throw new Exception("no more instructions");
-                return instructions.Span[ip++];
+                ReadOnlySpan<byte> span = instructions;
+                int offset = ip;
+                if ((uint)offset >= (uint)span.Length)
+                {
+                    ThrowEndOfInstructions();
+                }
+
+                byte b = span[offset];
+                ip++;
+                return b;
+            }
+
+            public void Skip(int count)
+            {
+                ip += count;
+                if ((uint)ip >= (uint)instructions.Length)
+                {
+                    ThrowEndOfInstructions();
+                }
             }
 
             public OpCode NextOpCode() => (OpCode)NextByte();
             public int NextWord() => (short)(ushort)(NextByte() << 8 | NextByte());
+            public void SkipWord(int count) => Skip(count * 2);
             public void Jump(int offset) => ip += offset;
+            public InstructionStream ToMemory() => new InstructionStream(this.origin, ip);
+
+            private static void ThrowEndOfInstructions() => throw new Exception("no more instructions");
         }
 
         private struct GraphicsState
