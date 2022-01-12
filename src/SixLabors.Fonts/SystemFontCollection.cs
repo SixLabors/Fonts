@@ -103,6 +103,9 @@ namespace SixLabors.Fonts
         public IEnumerable<FontFamily> Families => this.collection.Families;
 
         /// <inheritdoc/>
+        public IEnumerable<string> SearchDirectories => this.collection.SearchDirectories;
+
+        /// <inheritdoc/>
         public FontFamily Get(string name) => this.collection.Get(name);
 
         /// <inheritdoc/>

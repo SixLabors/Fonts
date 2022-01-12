@@ -19,6 +19,18 @@ namespace SixLabors.Fonts
         IEnumerable<FontFamily> Families { get; }
 
         /// <summary>
+        /// <para>
+        /// Gets the collection of directories that were searched for font families.
+        /// </para>
+        /// <para>
+        /// The search directories are only applicable for the <see cref="SystemFontCollection"/> or if
+        /// <see cref="FontCollectionExtensions.AddSystemFonts"/> was called on a font collection.
+        /// For font collections that do not involve system fonts, the search directories is always empty.
+        /// </para>
+        /// </summary>
+        public IEnumerable<string> SearchDirectories { get; }
+
+        /// <summary>
         /// Gets the specified font family matching the invariant culture and font family name.
         /// </summary>
         /// <param name="name">The font family name.</param>

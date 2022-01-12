@@ -40,6 +40,9 @@ namespace SixLabors.Fonts
         public IEnumerable<FontFamily> Families => this.FamiliesByCultureImpl(CultureInfo.InvariantCulture);
 
         /// <inheritdoc/>
+        public IEnumerable<string> SearchDirectories => this.searchDirectories;
+
+        /// <inheritdoc/>
         public FontFamily Add(string path)
             => this.Add(path, out _);
 
@@ -179,6 +182,14 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         IEnumerator<FontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
             => this.metricsCollection.GetEnumerator();
+
+        internal void AddSearchDirectories(IEnumerable<string> directories)
+        {
+            foreach (var directory in directories)
+            {
+                this.searchDirectories.Add(directory);
+            }
+        }
 
         private FontFamily AddImpl(string path, CultureInfo culture, out FontDescription description)
         {
