@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -128,6 +129,31 @@ namespace SixLabors.Fonts.Tests
 
             Assert.True(styles.Any());
             Assert.Equal(family.GetAvailableStyles(), styles);
+        }
+
+        [Fact]
+        public void SystemFonts_FontFamilyNotFound_Throws()
+        {
+            void Action() => SystemFonts.Get("AFontThatDoesNotExist");
+
+            FontFamilyNotFoundException exception = Assert.Throws<FontFamilyNotFoundException>(Action);
+            Assert.Equal("AFontThatDoesNotExist", exception.FontFamily);
+            Assert.Contains("AFontThatDoesNotExist", exception.Message);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Assert.Contains(@"Windows\Fonts", exception.Message);
+                Assert.Contains(exception.SearchDirectories, e => e.Contains(@"Windows\Fonts"));
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Assert.Contains(@"/share/fonts/", exception.Message);
+                Assert.Contains(exception.SearchDirectories, e => e.Contains(@"share/fonts"));
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Assert.Contains(@"/Library/Fonts/", exception.Message);
+                Assert.Contains(exception.SearchDirectories, e => e.Contains(@"Library/Fonts"));
+            }
         }
     }
 }

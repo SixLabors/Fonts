@@ -16,7 +16,25 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     {
+        private readonly HashSet<string> searchDirectories;
         private readonly HashSet<FontMetrics> metricsCollection = new();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontCollection"/> class.
+        /// </summary>
+        public FontCollection()
+            : this(Array.Empty<string>())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontCollection"/> class.
+        /// </summary>
+        /// <param name="searchDirectories">The collection of directories used to search for font families.</param>
+        internal FontCollection(IReadOnlyCollection<string> searchDirectories)
+        {
+            this.searchDirectories = new HashSet<string>(searchDirectories ?? throw new ArgumentNullException(nameof(searchDirectories)));
+        }
 
         /// <inheritdoc/>
         public IEnumerable<FontFamily> Families => this.FamiliesByCultureImpl(CultureInfo.InvariantCulture);
@@ -253,7 +271,7 @@ namespace SixLabors.Fonts
                 return family;
             }
 
-            throw new FontFamilyNotFoundException(name);
+            throw new FontFamilyNotFoundException(name, this.searchDirectories);
         }
     }
 }

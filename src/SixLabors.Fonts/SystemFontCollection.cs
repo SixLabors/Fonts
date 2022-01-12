@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts
 {
@@ -15,31 +16,49 @@ namespace SixLabors.Fonts
     /// </summary>
     internal sealed class SystemFontCollection : IReadOnlyFontCollection, IReadOnlyFontMetricsCollection
     {
-        private readonly FontCollection collection = new FontCollection();
+        private readonly FontCollection collection;
 
         /// <summary>
         /// Gets the default set of locations we probe for System Fonts.
         /// </summary>
-        private static readonly IReadOnlyCollection<string> StandardFontLocations
-            = new[]
+        private static readonly IReadOnlyCollection<string> StandardFontLocations;
+
+        static SystemFontCollection()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // windows directories
-                "%SYSTEMROOT%\\Fonts",
-                "%APPDATA%\\Microsoft\\Windows\\Fonts",
-                "%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts",
-
-                // linux directories
-                "~/.fonts/",
-                "/usr/local/share/fonts/",
-                "/usr/share/fonts/",
-
-                // mac directories
-                "~/Library/Fonts/",
-                "/Library/Fonts/",
-                "/Network/Library/Fonts/",
-                "/System/Library/Fonts/",
-                "/System Folder/Fonts/",
-            };
+                StandardFontLocations = new[]
+                {
+                    "%SYSTEMROOT%\\Fonts",
+                    "%APPDATA%\\Microsoft\\Windows\\Fonts",
+                    "%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts",
+                };
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                StandardFontLocations = new[]
+                {
+                    "~/.fonts/",
+                    "/usr/local/share/fonts/",
+                    "/usr/share/fonts/",
+                };
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                StandardFontLocations = new[]
+                {
+                    "~/Library/Fonts/",
+                    "/Library/Fonts/",
+                    "/Network/Library/Fonts/",
+                    "/System/Library/Fonts/",
+                    "/System Folder/Fonts/",
+                };
+            }
+            else
+            {
+                StandardFontLocations = Array.Empty<string>();
+            }
+        }
 
         public SystemFontCollection()
             : this(StandardFontLocations)
@@ -50,6 +69,8 @@ namespace SixLabors.Fonts
         {
             string[] expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
             string[] foundDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
+
+            this.collection = new FontCollection(foundDirectories);
 
             // We do this to provide a consistent experience with case sensitive file systems.
             IEnumerable<string> files = foundDirectories

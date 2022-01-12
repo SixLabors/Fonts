@@ -1,6 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace SixLabors.Fonts
 {
     /// <summary>
@@ -14,12 +18,51 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="family">The name of the missing font family.</param>
         public FontFamilyNotFoundException(string family)
-            : base($"{family} could not be found")
-            => this.FontFamily = family;
+            : this(family, Array.Empty<string>())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontFamilyNotFoundException"/> class.
+        /// </summary>
+        /// <param name="family">The name of the missing font family.</param>
+        /// <param name="searchDirectories">
+        /// The collection of directories that were searched for the font family.
+        /// Pass an empty collection if font families were not searched in directories.
+        /// </param>
+        public FontFamilyNotFoundException(string family, IReadOnlyCollection<string> searchDirectories)
+            : base(GetMessage(family, searchDirectories))
+        {
+            this.FontFamily = family;
+            this.SearchDirectories = searchDirectories;
+        }
 
         /// <summary>
         /// Gets the name of the font family we failed to find.
         /// </summary>
         public string FontFamily { get; }
+
+        /// <summary>
+        /// Gets the collection of directories that were unsuccessfully searched for the font family.
+        /// </summary>
+        /// <remarks>
+        /// If the searched collection does not involve the system font collection then the search directories are empty.
+        /// </remarks>
+        public IReadOnlyCollection<string> SearchDirectories { get; }
+
+        private static string GetMessage(string family, IReadOnlyCollection<string> searchDirectories)
+        {
+            if (searchDirectories.Count == 0)
+            {
+                return $"The \"{family}\" font family could not be found";
+            }
+
+            if (searchDirectories.Count == 1)
+            {
+                return $"The \"{family}\" font family could not be found in the following directory: {searchDirectories.First()}";
+            }
+
+            return $"The \"{family}\" font family could not be found in the following directories:{Environment.NewLine}{string.Join(Environment.NewLine, searchDirectories.Select(e => $"  * {e}"))}";
+        }
     }
 }
