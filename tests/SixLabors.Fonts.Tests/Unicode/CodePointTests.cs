@@ -370,5 +370,18 @@ namespace SixLabors.Fonts.Tests.Unicode
             Assert.Equal(type, join.JoiningType);
             Assert.Equal(group, join.JoiningGroup);
         }
+
+        [Theory]
+        [InlineData(0xFE0F, true)]
+        [InlineData(0xFE0E, true)]
+        [InlineData(0xFE01, true)]
+        [InlineData(0xFE00, true)]
+        [InlineData(0xFF00, false)]
+        [InlineData(0xFE10, false)]
+        public void CodePointIsVariationSelector(uint codePoint, bool expectedResult)
+        {
+            bool result = CodePoint.IsVariationSelector(new CodePoint(codePoint));
+            Assert.Equal(expectedResult, result);
+        }
     }
 }
