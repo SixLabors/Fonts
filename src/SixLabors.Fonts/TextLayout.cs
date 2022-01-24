@@ -565,7 +565,7 @@ namespace SixLabors.Fonts
                     {
                         glyphAdvance *= options.TabWidth;
                     }
-                    else if (CodePoint.IsZeroWidthJoiner(codePoint))
+                    else if (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthNonJoiner(codePoint))
                     {
                         // The zero-width joiner characters should be ignored when determining word or
                         // line break boundaries so are safe to skip here.
