@@ -262,6 +262,14 @@ namespace SixLabors.Fonts.Unicode
             => codePoint.Value == 0x200D;
 
         /// <summary>
+        /// Gets a value indicating whether the given codepoint is a variation selector.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a variation selector character; otherwise, <see langword="false"/></returns>
+        public static bool IsVariationSelector(CodePoint codePoint)
+            => (codePoint.Value & 0xFFF0) == 0xFE00; // See https://en.wikipedia.org/wiki/Variation_Selectors_%28Unicode_block%29
+
+        /// <summary>
         /// Gets a value indicating whether the given codepoint is a control character.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
