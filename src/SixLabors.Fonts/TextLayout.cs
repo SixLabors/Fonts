@@ -565,11 +565,11 @@ namespace SixLabors.Fonts
                     {
                         glyphAdvance *= options.TabWidth;
                     }
-                    else if (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthNonJoiner(codePoint))
+                    else if (metrics.Length == 1 && (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthNonJoiner(codePoint)))
                     {
                         // The zero-width joiner characters should be ignored when determining word or
-                        // line break boundaries so are safe to skip here.
-                        // Any existing instances are the result of font error.
+                        // line break boundaries so are safe to skip here. Any existing instances are the result of font error.
+                        // It multiple metrics are associated with code point, they are most likely the result of a substitution so we shouldn't ignore it.
                         glyphAdvance = 0;
                     }
                     else if (!CodePoint.IsNewLine(codePoint))
