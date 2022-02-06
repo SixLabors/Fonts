@@ -16,6 +16,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string TwemojiMozillaFile => GetFullPath("Twemoji Mozilla.ttf");
 
+        public static string SegoeuiEmojiFile => GetFullPath("seguiemj-win11.ttf");
+
         public static string CarterOneFile => GetFullPath("Carter_One/CarterOne.ttf");
 
         public static string WendyOneFile => GetFullPath("Wendy_One/WendyOne-Regular.ttf");
@@ -197,6 +199,8 @@ namespace SixLabors.Fonts.Tests
         public static string MeQuranFile => GetFullPath("me_quran_volt_newmet.ttf");
 
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
+
+        public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);
 
         public static Stream WendyOneFileData() => OpenStream(WendyOneFile);
 

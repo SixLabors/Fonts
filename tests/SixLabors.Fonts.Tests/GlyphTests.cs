@@ -140,6 +140,21 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(4, layout.Count);
         }
 
+        [Fact]
+        public void EmojiWidthIsComputedCorrectlyWithSubstitutionOnZwj()
+        {
+            Font font = new FontCollection().Add(TestFonts.SegoeuiEmojiData()).CreateFont(72);
+
+            string text = "\U0001F469\U0001F3FB\u200D\U0001F91D\u200D\U0001F469\U0001F3FC"; // women holding hands: light skin tone, medium-light skin tone
+            string text2 = "\U0001F46D\U0001F3FB"; // women holding hands: light skin tone
+
+            FontRectangle size = TextMeasurer.Measure(text, new TextOptions(font));
+            FontRectangle size2 = TextMeasurer.Measure(text2, new TextOptions(font));
+
+            Assert.True(size.Width > 103);
+            Assert.True(size2.Width > 98);
+        }
+
         [Theory]
         [InlineData(false, false, 1238)]
         [InlineData(false, true, 1238)]
