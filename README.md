@@ -7,8 +7,8 @@ SixLabors.Fonts
 
 <div align="center">
 
-[![Build Status](https://img.shields.io/github/workflow/status/SixLabors/Fonts/Build/master)](https://github.com/SixLabors/Fonts/actions)
-[![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/master/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
+[![Build Status](https://img.shields.io/github/workflow/status/SixLabors/Fonts/Build/main)](https://github.com/SixLabors/Fonts/actions)
+[![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/main/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [![GitHub issues](https://img.shields.io/github/issues/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/issues)
@@ -40,7 +40,7 @@ Support the efforts of the development of the Six Labors projects.
 ## Questions
 
 - Do you have questions? We are happy to help! Please [join our Discussions Forum](https://github.com/SixLabors/Fonts/discussions/category_choices).
-- Please read our [Contribution Guide](https://github.com/SixLabors/Fonts/blob/master/.github/CONTRIBUTING.md) before opening issues or pull requests!
+- Please read our [Contribution Guide](https://github.com/SixLabors/Fonts/blob/main/.github/CONTRIBUTING.md) before opening issues or pull requests!
 
 ## Code of Conduct
 This project has adopted the code of conduct defined by the [Contributor Covenant](https://contributor-covenant.org/) to clarify expected behavior in our community.
