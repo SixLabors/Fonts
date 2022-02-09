@@ -3,9 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-#if SUPPORTS_CULTUREINFO_LCID
 using System.Globalization;
-#endif
 
 namespace SixLabors.Fonts
 {
@@ -52,7 +50,6 @@ namespace SixLabors.Fonts
         public static Font CreateFont(string name, float size, FontStyle style)
             => Collection.Get(name).CreateFont(size, style);
 
-#if SUPPORTS_CULTUREINFO_LCID
         /// <inheritdoc cref="IReadOnlyFontCollection.GetByCulture(CultureInfo)"/>
         public static IEnumerable<FontFamily> GetByCulture(CultureInfo culture)
             => Collection.GetByCulture(culture);
@@ -85,6 +82,5 @@ namespace SixLabors.Fonts
         /// <returns>The new <see cref="Font"/>.</returns>
         public static Font CreateFont(string name, CultureInfo culture, float size, FontStyle style)
             => Collection.Get(name, culture).CreateFont(size, style);
-#endif
     }
 }

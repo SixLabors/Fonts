@@ -20,36 +20,20 @@
 
   <!--
     https://apisof.net/
-    +===================+=======+==========+=====================+
-    | SUPPORTS          | CULTUREINFO_LCID | NULLABLE_ATTRIBUTES |
-    +===================+==================+=====================+
-    | netcoreapp3.1     |         Y        |         Y           |
-    | netcoreapp2.1     |         Y        |         N           |
-    | netcoreapp2.0     |         Y        |         N           |
-    | netstandard2.1    |         Y        |         Y           |
-    | netstandard2.0    |         Y        |         N           |
-    | netstandard1.3    |         N        |         N           |
-    | net472            |         Y        |         N           |
-    +===================+==================+=====================+
+    +===================+=====================+
+    | SUPPORTS          | NULLABLE_ATTRIBUTES |
+    +===================+=====================+
+    | netcoreapp3.1     |         Y           |
+    | netstandard2.1    |         Y           |
+    | netstandard2.0    |         N           |
+    +===================+=====================+
   -->
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <DefineConstants>$(DefineConstants);SUPPORTS_CULTUREINFO_LCID;NULLABLE_ATTRIBUTES</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
-    <DefineConstants>$(DefineConstants)SUPPORTS_CULTUREINFO_LCID</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
-    <DefineConstants>$(DefineConstants)SUPPORTS_CULTUREINFO_LCID</DefineConstants>
+    <DefineConstants>$(DefineConstants);NULLABLE_ATTRIBUTES</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-    <DefineConstants>$(DefineConstants);SUPPORTS_CULTUREINFO_LCID;NULLABLE_ATTRIBUTES</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <DefineConstants>$(DefineConstants);SUPPORTS_CULTUREINFO_LCID</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
-    <DefineConstants>$(DefineConstants);SUPPORTS_CULTUREINFO_LCID</DefineConstants>
+    <DefineConstants>$(DefineConstants);NULLABLE_ATTRIBUTES</DefineConstants>
   </PropertyGroup>
 
 </Project>

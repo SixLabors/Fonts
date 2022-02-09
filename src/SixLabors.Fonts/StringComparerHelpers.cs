@@ -10,12 +10,11 @@ namespace SixLabors.Fonts
     {
         public static StringComparer GetCaseInsensitiveStringComparer(CultureInfo culture)
         {
-#if SUPPORTS_CULTUREINFO_LCID
             if (culture != null)
             {
                 return StringComparer.Create(culture, true);
             }
-#endif
+
             return StringComparer.OrdinalIgnoreCase;
         }
     }
