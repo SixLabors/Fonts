@@ -3,9 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-#if SUPPORTS_CULTUREINFO_LCID
 using System.Globalization;
-#endif
 
 namespace SixLabors.Fonts
 {
@@ -45,7 +43,6 @@ namespace SixLabors.Fonts
         /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
         bool TryGet(string name, out FontFamily family);
 
-#if SUPPORTS_CULTUREINFO_LCID
         /// <summary>
         /// Gets the collection of <see cref="FontFamily"/> in this <see cref="FontCollection"/>
         /// using the given culture.
@@ -80,6 +77,5 @@ namespace SixLabors.Fonts
         /// </returns>
         /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
         bool TryGet(string name, CultureInfo culture, out FontFamily family);
-#endif
     }
 }

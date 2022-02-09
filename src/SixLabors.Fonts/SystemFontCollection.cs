@@ -87,7 +87,6 @@ namespace SixLabors.Fonts
         public bool TryGet(string name, out FontFamily family)
             => this.collection.TryGet(name, out family);
 
-#if SUPPORTS_CULTUREINFO_LCID
         /// <inheritdoc/>
         public IEnumerable<FontFamily> GetByCulture(CultureInfo culture)
             => this.collection.GetByCulture(culture);
@@ -99,7 +98,6 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public bool TryGet(string name, CultureInfo culture, out FontFamily family)
             => this.collection.TryGet(name, culture, out family);
-#endif
 
         /// <inheritdoc/>
         bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)

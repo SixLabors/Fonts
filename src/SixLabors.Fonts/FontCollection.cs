@@ -61,7 +61,6 @@ namespace SixLabors.Fonts
         public bool TryGet(string name, out FontFamily family)
             => this.TryGetImpl(name, CultureInfo.InvariantCulture, out family);
 
-#if SUPPORTS_CULTUREINFO_LCID
         /// <inheritdoc/>
         public FontFamily Add(string path, CultureInfo culture)
             => this.AddImpl(path, culture, out _);
@@ -111,7 +110,6 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public bool TryGet(string name, CultureInfo culture, out FontFamily family)
             => this.TryGetImpl(name, culture, out family);
-#endif
 
         /// <inheritdoc/>
         FontFamily IFontMetricsCollection.AddMetrics(FontMetrics metrics, CultureInfo culture)

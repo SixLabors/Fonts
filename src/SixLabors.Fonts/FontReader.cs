@@ -70,7 +70,7 @@ namespace SixLabors.Fonts
                 // This is a woff2 file.
                 this.TableFormat = TableFormat.Woff2;
 
-#if NETSTANDARD2_0 || NETSTANDARD1_3
+#if NETSTANDARD2_0
                 throw new NotSupportedException("Brotli compression is not available and is required for decoding woff2");
 #else
 

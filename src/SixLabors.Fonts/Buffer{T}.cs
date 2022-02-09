@@ -39,7 +39,7 @@ namespace SixLabors.Fonts
             ref byte r0 = ref MemoryMarshal.GetReference<byte>(this.buffer);
             return MemoryMarshal.CreateSpan(ref Unsafe.As<byte, T>(ref r0), this.length);
 #else
-            return MemoryMarshal.Cast<byte, T>(this.buffer.AsSpan()).Slice(0, this.length);
+            return MemoryMarshal.Cast<byte, T>(this.buffer).Slice(0, this.length);
 #endif
         }
 

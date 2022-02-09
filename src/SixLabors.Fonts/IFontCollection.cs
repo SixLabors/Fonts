@@ -2,9 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-#if SUPPORTS_CULTUREINFO_LCID
 using System.Globalization;
-#endif
 using System.IO;
 
 namespace SixLabors.Fonts
@@ -75,7 +73,6 @@ namespace SixLabors.Fonts
         /// <returns>The new <see cref="IEnumerable{T}"/>.</returns>
         public IEnumerable<FontFamily> AddCollection(Stream stream, out IEnumerable<FontDescription> descriptions);
 
-#if SUPPORTS_CULTUREINFO_LCID
         /// <summary>
         /// Adds a font to the collection.
         /// </summary>
@@ -149,6 +146,5 @@ namespace SixLabors.Fonts
             Stream stream,
             CultureInfo culture,
             out IEnumerable<FontDescription> descriptions);
-#endif
     }
 }
