@@ -1,6 +1,6 @@
 <h1 align="center">
 
-<img src="https://raw.githubusercontent.com/SixLabors/Branding/master/icons/fonts/sixlabors.fonts.512.png" alt="SixLabors.Fonts" width="256"/>
+<img src="https://raw.githubusercontent.com/SixLabors/Branding/main/icons/fonts/sixlabors.fonts.512.png" alt="SixLabors.Fonts" width="256"/>
 <br/>
 SixLabors.Fonts
 </h1>
@@ -35,7 +35,7 @@ Support the efforts of the development of the Six Labors projects.
 ## Documentation
 
 - [Detailed documentation](https://sixlabors.github.io/docs/) for the Fonts API is available. This includes additional conceptual documentation to help you get started.
-- Our [Samples Repository](https://github.com/SixLabors/Samples/tree/master/ImageSharp) is also available containing buildable code samples demonstrating common activities.
+- Our [Samples Repository](https://github.com/SixLabors/Samples/tree/main/ImageSharp) is also available containing buildable code samples demonstrating common activities.
 
 ## Questions
 
