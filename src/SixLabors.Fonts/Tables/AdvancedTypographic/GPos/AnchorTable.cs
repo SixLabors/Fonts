@@ -45,7 +45,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             return anchorFormat switch
             {
                 1 => AnchorFormat1.Load(reader),
-                _ => throw new NotSupportedException($"anchorFormat {anchorFormat} not supported. Should be '1'.")
+                2 => AnchorFormat2.Load(reader),
+                _ => throw new NotSupportedException($"anchorFormat {anchorFormat} not supported. Should be '1' or `2`.")
             };
         }
 
@@ -70,6 +71,34 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 short xCoordinate = reader.ReadInt16();
                 short yCoordinate = reader.ReadInt16();
                 return new AnchorFormat1(xCoordinate, yCoordinate);
+            }
+        }
+
+        internal sealed class AnchorFormat2 : AnchorTable
+        {
+            // TODO: actually use the anchorPointIndex.
+            private readonly ushort anchorPointIndex;
+
+            public AnchorFormat2(short xCoordinate, short yCoordinate, ushort anchorPointIndex)
+                : base(xCoordinate, yCoordinate) => this.anchorPointIndex = anchorPointIndex;
+
+            public static AnchorFormat2 Load(BigEndianBinaryReader reader)
+            {
+                // +--------------+------------------------+------------------------------------------------+
+                // | Type         | Name                   | Description                                    |
+                // +==============+========================+================================================+
+                // | uint16       | anchorFormat           | Format identifier, = 1                         |
+                // +--------------+------------------------+------------------------------------------------+
+                // | int16        | xCoordinate            | Horizontal value, in design units.             |
+                // +--------------+------------------------+------------------------------------------------+
+                // | int16        | yCoordinate            | Vertical value, in design units.               |
+                // +--------------+------------------------+------------------------------------------------+
+                // | uint16       + anchorPoint            | Index to glyph contour point                   +
+                // +--------------+------------------------+------------------------------------------------+
+                short xCoordinate = reader.ReadInt16();
+                short yCoordinate = reader.ReadInt16();
+                ushort anchorPointIndex = reader.ReadUInt16();
+                return new AnchorFormat2(xCoordinate, yCoordinate, anchorPointIndex);
             }
         }
     }
