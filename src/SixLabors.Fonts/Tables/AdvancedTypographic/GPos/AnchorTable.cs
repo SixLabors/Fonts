@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 1 => AnchorFormat1.Load(reader),
                 2 => AnchorFormat2.Load(reader),
                 3 => AnchorFormat3.Load(reader),
-                _ => throw new NotSupportedException($"anchorFormat identifier {anchorFormat} is invalid. Should be '1', '2' or '3'.")
+                _ => throw new InvalidFontFileException($"anchorFormat identifier {anchorFormat} is invalid. Should be '1', '2' or '3'.")
             };
         }
 
