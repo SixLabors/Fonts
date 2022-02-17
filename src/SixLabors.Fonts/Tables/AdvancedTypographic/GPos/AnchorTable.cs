@@ -46,7 +46,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 1 => AnchorFormat1.Load(reader),
                 2 => AnchorFormat2.Load(reader),
-                _ => throw new NotSupportedException($"anchorFormat {anchorFormat} not supported. Should be '1' or `2`.")
+                3 => AnchorFormat3.Load(reader),
+                _ => throw new NotSupportedException($"anchorFormat identifier {anchorFormat} is invalid. Should be '1', '2' or '3'.")
             };
         }
 
@@ -87,18 +88,62 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // +--------------+------------------------+------------------------------------------------+
                 // | Type         | Name                   | Description                                    |
                 // +==============+========================+================================================+
-                // | uint16       | anchorFormat           | Format identifier, = 1                         |
+                // | uint16       | anchorFormat           | Format identifier, = 2                         |
                 // +--------------+------------------------+------------------------------------------------+
                 // | int16        | xCoordinate            | Horizontal value, in design units.             |
                 // +--------------+------------------------+------------------------------------------------+
                 // | int16        | yCoordinate            | Vertical value, in design units.               |
                 // +--------------+------------------------+------------------------------------------------+
-                // | uint16       + anchorPoint            | Index to glyph contour point                   +
+                // | uint16       + anchorPoint            | Index to glyph contour point.                  +
                 // +--------------+------------------------+------------------------------------------------+
                 short xCoordinate = reader.ReadInt16();
                 short yCoordinate = reader.ReadInt16();
                 ushort anchorPointIndex = reader.ReadUInt16();
                 return new AnchorFormat2(xCoordinate, yCoordinate, anchorPointIndex);
+            }
+        }
+
+        internal sealed class AnchorFormat3 : AnchorTable
+        {
+            // TODO: actually use the xDeviceOffset.
+            private readonly ushort xDeviceOffset;
+
+            // TODO: actually use the yDeviceOffset.
+            private readonly ushort yDeviceOffset;
+
+            public AnchorFormat3(short xCoordinate, short yCoordinate, ushort xDeviceOffset, ushort yDeviceOffset)
+                : base(xCoordinate, yCoordinate)
+            {
+                this.xDeviceOffset = xDeviceOffset;
+                this.yDeviceOffset = yDeviceOffset;
+            }
+
+            public static AnchorFormat3 Load(BigEndianBinaryReader reader)
+            {
+                // +--------------+------------------------+-----------------------------------------------------------+
+                // | Type         | Name                   | Description                                               |
+                // +==============+========================+===========================================================+
+                // | uint16       | anchorFormat           | Format identifier, = 3                                    |
+                // +--------------+------------------------+-----------------------------------------------------------+
+                // | int16        | xCoordinate            | Horizontal value, in design units.                        |
+                // +--------------+------------------------+-----------------------------------------------------------+
+                // | int16        | yCoordinate            | Vertical value, in design units.                          |
+                // +--------------+------------------------+-----------------------------------------------------------+
+                // | uint16       + anchorPoint            | Index to glyph contour point.                             +
+                // +--------------+------------------------+-----------------------------------------------------------+
+                // | Offset16     | xDeviceOffset          + Offset to Device table (non-variable font) /              |
+                // |              |                        | VariationIndex table (variable font) for X coordinate,    |
+                // |              |                        | from beginning of Anchor table (may be NULL)              |
+                // +--------------+------------------------+-----------------------------------------------------------+
+                // | Offset16     | yDeviceOffset          + Offset to Device table (non-variable font) /              |
+                // |              |                        | VariationIndex table (variable font) for Y coordinate,    |
+                // |              |                        | from beginning of Anchor table (may be NULL)              |
+                // +--------------+------------------------+-----------------------------------------------------------+
+                short xCoordinate = reader.ReadInt16();
+                short yCoordinate = reader.ReadInt16();
+                ushort xDeviceOffset = reader.ReadOffset16();
+                ushort yDeviceOffset = reader.ReadOffset16();
+                return new AnchorFormat3(xCoordinate, yCoordinate, xDeviceOffset, yDeviceOffset);
             }
         }
     }
