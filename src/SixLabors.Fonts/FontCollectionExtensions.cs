@@ -31,7 +31,7 @@ namespace SixLabors.Fonts
         /// Adds the fonts from the <see cref="SystemFonts"/> collection to this <see cref="FontCollection"/>.
         /// </summary>
         /// <param name="collection">The font collection.</param>
-        /// <param name="match">The System.Predicate delegate that defines the conditions of <see cref="FontMetrics"/> to add into the font collection.</param>
+        /// <param name="match">The <see cref="System.Predicate"/> delegate that defines the conditions of <see cref="FontMetrics"/> to add into the font collection.</param>
         /// <returns>The <see cref="FontCollection"/> containing the system fonts.</returns>
         public static FontCollection AddSystemFonts(this FontCollection collection, Predicate<FontMetrics> match)
         {
