@@ -31,7 +31,12 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="FontCollection"/> class.
         /// </summary>
         /// <param name="searchDirectories">The collection of directories used to search for font families.</param>
-        internal FontCollection(IReadOnlyCollection<string> searchDirectories)
+        /// <remarks>
+        /// Use this constructor instead of the parameterless constructor if the fonts added to that collection
+        /// are actually added after searching inside physical file system directories. The message of the
+        /// <see cref="FontFamilyNotFoundException"/> will include the searched directories.
+        /// </remarks>
+        public FontCollection(IReadOnlyCollection<string> searchDirectories)
         {
             this.searchDirectories = new HashSet<string>(searchDirectories ?? throw new ArgumentNullException(nameof(searchDirectories)));
         }
