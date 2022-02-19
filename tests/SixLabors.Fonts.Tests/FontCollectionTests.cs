@@ -71,5 +71,14 @@ namespace SixLabors.Fonts.Tests
             Assert.True(collection.Families.Any());
             Assert.Equal(collection.Families.Count(), SystemFonts.Families.Count());
         }
+
+        [Fact]
+        public void CanAddSystemFontsWithFilter()
+        {
+            var collection = new FontCollection();
+            collection.AddSystemFonts(p => false);
+
+            Assert.False(collection.Families.Any());
+        }
     }
 }
