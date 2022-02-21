@@ -132,9 +132,10 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void SystemFonts_FontFamilyNotFound_Throws()
+        [AppContextSwitch("Switch.SixLabors.Fonts.DoNotUseNativeSystemFontsEnumeration", true)]
+        public void SystemFonts_FontFamilyNotFound_ThrowsWithSearchDirectories()
         {
-            void Action() => SystemFonts.Get("AFontThatDoesNotExist");
+            void Action() => new SystemFontCollection().Get("AFontThatDoesNotExist");
 
             FontFamilyNotFoundException exception = Assert.Throws<FontFamilyNotFoundException>(Action);
             Assert.Equal("AFontThatDoesNotExist", exception.FontFamily);
@@ -153,6 +154,19 @@ namespace SixLabors.Fonts.Tests
             {
                 Assert.Contains(@"/Library/Fonts/", exception.Message);
                 Assert.Contains(exception.SearchDirectories, e => e.Contains(@"Library/Fonts"));
+            }
+        }
+
+        [Fact]
+        public void SystemFonts_FontFamilyNotFound_ThrowsWithoutSearchDirectories()
+        {
+            void Action() => new SystemFontCollection().Get("AFontThatDoesNotExist");
+
+            FontFamilyNotFoundException exception = Assert.Throws<FontFamilyNotFoundException>(Action);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Assert.DoesNotContain(@"/Library/Fonts/", exception.Message);
+                Assert.Empty(exception.SearchDirectories);
             }
         }
     }
