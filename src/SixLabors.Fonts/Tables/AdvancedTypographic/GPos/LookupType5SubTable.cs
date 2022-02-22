@@ -143,7 +143,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
                 AnchorTable baseAnchor = ligatureAttach.ComponentRecords[compIndex].LigatureAnchorTables[markRecord.MarkClass];
-                AdvancedTypographicUtils.ApplyAnchor(collection, index, baseAnchor, markRecord, baseGlyphIndex);
+                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, baseGlyphIndex);
 
                 return true;
             }

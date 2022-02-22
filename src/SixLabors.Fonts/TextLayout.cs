@@ -58,8 +58,8 @@ namespace SixLabors.Fonts
             }
 
             LayoutMode layoutMode = options.LayoutMode;
-            var substitutions = new GlyphSubstitutionCollection(layoutMode);
-            var positionings = new GlyphPositioningCollection(layoutMode);
+            GlyphSubstitutionCollection substitutions = new(layoutMode);
+            GlyphPositioningCollection positionings = new(options);
 
             // Analyse the text for bidi directional runs.
             BidiAlgorithm bidi = BidiAlgorithm.Instance.Value!;
@@ -450,7 +450,7 @@ namespace SixLabors.Fonts
             SubstituteBidiMirrors(fontMetrics, substitutions);
             fontMetrics.ApplySubstitution(substitutions, options.KerningMode);
 
-            return positionings.TryAddOrUpdate(fontMetrics, substitutions, options);
+            return positionings.TryAddOrUpdate(fontMetrics, substitutions);
         }
 
         private static void SubstituteBidiMirrors(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)

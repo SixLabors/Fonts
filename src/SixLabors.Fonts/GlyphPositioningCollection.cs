@@ -33,14 +33,30 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
         /// </summary>
-        /// <param name="mode">The text layout mode.</param>
-        public GlyphPositioningCollection(LayoutMode mode) => this.IsVerticalLayoutMode = mode.IsVertical();
+        /// <param name="options">The text options.</param>
+        public GlyphPositioningCollection(TextOptions options)
+        {
+            this.IsVerticalLayoutMode = options.LayoutMode.IsVertical();
+            this.ColorFontSupport = options.ColorFontSupport;
+            this.ApplyHinting = options.ApplyHinting;
+        }
 
         /// <inheritdoc />
         public int Count => this.offsets.Count;
 
         /// <inheritdoc />
         public bool IsVerticalLayoutMode { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to enable various color font formats.
+        /// </summary>
+        public ColorFontSupport ColorFontSupport { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to apply hinting - The use of mathematical instructions
+        /// to adjust the display of an outline font so that it lines up with a rasterized grid.
+        /// </summary>
+        public bool ApplyHinting { get; }
 
         /// <inheritdoc />
         public ReadOnlySpan<ushort> this[int index] => this.glyphs[index].GlyphIds;
@@ -55,8 +71,7 @@ namespace SixLabors.Fonts
         /// <inheritdoc />
         public void EnableShapingFeature(int index, Tag feature)
         {
-            List<TagEntry> features = this.glyphs[index].Features;
-            foreach (TagEntry tagEntry in features)
+            foreach (TagEntry tagEntry in this.glyphs[index].Features)
             {
                 if (tagEntry.Tag == feature)
                 {
@@ -86,13 +101,12 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontMetrics">The font face with metrics.</param>
         /// <param name="collection">The glyph substitution collection.</param>
-        /// <param name="options">The renderer options.</param>
         /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
-        public bool TryAddOrUpdate(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, TextOptions options)
+        public bool TryAddOrUpdate(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
         {
             if (this.Count == 0)
             {
-                return this.Add(fontMetrics, collection, options);
+                return this.Add(fontMetrics, collection);
             }
 
             bool hasFallBacks = false;
@@ -123,7 +137,7 @@ namespace SixLabors.Fonts
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, options.ColorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, this.ColorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
@@ -158,7 +172,7 @@ namespace SixLabors.Fonts
             return !hasFallBacks;
         }
 
-        private bool Add(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, TextOptions options)
+        private bool Add(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
         {
             bool hasFallBacks = false;
             for (int i = 0; i < collection.Count; i++)
@@ -172,7 +186,7 @@ namespace SixLabors.Fonts
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, options.ColorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, this.ColorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {

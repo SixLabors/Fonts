@@ -130,28 +130,54 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 GlyphShapingData current = collection.GetGlyphShapingData(index);
                 GlyphShapingData next = collection.GetGlyphShapingData(nextIndex);
 
-                // TODO: Vertical.
-                if (current.Direction == TextDirection.LeftToRight)
-                {
-                    current.Bounds.Width = exit.XCoordinate + current.Bounds.X;
+                AnchorXY exitXY = exit.GetAnchor(fontMetrics, current, collection);
+                AnchorXY entryXY = entry.GetAnchor(fontMetrics, next, collection);
 
-                    int delta = entry.XCoordinate + next.Bounds.X;
-                    next.Bounds.Width -= delta;
-                    next.Bounds.X -= delta;
+                if (!collection.IsVerticalLayoutMode)
+                {
+                    // Horizontal
+                    if (current.Direction == TextDirection.LeftToRight)
+                    {
+                        current.Bounds.Width = exitXY.XCoordinate + current.Bounds.X;
+
+                        int delta = entryXY.XCoordinate + next.Bounds.X;
+                        next.Bounds.Width -= delta;
+                        next.Bounds.X -= delta;
+                    }
+                    else
+                    {
+                        int delta = exitXY.XCoordinate + current.Bounds.X;
+                        current.Bounds.Width -= delta;
+                        current.Bounds.X -= delta;
+
+                        next.Bounds.Width = entryXY.XCoordinate + next.Bounds.X;
+                    }
                 }
                 else
                 {
-                    int delta = exit.XCoordinate + current.Bounds.X;
-                    current.Bounds.Width -= delta;
-                    current.Bounds.X -= delta;
+                    // Vertical : Top to bottom
+                    if (current.Direction == TextDirection.LeftToRight)
+                    {
+                        current.Bounds.Height = exitXY.YCoordinate + current.Bounds.Y;
 
-                    next.Bounds.Width = entry.XCoordinate + next.Bounds.X;
+                        int delta = entryXY.YCoordinate + next.Bounds.Y;
+                        next.Bounds.Height -= delta;
+                        next.Bounds.Y -= delta;
+                    }
+                    else
+                    {
+                        int delta = exitXY.YCoordinate + current.Bounds.Y;
+                        current.Bounds.Height -= delta;
+                        current.Bounds.Y -= delta;
+
+                        next.Bounds.Height = entryXY.YCoordinate + next.Bounds.Y;
+                    }
                 }
 
                 int child = index;
                 int parent = nextIndex;
-                int xOffset = entry.XCoordinate - exit.XCoordinate;
-                int yOffset = entry.YCoordinate - exit.YCoordinate;
+                int xOffset = entryXY.XCoordinate - exitXY.XCoordinate;
+                int yOffset = entryXY.YCoordinate - exitXY.YCoordinate;
                 if (this.LookupFlags.HasFlag(LookupFlags.RightToLeft))
                 {
                     int temp = child;
