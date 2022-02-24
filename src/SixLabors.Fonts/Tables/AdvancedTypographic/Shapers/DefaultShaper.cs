@@ -126,7 +126,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             }
 
             // Enable contextual fractions.
-            for (int i = index; i < count; i++)
+            for (int i = index; i < index + count; i++)
             {
                 GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
                 if (shapingData.CodePoint == FractionSlash || shapingData.CodePoint == Slash)
@@ -135,21 +135,27 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     int end = i + 1;
 
                     // Apply numerator.
-                    shapingData = collection.GetGlyphShapingData(start - 1);
-                    while (start > 0 && CodePoint.IsDigit(shapingData.CodePoint))
+                    if (start > 0)
                     {
-                        this.AddFeature(collection, start - 1, 1, NumrTag);
-                        this.AddFeature(collection, start - 1, 1, FracTag);
-                        start--;
+                        shapingData = collection.GetGlyphShapingData(start - 1);
+                        while (start > 0 && CodePoint.IsDigit(shapingData.CodePoint))
+                        {
+                            this.AddFeature(collection, start - 1, 1, NumrTag);
+                            this.AddFeature(collection, start - 1, 1, FracTag);
+                            start--;
+                        }
                     }
 
                     // Apply denominator.
-                    shapingData = collection.GetGlyphShapingData(end);
-                    while (end < collection.Count && CodePoint.IsDigit(shapingData.CodePoint))
+                    if (end < collection.Count)
                     {
-                        this.AddFeature(collection, end, 1, DnomTag);
-                        this.AddFeature(collection, end, 1, FracTag);
-                        end++;
+                        shapingData = collection.GetGlyphShapingData(end);
+                        while (end < collection.Count && CodePoint.IsDigit(shapingData.CodePoint))
+                        {
+                            this.AddFeature(collection, end, 1, DnomTag);
+                            this.AddFeature(collection, end, 1, FracTag);
+                            end++;
+                        }
                     }
 
                     // Apply fraction slash.

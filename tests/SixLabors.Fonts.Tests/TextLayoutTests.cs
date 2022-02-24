@@ -322,6 +322,18 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(expectedY, glyphRenderer.GlyphRects[0].Location.Y, 2);
         }
 
+        // https://github.com/SixLabors/Fonts/issues/244
+        [Fact]
+        public void MeasureTextLeadingFraction()
+        {
+            FontCollection c = new();
+            Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
+            TextOptions textOptions = new(font);
+            FontRectangle measurement = TextMeasurer.Measure("/ This will fail", textOptions);
+
+            Assert.NotEqual(FontRectangle.Empty, measurement);
+        }
+
         public static Font CreateFont(string text)
         {
             var fc = (IFontMetricsCollection)new FontCollection();
