@@ -37,12 +37,20 @@ namespace SixLabors.Fonts
         /// <returns>The <see cref="FontCollection"/> containing the system fonts.</returns>
         public static FontCollection AddSystemFonts(this FontCollection collection, Predicate<FontMetrics> match)
         {
+            bool isMatch = false;
             foreach (FontMetrics metric in (IReadOnlyFontMetricsCollection)SystemFonts.Collection)
             {
-                if (match(metric))
+                bool currentMatch = match(metric);
+                isMatch |= currentMatch;
+                if (currentMatch)
                 {
                     ((IFontMetricsCollection)collection).AddMetrics(metric);
                 }
+            }
+
+            if (isMatch)
+            {
+                collection.AddSearchDirectories(SystemFonts.Collection.SearchDirectories);
             }
 
             return collection;

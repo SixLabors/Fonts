@@ -77,9 +77,14 @@ namespace SixLabors.Fonts.Tests
         public void CanAddSystemFontsWithFilter()
         {
             var collection = new FontCollection();
-            collection.AddSystemFonts(p => false);
+            collection.AddSystemFonts(_ => false);
 
             Assert.False(collection.Families.Any());
+
+            collection.AddSystemFonts(_ => true);
+
+            Assert.True(collection.Families.Any());
+            Assert.Equal(SystemFonts.Collection.Families.Count(), collection.Families.Count());
         }
     }
 }
