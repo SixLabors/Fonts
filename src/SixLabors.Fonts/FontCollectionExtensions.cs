@@ -22,6 +22,8 @@ namespace SixLabors.Fonts
                 ((IFontMetricsCollection)collection).AddMetrics(metric);
             }
 
+            collection.AddSearchDirectories(SystemFonts.Collection.SearchDirectories);
+
             return collection;
         }
     }
