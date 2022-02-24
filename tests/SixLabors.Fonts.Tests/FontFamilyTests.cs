@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tests
 {
     public class FontFamilyTests
     {
-        private readonly FontFamily[] families = new SystemFontCollection().Families.ToArray();
+        private readonly FontFamily[] families = SystemFonts.Families.ToArray();
 
         [Fact]
         public void EqualNullTests()
@@ -46,21 +46,19 @@ namespace SixLabors.Fonts.Tests
             Assert.False(fontFamily.Equals(fontFamily2));
         }
 
-        [Fact]
-        public void HasPathTests()
+        [Theory]
+        [ClassData(typeof(SystemFontFamiliesTheoryData))]
+        public void HasPathTests(FontFamily family)
         {
-            foreach (FontFamily family in this.families)
-            {
-                Assert.True(family.TryGetPaths(out IEnumerable<string> familyPaths));
-                Assert.NotNull(familyPaths);
-                Assert.True(familyPaths.Any());
+            Assert.True(family.TryGetPaths(out IEnumerable<string> familyPaths));
+            Assert.NotNull(familyPaths);
+            Assert.True(familyPaths.Any());
 
-                foreach (FontStyle style in family.GetAvailableStyles())
-                {
-                    Font font = family.CreateFont(12, style);
-                    Assert.True(font.TryGetPath(out string fontPath));
-                    Assert.Contains(fontPath, familyPaths);
-                }
+            foreach (FontStyle style in family.GetAvailableStyles())
+            {
+                Font font = family.CreateFont(12, style);
+                Assert.True(font.TryGetPath(out string fontPath));
+                Assert.Contains(fontPath, familyPaths);
             }
         }
 
@@ -75,5 +73,16 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void Throws_FontException_TryGetMetrics_WhenDefault()
             => Assert.Throws<FontException>(() => default(FontFamily).TryGetMetrics(FontStyle.Regular, out FontMetrics _));
+
+        private class SystemFontFamiliesTheoryData : TheoryData<FontFamily>
+        {
+            public SystemFontFamiliesTheoryData()
+            {
+                foreach (FontFamily family in SystemFonts.Families)
+                {
+                    this.Add(family);
+                }
+            }
+        }
     }
 }

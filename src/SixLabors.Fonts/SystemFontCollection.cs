@@ -7,39 +7,60 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts
 {
     /// <summary>
     /// Provides a collection of fonts.
     /// </summary>
-    internal sealed class SystemFontCollection : IReadOnlyFontCollection, IReadOnlyFontMetricsCollection
+    internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IReadOnlyFontMetricsCollection
     {
-        private readonly FontCollection collection = new FontCollection();
+        private readonly FontCollection collection;
+        private readonly IReadOnlyCollection<string> searchDirectories;
 
         /// <summary>
         /// Gets the default set of locations we probe for System Fonts.
         /// </summary>
-        private static readonly IReadOnlyCollection<string> StandardFontLocations
-            = new[]
+        private static readonly IReadOnlyCollection<string> StandardFontLocations;
+
+        static SystemFontCollection()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // windows directories
-                "%SYSTEMROOT%\\Fonts",
-                "%APPDATA%\\Microsoft\\Windows\\Fonts",
-                "%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts",
-
-                // linux directories
-                "~/.fonts/",
-                "/usr/local/share/fonts/",
-                "/usr/share/fonts/",
-
-                // mac directories
-                "~/Library/Fonts/",
-                "/Library/Fonts/",
-                "/Network/Library/Fonts/",
-                "/System/Library/Fonts/",
-                "/System Folder/Fonts/",
-            };
+                StandardFontLocations = new[]
+                {
+                    @"%SYSTEMROOT%\Fonts",
+                    @"%APPDATA%\Microsoft\Windows\Fonts",
+                    @"%LOCALAPPDATA%\Microsoft\Windows\Fonts",
+                };
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                StandardFontLocations = new[]
+                {
+                    "%HOME%/.fonts/",
+                    "/usr/local/share/fonts/",
+                    "/usr/share/fonts/",
+                };
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                StandardFontLocations = new[]
+                {
+                    // As documented on "Mac OS X: Font locations and their purposes"
+                    // https://web.archive.org/web/20191015122508/https://support.apple.com/en-us/HT201722
+                    "%HOME%/Library/Fonts/",
+                    "/Library/Fonts/",
+                    "/System/Library/Fonts/",
+                    "/Network/Library/Fonts/",
+                };
+            }
+            else
+            {
+                StandardFontLocations = Array.Empty<string>();
+            }
+        }
 
         public SystemFontCollection()
             : this(StandardFontLocations)
@@ -49,10 +70,12 @@ namespace SixLabors.Fonts
         public SystemFontCollection(IEnumerable<string> paths)
         {
             string[] expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
-            string[] foundDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
+            this.searchDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
+
+            this.collection = new FontCollection(this.searchDirectories);
 
             // We do this to provide a consistent experience with case sensitive file systems.
-            IEnumerable<string> files = foundDirectories
+            IEnumerable<string> files = this.searchDirectories
                                 .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
                                 .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase)
                                 || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase));
@@ -79,6 +102,9 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         public IEnumerable<FontFamily> Families => this.collection.Families;
+
+        /// <inheritdoc/>
+        public IEnumerable<string> SearchDirectories => this.searchDirectories;
 
         /// <inheritdoc/>
         public FontFamily Get(string name) => this.collection.Get(name);
