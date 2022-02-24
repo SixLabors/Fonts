@@ -58,6 +58,24 @@ namespace SixLabors.Fonts
         /// <returns>Whether any of the characters had non-empty bounds.</returns>
         public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
+        
+        /// <summary>
+        /// Counts the lines from the generated layout.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The style.</param>
+        /// <returns>The count of lines used.</returns>
+        public static int CountLines(string text, TextOptions options)
+            => TextMeasurerInt.Default.CountLines(text.AsSpan(), options);
+
+        /// <summary>
+        /// Counts the lines from the generated layout.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The style.</param>
+        /// <returns>The count of lines used.</returns>
+        public static int CountLines(ReadOnlySpan<char> text, TextOptions options)
+            => TextMeasurerInt.Default.CountLines(text, options);
 
         internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
         {
@@ -194,6 +212,20 @@ namespace SixLabors.Fonts
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
                 return GetSize(glyphsToRender, options.Dpi);
+            }
+            
+            /// <summary>
+            /// Counts the lines from the generated layout.
+            /// </summary>
+            /// <param name="text">The text.</param>
+            /// <param name="options">The style.</param>
+            /// <returns>The count of lines used.</returns>
+            internal int CountLines(ReadOnlySpan<char> text, TextOptions options)
+            {
+                IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
+                int usedLines = glyphsToRender.Count(x => x.IsStartOfLine);
+
+                return usedLines;
             }
         }
     }
