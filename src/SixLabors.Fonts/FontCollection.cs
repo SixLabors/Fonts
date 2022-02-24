@@ -16,7 +16,34 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     {
+        private readonly HashSet<string> searchDirectories = new();
         private readonly HashSet<FontMetrics> metricsCollection = new();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontCollection"/> class.
+        /// </summary>
+        public FontCollection()
+            : this(Array.Empty<string>())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontCollection"/> class.
+        /// </summary>
+        /// <param name="searchDirectories">The collection of directories used to search for font families.</param>
+        /// <remarks>
+        /// Use this constructor instead of the parameterless constructor if the fonts added to that collection
+        /// are actually added after searching inside physical file system directories. The message of the
+        /// <see cref="FontFamilyNotFoundException"/> will include the searched directories.
+        /// </remarks>
+        internal FontCollection(IReadOnlyCollection<string> searchDirectories)
+        {
+            Guard.NotNull(searchDirectories, nameof(searchDirectories));
+            foreach (string? dir in searchDirectories)
+            {
+                this.searchDirectories.Add(dir);
+            }
+        }
 
         /// <inheritdoc/>
         public IEnumerable<FontFamily> Families => this.FamiliesByCultureImpl(CultureInfo.InvariantCulture);
@@ -162,6 +189,14 @@ namespace SixLabors.Fonts
         IEnumerator<FontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
             => this.metricsCollection.GetEnumerator();
 
+        internal void AddSearchDirectories(IEnumerable<string> directories)
+        {
+            foreach (string? directory in directories)
+            {
+                this.searchDirectories.Add(directory);
+            }
+        }
+
         private FontFamily AddImpl(string path, CultureInfo culture, out FontDescription description)
         {
             var instance = new FileFontMetrics(path);
@@ -253,7 +288,7 @@ namespace SixLabors.Fonts
                 return family;
             }
 
-            throw new FontFamilyNotFoundException(name);
+            throw new FontFamilyNotFoundException(name, this.searchDirectories);
         }
     }
 }

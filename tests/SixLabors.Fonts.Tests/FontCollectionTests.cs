@@ -57,6 +57,7 @@ namespace SixLabors.Fonts.Tests
                 () => new FontCollection().Get(invalid));
 
             Assert.Equal(invalid, ex.FontFamily);
+            Assert.Empty(ex.SearchDirectories);
         }
 
         [Fact]
