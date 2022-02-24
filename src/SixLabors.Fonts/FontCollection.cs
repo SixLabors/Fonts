@@ -16,7 +16,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     {
-        private readonly HashSet<string> searchDirectories;
+        private readonly HashSet<string> searchDirectories = new();
         private readonly HashSet<FontMetrics> metricsCollection = new();
 
         /// <summary>
@@ -36,16 +36,17 @@ namespace SixLabors.Fonts
         /// are actually added after searching inside physical file system directories. The message of the
         /// <see cref="FontFamilyNotFoundException"/> will include the searched directories.
         /// </remarks>
-        public FontCollection(IReadOnlyCollection<string> searchDirectories)
+        internal FontCollection(IReadOnlyCollection<string> searchDirectories)
         {
-            this.searchDirectories = new HashSet<string>(searchDirectories ?? throw new ArgumentNullException(nameof(searchDirectories)));
+            Guard.NotNull(searchDirectories, nameof(searchDirectories));
+            foreach (string? dir in searchDirectories)
+            {
+                this.searchDirectories.Add(dir);
+            }
         }
 
         /// <inheritdoc/>
         public IEnumerable<FontFamily> Families => this.FamiliesByCultureImpl(CultureInfo.InvariantCulture);
-
-        /// <inheritdoc/>
-        public IEnumerable<string> SearchDirectories => this.searchDirectories;
 
         /// <inheritdoc/>
         public FontFamily Add(string path)
@@ -190,7 +191,7 @@ namespace SixLabors.Fonts
 
         internal void AddSearchDirectories(IEnumerable<string> directories)
         {
-            foreach (var directory in directories)
+            foreach (string? directory in directories)
             {
                 this.searchDirectories.Add(directory);
             }

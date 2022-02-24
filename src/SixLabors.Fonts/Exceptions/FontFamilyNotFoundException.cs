@@ -38,7 +38,7 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Gets the name of the font family we failed to find.
+        /// Gets the name of the font family that was not found.
         /// </summary>
         public string FontFamily { get; }
 
@@ -46,7 +46,7 @@ namespace SixLabors.Fonts
         /// Gets the collection of directories that were unsuccessfully searched for the font family.
         /// </summary>
         /// <remarks>
-        /// If the searched collection does not involve the system font collection then the search directories are empty.
+        /// If the exception did not originate from the <see cref="SystemFonts.Collection"/> then this property will be empty.
         /// </remarks>
         public IReadOnlyCollection<string> SearchDirectories { get; }
 
@@ -62,7 +62,7 @@ namespace SixLabors.Fonts
                 return $"The \"{family}\" font family could not be found in the following directory: {searchDirectories.First()}";
             }
 
-            return $"The \"{family}\" font family could not be found in the following directories:{Environment.NewLine}{string.Join(Environment.NewLine, searchDirectories.Select(e => $"  * {e}"))}";
+            return $"The \"{family}\" font family could not be found in the following directories:{Environment.NewLine}{string.Join(Environment.NewLine, searchDirectories.Select(e => $" * {e}"))}";
         }
     }
 }
