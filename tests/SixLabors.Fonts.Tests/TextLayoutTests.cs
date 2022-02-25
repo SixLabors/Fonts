@@ -346,6 +346,26 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(usedLines, count);
         }
 
+        [Fact]
+        public void CountLinesWithSpan()
+        {
+            Font font = CreateFont("hello\n!");
+
+            Span<char> text = stackalloc char[]
+            {
+                'h',
+                'e',
+                'l',
+                'l',
+                'o',
+                '\n',
+                '!'
+            };
+            int count = TextMeasurer.CountLines(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+
+            Assert.Equal(2, count);
+        }
+
         [Theory]
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 7)]
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 7)]
