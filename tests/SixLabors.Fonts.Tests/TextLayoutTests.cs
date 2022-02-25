@@ -343,7 +343,7 @@ namespace SixLabors.Fonts.Tests
             Font font = CreateFont(text);
             int count = TextMeasurer.CountLines(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
-            Assert.Equal(count, usedLines);
+            Assert.Equal(usedLines, count);
         }
 
         [Theory]
@@ -351,14 +351,12 @@ namespace SixLabors.Fonts.Tests
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 7)]
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 6)]
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 200, 6)]
-        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 300, 5)]
-        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 3000, 1)]
         public void CountLinesWrappingLength(string text, int wrappingLength, int usedLines)
         {
             Font font = CreateFont(text);
             int count = TextMeasurer.CountLines(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor, WrappingLength = wrappingLength });
 
-            Assert.Equal(count, usedLines);
+            Assert.Equal(usedLines, count);
         }
 
         public static Font CreateFont(string text)
