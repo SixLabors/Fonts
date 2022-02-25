@@ -70,11 +70,11 @@ namespace SixLabors.Fonts
             => TextMeasurerInt.Default.CountLines(text.AsSpan(), options);
 
         /// <summary>
-        /// Counts the lines from the generated layout.
+        /// Gets the number of lines contained within the text.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
-        /// <returns>The count of lines used.</returns>
+        /// <returns>The line count.</returns>
         public static int CountLines(ReadOnlySpan<char> text, TextOptions options)
             => TextMeasurerInt.Default.CountLines(text, options);
 
