@@ -58,8 +58,7 @@ namespace SixLabors.Fonts
         /// <returns>Whether any of the characters had non-empty bounds.</returns>
         public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
-        
-```suggestion
+
         /// <summary>
         /// Gets the number of lines contained within the text.
         /// </summary>
@@ -214,13 +213,13 @@ namespace SixLabors.Fonts
 
                 return GetSize(glyphsToRender, options.Dpi);
             }
-            
+
             /// <summary>
-            /// Counts the lines from the generated layout.
+            /// Gets the number of lines contained within the text.
             /// </summary>
             /// <param name="text">The text.</param>
             /// <param name="options">The style.</param>
-            /// <returns>The count of lines used.</returns>
+            /// <returns>The line count.</returns>
             internal int CountLines(ReadOnlySpan<char> text, TextOptions options)
             {
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
