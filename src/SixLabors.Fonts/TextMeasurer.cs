@@ -59,12 +59,13 @@ namespace SixLabors.Fonts
         public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
         
+```suggestion
         /// <summary>
-        /// Counts the lines from the generated layout.
+        /// Gets the number of lines contained within the text.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The style.</param>
-        /// <returns>The count of lines used.</returns>
+        /// <returns>The line count.</returns>
         public static int CountLines(string text, TextOptions options)
             => TextMeasurerInt.Default.CountLines(text.AsSpan(), options);
 
