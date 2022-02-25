@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace SixLabors.Fonts.Tests
 {
     public static class TestFonts
     {
-        private static readonly Dictionary<string, Stream> Cache = new();
+        private static readonly ConcurrentDictionary<string, Stream> Cache = new();
 
         public static string TwemojiMozillaFile => GetFullPath("Twemoji Mozilla.ttf");
 
@@ -229,27 +230,14 @@ namespace SixLabors.Fonts.Tests
             public static string Issue97File => GetFullPath("Issues/Issue97.fuzz");
         }
 
-        private static Stream OpenStream(string path)
-        {
-            if (Cache.ContainsKey(path))
-            {
-                return Cache[path].Clone();
-            }
-
-            lock (Cache)
-            {
-                if (Cache.ContainsKey(path))
+        private static Stream OpenStream(string path) =>
+            Cache.GetOrAdd(
+                path,
+                p =>
                 {
-                    return Cache[path].Clone();
-                }
-
-                using (FileStream fs = File.OpenRead(path))
-                {
-                    Cache.Add(path, fs.Clone());
-                    return Cache[path].Clone();
-                }
-            }
-        }
+                    using FileStream fs = File.OpenRead(p);
+                    return fs.Clone();
+                }).Clone();
 
         private static Stream Clone(this Stream src)
         {
@@ -273,9 +261,7 @@ namespace SixLabors.Fonts.Tests
             };
 
             IEnumerable<string> fullPaths = paths.Select(x => Path.GetFullPath(Path.Combine(root, x)));
-            string rootPath = fullPaths
-                                .Where(x => Directory.Exists(x))
-                                .FirstOrDefault();
+            string rootPath = fullPaths.FirstOrDefault(x => Directory.Exists(x));
 
             Assert.True(rootPath != null, $"could not find the font folder in any of these location, \n{string.Join("\n", fullPaths)}");
 
