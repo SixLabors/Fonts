@@ -59,6 +59,24 @@ namespace SixLabors.Fonts
         public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] characterBounds)
             => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
 
+        /// <summary>
+        /// Gets the number of lines contained within the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The style.</param>
+        /// <returns>The line count.</returns>
+        public static int CountLines(string text, TextOptions options)
+            => TextMeasurerInt.Default.CountLines(text.AsSpan(), options);
+
+        /// <summary>
+        /// Gets the number of lines contained within the text.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The style.</param>
+        /// <returns>The line count.</returns>
+        public static int CountLines(ReadOnlySpan<char> text, TextOptions options)
+            => TextMeasurerInt.Default.CountLines(text, options);
+
         internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
         {
             if (glyphLayouts.Count == 0)
@@ -194,6 +212,20 @@ namespace SixLabors.Fonts
                 IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
 
                 return GetSize(glyphsToRender, options.Dpi);
+            }
+
+            /// <summary>
+            /// Gets the number of lines contained within the text.
+            /// </summary>
+            /// <param name="text">The text.</param>
+            /// <param name="options">The style.</param>
+            /// <returns>The line count.</returns>
+            internal int CountLines(ReadOnlySpan<char> text, TextOptions options)
+            {
+                IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
+                int usedLines = glyphsToRender.Count(x => x.IsStartOfLine);
+
+                return usedLines;
             }
         }
     }
