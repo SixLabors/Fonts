@@ -36,6 +36,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string ArabicFontFile => GetFullPath("Dubai-Regular.ttf");
 
+        public static string Anchor2FontFile => GetFullPath("DejaVuSans.ttf");
+
         public static string SegeouiFontFile => GetFullPath("Segoeui.ttf");
 
         public static string TimesNewRomanFile => GetFullPath("TimesNewRoman.ttf");

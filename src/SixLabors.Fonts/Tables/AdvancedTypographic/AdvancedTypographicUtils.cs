@@ -222,21 +222,22 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         }
 
         public static void ApplyAnchor(
+            FontMetrics fontMetrics,
             GlyphPositioningCollection collection,
             ushort index,
             AnchorTable baseAnchor,
             MarkRecord markRecord,
             int baseGlyphIndex)
         {
-            short baseX = baseAnchor.XCoordinate;
-            short baseY = baseAnchor.YCoordinate;
-            short markX = markRecord.MarkAnchorTable.XCoordinate;
-            short markY = markRecord.MarkAnchorTable.YCoordinate;
+            GlyphShapingData baseData = collection.GetGlyphShapingData(baseGlyphIndex);
+            AnchorXY baseXY = baseAnchor.GetAnchor(fontMetrics, baseData, collection);
 
-            GlyphShapingData data = collection.GetGlyphShapingData(index);
-            data.Bounds.X = baseX - markX;
-            data.Bounds.Y = baseY - markY;
-            data.MarkAttachment = baseGlyphIndex;
+            GlyphShapingData markData = collection.GetGlyphShapingData(index);
+            AnchorXY markXY = markRecord.MarkAnchorTable.GetAnchor(fontMetrics, markData, collection);
+
+            markData.Bounds.X = baseXY.XCoordinate - markXY.XCoordinate;
+            markData.Bounds.Y = baseXY.YCoordinate - markXY.YCoordinate;
+            markData.MarkAttachment = baseGlyphIndex;
         }
 
         public static void ApplyPosition(

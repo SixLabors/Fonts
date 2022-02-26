@@ -160,7 +160,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 MarkRecord markRecord = this.mark1ArrayTable.MarkRecords[mark1Index];
                 AnchorTable baseAnchor = this.mark2ArrayTable.Mark2Records[mark2Index].MarkAnchorTable[markRecord.MarkClass];
-                AdvancedTypographicUtils.ApplyAnchor(collection, index, baseAnchor, markRecord, prevIdx);
+                AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, prevIdx);
 
                 return true;
             }
