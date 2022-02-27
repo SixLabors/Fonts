@@ -2,7 +2,9 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -302,7 +304,8 @@ namespace SixLabors.Fonts.Tests
                 TabWidth = 3F,
                 LineSpacing = -1F,
                 VerticalAlignment = VerticalAlignment.Bottom,
-                WrappingLength = 42F
+                WrappingLength = 42F,
+                FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures }
             };
 
             TextOptions actual = new(expected);
@@ -314,6 +317,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(expected.TabWidth, actual.TabWidth);
             Assert.Equal(expected.VerticalAlignment, actual.VerticalAlignment);
             Assert.Equal(expected.WrappingLength, actual.WrappingLength);
+            Assert.Equal(expected.FeatureTags, actual.FeatureTags);
         }
 
         [Fact]

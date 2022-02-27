@@ -96,14 +96,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new GSubTable(scriptList, featureList, lookupList);
         }
 
-        public void ApplySubstitution(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, KerningMode kerningMode)
+        public void ApplySubstitution(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
         {
             for (ushort i = 0; i < collection.Count; i++)
             {
                 // Choose a shaper based on the script.
                 // This determines which features to apply to which glyphs.
                 ScriptClass current = CodePoint.GetScriptClass(collection.GetGlyphShapingData(i).CodePoint);
-                BaseShaper shaper = ShaperFactory.Create(current, kerningMode);
+                BaseShaper shaper = ShaperFactory.Create(current, collection.TextOptions);
 
                 ushort index = i;
                 ushort count = 1;

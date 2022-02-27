@@ -100,7 +100,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return new GPosTable(scriptList, featureList, lookupList);
         }
 
-        public bool TryUpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, KerningMode kerningMode, out bool kerned)
+        public bool TryUpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, out bool kerned)
         {
             kerned = false;
             bool updated = false;
@@ -112,7 +112,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 }
 
                 ScriptClass current = CodePoint.GetScriptClass(collection.GetGlyphShapingData(i).CodePoint);
-                BaseShaper shaper = ShaperFactory.Create(current, kerningMode);
+                BaseShaper shaper = ShaperFactory.Create(current, collection.TextOptions);
 
                 ushort index = i;
                 ushort count = 1;

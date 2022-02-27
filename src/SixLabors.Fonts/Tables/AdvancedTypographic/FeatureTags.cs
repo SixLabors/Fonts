@@ -4,10 +4,10 @@
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     /// <summary>
-    /// Enum for the different font features.
-    /// <see href="https://docs.microsoft.com/en-us/typography/opentype/otspec183/features_ae"/>
+    /// Provides enumeration for the different font features.
+    /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/featuretags"/>
     /// </summary>
-    internal enum FeatureTag : uint
+    public enum FeatureTags : uint
     {
         /// <summary>
         /// Access All Alternates. Shortcode: aalt.

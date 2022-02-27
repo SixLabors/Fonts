@@ -27,8 +27,12 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphSubstitutionCollection"/> class.
         /// </summary>
-        /// <param name="mode">The text layout mode.</param>
-        public GlyphSubstitutionCollection(LayoutMode mode) => this.IsVerticalLayoutMode = mode.IsVertical();
+        /// <param name="textOptions">The text options.</param>
+        public GlyphSubstitutionCollection(TextOptions textOptions)
+        {
+            this.TextOptions = textOptions;
+            this.IsVerticalLayoutMode = textOptions.LayoutMode.IsVertical();
+        }
 
         /// <summary>
         /// Gets the number of glyphs ids contained in the collection.
@@ -38,6 +42,9 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc />
         public bool IsVerticalLayoutMode { get; private set; }
+
+        /// <inheritdoc />
+        public TextOptions TextOptions { get; }
 
         /// <summary>
         /// Gets or sets the running id of any ligature glyphs contained withing this collection are a member of.
