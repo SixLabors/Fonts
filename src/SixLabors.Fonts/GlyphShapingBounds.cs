@@ -13,23 +13,67 @@ namespace SixLabors.Fonts
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     internal class GlyphShapingBounds
     {
+        private int x;
+        private int y;
+        private int width;
+        private int height;
+
         public GlyphShapingBounds(int x, int y, int width, int height)
         {
-            this.X = x;
-            this.Y = y;
-            this.Width = width;
-            this.Height = height;
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.IsDirty = false;
         }
 
-        public int X { get; set; }
+        public int X
+        {
+            get => this.x;
 
-        public int Y { get; set; }
+            set
+            {
+                this.x = value;
+                this.IsDirty = true;
+            }
+        }
 
-        public int Width { get; set; }
+        public int Y
+        {
+            get => this.y;
 
-        public int Height { get; set; }
+            set
+            {
+                this.y = value;
+                this.IsDirty = true;
+            }
+        }
+
+        public int Width
+        {
+            get => this.width;
+
+            set
+            {
+                this.width = value;
+                this.IsDirty = true;
+            }
+        }
+
+        public int Height
+        {
+            get => this.height;
+
+            set
+            {
+                this.height = value;
+                this.IsDirty = true;
+            }
+        }
+
+        public bool IsDirty { get; private set; }
 
         private string DebuggerDisplay
-            => FormattableString.Invariant($"{this.X} : {this.Y} : {this.Width} : {this.Height}");
+            => FormattableString.Invariant($"{this.X} : {this.Y} : {this.Width} : {this.Height} : {this.IsDirty}");
     }
 }

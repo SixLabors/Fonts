@@ -225,6 +225,11 @@ namespace SixLabors.Fonts
         public void UpdatePosition(FontMetrics fontMetrics, ushort index)
         {
             GlyphShapingData data = this.GetGlyphShapingData(index);
+            if (!data.Bounds.IsDirty)
+            {
+                return;
+            }
+
             ushort glyphId = data.GlyphIds[0];
             foreach (GlyphMetrics m in this.map[this.offsets[index]])
             {
