@@ -262,21 +262,22 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        internal override void ApplySubstitution(GlyphSubstitutionCollection collection, KerningMode kerningMode)
+        internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
         {
             if (this.gSubTable != null)
             {
-                this.gSubTable.ApplySubstitution(this, collection, kerningMode);
+                this.gSubTable.ApplySubstitution(this, collection);
             }
         }
 
         /// <inheritdoc/>
-        internal override void UpdatePositions(GlyphPositioningCollection collection, KerningMode kerningMode)
+        internal override void UpdatePositions(GlyphPositioningCollection collection)
         {
             bool kerned = false;
+            KerningMode kerningMode = collection.TextOptions.KerningMode;
             if (this.gPosTable != null)
             {
-                this.gPosTable.TryUpdatePositions(this, collection, kerningMode, out kerned);
+                this.gPosTable.TryUpdatePositions(this, collection, out kerned);
             }
 
             if (!kerned && kerningMode != KerningMode.None && this.kerningTable != null)

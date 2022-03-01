@@ -141,14 +141,12 @@ namespace SixLabors.Fonts
         /// Applies any available substitutions to the collection of glyphs.
         /// </summary>
         /// <param name="collection">The glyph substitution collection.</param>
-        /// <param name="kerningMode">The kerning mode.</param>
-        internal abstract void ApplySubstitution(GlyphSubstitutionCollection collection, KerningMode kerningMode);
+        internal abstract void ApplySubstitution(GlyphSubstitutionCollection collection);
 
         /// <summary>
         /// Applies any available positioning updates to the collection of glyphs.
         /// </summary>
         /// <param name="collection">The glyph positioning collection.</param>
-        /// <param name="kerningMode">The kerning mode.</param>
-        internal abstract void UpdatePositions(GlyphPositioningCollection collection, KerningMode kerningMode);
+        internal abstract void UpdatePositions(GlyphPositioningCollection collection);
     }
 }

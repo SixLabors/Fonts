@@ -109,9 +109,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public override AnchorXY GetAnchor(FontMetrics fontMetrics, GlyphShapingData data, GlyphPositioningCollection collection)
             {
-                if (collection.ApplyHinting)
+                if (collection.TextOptions.ApplyHinting)
                 {
-                    foreach (GlyphMetrics metric in fontMetrics.GetGlyphMetrics(data.CodePoint, collection.ColorFontSupport))
+                    foreach (GlyphMetrics metric in fontMetrics.GetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport))
                     {
                         ReadOnlyMemory<Vector2> points = metric.GetOutline().ControlPoints;
                         if (this.anchorPointIndex < points.Length)

@@ -58,7 +58,7 @@ namespace SixLabors.Fonts
             }
 
             LayoutMode layoutMode = options.LayoutMode;
-            GlyphSubstitutionCollection substitutions = new(layoutMode);
+            GlyphSubstitutionCollection substitutions = new(options);
             GlyphPositioningCollection positionings = new(options);
 
             // Analyse the text for bidi directional runs.
@@ -113,10 +113,10 @@ namespace SixLabors.Fonts
             // Update the positions of the glyphs in the completed collection.
             // Each set of metrics is associated with single font and will only be updated
             // by that font so it's safe to use a single collection.
-            mainFont.UpdatePositions(positionings, options.KerningMode);
+            mainFont.UpdatePositions(positionings);
             foreach (FontMetrics font in fallbackFonts)
             {
-                font.UpdatePositions(positionings, options.KerningMode);
+                font.UpdatePositions(positionings);
             }
 
             return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
@@ -448,7 +448,7 @@ namespace SixLabors.Fonts
             // Apply the simple and complex substitutions.
             // TODO: Investigate HarfBuzz normlizer.
             SubstituteBidiMirrors(fontMetrics, substitutions);
-            fontMetrics.ApplySubstitution(substitutions, options.KerningMode);
+            fontMetrics.ApplySubstitution(substitutions);
 
             return positionings.TryAddOrUpdate(fontMetrics, substitutions);
         }

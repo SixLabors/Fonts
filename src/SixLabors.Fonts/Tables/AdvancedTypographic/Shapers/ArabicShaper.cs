@@ -74,8 +74,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 2 }, new byte[] { None, Fin3, 5 }, new byte[] { None, Isol, 6 } },
         };
 
-        public ArabicShaper(KerningMode kerningMode)
-            : base(MarkZeroingMode.PostGpos, kerningMode)
+        public ArabicShaper(TextOptions textOptions)
+            : base(MarkZeroingMode.PostGpos, textOptions)
         {
         }
 
