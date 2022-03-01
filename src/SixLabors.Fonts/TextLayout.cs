@@ -508,7 +508,7 @@ namespace SixLabors.Fonts
             float wrappingLength = shouldWrap ? options.WrappingLength / options.Dpi : float.MaxValue;
             bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
             bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
-            bool isHorizontal = (layoutMode & LayoutMode.VerticalLeftRight) == 0;
+            bool isHorizontal = !layoutMode.IsVertical();
 
             float scaledMaxAscender = 0;
             float scaledMaxDescender = 0;
