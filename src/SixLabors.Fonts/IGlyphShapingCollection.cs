@@ -22,6 +22,11 @@ namespace SixLabors.Fonts
         bool IsVerticalLayoutMode { get; }
 
         /// <summary>
+        /// Gets the text options used by this collection.
+        /// </summary>
+        TextOptions TextOptions { get; }
+
+        /// <summary>
         /// Gets the glyph ids at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index of the elements to get.</param>

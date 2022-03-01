@@ -27,6 +27,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public static implicit operator Tag(uint value) => new(value);
 
+        public static implicit operator Tag(FeatureTags value) => new((uint)value);
+
         public static bool operator ==(Tag left, Tag right) => left.Equals(right);
 
         public static bool operator !=(Tag left, Tag right) => !(left == right);

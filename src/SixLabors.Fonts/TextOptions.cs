@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 
 namespace SixLabors.Fonts
 {
@@ -46,6 +47,7 @@ namespace SixLabors.Fonts
             this.LayoutMode = options.LayoutMode;
             this.KerningMode = options.KerningMode;
             this.ColorFontSupport = options.ColorFontSupport;
+            this.FeatureTags = new List<Tag>(options.FeatureTags);
         }
 
         /// <summary>
@@ -174,5 +176,10 @@ namespace SixLabors.Fonts
         /// Gets or sets a value indicating whether to enable various color font formats.
         /// </summary>
         public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.MicrosoftColrFormat;
+
+        /// <summary>
+        /// Gets or sets the collection of additional feature tags to apply during glyph shaping.
+        /// </summary>
+        public IReadOnlyList<Tag> FeatureTags { get; set; } = Array.Empty<Tag>();
     }
 }

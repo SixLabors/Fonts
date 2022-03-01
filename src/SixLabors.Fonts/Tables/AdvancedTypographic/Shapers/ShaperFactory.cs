@@ -11,9 +11,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         /// Creates a Shaper based on the given script language.
         /// </summary>
         /// <param name="script">The script language.</param>
-        /// <param name="kerningMode">The kerning mode.</param>
+        /// <param name="textOptions">The text options.</param>
         /// <returns>A shaper for the given script.</returns>
-        public static BaseShaper Create(ScriptClass script, KerningMode kerningMode)
+        public static BaseShaper Create(ScriptClass script, TextOptions textOptions)
             => script switch
             {
                 ScriptClass.Arabic
@@ -23,8 +23,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 or ScriptClass.PhagsPa
                 or ScriptClass.Mandaic
                 or ScriptClass.Manichaean
-                or ScriptClass.PsalterPahlavi => new ArabicShaper(kerningMode),
-                _ => new DefaultShaper(kerningMode),
+                or ScriptClass.PsalterPahlavi => new ArabicShaper(textOptions),
+                _ => new DefaultShaper(textOptions),
             };
     }
 }

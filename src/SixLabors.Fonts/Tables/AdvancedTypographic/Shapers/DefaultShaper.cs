@@ -62,15 +62,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private readonly KerningMode kerningMode;
 
-        internal DefaultShaper(KerningMode kerningMode)
-            : this(MarkZeroingMode.PostGpos, kerningMode)
+        private readonly IReadOnlyList<Tag> featureTags;
+
+        internal DefaultShaper(TextOptions textOptions)
+            : this(MarkZeroingMode.PostGpos, textOptions)
         {
         }
 
-        protected DefaultShaper(MarkZeroingMode markZeroingMode, KerningMode kerningMode)
+        protected DefaultShaper(MarkZeroingMode markZeroingMode, TextOptions textOptions)
         {
             this.MarkZeroingMode = markZeroingMode;
-            this.kerningMode = kerningMode;
+            this.kerningMode = textOptions.KerningMode;
+            this.featureTags = textOptions.FeatureTags;
         }
 
         /// <inheritdoc />
@@ -162,6 +165,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     this.AddFeature(collection, i, 1, FracTag);
                     i = end - 1;
                 }
+            }
+
+            // Add user defined features.
+            foreach (Tag feature in this.featureTags)
+            {
+                this.AddFeature(collection, index, count, feature);
             }
         }
 

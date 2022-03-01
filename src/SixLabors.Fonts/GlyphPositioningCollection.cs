@@ -33,12 +33,11 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
         /// </summary>
-        /// <param name="options">The text options.</param>
-        public GlyphPositioningCollection(TextOptions options)
+        /// <param name="textOptions">The text options.</param>
+        public GlyphPositioningCollection(TextOptions textOptions)
         {
-            this.IsVerticalLayoutMode = options.LayoutMode.IsVertical();
-            this.ColorFontSupport = options.ColorFontSupport;
-            this.ApplyHinting = options.ApplyHinting;
+            this.TextOptions = textOptions;
+            this.IsVerticalLayoutMode = textOptions.LayoutMode.IsVertical();
         }
 
         /// <inheritdoc />
@@ -47,16 +46,8 @@ namespace SixLabors.Fonts
         /// <inheritdoc />
         public bool IsVerticalLayoutMode { get; }
 
-        /// <summary>
-        /// Gets a value indicating whether to enable various color font formats.
-        /// </summary>
-        public ColorFontSupport ColorFontSupport { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether to apply hinting - The use of mathematical instructions
-        /// to adjust the display of an outline font so that it lines up with a rasterized grid.
-        /// </summary>
-        public bool ApplyHinting { get; }
+        /// <inheritdoc />
+        public TextOptions TextOptions { get; }
 
         /// <inheritdoc />
         public ReadOnlySpan<ushort> this[int index] => this.glyphs[index].GlyphIds;
@@ -137,7 +128,7 @@ namespace SixLabors.Fonts
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, this.ColorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, this.TextOptions.ColorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
@@ -186,7 +177,7 @@ namespace SixLabors.Fonts
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, this.ColorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, this.TextOptions.ColorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
