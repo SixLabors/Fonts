@@ -63,6 +63,7 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public override string ToString() => $"[TextRun: Start={this.Start}, End={this.End}, TextAttributes={this.TextAttributes}]";
+        public override string ToString()
+            => $"[TextRun: Start={this.Start}, End={this.End}, TextAttributes={this.TextAttributes}]";
     }
 }

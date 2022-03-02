@@ -86,7 +86,7 @@ namespace SixLabors.Fonts
                 FontMetrics runFont = textRun.Font?.FontMetrics ?? mainFont;
                 ReadOnlySpan<char> runText = textRun.Slice(text);
                 substitutions.Clear();
-                complete |= DoFontRun(
+                if (!DoFontRun(
                     runText,
                     textRun.Start,
                     textRun.End,
@@ -95,7 +95,10 @@ namespace SixLabors.Fonts
                     bidiRuns,
                     bidiMap,
                     substitutions,
-                    positionings);
+                    positionings))
+                {
+                    complete = false;
+                }
             }
 
             if (!complete)
@@ -137,53 +140,6 @@ namespace SixLabors.Fonts
             }
 
             return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
-        }
-
-        private static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
-        {
-            if (options.TextRuns?.Count == 0)
-            {
-                return new TextRun[]
-                {
-                    new()
-                    {
-                        Start = 0,
-                        End = CodePoint.GetCodePointCount(text),
-                        Font = options.Font
-                    }
-                };
-            }
-
-            int start = 0;
-            int end = CodePoint.GetCodePointCount(text);
-            List<TextRun> textRuns = new();
-            foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
-            {
-                // Fill gaps within runs.
-                if (textRun.Start > start)
-                {
-                    //textRuns.Add(new()
-                    //{
-                    //    Start = start,
-                    //    End = textRun.Start,
-                    //});
-                }
-
-                textRuns.Add(textRun);
-                start = textRun.End;
-            }
-
-            // Add a final run.
-            if (start < end)
-            {
-                //textRuns.Add(new()
-                //{
-                //    Start = start,
-                //    End = end,
-                //});
-            }
-
-            return textRuns;
         }
 
         private static IReadOnlyList<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
