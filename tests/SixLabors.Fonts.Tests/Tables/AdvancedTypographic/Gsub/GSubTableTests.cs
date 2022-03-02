@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
@@ -334,6 +336,30 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
 
             // act
             TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        // Related PR: https://github.com/SixLabors/Fonts/pull/248
+        [Fact]
+        public void OldStyleFiguresFeature_Works()
+        {
+            // arrange
+            Font font = new FontCollection().Add(TestFonts.EbGaramond).CreateFont(12);
+            var renderer = new ColorGlyphRenderer();
+            string testStr = "123456";
+            int[] expectedGlyphIndices = { 2242, 2243, 2244, 2245, 2246, 2247 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font)
+            {
+                FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures }
+            });
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);

@@ -187,6 +187,11 @@ namespace SixLabors.Fonts.Tests
         /// </summary>
         public static string GposLookupType8Format3 => GetFullPath("GposLookupType8Format3.ttf");
 
+        /// <summary>
+        /// Gets the eb-garamond font, which can be used to test old style figures feature.
+        /// </summary>
+        public static string EbGaramond => GetFullPath("EBGaramond-Regular.ttf");
+
         public static string RobotoRegular => GetFullPath("Roboto-Regular.ttf");
 
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
