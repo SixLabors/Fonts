@@ -422,11 +422,15 @@ namespace SixLabors.Fonts
                     textRun.Font = options.Font;
                 }
 
+                // Ensure that the previous run does not overlap the current.
+                TextRun previous = textRuns[textRuns.Count - 1];
+                previous.End = Math.Min(previous.End, start);
+
                 textRuns.Add(textRun);
                 start = textRun.End;
             }
 
-            // Add a final run.
+            // Add a final run if required.
             if (start < end)
             {
                 textRuns.Add(new()
