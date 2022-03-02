@@ -41,7 +41,7 @@ namespace SixLabors.Fonts
         public int Count => this.offsets.Count;
 
         /// <inheritdoc />
-        public bool IsVerticalLayoutMode { get; private set; }
+        public bool IsVerticalLayoutMode { get; }
 
         /// <inheritdoc />
         public TextOptions TextOptions { get; }
@@ -109,13 +109,11 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Removes all elements from the collection.
         /// </summary>
-        /// <param name="mode">The text layout mode.</param>
-        public void Clear(LayoutMode mode)
+        public void Clear()
         {
             this.offsets.Clear();
             this.glyphs.Clear();
             this.LigatureId = 1;
-            this.IsVerticalLayoutMode = mode.IsVertical();
         }
 
         /// <summary>

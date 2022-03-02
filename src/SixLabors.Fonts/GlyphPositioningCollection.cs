@@ -92,8 +92,11 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontMetrics">The font face with metrics.</param>
         /// <param name="collection">The glyph substitution collection.</param>
+        /// <param name="start">The start index for the given collection.</param>
+        /// <param name="end">The end index for the given collection.</param>
+        /// <param name="textRun">Whether the current font run is a sliced text run.</param>
         /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
-        public bool TryAddOrUpdate(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
+        public bool TryAddOrUpdate(FontMetrics fontMetrics, GlyphSubstitutionCollection collection, int start, int end, bool textRun)
         {
             if (this.Count == 0)
             {
@@ -102,7 +105,7 @@ namespace SixLabors.Fonts
 
             bool hasFallBacks = false;
             List<int> orphans = new();
-            for (int i = 0; i < this.offsets.Count; i++)
+            for (int i = start; i < Math.Min(end, this.offsets.Count); i++)
             {
                 int offset = this.offsets[i];
                 if (!collection.TryGetGlyphShapingDataAtOffset(offset, out GlyphShapingData? data))
@@ -114,7 +117,7 @@ namespace SixLabors.Fonts
                 }
 
                 GlyphMetrics[] metrics = this.map[offset];
-                if (metrics[0].GlyphType != GlyphType.Fallback)
+                if (!textRun && metrics[0].GlyphType != GlyphType.Fallback)
                 {
                     // We've already got the correct glyph.
                     continue;

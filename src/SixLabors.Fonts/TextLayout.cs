@@ -25,18 +25,6 @@ namespace SixLabors.Fonts
                 return Array.Empty<GlyphLayout>();
             }
 
-            if (options.WrappingLength > 0)
-            {
-                // Trim trailing white spaces from the text
-                text = text.TrimEnd(null);
-            }
-
-            // Check our string again after trimming.
-            if (text.IsEmpty)
-            {
-                return Array.Empty<GlyphLayout>();
-            }
-
             TextBox textBox = ProcessText(text, options);
             return LayoutText(textBox, options);
         }
@@ -45,17 +33,9 @@ namespace SixLabors.Fonts
         {
             // Gather the font and fallbacks.
             FontMetrics mainFont = options.Font.FontMetrics;
-            FontMetrics[] fallbackFonts;
-            if (options.FallbackFontFamilies?.Count > 0)
-            {
-                fallbackFonts = options.FallbackFontFamilies
-                    .Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle).FontMetrics)
-                    .ToArray();
-            }
-            else
-            {
-                fallbackFonts = Array.Empty<FontMetrics>();
-            }
+            FontMetrics[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
+                ? options.FallbackFontFamilies.Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle).FontMetrics).ToArray()
+                : Array.Empty<FontMetrics>();
 
             LayoutMode layoutMode = options.LayoutMode;
             GlyphSubstitutionCollection substitutions = new(options);
@@ -84,21 +64,51 @@ namespace SixLabors.Fonts
             // Incrementally build out collection of glyphs.
             // For each run we start with a fresh substitution collection to avoid
             // overwriting the glyph ids.
-            if (!DoFontRun(
+            IReadOnlyList<TextRun> textRuns = options.TextRuns ?? Array.Empty<TextRun>();
+            int count = CodePoint.GetCodePointCount(text);
+
+            // First do a complete run using our default font.
+            // This builds our position collection for overwriting.
+            bool complete = DoFontRun(
                 text,
-                options,
+                0,
+                count,
+                false,
                 mainFont,
                 bidiRuns,
                 bidiMap,
                 substitutions,
-                positionings))
+                positionings);
+
+            // Now overwrite with individual text runs.
+            foreach (TextRun textRun in textRuns)
             {
+                FontMetrics runFont = textRun.Font?.FontMetrics ?? mainFont;
+                ReadOnlySpan<char> runText = textRun.Slice(text);
+                substitutions.Clear();
+                complete |= DoFontRun(
+                    runText,
+                    textRun.Start,
+                    textRun.End,
+                    true,
+                    runFont,
+                    bidiRuns,
+                    bidiMap,
+                    substitutions,
+                    positionings);
+            }
+
+            if (!complete)
+            {
+                // Finally try our fallback fonts.
                 foreach (FontMetrics font in fallbackFonts)
                 {
-                    substitutions.Clear(layoutMode);
+                    substitutions.Clear();
                     if (DoFontRun(
                         text,
-                        options,
+                        0,
+                        count,
+                        false,
                         font,
                         bidiRuns,
                         bidiMap,
@@ -114,12 +124,66 @@ namespace SixLabors.Fonts
             // Each set of metrics is associated with single font and will only be updated
             // by that font so it's safe to use a single collection.
             mainFont.UpdatePositions(positionings);
+
+            foreach (TextRun textRun in textRuns)
+            {
+                FontMetrics runFont = textRun.Font?.FontMetrics ?? mainFont;
+                runFont.UpdatePositions(positionings);
+            }
+
             foreach (FontMetrics font in fallbackFonts)
             {
                 font.UpdatePositions(positionings);
             }
 
             return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
+        }
+
+        private static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
+        {
+            if (options.TextRuns?.Count == 0)
+            {
+                return new TextRun[]
+                {
+                    new()
+                    {
+                        Start = 0,
+                        End = CodePoint.GetCodePointCount(text),
+                        Font = options.Font
+                    }
+                };
+            }
+
+            int start = 0;
+            int end = CodePoint.GetCodePointCount(text);
+            List<TextRun> textRuns = new();
+            foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
+            {
+                // Fill gaps within runs.
+                if (textRun.Start > start)
+                {
+                    //textRuns.Add(new()
+                    //{
+                    //    Start = start,
+                    //    End = textRun.Start,
+                    //});
+                }
+
+                textRuns.Add(textRun);
+                start = textRun.End;
+            }
+
+            // Add a final run.
+            if (start < end)
+            {
+                //textRuns.Add(new()
+                //{
+                //    Start = start,
+                //    End = end,
+                //});
+            }
+
+            return textRuns;
         }
 
         private static IReadOnlyList<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
@@ -390,7 +454,9 @@ namespace SixLabors.Fonts
 
         private static bool DoFontRun(
             ReadOnlySpan<char> text,
-            TextOptions options,
+            int start,
+            int end,
+            bool textRun,
             FontMetrics fontMetrics,
             BidiRun[] bidiRuns,
             Dictionary<int, int> bidiMap,
@@ -399,7 +465,7 @@ namespace SixLabors.Fonts
         {
             // Enumerate through each grapheme in the text.
             int graphemeIndex;
-            int codePointIndex = 0;
+            int codePointIndex = start;
             int bidiRun = 0;
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
             for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
@@ -450,7 +516,7 @@ namespace SixLabors.Fonts
             SubstituteBidiMirrors(fontMetrics, substitutions);
             fontMetrics.ApplySubstitution(substitutions);
 
-            return positionings.TryAddOrUpdate(fontMetrics, substitutions);
+            return positionings.TryAddOrUpdate(fontMetrics, substitutions, start, end, textRun);
         }
 
         private static void SubstituteBidiMirrors(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)

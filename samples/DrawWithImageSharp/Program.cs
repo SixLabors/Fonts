@@ -40,6 +40,14 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily arabicFont = SystemFonts.Get("Dubai");
 
             FontFamily tahoma = SystemFonts.Get("Tahoma");
+            var textRuns = new List<TextRun>
+            {
+                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(32, FontStyle.Bold) },
+                new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(32, FontStyle.Italic) }
+            };
+
+            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", 32, textRuns: textRuns);
+            return;
             RenderText(font2, "\uFB01", pointSize: 11.25F);
             RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
             RenderText(tahoma, "p", pointSize: 11.25F);
@@ -182,12 +190,18 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             SaveImage(options, text, (int)size.Width, (int)size.Height, options.Font.Name, text + ".png");
         }
 
-        public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
+        public static void RenderText(
+            FontFamily font,
+            string text,
+            float pointSize = 12,
+            IEnumerable<FontFamily> fallbackFonts = null,
+            IEnumerable<TextRun> textRuns = null)
             => RenderText(
                 new TextOptions(new Font(font, pointSize))
                 {
                     WrappingLength = 400,
-                    FallbackFontFamilies = fallbackFonts?.ToArray()
+                    FallbackFontFamilies = fallbackFonts?.ToArray(),
+                    TextRuns = textRuns?.ToArray()
                 },
                 text);
 
