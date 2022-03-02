@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -38,6 +39,8 @@ namespace SixLabors.Fonts
         /// <returns>The <see cref="ReadOnlySpan{Char}"/>.</returns>
         public ReadOnlySpan<char> Slice(ReadOnlySpan<char> text)
         {
+            ValidateRange(this.Start, this.End);
+
             // Convert code point indices into char indices so we can slice
             int chars = 0;
             int count = 0;
@@ -65,5 +68,19 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public override string ToString()
             => $"[TextRun: Start={this.Start}, End={this.End}, TextAttributes={this.TextAttributes}]";
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ValidateRange(int start, int end)
+        {
+            if (start < 0 || end < 0)
+            {
+                throw new ArgumentOutOfRangeException($"Start '{start}' and End '{end}' must be greater or equal to zero.");
+            }
+
+            if (end <= start)
+            {
+                throw new ArgumentOutOfRangeException($"End '{end}' must be greater than Start '{start}'.");
+            }
+        }
     }
 }
