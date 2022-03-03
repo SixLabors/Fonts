@@ -399,13 +399,14 @@ namespace SixLabors.Fonts.Tests
         {
             const string text = "This is a long and Honorificabilitudinitatibus califragilisticexpialidocious";
             Font font = CreateFont(text);
+            Font font2 = CreateFont(text, 16);
             TextOptions options = new(font)
             {
                 TextRuns = new List<TextRun>()
                 {
-                    new TextRun() { Start = 9, End = 23 },
-                    new TextRun() { Start = 35, End = 54 },
-                    new TextRun() { Start = 68, End = 70 },
+                    new TextRun() { Start = 9, End = 23, Font = font2 },
+                    new TextRun() { Start = 35, End = 54, Font = font2 },
+                    new TextRun() { Start = 68, End = 70, Font = font2 },
                 }
             };
 
@@ -415,30 +416,37 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(0, runs[0].Start);
             Assert.Equal(9, runs[0].End);
+            Assert.Equal(font, runs[0].Font);
             Assert.Equal(9, runs[0].Slice(text.AsSpan()).Length);
 
             Assert.Equal(9, runs[1].Start);
             Assert.Equal(23, runs[1].End);
+            Assert.Equal(font2, runs[1].Font);
             Assert.Equal(14, runs[1].Slice(text.AsSpan()).Length);
 
             Assert.Equal(23, runs[2].Start);
             Assert.Equal(35, runs[2].End);
+            Assert.Equal(font, runs[2].Font);
             Assert.Equal(12, runs[2].Slice(text.AsSpan()).Length);
 
             Assert.Equal(35, runs[3].Start);
             Assert.Equal(54, runs[3].End);
+            Assert.Equal(font2, runs[3].Font);
             Assert.Equal(19, runs[3].Slice(text.AsSpan()).Length);
 
             Assert.Equal(54, runs[4].Start);
             Assert.Equal(68, runs[4].End);
+            Assert.Equal(font, runs[4].Font);
             Assert.Equal(14, runs[4].Slice(text.AsSpan()).Length);
 
             Assert.Equal(68, runs[5].Start);
             Assert.Equal(70, runs[5].End);
+            Assert.Equal(font2, runs[5].Font);
             Assert.Equal(2, runs[5].Slice(text.AsSpan()).Length);
 
             Assert.Equal(70, runs[6].Start);
             Assert.Equal(76, runs[6].End);
+            Assert.Equal(font, runs[6].Font);
             Assert.Equal(6, runs[6].Slice(text.AsSpan()).Length);
         }
 
@@ -473,6 +481,13 @@ namespace SixLabors.Fonts.Tests
             var fc = (IFontMetricsCollection)new FontCollection();
             Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
             return new Font(d, 1);
+        }
+
+        public static Font CreateFont(string text, float pointSize)
+        {
+            var fc = (IFontMetricsCollection)new FontCollection();
+            Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
+            return new Font(d, pointSize);
         }
     }
 }
