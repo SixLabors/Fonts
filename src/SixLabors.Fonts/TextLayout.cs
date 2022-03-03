@@ -93,10 +93,9 @@ namespace SixLabors.Fonts
         private static TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
         {
             // Gather the font and fallbacks.
-            FontMetrics mainFont = options.Font.FontMetrics;
-            FontMetrics[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
-                ? options.FallbackFontFamilies.Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle).FontMetrics).ToArray()
-                : Array.Empty<FontMetrics>();
+            Font[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
+                ? options.FallbackFontFamilies.Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle)).ToArray()
+                : Array.Empty<Font>();
 
             LayoutMode layoutMode = options.LayoutMode;
             GlyphSubstitutionCollection substitutions = new(options);
@@ -133,7 +132,7 @@ namespace SixLabors.Fonts
                     textRun.Slice(text),
                     textRun.Start,
                     false,
-                    textRun.Font!.FontMetrics,
+                    textRun.Font!,
                     bidiRuns,
                     bidiMap,
                     substitutions,
@@ -147,7 +146,7 @@ namespace SixLabors.Fonts
             {
                 // Finally try our fallback fonts.
                 // We do a complete run here across the whole collection.
-                foreach (FontMetrics font in fallbackFonts)
+                foreach (Font font in fallbackFonts)
                 {
                     if (DoFontRun(
                         text,
@@ -172,9 +171,9 @@ namespace SixLabors.Fonts
                 textRun.Font!.FontMetrics.UpdatePositions(positionings);
             }
 
-            foreach (FontMetrics font in fallbackFonts)
+            foreach (Font font in fallbackFonts)
             {
-                font.UpdatePositions(positionings);
+                font.FontMetrics.UpdatePositions(positionings);
             }
 
             return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
@@ -450,7 +449,7 @@ namespace SixLabors.Fonts
             ReadOnlySpan<char> text,
             int start,
             bool isFallbackRun,
-            FontMetrics fontMetrics,
+            Font font,
             BidiRun[] bidiRuns,
             Dictionary<int, int> bidiMap,
             GlyphSubstitutionCollection substitutions,
@@ -500,7 +499,7 @@ namespace SixLabors.Fonts
                     charIndex += charsConsumed;
 
                     // Get the glyph id for the codepoint and add to the collection.
-                    fontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
+                    font.FontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
                     substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, codePointIndex);
 
                     codePointIndex++;
@@ -510,12 +509,12 @@ namespace SixLabors.Fonts
 
             // Apply the simple and complex substitutions.
             // TODO: Investigate HarfBuzz normlizer.
-            SubstituteBidiMirrors(fontMetrics, substitutions);
-            fontMetrics.ApplySubstitution(substitutions);
+            SubstituteBidiMirrors(font.FontMetrics, substitutions);
+            font.FontMetrics.ApplySubstitution(substitutions);
 
             return !isFallbackRun
-                ? positionings.TryAdd(fontMetrics, substitutions)
-                : positionings.TryUpdate(fontMetrics, substitutions);
+                ? positionings.TryAdd(font, substitutions)
+                : positionings.TryUpdate(font, substitutions);
         }
 
         private static void SubstituteBidiMirrors(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
@@ -568,7 +567,6 @@ namespace SixLabors.Fonts
             GlyphPositioningCollection positionings,
             LayoutMode layoutMode)
         {
-            float pointSize = options.Font.Size;
             bool shouldWrap = options.WrappingLength > 0;
             float wrappingLength = shouldWrap ? options.WrappingLength / options.Dpi : float.MaxValue;
             bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
@@ -607,7 +605,7 @@ namespace SixLabors.Fonts
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
-                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out GlyphMetrics[]? metrics))
+                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out GlyphMetrics[]? metrics))
                     {
                         // Codepoint was skipped during original enumeration.
                         codePointIndex++;
