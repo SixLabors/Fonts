@@ -37,6 +37,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="text">The text to slice.</param>
         /// <returns>The <see cref="ReadOnlySpan{Char}"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<char> Slice(ReadOnlySpan<char> text)
         {
             ValidateRange(this.Start, this.End);

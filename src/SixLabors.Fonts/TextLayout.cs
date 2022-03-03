@@ -14,11 +14,9 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Encapsulated logic or laying out text.
     /// </summary>
-    internal class TextLayout
+    internal static class TextLayout
     {
-        internal static TextLayout Default { get; set; } = new();
-
-        public IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
+        public static IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
         {
             if (text.IsEmpty)
             {
@@ -27,6 +25,69 @@ namespace SixLabors.Fonts
 
             TextBox textBox = ProcessText(text, options);
             return LayoutText(textBox, options);
+        }
+
+        public static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
+        {
+            if (options.TextRuns?.Count == 0)
+            {
+                return new TextRun[]
+                {
+                    new()
+                    {
+                        Start = 0,
+                        End = CodePoint.GetCodePointCount(text),
+                        Font = options.Font
+                    }
+                };
+            }
+
+            int start = 0;
+            int end = CodePoint.GetCodePointCount(text);
+            List<TextRun> textRuns = new();
+            foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
+            {
+                // Fill gaps within runs.
+                if (textRun.Start > start)
+                {
+                    textRuns.Add(new()
+                    {
+                        Start = start,
+                        End = textRun.Start,
+                        Font = options.Font
+                    });
+                }
+
+                // Add the current run, ensuring the font is not null.
+                if (textRun.Font is null)
+                {
+                    textRun.Font = options.Font;
+                }
+
+                // Ensure that the previous run does not overlap the current.
+                if (textRuns.Count > 0)
+                {
+                    int prevIndex = textRuns.Count - 1;
+                    TextRun previous = textRuns[prevIndex];
+                    previous.End = Math.Min(previous.End, textRun.Start);
+                }
+
+                textRuns.Add(textRun);
+                start = textRun.End;
+            }
+
+            // Add a final run if required.
+            if (start < end)
+            {
+                textRuns.Add(new()
+                {
+                    Start = start,
+                    End = end,
+                    Font = options.Font
+                });
+            }
+
+            return textRuns;
         }
 
         private static TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
@@ -383,65 +444,6 @@ namespace SixLabors.Fonts
             }
 
             return glyphs;
-        }
-
-        private static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
-        {
-            if (options.TextRuns?.Count == 0)
-            {
-                return new TextRun[]
-                {
-                    new()
-                    {
-                        Start = 0,
-                        End = CodePoint.GetCodePointCount(text),
-                        Font = options.Font
-                    }
-                };
-            }
-
-            int start = 0;
-            int end = CodePoint.GetCodePointCount(text);
-            List<TextRun> textRuns = new();
-            foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
-            {
-                // Fill gaps within runs.
-                if (textRun.Start > start)
-                {
-                    textRuns.Add(new()
-                    {
-                        Start = start,
-                        End = textRun.Start,
-                        Font = options.Font
-                    });
-                }
-
-                // Add the current run, ensuring the font is not null.
-                if (textRun.Font is null)
-                {
-                    textRun.Font = options.Font;
-                }
-
-                // Ensure that the previous run does not overlap the current.
-                TextRun previous = textRuns[textRuns.Count - 1];
-                previous.End = Math.Min(previous.End, start);
-
-                textRuns.Add(textRun);
-                start = textRun.End;
-            }
-
-            // Add a final run if required.
-            if (start < end)
-            {
-                textRuns.Add(new()
-                {
-                    Start = start,
-                    End = end,
-                    Font = options.Font
-                });
-            }
-
-            return textRuns;
         }
 
         private static bool DoFontRun(

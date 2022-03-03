@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Tests
                 VerticalAlignment = vertical
             };
 
-            IReadOnlyList<GlyphLayout> glyphsToRender = new TextLayout().GenerateLayout(text.AsSpan(), span);
+            IReadOnlyList<GlyphLayout> glyphsToRender = TextLayout.GenerateLayout(text.AsSpan(), span);
             FontRectangle bound = TextMeasurer.GetBounds(glyphsToRender, span.Dpi);
 
             Assert.Equal(310, bound.Width, 3);
@@ -377,6 +377,95 @@ namespace SixLabors.Fonts.Tests
             int count = TextMeasurer.CountLines(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor, WrappingLength = wrappingLength });
 
             Assert.Equal(usedLines, count);
+        }
+
+        [Fact]
+        public void BuildTextRuns_EmptyReturnsDefaultRun()
+        {
+            const string text = "This is a long and Honorificabilitudinitatibus califragilisticexpialidocious";
+            Font font = CreateFont(text);
+            TextOptions options = new(font);
+
+            IReadOnlyList<TextRun> runs = TextLayout.BuildTextRuns(text.AsSpan(), options);
+
+            Assert.True(runs.Count == 1);
+            Assert.Equal(font, runs[0].Font);
+            Assert.Equal(0, runs[0].Start);
+            Assert.Equal(CodePoint.GetCodePointCount(text.AsSpan()), runs[0].End);
+        }
+
+        [Fact]
+        public void BuildTextRuns_ReturnsCreatesInterimRuns()
+        {
+            const string text = "This is a long and Honorificabilitudinitatibus califragilisticexpialidocious";
+            Font font = CreateFont(text);
+            TextOptions options = new(font)
+            {
+                TextRuns = new List<TextRun>()
+                {
+                    new TextRun() { Start = 9, End = 23 },
+                    new TextRun() { Start = 35, End = 54 },
+                    new TextRun() { Start = 68, End = 70 },
+                }
+            };
+
+            IReadOnlyList<TextRun> runs = TextLayout.BuildTextRuns(text.AsSpan(), options);
+
+            Assert.True(runs.Count == 7);
+
+            Assert.Equal(0, runs[0].Start);
+            Assert.Equal(9, runs[0].End);
+            Assert.Equal(9, runs[0].Slice(text.AsSpan()).Length);
+
+            Assert.Equal(9, runs[1].Start);
+            Assert.Equal(23, runs[1].End);
+            Assert.Equal(14, runs[1].Slice(text.AsSpan()).Length);
+
+            Assert.Equal(23, runs[2].Start);
+            Assert.Equal(35, runs[2].End);
+            Assert.Equal(12, runs[2].Slice(text.AsSpan()).Length);
+
+            Assert.Equal(35, runs[3].Start);
+            Assert.Equal(54, runs[3].End);
+            Assert.Equal(19, runs[3].Slice(text.AsSpan()).Length);
+
+            Assert.Equal(54, runs[4].Start);
+            Assert.Equal(68, runs[4].End);
+            Assert.Equal(14, runs[4].Slice(text.AsSpan()).Length);
+
+            Assert.Equal(68, runs[5].Start);
+            Assert.Equal(70, runs[5].End);
+            Assert.Equal(2, runs[5].Slice(text.AsSpan()).Length);
+
+            Assert.Equal(70, runs[6].Start);
+            Assert.Equal(76, runs[6].End);
+            Assert.Equal(6, runs[6].Slice(text.AsSpan()).Length);
+        }
+
+        [Fact]
+        public void BuildTextRuns_PreventsOverlappingRun()
+        {
+            const string text = "This is a long and Honorificabilitudinitatibus califragilisticexpialidocious";
+            Font font = CreateFont(text);
+            TextOptions options = new(font)
+            {
+                TextRuns = new List<TextRun>()
+                {
+                    new TextRun() { Start = 0, End = 23 },
+                    new TextRun() { Start = 1, End = 76 },
+                }
+            };
+
+            IReadOnlyList<TextRun> runs = TextLayout.BuildTextRuns(text.AsSpan(), options);
+
+            Assert.Equal(2, runs.Count);
+            Assert.Equal(font, runs[0].Font);
+            Assert.Equal(0, runs[0].Start);
+            Assert.Equal(1, runs[0].End);
+
+            Assert.Equal(font, runs[1].Font);
+            Assert.Equal(1, runs[1].Start);
+            Assert.Equal(76, runs[1].End);
         }
 
         public static Font CreateFont(string text)

@@ -9,7 +9,7 @@ using System.Numerics;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Encapsulated logic for laying out and measuring text.
+    /// Encapsulated logic for laying out and then measuring text properties.
     /// </summary>
     public static class TextMeasurer
     {
@@ -17,65 +17,75 @@ namespace SixLabors.Fonts
         /// Measures the text.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="options">The text shaping options.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public static FontRectangle Measure(string text, TextOptions options)
-            => TextMeasurerInt.Default.Measure(text.AsSpan(), options);
+            => Measure(text.AsSpan(), options);
 
         /// <summary>
         /// Measures the text.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="options">The text shaping options.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public static FontRectangle Measure(ReadOnlySpan<char> text, TextOptions options)
-            => TextMeasurerInt.Default.Measure(text, options);
+            => GetSize(TextLayout.GenerateLayout(text, options), options.Dpi);
 
         /// <summary>
         /// Measures the text.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="options">The text shaping options.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public static FontRectangle MeasureBounds(string text, TextOptions options)
-            => TextMeasurerInt.Default.MeasureBounds(text.AsSpan(), options);
+            => MeasureBounds(text.AsSpan(), options);
 
         /// <summary>
         /// Measures the text.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="options">The text shaping options.</param>
         /// <returns>The size of the text if it was to be rendered.</returns>
         public static FontRectangle MeasureBounds(ReadOnlySpan<char> text, TextOptions options)
-            => TextMeasurerInt.Default.MeasureBounds(text, options);
+            => GetBounds(TextLayout.GenerateLayout(text, options), options.Dpi);
 
         /// <summary>
         /// Measures the character bounds of the text. For each control character the list contains a <c>null</c> element.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="options">The text shaping options.</param>
+        /// <param name="characterBounds">The list of character bounds of the text if it was to be rendered.</param>
+        /// <returns>Whether any of the characters had non-empty bounds.</returns>
+        public static bool TryMeasureCharacterBounds(string text, TextOptions options, out GlyphBounds[] characterBounds)
+            => TryMeasureCharacterBounds(text.AsSpan(), options, out characterBounds);
+
+        /// <summary>
+        /// Measures the character bounds of the text. For each control character the list contains a <c>null</c> element.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The text shaping options.</param>
         /// <param name="characterBounds">The list of character bounds of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty bounds.</returns>
         public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] characterBounds)
-            => TextMeasurerInt.Default.TryMeasureCharacterBounds(text, options, out characterBounds);
+            => TryGetCharacterBounds(TextLayout.GenerateLayout(text, options), options.Dpi, out characterBounds);
 
         /// <summary>
         /// Gets the number of lines contained within the text.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="options">The text shaping options.</param>
         /// <returns>The line count.</returns>
         public static int CountLines(string text, TextOptions options)
-            => TextMeasurerInt.Default.CountLines(text.AsSpan(), options);
+            => CountLines(text.AsSpan(), options);
 
         /// <summary>
         /// Gets the number of lines contained within the text.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="options">The text shaping options.</param>
         /// <returns>The line count.</returns>
         public static int CountLines(ReadOnlySpan<char> text, TextOptions options)
-            => TextMeasurerInt.Default.CountLines(text, options);
+            => TextLayout.GenerateLayout(text, options).Count(x => x.IsStartOfLine);
 
         internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
         {
@@ -155,78 +165,6 @@ namespace SixLabors.Fonts
 
             characterBounds = characterBoundsList;
             return hasSize;
-        }
-
-        internal class TextMeasurerInt
-        {
-            private readonly TextLayout layoutEngine;
-
-            internal TextMeasurerInt(TextLayout layoutEngine)
-                => this.layoutEngine = layoutEngine;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="TextMeasurerInt"/> class.
-            /// </summary>
-            internal TextMeasurerInt()
-            : this(TextLayout.Default)
-            {
-            }
-
-            internal static TextMeasurerInt Default { get; set; } = new TextMeasurerInt();
-
-            /// <summary>
-            /// Measures the text.
-            /// </summary>
-            /// <param name="text">The text.</param>
-            /// <param name="options">The style.</param>
-            /// <returns>The size of the text if it was to be rendered.</returns>
-            internal FontRectangle MeasureBounds(ReadOnlySpan<char> text, TextOptions options)
-            {
-                IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
-
-                return GetBounds(glyphsToRender, options.Dpi);
-            }
-
-            /// <summary>
-            /// Measures the text.
-            /// </summary>
-            /// <param name="text">The text.</param>
-            /// <param name="options">The style.</param>
-            /// <param name="characterBounds">The character bounds list.</param>
-            /// <returns>The size of the text if it was to be rendered.</returns>
-            internal bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] characterBounds)
-            {
-                IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
-
-                return TryGetCharacterBounds(glyphsToRender, options.Dpi, out characterBounds);
-            }
-
-            /// <summary>
-            /// Measures the text.
-            /// </summary>
-            /// <param name="text">The text.</param>
-            /// <param name="options">The style.</param>
-            /// <returns>The size of the text if it was to be rendered.</returns>
-            internal FontRectangle Measure(ReadOnlySpan<char> text, TextOptions options)
-            {
-                IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
-
-                return GetSize(glyphsToRender, options.Dpi);
-            }
-
-            /// <summary>
-            /// Gets the number of lines contained within the text.
-            /// </summary>
-            /// <param name="text">The text.</param>
-            /// <param name="options">The style.</param>
-            /// <returns>The line count.</returns>
-            internal int CountLines(ReadOnlySpan<char> text, TextOptions options)
-            {
-                IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
-                int usedLines = glyphsToRender.Count(x => x.IsStartOfLine);
-
-                return usedLines;
-            }
         }
     }
 }
