@@ -24,6 +24,7 @@ namespace SixLabors.Fonts
     /// </summary>
     internal class StreamFontMetrics : FontMetrics
     {
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
         private readonly MaximumProfileTable maximumProfileTable;
         private readonly CMapTable cmap;
         private readonly GlyphTable glyphs;
@@ -33,7 +34,7 @@ namespace SixLabors.Fonts
         private readonly VerticalMetricsTable? verticalMetricsTable;
         private readonly GlyphMetrics[][] glyphCache;
         private readonly GlyphMetrics[][]? colorGlyphCache;
-        private readonly KerningTable kerningTable;
+        private readonly KerningTable? kerningTable;
         private readonly GSubTable? gSubTable;
         private readonly GPosTable? gPosTable;
         private readonly ColrTable? colrTable;
@@ -60,6 +61,7 @@ namespace SixLabors.Fonts
         /// <param name="verticalMetrics">The vertical metrics table.</param>
         /// <param name="head">The head table.</param>
         /// <param name="kern">The kerning table.</param>
+        /// <param name="postTable">The table needed to use TrueType or OpenType fonts on PostScript printers.</param>
         /// <param name="gSubTable">The glyph substitution table.</param>
         /// <param name="gPosTable">The glyph positioning table.</param>
         /// <param name="colrTable">The COLR table</param>
@@ -79,7 +81,8 @@ namespace SixLabors.Fonts
             VerticalHeadTable? verticalHeadTable,
             VerticalMetricsTable? verticalMetrics,
             HeadTable head,
-            KerningTable kern,
+            KerningTable? kern,
+            PostTable postTable,
             GSubTable? gSubTable,
             GPosTable? gPosTable,
             ColrTable? colrTable,
@@ -163,6 +166,10 @@ namespace SixLabors.Fonts
             this.StrikeoutSize = os2.StrikeoutSize;
             this.StrikeoutPosition = os2.StrikeoutPosition;
 
+            this.UnderlinePosition = postTable.UnderlinePosition;
+            this.UnderlinePosition = postTable.UnderlinePosition;
+            this.ItalicAngle = postTable.ItalicAngle;
+
             this.kerningTable = kern;
             this.gSubTable = gSubTable;
             this.gPosTable = gPosTable;
@@ -233,6 +240,15 @@ namespace SixLabors.Fonts
         public override short StrikeoutPosition { get; }
 
         /// <inheritdoc/>
+        public override short UnderlinePosition { get; }
+
+        /// <inheritdoc/>
+        public override short UnderlineThickness { get; }
+
+        /// <inheritdoc/>
+        public override float ItalicAngle { get; }
+
+        /// <inheritdoc/>
         internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
             => this.TryGetGlyphId(codePoint, null, out glyphId, out bool _);
 
@@ -244,24 +260,14 @@ namespace SixLabors.Fonts
         internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
         {
             glyphClass = null;
-            if (this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetGlyphClass(glyphId, out glyphClass))
-            {
-                return true;
-            }
-
-            return false;
+            return this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetGlyphClass(glyphId, out glyphClass);
         }
 
         /// <inheritdoc/>
         internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
         {
             markAttachmentClass = null;
-            if (this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass))
-            {
-                return true;
-            }
-
-            return false;
+            return this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
         }
 
         /// <inheritdoc/>
@@ -305,22 +311,14 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
-        {
-            if (this.gSubTable != null)
-            {
-                this.gSubTable.ApplySubstitution(this, collection);
-            }
-        }
+            => this.gSubTable?.ApplySubstitution(this, collection);
 
         /// <inheritdoc/>
         internal override void UpdatePositions(GlyphPositioningCollection collection)
         {
             bool kerned = false;
             KerningMode kerningMode = collection.TextOptions.KerningMode;
-            if (this.gPosTable != null)
-            {
-                this.gPosTable.TryUpdatePositions(this, collection, out kerned);
-            }
+            this.gPosTable?.TryUpdatePositions(this, collection, out kerned);
 
             if (!kerned && kerningMode != KerningMode.None && this.kerningTable != null)
             {
@@ -398,9 +396,13 @@ namespace SixLabors.Fonts
 
             reader.GetTable<IndexLocationTable>(); // loca
             GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
-            KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
+            KerningTable? kern = reader.TryGetTable<KerningTable>(); // kern - Kerning
             NameTable nameTable = reader.GetTable<NameTable>(); // name
+            PostTable postTable = reader.GetTable<PostTable>(); // post - PostScript information
 
+            // gasp - Grid-fitting/Scan-conversion (optional table)
+            // PCLT - PCL 5 data
+            // DSIG - Digital signature
             ColrTable? colrTable = reader.TryGetTable<ColrTable>(); // colr
             CpalTable? cpalTable;
             if (colrTable != null)
@@ -417,10 +419,6 @@ namespace SixLabors.Fonts
             GPosTable? gPos = reader.TryGetTable<GPosTable>();
             GlyphDefinitionTable? glyphDefinitionTable = reader.TryGetTable<GlyphDefinitionTable>();
 
-            // post - PostScript information
-            // gasp - Grid-fitting/Scan-conversion (optional table)
-            // PCLT - PCL 5 data
-            // DSIG - Digital signature
             return new StreamFontMetrics(
                 nameTable,
                 maxp,
@@ -433,6 +431,7 @@ namespace SixLabors.Fonts
                 verticalMetrics,
                 head,
                 kern,
+                postTable,
                 gSub,
                 gPos,
                 colrTable,

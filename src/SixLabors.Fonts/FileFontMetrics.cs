@@ -101,6 +101,15 @@ namespace SixLabors.Fonts
         public override short StrikeoutPosition => this.metrics.Value.StrikeoutPosition;
 
         /// <inheritdoc/>
+        public override short UnderlinePosition => this.metrics.Value.UnderlinePosition;
+
+        /// <inheritdoc/>
+        public override short UnderlineThickness => this.metrics.Value.UnderlineThickness;
+
+        /// <inheritdoc/>
+        public override float ItalicAngle => this.metrics.Value.ItalicAngle;
+
+        /// <inheritdoc/>
         internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
             => this.metrics.Value.TryGetGlyphId(codePoint, out glyphId);
 

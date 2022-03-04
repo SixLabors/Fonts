@@ -40,6 +40,7 @@ namespace SixLabors.Fonts.Tables
             this.Register(FpgmTable.Load);
             this.Register(PrepTable.Load);
             this.Register(GlyphDefinitionTable.Load);
+            this.Register(PostTable.Load);
         }
 
         public static TableLoader Default { get; } = new();

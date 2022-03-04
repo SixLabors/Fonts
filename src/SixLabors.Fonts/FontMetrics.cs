@@ -118,6 +118,22 @@ namespace SixLabors.Fonts
         public abstract short StrikeoutPosition { get; }
 
         /// <summary>
+        /// Gets the suggested distance of the top of the underline from the baseline (negative values indicate below baseline).
+        /// </summary>
+        public abstract short UnderlinePosition { get; }
+
+        /// <summary>
+        /// Gets the suggested values for the underline thickness. In general, the underline thickness should match the thickness of
+        /// the underscore character (U+005F LOW LINE), and should also match the strikeout thickness, which is specified in the OS/2 table.
+        /// </summary>
+        public abstract short UnderlineThickness { get; }
+
+        /// <summary>
+        /// Gets the italic angle in counter-clockwise degrees from the vertical. Zero for upright text, negative for text that leans to the right (forward).
+        /// </summary>
+        public abstract float ItalicAngle { get; }
+
+        /// <summary>
         /// Gets the specified glyph id matching the codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint.</param>
