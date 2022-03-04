@@ -130,12 +130,12 @@ namespace SixLabors.Fonts
             => this.metrics.Value.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
 
         /// <inheritdoc />
-        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, TextAttribute textAttributes, ColorFontSupport support)
-              => this.metrics.Value.GetGlyphMetrics(codePoint, textAttributes, support);
+        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
+              => this.metrics.Value.GetGlyphMetrics(codePoint, support);
 
         /// <inheritdoc />
-        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, ColorFontSupport support)
-            => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, support);
+        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
+            => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
 
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)

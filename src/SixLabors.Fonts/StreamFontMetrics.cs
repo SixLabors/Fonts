@@ -271,14 +271,14 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, TextAttribute textAttributes, ColorFontSupport support)
+        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
         {
             this.TryGetGlyphId(codePoint, out ushort glyphId);
-            return this.GetGlyphMetrics(codePoint, glyphId, textAttributes, support);
+            return this.GetGlyphMetrics(codePoint, glyphId, support);
         }
 
         /// <inheritdoc/>
-        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, ColorFontSupport support)
+        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
         {
             GlyphType glyphType = GlyphType.Standard;
             if (glyphId == 0)
@@ -289,22 +289,21 @@ namespace SixLabors.Fonts
             }
 
             if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, out GlyphMetrics[]? metrics))
+                && this.TryGetColoredMetrics(codePoint, glyphId, out GlyphMetrics[]? metrics))
             {
                 return metrics;
             }
 
             // We overwrite the cache entry for this type should the attributes change.
             GlyphMetrics[]? cached = this.glyphCache[glyphId];
-            if (cached == null || cached[0]!.TextAttributes != textAttributes)
+            if (cached is null)
             {
                 this.glyphCache[glyphId] = new[]
                 {
                     this.CreateGlyphMetrics(
                     codePoint,
                     glyphId,
-                    glyphType,
-                    textAttributes)
+                    glyphType)
                 };
             }
 
@@ -512,7 +511,7 @@ namespace SixLabors.Fonts
             return glyphVector;
         }
 
-        private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
+        private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
             if (this.colrTable == null || this.colorGlyphCache == null)
             {
@@ -522,7 +521,7 @@ namespace SixLabors.Fonts
 
             // We overwrite the cache entry for this type should the attributes change.
             metrics = this.colorGlyphCache[glyphId];
-            if (metrics == null || metrics[0].TextAttributes != textAttributes)
+            if (metrics is null)
             {
                 Span<LayerRecord> indexes = this.colrTable.GetLayers(glyphId);
                 if (indexes.Length > 0)
@@ -532,7 +531,7 @@ namespace SixLabors.Fonts
                     {
                         LayerRecord? layer = indexes[i];
 
-                        metrics[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, layer.PaletteIndex);
+                        metrics[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PaletteIndex);
                     }
                 }
 
@@ -547,7 +546,6 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             ushort glyphId,
             GlyphType glyphType,
-            TextAttribute textAttributes,
             ushort palleteIndex = 0)
         {
             GlyphVector vector = this.glyphs.GetGlyph(glyphId);
@@ -585,7 +583,6 @@ namespace SixLabors.Fonts
                 this.UnitsPerEm,
                 glyphId,
                 glyphType,
-                textAttributes,
                 color);
         }
     }

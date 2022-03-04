@@ -187,10 +187,9 @@ namespace SixLabors.Fonts
         /// Gets the glyph metrics for a given code point.
         /// </summary>
         /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
-        /// <param name="textAttributes">The text attributes to assign to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The glyph metrics to find.</returns>
-        public abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, TextAttribute textAttributes, ColorFontSupport support);
+        public abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point and glyph id.
@@ -200,10 +199,9 @@ namespace SixLabors.Fonts
         /// The previously matched or substituted glyph id for the codepoint in the face.
         /// If this value equals <value>0</value> the default fallback metrics are returned.
         /// </param>
-        /// <param name="textAttributes">The text attributes to assigned to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
-        internal abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, ColorFontSupport support);
+        internal abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support);
 
         /// <summary>
         /// Applies any available substitutions to the collection of glyphs.

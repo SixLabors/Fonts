@@ -130,14 +130,13 @@ namespace SixLabors.Fonts
 
                 CodePoint codePoint = data.CodePoint;
                 ushort[] glyphIds = data.GlyphIds;
-                TextAttribute textAttributes = data.TextRun.TextAttributes;
-
                 var m = new List<GlyphMetrics>(glyphIds.Length);
+
                 foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, colorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
@@ -149,7 +148,7 @@ namespace SixLabors.Fonts
 
                         // We slip the text run in here while we clone so we have
                         // it available to the renderer.
-                        m.Add(new GlyphMetrics(gm, data.TextRun, codePoint));
+                        m.Add(GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint));
                     }
                 }
 
@@ -191,14 +190,13 @@ namespace SixLabors.Fonts
                 GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
                 CodePoint codePoint = data.CodePoint;
                 ushort[] glyphIds = data.GlyphIds;
-                TextAttribute textAttributes = data.TextRun.TextAttributes;
-
                 var m = new List<GlyphMetrics>(glyphIds.Length);
+
                 foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, colorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
@@ -207,7 +205,7 @@ namespace SixLabors.Fonts
 
                         // We slip the text run in here while we clone so we have
                         // it available to the renderer.
-                        m.Add(new GlyphMetrics(gm, data.TextRun, codePoint));
+                        m.Add(GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint));
                     }
                 }
 

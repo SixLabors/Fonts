@@ -18,7 +18,7 @@ namespace SixLabors.Fonts
         private GlyphVector vector;
         private readonly Dictionary<float, GlyphVector> scaledVector = new();
         private Vector2 offset = Vector2.Zero;
-        private readonly TextRun textRun = new();
+        private TextRun textRun = new();
 
         internal GlyphMetrics(
             StreamFontMetrics font,
@@ -31,7 +31,6 @@ namespace SixLabors.Fonts
             ushort unitsPerEM,
             ushort glyphId,
             GlyphType glyphType = GlyphType.Standard,
-            TextAttribute textAttributes = TextAttribute.None,
             GlyphColor? glyphColor = null)
         {
             this.FontMetrics = font;
@@ -47,49 +46,10 @@ namespace SixLabors.Fonts
             this.Width = bounds.Max.X - bounds.Min.X;
             this.Height = bounds.Max.Y - bounds.Min.Y;
             this.GlyphType = glyphType;
-            this.TextAttributes = textAttributes;
             this.LeftSideBearing = leftSideBearing;
             this.TopSideBearing = topSideBearing;
-
-            Vector2 scaleFactor = new(unitsPerEM * 72F);
-            if (this.TextAttributes.HasFlag(TextAttribute.Subscript))
-            {
-                float units = unitsPerEM;
-                scaleFactor /= new Vector2(this.FontMetrics.SubscriptXSize / units, this.FontMetrics.SubscriptYSize / units);
-                this.offset = new(this.FontMetrics.SubscriptXOffset, this.FontMetrics.SubscriptYOffset);
-            }
-            else if (this.TextAttributes.HasFlag(TextAttribute.Superscript))
-            {
-                float units = unitsPerEM;
-                scaleFactor /= new Vector2(this.FontMetrics.SuperscriptXSize / units, this.FontMetrics.SuperscriptYSize / units);
-                this.offset = new(this.FontMetrics.SuperscriptXOffset, -this.FontMetrics.SuperscriptYOffset);
-            }
-
-            this.ScaleFactor = scaleFactor;
+            this.ScaleFactor = new(unitsPerEM * 72F);
             this.GlyphColor = glyphColor;
-        }
-
-        internal GlyphMetrics(GlyphMetrics other, TextRun textRun, CodePoint codePoint)
-        {
-            this.FontMetrics = other.FontMetrics;
-            this.CodePoint = codePoint;
-            this.UnitsPerEm = other.UnitsPerEm;
-            this.vector = GlyphVector.DeepClone(other.vector);
-
-            this.AdvanceWidth = other.AdvanceWidth;
-            this.AdvanceHeight = other.AdvanceHeight;
-            this.GlyphId = other.GlyphId;
-
-            this.Width = other.Width;
-            this.Height = other.Height;
-            this.GlyphType = other.GlyphType;
-            this.TextAttributes = other.TextAttributes;
-            this.LeftSideBearing = other.LeftSideBearing;
-            this.TopSideBearing = other.TopSideBearing;
-            this.ScaleFactor = other.ScaleFactor;
-            this.GlyphColor = other.GlyphColor;
-            this.offset = other.offset;
-            this.textRun = textRun;
         }
 
         /// <summary>
@@ -138,11 +98,6 @@ namespace SixLabors.Fonts
         public GlyphType GlyphType { get; }
 
         /// <summary>
-        /// Gets the text attributes applied to this glyph.
-        /// </summary>
-        public TextAttribute TextAttributes { get; }
-
-        /// <summary>
         /// Gets the color of this glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
         /// </summary>
         public GlyphColor? GlyphColor { get; }
@@ -151,12 +106,58 @@ namespace SixLabors.Fonts
         public ushort UnitsPerEm { get; }
 
         /// <inheritdoc cref="FontMetrics.ScaleFactor"/>
-        public Vector2 ScaleFactor { get; }
+        public Vector2 ScaleFactor { get; private set; }
 
         /// <summary>
         /// Gets the glyph Id.
         /// </summary>
         internal ushort GlyphId { get; }
+
+        /// <summary>
+        /// Performs a semi-deep clone (FontMetrics are not cloned) for rendering
+        /// This allows caching the original in the font metrics.
+        /// </summary>
+        /// <param name="other">The original glyph metrics.</param>
+        /// <param name="textRun">The text run this glyph is a member of.</param>
+        /// <param name="codePoint">The codepoint for this glyph.</param>
+        /// <returns>The new <see cref="GlyphMetrics"/>.</returns>
+        internal static GlyphMetrics CloneForRendering(GlyphMetrics other, TextRun textRun, CodePoint codePoint)
+        {
+            StreamFontMetrics fontMetrics = other.FontMetrics;
+            Vector2 offset = other.offset;
+            Vector2 scaleFactor = other.ScaleFactor;
+            if (textRun.TextAttributes.HasFlag(TextAttribute.Subscript))
+            {
+                float units = other.UnitsPerEm;
+                scaleFactor /= new Vector2(fontMetrics.SubscriptXSize / units, fontMetrics.SubscriptYSize / units);
+                offset = new(other.FontMetrics.SubscriptXOffset, other.FontMetrics.SubscriptYOffset);
+            }
+            else if (textRun.TextAttributes.HasFlag(TextAttribute.Superscript))
+            {
+                float units = other.UnitsPerEm;
+                scaleFactor /= new Vector2(fontMetrics.SuperscriptXSize / units, fontMetrics.SuperscriptYSize / units);
+                offset = new(fontMetrics.SuperscriptXOffset, -fontMetrics.SuperscriptYOffset);
+            }
+
+            GlyphMetrics metrics = new(
+                fontMetrics,
+                codePoint,
+                GlyphVector.DeepClone(other.vector),
+                other.AdvanceWidth,
+                other.AdvanceHeight,
+                other.LeftSideBearing,
+                other.TopSideBearing,
+                other.UnitsPerEm,
+                other.GlyphId,
+                other.GlyphType,
+                other.GlyphColor);
+
+            metrics.offset = offset;
+            metrics.ScaleFactor = scaleFactor;
+            metrics.textRun = textRun;
+
+            return metrics;
+        }
 
         /// <summary>
         /// Gets the outline for the current glyph.
@@ -326,8 +327,6 @@ namespace SixLabors.Fonts
 
                     surface.EndFigure();
                 }
-
-                // TODO: Draw rectangles for strikethrough, underline.
             }
 
             surface.EndGlyph();

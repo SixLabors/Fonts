@@ -93,7 +93,7 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Add(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             // Get letter A
-            Glyph g = font.GetGlyphs(new CodePoint(41), TextAttribute.None, ColorFontSupport.None).First();
+            Glyph g = font.GetGlyphs(new CodePoint(41), ColorFontSupport.None).First();
             GlyphOutline instance = g.GlyphMetrics.GetOutline();
 
             Assert.Equal(20, instance.ControlPoints.Length);
@@ -109,7 +109,7 @@ namespace SixLabors.Fonts.Tests
             var instance = font.FontMetrics as StreamFontMetrics;
             CodePoint codePoint = this.AsCodePoint("😀");
             Assert.True(instance.TryGetGlyphId(codePoint, out ushort idx));
-            IEnumerable<GlyphMetrics> vectors = instance.GetGlyphMetrics(codePoint, idx, TextAttribute.None, ColorFontSupport.MicrosoftColrFormat);
+            IEnumerable<GlyphMetrics> vectors = instance.GetGlyphMetrics(codePoint, idx, ColorFontSupport.MicrosoftColrFormat);
             Assert.Equal(3, vectors.Count());
         }
 
