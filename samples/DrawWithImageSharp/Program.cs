@@ -42,11 +42,12 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily tahoma = SystemFonts.Get("Tahoma");
             var textRuns = new List<TextRun>
             {
-                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(32, FontStyle.Bold) },
-                new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(32, FontStyle.Italic) }
+                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(32, FontStyle.Bold), TextAttributes = TextAttribute.Strikethrough },
+                new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(32, FontStyle.Italic), TextAttributes = TextAttribute.Underline }
             };
 
             RenderText(uiFont, "The quick brown fox jumps over the lazy dog", 32, textRuns: textRuns);
+
             return;
             RenderText(font2, "\uFB01", pointSize: 11.25F);
             RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
