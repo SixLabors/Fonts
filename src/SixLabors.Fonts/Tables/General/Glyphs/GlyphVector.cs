@@ -73,6 +73,15 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             => Transform(src, Matrix3x2.CreateScale(scale));
 
         /// <summary>
+        /// Scales a glyph vector uniformly by a specified scale.
+        /// </summary>
+        /// <param name="src">The glyph vector to translate.</param>
+        /// <param name="scales">The vector scale to use.</param>
+        /// <returns>The new <see cref="GlyphVector"/>.</returns>
+        public static GlyphVector Scale(GlyphVector src, Vector2 scales)
+            => Transform(src, Matrix3x2.CreateScale(scales));
+
+        /// <summary>
         /// Translates a glyph vector by a specified x and y coordinates.
         /// </summary>
         /// <param name="src">The glyph vector to translate.</param>

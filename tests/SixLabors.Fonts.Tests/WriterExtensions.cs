@@ -323,7 +323,6 @@ namespace SixLabors.Fonts.Tests
 
         public static void WritePostTable(this BigEndianBinaryWriter writer, PostTable postTable)
         {
-
             // HEADER
             // Type            | Name                | Description
             // ----------------|---------------------|---------------------------------------------------------------

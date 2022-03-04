@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Linq;
+using System.Numerics;
 using SixLabors.Fonts.Unicode;
 using Xunit;
 
@@ -66,7 +67,7 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
-            Assert.Equal(glyphMetrics.UnitsPerEm * 72F, glyphMetrics.ScaleFactor);
+            Assert.Equal(new Vector2(glyphMetrics.UnitsPerEm * 72F), glyphMetrics.ScaleFactor);
             Assert.Equal(1295, glyphMetrics.AdvanceWidth);
             Assert.Equal(2789, glyphMetrics.AdvanceHeight);
             Assert.Equal(1293, glyphMetrics.Width);
@@ -93,7 +94,7 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
-            Assert.Equal(glyphMetrics.UnitsPerEm * 72F, glyphMetrics.ScaleFactor);
+            Assert.Equal(new Vector2(glyphMetrics.UnitsPerEm * 72F), glyphMetrics.ScaleFactor);
             Assert.Equal(1295, glyphMetrics.AdvanceWidth);
             Assert.Equal(2789, glyphMetrics.AdvanceHeight);
             Assert.Equal(1293, glyphMetrics.Width);
@@ -121,7 +122,7 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
-            Assert.Equal(glyphMetrics.UnitsPerEm * 72F, glyphMetrics.ScaleFactor);
+            Assert.Equal(new Vector2(glyphMetrics.UnitsPerEm * 72F), glyphMetrics.ScaleFactor);
             Assert.Equal(1295, glyphMetrics.AdvanceWidth);
             Assert.Equal(2789, glyphMetrics.AdvanceHeight);
             Assert.Equal(1293, glyphMetrics.Width);
@@ -150,7 +151,7 @@ namespace SixLabors.Fonts.Tests
             // Position 0.
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
-            Assert.Equal(glyphMetrics.UnitsPerEm * 72F, glyphMetrics.ScaleFactor);
+            Assert.Equal(new Vector2(glyphMetrics.UnitsPerEm * 72F), glyphMetrics.ScaleFactor);
             Assert.Equal(364, glyphMetrics.AdvanceWidth);
             Assert.Equal(1000, glyphMetrics.AdvanceHeight);
             Assert.Equal(265, glyphMetrics.Width);

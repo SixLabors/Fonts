@@ -311,7 +311,7 @@ namespace SixLabors.Fonts
                         new Glyph(metric, info.PointSize),
                         location,
                         info.ScaledAdvance,
-                        metric.AdvanceHeight * (info.PointSize / metric.ScaleFactor),
+                        metric.AdvanceHeight * (info.PointSize / metric.ScaleFactor.Y),
                         textBox.ScaledMaxLineHeight * options.LineSpacing,
                         i == 0));
                 }
@@ -428,7 +428,7 @@ namespace SixLabors.Fonts
                 {
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, info.PointSize),
-                        location + new Vector2((xWidth - (metric.AdvanceWidth * (info.PointSize / metric.ScaleFactor))) * .5F, 0),
+                        location + new Vector2((xWidth - (metric.AdvanceWidth * (info.PointSize / metric.ScaleFactor.X))) * .5F, 0),
                         xLineAdvance,
                         info.ScaledAdvance,
                         textBox.ScaledMaxLineHeight,
@@ -671,7 +671,7 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    glyphAdvance *= pointSize / glyph.ScaleFactor;
+                    glyphAdvance *= pointSize / (isHorizontal ? glyph.ScaleFactor.X : glyph.ScaleFactor.Y);
 
                     // Should we start a new line?
                     bool requiredBreak = false;
@@ -762,10 +762,10 @@ namespace SixLabors.Fonts
                     }
 
                     GlyphMetrics metric = metrics[0];
-                    float ascender = metric.FontMetrics.Ascender * pointSize / metric.ScaleFactor;
-                    float descender = Math.Abs(metric.FontMetrics.Descender * pointSize / metric.ScaleFactor);
-                    float lineHeight = metric.FontMetrics.LineHeight * pointSize / metric.ScaleFactor;
-                    float leftSideBearing = metric.LeftSideBearing * pointSize / metric.ScaleFactor;
+                    float ascender = metric.FontMetrics.Ascender * pointSize / metric.ScaleFactor.Y;
+                    float descender = Math.Abs(metric.FontMetrics.Descender * pointSize / metric.ScaleFactor.Y);
+                    float lineHeight = metric.FontMetrics.LineHeight * pointSize / metric.ScaleFactor.Y;
+                    float leftSideBearing = metric.LeftSideBearing * pointSize / metric.ScaleFactor.X;
 
                     if (ascender > scaledMaxAscender)
                     {

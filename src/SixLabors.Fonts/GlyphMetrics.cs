@@ -48,7 +48,20 @@ namespace SixLabors.Fonts
             this.TextAttributes = textAttributes;
             this.LeftSideBearing = leftSideBearing;
             this.TopSideBearing = topSideBearing;
-            this.ScaleFactor = this.UnitsPerEm * 72F;
+
+            Vector2 scaleFactor = new(unitsPerEM * 72F);
+            if (this.TextAttributes.HasFlag(TextAttribute.Subscript))
+            {
+                float units = unitsPerEM;
+                scaleFactor /= new Vector2(this.FontMetrics.SubscriptXSize / units, this.FontMetrics.SubscriptYSize / units);
+            }
+            else if (this.TextAttributes.HasFlag(TextAttribute.Superscript))
+            {
+                float units = unitsPerEM;
+                scaleFactor /= new Vector2(this.FontMetrics.SuperscriptXSize / units, this.FontMetrics.SuperscriptYSize / units);
+            }
+
+            this.ScaleFactor = scaleFactor;
             this.GlyphColor = glyphColor;
         }
 
@@ -132,7 +145,7 @@ namespace SixLabors.Fonts
         public ushort UnitsPerEm { get; }
 
         /// <inheritdoc cref="FontMetrics.ScaleFactor"/>
-        public float ScaleFactor { get; }
+        public Vector2 ScaleFactor { get; }
 
         /// <summary>
         /// Gets the glyph Id.
@@ -186,9 +199,10 @@ namespace SixLabors.Fonts
         internal FontRectangle GetBoundingBox(Vector2 origin, float scaledPointSize)
         {
             // TODO: This should be scaled for subscript/superscript.
+            Vector2 scale = new Vector2(scaledPointSize) / this.ScaleFactor;
             Bounds bounds = this.GetBounds();
-            Vector2 size = bounds.Size() * scaledPointSize / this.ScaleFactor;
-            Vector2 loc = new Vector2(bounds.Min.X, bounds.Max.Y) * scaledPointSize / this.ScaleFactor * MirrorScale;
+            Vector2 size = bounds.Size() * scale;
+            Vector2 loc = new Vector2(bounds.Min.X, bounds.Max.Y) * scale * MirrorScale;
 
             loc = origin + loc;
 
@@ -223,7 +237,7 @@ namespace SixLabors.Fonts
 
                 if (!this.scaledVector.TryGetValue(scaledPoint, out GlyphVector scaledVector))
                 {
-                    scaledVector = GlyphVector.Scale(this.vector, scaledPoint / this.ScaleFactor);
+                    scaledVector = GlyphVector.Scale(this.vector, new Vector2(scaledPoint) / this.ScaleFactor);
                     this.scaledVector[scaledPoint] = scaledVector;
                 }
 
