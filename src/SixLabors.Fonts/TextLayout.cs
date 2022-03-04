@@ -526,7 +526,7 @@ namespace SixLabors.Fonts
 
                     // Get the glyph id for the codepoint and add to the collection.
                     font.FontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
-                    substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, textRuns[textRun].TextAttributes, codePointIndex);
+                    substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, textRuns[textRun], codePointIndex);
 
                     codePointIndex++;
                     graphemeCodePointIndex++;

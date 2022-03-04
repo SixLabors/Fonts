@@ -18,9 +18,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphShapingData"/> class.
         /// </summary>
-        public GlyphShapingData()
-        {
-        }
+        public GlyphShapingData(TextRun textRun) => this.TextRun = textRun;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphShapingData"/> class.
@@ -32,7 +30,7 @@ namespace SixLabors.Fonts
             this.CodePoint = data.CodePoint;
             this.CodePointCount = data.CodePointCount;
             this.Direction = data.Direction;
-            this.TextAttributes = data.TextAttributes;
+            this.TextRun = data.TextRun;
             this.GlyphIds = data.GlyphIds;
             this.LigatureId = data.LigatureId;
             this.LigatureComponent = data.LigatureComponent;
@@ -63,9 +61,9 @@ namespace SixLabors.Fonts
         public TextDirection Direction { get; set; }
 
         /// <summary>
-        /// Gets or sets the text attributes applied to this glyph.
+        /// Gets or sets the text run this glyph belongs to.
         /// </summary>
-        public TextAttribute TextAttributes { get; set; }
+        public TextRun TextRun { get; set; }
 
         /// <summary>
         /// Gets or sets the collection of glyph ids.
@@ -104,6 +102,6 @@ namespace SixLabors.Fonts
 
         private string DebuggerDisplay
             => FormattableString
-            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : [{string.Join(",", this.GlyphIds)}]");
+            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : [{string.Join(",", this.GlyphIds)}]");
     }
 }

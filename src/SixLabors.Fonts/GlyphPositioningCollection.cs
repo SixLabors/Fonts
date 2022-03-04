@@ -130,7 +130,7 @@ namespace SixLabors.Fonts
 
                 CodePoint codePoint = data.CodePoint;
                 ushort[] glyphIds = data.GlyphIds;
-                TextAttribute textAttributes = data.TextAttributes;
+                TextAttribute textAttributes = data.TextRun.TextAttributes;
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
                 foreach (ushort id in glyphIds)
@@ -147,7 +147,9 @@ namespace SixLabors.Fonts
                             break;
                         }
 
-                        m.Add(new GlyphMetrics(gm, codePoint));
+                        // We slip the text run in here while we clone so we have
+                        // it available to the renderer.
+                        m.Add(new GlyphMetrics(gm, data.TextRun, codePoint));
                     }
                 }
 
@@ -189,7 +191,7 @@ namespace SixLabors.Fonts
                 GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
                 CodePoint codePoint = data.CodePoint;
                 ushort[] glyphIds = data.GlyphIds;
-                TextAttribute textAttributes = data.TextAttributes;
+                TextAttribute textAttributes = data.TextRun.TextAttributes;
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
                 foreach (ushort id in glyphIds)
@@ -203,7 +205,9 @@ namespace SixLabors.Fonts
                             hasFallBacks = true;
                         }
 
-                        m.Add(new GlyphMetrics(gm, codePoint));
+                        // We slip the text run in here while we clone so we have
+                        // it available to the renderer.
+                        m.Add(new GlyphMetrics(gm, data.TextRun, codePoint));
                     }
                 }
 

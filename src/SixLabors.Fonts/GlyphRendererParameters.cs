@@ -13,7 +13,7 @@ namespace SixLabors.Fonts
     [DebuggerDisplay("GlyphIndex = {GlyphIndex}, PointSize = {PointSize}, DpiX = {DpiX}, DpiY = {DpiY}")]
     public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParameters>
     {
-        internal GlyphRendererParameters(GlyphMetrics glyph, float pointSize, float dpi)
+        internal GlyphRendererParameters(GlyphMetrics glyph, TextRun textRun, float pointSize, float dpi)
         {
             this.Font = glyph.FontMetrics.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
             this.FontStyle = glyph.FontMetrics.Description.Style;
@@ -22,6 +22,7 @@ namespace SixLabors.Fonts
             this.Dpi = dpi;
             this.GlyphType = glyph.GlyphType;
             this.GlyphColor = glyph.GlyphColor ?? default;
+            this.TextRun = textRun;
         }
 
         /// <summary>
@@ -55,9 +56,14 @@ namespace SixLabors.Fonts
         public float PointSize { get; }
 
         /// <summary>
-        /// Gets the dpi along the X axis we are rendering at.
+        /// Gets the dots-per-inch we are rendering at.
         /// </summary>
         public float Dpi { get; }
+
+        /// <summary>
+        /// Gets the text run this glyph belongs to.
+        /// </summary>
+        public TextRun TextRun { get; }
 
         /// <summary>
         /// Compares two <see cref="GlyphRendererParameters"/> objects for equality.

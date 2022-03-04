@@ -18,6 +18,7 @@ namespace SixLabors.Fonts
         private GlyphVector vector;
         private readonly Dictionary<float, GlyphVector> scaledVector = new();
         private Vector2 offset = Vector2.Zero;
+        private readonly TextRun textRun = new();
 
         internal GlyphMetrics(
             StreamFontMetrics font,
@@ -68,7 +69,7 @@ namespace SixLabors.Fonts
             this.GlyphColor = glyphColor;
         }
 
-        internal GlyphMetrics(GlyphMetrics other, CodePoint codePoint)
+        internal GlyphMetrics(GlyphMetrics other, TextRun textRun, CodePoint codePoint)
         {
             this.FontMetrics = other.FontMetrics;
             this.CodePoint = codePoint;
@@ -88,6 +89,7 @@ namespace SixLabors.Fonts
             this.ScaleFactor = other.ScaleFactor;
             this.GlyphColor = other.GlyphColor;
             this.offset = other.offset;
+            this.textRun = textRun;
         }
 
         /// <summary>
@@ -228,7 +230,7 @@ namespace SixLabors.Fonts
 
             FontRectangle box = this.GetBoundingBox(location, scaledPoint);
 
-            var parameters = new GlyphRendererParameters(this, pointSize, dpi);
+            var parameters = new GlyphRendererParameters(this, this.textRun, pointSize, dpi);
 
             if (surface.BeginGlyph(box, parameters))
             {
@@ -239,6 +241,7 @@ namespace SixLabors.Fonts
 
                 if (!this.scaledVector.TryGetValue(scaledPoint, out GlyphVector scaledVector))
                 {
+                    // TODO: Optimize to a single transform.
                     Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor;
                     scaledVector = GlyphVector.Scale(this.vector, scale);
 

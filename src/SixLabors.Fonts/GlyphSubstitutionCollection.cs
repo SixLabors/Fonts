@@ -94,15 +94,14 @@ namespace SixLabors.Fonts
         /// <param name="glyphId">The id of the glyph to add.</param>
         /// <param name="codePoint">The codepoint the glyph represents.</param>
         /// <param name="direction">The resolved text direction for the codepoint.</param>
-        /// <param name="textAttributes">The text attributes to apply to the glyph.</param>
+        /// <param name="textRun">The text run this glyph belongs to.</param>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
-        public void AddGlyph(ushort glyphId, CodePoint codePoint, TextDirection direction, TextAttribute textAttributes, int offset)
+        public void AddGlyph(ushort glyphId, CodePoint codePoint, TextDirection direction, TextRun textRun, int offset)
         {
-            this.glyphs.Add(offset, new()
+            this.glyphs.Add(offset, new(textRun)
             {
                 CodePoint = codePoint,
                 Direction = direction,
-                TextAttributes = textAttributes,
                 GlyphIds = new[] { glyphId },
             });
             this.offsets.Add(offset);
