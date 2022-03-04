@@ -59,8 +59,8 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
-            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, ColorFontSupport.None).First().GlyphMetrics;
+            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, TextAttribute.None, ColorFontSupport.None).First();
+            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, TextAttribute.None, ColorFontSupport.None).First().GlyphMetrics;
 
             Assert.Equal(glyphMetrics, glyphMetrics1);
 
@@ -86,8 +86,8 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
-            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, ColorFontSupport.None).First().GlyphMetrics;
+            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, TextAttribute.None, ColorFontSupport.None).First();
+            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, TextAttribute.None, ColorFontSupport.None).First().GlyphMetrics;
 
             Assert.Equal(glyphMetrics, glyphMetrics1);
 
@@ -114,8 +114,8 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
-            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, ColorFontSupport.None).First().GlyphMetrics;
+            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, TextAttribute.None, ColorFontSupport.None).First();
+            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, TextAttribute.None, ColorFontSupport.None).First().GlyphMetrics;
 
             Assert.Equal(glyphMetrics, glyphMetrics1);
 
@@ -142,8 +142,8 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
-            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, ColorFontSupport.None).First().GlyphMetrics;
+            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, TextAttribute.None, ColorFontSupport.None).First();
+            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, TextAttribute.None, ColorFontSupport.None).First().GlyphMetrics;
 
             Assert.Equal(glyphMetrics, glyphMetrics1);
 
