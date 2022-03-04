@@ -241,13 +241,11 @@ namespace SixLabors.Fonts
 
                 if (!this.scaledVector.TryGetValue(scaledPoint, out GlyphVector scaledVector))
                 {
-                    // TODO: Optimize to a single transform.
+                    // Scale and translate the glyph
                     Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor;
-                    scaledVector = GlyphVector.Scale(this.vector, scale);
-
-                    Vector2 offset = this.offset * scale * MirrorScale;
-                    scaledVector = GlyphVector.Translate(scaledVector, offset.X, offset.Y);
-
+                    var transform = Matrix3x2.CreateScale(scale);
+                    transform.Translation = this.offset * scale * MirrorScale;
+                    scaledVector = GlyphVector.Transform(this.vector, transform);
                     this.scaledVector[scaledPoint] = scaledVector;
                 }
 
