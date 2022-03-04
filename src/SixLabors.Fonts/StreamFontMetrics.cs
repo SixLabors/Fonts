@@ -289,12 +289,14 @@ namespace SixLabors.Fonts
             }
 
             if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredVectors(codePoint, glyphId, textAttributes, out GlyphMetrics[]? metrics))
+                && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, out GlyphMetrics[]? metrics))
             {
                 return metrics;
             }
 
-            if (this.glyphCache[glyphId] is null)
+            // We overwrite the cache entry for this type should the attributes change.
+            GlyphMetrics[]? cached = this.glyphCache[glyphId];
+            if (cached == null || cached[0]!.TextAttributes != textAttributes)
             {
                 this.glyphCache[glyphId] = new[]
                 {
@@ -510,34 +512,35 @@ namespace SixLabors.Fonts
             return glyphVector;
         }
 
-        private bool TryGetColoredVectors(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
+        private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
             if (this.colrTable == null || this.colorGlyphCache == null)
             {
-                vectors = null;
+                metrics = null;
                 return false;
             }
 
-            vectors = this.colorGlyphCache[glyphId];
-            if (vectors is null)
+            // We overwrite the cache entry for this type should the attributes change.
+            metrics = this.colorGlyphCache[glyphId];
+            if (metrics == null || metrics[0].TextAttributes != textAttributes)
             {
                 Span<LayerRecord> indexes = this.colrTable.GetLayers(glyphId);
                 if (indexes.Length > 0)
                 {
-                    vectors = new GlyphMetrics[indexes.Length];
+                    metrics = new GlyphMetrics[indexes.Length];
                     for (int i = 0; i < indexes.Length; i++)
                     {
                         LayerRecord? layer = indexes[i];
 
-                        vectors[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, layer.PaletteIndex);
+                        metrics[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, layer.PaletteIndex);
                     }
                 }
 
-                vectors ??= Array.Empty<GlyphMetrics>();
-                this.colorGlyphCache[glyphId] = vectors;
+                metrics ??= Array.Empty<GlyphMetrics>();
+                this.colorGlyphCache[glyphId] = metrics;
             }
 
-            return vectors.Length > 0;
+            return metrics.Length > 0;
         }
 
         private GlyphMetrics CreateGlyphMetrics(

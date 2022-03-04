@@ -17,6 +17,7 @@ namespace SixLabors.Fonts
         private static readonly Vector2 MirrorScale = new(1, -1);
         private GlyphVector vector;
         private readonly Dictionary<float, GlyphVector> scaledVector = new();
+        private Vector2 offset = Vector2.Zero;
 
         internal GlyphMetrics(
             StreamFontMetrics font,
@@ -54,11 +55,13 @@ namespace SixLabors.Fonts
             {
                 float units = unitsPerEM;
                 scaleFactor /= new Vector2(this.FontMetrics.SubscriptXSize / units, this.FontMetrics.SubscriptYSize / units);
+                this.offset = new(this.FontMetrics.SubscriptXOffset, this.FontMetrics.SubscriptYOffset);
             }
             else if (this.TextAttributes.HasFlag(TextAttribute.Superscript))
             {
                 float units = unitsPerEM;
                 scaleFactor /= new Vector2(this.FontMetrics.SuperscriptXSize / units, this.FontMetrics.SuperscriptYSize / units);
+                this.offset = new(this.FontMetrics.SuperscriptXOffset, -this.FontMetrics.SuperscriptYOffset);
             }
 
             this.ScaleFactor = scaleFactor;
@@ -84,6 +87,7 @@ namespace SixLabors.Fonts
             this.TopSideBearing = other.TopSideBearing;
             this.ScaleFactor = other.ScaleFactor;
             this.GlyphColor = other.GlyphColor;
+            this.offset = other.offset;
         }
 
         /// <summary>
@@ -198,12 +202,10 @@ namespace SixLabors.Fonts
 
         internal FontRectangle GetBoundingBox(Vector2 origin, float scaledPointSize)
         {
-            // TODO: This should be scaled for subscript/superscript.
             Vector2 scale = new Vector2(scaledPointSize) / this.ScaleFactor;
             Bounds bounds = this.GetBounds();
             Vector2 size = bounds.Size() * scale;
-            Vector2 loc = new Vector2(bounds.Min.X, bounds.Max.Y) * scale * MirrorScale;
-
+            Vector2 loc = (new Vector2(bounds.Min.X, bounds.Max.Y) + this.offset) * scale * MirrorScale;
             loc = origin + loc;
 
             return new FontRectangle(loc.X, loc.Y, size.X, size.Y);
@@ -237,7 +239,12 @@ namespace SixLabors.Fonts
 
                 if (!this.scaledVector.TryGetValue(scaledPoint, out GlyphVector scaledVector))
                 {
-                    scaledVector = GlyphVector.Scale(this.vector, new Vector2(scaledPoint) / this.ScaleFactor);
+                    Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor;
+                    scaledVector = GlyphVector.Scale(this.vector, scale);
+
+                    Vector2 offset = this.offset * scale * MirrorScale;
+                    scaledVector = GlyphVector.Translate(scaledVector, offset.X, offset.Y);
+
                     this.scaledVector[scaledPoint] = scaledVector;
                 }
 

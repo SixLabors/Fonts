@@ -79,12 +79,23 @@ namespace SixLabors.Fonts
             // Add a final run if required.
             if (start < end)
             {
-                textRuns.Add(new()
+                // Offset error by user, last index in input string
+                // instead of exclusive index.
+                if (start == end - 1)
                 {
-                    Start = start,
-                    End = end,
-                    Font = options.Font
-                });
+                    int prevIndex = textRuns.Count - 1;
+                    TextRun previous = textRuns[prevIndex];
+                    previous.End++;
+                }
+                else
+                {
+                    textRuns.Add(new()
+                    {
+                        Start = start,
+                        End = end,
+                        Font = options.Font
+                    });
+                }
             }
 
             return textRuns;
@@ -126,12 +137,15 @@ namespace SixLabors.Fonts
 
             // First do multiple font runs using the individual text runs.
             bool complete = true;
+            int runIndex = 0;
             foreach (TextRun textRun in textRuns)
             {
+                ref int index = ref runIndex;
                 if (!DoFontRun(
                     textRun.Slice(text),
                     textRun.Start,
                     textRuns,
+                    ref index,
                     false,
                     textRun.Font!,
                     bidiRuns,
@@ -149,10 +163,13 @@ namespace SixLabors.Fonts
                 // We do a complete run here across the whole collection.
                 foreach (Font font in fallbackFonts)
                 {
+                    runIndex = 0;
+                    ref int index = ref runIndex;
                     if (DoFontRun(
                         text,
                         0,
                         textRuns,
+                        ref index,
                         true,
                         font,
                         bidiRuns,
@@ -451,6 +468,7 @@ namespace SixLabors.Fonts
             ReadOnlySpan<char> text,
             int start,
             IReadOnlyList<TextRun> textRuns,
+            ref int textRun,
             bool isFallbackRun,
             Font font,
             BidiRun[] bidiRuns,
@@ -466,7 +484,6 @@ namespace SixLabors.Fonts
             int graphemeIndex;
             int codePointIndex = start;
             int bidiRun = 0;
-            int textRun = 0;
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
             for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
             {
@@ -517,7 +534,7 @@ namespace SixLabors.Fonts
             }
 
             // Apply the simple and complex substitutions.
-            // TODO: Investigate HarfBuzz normlizer.
+            // TODO: Investigate HarfBuzz normalizer.
             SubstituteBidiMirrors(font.FontMetrics, substitutions);
             font.FontMetrics.ApplySubstitution(substitutions);
 
