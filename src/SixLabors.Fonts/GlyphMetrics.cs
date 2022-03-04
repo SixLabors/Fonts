@@ -341,10 +341,10 @@ namespace SixLabors.Fonts
 
                     Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor * MirrorScale;
 
-                    var tl = (new Vector2(0, top) * scale) + location;
-                    var tr = (new Vector2(this.AdvanceWidth, top) * scale) + location;
-                    var br = (new Vector2(this.AdvanceWidth, bottom) * scale) + location;
-                    var bl = (new Vector2(0, bottom) * scale) + location;
+                    var tl = (new Vector2(-this.LeftSideBearing, top) * scale) + location;
+                    var tr = (new Vector2(this.AdvanceWidth + this.LeftSideBearing, top) * scale) + location;
+                    var br = (new Vector2(this.AdvanceWidth + this.LeftSideBearing, bottom) * scale) + location;
+                    var bl = (new Vector2(-this.LeftSideBearing, bottom) * scale) + location;
 
                     tl.Y = MathF.Ceiling(tl.Y);
                     tr.Y = MathF.Ceiling(tr.Y);
