@@ -185,6 +185,7 @@ namespace SixLabors.Fonts
 
         internal FontRectangle GetBoundingBox(Vector2 origin, float scaledPointSize)
         {
+            // TODO: This should be scaled for subscript/superscript.
             Bounds bounds = this.GetBounds();
             Vector2 size = bounds.Size() * scaledPointSize / this.ScaleFactor;
             Vector2 loc = new Vector2(bounds.Min.X, bounds.Max.Y) * scaledPointSize / this.ScaleFactor * MirrorScale;
@@ -303,6 +304,8 @@ namespace SixLabors.Fonts
 
                     surface.EndFigure();
                 }
+
+                // TODO: Draw rectangles for strikethrough, underline.
             }
 
             surface.EndGlyph();
