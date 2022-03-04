@@ -152,6 +152,17 @@ namespace SixLabors.Fonts
             this.AdvanceWidthMax = (short)horizontalHeadTable.AdvanceWidthMax;
             this.AdvanceHeightMax = verticalHeadTable == null ? this.LineHeight : verticalHeadTable.AdvanceHeightMax;
 
+            this.SubscriptXSize = os2.SubscriptXSize;
+            this.SubscriptYSize = os2.SubscriptYSize;
+            this.SubscriptXOffset = os2.SubscriptXOffset;
+            this.SubscriptYOffset = os2.SubscriptYOffset;
+            this.SuperscriptXSize = os2.SuperscriptXSize;
+            this.SuperscriptYSize = os2.SuperscriptYSize;
+            this.SuperscriptXOffset = os2.SuperscriptXOffset;
+            this.SuperscriptYOffset = os2.SuperscriptYOffset;
+            this.StrikeoutSize = os2.StrikeoutSize;
+            this.StrikeoutPosition = os2.StrikeoutPosition;
+
             this.kerningTable = kern;
             this.gSubTable = gSubTable;
             this.gPosTable = gPosTable;
@@ -192,6 +203,36 @@ namespace SixLabors.Fonts
         public override short AdvanceHeightMax { get; }
 
         /// <inheritdoc/>
+        public override short SubscriptXSize { get; }
+
+        /// <inheritdoc/>
+        public override short SubscriptYSize { get; }
+
+        /// <inheritdoc/>
+        public override short SubscriptXOffset { get; }
+
+        /// <inheritdoc/>
+        public override short SubscriptYOffset { get; }
+
+        /// <inheritdoc/>
+        public override short SuperscriptXSize { get; }
+
+        /// <inheritdoc/>
+        public override short SuperscriptYSize { get; }
+
+        /// <inheritdoc/>
+        public override short SuperscriptXOffset { get; }
+
+        /// <inheritdoc/>
+        public override short SuperscriptYOffset { get; }
+
+        /// <inheritdoc/>
+        public override short StrikeoutSize { get; }
+
+        /// <inheritdoc/>
+        public override short StrikeoutPosition { get; }
+
+        /// <inheritdoc/>
         internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
             => this.TryGetGlyphId(codePoint, null, out glyphId, out bool _);
 
@@ -224,14 +265,14 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
+        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, TextAttribute textAttributes, ColorFontSupport support)
         {
             this.TryGetGlyphId(codePoint, out ushort glyphId);
-            return this.GetGlyphMetrics(codePoint, glyphId, support);
+            return this.GetGlyphMetrics(codePoint, glyphId, textAttributes, support);
         }
 
         /// <inheritdoc/>
-        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
+        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, ColorFontSupport support)
         {
             GlyphType glyphType = GlyphType.Standard;
             if (glyphId == 0)
@@ -242,7 +283,7 @@ namespace SixLabors.Fonts
             }
 
             if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredVectors(codePoint, glyphId, out GlyphMetrics[]? metrics))
+                && this.TryGetColoredVectors(codePoint, glyphId, textAttributes, out GlyphMetrics[]? metrics))
             {
                 return metrics;
             }
@@ -254,7 +295,8 @@ namespace SixLabors.Fonts
                     this.CreateGlyphMetrics(
                     codePoint,
                     glyphId,
-                    glyphType)
+                    glyphType,
+                    textAttributes)
                 };
             }
 
@@ -469,7 +511,7 @@ namespace SixLabors.Fonts
             return glyphVector;
         }
 
-        private bool TryGetColoredVectors(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
+        private bool TryGetColoredVectors(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
         {
             if (this.colrTable == null || this.colorGlyphCache == null)
             {
@@ -488,7 +530,7 @@ namespace SixLabors.Fonts
                     {
                         LayerRecord? layer = indexes[i];
 
-                        vectors[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PaletteIndex);
+                        vectors[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, layer.PaletteIndex);
                     }
                 }
 
@@ -503,6 +545,7 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             ushort glyphId,
             GlyphType glyphType,
+            TextAttribute textAttributes,
             ushort palleteIndex = 0)
         {
             GlyphVector vector = this.glyphs.GetGlyph(glyphId);
@@ -540,6 +583,7 @@ namespace SixLabors.Fonts
                 this.UnitsPerEm,
                 glyphId,
                 glyphType,
+                textAttributes,
                 color);
         }
     }

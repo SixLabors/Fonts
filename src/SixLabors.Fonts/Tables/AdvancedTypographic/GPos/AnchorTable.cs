@@ -111,7 +111,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 if (collection.TextOptions.ApplyHinting)
                 {
-                    foreach (GlyphMetrics metric in fontMetrics.GetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport))
+                    foreach (GlyphMetrics metric in fontMetrics.GetGlyphMetrics(data.CodePoint, data.TextAttributes, collection.TextOptions.ColorFontSupport))
                     {
                         ReadOnlyMemory<Vector2> points = metric.GetOutline().ControlPoints;
                         if (this.anchorPointIndex < points.Length)

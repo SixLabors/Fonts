@@ -30,33 +30,52 @@ namespace SixLabors.Fonts.Tables.General
         private readonly ushort weightClass;
         private readonly ushort widthClass;
         private readonly short averageCharWidth;
-        private readonly short strikeoutPosition;
-        private readonly short strikeoutSize;
-        private readonly short subscriptXOffset;
-        private readonly short subscriptXSize;
-        private readonly short subscriptYOffset;
-        private readonly short subscriptYSize;
-        private readonly short superscriptXOffset;
-        private readonly short superscriptXSize;
-        private readonly short superscriptYOffset;
-        private readonly short superscriptYSize;
 
-        public OS2Table(short averageCharWidth, ushort weightClass, ushort widthClass, ushort styleType, short subscriptXSize, short subscriptYSize, short subscriptXOffset, short subscriptYOffset, short superscriptXSize, short superscriptYSize, short superscriptXOffset, short superscriptYOffset, short strikeoutSize, short strikeoutPosition, short familyClass, byte[] panose, uint unicodeRange1, uint unicodeRange2, uint unicodeRange3, uint unicodeRange4, string tag, FontStyleSelection fontStyle, ushort firstCharIndex, ushort lastCharIndex, short typoAscender, short typoDescender, short typoLineGap, ushort winAscent, ushort winDescent)
+        public OS2Table(
+            short averageCharWidth,
+            ushort weightClass,
+            ushort widthClass,
+            ushort styleType,
+            short subscriptXSize,
+            short subscriptYSize,
+            short subscriptXOffset,
+            short subscriptYOffset,
+            short superscriptXSize,
+            short superscriptYSize,
+            short superscriptXOffset,
+            short superscriptYOffset,
+            short strikeoutSize,
+            short strikeoutPosition,
+            short familyClass,
+            byte[] panose,
+            uint unicodeRange1,
+            uint unicodeRange2,
+            uint unicodeRange3,
+            uint unicodeRange4,
+            string tag,
+            FontStyleSelection fontStyle,
+            ushort firstCharIndex,
+            ushort lastCharIndex,
+            short typoAscender,
+            short typoDescender,
+            short typoLineGap,
+            ushort winAscent,
+            ushort winDescent)
         {
             this.averageCharWidth = averageCharWidth;
             this.weightClass = weightClass;
             this.widthClass = widthClass;
             this.styleType = styleType;
-            this.subscriptXSize = subscriptXSize;
-            this.subscriptYSize = subscriptYSize;
-            this.subscriptXOffset = subscriptXOffset;
-            this.subscriptYOffset = subscriptYOffset;
-            this.superscriptXSize = superscriptXSize;
-            this.superscriptYSize = superscriptYSize;
-            this.superscriptXOffset = superscriptXOffset;
-            this.superscriptYOffset = superscriptYOffset;
-            this.strikeoutSize = strikeoutSize;
-            this.strikeoutPosition = strikeoutPosition;
+            this.SubscriptXSize = subscriptXSize;
+            this.SubscriptYSize = subscriptYSize;
+            this.SubscriptXOffset = subscriptXOffset;
+            this.SubscriptYOffset = subscriptYOffset;
+            this.SuperscriptXSize = superscriptXSize;
+            this.SuperscriptYSize = superscriptYSize;
+            this.SuperscriptXOffset = superscriptXOffset;
+            this.SuperscriptYOffset = superscriptYOffset;
+            this.StrikeoutSize = strikeoutSize;
+            this.StrikeoutPosition = strikeoutPosition;
             this.familyClass = familyClass;
             this.panose = panose;
             this.unicodeRange1 = unicodeRange1;
@@ -74,22 +93,30 @@ namespace SixLabors.Fonts.Tables.General
             this.WinDescent = winDescent;
         }
 
-        public OS2Table(OS2Table version0Table, ushort codePageRange1, ushort codePageRange2, short heightX, short capHeight, ushort defaultChar, ushort breakChar, ushort maxContext)
+        public OS2Table(
+            OS2Table version0Table,
+            ushort codePageRange1,
+            ushort codePageRange2,
+            short heightX,
+            short capHeight,
+            ushort defaultChar,
+            ushort breakChar,
+            ushort maxContext)
             : this(
                 version0Table.averageCharWidth,
                 version0Table.weightClass,
                 version0Table.widthClass,
                 version0Table.styleType,
-                version0Table.subscriptXSize,
-                version0Table.subscriptYSize,
-                version0Table.subscriptXOffset,
-                version0Table.subscriptYOffset,
-                version0Table.superscriptXSize,
-                version0Table.superscriptYSize,
-                version0Table.superscriptXOffset,
-                version0Table.superscriptYOffset,
-                version0Table.strikeoutSize,
-                version0Table.strikeoutPosition,
+                version0Table.SubscriptXSize,
+                version0Table.SubscriptYSize,
+                version0Table.SubscriptXOffset,
+                version0Table.SubscriptYOffset,
+                version0Table.SuperscriptXSize,
+                version0Table.SuperscriptYSize,
+                version0Table.SuperscriptXOffset,
+                version0Table.SuperscriptYOffset,
+                version0Table.StrikeoutSize,
+                version0Table.StrikeoutPosition,
                 version0Table.familyClass,
                 version0Table.panose,
                 version0Table.unicodeRange1,
@@ -176,6 +203,26 @@ namespace SixLabors.Fonts.Tables.General
         public ushort WinAscent { get; }
 
         public ushort WinDescent { get; }
+
+        public short StrikeoutPosition { get; }
+
+        public short StrikeoutSize { get; }
+
+        public short SubscriptXOffset { get; }
+
+        public short SubscriptXSize { get; }
+
+        public short SubscriptYOffset { get; }
+
+        public short SubscriptYSize { get; }
+
+        public short SuperscriptXOffset { get; }
+
+        public short SuperscriptXSize { get; }
+
+        public short SuperscriptYOffset { get; }
+
+        public short SuperscriptYSize { get; }
 
         public static OS2Table? Load(FontReader fontReader)
         {

@@ -32,6 +32,7 @@ namespace SixLabors.Fonts
             this.CodePoint = data.CodePoint;
             this.CodePointCount = data.CodePointCount;
             this.Direction = data.Direction;
+            this.TextAttributes = data.TextAttributes;
             this.GlyphIds = data.GlyphIds;
             this.LigatureId = data.LigatureId;
             this.LigatureComponent = data.LigatureComponent;
@@ -60,6 +61,11 @@ namespace SixLabors.Fonts
         /// Gets or sets the text direction.
         /// </summary>
         public TextDirection Direction { get; set; }
+
+        /// <summary>
+        /// Gets or sets the text attributes applied to this glyph.
+        /// </summary>
+        public TextAttribute TextAttributes { get; set; }
 
         /// <summary>
         /// Gets or sets the collection of glyph ids.

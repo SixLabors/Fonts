@@ -106,7 +106,8 @@ namespace SixLabors.Fonts
         /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
         public bool TryUpdate(Font font, GlyphSubstitutionCollection collection)
         {
-            FontMetrics? fontMetrics = font.FontMetrics;
+            FontMetrics fontMetrics = font.FontMetrics;
+            ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
             bool hasFallBacks = false;
             List<int> orphans = new();
             for (int i = 0; i < this.offsets.Count; i++)
@@ -129,13 +130,14 @@ namespace SixLabors.Fonts
 
                 CodePoint codePoint = data.CodePoint;
                 ushort[] glyphIds = data.GlyphIds;
+                TextAttribute textAttributes = data.TextAttributes;
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
                 foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, this.TextOptions.ColorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, colorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
@@ -180,18 +182,21 @@ namespace SixLabors.Fonts
         public bool TryAdd(Font font, GlyphSubstitutionCollection collection)
         {
             bool hasFallBacks = false;
+            FontMetrics fontMetrics = font.FontMetrics;
+            ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
             for (int i = 0; i < collection.Count; i++)
             {
                 GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
                 CodePoint codePoint = data.CodePoint;
                 ushort[] glyphIds = data.GlyphIds;
+                TextAttribute textAttributes = data.TextAttributes;
 
                 var m = new List<GlyphMetrics>(glyphIds.Length);
                 foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in font.FontMetrics.GetGlyphMetrics(codePoint, id, this.TextOptions.ColorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, colorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {

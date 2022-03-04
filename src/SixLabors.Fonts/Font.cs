@@ -146,11 +146,12 @@ namespace SixLabors.Fonts
         /// Gets the glyphs for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The code point of the character.</param>
+        /// <param name="textAttributes">The text attributes to assign to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>Returns the glyph</returns>
-        public IEnumerable<Glyph> GetGlyphs(CodePoint codePoint, ColorFontSupport support)
+        public IEnumerable<Glyph> GetGlyphs(CodePoint codePoint, TextAttribute textAttributes, ColorFontSupport support)
         {
-            foreach (GlyphMetrics metrics in this.FontMetrics.GetGlyphMetrics(codePoint, support))
+            foreach (GlyphMetrics metrics in this.FontMetrics.GetGlyphMetrics(codePoint, textAttributes, support))
             {
                 yield return new(metrics, this.Size);
             }

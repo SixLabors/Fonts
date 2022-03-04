@@ -68,6 +68,56 @@ namespace SixLabors.Fonts
         public abstract short AdvanceHeightMax { get; }
 
         /// <summary>
+        /// Gets the recommended horizontal size in font design units for subscripts for this font.
+        /// </summary>
+        public abstract short SubscriptXSize { get; }
+
+        /// <summary>
+        /// Gets the recommended vertical size in font design units for subscripts for this font.
+        /// </summary>
+        public abstract short SubscriptYSize { get; }
+
+        /// <summary>
+        /// Gets the recommended horizontal offset in font design units for subscripts for this font.
+        /// </summary>
+        public abstract short SubscriptXOffset { get; }
+
+        /// <summary>
+        /// Gets the recommended vertical offset in font design units for subscripts for this font.
+        /// </summary>
+        public abstract short SubscriptYOffset { get; }
+
+        /// <summary>
+        /// Gets the recommended horizontal size in font design units for superscripts for this font.
+        /// </summary>
+        public abstract short SuperscriptXSize { get; }
+
+        /// <summary>
+        /// Gets the recommended vertical size in font design units for superscripts for this font.
+        /// </summary>
+        public abstract short SuperscriptYSize { get; }
+
+        /// <summary>
+        /// Gets the recommended horizontal offset in font design units for superscripts for this font.
+        /// </summary>
+        public abstract short SuperscriptXOffset { get; }
+
+        /// <summary>
+        /// Gets the recommended vertical offset in font design units for superscripts for this font.
+        /// </summary>
+        public abstract short SuperscriptYOffset { get; }
+
+        /// <summary>
+        /// Gets thickness of the strikeout stroke in font design units.
+        /// </summary>
+        public abstract short StrikeoutSize { get; }
+
+        /// <summary>
+        /// Gets the position of the top of the strikeout stroke relative to the baseline in font design units.
+        /// </summary>
+        public abstract short StrikeoutPosition { get; }
+
+        /// <summary>
         /// Gets the specified glyph id matching the codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint.</param>
@@ -121,9 +171,10 @@ namespace SixLabors.Fonts
         /// Gets the glyph metrics for a given code point.
         /// </summary>
         /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
+        /// <param name="textAttributes">The text attributes to assign to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The glyph metrics to find.</returns>
-        public abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support);
+        public abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, TextAttribute textAttributes, ColorFontSupport support);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point and glyph id.
@@ -133,9 +184,10 @@ namespace SixLabors.Fonts
         /// The previously matched or substituted glyph id for the codepoint in the face.
         /// If this value equals <value>0</value> the default fallback metrics are returned.
         /// </param>
+        /// <param name="textAttributes">The text attributes to assigned to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
-        internal abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support);
+        internal abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, ColorFontSupport support);
 
         /// <summary>
         /// Applies any available substitutions to the collection of glyphs.

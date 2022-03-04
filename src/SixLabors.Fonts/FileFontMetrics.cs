@@ -71,6 +71,36 @@ namespace SixLabors.Fonts
         public override short AdvanceHeightMax => this.metrics.Value.AdvanceHeightMax;
 
         /// <inheritdoc/>
+        public override short SubscriptXSize => this.metrics.Value.SubscriptXSize;
+
+        /// <inheritdoc/>
+        public override short SubscriptYSize => this.metrics.Value.SubscriptYSize;
+
+        /// <inheritdoc/>
+        public override short SubscriptXOffset => this.metrics.Value.SubscriptXOffset;
+
+        /// <inheritdoc/>
+        public override short SubscriptYOffset => this.metrics.Value.SubscriptYOffset;
+
+        /// <inheritdoc/>
+        public override short SuperscriptXSize => this.metrics.Value.SuperscriptXSize;
+
+        /// <inheritdoc/>
+        public override short SuperscriptYSize => this.metrics.Value.SuperscriptYSize;
+
+        /// <inheritdoc/>
+        public override short SuperscriptXOffset => this.metrics.Value.SuperscriptXOffset;
+
+        /// <inheritdoc/>
+        public override short SuperscriptYOffset => this.metrics.Value.SuperscriptYOffset;
+
+        /// <inheritdoc/>
+        public override short StrikeoutSize => this.metrics.Value.StrikeoutSize;
+
+        /// <inheritdoc/>
+        public override short StrikeoutPosition => this.metrics.Value.StrikeoutPosition;
+
+        /// <inheritdoc/>
         internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
             => this.metrics.Value.TryGetGlyphId(codePoint, out glyphId);
 
@@ -91,12 +121,12 @@ namespace SixLabors.Fonts
             => this.metrics.Value.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
 
         /// <inheritdoc />
-        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
-              => this.metrics.Value.GetGlyphMetrics(codePoint, support);
+        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, TextAttribute textAttributes, ColorFontSupport support)
+              => this.metrics.Value.GetGlyphMetrics(codePoint, textAttributes, support);
 
         /// <inheritdoc />
-        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
-            => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
+        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, TextAttribute textAttributes, ColorFontSupport support)
+            => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, support);
 
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)

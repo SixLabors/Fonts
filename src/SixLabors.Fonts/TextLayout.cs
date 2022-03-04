@@ -131,6 +131,7 @@ namespace SixLabors.Fonts
                 if (!DoFontRun(
                     textRun.Slice(text),
                     textRun.Start,
+                    textRuns,
                     false,
                     textRun.Font!,
                     bidiRuns,
@@ -151,6 +152,7 @@ namespace SixLabors.Fonts
                     if (DoFontRun(
                         text,
                         0,
+                        textRuns,
                         true,
                         font,
                         bidiRuns,
@@ -448,6 +450,7 @@ namespace SixLabors.Fonts
         private static bool DoFontRun(
             ReadOnlySpan<char> text,
             int start,
+            IReadOnlyList<TextRun> textRuns,
             bool isFallbackRun,
             Font font,
             BidiRun[] bidiRuns,
@@ -463,6 +466,7 @@ namespace SixLabors.Fonts
             int graphemeIndex;
             int codePointIndex = start;
             int bidiRun = 0;
+            int textRun = 0;
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
             for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
             {
@@ -478,6 +482,11 @@ namespace SixLabors.Fonts
                     if (codePointIndex == bidiRuns[bidiRun].End)
                     {
                         bidiRun++;
+                    }
+
+                    if (codePointIndex == textRuns[textRun].End)
+                    {
+                        textRun++;
                     }
 
                     if (skipNextCodePoint)
@@ -500,7 +509,7 @@ namespace SixLabors.Fonts
 
                     // Get the glyph id for the codepoint and add to the collection.
                     font.FontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
-                    substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, codePointIndex);
+                    substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, textRuns[textRun].TextAttributes, codePointIndex);
 
                     codePointIndex++;
                     graphemeCodePointIndex++;

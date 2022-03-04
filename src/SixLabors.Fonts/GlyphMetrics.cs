@@ -29,6 +29,7 @@ namespace SixLabors.Fonts
             ushort unitsPerEM,
             ushort glyphId,
             GlyphType glyphType = GlyphType.Standard,
+            TextAttribute textAttributes = TextAttribute.None,
             GlyphColor? glyphColor = null)
         {
             this.FontMetrics = font;
@@ -44,6 +45,7 @@ namespace SixLabors.Fonts
             this.Width = bounds.Max.X - bounds.Min.X;
             this.Height = bounds.Max.Y - bounds.Min.Y;
             this.GlyphType = glyphType;
+            this.TextAttributes = textAttributes;
             this.LeftSideBearing = leftSideBearing;
             this.TopSideBearing = topSideBearing;
             this.ScaleFactor = this.UnitsPerEm * 72F;
@@ -64,6 +66,7 @@ namespace SixLabors.Fonts
             this.Width = other.Width;
             this.Height = other.Height;
             this.GlyphType = other.GlyphType;
+            this.TextAttributes = other.TextAttributes;
             this.LeftSideBearing = other.LeftSideBearing;
             this.TopSideBearing = other.TopSideBearing;
             this.ScaleFactor = other.ScaleFactor;
@@ -114,6 +117,11 @@ namespace SixLabors.Fonts
         /// Gets the glyph type.
         /// </summary>
         public GlyphType GlyphType { get; }
+
+        /// <summary>
+        /// Gets the text attributes applied to this glyph.
+        /// </summary>
+        public TextAttribute TextAttributes { get; }
 
         /// <summary>
         /// Gets the color of this glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
