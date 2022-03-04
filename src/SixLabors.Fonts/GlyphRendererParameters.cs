@@ -102,6 +102,7 @@ namespace SixLabors.Fonts
             && other.Dpi == this.Dpi
             && other.GlyphIndex == this.GlyphIndex
             && other.GlyphType == this.GlyphType
+            && other.TextRun == this.TextRun
             && other.GlyphColor.Equals(this.GlyphColor)
             && ((other.Font is null && this.Font is null)
             || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
@@ -118,6 +119,7 @@ namespace SixLabors.Fonts
                 this.GlyphType,
                 this.GlyphColor,
                 this.FontStyle,
-                this.Dpi);
+                this.Dpi,
+                this.TextRun);
     }
 }

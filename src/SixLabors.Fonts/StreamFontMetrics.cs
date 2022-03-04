@@ -167,7 +167,7 @@ namespace SixLabors.Fonts
             this.StrikeoutPosition = os2.StrikeoutPosition;
 
             this.UnderlinePosition = postTable.UnderlinePosition;
-            this.UnderlinePosition = postTable.UnderlinePosition;
+            this.UnderlineThickness = postTable.UnderlineThickness;
             this.ItalicAngle = postTable.ItalicAngle;
 
             this.kerningTable = kern;

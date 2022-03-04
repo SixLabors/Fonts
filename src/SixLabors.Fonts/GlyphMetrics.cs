@@ -235,97 +235,139 @@ namespace SixLabors.Fonts
 
             if (surface.BeginGlyph(box, parameters))
             {
-                if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
+                if (!CodePoint.IsWhiteSpace(this.CodePoint))
                 {
-                    colorSurface.SetColor(this.GlyphColor.Value);
+                    if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
+                    {
+                        colorSurface.SetColor(this.GlyphColor.Value);
+                    }
+
+                    if (!this.scaledVector.TryGetValue(scaledPoint, out GlyphVector scaledVector))
+                    {
+                        // Scale and translate the glyph
+                        Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor;
+                        var transform = Matrix3x2.CreateScale(scale);
+                        transform.Translation = this.offset * scale * MirrorScale;
+                        scaledVector = GlyphVector.Transform(this.vector, transform);
+                        this.scaledVector[scaledPoint] = scaledVector;
+                    }
+
+                    if (options.ApplyHinting)
+                    {
+                        this.FontMetrics.ApplyHinting(scaledVector, pointSize * dpi / 72, this.GlyphId);
+                    }
+
+                    GlyphOutline outline = scaledVector.GetOutline();
+                    ReadOnlySpan<Vector2> controlPoints = outline.ControlPoints.Span;
+                    ReadOnlySpan<ushort> endPoints = outline.EndPoints.Span;
+                    ReadOnlySpan<bool> onCurves = outline.OnCurves.Span;
+
+                    int endOfContour = -1;
+                    for (int i = 0; i < outline.EndPoints.Length; i++)
+                    {
+                        surface.BeginFigure();
+                        int startOfContour = endOfContour + 1;
+                        endOfContour = endPoints[i];
+
+                        Vector2 prev;
+                        Vector2 curr = (MirrorScale * controlPoints[endOfContour]) + location;
+                        Vector2 next = (MirrorScale * controlPoints[startOfContour]) + location;
+
+                        if (onCurves[endOfContour])
+                        {
+                            surface.MoveTo(curr);
+                        }
+                        else
+                        {
+                            if (onCurves[startOfContour])
+                            {
+                                surface.MoveTo(next);
+                            }
+                            else
+                            {
+                                // If both first and last points are off-curve, start at their middle.
+                                Vector2 startPoint = (curr + next) / 2;
+                                surface.MoveTo(startPoint);
+                            }
+                        }
+
+                        int length = endOfContour - startOfContour + 1;
+                        for (int p = 0; p < length; p++)
+                        {
+                            prev = curr;
+                            curr = next;
+                            int currentIndex = startOfContour + p;
+                            int nextIndex = startOfContour + ((p + 1) % length);
+                            int prevIndex = startOfContour + ((length + p - 1) % length);
+                            next = (MirrorScale * controlPoints[nextIndex]) + location;
+
+                            if (onCurves[currentIndex])
+                            {
+                                // This is a straight line.
+                                surface.LineTo(curr);
+                            }
+                            else
+                            {
+                                Vector2 prev2 = prev;
+                                Vector2 next2 = next;
+
+                                if (!onCurves[prevIndex])
+                                {
+                                    prev2 = (curr + prev) / 2;
+                                    surface.LineTo(prev2);
+                                }
+
+                                if (!onCurves[nextIndex])
+                                {
+                                    next2 = (curr + next) / 2;
+                                }
+
+                                surface.LineTo(prev2);
+                                surface.QuadraticBezierTo(curr, next2);
+                            }
+                        }
+
+                        surface.EndFigure();
+                    }
                 }
 
-                if (!this.scaledVector.TryGetValue(scaledPoint, out GlyphVector scaledVector))
-                {
-                    // Scale and translate the glyph
-                    Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor;
-                    var transform = Matrix3x2.CreateScale(scale);
-                    transform.Translation = this.offset * scale * MirrorScale;
-                    scaledVector = GlyphVector.Transform(this.vector, transform);
-                    this.scaledVector[scaledPoint] = scaledVector;
-                }
-
-                if (options.ApplyHinting)
-                {
-                    this.FontMetrics.ApplyHinting(scaledVector, pointSize * dpi / 72, this.GlyphId);
-                }
-
-                GlyphOutline outline = scaledVector.GetOutline();
-                ReadOnlySpan<Vector2> controlPoints = outline.ControlPoints.Span;
-                ReadOnlySpan<ushort> endPoints = outline.EndPoints.Span;
-                ReadOnlySpan<bool> onCurves = outline.OnCurves.Span;
-
-                int endOfContour = -1;
-                for (int i = 0; i < outline.EndPoints.Length; i++)
+                void DrawLine(float thickness, float position)
                 {
                     surface.BeginFigure();
-                    int startOfContour = endOfContour + 1;
-                    endOfContour = endPoints[i];
 
-                    Vector2 prev;
-                    Vector2 curr = (MirrorScale * controlPoints[endOfContour]) + location;
-                    Vector2 next = (MirrorScale * controlPoints[startOfContour]) + location;
+                    var height = thickness;
+                    var top = position - (height / 2);
+                    var bottom = top + height;
 
-                    if (onCurves[endOfContour])
-                    {
-                        surface.MoveTo(curr);
-                    }
-                    else
-                    {
-                        if (onCurves[startOfContour])
-                        {
-                            surface.MoveTo(next);
-                        }
-                        else
-                        {
-                            // If both first and last points are off-curve, start at their middle.
-                            Vector2 startPoint = (curr + next) / 2;
-                            surface.MoveTo(startPoint);
-                        }
-                    }
+                    Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor * MirrorScale;
 
-                    int length = endOfContour - startOfContour + 1;
-                    for (int p = 0; p < length; p++)
-                    {
-                        prev = curr;
-                        curr = next;
-                        int currentIndex = startOfContour + p;
-                        int nextIndex = startOfContour + ((p + 1) % length);
-                        int prevIndex = startOfContour + ((length + p - 1) % length);
-                        next = (MirrorScale * controlPoints[nextIndex]) + location;
+                    var tl = (new Vector2(0, top) * scale) + location;
+                    var tr = (new Vector2(this.AdvanceWidth, top) * scale) + location;
+                    var br = (new Vector2(this.AdvanceWidth, bottom) * scale) + location;
+                    var bl = (new Vector2(0, bottom) * scale) + location;
 
-                        if (onCurves[currentIndex])
-                        {
-                            // This is a straight line.
-                            surface.LineTo(curr);
-                        }
-                        else
-                        {
-                            Vector2 prev2 = prev;
-                            Vector2 next2 = next;
+                    tl.Y = MathF.Ceiling(tl.Y);
+                    tr.Y = MathF.Ceiling(tr.Y);
+                    br.Y = MathF.Ceiling(br.Y);
+                    bl.Y = MathF.Ceiling(bl.Y);
 
-                            if (!onCurves[prevIndex])
-                            {
-                                prev2 = (curr + prev) / 2;
-                                surface.LineTo(prev2);
-                            }
-
-                            if (!onCurves[nextIndex])
-                            {
-                                next2 = (curr + next) / 2;
-                            }
-
-                            surface.LineTo(prev2);
-                            surface.QuadraticBezierTo(curr, next2);
-                        }
-                    }
+                    surface.MoveTo(tl);
+                    surface.LineTo(bl);
+                    surface.LineTo(br);
+                    surface.LineTo(tr);
 
                     surface.EndFigure();
+                }
+
+                // lets figure out underline
+                if ((this.textRun.TextAttributes & TextAttribute.Underline) == TextAttribute.Underline)
+                {
+                    DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
+                }
+
+                if ((this.textRun.TextAttributes & TextAttribute.Strikethrough) == TextAttribute.Strikethrough)
+                {
+                    DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
                 }
             }
 
