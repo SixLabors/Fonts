@@ -71,7 +71,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
 
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
-            // RenderText(bugzilla, "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ", pointSize: 72);
 
             RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { font2 });
 
