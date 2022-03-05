@@ -29,7 +29,7 @@ namespace SixLabors.Fonts
 
         public static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
         {
-            if (options.TextRuns?.Count == 0)
+            if (options.TextRuns is null || options.TextRuns.Count == 0)
             {
                 return new TextRun[]
                 {
@@ -657,8 +657,9 @@ namespace SixLabors.Fonts
                     else if (metrics.Length == 1 && (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthNonJoiner(codePoint)))
                     {
                         // The zero-width joiner characters should be ignored when determining word or
-                        // line break boundaries so are safe to skip here. Any existing instances are the result of font error.
-                        // It multiple metrics are associated with code point, they are most likely the result of a substitution so we shouldn't ignore it.
+                        // line break boundaries so are safe to skip here. Any existing instances are the result of font error
+                        // unless multiple metrics are associated with code point. In this case they are most likely the result
+                        // of a substitution and shouldn't be ignored.
                         glyphAdvance = 0;
                     }
                     else if (!CodePoint.IsNewLine(codePoint))

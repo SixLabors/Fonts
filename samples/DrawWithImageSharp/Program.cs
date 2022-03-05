@@ -8,6 +8,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using DrawWithImageSharp;
+using SixLabors.Fonts.Unicode;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -33,6 +34,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily colorEmoji = fonts.Add(@"Fonts\Twemoji Mozilla.ttf");
             FontFamily font2 = fonts.Add(@"Fonts\OpenSans-Regular.ttf");
             FontFamily sunflower = fonts.Add(@"Fonts\Sunflower-Medium.ttf");
+            FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
 #if OS_WINDOWS
             FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
@@ -46,7 +48,16 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(32, FontStyle.Italic), TextAttributes = TextAttribute.Underline | TextAttribute.Subscript }
             };
 
-            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", 32, textRuns: textRuns);
+            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", pointSize: 32, textRuns: textRuns);
+
+            string arabic = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ";
+            textRuns = new List<TextRun>
+            {
+                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextAttributes = TextAttribute.Underline }
+            };
+
+            RenderText(bugzilla, arabic, pointSize: 72, textRuns: textRuns);
+
 
             return;
             RenderText(font2, "\uFB01", pointSize: 11.25F);
@@ -54,7 +65,6 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(tahoma, "p", pointSize: 11.25F);
             RenderText(tahoma, "Lorem ipsum dolor sit amet", pointSize: 11.25F);
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
-            FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
             RenderText(bugzilla, "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ", pointSize: 72);
@@ -200,7 +210,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             => RenderText(
                 new TextOptions(new Font(font, pointSize))
                 {
-                    WrappingLength = 400,
+                    // WrappingLength = 400,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
                     TextRuns = textRuns?.ToArray()
                 },
