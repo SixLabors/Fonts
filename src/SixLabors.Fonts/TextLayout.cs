@@ -324,11 +324,25 @@ namespace SixLabors.Fonts
 
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
+                    // Advance Width & Height can be 0 which is fine for layout but not for measuring.
+                    Vector2 scale = new Vector2(info.PointSize) / metric.ScaleFactor;
+                    float advanceX = info.ScaledAdvance;
+                    float advanceY = metric.AdvanceHeight * scale.Y;
+                    if (advanceX == 0)
+                    {
+                        advanceX = (metric.LeftSideBearing + metric.Width + metric.RightSideBearing) * scale.X;
+                    }
+
+                    if (advanceY == 0)
+                    {
+                        advanceY = (metric.TopSideBearing + metric.Height + metric.BottomSideBearing) * scale.Y;
+                    }
+
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, info.PointSize),
                         location,
-                        info.ScaledAdvance,
-                        metric.AdvanceHeight * (info.PointSize / metric.ScaleFactor.Y),
+                        advanceX,
+                        advanceY,
                         textBox.ScaledMaxLineHeight * options.LineSpacing,
                         i == 0));
                 }
@@ -443,11 +457,26 @@ namespace SixLabors.Fonts
 
                 foreach (GlyphMetrics metric in info.Metrics)
                 {
+                    Vector2 scale = new Vector2(info.PointSize) / metric.ScaleFactor;
+                    float advanceX = xLineAdvance;
+                    float advanceY = info.ScaledAdvance;
+
+                    // Advance Width & Height can be 0 which is fine for layout but not for measuring.
+                    if (advanceX == 0)
+                    {
+                        advanceX = (metric.LeftSideBearing + metric.Width + metric.RightSideBearing) * scale.X;
+                    }
+
+                    if (advanceY == 0)
+                    {
+                        advanceY = (metric.TopSideBearing + metric.Height + metric.BottomSideBearing) * scale.Y;
+                    }
+
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, info.PointSize),
-                        location + new Vector2((xWidth - (metric.AdvanceWidth * (info.PointSize / metric.ScaleFactor.X))) * .5F, 0),
-                        xLineAdvance,
-                        info.ScaledAdvance,
+                        location + new Vector2((xWidth - (metric.AdvanceWidth * scale.X)) * .5F, 0),
+                        advanceX,
+                        advanceY,
                         textBox.ScaledMaxLineHeight,
                         i == 0));
                 }

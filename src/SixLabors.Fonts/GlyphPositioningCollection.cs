@@ -237,7 +237,9 @@ namespace SixLabors.Fonts
         public void UpdatePosition(FontMetrics fontMetrics, ushort index)
         {
             GlyphShapingData data = this.GetGlyphShapingData(index);
-            if (!data.Bounds.IsDirty)
+            bool isDirtyXY = data.Bounds.IsDirtyXY;
+            bool isDirtyWH = data.Bounds.IsDirtyWH;
+            if (!isDirtyXY && !isDirtyWH)
             {
                 return;
             }
@@ -247,9 +249,16 @@ namespace SixLabors.Fonts
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.ApplyOffset((short)data.Bounds.X, (short)data.Bounds.Y);
-                    m.SetAdvanceWidth((ushort)data.Bounds.Width);
-                    m.SetAdvanceHeight((ushort)data.Bounds.Height);
+                    if (isDirtyXY)
+                    {
+                        m.ApplyOffset((short)data.Bounds.X, (short)data.Bounds.Y);
+                    }
+
+                    if (isDirtyWH)
+                    {
+                        m.SetAdvanceWidth((ushort)data.Bounds.Width);
+                        m.SetAdvanceHeight((ushort)data.Bounds.Height);
+                    }
                 }
             }
         }

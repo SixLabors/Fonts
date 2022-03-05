@@ -22,6 +22,7 @@ namespace SixLabors.Fonts
         {
             this.LineHeight = lineHeight;
             this.Glyph = glyph;
+            this.CodePoint = glyph.GlyphMetrics.CodePoint;
             this.Location = location;
             this.Width = width;
             this.Height = height;
@@ -32,6 +33,11 @@ namespace SixLabors.Fonts
         /// Gets the glyph.
         /// </summary>
         public Glyph Glyph { get; }
+
+        /// <summary>
+        /// Gets the codepoint represented by this glyph.
+        /// </summary>
+        public CodePoint CodePoint { get; }
 
         /// <summary>
         /// Gets the location.
@@ -62,7 +68,7 @@ namespace SixLabors.Fonts
         /// Gets a value indicating whether the glyph represents a whitespace character.
         /// </summary>
         /// <returns>The <see cref="bool"/>.</returns>
-        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.Glyph.GlyphMetrics.CodePoint);
+        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.CodePoint);
 
         internal FontRectangle BoundingBox(float dpi)
         {
@@ -79,33 +85,10 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public override string ToString()
         {
-            var sb = new StringBuilder();
-            if (this.IsStartOfLine)
-            {
-                sb.Append('@');
-                sb.Append(' ');
-            }
-
-            if (this.IsWhiteSpace())
-            {
-                sb.Append('!');
-            }
-
-            sb.Append('\'');
-            sb.Append(this.Glyph.GlyphMetrics.CodePoint.ToDebuggerDisplay());
-
-            sb.Append('\'');
-            sb.Append(' ');
-
-            sb.Append(this.Location.X);
-            sb.Append(',');
-            sb.Append(this.Location.Y);
-            sb.Append(' ');
-            sb.Append(this.Width);
-            sb.Append('x');
-            sb.Append(this.Height);
-
-            return sb.ToString();
+            string s = this.IsStartOfLine ? "@ " : string.Empty;
+            string ws = this.IsWhiteSpace() ? "!" : string.Empty;
+            Vector2 l = this.Location;
+            return $"{s}{ws}{this.CodePoint.ToDebuggerDisplay()} {l.X},{l.Y} {this.Width}x{this.Height}";
         }
     }
 }

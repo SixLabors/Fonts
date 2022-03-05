@@ -24,7 +24,8 @@ namespace SixLabors.Fonts
             this.y = y;
             this.width = width;
             this.height = height;
-            this.IsDirty = false;
+            this.IsDirtyXY = false;
+            this.IsDirtyWH = false;
         }
 
         public int X
@@ -34,7 +35,7 @@ namespace SixLabors.Fonts
             set
             {
                 this.x = value;
-                this.IsDirty = true;
+                this.IsDirtyXY = true;
             }
         }
 
@@ -45,7 +46,7 @@ namespace SixLabors.Fonts
             set
             {
                 this.y = value;
-                this.IsDirty = true;
+                this.IsDirtyXY = true;
             }
         }
 
@@ -56,7 +57,7 @@ namespace SixLabors.Fonts
             set
             {
                 this.width = value;
-                this.IsDirty = true;
+                this.IsDirtyWH = true;
             }
         }
 
@@ -67,13 +68,15 @@ namespace SixLabors.Fonts
             set
             {
                 this.height = value;
-                this.IsDirty = true;
+                this.IsDirtyWH = true;
             }
         }
 
-        public bool IsDirty { get; private set; }
+        public bool IsDirtyXY { get; private set; }
+
+        public bool IsDirtyWH { get; private set; }
 
         private string DebuggerDisplay
-            => FormattableString.Invariant($"{this.X} : {this.Y} : {this.Width} : {this.Height} : {this.IsDirty}");
+            => FormattableString.Invariant($"{this.X} : {this.Y} : {this.Width} : {this.Height} : {this.IsDirtyXY} : {this.IsDirtyWH}");
     }
 }

@@ -44,11 +44,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily tahoma = SystemFonts.Get("Tahoma");
             var textRuns = new List<TextRun>
             {
-                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(32, FontStyle.Bold), TextAttributes = TextAttribute.Strikethrough | TextAttribute.Superscript },
-                new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(32, FontStyle.Italic), TextAttributes = TextAttribute.Underline | TextAttribute.Subscript }
+                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttribute.Strikethrough | TextAttribute.Superscript },
+                new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttribute.Underline | TextAttribute.Subscript }
             };
 
-            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", pointSize: 32, textRuns: textRuns);
+            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns);
 
             string arabic = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ";
             textRuns = new List<TextRun>
@@ -56,10 +56,14 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextAttributes = TextAttribute.Underline }
             };
 
+            RenderText(uiFont, arabic, pointSize: 72, textRuns: textRuns);
+
+            textRuns = new List<TextRun>
+            {
+                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextAttributes = TextAttribute.Underline }
+            };
             RenderText(bugzilla, arabic, pointSize: 72, textRuns: textRuns);
 
-
-            return;
             RenderText(font2, "\uFB01", pointSize: 11.25F);
             RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
             RenderText(tahoma, "p", pointSize: 11.25F);
@@ -67,7 +71,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
 
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
-            RenderText(bugzilla, "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ", pointSize: 72);
+            // RenderText(bugzilla, "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ", pointSize: 72);
 
             RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { font2 });
 

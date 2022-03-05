@@ -47,7 +47,9 @@ namespace SixLabors.Fonts
             this.Height = bounds.Max.Y - bounds.Min.Y;
             this.GlyphType = glyphType;
             this.LeftSideBearing = leftSideBearing;
+            this.RightSideBearing = (short)(this.AdvanceWidth - this.LeftSideBearing - this.Width);
             this.TopSideBearing = topSideBearing;
+            this.BottomSideBearing = (short)(this.AdvanceHeight - this.TopSideBearing - this.Height);
             this.ScaleFactor = new(unitsPerEM * 72F);
             this.GlyphColor = glyphColor;
         }
@@ -78,9 +80,19 @@ namespace SixLabors.Fonts
         public short LeftSideBearing { get; }
 
         /// <summary>
+        /// Gets the right side bearing for horizontal layout, expressed in font units.
+        /// </summary>
+        public short RightSideBearing { get; }
+
+        /// <summary>
         /// Gets the top side bearing for vertical layout, expressed in font units.
         /// </summary>
         public short TopSideBearing { get; }
+
+        /// <summary>
+        /// Gets the bottom side bearing for vertical layout, expressed in font units.
+        /// </summary>
+        public short BottomSideBearing { get; }
 
         /// <summary>
         /// Gets the width, expressed in font units.
@@ -342,17 +354,34 @@ namespace SixLabors.Fonts
                     Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor * MirrorScale;
                     Vector2 offset = location + (this.offset * scale * MirrorScale);
 
-                    float lsb = this.LeftSideBearing;
+                    // Calculate the correct advance for the line.
+                    // For zero advance glyphs we must calculate our own advance.
+                    // We add a single font unit to account for rounding error.
+                    float lsb = Math.Abs(this.LeftSideBearing) + 1;
                     float width = this.AdvanceWidth + lsb;
+                    if (this.AdvanceWidth == 0)
+                    {
+                        // Create advance width from bearing + width;
+                        width = lsb + lsb + this.Width + Math.Abs(this.RightSideBearing) + 1;
+                    }
+
                     Vector2 tl = (new Vector2(-lsb, top) * scale) + offset;
                     Vector2 tr = (new Vector2(width, top) * scale) + offset;
                     Vector2 br = (new Vector2(width, bottom) * scale) + offset;
                     Vector2 bl = (new Vector2(-lsb, bottom) * scale) + offset;
 
+                    // Clamp the horizontal components to a whole pixel.
                     tl.Y = MathF.Ceiling(tl.Y);
                     tr.Y = MathF.Ceiling(tr.Y);
                     br.Y = MathF.Ceiling(br.Y);
                     bl.Y = MathF.Ceiling(bl.Y);
+
+                    // Do the same for vertical components.
+                    // This helps with rounding error for certain fonts.
+                    tl.X = MathF.Floor(tl.X);
+                    tr.X = MathF.Ceiling(tr.X);
+                    br.X = MathF.Ceiling(br.X);
+                    bl.X = MathF.Floor(bl.X);
 
                     surface.MoveTo(tl);
                     surface.LineTo(bl);
