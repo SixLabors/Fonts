@@ -25,18 +25,19 @@ namespace SixLabors.Fonts.Tests
             CodePoint codePoint = this.AsCodePoint(text);
             Font font = CreateFont(text);
             FontMetrics metrics = font.FontMetrics;
-            var glyph = new Glyph(
-                new GlyphMetrics(
-                    (StreamFontMetrics)metrics,
-                    codePoint,
-                    new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, metrics.UnitsPerEm, 0, metrics.UnitsPerEm), Array.Empty<byte>()),
-                    0,
-                    0,
-                    0,
-                    0,
-                    metrics.UnitsPerEm,
-                    0),
-                10);
+            GlyphMetrics glyphMetrics = new(
+                (StreamFontMetrics)metrics,
+                codePoint,
+                new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, metrics.UnitsPerEm, 0, metrics.UnitsPerEm), Array.Empty<byte>()),
+                0,
+                0,
+                0,
+                0,
+                metrics.UnitsPerEm,
+                0);
+
+            TextRun textRun = new() { Start = 0, End = 1, Font = font };
+            Glyph glyph = new(GlyphMetrics.CloneForRendering(glyphMetrics, textRun, codePoint), 10);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
             glyph.RenderTo(this.renderer, locationInFontSpace, new TextOptions(font));

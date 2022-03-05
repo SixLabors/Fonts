@@ -61,9 +61,6 @@ namespace SixLabors.Fonts.Tests
 
             var codePoint = new CodePoint('A');
             GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
-            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, ColorFontSupport.None).First().GlyphMetrics;
-
-            Assert.Equal(glyphMetrics, glyphMetrics1);
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
@@ -88,9 +85,6 @@ namespace SixLabors.Fonts.Tests
 
             var codePoint = new CodePoint('A');
             GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
-            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, ColorFontSupport.None).First().GlyphMetrics;
-
-            Assert.Equal(glyphMetrics, glyphMetrics1);
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
@@ -116,9 +110,6 @@ namespace SixLabors.Fonts.Tests
 
             var codePoint = new CodePoint('A');
             GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
-            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, ColorFontSupport.None).First().GlyphMetrics;
-
-            Assert.Equal(glyphMetrics, glyphMetrics1);
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
@@ -144,9 +135,6 @@ namespace SixLabors.Fonts.Tests
 
             var codePoint = new CodePoint('A');
             GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
-            GlyphMetrics glyphMetrics1 = font.GetGlyphs(codePoint, ColorFontSupport.None).First().GlyphMetrics;
-
-            Assert.Equal(glyphMetrics, glyphMetrics1);
 
             // Position 0.
             Assert.Equal(codePoint, glyphMetrics.CodePoint);

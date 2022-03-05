@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
 {
@@ -13,16 +14,17 @@ namespace SixLabors.Fonts
     [DebuggerDisplay("GlyphIndex = {GlyphIndex}, PointSize = {PointSize}, DpiX = {DpiX}, DpiY = {DpiY}")]
     public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParameters>
     {
-        internal GlyphRendererParameters(GlyphMetrics glyph, TextRun textRun, float pointSize, float dpi)
+        internal GlyphRendererParameters(GlyphMetrics metrics, TextRun textRun, float pointSize, float dpi)
         {
-            this.Font = glyph.FontMetrics.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
-            this.FontStyle = glyph.FontMetrics.Description.Style;
-            this.GlyphIndex = glyph.GlyphId;
+            this.Font = metrics.FontMetrics.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
+            this.FontStyle = metrics.FontMetrics.Description.Style;
+            this.GlyphIndex = metrics.GlyphId;
             this.PointSize = pointSize;
             this.Dpi = dpi;
-            this.GlyphType = glyph.GlyphType;
-            this.GlyphColor = glyph.GlyphColor ?? default;
+            this.GlyphType = metrics.GlyphType;
+            this.GlyphColor = metrics.GlyphColor ?? default;
             this.TextRun = textRun;
+            this.CodePoint = metrics.CodePoint;
         }
 
         /// <summary>
@@ -31,7 +33,7 @@ namespace SixLabors.Fonts
         public string Font { get; }
 
         /// <summary>
-        /// Gets the type of this glyph.
+        /// Gets the color details of this glyph.
         /// </summary>
         public GlyphColor GlyphColor { get; }
 
@@ -41,14 +43,19 @@ namespace SixLabors.Fonts
         public GlyphType GlyphType { get; }
 
         /// <summary>
-        /// Gets the style of the Font this glyph belongs to.
+        /// Gets the style of the font this glyph belongs to.
         /// </summary>
         public FontStyle FontStyle { get; }
 
         /// <summary>
-        /// Gets the index of the glyph.
+        /// Gets the index of the glyph within the font tables.
         /// </summary>
         public ushort GlyphIndex { get; }
+
+        /// <summary>
+        /// Gets the codepoint represented by this glyph.
+        /// </summary>
+        public CodePoint CodePoint { get; }
 
         /// <summary>
         /// Gets the rendered point size.
@@ -56,7 +63,7 @@ namespace SixLabors.Fonts
         public float PointSize { get; }
 
         /// <summary>
-        /// Gets the dots-per-inch we are rendering at.
+        /// Gets the dots-per-inch the glyph is to be rendered at.
         /// </summary>
         public float Dpi { get; }
 

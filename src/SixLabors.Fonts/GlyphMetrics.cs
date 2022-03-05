@@ -18,7 +18,7 @@ namespace SixLabors.Fonts
         private GlyphVector vector;
         private readonly Dictionary<float, GlyphVector> scaledVector = new();
         private Vector2 offset = Vector2.Zero;
-        private TextRun textRun = new();
+        private TextRun? textRun;
 
         internal GlyphMetrics(
             StreamFontMetrics font,
@@ -222,16 +222,16 @@ namespace SixLabors.Fonts
         /// <param name="location">The location.</param>
         /// <param name="options">The options used to influence the rendering of this glyph.</param>
         /// <exception cref="NotSupportedException">Too many control points</exception>
-        public void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, TextOptions options)
+        internal void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, TextOptions options)
         {
             float dpi = options.Dpi;
             location *= dpi;
-
             float scaledPoint = dpi * pointSize;
-
             FontRectangle box = this.GetBoundingBox(location, scaledPoint);
 
-            var parameters = new GlyphRendererParameters(this, this.textRun, pointSize, dpi);
+            // TextRun is never null here as rendering is only accessable via a Glyph which
+            // uses the cloned metrics instance.
+            var parameters = new GlyphRendererParameters(this, this.textRun!, pointSize, dpi);
 
             if (surface.BeginGlyph(box, parameters))
             {
@@ -286,7 +286,7 @@ namespace SixLabors.Fonts
                             else
                             {
                                 // If both first and last points are off-curve, start at their middle.
-                                Vector2 startPoint = (curr + next) / 2;
+                                Vector2 startPoint = (curr + next) * .5F;
                                 surface.MoveTo(startPoint);
                             }
                         }
@@ -313,13 +313,13 @@ namespace SixLabors.Fonts
 
                                 if (!onCurves[prevIndex])
                                 {
-                                    prev2 = (curr + prev) / 2;
+                                    prev2 = (curr + prev) * .5F;
                                     surface.LineTo(prev2);
                                 }
 
                                 if (!onCurves[nextIndex])
                                 {
-                                    next2 = (curr + next) / 2;
+                                    next2 = (curr + next) * .5F;
                                 }
 
                                 surface.LineTo(prev2);
@@ -335,16 +335,17 @@ namespace SixLabors.Fonts
                 {
                     surface.BeginFigure();
 
-                    var height = thickness;
-                    var top = position - (height / 2);
-                    var bottom = top + height;
+                    float height = thickness;
+                    float top = position - (height * .5F);
+                    float bottom = top + height;
 
                     Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor * MirrorScale;
+                    Vector2 offset = location + (this.offset * scale * MirrorScale);
 
-                    var tl = (new Vector2(-this.LeftSideBearing, top) * scale) + location;
-                    var tr = (new Vector2(this.AdvanceWidth + this.LeftSideBearing, top) * scale) + location;
-                    var br = (new Vector2(this.AdvanceWidth + this.LeftSideBearing, bottom) * scale) + location;
-                    var bl = (new Vector2(-this.LeftSideBearing, bottom) * scale) + location;
+                    Vector2 tl = (new Vector2(-this.LeftSideBearing, top) * scale) + offset;
+                    Vector2 tr = (new Vector2(this.AdvanceWidth + this.LeftSideBearing, top) * scale) + offset;
+                    Vector2 br = (new Vector2(this.AdvanceWidth + this.LeftSideBearing, bottom) * scale) + offset;
+                    Vector2 bl = (new Vector2(-this.LeftSideBearing, bottom) * scale) + offset;
 
                     tl.Y = MathF.Ceiling(tl.Y);
                     tr.Y = MathF.Ceiling(tr.Y);
@@ -359,13 +360,15 @@ namespace SixLabors.Fonts
                     surface.EndFigure();
                 }
 
-                // lets figure out underline
-                if ((this.textRun.TextAttributes & TextAttribute.Underline) == TextAttribute.Underline)
+                // Add underline and stroke.
+                // TextRun is never null here as rendering is only accessable via a Glyph which
+                // uses the cloned metrics instance.
+                if ((this.textRun!.TextAttributes & TextAttribute.Underline) == TextAttribute.Underline)
                 {
                     DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
                 }
 
-                if ((this.textRun.TextAttributes & TextAttribute.Strikethrough) == TextAttribute.Strikethrough)
+                if ((this.textRun!.TextAttributes & TextAttribute.Strikethrough) == TextAttribute.Strikethrough)
                 {
                     DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
                 }
