@@ -342,15 +342,19 @@ namespace SixLabors.Fonts
                     Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor * MirrorScale;
                     Vector2 offset = location + (this.offset * scale * MirrorScale);
 
-                    Vector2 tl = (new Vector2(-this.LeftSideBearing, top) * scale) + offset;
+                    Vector2 tl = (new Vector2(0, top) * scale) + offset;
                     Vector2 tr = (new Vector2(this.AdvanceWidth + this.LeftSideBearing, top) * scale) + offset;
                     Vector2 br = (new Vector2(this.AdvanceWidth + this.LeftSideBearing, bottom) * scale) + offset;
-                    Vector2 bl = (new Vector2(-this.LeftSideBearing, bottom) * scale) + offset;
+                    Vector2 bl = (new Vector2(0, bottom) * scale) + offset;
 
                     tl.Y = MathF.Ceiling(tl.Y);
                     tr.Y = MathF.Ceiling(tr.Y);
-                    br.Y = MathF.Ceiling(br.Y);
-                    bl.Y = MathF.Ceiling(bl.Y);
+                    br.Y = MathF.Floor(br.Y);
+                    bl.Y = MathF.Floor(bl.Y);
+                    tl.X = MathF.Ceiling(tl.X);
+                    bl.X = MathF.Ceiling(bl.X);
+                    tr.X = MathF.Floor(tr.X);
+                    br.X = MathF.Floor(br.X);
 
                     surface.MoveTo(tl);
                     surface.LineTo(bl);
