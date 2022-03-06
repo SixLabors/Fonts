@@ -330,12 +330,12 @@ namespace SixLabors.Fonts
                     float advanceY = metric.AdvanceHeight * scale.Y;
                     if (advanceX == 0)
                     {
-                        advanceX = (metric.LeftSideBearing + metric.Width + metric.RightSideBearing) * scale.X;
+                        advanceX = (metric.LeftSideBearing + metric.Width) * scale.X;
                     }
 
                     if (advanceY == 0)
                     {
-                        advanceY = (metric.TopSideBearing + metric.Height + metric.BottomSideBearing) * scale.Y;
+                        advanceY = (metric.TopSideBearing + metric.Height) * scale.Y;
                     }
 
                     glyphs.Add(new GlyphLayout(
@@ -464,12 +464,12 @@ namespace SixLabors.Fonts
                     // Advance Width & Height can be 0 which is fine for layout but not for measuring.
                     if (advanceX == 0)
                     {
-                        advanceX = (metric.LeftSideBearing + metric.Width + metric.RightSideBearing) * scale.X;
+                        advanceX = (metric.LeftSideBearing + metric.Width) * scale.X;
                     }
 
                     if (advanceY == 0)
                     {
-                        advanceY = (metric.TopSideBearing + metric.Height + metric.BottomSideBearing) * scale.Y;
+                        advanceY = (metric.TopSideBearing + metric.Height) * scale.Y;
                     }
 
                     glyphs.Add(new GlyphLayout(
