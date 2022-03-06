@@ -343,14 +343,8 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                void DrawLine(float thickness, float position)
+                (Vector2 start, Vector2 end, float thickness) GetEnds(float thickness, float position)
                 {
-                    surface.BeginFigure();
-
-                    float height = thickness;
-                    float top = position - (height * .5F);
-                    float bottom = top + height;
-
                     Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor * MirrorScale;
                     Vector2 offset = location + (this.offset * scale * MirrorScale);
 
@@ -362,10 +356,24 @@ namespace SixLabors.Fonts
                         width = this.LeftSideBearing + this.Width;
                     }
 
-                    Vector2 tl = (new Vector2(0, top) * scale) + offset;
-                    Vector2 tr = (new Vector2(width, top) * scale) + offset;
-                    Vector2 br = (new Vector2(width, bottom) * scale) + offset;
-                    Vector2 bl = (new Vector2(0, bottom) * scale) + offset;
+                    Vector2 tl = (new Vector2(0, position) * scale) + offset;
+                    Vector2 tr = (new Vector2(width, position) * scale) + offset;
+                    Vector2 bl = (new Vector2(0, position + thickness) * scale) + offset;
+
+                    return (tl, tr, tl.Y - bl.Y);
+                }
+
+                void DrawLine(float thickness, float position)
+                {
+                    surface.BeginFigure();
+
+                    var (start, end, finalThickness) = GetEnds(thickness, position);
+                    var halfHeight = new Vector2(0, -finalThickness * .5F);
+
+                    Vector2 tl = start - halfHeight;
+                    Vector2 tr = end - halfHeight;
+                    Vector2 bl = start + halfHeight;
+                    Vector2 br = end + halfHeight;
 
                     // Clamp the horizontal components to a whole pixel.
                     tl.Y = MathF.Ceiling(tl.Y);
@@ -387,17 +395,53 @@ namespace SixLabors.Fonts
                     surface.EndFigure();
                 }
 
-                // Add underline and stroke.
-                // TextRun is never null here as rendering is only accessable via a Glyph which
-                // uses the cloned metrics instance.
-                if ((this.textRun!.TextAttributes & TextAttribute.Underline) == TextAttribute.Underline)
+                void SetDecoration(TextDecoration decorationType, float thickness, float position)
                 {
-                    DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
+                    var (start, end, calcThickness) = GetEnds(thickness, position);
+                    ((IGlyphDecorationRenderer)surface).SetDecoration(decorationType, start, end, calcThickness);
                 }
 
-                if ((this.textRun!.TextAttributes & TextAttribute.Strikethrough) == TextAttribute.Strikethrough)
+                // we will need to infer this from the other metrics
+                // TODO figure out real place to get this metadata !!!
+                var virtualOverlineThickness = this.FontMetrics.UnderlineThickness;
+                var virtualOverlinePosition = this.FontMetrics.Ascender;
+                if (surface is IGlyphDecorationRenderer decorationSurface)
                 {
-                    DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
+                    // allow the rendered to override the decorations to attach
+                    var decorations = decorationSurface.EnabledDecorations();
+                    if ((decorations & TextDecoration.Underline) == TextDecoration.Underline)
+                    {
+                        SetDecoration(TextDecoration.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
+                    }
+
+                    if ((decorations & TextDecoration.Strikeout) == TextDecoration.Strikeout)
+                    {
+                        SetDecoration(TextDecoration.Strikeout, this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
+                    }
+
+                    if ((decorations & TextDecoration.Overline) == TextDecoration.Overline)
+                    {
+                        SetDecoration(TextDecoration.Overline, virtualOverlineThickness, virtualOverlinePosition);
+                    }
+                }
+                else
+                {
+                    // TextRun is never null here as rendering is only accessable via a Glyph which
+                    // uses the cloned metrics instance.
+                    if ((this.textRun!.TextDecorations & TextDecoration.Underline) == TextDecoration.Underline)
+                    {
+                        DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
+                    }
+
+                    if ((this.textRun!.TextDecorations & TextDecoration.Strikeout) == TextDecoration.Strikeout)
+                    {
+                        DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
+                    }
+
+                    if ((this.textRun!.TextDecorations & TextDecoration.Overline) == TextDecoration.Overline)
+                    {
+                        DrawLine(virtualOverlineThickness, virtualOverlinePosition);
+                    }
                 }
             }
 
