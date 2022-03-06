@@ -355,20 +355,17 @@ namespace SixLabors.Fonts
                     Vector2 offset = location + (this.offset * scale * MirrorScale);
 
                     // Calculate the correct advance for the line.
-                    // For zero advance glyphs we must calculate our own advance.
-                    // We add a single font unit to account for rounding error.
-                    float lsb = Math.Abs(this.LeftSideBearing) + 1;
-                    float width = this.AdvanceWidth + lsb;
+                    float width = this.AdvanceWidth;
                     if (this.AdvanceWidth == 0)
                     {
-                        // Create advance width from bearing + width;
-                        width = lsb + this.Width;
+                        // For zero advance glyphs we must calculate our advance width from bearing + width;
+                        width = this.LeftSideBearing + this.Width;
                     }
 
-                    Vector2 tl = (new Vector2(-lsb, top) * scale) + offset;
+                    Vector2 tl = (new Vector2(0, top) * scale) + offset;
                     Vector2 tr = (new Vector2(width, top) * scale) + offset;
                     Vector2 br = (new Vector2(width, bottom) * scale) + offset;
-                    Vector2 bl = (new Vector2(-lsb, bottom) * scale) + offset;
+                    Vector2 bl = (new Vector2(0, bottom) * scale) + offset;
 
                     // Clamp the horizontal components to a whole pixel.
                     tl.Y = MathF.Ceiling(tl.Y);
@@ -378,8 +375,8 @@ namespace SixLabors.Fonts
 
                     // Do the same for vertical components.
                     tl.X = MathF.Floor(tl.X);
-                    tr.X = MathF.Ceiling(tr.X);
-                    br.X = MathF.Ceiling(br.X);
+                    tr.X = MathF.Floor(tr.X);
+                    br.X = MathF.Floor(br.X);
                     bl.X = MathF.Floor(bl.X);
 
                     surface.MoveTo(tl);
