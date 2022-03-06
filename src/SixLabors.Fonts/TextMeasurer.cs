@@ -94,18 +94,47 @@ namespace SixLabors.Fonts
                 return FontRectangle.Empty;
             }
 
-            float top = glyphLayouts.Min(x => x.Location.Y);
-            float left = glyphLayouts.Min(x => x.Location.X);
+            float left = int.MaxValue;
+            float top = int.MaxValue;
+            float bottom = int.MinValue;
+            float right = int.MinValue;
+            for (int i = 0; i < glyphLayouts.Count; i++)
+            {
+                GlyphLayout glyph = glyphLayouts[i];
+                Vector2 location = glyph.Location;
+                float lineHeight = glyph.LineHeight;
 
-            // Avoid trimming zero-width/height marks that extend past the bounds of their base.
-            float right = glyphLayouts.Max(x => Math.Max(x.Location.X + x.Width, x.BoundingBox(1F).Right));
-            float bottom = glyphLayouts.Max(x => Math.Max(x.Location.Y + x.LineHeight, x.BoundingBox(1F).Top + x.LineHeight));
+                // Avoid trimming zero-width/height marks that extend past the bounds of their base.
+                FontRectangle box = glyph.BoundingBox(1F);
+                float advanceX = Math.Max(location.X + glyph.Width, box.Right);
+                float advanceY = Math.Max(location.Y + lineHeight, box.Top + lineHeight);
+
+                if (left > location.X)
+                {
+                    left = location.X;
+                }
+
+                if (top > location.Y)
+                {
+                    top = location.Y;
+                }
+
+                if (right < advanceX)
+                {
+                    right = advanceX;
+                }
+
+                if (bottom < advanceY)
+                {
+                    bottom = advanceY;
+                }
+            }
 
             Vector2 topLeft = new Vector2(left, top) * dpi;
             Vector2 bottomRight = new Vector2(right, bottom) * dpi;
             Vector2 size = bottomRight - topLeft;
 
-            return new FontRectangle(0, 0, size.X, size.Y);
+            return new FontRectangle(0, 0, MathF.Ceiling(size.X), MathF.Ceiling(size.Y));
         }
 
         internal static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
