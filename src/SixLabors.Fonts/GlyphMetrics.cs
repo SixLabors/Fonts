@@ -343,7 +343,7 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                (Vector2 start, Vector2 end, float thickness) GetEnds(float thickness, float position)
+                (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float position)
                 {
                     Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor * MirrorScale;
                     Vector2 offset = location + (this.offset * scale * MirrorScale);
