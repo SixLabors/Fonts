@@ -362,7 +362,7 @@ namespace SixLabors.Fonts
                     if (this.AdvanceWidth == 0)
                     {
                         // Create advance width from bearing + width;
-                        width = lsb + lsb + this.Width + Math.Abs(this.RightSideBearing) + 1;
+                        width = lsb + this.Width;
                     }
 
                     Vector2 tl = (new Vector2(-lsb, top) * scale) + offset;
@@ -373,11 +373,10 @@ namespace SixLabors.Fonts
                     // Clamp the horizontal components to a whole pixel.
                     tl.Y = MathF.Ceiling(tl.Y);
                     tr.Y = MathF.Ceiling(tr.Y);
-                    br.Y = MathF.Ceiling(br.Y);
-                    bl.Y = MathF.Ceiling(bl.Y);
+                    br.Y = MathF.Floor(br.Y);
+                    bl.Y = MathF.Floor(bl.Y);
 
                     // Do the same for vertical components.
-                    // This helps with rounding error for certain fonts.
                     tl.X = MathF.Floor(tl.X);
                     tr.X = MathF.Ceiling(tr.X);
                     br.X = MathF.Ceiling(br.X);
