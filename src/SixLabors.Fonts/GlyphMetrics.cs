@@ -350,7 +350,7 @@ namespace SixLabors.Fonts
 
                     // Calculate the correct advance for the line.
                     float width = this.AdvanceWidth;
-                    if (this.AdvanceWidth == 0)
+                    if (width == 0)
                     {
                         // For zero advance glyphs we must calculate our advance width from bearing + width;
                         width = this.LeftSideBearing + this.Width;
@@ -367,7 +367,7 @@ namespace SixLabors.Fonts
                 {
                     surface.BeginFigure();
 
-                    var (start, end, finalThickness) = GetEnds(thickness, position);
+                    (Vector2 start, Vector2 end, float finalThickness) = GetEnds(thickness, position);
                     var halfHeight = new Vector2(0, -finalThickness * .5F);
 
                     Vector2 tl = start - halfHeight;
@@ -397,18 +397,18 @@ namespace SixLabors.Fonts
 
                 void SetDecoration(TextDecoration decorationType, float thickness, float position)
                 {
-                    var (start, end, calcThickness) = GetEnds(thickness, position);
+                    (Vector2 start, Vector2 end, float calcThickness) = GetEnds(thickness, position);
                     ((IGlyphDecorationRenderer)surface).SetDecoration(decorationType, start, end, calcThickness);
                 }
 
-                // we will need to infer this from the other metrics
-                // TODO figure out real place to get this metadata !!!
-                var virtualOverlineThickness = this.FontMetrics.UnderlineThickness;
-                var virtualOverlinePosition = this.FontMetrics.Ascender;
+                // There's no built in metrics for these values so we will need to infer them from the other metrics.
+                // Offset to avoid clipping.
+                float overlineThickness = this.FontMetrics.UnderlineThickness;
+                float overlinePosition = this.FontMetrics.Ascender - (overlineThickness * .5F);
                 if (surface is IGlyphDecorationRenderer decorationSurface)
                 {
                     // allow the rendered to override the decorations to attach
-                    var decorations = decorationSurface.EnabledDecorations();
+                    TextDecoration decorations = decorationSurface.EnabledDecorations();
                     if ((decorations & TextDecoration.Underline) == TextDecoration.Underline)
                     {
                         SetDecoration(TextDecoration.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
@@ -421,7 +421,7 @@ namespace SixLabors.Fonts
 
                     if ((decorations & TextDecoration.Overline) == TextDecoration.Overline)
                     {
-                        SetDecoration(TextDecoration.Overline, virtualOverlineThickness, virtualOverlinePosition);
+                        SetDecoration(TextDecoration.Overline, overlineThickness, overlinePosition);
                     }
                 }
                 else
@@ -440,7 +440,7 @@ namespace SixLabors.Fonts
 
                     if ((this.textRun!.TextDecorations & TextDecoration.Overline) == TextDecoration.Overline)
                     {
-                        DrawLine(virtualOverlineThickness, virtualOverlinePosition);
+                        DrawLine(overlineThickness, overlinePosition);
                     }
                 }
             }
