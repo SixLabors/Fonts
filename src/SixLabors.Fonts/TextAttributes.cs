@@ -9,7 +9,7 @@ namespace SixLabors.Fonts
     /// Provides enumeration of various text attributes.
     /// </summary>
     [Flags]
-    public enum TextAttribute
+    public enum TextAttributes
     {
         /// <summary>
         /// No attributes are applied

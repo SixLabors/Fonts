@@ -30,12 +30,12 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the text attributes applied to this run.
         /// </summary>
-        public TextAttribute TextAttributes { get; set; }
+        public TextAttributes TextAttributes { get; set; }
 
         /// <summary>
         /// Gets or sets the text decorations applied to this run.
         /// </summary>
-        public TextDecoration TextDecorations { get; set; }
+        public TextDecorations TextDecorations { get; set; }
 
         /// <summary>
         /// Returns the slice of the given text representing this <see cref="TextRun"/>.

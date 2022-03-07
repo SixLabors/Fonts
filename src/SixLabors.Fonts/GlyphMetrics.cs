@@ -138,13 +138,13 @@ namespace SixLabors.Fonts
             StreamFontMetrics fontMetrics = other.FontMetrics;
             Vector2 offset = other.offset;
             Vector2 scaleFactor = other.ScaleFactor;
-            if (textRun.TextAttributes.HasFlag(TextAttribute.Subscript))
+            if (textRun.TextAttributes.HasFlag(TextAttributes.Subscript))
             {
                 float units = other.UnitsPerEm;
                 scaleFactor /= new Vector2(fontMetrics.SubscriptXSize / units, fontMetrics.SubscriptYSize / units);
                 offset = new(other.FontMetrics.SubscriptXOffset, other.FontMetrics.SubscriptYOffset);
             }
-            else if (textRun.TextAttributes.HasFlag(TextAttribute.Superscript))
+            else if (textRun.TextAttributes.HasFlag(TextAttributes.Superscript))
             {
                 float units = other.UnitsPerEm;
                 scaleFactor /= new Vector2(fontMetrics.SuperscriptXSize / units, fontMetrics.SuperscriptYSize / units);
@@ -395,7 +395,7 @@ namespace SixLabors.Fonts
                     surface.EndFigure();
                 }
 
-                void SetDecoration(TextDecoration decorationType, float thickness, float position)
+                void SetDecoration(TextDecorations decorationType, float thickness, float position)
                 {
                     (Vector2 start, Vector2 end, float calcThickness) = GetEnds(thickness, position);
                     ((IGlyphDecorationRenderer)surface).SetDecoration(decorationType, start, end, calcThickness);
@@ -408,37 +408,37 @@ namespace SixLabors.Fonts
                 if (surface is IGlyphDecorationRenderer decorationSurface)
                 {
                     // allow the rendered to override the decorations to attach
-                    TextDecoration decorations = decorationSurface.EnabledDecorations();
-                    if ((decorations & TextDecoration.Underline) == TextDecoration.Underline)
+                    TextDecorations decorations = decorationSurface.EnabledDecorations();
+                    if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
                     {
-                        SetDecoration(TextDecoration.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
+                        SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
                     }
 
-                    if ((decorations & TextDecoration.Strikeout) == TextDecoration.Strikeout)
+                    if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
                     {
-                        SetDecoration(TextDecoration.Strikeout, this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
+                        SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
                     }
 
-                    if ((decorations & TextDecoration.Overline) == TextDecoration.Overline)
+                    if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
                     {
-                        SetDecoration(TextDecoration.Overline, overlineThickness, overlinePosition);
+                        SetDecoration(TextDecorations.Overline, overlineThickness, overlinePosition);
                     }
                 }
                 else
                 {
                     // TextRun is never null here as rendering is only accessable via a Glyph which
                     // uses the cloned metrics instance.
-                    if ((this.textRun!.TextDecorations & TextDecoration.Underline) == TextDecoration.Underline)
+                    if ((this.textRun!.TextDecorations & TextDecorations.Underline) == TextDecorations.Underline)
                     {
                         DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
                     }
 
-                    if ((this.textRun!.TextDecorations & TextDecoration.Strikeout) == TextDecoration.Strikeout)
+                    if ((this.textRun!.TextDecorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
                     {
                         DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
                     }
 
-                    if ((this.textRun!.TextDecorations & TextDecoration.Overline) == TextDecoration.Overline)
+                    if ((this.textRun!.TextDecorations & TextDecorations.Overline) == TextDecorations.Overline)
                     {
                         DrawLine(overlineThickness, overlinePosition);
                     }

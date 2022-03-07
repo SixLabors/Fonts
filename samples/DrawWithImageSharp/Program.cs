@@ -44,8 +44,8 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily tahoma = SystemFonts.Get("Tahoma");
             var textRuns = new List<TextRun>
             {
-                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttribute.Superscript, TextDecorations = TextDecoration.Underline | TextDecoration.Strikeout | TextDecoration.Overline },
-                new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttribute.Subscript, TextDecorations = TextDecoration.Strikeout | TextDecoration.Underline | TextDecoration.Overline }
+                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
+                new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttributes.Subscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline | TextDecorations.Overline }
             };
 
             RenderText(uiFont, "The quick brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns);
@@ -53,14 +53,14 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             string arabic = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ";
             textRuns = new List<TextRun>
             {
-                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecoration.Underline }
+                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecorations.Underline }
             };
 
             RenderText(uiFont, arabic, pointSize: 72, textRuns: textRuns);
 
             textRuns = new List<TextRun>
             {
-                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecoration.Underline }
+                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecorations.Underline }
             };
             RenderText(bugzilla, arabic, pointSize: 72, textRuns: textRuns);
 
