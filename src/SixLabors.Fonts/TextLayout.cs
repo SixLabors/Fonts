@@ -217,21 +217,21 @@ namespace SixLabors.Fonts
             {
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, i, ref location, origin));
+                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, textBox.TextLines.Count - 1 - i, ref location, origin));
                 }
             }
             else if (layoutMode == LayoutMode.VerticalLeftRight)
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, i, ref location));
                 }
             }
             else
             {
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, textBox.TextLines.Count - 1 - i, ref location));
                 }
             }
 
@@ -267,7 +267,7 @@ namespace SixLabors.Fonts
                     location.Y = origin.Y;
                     offsetY = ((scaledMaxAscender + scaledMaxLineGap) * .5F) - (scaledMaxDescender * .5F);
 
-                    // Vertically centering aligning multiple lines of variable line hight is tricky.
+                    // Vertically centering aligning multiple lines of variable line-hight is tricky.
                     if (textBox.TextLines.Count > 1)
                     {
                         // First negatively offset each line based on its index aligning at the bottom
@@ -395,7 +395,7 @@ namespace SixLabors.Fonts
             TextDirection direction,
             float maxScaledAdvance,
             TextOptions options,
-            bool first,
+            int index,
             ref Vector2 location)
         {
             float originY = location.Y;
@@ -404,22 +404,28 @@ namespace SixLabors.Fonts
 
             // Set the Y-Origin for the line.
             float scaledMaxLineGap = textLine.ScaledMaxLineGap();
-            float scaledMaxAscender = textLine.ScaledMaxAscender() + scaledMaxLineGap;
+            float scaledMaxAscender = textLine.ScaledMaxAscender();
             float scaledMaxDescender = textLine.ScaledMaxDescender();
             float scaledMaxLineHeight = textLine.ScaledMaxLineHeight();
+
+            TextLine.GlyphLayoutData first = textLine[0];
+            float firstMaxLineGap = first.ScaledLineGap;
+            float firstMaxAscender = first.ScaledAscender;
+            float firstMaxDescender = first.ScaledDescender;
+            float firstMaxLineHeight = first.ScaledLineHeight;
 
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Top:
-                    offsetY = scaledMaxAscender;
+                    offsetY = firstMaxAscender + firstMaxLineGap;
                     break;
                 case VerticalAlignment.Center:
-                    offsetY = (scaledMaxAscender * .5F) - (scaledMaxDescender * .5F);
-                    offsetY -= (maxScaledAdvance - scaledMaxLineHeight) * .5F;
+                    offsetY = ((firstMaxAscender + firstMaxLineGap) * .5F) - (firstMaxDescender * .5F);
+                    offsetY -= (maxScaledAdvance - firstMaxLineHeight) * .5F;
                     break;
                 case VerticalAlignment.Bottom:
-                    offsetY = -scaledMaxDescender;
-                    offsetY -= maxScaledAdvance - scaledMaxLineHeight;
+                    offsetY = -firstMaxDescender;
+                    offsetY -= maxScaledAdvance - firstMaxLineHeight;
                     break;
             }
 
@@ -451,7 +457,8 @@ namespace SixLabors.Fonts
 
             location.Y += offsetY;
 
-            if (first)
+            bool isFirstLine = index == 0;
+            if (isFirstLine)
             {
                 // Set the X-Origin for horizontal alignment.
                 switch (options.HorizontalAlignment)
@@ -478,10 +485,10 @@ namespace SixLabors.Fonts
             location.X += offsetX;
 
             List<GlyphLayout> glyphs = new();
-            float xWidth = scaledMaxLineHeight * (first ? 1F : options.LineSpacing);
+            float xWidth = scaledMaxLineHeight * (isFirstLine ? 1F : options.LineSpacing);
             float xLineAdvance = scaledMaxLineHeight * options.LineSpacing;
 
-            if (first)
+            if (isFirstLine)
             {
                 xLineAdvance -= (xLineAdvance - scaledMaxLineHeight) * .5F;
             }
