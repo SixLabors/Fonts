@@ -408,24 +408,16 @@ namespace SixLabors.Fonts
             float scaledMaxDescender = textLine.ScaledMaxDescender();
             float scaledMaxLineHeight = textLine.ScaledMaxLineHeight();
 
-            TextLine.GlyphLayoutData first = textLine[0];
-            float firstMaxLineGap = first.ScaledLineGap;
-            float firstMaxAscender = first.ScaledAscender;
-            float firstMaxDescender = first.ScaledDescender;
-            float firstMaxLineHeight = first.ScaledLineHeight;
-
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Top:
-                    offsetY = firstMaxAscender + firstMaxLineGap;
+                    offsetY = 0;
                     break;
                 case VerticalAlignment.Center:
-                    offsetY = ((firstMaxAscender + firstMaxLineGap) * .5F) - (firstMaxDescender * .5F);
-                    offsetY -= (maxScaledAdvance - firstMaxLineHeight) * .5F;
+                    offsetY -= maxScaledAdvance * .5F;
                     break;
                 case VerticalAlignment.Bottom:
-                    offsetY = -firstMaxDescender;
-                    offsetY -= maxScaledAdvance - firstMaxLineHeight;
+                    offsetY -= maxScaledAdvance;
                     break;
             }
 
@@ -464,16 +456,15 @@ namespace SixLabors.Fonts
                 switch (options.HorizontalAlignment)
                 {
                     case HorizontalAlignment.Right:
-                        offsetX = -(scaledMaxLineHeight * options.LineSpacing);
-                        for (int i = textBox.TextLines.Count - 1; i > 0; i--)
+                        // The textline methods are memoized so we're safe to call them multiple times.
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
                         {
                             offsetX -= textBox.TextLines[i].ScaledMaxLineHeight() * options.LineSpacing;
                         }
 
                         break;
                     case HorizontalAlignment.Center:
-                        offsetX = -(scaledMaxLineHeight * options.LineSpacing * .5F);
-                        for (int i = textBox.TextLines.Count - 1; i > 0; i--)
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
                         {
                             offsetX -= textBox.TextLines[i].ScaledMaxLineHeight() * options.LineSpacing * .5F;
                         }
@@ -495,19 +486,19 @@ namespace SixLabors.Fonts
 
             for (int i = 0; i < textLine.Count; i++)
             {
-                TextLine.GlyphLayoutData info = textLine[i];
-                if (info.IsNewLine)
+                TextLine.GlyphLayoutData data = textLine[i];
+                if (data.IsNewLine)
                 {
                     location.X += xLineAdvance;
                     location.Y = originY;
                     continue;
                 }
 
-                foreach (GlyphMetrics metric in info.Metrics)
+                foreach (GlyphMetrics metric in data.Metrics)
                 {
-                    Vector2 scale = new Vector2(info.PointSize) / metric.ScaleFactor;
+                    Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
                     float advanceX = xLineAdvance;
-                    float advanceY = info.ScaledAdvance;
+                    float advanceY = data.ScaledAdvance;
 
                     // Advance Width & Height can be 0 which is fine for layout but not for measuring.
                     if (advanceX == 0)
@@ -521,8 +512,8 @@ namespace SixLabors.Fonts
                     }
 
                     glyphs.Add(new GlyphLayout(
-                        new Glyph(metric, info.PointSize),
-                        location + new Vector2((xWidth - (metric.AdvanceWidth * scale.X)) * .5F, 0),
+                        new Glyph(metric, data.PointSize),
+                        location + new Vector2((xWidth - (metric.AdvanceWidth * scale.X)) * .5F, data.ScaledAscender),
                         scaledMaxAscender,
                         scaledMaxDescender,
                         scaledMaxLineGap,
@@ -532,7 +523,7 @@ namespace SixLabors.Fonts
                         i == 0));
                 }
 
-                location.Y += info.ScaledAdvance;
+                location.Y += data.ScaledAdvance;
             }
 
             location.Y = originY;
@@ -788,6 +779,17 @@ namespace SixLabors.Fonts
                                 glyphCount += textLine.Count;
                                 textLine = new();
                                 lineAdvance = 0;
+                            }
+                            else if (currentLineBreak.PositionWrap == codePointIndex)
+                            {
+                                // Split the current textline into two at the current wrapping point.
+                                TextLine split = textLine.SplitAt(currentLineBreak, keepAll);
+                                if (split != textLine)
+                                {
+                                    textLines.Add(textLine.BidiReOrder());
+                                    textLine = split;
+                                    lineAdvance = split.ScaledLineAdvance();
+                                }
                             }
                             else if (currentLineBreak.PositionMeasure == codePointIndex)
                             {
