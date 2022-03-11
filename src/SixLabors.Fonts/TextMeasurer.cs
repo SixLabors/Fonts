@@ -98,25 +98,28 @@ namespace SixLabors.Fonts
             float top = int.MaxValue;
             float bottom = int.MinValue;
             float right = int.MinValue;
+
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
                 GlyphLayout glyph = glyphLayouts[i];
                 Vector2 location = glyph.Location;
+                float x = location.X;
+                float y = location.Y - (glyph.Ascender + glyph.LineGap);
                 float lineHeight = glyph.LineHeight;
 
                 // Avoid trimming zero-width/height marks that extend past the bounds of their base.
                 FontRectangle box = glyph.BoundingBox(1F);
-                float advanceX = Math.Max(location.X + glyph.Width, box.Right);
-                float advanceY = Math.Max(location.Y + lineHeight, box.Top + lineHeight);
+                float advanceX = Math.Max(x + glyph.Width, box.Right);
+                float advanceY = Math.Max(y + lineHeight, box.Top + box.Height);
 
-                if (left > location.X)
+                if (left > x)
                 {
-                    left = location.X;
+                    left = x;
                 }
 
-                if (top > location.Y)
+                if (top > y)
                 {
-                    top = location.Y;
+                    top = y;
                 }
 
                 if (right < advanceX)

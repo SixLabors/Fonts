@@ -14,15 +14,21 @@ namespace SixLabors.Fonts
         internal GlyphLayout(
             Glyph glyph,
             Vector2 location,
+            float ascender,
+            float descender,
+            float linegap,
+            float lineHeight,
             float width,
             float height,
-            float lineHeight,
             bool isStartOfLine)
         {
-            this.LineHeight = lineHeight;
             this.Glyph = glyph;
             this.CodePoint = glyph.GlyphMetrics.CodePoint;
             this.Location = location;
+            this.Ascender = ascender;
+            this.Descender = descender;
+            this.LineGap = linegap;
+            this.LineHeight = lineHeight;
             this.Width = width;
             this.Height = height;
             this.IsStartOfLine = isStartOfLine;
@@ -44,6 +50,26 @@ namespace SixLabors.Fonts
         public Vector2 Location { get; }
 
         /// <summary>
+        /// Gets the ascender
+        /// </summary>
+        public float Ascender { get; }
+
+        /// <summary>
+        /// Gets the ascender
+        /// </summary>
+        public float Descender { get; }
+
+        /// <summary>
+        /// Gets the lie gap
+        /// </summary>
+        public float LineGap { get; }
+
+        /// <summary>
+        /// Gets the line height of the glyph.
+        /// </summary>
+        public float LineHeight { get; }
+
+        /// <summary>
         /// Gets the width.
         /// </summary>
         public float Width { get; }
@@ -52,11 +78,6 @@ namespace SixLabors.Fonts
         /// Gets the height.
         /// </summary>
         public float Height { get; }
-
-        /// <summary>
-        /// Gets the line height of the glyph.
-        /// </summary>
-        public float LineHeight { get; }
 
         /// <summary>
         /// Gets a value indicating whether this glyph is the first glyph on a new line.
