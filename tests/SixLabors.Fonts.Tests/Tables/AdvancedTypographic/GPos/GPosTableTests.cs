@@ -492,8 +492,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 759, 989 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(246, 263.999878f, 363, 322),
-                new(71, 324.999878f, 966, 1573),
+                new(246, 264, 363, 322),
+                new(71, 325, 966, 1573),
             };
 
             // act

@@ -780,17 +780,6 @@ namespace SixLabors.Fonts
                                 textLine = new();
                                 lineAdvance = 0;
                             }
-                            else if (currentLineBreak.PositionWrap == codePointIndex)
-                            {
-                                // Split the current textline into two at the current wrapping point.
-                                TextLine split = textLine.SplitAt(currentLineBreak, keepAll);
-                                if (split != textLine)
-                                {
-                                    textLines.Add(textLine.BidiReOrder());
-                                    textLine = split;
-                                    lineAdvance = split.ScaledLineAdvance();
-                                }
-                            }
                             else if (currentLineBreak.PositionMeasure == codePointIndex)
                             {
                                 // Exact length match. Check for CJK
@@ -810,6 +799,17 @@ namespace SixLabors.Fonts
                                     glyphCount += textLine.Count;
                                     textLine = new();
                                     lineAdvance = 0;
+                                }
+                            }
+                            else if (currentLineBreak.PositionWrap == codePointIndex)
+                            {
+                                // Split the current textline into two at the current wrapping point.
+                                TextLine split = textLine.SplitAt(currentLineBreak, keepAll);
+                                if (split != textLine)
+                                {
+                                    textLines.Add(textLine.BidiReOrder());
+                                    textLine = split;
+                                    lineAdvance = split.ScaledLineAdvance();
                                 }
                             }
                             else if (lastLineBreak.PositionWrap < codePointIndex)
