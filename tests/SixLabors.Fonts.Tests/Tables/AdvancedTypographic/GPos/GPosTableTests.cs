@@ -509,7 +509,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
 
             for (int i = 0; i < expectedFontRectangles.Length; i++)
             {
-                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i]);
+                // NET FX requires lower precision
+                CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i], 3);
             }
         }
 
