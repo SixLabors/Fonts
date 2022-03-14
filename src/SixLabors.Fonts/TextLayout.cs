@@ -251,8 +251,8 @@ namespace SixLabors.Fonts
             float scaledMaxLineGap = textLine.ScaledMaxLineGap();
             float scaledMaxAscender = textLine.ScaledMaxAscender();
             float scaledMaxDescender = textLine.ScaledMaxDescender();
-            float scaledMaxLineHeight = textLine.ScaledMaxLineHeight();
-            float scaledLineAdvance = scaledMaxDescender * options.LineSpacing;
+            float scaledMaxLineHeight = textLine.ScaledMaxLineHeight() * options.LineSpacing;
+            float scaledLineAdvance = scaledMaxLineHeight - (scaledMaxAscender + scaledMaxLineGap);
             float originX = location.X;
             float offsetY = 0;
             float offsetX = 0;
@@ -274,7 +274,7 @@ namespace SixLabors.Fonts
                         // as we do with the bottom alignment below.
                         for (int i = index; i < textBox.TextLines.Count; i++)
                         {
-                            offsetY -= textBox.TextLines[i].ScaledMaxLineHeight();
+                            offsetY -= textBox.TextLines[i].ScaledMaxLineHeight() * options.LineSpacing;
                         }
 
                         // Now push all the lines back down by half.
@@ -282,7 +282,7 @@ namespace SixLabors.Fonts
                         for (int i = 0; i < textBox.TextLines.Count; i++)
                         {
                             TextLine current = textBox.TextLines[i];
-                            offsetY += (current.ScaledMaxLineHeight() + (current.ScaledMaxDescender() * options.LineSpacing)) * .5F;
+                            offsetY += ((current.ScaledMaxLineHeight() * options.LineSpacing) + current.ScaledMaxDescender()) * .5F;
                         }
                     }
 
@@ -292,7 +292,7 @@ namespace SixLabors.Fonts
                     offsetY = -scaledMaxDescender;
                     for (int i = index; i < textBox.TextLines.Count - 1; i++)
                     {
-                        offsetY -= textBox.TextLines[i].ScaledMaxLineHeight();
+                        offsetY -= textBox.TextLines[i].ScaledMaxLineHeight() * options.LineSpacing;
                     }
 
                     break;
@@ -803,7 +803,7 @@ namespace SixLabors.Fonts
                             }
                             else if (currentLineBreak.PositionWrap == codePointIndex)
                             {
-                                // Split the current textline into two at the current wrapping point.
+                                // Exact length match. Check for CJK
                                 TextLine split = textLine.SplitAt(currentLineBreak, keepAll);
                                 if (split != textLine)
                                 {
