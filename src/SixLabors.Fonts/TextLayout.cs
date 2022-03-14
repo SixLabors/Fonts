@@ -210,14 +210,14 @@ namespace SixLabors.Fonts
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, i, ref location, origin));
+                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, i, ref location));
                 }
             }
             else if (layoutMode == LayoutMode.HorizontalBottomTop)
             {
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, textBox.TextLines.Count - 1 - i, ref location, origin));
+                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, textBox.TextLines.Count - 1 - i, ref location));
                 }
             }
             else if (layoutMode == LayoutMode.VerticalLeftRight)
@@ -245,60 +245,45 @@ namespace SixLabors.Fonts
             float maxScaledAdvance,
             TextOptions options,
             int index,
-            ref Vector2 location,
-            Vector2 origin)
+            ref Vector2 location)
         {
             float scaledMaxLineGap = textLine.ScaledMaxLineGap();
             float scaledMaxAscender = textLine.ScaledMaxAscender();
             float scaledMaxDescender = textLine.ScaledMaxDescender();
             float scaledMaxLineHeight = textLine.ScaledMaxLineHeight() * options.LineSpacing;
-            float scaledLineAdvance = scaledMaxLineHeight - (scaledMaxAscender + scaledMaxLineGap);
+            float scaledLineAdvance = scaledMaxLineHeight;
             float originX = location.X;
             float offsetY = 0;
             float offsetX = 0;
 
             // Set the Y-Origin for the line.
-            switch (options.VerticalAlignment)
+            if (index == 0)
             {
-                case VerticalAlignment.Top:
-                    offsetY = scaledMaxAscender + scaledMaxLineGap;
-                    break;
-                case VerticalAlignment.Center:
-                    location.Y = origin.Y;
-                    offsetY = ((scaledMaxAscender + scaledMaxLineGap) * .5F) - (scaledMaxDescender * .5F);
+                switch (options.VerticalAlignment)
+                {
+                    case VerticalAlignment.Top:
+                        offsetY = scaledMaxAscender + scaledMaxLineGap;
+                        break;
+                    case VerticalAlignment.Center:
+                        offsetY = (scaledMaxAscender + scaledMaxLineGap - scaledMaxDescender) * .5F;
+                        for (int i = index; i < textBox.TextLines.Count - 1; i++)
+                        {
+                            offsetY -= textBox.TextLines[i].ScaledMaxLineHeight() * options.LineSpacing * .5F;
+                        }
 
-                    // Vertically centering aligning multiple lines of variable line-hight is tricky.
-                    if (textBox.TextLines.Count > 1)
-                    {
-                        // First negatively offset each line based on its index aligning at the bottom
-                        // as we do with the bottom alignment below.
-                        for (int i = index; i < textBox.TextLines.Count; i++)
+                        break;
+                    case VerticalAlignment.Bottom:
+                        offsetY = -scaledMaxDescender;
+                        for (int i = index; i < textBox.TextLines.Count - 1; i++)
                         {
                             offsetY -= textBox.TextLines[i].ScaledMaxLineHeight() * options.LineSpacing;
                         }
 
-                        // Now push all the lines back down by half.
-                        // The textline methods are memoized so we're safe to call them multiple times.
-                        for (int i = 0; i < textBox.TextLines.Count; i++)
-                        {
-                            TextLine current = textBox.TextLines[i];
-                            offsetY += ((current.ScaledMaxLineHeight() * options.LineSpacing) + current.ScaledMaxDescender()) * .5F;
-                        }
-                    }
+                        break;
+                }
 
-                    break;
-                case VerticalAlignment.Bottom:
-                    location.Y = origin.Y;
-                    offsetY = -scaledMaxDescender;
-                    for (int i = index; i < textBox.TextLines.Count - 1; i++)
-                    {
-                        offsetY -= textBox.TextLines[i].ScaledMaxLineHeight() * options.LineSpacing;
-                    }
-
-                    break;
+                location.Y += offsetY;
             }
-
-            location.Y += offsetY;
 
             // Set the X-Origin for horizontal alignment.
             switch (options.HorizontalAlignment)
