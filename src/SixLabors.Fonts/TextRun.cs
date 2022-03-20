@@ -8,17 +8,17 @@ using SixLabors.Fonts.Unicode;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Represents a run of text spanning a series of code points within a string.
+    /// Represents a run of text spanning a series of graphemes within a string.
     /// </summary>
     public class TextRun
     {
         /// <summary>
-        /// Gets or sets the inclusive start index of the first codepoint in this <see cref="TextRun"/>.
+        /// Gets or sets the inclusive start index of the first grapheme in this <see cref="TextRun"/>.
         /// </summary>
         public int Start { get; set; }
 
         /// <summary>
-        /// Gets or sets the exclusive end index of the last codepoint in this <see cref="TextRun"/>.
+        /// Gets or sets the exclusive end index of the last grapheme in this <see cref="TextRun"/>.
         /// </summary>
         public int End { get; set; }
 
@@ -47,27 +47,32 @@ namespace SixLabors.Fonts
         {
             ValidateRange(this.Start, this.End);
 
-            // Convert code point indices into char indices so we can slice
+            // Convert grapheme indices into char indices so we can slice
             int chars = 0;
             int count = 0;
             int start = 0;
             int length = 0;
-            SpanCodePointEnumerator codePointEnumerator = new(text);
-            while (codePointEnumerator.MoveNext())
+            SpanGraphemeEnumerator graphemeEnumerator = new(text);
+            while (graphemeEnumerator.MoveNext())
             {
-                if (count == this.Start)
+                SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current);
+                while (codePointEnumerator.MoveNext())
                 {
-                    start = chars;
-                }
+                    if (count == this.Start)
+                    {
+                        start = chars;
+                    }
 
-                chars += codePointEnumerator.Current.Utf16SequenceLength;
-                length = chars - start;
-                if (++count == this.End)
-                {
-                    break;
+                    chars += codePointEnumerator.Current.Utf16SequenceLength;
+                    length = chars - start;
+                    if (++count == this.End)
+                    {
+                        goto End;
+                    }
                 }
             }
 
+            End:
             return text.Slice(start, length);
         }
 

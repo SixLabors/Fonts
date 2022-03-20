@@ -104,7 +104,7 @@ namespace SixLabors.Fonts
                 GlyphLayout glyph = glyphLayouts[i];
                 Vector2 location = glyph.Location;
                 float x = location.X;
-                float y = location.Y - (glyph.Ascender + glyph.LineGap);
+                float y = location.Y - glyph.Ascender;
                 float lineHeight = glyph.LineHeight;
 
                 // Avoid trimming zero-width/height marks that extend past the bounds of their base.
