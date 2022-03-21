@@ -259,12 +259,12 @@ namespace SixLabors.Fonts
 
             // Recalculate the advance based upon the next line.
             // If larger, we want to scale it up to ensure it it pushed down far enough.
-            // We split the different exactly to line up the text at the exact vertical center.
+            // We split the different at 2/3 (heuristically determined value based upon extensive visual testing).
             if (!isFirstLine && !isLastLine)
             {
                 TextLine next = textBox.TextLines[index + 1];
                 float nextLineAdvance = textBox.ScaledMaxLineHeight(next.MaxPointSize) * options.LineSpacing;
-                scaledLineAdvance += (nextLineAdvance - scaledLineAdvance) * .5F;
+                scaledLineAdvance += (nextLineAdvance - scaledLineAdvance) * .667F;
             }
 
             float originX = location.X;
@@ -288,7 +288,7 @@ namespace SixLabors.Fonts
                             {
                                 TextLine next = textBox.TextLines[index + 1];
                                 float nextLineAdvance = textBox.ScaledMaxLineHeight(next.MaxPointSize);
-                                advance += (nextLineAdvance - advance) * .5F;
+                                advance += (nextLineAdvance - advance) * .667F;
                             }
 
                             offsetY -= advance * options.LineSpacing * .5F;
@@ -304,7 +304,7 @@ namespace SixLabors.Fonts
                             {
                                 TextLine next = textBox.TextLines[index + 1];
                                 float nextLineAdvance = textBox.ScaledMaxLineHeight(next.MaxPointSize);
-                                advance += (nextLineAdvance - advance) * .5F;
+                                advance += (nextLineAdvance - advance) * .667F;
                             }
 
                             offsetY -= advance * options.LineSpacing;
