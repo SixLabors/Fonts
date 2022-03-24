@@ -180,7 +180,10 @@ namespace SixLabors.Fonts
             this.prep = prep;
             this.glyphDefinitionTable = glyphDefinitionTable;
             this.Description = new FontDescription(nameTable, os2, head);
+            this.HeadFlags = head.Flags;
         }
+
+        public HeadTable.HeadFlags HeadFlags { get; }
 
         /// <inheritdoc/>
         public override FontDescription Description { get; }
@@ -475,7 +478,7 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
-        internal GlyphVector ApplyHinting(GlyphVector glyphVector, float pixelSize, ushort glyphIndex)
+        internal void ApplyHinting(GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float scaledPixel)
         {
             if (this.interpreter == null)
             {
@@ -492,23 +495,17 @@ namespace SixLabors.Fonts
                 }
             }
 
-            float scale = pixelSize / this.UnitsPerEm;
-            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scale, pixelSize, this.prep?.Instructions);
+            float scaleFactor = scaledPixel / this.UnitsPerEm;
+            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scaleFactor, scaledPixel, this.prep?.Instructions);
 
             Bounds bounds = glyphVector.GetBounds();
-            short leftSideBearing = this.horizontalMetrics.GetLeftSideBearing(glyphIndex);
-            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphIndex);
-            short topSideBearing = this.verticalMetricsTable?.GetTopSideBearing(glyphIndex) ?? (short)(this.Ascender - bounds.Max.Y);
-            ushort advanceHeight = this.verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)this.LineHeight;
 
-            var pp1 = new Vector2(bounds.Min.X - (leftSideBearing * scale), 0);
-            var pp2 = new Vector2(pp1.X + (advanceWidth * scale), 0);
-            var pp3 = new Vector2(0, bounds.Max.Y + (topSideBearing * scale));
-            var pp4 = new Vector2(0, pp3.Y - (advanceHeight * scale));
+            var pp1 = new Vector2(bounds.Min.X - (metrics.LeftSideBearing * scaleXY.X), 0);
+            var pp2 = new Vector2(pp1.X + (metrics.AdvanceWidth * scaleXY.X), 0);
+            var pp3 = new Vector2(0, bounds.Max.Y + (metrics.TopSideBearing * scaleXY.Y));
+            var pp4 = new Vector2(0, pp3.Y - (metrics.AdvanceHeight * scaleXY.Y));
 
             GlyphVector.Hint(ref glyphVector, this.interpreter, pp1, pp2, pp3, pp4);
-
-            return glyphVector;
         }
 
         private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? metrics)

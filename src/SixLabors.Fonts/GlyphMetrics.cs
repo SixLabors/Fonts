@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Unicode;
 
@@ -239,6 +240,13 @@ namespace SixLabors.Fonts
             float dpi = options.Dpi;
             location *= dpi;
             float scaledPoint = dpi * pointSize;
+            bool forcePPEMToInt = (this.FontMetrics.HeadFlags & HeadTable.HeadFlags.ForcePPEMToInt) != 0;
+
+            if (forcePPEMToInt)
+            {
+                scaledPoint = MathF.Round(scaledPoint);
+            }
+
             FontRectangle box = this.GetBoundingBox(location, scaledPoint);
 
             // TextRun is never null here as rendering is only accessable via a Glyph which
@@ -261,12 +269,19 @@ namespace SixLabors.Fonts
                         var transform = Matrix3x2.CreateScale(scale);
                         transform.Translation = this.offset * scale * MirrorScale;
                         scaledVector = GlyphVector.Transform(this.vector, transform);
-                        this.scaledVector[scaledPoint] = scaledVector;
-                    }
 
-                    if (options.ApplyHinting)
-                    {
-                        this.FontMetrics.ApplyHinting(scaledVector, pointSize * dpi / 72, this.GlyphId);
+                        if (options.ApplyHinting)
+                        {
+                            float scaledPixel = scaledPoint * (dpi / 72F);
+                            if (forcePPEMToInt)
+                            {
+                                scaledPixel = MathF.Round(scaledPixel);
+                            }
+
+                            this.FontMetrics.ApplyHinting(this, ref scaledVector, scale, scaledPixel);
+                        }
+
+                        this.scaledVector[scaledPoint] = scaledVector;
                     }
 
                     GlyphOutline outline = scaledVector.GetOutline();
