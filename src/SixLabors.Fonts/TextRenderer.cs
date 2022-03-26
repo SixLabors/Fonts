@@ -11,23 +11,13 @@ namespace SixLabors.Fonts
     /// </summary>
     public class TextRenderer
     {
-        private readonly TextLayout layoutEngine;
         private readonly IGlyphRenderer renderer;
-
-        internal TextRenderer(IGlyphRenderer renderer, TextLayout layoutEngine)
-        {
-            this.layoutEngine = layoutEngine;
-            this.renderer = renderer;
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TextRenderer"/> class.
         /// </summary>
         /// <param name="renderer">The renderer.</param>
-        public TextRenderer(IGlyphRenderer renderer)
-            : this(renderer, TextLayout.Default)
-        {
-        }
+        public TextRenderer(IGlyphRenderer renderer) => this.renderer = renderer;
 
         /// <summary>
         /// Renders the text to the <paramref name="renderer"/>.
@@ -62,18 +52,13 @@ namespace SixLabors.Fonts
         /// <param name="options">The style.</param>
         public void RenderText(ReadOnlySpan<char> text, TextOptions options)
         {
-            IReadOnlyList<GlyphLayout> glyphsToRender = this.layoutEngine.GenerateLayout(text, options);
+            IReadOnlyList<GlyphLayout> glyphsToRender = TextLayout.GenerateLayout(text, options);
             FontRectangle rect = TextMeasurer.GetBounds(glyphsToRender, options.Dpi);
 
             this.renderer.BeginText(rect);
 
             foreach (GlyphLayout g in glyphsToRender)
             {
-                if (g.IsWhiteSpace())
-                {
-                    continue;
-                }
-
                 g.Glyph.RenderTo(this.renderer, g.Location, options);
             }
 

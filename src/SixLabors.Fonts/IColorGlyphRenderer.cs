@@ -18,7 +18,7 @@ namespace SixLabors.Fonts
     }
 
     /// <summary>
-    /// Provides access to the the color details for the current glyph.
+    /// Provides access to the color details for the current glyph.
     /// </summary>
     public readonly struct GlyphColor
     {

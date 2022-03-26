@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Numerics;
-using System.Text;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -15,14 +14,21 @@ namespace SixLabors.Fonts
         internal GlyphLayout(
             Glyph glyph,
             Vector2 location,
+            float ascender,
+            float descender,
+            float linegap,
+            float lineHeight,
             float width,
             float height,
-            float lineHeight,
             bool isStartOfLine)
         {
-            this.LineHeight = lineHeight;
             this.Glyph = glyph;
+            this.CodePoint = glyph.GlyphMetrics.CodePoint;
             this.Location = location;
+            this.Ascender = ascender;
+            this.Descender = descender;
+            this.LineGap = linegap;
+            this.LineHeight = lineHeight;
             this.Width = width;
             this.Height = height;
             this.IsStartOfLine = isStartOfLine;
@@ -34,9 +40,34 @@ namespace SixLabors.Fonts
         public Glyph Glyph { get; }
 
         /// <summary>
+        /// Gets the codepoint represented by this glyph.
+        /// </summary>
+        public CodePoint CodePoint { get; }
+
+        /// <summary>
         /// Gets the location.
         /// </summary>
         public Vector2 Location { get; }
+
+        /// <summary>
+        /// Gets the ascender
+        /// </summary>
+        public float Ascender { get; }
+
+        /// <summary>
+        /// Gets the ascender
+        /// </summary>
+        public float Descender { get; }
+
+        /// <summary>
+        /// Gets the lie gap
+        /// </summary>
+        public float LineGap { get; }
+
+        /// <summary>
+        /// Gets the line height of the glyph.
+        /// </summary>
+        public float LineHeight { get; }
 
         /// <summary>
         /// Gets the width.
@@ -49,11 +80,6 @@ namespace SixLabors.Fonts
         public float Height { get; }
 
         /// <summary>
-        /// Gets the line height of the glyph.
-        /// </summary>
-        public float LineHeight { get; }
-
-        /// <summary>
         /// Gets a value indicating whether this glyph is the first glyph on a new line.
         /// </summary>
         public bool IsStartOfLine { get; }
@@ -62,7 +88,7 @@ namespace SixLabors.Fonts
         /// Gets a value indicating whether the glyph represents a whitespace character.
         /// </summary>
         /// <returns>The <see cref="bool"/>.</returns>
-        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.Glyph.GlyphMetrics.CodePoint);
+        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.CodePoint);
 
         internal FontRectangle BoundingBox(float dpi)
         {
@@ -79,33 +105,10 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         public override string ToString()
         {
-            var sb = new StringBuilder();
-            if (this.IsStartOfLine)
-            {
-                sb.Append('@');
-                sb.Append(' ');
-            }
-
-            if (this.IsWhiteSpace())
-            {
-                sb.Append('!');
-            }
-
-            sb.Append('\'');
-            sb.Append(this.Glyph.GlyphMetrics.CodePoint.ToDebuggerDisplay());
-
-            sb.Append('\'');
-            sb.Append(' ');
-
-            sb.Append(this.Location.X);
-            sb.Append(',');
-            sb.Append(this.Location.Y);
-            sb.Append(' ');
-            sb.Append(this.Width);
-            sb.Append('x');
-            sb.Append(this.Height);
-
-            return sb.ToString();
+            string s = this.IsStartOfLine ? "@ " : string.Empty;
+            string ws = this.IsWhiteSpace() ? "!" : string.Empty;
+            Vector2 l = this.Location;
+            return $"{s}{ws}{this.CodePoint.ToDebuggerDisplay()} {l.X},{l.Y} {this.Width}x{this.Height}";
         }
     }
 }

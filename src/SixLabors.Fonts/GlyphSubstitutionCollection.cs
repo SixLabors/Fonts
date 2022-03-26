@@ -41,7 +41,7 @@ namespace SixLabors.Fonts
         public int Count => this.offsets.Count;
 
         /// <inheritdoc />
-        public bool IsVerticalLayoutMode { get; private set; }
+        public bool IsVerticalLayoutMode { get; }
 
         /// <inheritdoc />
         public TextOptions TextOptions { get; }
@@ -94,10 +94,11 @@ namespace SixLabors.Fonts
         /// <param name="glyphId">The id of the glyph to add.</param>
         /// <param name="codePoint">The codepoint the glyph represents.</param>
         /// <param name="direction">The resolved text direction for the codepoint.</param>
+        /// <param name="textRun">The text run this glyph belongs to.</param>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
-        public void AddGlyph(ushort glyphId, CodePoint codePoint, TextDirection direction, int offset)
+        public void AddGlyph(ushort glyphId, CodePoint codePoint, TextDirection direction, TextRun textRun, int offset)
         {
-            this.glyphs.Add(offset, new()
+            this.glyphs.Add(offset, new(textRun)
             {
                 CodePoint = codePoint,
                 Direction = direction,
@@ -109,13 +110,11 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Removes all elements from the collection.
         /// </summary>
-        /// <param name="mode">The text layout mode.</param>
-        public void Clear(LayoutMode mode)
+        public void Clear()
         {
             this.offsets.Clear();
             this.glyphs.Clear();
             this.LigatureId = 1;
-            this.IsVerticalLayoutMode = mode.IsVertical();
         }
 
         /// <summary>

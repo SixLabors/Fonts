@@ -28,7 +28,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Contains a map between non-sequential codepoint offsets and their glyphs.
         /// </summary>
-        private readonly Dictionary<int, GlyphMetrics[]> map = new();
+        private readonly Dictionary<int, PointSizeMetricsPair> map = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
@@ -76,30 +76,38 @@ namespace SixLabors.Fonts
         /// Gets the glyph metrics at the given codepoint offset.
         /// </summary>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        /// <param name="pointSize">The font size in PT units of the font containing this glyph.</param>
         /// <param name="metrics">
         /// When this method returns, contains the glyph metrics associated with the specified offset,
         /// if the value is found; otherwise, the default value for the type of the metrics parameter.
         /// This parameter is passed uninitialized.
         /// </param>
-        /// <returns>The <see cref="T:GlyphMetrics[]"/>.</returns>
-        public bool TryGetGlyphMetricsAtOffset(int offset, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
-            => this.map.TryGetValue(offset, out metrics);
-
-        /// <summary>
-        /// Adds the collection of glyph ids to the metrics collection.
-        /// Adding subsequent collections will overwrite any glyphs that have been previously
-        /// identified as fallbacks.
-        /// </summary>
-        /// <param name="fontMetrics">The font face with metrics.</param>
-        /// <param name="collection">The glyph substitution collection.</param>
-        /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
-        public bool TryAddOrUpdate(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
+        /// <returns>The metrics.</returns>
+        public bool TryGetGlyphMetricsAtOffset(int offset, out float pointSize, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
-            if (this.Count == 0)
+            if (this.map.TryGetValue(offset, out PointSizeMetricsPair? entry))
             {
-                return this.Add(fontMetrics, collection);
+                pointSize = entry.PointSize;
+                metrics = entry.Metrics;
+                return true;
             }
 
+            pointSize = 0;
+            metrics = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Updates the collection of glyph ids to the metrics collection to overwrite any glyphs that have been previously
+        /// identified as fallbacks.
+        /// </summary>
+        /// <param name="font">The font face with metrics.</param>
+        /// <param name="collection">The glyph substitution collection.</param>
+        /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
+        public bool TryUpdate(Font font, GlyphSubstitutionCollection collection)
+        {
+            FontMetrics fontMetrics = font.FontMetrics;
+            ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
             bool hasFallBacks = false;
             List<int> orphans = new();
             for (int i = 0; i < this.offsets.Count; i++)
@@ -113,8 +121,8 @@ namespace SixLabors.Fonts
                     continue;
                 }
 
-                GlyphMetrics[] metrics = this.map[offset];
-                if (metrics[0].GlyphType != GlyphType.Fallback)
+                PointSizeMetricsPair pair = this.map[offset];
+                if (pair.Metrics[0].GlyphType != GlyphType.Fallback)
                 {
                     // We've already got the correct glyph.
                     continue;
@@ -122,13 +130,13 @@ namespace SixLabors.Fonts
 
                 CodePoint codePoint = data.CodePoint;
                 ushort[] glyphIds = data.GlyphIds;
-
                 var m = new List<GlyphMetrics>(glyphIds.Length);
+
                 foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, this.TextOptions.ColorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
@@ -138,14 +146,16 @@ namespace SixLabors.Fonts
                             break;
                         }
 
-                        m.Add(new GlyphMetrics(gm, codePoint));
+                        // We slip the text run in here while we clone so we have
+                        // it available to the renderer.
+                        m.Add(GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint));
                     }
                 }
 
                 if (m.Count > 0)
                 {
                     GlyphMetrics[] gm = m.ToArray();
-                    this.map[offset] = gm;
+                    this.map[offset] = new(pair.PointSize, gm);
                     this.glyphs[i] = new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, gm[0].AdvanceHeight) };
                     this.offsets[i] = offset;
                 }
@@ -163,35 +173,46 @@ namespace SixLabors.Fonts
             return !hasFallBacks;
         }
 
-        private bool Add(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
+        /// <summary>
+        /// Adds the collection of glyph ids to the metrics collection.
+        /// identified as fallbacks.
+        /// </summary>
+        /// <param name="font">The font face with metrics.</param>
+        /// <param name="collection">The glyph substitution collection.</param>
+        /// <returns><see langword="true"/> if the metrics collection does not contain any fallbacks; otherwise <see langword="false"/>.</returns>
+        public bool TryAdd(Font font, GlyphSubstitutionCollection collection)
         {
             bool hasFallBacks = false;
+            FontMetrics fontMetrics = font.FontMetrics;
+            ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
             for (int i = 0; i < collection.Count; i++)
             {
                 GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
                 CodePoint codePoint = data.CodePoint;
                 ushort[] glyphIds = data.GlyphIds;
-
                 var m = new List<GlyphMetrics>(glyphIds.Length);
+
                 foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, this.TextOptions.ColorFontSupport))
+                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
                     {
                         if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
                             hasFallBacks = true;
                         }
 
-                        m.Add(new GlyphMetrics(gm, codePoint));
+                        // We slip the text run in here while we clone so we have
+                        // it available to the renderer.
+                        m.Add(GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint));
                     }
                 }
 
                 if (m.Count > 0)
                 {
                     GlyphMetrics[] gm = m.ToArray();
-                    this.map[offset] = gm;
+                    this.map[offset] = new(font.Size, gm);
                     if (this.IsVerticalLayoutMode)
                     {
                         this.glyphs.Add(new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) });
@@ -216,19 +237,28 @@ namespace SixLabors.Fonts
         public void UpdatePosition(FontMetrics fontMetrics, ushort index)
         {
             GlyphShapingData data = this.GetGlyphShapingData(index);
-            if (!data.Bounds.IsDirty)
+            bool isDirtyXY = data.Bounds.IsDirtyXY;
+            bool isDirtyWH = data.Bounds.IsDirtyWH;
+            if (!isDirtyXY && !isDirtyWH)
             {
                 return;
             }
 
             ushort glyphId = data.GlyphIds[0];
-            foreach (GlyphMetrics m in this.map[this.offsets[index]])
+            foreach (GlyphMetrics m in this.map[this.offsets[index]].Metrics)
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.ApplyOffset((short)data.Bounds.X, (short)data.Bounds.Y);
-                    m.SetAdvanceWidth((ushort)data.Bounds.Width);
-                    m.SetAdvanceHeight((ushort)data.Bounds.Height);
+                    if (isDirtyXY)
+                    {
+                        m.ApplyOffset((short)data.Bounds.X, (short)data.Bounds.Y);
+                    }
+
+                    if (isDirtyWH)
+                    {
+                        m.SetAdvanceWidth((ushort)data.Bounds.Width);
+                        m.SetAdvanceHeight((ushort)data.Bounds.Height);
+                    }
                 }
             }
         }
@@ -244,7 +274,7 @@ namespace SixLabors.Fonts
         /// <param name="dy">The delta y-advance.</param>
         public void Advance(FontMetrics fontMetrics, ushort index, ushort glyphId, short dx, short dy)
         {
-            foreach (GlyphMetrics m in this.map[this.offsets[index]])
+            foreach (GlyphMetrics m in this.map[this.offsets[index]].Metrics)
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
@@ -260,6 +290,19 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the elements to offset.</param>
         /// <returns><see langword="true"/> if the element should be processed; otherwise, <see langword="false"/>.</returns>
         public bool ShouldProcess(FontMetrics fontMetrics, ushort index)
-            => this.map[this.offsets[index]][0].FontMetrics == fontMetrics;
+            => this.map[this.offsets[index]].Metrics[0].FontMetrics == fontMetrics;
+
+        private class PointSizeMetricsPair
+        {
+            public PointSizeMetricsPair(float pointSize, GlyphMetrics[] metrics)
+            {
+                this.PointSize = pointSize;
+                this.Metrics = metrics;
+            }
+
+            public float PointSize { get; set; }
+
+            public GlyphMetrics[] Metrics { get; set; }
+        }
     }
 }

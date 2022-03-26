@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
@@ -14,24 +13,10 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Encapsulated logic or laying out text.
     /// </summary>
-    internal class TextLayout
+    internal static class TextLayout
     {
-        internal static TextLayout Default { get; set; } = new();
-
-        public IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
+        public static IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
         {
-            if (text.IsEmpty)
-            {
-                return Array.Empty<GlyphLayout>();
-            }
-
-            if (options.WrappingLength > 0)
-            {
-                // Trim trailing white spaces from the text
-                text = text.TrimEnd(null);
-            }
-
-            // Check our string again after trimming.
             if (text.IsEmpty)
             {
                 return Array.Empty<GlyphLayout>();
@@ -41,21 +26,86 @@ namespace SixLabors.Fonts
             return LayoutText(textBox, options);
         }
 
+        public static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
+        {
+            if (options.TextRuns is null || options.TextRuns.Count == 0)
+            {
+                return new TextRun[]
+                {
+                    new()
+                    {
+                        Start = 0,
+                        End = CodePoint.GetCodePointCount(text),
+                        Font = options.Font
+                    }
+                };
+            }
+
+            int start = 0;
+            int end = CodePoint.GetCodePointCount(text);
+            List<TextRun> textRuns = new();
+            foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
+            {
+                // Fill gaps within runs.
+                if (textRun.Start > start)
+                {
+                    textRuns.Add(new()
+                    {
+                        Start = start,
+                        End = textRun.Start,
+                        Font = options.Font
+                    });
+                }
+
+                // Add the current run, ensuring the font is not null.
+                if (textRun.Font is null)
+                {
+                    textRun.Font = options.Font;
+                }
+
+                // Ensure that the previous run does not overlap the current.
+                if (textRuns.Count > 0)
+                {
+                    int prevIndex = textRuns.Count - 1;
+                    TextRun previous = textRuns[prevIndex];
+                    previous.End = Math.Min(previous.End, textRun.Start);
+                }
+
+                textRuns.Add(textRun);
+                start = textRun.End;
+            }
+
+            // Add a final run if required.
+            if (start < end)
+            {
+                // Offset error by user, last index in input string
+                // instead of exclusive index.
+                if (start == end - 1)
+                {
+                    int prevIndex = textRuns.Count - 1;
+                    TextRun previous = textRuns[prevIndex];
+                    previous.End++;
+                }
+                else
+                {
+                    textRuns.Add(new()
+                    {
+                        Start = start,
+                        End = end,
+                        Font = options.Font
+                    });
+                }
+            }
+
+            return textRuns;
+        }
+
         private static TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
         {
             // Gather the font and fallbacks.
-            FontMetrics mainFont = options.Font.FontMetrics;
-            FontMetrics[] fallbackFonts;
-            if (options.FallbackFontFamilies?.Count > 0)
-            {
-                fallbackFonts = options.FallbackFontFamilies
-                    .Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle).FontMetrics)
-                    .ToArray();
-            }
-            else
-            {
-                fallbackFonts = Array.Empty<FontMetrics>();
-            }
+            Font[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
+                ? options.FallbackFontFamilies.Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle)).ToArray()
+                : Array.Empty<Font>();
 
             LayoutMode layoutMode = options.LayoutMode;
             GlyphSubstitutionCollection substitutions = new(options);
@@ -82,23 +132,44 @@ namespace SixLabors.Fonts
             Dictionary<int, int> bidiMap = new();
 
             // Incrementally build out collection of glyphs.
-            // For each run we start with a fresh substitution collection to avoid
-            // overwriting the glyph ids.
-            if (!DoFontRun(
-                text,
-                options,
-                mainFont,
-                bidiRuns,
-                bidiMap,
-                substitutions,
-                positionings))
+            IReadOnlyList<TextRun> textRuns = BuildTextRuns(text, options);
+
+            // First do multiple font runs using the individual text runs.
+            bool complete = true;
+            int runIndex = 0;
+            foreach (TextRun textRun in textRuns)
             {
-                foreach (FontMetrics font in fallbackFonts)
+                ref int index = ref runIndex;
+                if (!DoFontRun(
+                    textRun.Slice(text),
+                    textRun.Start,
+                    textRuns,
+                    ref index,
+                    false,
+                    textRun.Font!,
+                    bidiRuns,
+                    bidiMap,
+                    substitutions,
+                    positionings))
                 {
-                    substitutions.Clear(layoutMode);
+                    complete = false;
+                }
+            }
+
+            if (!complete)
+            {
+                // Finally try our fallback fonts.
+                // We do a complete run here across the whole collection.
+                foreach (Font font in fallbackFonts)
+                {
+                    runIndex = 0;
+                    ref int index = ref runIndex;
                     if (DoFontRun(
                         text,
-                        options,
+                        0,
+                        textRuns,
+                        ref index,
+                        true,
                         font,
                         bidiRuns,
                         bidiMap,
@@ -113,10 +184,14 @@ namespace SixLabors.Fonts
             // Update the positions of the glyphs in the completed collection.
             // Each set of metrics is associated with single font and will only be updated
             // by that font so it's safe to use a single collection.
-            mainFont.UpdatePositions(positionings);
-            foreach (FontMetrics font in fallbackFonts)
+            foreach (TextRun textRun in textRuns)
             {
-                font.UpdatePositions(positionings);
+                textRun.Font!.FontMetrics.UpdatePositions(positionings);
+            }
+
+            foreach (Font font in fallbackFonts)
+            {
+                font.FontMetrics.UpdatePositions(positionings);
             }
 
             return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
@@ -126,36 +201,38 @@ namespace SixLabors.Fonts
         {
             LayoutMode layoutMode = options.LayoutMode;
             List<GlyphLayout> glyphs = new();
-
             Vector2 location = options.Origin / options.Dpi;
-            float maxScaledAdvance = textBox.TextLines.Max(x => x.ScaledLineAdvance());
+            float maxScaledAdvance = textBox.ScaledMaxAdvance();
             TextDirection direction = textBox.TextDirection();
+
             if (layoutMode == LayoutMode.HorizontalTopBottom)
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, i, ref location));
                 }
             }
             else if (layoutMode == LayoutMode.HorizontalBottomTop)
             {
+                int index = 0;
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, index++, ref location));
                 }
             }
             else if (layoutMode == LayoutMode.VerticalLeftRight)
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, i, ref location));
                 }
             }
             else
             {
+                int index = 0;
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, glyphs.Count == 0, ref location));
+                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, index++, ref location));
                 }
             }
 
@@ -168,29 +245,71 @@ namespace SixLabors.Fonts
             TextDirection direction,
             float maxScaledAdvance,
             TextOptions options,
-            bool first,
+            int index,
             ref Vector2 location)
         {
+            float scaledMaxLineGap = textBox.ScaledMaxLineGap(textLine.MaxPointSize);
+            float scaledMaxAscender = textBox.ScaledMaxAscender(textLine.MaxPointSize);
+            float scaledMaxDescender = textBox.ScaledMaxDescender(textLine.MaxPointSize);
+            float scaledMaxLineHeight = textBox.ScaledMaxLineHeight(textLine.MaxPointSize);
+
+            bool isFirstLine = index == 0;
+            bool isLastLine = index == textBox.TextLines.Count - 1;
+            float scaledLineAdvance = scaledMaxLineHeight * options.LineSpacing;
+
+            // Recalculate the advance based upon the next line.
+            // If larger, we want to scale it up to ensure it it pushed down far enough.
+            // We split the different at 2/3 (heuristically determined value based upon extensive visual testing).
+            if (!isFirstLine && !isLastLine)
+            {
+                TextLine next = textBox.TextLines[index + 1];
+                float nextLineAdvance = textBox.ScaledMaxLineHeight(next.MaxPointSize) * options.LineSpacing;
+                scaledLineAdvance += (nextLineAdvance - scaledLineAdvance) * .667F;
+            }
+
             float originX = location.X;
             float offsetY = 0;
             float offsetX = 0;
-            if (first)
+
+            // Set the Y-Origin for the line.
+            if (isFirstLine)
             {
-                // Set the Y-Origin for the first line.
-                float scaledMaxAscender = textBox.ScaledMaxAscender + textBox.ScaledMaxLineGap;
-                float scaledMaxDescender = textBox.ScaledMaxDescender;
                 switch (options.VerticalAlignment)
                 {
                     case VerticalAlignment.Top:
                         offsetY = scaledMaxAscender;
                         break;
                     case VerticalAlignment.Center:
-                        offsetY = (scaledMaxAscender * .5F) - (scaledMaxDescender * .5F);
-                        offsetY -= (textBox.TextLines.Count - 1) * textBox.ScaledMaxLineHeight * options.LineSpacing * .5F;
+                        offsetY = (scaledMaxAscender - (scaledMaxDescender + scaledMaxLineGap)) * .5F;
+                        for (int i = index; i < textBox.TextLines.Count - 1; i++)
+                        {
+                            float advance = textBox.ScaledMaxLineHeight(textBox.TextLines[i].MaxPointSize);
+                            if (i != 0)
+                            {
+                                TextLine next = textBox.TextLines[index + 1];
+                                float nextLineAdvance = textBox.ScaledMaxLineHeight(next.MaxPointSize);
+                                advance += (nextLineAdvance - advance) * .667F;
+                            }
+
+                            offsetY -= advance * options.LineSpacing * .5F;
+                        }
+
                         break;
                     case VerticalAlignment.Bottom:
-                        offsetY = -scaledMaxDescender;
-                        offsetY -= (textBox.TextLines.Count - 1) * textBox.ScaledMaxLineHeight * options.LineSpacing;
+                        offsetY = -(scaledMaxDescender + scaledMaxLineGap);
+                        for (int i = index; i < textBox.TextLines.Count - 1; i++)
+                        {
+                            float advance = textBox.ScaledMaxLineHeight(textBox.TextLines[i].MaxPointSize);
+                            if (i != 0)
+                            {
+                                TextLine next = textBox.TextLines[index + 1];
+                                float nextLineAdvance = textBox.ScaledMaxLineHeight(next.MaxPointSize);
+                                advance += (nextLineAdvance - advance) * .667F;
+                            }
+
+                            offsetY -= advance * options.LineSpacing;
+                        }
+
                         break;
                 }
 
@@ -214,10 +333,10 @@ namespace SixLabors.Fonts
                 switch (options.TextAlignment)
                 {
                     case TextAlignment.End:
-                        offsetX += maxScaledAdvance - textLine.ScaledLineAdvance();
+                        offsetX += maxScaledAdvance - textLine.ScaledLineAdvance;
                         break;
                     case TextAlignment.Center:
-                        offsetX += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
+                        offsetX += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance * .5F);
                         break;
                 }
             }
@@ -226,10 +345,10 @@ namespace SixLabors.Fonts
                 switch (options.TextAlignment)
                 {
                     case TextAlignment.Start:
-                        offsetX += maxScaledAdvance - textLine.ScaledLineAdvance();
+                        offsetX += maxScaledAdvance - textLine.ScaledLineAdvance;
                         break;
                     case TextAlignment.Center:
-                        offsetX += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
+                        offsetX += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance * .5F);
                         break;
                 }
             }
@@ -239,31 +358,48 @@ namespace SixLabors.Fonts
             List<GlyphLayout> glyphs = new();
             for (int i = 0; i < textLine.Count; i++)
             {
-                TextLine.GlyphLayoutData info = textLine[i];
-                if (info.IsNewLine)
+                TextLine.GlyphLayoutData data = textLine[i];
+                if (data.IsNewLine)
                 {
-                    location.Y += textBox.ScaledMaxLineHeight * options.LineSpacing;
+                    location.Y += scaledLineAdvance;
                     continue;
                 }
 
-                foreach (GlyphMetrics metric in info.Metrics)
+                foreach (GlyphMetrics metric in data.Metrics)
                 {
+                    // Advance Width & Height can be 0 which is fine for layout but not for measuring.
+                    Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
+                    float advanceX = data.ScaledAdvance;
+                    float advanceY = metric.AdvanceHeight * scale.Y;
+                    if (advanceX == 0)
+                    {
+                        advanceX = (metric.LeftSideBearing + metric.Width) * scale.X;
+                    }
+
+                    if (advanceY == 0)
+                    {
+                        advanceY = (metric.TopSideBearing + metric.Height) * scale.Y;
+                    }
+
                     glyphs.Add(new GlyphLayout(
-                        new Glyph(metric, info.PointSize),
+                        new Glyph(metric, data.PointSize),
                         location,
-                        info.ScaledAdvance,
-                        metric.AdvanceHeight * (info.PointSize / metric.ScaleFactor),
-                        textBox.ScaledMaxLineHeight * options.LineSpacing,
+                        scaledMaxAscender,
+                        scaledMaxDescender,
+                        scaledMaxLineGap,
+                        scaledLineAdvance,
+                        advanceX,
+                        advanceY,
                         i == 0));
                 }
 
-                location.X += info.ScaledAdvance;
+                location.X += data.ScaledAdvance;
             }
 
             location.X = originX;
             if (glyphs.Count > 0)
             {
-                location.Y += textBox.ScaledMaxLineHeight * options.LineSpacing;
+                location.Y += scaledLineAdvance;
             }
 
             return glyphs;
@@ -275,28 +411,29 @@ namespace SixLabors.Fonts
             TextDirection direction,
             float maxScaledAdvance,
             TextOptions options,
-            bool first,
+            int index,
             ref Vector2 location)
         {
             float originY = location.Y;
             float offsetY = 0;
             float offsetX = 0;
 
-            // Set the Y-Origin for the first line.
-            float scaledMaxAscender = textBox.ScaledMaxAscender + textBox.ScaledMaxLineGap;
-            float scaledMaxDescender = textBox.ScaledMaxDescender;
+            // Set the Y-Origin for the line.
+            float scaledMaxLineGap = textBox.ScaledMaxLineGap(textLine.MaxPointSize);
+            float scaledMaxAscender = textBox.ScaledMaxAscender(textLine.MaxPointSize);
+            float scaledMaxDescender = textBox.ScaledMaxDescender(textLine.MaxPointSize);
+            float scaledMaxLineHeight = textBox.ScaledMaxLineHeight(textLine.MaxPointSize);
+
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Top:
-                    offsetY = scaledMaxAscender;
+                    offsetY = 0;
                     break;
                 case VerticalAlignment.Center:
-                    offsetY = (scaledMaxAscender * .5F) - (scaledMaxDescender * .5F);
-                    offsetY -= (maxScaledAdvance - textBox.ScaledMaxLineHeight) * .5F;
+                    offsetY -= maxScaledAdvance * .5F;
                     break;
                 case VerticalAlignment.Bottom:
-                    offsetY = -scaledMaxDescender;
-                    offsetY -= maxScaledAdvance - textBox.ScaledMaxLineHeight;
+                    offsetY -= maxScaledAdvance;
                     break;
             }
 
@@ -306,10 +443,10 @@ namespace SixLabors.Fonts
                 switch (options.TextAlignment)
                 {
                     case TextAlignment.End:
-                        offsetY += maxScaledAdvance - textLine.ScaledLineAdvance();
+                        offsetY += maxScaledAdvance - textLine.ScaledLineAdvance;
                         break;
                     case TextAlignment.Center:
-                        offsetY += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
+                        offsetY += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance * .5F);
                         break;
                 }
             }
@@ -318,28 +455,36 @@ namespace SixLabors.Fonts
                 switch (options.TextAlignment)
                 {
                     case TextAlignment.Start:
-                        offsetY += maxScaledAdvance - textLine.ScaledLineAdvance();
+                        offsetY += maxScaledAdvance - textLine.ScaledLineAdvance;
                         break;
                     case TextAlignment.Center:
-                        offsetY += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance() * .5F);
+                        offsetY += (maxScaledAdvance * .5F) - (textLine.ScaledLineAdvance * .5F);
                         break;
                 }
             }
 
             location.Y += offsetY;
 
-            if (first)
+            bool isFirstLine = index == 0;
+            if (isFirstLine)
             {
                 // Set the X-Origin for horizontal alignment.
                 switch (options.HorizontalAlignment)
                 {
                     case HorizontalAlignment.Right:
-                        offsetX = -(textBox.ScaledMaxLineHeight * options.LineSpacing);
-                        offsetX -= (textBox.TextLines.Count - 1) * textBox.ScaledMaxLineHeight * options.LineSpacing;
+                        // The textline methods are memoized so we're safe to call them multiple times.
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
+                        {
+                            offsetX -= textBox.ScaledMaxLineHeight(textBox.TextLines[i].MaxPointSize) * options.LineSpacing;
+                        }
+
                         break;
                     case HorizontalAlignment.Center:
-                        offsetX = -(textBox.ScaledMaxLineHeight * options.LineSpacing * .5F);
-                        offsetX -= (textBox.TextLines.Count - 1) * textBox.ScaledMaxLineHeight * options.LineSpacing * .5F;
+                        for (int i = 0; i < textBox.TextLines.Count; i++)
+                        {
+                            offsetX -= textBox.ScaledMaxLineHeight(textBox.TextLines[i].MaxPointSize) * options.LineSpacing * .5F;
+                        }
+
                         break;
                 }
             }
@@ -347,36 +492,54 @@ namespace SixLabors.Fonts
             location.X += offsetX;
 
             List<GlyphLayout> glyphs = new();
-            float xWidth = textBox.ScaledMaxLineHeight * (first ? 1F : options.LineSpacing);
-            float xLineAdvance = textBox.ScaledMaxLineHeight * options.LineSpacing;
+            float xWidth = scaledMaxLineHeight * (isFirstLine ? 1F : options.LineSpacing);
+            float xLineAdvance = scaledMaxLineHeight * options.LineSpacing;
 
-            if (first)
+            if (isFirstLine)
             {
-                xLineAdvance -= (xLineAdvance - textBox.ScaledMaxLineHeight) * .5F;
+                xLineAdvance -= (xLineAdvance - scaledMaxLineHeight) * .5F;
             }
 
             for (int i = 0; i < textLine.Count; i++)
             {
-                TextLine.GlyphLayoutData info = textLine[i];
-                if (info.IsNewLine)
+                TextLine.GlyphLayoutData data = textLine[i];
+                if (data.IsNewLine)
                 {
                     location.X += xLineAdvance;
                     location.Y = originY;
                     continue;
                 }
 
-                foreach (GlyphMetrics metric in info.Metrics)
+                foreach (GlyphMetrics metric in data.Metrics)
                 {
+                    Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
+                    float advanceX = xLineAdvance;
+                    float advanceY = data.ScaledAdvance;
+
+                    // Advance Width & Height can be 0 which is fine for layout but not for measuring.
+                    if (advanceX == 0)
+                    {
+                        advanceX = (metric.LeftSideBearing + metric.Width) * scale.X;
+                    }
+
+                    if (advanceY == 0)
+                    {
+                        advanceY = (metric.TopSideBearing + metric.Height) * scale.Y;
+                    }
+
                     glyphs.Add(new GlyphLayout(
-                        new Glyph(metric, info.PointSize),
-                        location + new Vector2((xWidth - (metric.AdvanceWidth * (info.PointSize / metric.ScaleFactor))) * .5F, 0),
-                        xLineAdvance,
-                        info.ScaledAdvance,
-                        textBox.ScaledMaxLineHeight,
+                        new Glyph(metric, data.PointSize),
+                        location + new Vector2((xWidth - (metric.AdvanceWidth * scale.X)) * .5F, data.ScaledAscender),
+                        scaledMaxAscender,
+                        scaledMaxDescender,
+                        scaledMaxLineGap,
+                        scaledMaxLineHeight,
+                        advanceX,
+                        advanceY,
                         i == 0));
                 }
 
-                location.Y += info.ScaledAdvance;
+                location.Y += data.ScaledAdvance;
             }
 
             location.Y = originY;
@@ -390,16 +553,23 @@ namespace SixLabors.Fonts
 
         private static bool DoFontRun(
             ReadOnlySpan<char> text,
-            TextOptions options,
-            FontMetrics fontMetrics,
+            int start,
+            IReadOnlyList<TextRun> textRuns,
+            ref int textRun,
+            bool isFallbackRun,
+            Font font,
             BidiRun[] bidiRuns,
             Dictionary<int, int> bidiMap,
             GlyphSubstitutionCollection substitutions,
             GlyphPositioningCollection positionings)
         {
+            // For each run we start with a fresh substitution collection to avoid
+            // overwriting the glyph ids.
+            substitutions.Clear();
+
             // Enumerate through each grapheme in the text.
             int graphemeIndex;
-            int codePointIndex = 0;
+            int codePointIndex = start;
             int bidiRun = 0;
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
             for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
@@ -407,6 +577,11 @@ namespace SixLabors.Fonts
                 int graphemeMax = graphemeEnumerator.Current.Length - 1;
                 int graphemeCodePointIndex = 0;
                 int charIndex = 0;
+
+                if (graphemeIndex == textRuns[textRun].End)
+                {
+                    textRun++;
+                }
 
                 // Now enumerate through each codepoint in the grapheme.
                 bool skipNextCodePoint = false;
@@ -437,8 +612,8 @@ namespace SixLabors.Fonts
                     charIndex += charsConsumed;
 
                     // Get the glyph id for the codepoint and add to the collection.
-                    fontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
-                    substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, codePointIndex);
+                    font.FontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
+                    substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, textRuns[textRun], codePointIndex);
 
                     codePointIndex++;
                     graphemeCodePointIndex++;
@@ -446,11 +621,13 @@ namespace SixLabors.Fonts
             }
 
             // Apply the simple and complex substitutions.
-            // TODO: Investigate HarfBuzz normlizer.
-            SubstituteBidiMirrors(fontMetrics, substitutions);
-            fontMetrics.ApplySubstitution(substitutions);
+            // TODO: Investigate HarfBuzz normalizer.
+            SubstituteBidiMirrors(font.FontMetrics, substitutions);
+            font.FontMetrics.ApplySubstitution(substitutions);
 
-            return positionings.TryAddOrUpdate(fontMetrics, substitutions);
+            return !isFallbackRun
+                ? positionings.TryAdd(font, substitutions)
+                : positionings.TryUpdate(font, substitutions);
         }
 
         private static void SubstituteBidiMirrors(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
@@ -503,17 +680,11 @@ namespace SixLabors.Fonts
             GlyphPositioningCollection positionings,
             LayoutMode layoutMode)
         {
-            float pointSize = options.Font.Size;
             bool shouldWrap = options.WrappingLength > 0;
             float wrappingLength = shouldWrap ? options.WrappingLength / options.Dpi : float.MaxValue;
             bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
             bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
             bool isHorizontal = !layoutMode.IsVertical();
-
-            float scaledMaxAscender = 0;
-            float scaledMaxDescender = 0;
-            float scaledMaxLineHeight = 0;
-            float scaledMaxLeftSideBearing = 0;
 
             // Calculate the position of potential line breaks.
             var lineBreakEnumerator = new LineBreakEnumerator(text);
@@ -542,7 +713,7 @@ namespace SixLabors.Fonts
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
-                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out GlyphMetrics[]? metrics))
+                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out GlyphMetrics[]? metrics))
                     {
                         // Codepoint was skipped during original enumeration.
                         codePointIndex++;
@@ -568,8 +739,9 @@ namespace SixLabors.Fonts
                     else if (metrics.Length == 1 && (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthNonJoiner(codePoint)))
                     {
                         // The zero-width joiner characters should be ignored when determining word or
-                        // line break boundaries so are safe to skip here. Any existing instances are the result of font error.
-                        // It multiple metrics are associated with code point, they are most likely the result of a substitution so we shouldn't ignore it.
+                        // line break boundaries so are safe to skip here. Any existing instances are the result of font error
+                        // unless multiple metrics are associated with code point. In this case they are most likely the result
+                        // of a substitution and shouldn't be ignored.
                         glyphAdvance = 0;
                     }
                     else if (!CodePoint.IsNewLine(codePoint))
@@ -599,7 +771,7 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    glyphAdvance *= pointSize / glyph.ScaleFactor;
+                    glyphAdvance *= pointSize / (isHorizontal ? glyph.ScaleFactor.X : glyph.ScaleFactor.Y);
 
                     // Should we start a new line?
                     bool requiredBreak = false;
@@ -634,7 +806,7 @@ namespace SixLabors.Fonts
                                     {
                                         textLines.Add(textLine.BidiReOrder());
                                         textLine = split;
-                                        lineAdvance = split.ScaledLineAdvance();
+                                        lineAdvance = split.ScaledLineAdvance;
                                     }
                                 }
                                 else
@@ -645,6 +817,17 @@ namespace SixLabors.Fonts
                                     lineAdvance = 0;
                                 }
                             }
+                            else if (currentLineBreak.PositionWrap == codePointIndex)
+                            {
+                                // Exact length match. Check for CJK
+                                TextLine split = textLine.SplitAt(currentLineBreak, keepAll);
+                                if (split != textLine)
+                                {
+                                    textLines.Add(textLine.BidiReOrder());
+                                    textLine = split;
+                                    lineAdvance = split.ScaledLineAdvance;
+                                }
+                            }
                             else if (lastLineBreak.PositionWrap < codePointIndex)
                             {
                                 // Split the current textline into two at the last wrapping point.
@@ -653,7 +836,7 @@ namespace SixLabors.Fonts
                                 {
                                     textLines.Add(textLine.BidiReOrder());
                                     textLine = split;
-                                    lineAdvance = split.ScaledLineAdvance();
+                                    lineAdvance = split.ScaledLineAdvance;
                                 }
                             }
                         }
@@ -690,30 +873,17 @@ namespace SixLabors.Fonts
                     }
 
                     GlyphMetrics metric = metrics[0];
-                    float ascender = metric.FontMetrics.Ascender * pointSize / metric.ScaleFactor;
-                    float descender = Math.Abs(metric.FontMetrics.Descender * pointSize / metric.ScaleFactor);
-                    float lineHeight = metric.FontMetrics.LineHeight * pointSize / metric.ScaleFactor;
-                    float leftSideBearing = metric.LeftSideBearing * pointSize / metric.ScaleFactor;
-
-                    if (ascender > scaledMaxAscender)
+                    float scaleY = pointSize / metric.ScaleFactor.Y;
+                    float ascender = metric.FontMetrics.Ascender * scaleY;
+                    if (metric.TopSideBearing < 0)
                     {
-                        scaledMaxAscender = ascender;
+                        // Adjust for glyphs with a negative tsb. e.g. emoji.
+                        ascender -= metric.TopSideBearing * scaleY;
                     }
 
-                    if (descender > scaledMaxDescender)
-                    {
-                        scaledMaxDescender = descender;
-                    }
-
-                    if (lineHeight > scaledMaxLineHeight)
-                    {
-                        scaledMaxLineHeight = lineHeight;
-                    }
-
-                    if (leftSideBearing > scaledMaxLeftSideBearing)
-                    {
-                        scaledMaxLeftSideBearing = leftSideBearing;
-                    }
+                    float descender = Math.Abs(metric.FontMetrics.Descender * scaleY);
+                    float lineHeight = metric.FontMetrics.LineHeight * scaleY;
+                    float lineGap = lineHeight - (ascender + descender);
 
                     // Add our metrics to the line.
                     lineAdvance += glyphAdvance;
@@ -721,6 +891,10 @@ namespace SixLabors.Fonts
                         metrics,
                         pointSize,
                         glyphAdvance,
+                        lineHeight,
+                        ascender,
+                        descender,
+                        lineGap,
                         bidiRuns[bidiMap[codePointIndex]],
                         graphemeIndex,
                         codePointIndex);
@@ -736,68 +910,87 @@ namespace SixLabors.Fonts
                 textLines.Add(textLine.BidiReOrder());
             }
 
-            return new TextBox(textLines, scaledMaxAscender, scaledMaxDescender, scaledMaxLineHeight, scaledMaxLeftSideBearing);
+            return new TextBox(textLines);
         }
 
         internal sealed class TextBox
         {
-            public TextBox(
-                IList<TextLine> textLines,
-                float scaledMaxAscender,
-                float scaledMaxDescender,
-                float scaledMaxLineHeight,
-                float scaledMaxLeftSideBearing)
-            {
-                this.TextLines = new(textLines);
-                this.ScaledMaxAscender = scaledMaxAscender;
-                this.ScaledMaxDescender = scaledMaxDescender;
-                this.ScaledMaxLineHeight = scaledMaxLineHeight;
-                this.ScaledMaxLineGap = scaledMaxLineHeight - (scaledMaxAscender + scaledMaxDescender);
-                this.ScaledMaxLeftSideBearing = scaledMaxLeftSideBearing;
-            }
+            public TextBox(IReadOnlyList<TextLine> textLines) => this.TextLines = textLines;
 
-            public float ScaledMaxAscender { get; }
+            public IReadOnlyList<TextLine> TextLines { get; }
 
-            public float ScaledMaxDescender { get; }
+            // TODO: It would be very good to cache these.
+            public float ScaledMaxAdvance()
+                => this.TextLines.Max(x => x.ScaledLineAdvance);
 
-            public float ScaledMaxLineHeight { get; }
+            public float ScaledMaxLineHeight(float pointSize)
+                => this.TextLines.Where(x => x.MaxPointSize == pointSize).Max(x => x.ScaledMaxLineHeight);
 
-            public float ScaledMaxLineGap { get; }
+            public float ScaledMaxAscender(float pointSize)
+                => this.TextLines.Where(x => x.MaxPointSize == pointSize).Max(x => x.ScaledMaxAscender);
 
-            public float ScaledMaxLeftSideBearing { get; }
+            public float ScaledMaxDescender(float pointSize)
+                => this.TextLines.Where(x => x.MaxPointSize == pointSize).Max(x => x.ScaledMaxDescender);
 
-            public ReadOnlyCollection<TextLine> TextLines { get; }
+            public float ScaledMaxLineGap(float pointSize)
+                => this.TextLines.Where(x => x.MaxPointSize == pointSize).Max(x => x.ScaledMaxLineGap);
 
             public TextDirection TextDirection() => this.TextLines[0][0].TextDirection;
         }
 
         internal sealed class TextLine
         {
-            private readonly List<GlyphLayoutData> info = new();
+            private readonly List<GlyphLayoutData> data = new();
 
-            public int Count => this.info.Count;
+            public int Count => this.data.Count;
 
-            public GlyphLayoutData this[int index] => this.info[index];
+            public float MaxPointSize { get; private set; } = -1;
 
-            public float ScaledLineAdvance()
-                => this.info.Sum(x => x.ScaledAdvance);
+            public float ScaledLineAdvance { get; private set; } = 0;
+
+            public float ScaledMaxLineHeight { get; private set; } = -1;
+
+            public float ScaledMaxAscender { get; private set; } = -1;
+
+            public float ScaledMaxDescender { get; private set; } = -1;
+
+            public float ScaledMaxLineGap { get; private set; } = -1;
+
+            public GlyphLayoutData this[int index] => this.data[index];
 
             public void Add(
                 GlyphMetrics[] metrics,
                 float pointSize,
                 float scaledAdvance,
+                float scaledLineHeight,
+                float scaledAscender,
+                float scaledDescender,
+                float scaledLineGap,
                 BidiRun bidiRun,
                 int graphemeIndex,
                 int offset)
-                => this.info.Add(new(metrics, pointSize, scaledAdvance, bidiRun, graphemeIndex, offset));
+            {
+                // Reset metrics.
+                // We track the maximum metrics for each line to ensure glyphs can be aligned.
+                // These will be grouped by the point size for each run within the text to ensure
+                // multi-line text maintains an even layout for equal point sizes.
+                this.MaxPointSize = MathF.Max(this.MaxPointSize, pointSize);
+                this.ScaledLineAdvance += scaledAdvance;
+                this.ScaledMaxLineHeight = MathF.Max(this.ScaledMaxLineHeight, scaledLineHeight);
+                this.ScaledMaxAscender = MathF.Max(this.ScaledMaxAscender, scaledAscender);
+                this.ScaledMaxDescender = MathF.Max(this.ScaledMaxDescender, scaledDescender);
+                this.ScaledMaxLineGap = MathF.Max(this.ScaledMaxLineGap, scaledLineGap);
+
+                this.data.Add(new(metrics, pointSize, scaledAdvance, scaledLineHeight, scaledAscender, scaledDescender, scaledLineGap, bidiRun, graphemeIndex, offset));
+            }
 
             public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
             {
-                int index = this.info.Count;
+                int index = this.data.Count;
                 GlyphLayoutData glyphWrap = default;
                 while (index > 0)
                 {
-                    glyphWrap = this.info[--index];
+                    glyphWrap = this.data[--index];
 
                     if (glyphWrap.Offset == lineBreak.PositionWrap)
                     {
@@ -818,7 +1011,7 @@ namespace SixLabors.Fonts
                     // a non CJK codepoint we can break at.
                     while (index > 0)
                     {
-                        glyphWrap = this.info[--index];
+                        glyphWrap = this.data[--index];
                         if (!UnicodeUtility.IsCJKCodePoint((uint)glyphWrap.CodePoint.Value))
                         {
                             index++;
@@ -832,15 +1025,24 @@ namespace SixLabors.Fonts
                     }
                 }
 
+                // Create a new line ensuring we capture the intitial metrics.
                 TextLine result = new();
-                result.info.AddRange(this.info.GetRange(index, this.info.Count - index));
-                this.info.RemoveRange(index, this.info.Count - index);
+                result.data.AddRange(this.data.GetRange(index, this.data.Count - index));
+                result.ScaledLineAdvance = result.data.Sum(x => x.ScaledAdvance);
+                result.MaxPointSize = result.data.Max(x => x.PointSize);
+                result.ScaledMaxAscender = result.data.Max(x => x.ScaledAscender);
+                result.ScaledMaxDescender = result.data.Max(x => x.ScaledDescender);
+                result.ScaledMaxLineHeight = result.data.Max(x => x.ScaledLineHeight);
+                result.ScaledMaxLineGap = result.data.Max(x => x.ScaledLineGap);
 
-                // Trim trailing whitespace from previous line.
-                index = this.info.Count;
+                // Remove those items from this line.
+                this.data.RemoveRange(index, this.data.Count - index);
+
+                // Now trim trailing whitespace from this line.
+                index = this.data.Count;
                 while (index > 0)
                 {
-                    if (!CodePoint.IsWhiteSpace(this.info[index - 1].CodePoint))
+                    if (!CodePoint.IsWhiteSpace(this.data[index - 1].CodePoint))
                     {
                         break;
                     }
@@ -848,10 +1050,18 @@ namespace SixLabors.Fonts
                     index--;
                 }
 
-                if (index < this.info.Count)
+                if (index < this.data.Count)
                 {
-                    this.info.RemoveRange(index, this.info.Count - index);
+                    this.data.RemoveRange(index, this.data.Count - index);
                 }
+
+                // Lastly recalculate this line metrics.
+                this.ScaledLineAdvance = this.data.Sum(x => x.ScaledAdvance);
+                this.MaxPointSize = this.data.Max(x => x.PointSize);
+                this.ScaledMaxAscender = this.data.Max(x => x.ScaledAscender);
+                this.ScaledMaxDescender = this.data.Max(x => x.ScaledDescender);
+                this.ScaledMaxLineHeight = this.data.Max(x => x.ScaledLineHeight);
+                this.ScaledMaxLineGap = this.data.Max(x => x.ScaledLineGap);
 
                 return result;
             }
@@ -859,12 +1069,12 @@ namespace SixLabors.Fonts
             public TextLine BidiReOrder()
             {
                 // Build up the collection of ordered runs.
-                BidiRun run = this.info[0].BidiRun;
+                BidiRun run = this.data[0].BidiRun;
                 OrderedBidiRun orderedRun = new(run.Level);
                 OrderedBidiRun? current = orderedRun;
-                for (int i = 0; i < this.info.Count; i++)
+                for (int i = 0; i < this.data.Count; i++)
                 {
-                    GlyphLayoutData g = this.info[i];
+                    GlyphLayoutData g = this.data[i];
                     if (run != g.BidiRun)
                     {
                         run = g.BidiRun;
@@ -884,9 +1094,9 @@ namespace SixLabors.Fonts
                 // https://unicode.org/reports/tr9/#L2
                 int max = 0;
                 int min = int.MaxValue;
-                for (int i = 0; i < this.info.Count; i++)
+                for (int i = 0; i < this.data.Count; i++)
                 {
-                    int level = this.info[i].BidiRun.Level;
+                    int level = this.data[i].BidiRun.Level;
                     if (level > max)
                     {
                         max = level;
@@ -927,11 +1137,11 @@ namespace SixLabors.Fonts
                     minLevelToReverse--;
                 }
 
-                this.info.Clear();
+                this.data.Clear();
                 current = orderedRun;
                 while (current != null)
                 {
-                    this.info.AddRange(current.AsSlice());
+                    this.data.AddRange(current.AsSlice());
                     current = current.Next;
                 }
 
@@ -1006,6 +1216,10 @@ namespace SixLabors.Fonts
                     GlyphMetrics[] metrics,
                     float pointSize,
                     float scaledAdvance,
+                    float scaledLineHeight,
+                    float scaledAscender,
+                    float scaledDescender,
+                    float scaledLineGap,
                     BidiRun bidiRun,
                     int graphemeIndex,
                     int offset)
@@ -1013,6 +1227,10 @@ namespace SixLabors.Fonts
                     this.Metrics = metrics;
                     this.PointSize = pointSize;
                     this.ScaledAdvance = scaledAdvance;
+                    this.ScaledLineHeight = scaledLineHeight;
+                    this.ScaledAscender = scaledAscender;
+                    this.ScaledDescender = scaledDescender;
+                    this.ScaledLineGap = scaledLineGap;
                     this.BidiRun = bidiRun;
                     this.GraphemeIndex = graphemeIndex;
                     this.Offset = offset;
@@ -1025,6 +1243,14 @@ namespace SixLabors.Fonts
                 public float PointSize { get; }
 
                 public float ScaledAdvance { get; }
+
+                public float ScaledLineHeight { get; }
+
+                public float ScaledAscender { get; }
+
+                public float ScaledDescender { get; }
+
+                public float ScaledLineGap { get; }
 
                 public BidiRun BidiRun { get; }
 

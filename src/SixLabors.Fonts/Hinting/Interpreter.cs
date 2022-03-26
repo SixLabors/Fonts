@@ -100,9 +100,6 @@ namespace SixLabors.Fonts.Hinting
             if ((state.InstructionControl & InstructionControlFlags.InhibitGridFitting) != 0)
                 return;
 
-            // TODO: composite glyphs
-            // TODO: round the phantom points?
-
             // save contours and points
             this.contours = glyphVector.EndPoints;
             zp0 = zp1 = zp2 = points = new Zone(glyphVector, isTwilight: false);
@@ -128,7 +125,7 @@ namespace SixLabors.Fonts.Hinting
             Execute(new StackInstructionStream(instructions, 0), false, false);
         }
 
-        private System.Collections.Generic.List<OpCode> debugList = new System.Collections.Generic.List<OpCode>();
+        private List<OpCode> debugList = new List<OpCode>();
 
         private void Execute(StackInstructionStream stream, bool inFunction, bool allowFunctionDefs)
         {

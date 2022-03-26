@@ -15,8 +15,8 @@ namespace SixLabors.Fonts.Tests.Issues
 
             FontRectangle size = TextMeasurer.Measure("H", new TextOptions(font));
 
-            Assert.Equal(17.6, size.Width, 1);
-            Assert.Equal(30.6, size.Height, 1);
+            Assert.Equal(18, size.Width, 1);
+            Assert.Equal(31, size.Height, 1);
         }
     }
 }

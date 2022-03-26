@@ -68,6 +68,72 @@ namespace SixLabors.Fonts
         public abstract short AdvanceHeightMax { get; }
 
         /// <summary>
+        /// Gets the recommended horizontal size in font design units for subscripts for this font.
+        /// </summary>
+        public abstract short SubscriptXSize { get; }
+
+        /// <summary>
+        /// Gets the recommended vertical size in font design units for subscripts for this font.
+        /// </summary>
+        public abstract short SubscriptYSize { get; }
+
+        /// <summary>
+        /// Gets the recommended horizontal offset in font design units for subscripts for this font.
+        /// </summary>
+        public abstract short SubscriptXOffset { get; }
+
+        /// <summary>
+        /// Gets the recommended vertical offset in font design units for subscripts for this font.
+        /// </summary>
+        public abstract short SubscriptYOffset { get; }
+
+        /// <summary>
+        /// Gets the recommended horizontal size in font design units for superscripts for this font.
+        /// </summary>
+        public abstract short SuperscriptXSize { get; }
+
+        /// <summary>
+        /// Gets the recommended vertical size in font design units for superscripts for this font.
+        /// </summary>
+        public abstract short SuperscriptYSize { get; }
+
+        /// <summary>
+        /// Gets the recommended horizontal offset in font design units for superscripts for this font.
+        /// </summary>
+        public abstract short SuperscriptXOffset { get; }
+
+        /// <summary>
+        /// Gets the recommended vertical offset in font design units for superscripts for this font.
+        /// </summary>
+        public abstract short SuperscriptYOffset { get; }
+
+        /// <summary>
+        /// Gets thickness of the strikeout stroke in font design units.
+        /// </summary>
+        public abstract short StrikeoutSize { get; }
+
+        /// <summary>
+        /// Gets the position of the top of the strikeout stroke relative to the baseline in font design units.
+        /// </summary>
+        public abstract short StrikeoutPosition { get; }
+
+        /// <summary>
+        /// Gets the suggested distance of the top of the underline from the baseline (negative values indicate below baseline).
+        /// </summary>
+        public abstract short UnderlinePosition { get; }
+
+        /// <summary>
+        /// Gets the suggested values for the underline thickness. In general, the underline thickness should match the thickness of
+        /// the underscore character (U+005F LOW LINE), and should also match the strikeout thickness, which is specified in the OS/2 table.
+        /// </summary>
+        public abstract short UnderlineThickness { get; }
+
+        /// <summary>
+        /// Gets the italic angle in counter-clockwise degrees from the vertical. Zero for upright text, negative for text that leans to the right (forward).
+        /// </summary>
+        public abstract float ItalicAngle { get; }
+
+        /// <summary>
         /// Gets the specified glyph id matching the codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint.</param>

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Kern;
+using SixLabors.Fonts.Tables.General.Post;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Fakes
@@ -30,6 +31,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                   GenerateVerticalMetricsTable(glyphs),
                   GenerateHeadTable(),
                   new KerningTable(Array.Empty<KerningSubTable>()),
+                  GeneratePostTable(),
                   null,
                   null,
                   null,
@@ -52,7 +54,8 @@ namespace SixLabors.Fonts.Tests.Fakes
             VerticalHeadTable verticalHeadTable,
             VerticalMetricsTable verticalMetrics,
             HeadTable head,
-            KerningTable kern)
+            KerningTable kern,
+            PostTable post)
             : base(
                   nameTable,
                   maxpTable,
@@ -65,6 +68,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                   verticalMetrics,
                   head,
                   kern,
+                  post,
                   null,
                   null,
                   null,
@@ -94,7 +98,8 @@ namespace SixLabors.Fonts.Tests.Fakes
                 GenerateVerticalHeadTable(),
                 GenerateVerticalMetricsTable(glyphs),
                 GenerateHeadTable(),
-                new KerningTable(Array.Empty<KerningSubTable>()));
+                new KerningTable(Array.Empty<KerningSubTable>()),
+                GeneratePostTable());
         }
 
         private static List<FakeGlyphSource> GetGlyphs(string text)
@@ -128,7 +133,7 @@ namespace SixLabors.Fonts.Tests.Fakes
             => new(new[] { new FakeCmapSubtable(glyphs) });
 
         private static MaximumProfileTable GenerateMaxpTable(List<FakeGlyphSource> glyphs)
-            => new MaximumProfileTable((ushort)glyphs.Count);
+            => new((ushort)glyphs.Count);
 
         private static HorizontalHeadTable GenerateHorizontalHeadTable()
             => new(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
@@ -158,5 +163,7 @@ namespace SixLabors.Fonts.Tests.Fakes
                 new Bounds(10, 10, 20, 20),
                 1,
                 HeadTable.IndexLocationFormats.Offset16);
+
+        private static PostTable GeneratePostTable() => new(2, 0, 0, 200, 35, 0, 0, 0, 0, 0, Array.Empty<PostNameRecord>());
     }
 }

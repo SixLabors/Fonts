@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
             {
                 WrappingLength = 350,
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
             {
                 WrappingLength = 350,
                 HorizontalAlignment = horizontalAlignment
@@ -74,7 +74,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
             {
                 WrappingLength = 350
             });
@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             var r = new GlyphRenderer();
 
-            IReadOnlyList<GlyphLayout> layout = new TextLayout().GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+            IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
             {
                 WrappingLength = 350
             });

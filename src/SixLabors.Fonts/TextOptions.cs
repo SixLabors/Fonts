@@ -9,9 +9,9 @@ using SixLabors.Fonts.Tables.AdvancedTypographic;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Provides configuration options for rendering text.
+    /// Provides configuration options for rendering and shaping text.
     /// </summary>
-    public sealed class TextOptions
+    public class TextOptions
     {
         private float tabWidth = 4F;
         private float dpi = 72F;
@@ -48,6 +48,7 @@ namespace SixLabors.Fonts
             this.KerningMode = options.KerningMode;
             this.ColorFontSupport = options.ColorFontSupport;
             this.FeatureTags = new List<Tag>(options.FeatureTags);
+            this.TextRuns = new List<TextRun>(options.TextRuns);
         }
 
         /// <summary>
@@ -181,5 +182,10 @@ namespace SixLabors.Fonts
         /// Gets or sets the collection of additional feature tags to apply during glyph shaping.
         /// </summary>
         public IReadOnlyList<Tag> FeatureTags { get; set; } = Array.Empty<Tag>();
+
+        /// <summary>
+        /// Gets or sets an optional collection of text runs to apply to the body of text.
+        /// </summary>
+        public IReadOnlyList<TextRun> TextRuns { get; set; } = Array.Empty<TextRun>();
     }
 }

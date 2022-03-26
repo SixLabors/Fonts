@@ -112,17 +112,14 @@ namespace SixLabors.Fonts
         public ushort ReadUFWORD() => this.ReadUInt16();
 
         /// <summary>
-        /// Reads a 32-bit signed integer from the stream.
+        /// Reads a fixed 32-bit value from the stream.
         /// 4 bytes are read.
         /// </summary>
-        /// <returns>The 32-bit integer read.</returns>
+        /// <returns>The 32-bit value read.</returns>
         public float ReadFixed()
         {
             this.ReadInternal(this.buffer, 4);
-
-            int value = BinaryPrimitives.ReadInt32BigEndian(this.buffer);
-
-            return Unsafe.As<int, float>(ref value);
+            return BinaryPrimitives.ReadInt32BigEndian(this.buffer) / 65536F;
         }
 
         /// <summary>

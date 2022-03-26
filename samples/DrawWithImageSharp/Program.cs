@@ -8,6 +8,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using DrawWithImageSharp;
+using SixLabors.Fonts.Unicode;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -33,6 +34,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily colorEmoji = fonts.Add(@"Fonts\Twemoji Mozilla.ttf");
             FontFamily font2 = fonts.Add(@"Fonts\OpenSans-Regular.ttf");
             FontFamily sunflower = fonts.Add(@"Fonts\Sunflower-Medium.ttf");
+            FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
 #if OS_WINDOWS
             FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
@@ -40,15 +42,35 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily arabicFont = SystemFonts.Get("Dubai");
 
             FontFamily tahoma = SystemFonts.Get("Tahoma");
+            var textRuns = new List<TextRun>
+            {
+                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
+                new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttributes.Subscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline | TextDecorations.Overline }
+            };
+
+            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns);
+
+            string arabic = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ";
+            textRuns = new List<TextRun>
+            {
+                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecorations.Underline }
+            };
+
+            RenderText(uiFont, arabic, pointSize: 72, textRuns: textRuns);
+
+            textRuns = new List<TextRun>
+            {
+                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecorations.Underline }
+            };
+            RenderText(bugzilla, arabic, pointSize: 72, textRuns: textRuns);
+
             RenderText(font2, "\uFB01", pointSize: 11.25F);
             RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
             RenderText(tahoma, "p", pointSize: 11.25F);
             RenderText(tahoma, "Lorem ipsum dolor sit amet", pointSize: 11.25F);
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
-            FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
             RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
-            RenderText(bugzilla, "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ", pointSize: 72);
 
             RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { font2 });
 
@@ -182,12 +204,18 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             SaveImage(options, text, (int)size.Width, (int)size.Height, options.Font.Name, text + ".png");
         }
 
-        public static void RenderText(FontFamily font, string text, float pointSize = 12, IEnumerable<FontFamily> fallbackFonts = null)
+        public static void RenderText(
+            FontFamily font,
+            string text,
+            float pointSize = 12,
+            IEnumerable<FontFamily> fallbackFonts = null,
+            IEnumerable<TextRun> textRuns = null)
             => RenderText(
                 new TextOptions(new Font(font, pointSize))
                 {
-                    WrappingLength = 400,
-                    FallbackFontFamilies = fallbackFonts?.ToArray()
+                    // WrappingLength = 400,
+                    FallbackFontFamilies = fallbackFonts?.ToArray(),
+                    TextRuns = textRuns?.ToArray()
                 },
                 text);
 

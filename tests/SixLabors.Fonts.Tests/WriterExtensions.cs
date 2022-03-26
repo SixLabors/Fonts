@@ -9,6 +9,7 @@ using System.Text;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.CMap;
+using SixLabors.Fonts.Tables.General.Post;
 using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tests
@@ -317,6 +318,52 @@ namespace SixLabors.Fonts.Tests
             foreach (ushort c in subtable.GlyphIds)
             {
                 writer.WriteUInt16(c);
+            }
+        }
+
+        public static void WritePostTable(this BigEndianBinaryWriter writer, PostTable postTable)
+        {
+            // HEADER
+            // Type            | Name                | Description
+            // ----------------|---------------------|---------------------------------------------------------------
+            // Version16Dot16  | version             | 0x00010000 for version 1.0, 0x00020000 for version 2.0, 0x00025000 for version 2.5 (deprecated), 0x00030000 for version 3.0
+            // Fixed           | italicAngle         | Italic angle in counter-clockwise degrees from the vertical. Zero for upright text, negative for text that leans to the right (forward).
+            // FWORD           | underlinePosition   | This is the suggested distance of the top of the underline from the baseline (negative values indicate below baseline). The PostScript definition of this FontInfo dictionary key (the y coordinate of the center of the stroke) is not used for historical reasons. The value of the PostScript key may be calculated by subtracting half the underlineThickness from the value of this field.
+            // FWORD           | underlineThickness  | Suggested values for the underline thickness. In general, the underline thickness should match the thickness of the underscore character (U+005F LOW LINE), and should also match the strikeout thickness, which is specified in the OS/2 table.
+            // uint32          | isFixedPitch        | Set to 0 if the font is proportionally spaced, non-zero if the font is not proportionally spaced (i.e. monospaced).
+            // uint32          | minMemType42        | Minimum memory usage when an OpenType font is downloaded.
+            // uint32          | maxMemType42        | Maximum memory usage when an OpenType font is downloaded.
+            // uint32          | minMemType1         | Minimum memory usage when an OpenType font is downloaded as a Type 1 font.
+            // uint32          | maxMemType1         | Maximum memory usage when an OpenType font is downloaded as a Type 1 font.
+            writer.WriteUInt16(postTable.FormatMajor);
+            writer.WriteUInt16(postTable.FormatMinor);
+
+            writer.WriteFWORD(postTable.UnderlinePosition);
+            writer.WriteFWORD(postTable.UnderlineThickness);
+            writer.WriteUInt32(postTable.IsFixedPitch);
+            writer.WriteUInt32(postTable.MinMemType42);
+            writer.WriteUInt32(postTable.MaxMemType42);
+            writer.WriteUInt32(postTable.MinMemType1);
+            writer.WriteUInt32(postTable.MaxMemType1);
+
+            // FORMAT 2.0
+            // Type    | Name                        | Description
+            // --------|-----------------------------|--------------------------------------------------------------
+            // uint16  | numGlyphs                   | Number of glyphs (this should be the same as numGlyphs in 'maxp' table).
+            // uint16  | glyphNameIndex[numGlyphs]   | Array of indices into the string data. See below for details.
+            // uint8   | stringData[variable]        | Storage for the string data.
+            writer.WriteUInt16((ushort)postTable.PostRecords.Length);
+
+            // Write the array of glyph name indices
+            foreach (PostNameRecord postRecord in postTable.PostRecords)
+            {
+                writer.WriteUInt16(postRecord.NameIndex);
+            }
+
+            // Write the actual name string data
+            foreach (PostNameRecord postRecord in postTable.PostRecords)
+            {
+                writer.WriteString(postRecord.Name, Encoding.ASCII);
             }
         }
 

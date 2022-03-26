@@ -24,6 +24,7 @@ namespace SixLabors.Fonts
     /// </summary>
     internal class StreamFontMetrics : FontMetrics
     {
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
         private readonly MaximumProfileTable maximumProfileTable;
         private readonly CMapTable cmap;
         private readonly GlyphTable glyphs;
@@ -33,7 +34,7 @@ namespace SixLabors.Fonts
         private readonly VerticalMetricsTable? verticalMetricsTable;
         private readonly GlyphMetrics[][] glyphCache;
         private readonly GlyphMetrics[][]? colorGlyphCache;
-        private readonly KerningTable kerningTable;
+        private readonly KerningTable? kerningTable;
         private readonly GSubTable? gSubTable;
         private readonly GPosTable? gPosTable;
         private readonly ColrTable? colrTable;
@@ -60,6 +61,7 @@ namespace SixLabors.Fonts
         /// <param name="verticalMetrics">The vertical metrics table.</param>
         /// <param name="head">The head table.</param>
         /// <param name="kern">The kerning table.</param>
+        /// <param name="postTable">The table needed to use TrueType or OpenType fonts on PostScript printers.</param>
         /// <param name="gSubTable">The glyph substitution table.</param>
         /// <param name="gPosTable">The glyph positioning table.</param>
         /// <param name="colrTable">The COLR table</param>
@@ -79,7 +81,8 @@ namespace SixLabors.Fonts
             VerticalHeadTable? verticalHeadTable,
             VerticalMetricsTable? verticalMetrics,
             HeadTable head,
-            KerningTable kern,
+            KerningTable? kern,
+            PostTable postTable,
             GSubTable? gSubTable,
             GPosTable? gPosTable,
             ColrTable? colrTable,
@@ -152,6 +155,21 @@ namespace SixLabors.Fonts
             this.AdvanceWidthMax = (short)horizontalHeadTable.AdvanceWidthMax;
             this.AdvanceHeightMax = verticalHeadTable == null ? this.LineHeight : verticalHeadTable.AdvanceHeightMax;
 
+            this.SubscriptXSize = os2.SubscriptXSize;
+            this.SubscriptYSize = os2.SubscriptYSize;
+            this.SubscriptXOffset = os2.SubscriptXOffset;
+            this.SubscriptYOffset = os2.SubscriptYOffset;
+            this.SuperscriptXSize = os2.SuperscriptXSize;
+            this.SuperscriptYSize = os2.SuperscriptYSize;
+            this.SuperscriptXOffset = os2.SuperscriptXOffset;
+            this.SuperscriptYOffset = os2.SuperscriptYOffset;
+            this.StrikeoutSize = os2.StrikeoutSize;
+            this.StrikeoutPosition = os2.StrikeoutPosition;
+
+            this.UnderlinePosition = postTable.UnderlinePosition;
+            this.UnderlineThickness = postTable.UnderlineThickness;
+            this.ItalicAngle = postTable.ItalicAngle;
+
             this.kerningTable = kern;
             this.gSubTable = gSubTable;
             this.gPosTable = gPosTable;
@@ -162,7 +180,10 @@ namespace SixLabors.Fonts
             this.prep = prep;
             this.glyphDefinitionTable = glyphDefinitionTable;
             this.Description = new FontDescription(nameTable, os2, head);
+            this.HeadFlags = head.Flags;
         }
+
+        public HeadTable.HeadFlags HeadFlags { get; }
 
         /// <inheritdoc/>
         public override FontDescription Description { get; }
@@ -192,6 +213,45 @@ namespace SixLabors.Fonts
         public override short AdvanceHeightMax { get; }
 
         /// <inheritdoc/>
+        public override short SubscriptXSize { get; }
+
+        /// <inheritdoc/>
+        public override short SubscriptYSize { get; }
+
+        /// <inheritdoc/>
+        public override short SubscriptXOffset { get; }
+
+        /// <inheritdoc/>
+        public override short SubscriptYOffset { get; }
+
+        /// <inheritdoc/>
+        public override short SuperscriptXSize { get; }
+
+        /// <inheritdoc/>
+        public override short SuperscriptYSize { get; }
+
+        /// <inheritdoc/>
+        public override short SuperscriptXOffset { get; }
+
+        /// <inheritdoc/>
+        public override short SuperscriptYOffset { get; }
+
+        /// <inheritdoc/>
+        public override short StrikeoutSize { get; }
+
+        /// <inheritdoc/>
+        public override short StrikeoutPosition { get; }
+
+        /// <inheritdoc/>
+        public override short UnderlinePosition { get; }
+
+        /// <inheritdoc/>
+        public override short UnderlineThickness { get; }
+
+        /// <inheritdoc/>
+        public override float ItalicAngle { get; }
+
+        /// <inheritdoc/>
         internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
             => this.TryGetGlyphId(codePoint, null, out glyphId, out bool _);
 
@@ -203,24 +263,14 @@ namespace SixLabors.Fonts
         internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
         {
             glyphClass = null;
-            if (this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetGlyphClass(glyphId, out glyphClass))
-            {
-                return true;
-            }
-
-            return false;
+            return this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetGlyphClass(glyphId, out glyphClass);
         }
 
         /// <inheritdoc/>
         internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
         {
             markAttachmentClass = null;
-            if (this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass))
-            {
-                return true;
-            }
-
-            return false;
+            return this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
         }
 
         /// <inheritdoc/>
@@ -242,12 +292,14 @@ namespace SixLabors.Fonts
             }
 
             if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredVectors(codePoint, glyphId, out GlyphMetrics[]? metrics))
+                && this.TryGetColoredMetrics(codePoint, glyphId, out GlyphMetrics[]? metrics))
             {
                 return metrics;
             }
 
-            if (this.glyphCache[glyphId] is null)
+            // We overwrite the cache entry for this type should the attributes change.
+            GlyphMetrics[]? cached = this.glyphCache[glyphId];
+            if (cached is null)
             {
                 this.glyphCache[glyphId] = new[]
                 {
@@ -263,22 +315,14 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
-        {
-            if (this.gSubTable != null)
-            {
-                this.gSubTable.ApplySubstitution(this, collection);
-            }
-        }
+            => this.gSubTable?.ApplySubstitution(this, collection);
 
         /// <inheritdoc/>
         internal override void UpdatePositions(GlyphPositioningCollection collection)
         {
             bool kerned = false;
             KerningMode kerningMode = collection.TextOptions.KerningMode;
-            if (this.gPosTable != null)
-            {
-                this.gPosTable.TryUpdatePositions(this, collection, out kerned);
-            }
+            this.gPosTable?.TryUpdatePositions(this, collection, out kerned);
 
             if (!kerned && kerningMode != KerningMode.None && this.kerningTable != null)
             {
@@ -356,9 +400,13 @@ namespace SixLabors.Fonts
 
             reader.GetTable<IndexLocationTable>(); // loca
             GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
-            KerningTable kern = reader.GetTable<KerningTable>(); // kern - Kerning
+            KerningTable? kern = reader.TryGetTable<KerningTable>(); // kern - Kerning
             NameTable nameTable = reader.GetTable<NameTable>(); // name
+            PostTable postTable = reader.GetTable<PostTable>(); // post - PostScript information
 
+            // gasp - Grid-fitting/Scan-conversion (optional table)
+            // PCLT - PCL 5 data
+            // DSIG - Digital signature
             ColrTable? colrTable = reader.TryGetTable<ColrTable>(); // colr
             CpalTable? cpalTable;
             if (colrTable != null)
@@ -375,10 +423,6 @@ namespace SixLabors.Fonts
             GPosTable? gPos = reader.TryGetTable<GPosTable>();
             GlyphDefinitionTable? glyphDefinitionTable = reader.TryGetTable<GlyphDefinitionTable>();
 
-            // post - PostScript information
-            // gasp - Grid-fitting/Scan-conversion (optional table)
-            // PCLT - PCL 5 data
-            // DSIG - Digital signature
             return new StreamFontMetrics(
                 nameTable,
                 maxp,
@@ -391,6 +435,7 @@ namespace SixLabors.Fonts
                 verticalMetrics,
                 head,
                 kern,
+                postTable,
                 gSub,
                 gPos,
                 colrTable,
@@ -433,7 +478,7 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
-        internal GlyphVector ApplyHinting(GlyphVector glyphVector, float pixelSize, ushort glyphIndex)
+        internal void ApplyHinting(GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float scaledPPEM)
         {
             if (this.interpreter == null)
             {
@@ -450,53 +495,48 @@ namespace SixLabors.Fonts
                 }
             }
 
-            float scale = pixelSize / this.UnitsPerEm;
-            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scale, pixelSize, this.prep?.Instructions);
+            float scaleFactor = scaledPPEM / this.UnitsPerEm;
+            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scaleFactor, scaledPPEM, this.prep?.Instructions);
 
             Bounds bounds = glyphVector.GetBounds();
-            short leftSideBearing = this.horizontalMetrics.GetLeftSideBearing(glyphIndex);
-            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphIndex);
-            short topSideBearing = this.verticalMetricsTable?.GetTopSideBearing(glyphIndex) ?? (short)(this.Ascender - bounds.Max.Y);
-            ushort advanceHeight = this.verticalMetricsTable?.GetAdvancedHeight(glyphIndex) ?? (ushort)this.LineHeight;
 
-            var pp1 = new Vector2(bounds.Min.X - (leftSideBearing * scale), 0);
-            var pp2 = new Vector2(pp1.X + (advanceWidth * scale), 0);
-            var pp3 = new Vector2(0, bounds.Max.Y + (topSideBearing * scale));
-            var pp4 = new Vector2(0, pp3.Y - (advanceHeight * scale));
+            var pp1 = new Vector2(bounds.Min.X - (metrics.LeftSideBearing * scaleXY.X), 0);
+            var pp2 = new Vector2(pp1.X + (metrics.AdvanceWidth * scaleXY.X), 0);
+            var pp3 = new Vector2(0, bounds.Max.Y + (metrics.TopSideBearing * scaleXY.Y));
+            var pp4 = new Vector2(0, pp3.Y - (metrics.AdvanceHeight * scaleXY.Y));
 
             GlyphVector.Hint(ref glyphVector, this.interpreter, pp1, pp2, pp3, pp4);
-
-            return glyphVector;
         }
 
-        private bool TryGetColoredVectors(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? vectors)
+        private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
             if (this.colrTable == null || this.colorGlyphCache == null)
             {
-                vectors = null;
+                metrics = null;
                 return false;
             }
 
-            vectors = this.colorGlyphCache[glyphId];
-            if (vectors is null)
+            // We overwrite the cache entry for this type should the attributes change.
+            metrics = this.colorGlyphCache[glyphId];
+            if (metrics is null)
             {
                 Span<LayerRecord> indexes = this.colrTable.GetLayers(glyphId);
                 if (indexes.Length > 0)
                 {
-                    vectors = new GlyphMetrics[indexes.Length];
+                    metrics = new GlyphMetrics[indexes.Length];
                     for (int i = 0; i < indexes.Length; i++)
                     {
                         LayerRecord? layer = indexes[i];
 
-                        vectors[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PaletteIndex);
+                        metrics[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PaletteIndex);
                     }
                 }
 
-                vectors ??= Array.Empty<GlyphMetrics>();
-                this.colorGlyphCache[glyphId] = vectors;
+                metrics ??= Array.Empty<GlyphMetrics>();
+                this.colorGlyphCache[glyphId] = metrics;
             }
 
-            return vectors.Length > 0;
+            return metrics.Length > 0;
         }
 
         private GlyphMetrics CreateGlyphMetrics(

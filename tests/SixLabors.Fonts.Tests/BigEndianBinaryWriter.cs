@@ -380,5 +380,23 @@ namespace SixLabors.Fonts.Tests
         public void WriteFWORD(short value) => this.WriteInt16(value);
 
         public void WriteUFWORD(ushort value) => this.WriteUInt16(value);
+
+        /// <summary>
+        /// Writes a Pascal string to the stream
+        /// </summary>
+        /// <param name="value">String value.</param>
+        /// <param name="encoding">Encoding type.</param>
+        public void WriteString(string value, Encoding encoding)
+        {
+            // Variable length
+            byte[] data = encoding.GetBytes(value);
+
+            // Write the length of the data
+            this.buffer[0] = unchecked((byte)data.Length);
+            this.WriteInternal(this.buffer, 1);
+
+            // Write the actual string data
+            this.WriteInternal(data, data.Length);
+        }
     }
 }

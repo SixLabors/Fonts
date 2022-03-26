@@ -71,6 +71,45 @@ namespace SixLabors.Fonts
         public override short AdvanceHeightMax => this.metrics.Value.AdvanceHeightMax;
 
         /// <inheritdoc/>
+        public override short SubscriptXSize => this.metrics.Value.SubscriptXSize;
+
+        /// <inheritdoc/>
+        public override short SubscriptYSize => this.metrics.Value.SubscriptYSize;
+
+        /// <inheritdoc/>
+        public override short SubscriptXOffset => this.metrics.Value.SubscriptXOffset;
+
+        /// <inheritdoc/>
+        public override short SubscriptYOffset => this.metrics.Value.SubscriptYOffset;
+
+        /// <inheritdoc/>
+        public override short SuperscriptXSize => this.metrics.Value.SuperscriptXSize;
+
+        /// <inheritdoc/>
+        public override short SuperscriptYSize => this.metrics.Value.SuperscriptYSize;
+
+        /// <inheritdoc/>
+        public override short SuperscriptXOffset => this.metrics.Value.SuperscriptXOffset;
+
+        /// <inheritdoc/>
+        public override short SuperscriptYOffset => this.metrics.Value.SuperscriptYOffset;
+
+        /// <inheritdoc/>
+        public override short StrikeoutSize => this.metrics.Value.StrikeoutSize;
+
+        /// <inheritdoc/>
+        public override short StrikeoutPosition => this.metrics.Value.StrikeoutPosition;
+
+        /// <inheritdoc/>
+        public override short UnderlinePosition => this.metrics.Value.UnderlinePosition;
+
+        /// <inheritdoc/>
+        public override short UnderlineThickness => this.metrics.Value.UnderlineThickness;
+
+        /// <inheritdoc/>
+        public override float ItalicAngle => this.metrics.Value.ItalicAngle;
+
+        /// <inheritdoc/>
         internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
             => this.metrics.Value.TryGetGlyphId(codePoint, out glyphId);
 
