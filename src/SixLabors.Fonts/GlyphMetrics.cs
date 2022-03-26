@@ -239,15 +239,15 @@ namespace SixLabors.Fonts
         {
             float dpi = options.Dpi;
             location *= dpi;
-            float scaledPoint = dpi * pointSize;
+            float scaledPPEM = dpi * pointSize;
             bool forcePPEMToInt = (this.FontMetrics.HeadFlags & HeadTable.HeadFlags.ForcePPEMToInt) != 0;
 
             if (forcePPEMToInt)
             {
-                scaledPoint = MathF.Round(scaledPoint);
+                scaledPPEM = MathF.Round(scaledPPEM);
             }
 
-            FontRectangle box = this.GetBoundingBox(location, scaledPoint);
+            FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
 
             // TextRun is never null here as rendering is only accessable via a Glyph which
             // uses the cloned metrics instance.
@@ -262,26 +262,20 @@ namespace SixLabors.Fonts
                         colorSurface.SetColor(this.GlyphColor.Value);
                     }
 
-                    if (!this.scaledVector.TryGetValue(scaledPoint, out GlyphVector scaledVector))
+                    if (!this.scaledVector.TryGetValue(scaledPPEM, out GlyphVector scaledVector))
                     {
                         // Scale and translate the glyph
-                        Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor;
+                        Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
                         var transform = Matrix3x2.CreateScale(scale);
                         transform.Translation = this.offset * scale * MirrorScale;
                         scaledVector = GlyphVector.Transform(this.vector, transform);
 
                         if (options.ApplyHinting)
                         {
-                            float scaledPixel = scaledPoint * (dpi / 72F);
-                            if (forcePPEMToInt)
-                            {
-                                scaledPixel = MathF.Round(scaledPixel);
-                            }
-
-                            this.FontMetrics.ApplyHinting(this, ref scaledVector, scale, scaledPixel);
+                            this.FontMetrics.ApplyHinting(this, ref scaledVector, scale, scaledPPEM);
                         }
 
-                        this.scaledVector[scaledPoint] = scaledVector;
+                        this.scaledVector[scaledPPEM] = scaledVector;
                     }
 
                     GlyphOutline outline = scaledVector.GetOutline();
@@ -360,7 +354,7 @@ namespace SixLabors.Fonts
 
                 (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float position)
                 {
-                    Vector2 scale = new Vector2(scaledPoint) / this.ScaleFactor * MirrorScale;
+                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
                     Vector2 offset = location + (this.offset * scale * MirrorScale);
 
                     // Calculate the correct advance for the line.

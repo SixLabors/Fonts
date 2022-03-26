@@ -133,6 +133,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             for (int i = 0; i < glyph.entries.Count; i++)
             {
                 GlyphTableEntry entry = glyph.entries[i];
+
+                // TODO: Figure out a way to pool this.
                 var controlPoints = new Vector2[entry.ControlPoints.Length + 4];
                 controlPoints[controlPoints.Length - 4] = pp1;
                 controlPoints[controlPoints.Length - 3] = pp2;

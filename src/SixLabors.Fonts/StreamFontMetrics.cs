@@ -478,7 +478,7 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
-        internal void ApplyHinting(GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float scaledPixel)
+        internal void ApplyHinting(GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float scaledPPEM)
         {
             if (this.interpreter == null)
             {
@@ -495,8 +495,8 @@ namespace SixLabors.Fonts
                 }
             }
 
-            float scaleFactor = scaledPixel / this.UnitsPerEm;
-            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scaleFactor, scaledPixel, this.prep?.Instructions);
+            float scaleFactor = scaledPPEM / this.UnitsPerEm;
+            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scaleFactor, scaledPPEM, this.prep?.Instructions);
 
             Bounds bounds = glyphVector.GetBounds();
 
