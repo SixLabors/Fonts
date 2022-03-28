@@ -4,6 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+#if SUPPORTS_RUNTIME_INTRINSICS
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+#endif
 using SixLabors.Fonts.Hinting;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
@@ -122,14 +128,20 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         /// <summary>
         /// Applies True Type hinting to the specified glyph vector.
         /// </summary>
+        /// <param name="hintingMode">The hinting mode.</param>
         /// <param name="glyph">The glyph vector to hint.</param>
         /// <param name="interpreter">The True Type interpreter.</param>
         /// <param name="pp1">The first phantom point.</param>
         /// <param name="pp2">The second phantom point.</param>
         /// <param name="pp3">The third phantom point.</param>
         /// <param name="pp4">The fourth phantom point.</param>
-        public static void Hint(ref GlyphVector glyph, Interpreter interpreter, Vector2 pp1, Vector2 pp2, Vector2 pp3, Vector2 pp4)
+        public static void Hint(HintingMode hintingMode, ref GlyphVector glyph, Interpreter interpreter, Vector2 pp1, Vector2 pp2, Vector2 pp3, Vector2 pp4)
         {
+            if (hintingMode == HintingMode.None)
+            {
+                return;
+            }
+
             for (int i = 0; i < glyph.entries.Count; i++)
             {
                 GlyphTableEntry entry = glyph.entries[i];
@@ -142,11 +154,57 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
                 controlPoints[controlPoints.Length - 1] = pp4;
                 entry.ControlPoints.AsSpan().CopyTo(controlPoints.AsSpan());
 
+                // To keep vertical hinting but discard horizontal we simply cheat the hinter.
+                // We stretch the symbols horizontally so that the hinter would have to work with high accuracy in the X direction.
+                if (hintingMode == HintingMode.HintY)
+                {
+                    ScaleX(controlPoints, 1000F);
+                }
+
                 var withPhantomPoints = new GlyphTableEntry(controlPoints, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
                 interpreter.HintGlyph(withPhantomPoints);
 
+                if (hintingMode == HintingMode.HintY)
+                {
+                    ScaleX(controlPoints, 1F / 1000F);
+                }
+
                 controlPoints.AsSpan(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.AsSpan());
                 glyph.entries[i] = entry;
+            }
+        }
+
+        private static void ScaleX(Span<Vector2> controlPoints, float scale)
+        {
+            int remainder = 0;
+#if SUPPORTS_RUNTIME_INTRINSICS
+            if (Avx.IsSupported)
+            {
+                int length = controlPoints.Length;
+                remainder = length - (ModuloP2(length * 2, Vector256<float>.Count) / 2);
+                Span<Vector256<float>> vectors = MemoryMarshal.Cast<Vector2, Vector256<float>>(controlPoints);
+                Vector256<float> mutiplier = Avx.UnpackLow(Vector256.Create(scale), Vector256.Create(1F));
+                for (int i = 0; i < vectors.Length; i++)
+                {
+                    vectors[i] = Avx.Multiply(vectors[i], mutiplier);
+                }
+            }
+            else if (Sse.IsSupported)
+            {
+                int length = controlPoints.Length;
+                remainder = length - (ModuloP2(length * 2, Vector128<float>.Count) / 2);
+                Span<Vector128<float>> vectors = MemoryMarshal.Cast<Vector2, Vector128<float>>(controlPoints);
+                Vector128<float> mutiplier = Sse.UnpackLow(Vector128.Create(scale), Vector128.Create(1F));
+                for (int i = 0; i < vectors.Length; i++)
+                {
+                    vectors[i] = Sse.Multiply(vectors[i], mutiplier);
+                }
+            }
+#endif
+            Vector2 v = new(scale, 1F);
+            for (int i = remainder; i < controlPoints.Length; i++)
+            {
+                controlPoints[i] *= v;
             }
         }
 
@@ -216,5 +274,13 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         /// <returns>The <see cref="GlyphVector"/>.</returns>
         public static GlyphVector WithCompositeBounds(GlyphVector src, Bounds bounds)
             => new(src.entries, bounds);
+#if SUPPORTS_RUNTIME_INTRINSICS
+        /// <summary>
+        /// Fast (x mod m) calculator, with the restriction that
+        /// <paramref name="m"/> should be power of 2.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ModuloP2(int x, int m) => x & (m - 1);
+#endif
     }
 }
