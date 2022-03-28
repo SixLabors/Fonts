@@ -180,34 +180,24 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
 #if SUPPORTS_RUNTIME_INTRINSICS
             if (Avx.IsSupported)
             {
-                ref Vector256<float> controlPointsBase = ref Unsafe.As<Vector2, Vector256<float>>(ref MemoryMarshal.GetReference(controlPoints));
                 int length = controlPoints.Length;
-                nint n = length * 2 / Vector256<float>.Count;
-                if (n >= 1)
+                remainder = length - (ModuloP2(length * 2, Vector256<float>.Count) / 2);
+                Span<Vector256<float>> vectors = MemoryMarshal.Cast<Vector2, Vector256<float>>(controlPoints);
+                Vector256<float> mutiplier = Avx.UnpackLow(Vector256.Create(scale), Vector256.Create(1F));
+                for (int i = 0; i < vectors.Length; i++)
                 {
-                    remainder = length - (ModuloP2(length, Vector256<float>.Count) / 2);
-                    Vector256<float> mutiplier = Avx.UnpackLow(Vector256.Create(scale), Vector256.Create(1F));
-                    for (nint i = 0; i < n; i++)
-                    {
-                        ref Vector256<float> original = ref Unsafe.Add(ref controlPointsBase, i);
-                        original = Avx.Multiply(original, mutiplier);
-                    }
+                    vectors[i] = Avx.Multiply(vectors[i], mutiplier);
                 }
             }
             else if (Sse.IsSupported)
             {
-                ref Vector128<float> controlPointsBase = ref Unsafe.As<Vector2, Vector128<float>>(ref MemoryMarshal.GetReference(controlPoints));
                 int length = controlPoints.Length;
-                nint n = length * 2 / Vector128<float>.Count;
-                if (n >= 1)
+                remainder = length - (ModuloP2(length * 2, Vector128<float>.Count) / 2);
+                Span<Vector128<float>> vectors = MemoryMarshal.Cast<Vector2, Vector128<float>>(controlPoints);
+                Vector128<float> mutiplier = Sse.UnpackLow(Vector128.Create(scale), Vector128.Create(1F));
+                for (int i = 0; i < vectors.Length; i++)
                 {
-                    remainder = length - (ModuloP2(length, Vector128<float>.Count) / 2);
-                    Vector128<float> mutiplier = Sse.UnpackLow(Vector128.Create(scale), Vector128.Create(1F));
-                    for (nint i = 0; i < n; i++)
-                    {
-                        ref Vector128<float> original = ref Unsafe.Add(ref controlPointsBase, i);
-                        original = Sse.Multiply(original, mutiplier);
-                    }
+                    vectors[i] = Sse.Multiply(vectors[i], mutiplier);
                 }
             }
 #endif
