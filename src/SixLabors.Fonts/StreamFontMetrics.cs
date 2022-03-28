@@ -478,8 +478,13 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
-        internal void ApplyHinting(GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float scaledPPEM)
+        internal void ApplyHinting(HintingMode hintingMode, GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float scaledPPEM)
         {
+            if (hintingMode == HintingMode.None)
+            {
+                return;
+            }
+
             if (this.interpreter == null)
             {
                 this.interpreter = new Hinting.Interpreter(
@@ -505,7 +510,7 @@ namespace SixLabors.Fonts
             var pp3 = new Vector2(0, bounds.Max.Y + (metrics.TopSideBearing * scaleXY.Y));
             var pp4 = new Vector2(0, pp3.Y - (metrics.AdvanceHeight * scaleXY.Y));
 
-            GlyphVector.Hint(ref glyphVector, this.interpreter, pp1, pp2, pp3, pp4);
+            GlyphVector.Hint(hintingMode, ref glyphVector, this.interpreter, pp1, pp2, pp3, pp4);
         }
 
         private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? metrics)

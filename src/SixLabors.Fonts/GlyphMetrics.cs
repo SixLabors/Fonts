@@ -269,12 +269,7 @@ namespace SixLabors.Fonts
                         var transform = Matrix3x2.CreateScale(scale);
                         transform.Translation = this.offset * scale * MirrorScale;
                         scaledVector = GlyphVector.Transform(this.vector, transform);
-
-                        if (options.ApplyHinting)
-                        {
-                            this.FontMetrics.ApplyHinting(this, ref scaledVector, scale, scaledPPEM);
-                        }
-
+                        this.FontMetrics.ApplyHinting(options.HintingMode, this, ref scaledVector, scale, scaledPPEM);
                         this.scaledVector[scaledPPEM] = scaledVector;
                     }
 

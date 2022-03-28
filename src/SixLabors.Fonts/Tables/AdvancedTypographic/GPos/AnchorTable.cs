@@ -109,7 +109,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
             public override AnchorXY GetAnchor(FontMetrics fontMetrics, GlyphShapingData data, GlyphPositioningCollection collection)
             {
-                if (collection.TextOptions.ApplyHinting)
+                if (collection.TextOptions.HintingMode != HintingMode.None)
                 {
                     foreach (GlyphMetrics metric in fontMetrics.GetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport))
                     {

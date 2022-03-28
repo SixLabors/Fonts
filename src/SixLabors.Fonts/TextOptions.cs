@@ -34,7 +34,7 @@ namespace SixLabors.Fonts
             this.Font = options.Font;
             this.FallbackFontFamilies = new List<FontFamily>(options.FallbackFontFamilies);
             this.TabWidth = options.TabWidth;
-            this.ApplyHinting = options.ApplyHinting;
+            this.HintingMode = options.HintingMode;
             this.Dpi = options.Dpi;
             this.LineSpacing = options.LineSpacing;
             this.Origin = options.Origin;
@@ -106,7 +106,7 @@ namespace SixLabors.Fonts
         /// Gets or sets a value indicating whether to apply hinting - The use of mathematical instructions
         /// to adjust the display of an outline font so that it lines up with a rasterized grid.
         /// </summary>
-        public bool ApplyHinting { get; set; }
+        public HintingMode HintingMode { get; set; }
 
         /// <summary>
         /// Gets or sets the line spacing. Applied as a multiple of the line height.
