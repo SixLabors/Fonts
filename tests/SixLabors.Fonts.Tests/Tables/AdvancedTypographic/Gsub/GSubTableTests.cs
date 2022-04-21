@@ -82,7 +82,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 580, 404, 453 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { FeatureTags.Numerators, FeatureTags.Denominators } });
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -102,7 +102,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             int[] expectedGlyphIndices = { 580, 404, 453 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
+            TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { FeatureTags.Fractions } });
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);

@@ -128,6 +128,50 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 this.AddFeature(collection, index, count, VertTag);
             }
 
+            // User defined fractional features require special treatment.
+            // https://docs.microsoft.com/en-us/typography/opentype/spec/features_fj#tag-frac
+            if (this.HasFractions())
+            {
+                this.AssignFractionalFeatures(collection, index, count);
+            }
+
+            // Add user defined features.
+            foreach (Tag feature in this.featureTags)
+            {
+                // We've already dealt with fractional features.
+                if (feature != FracTag && feature != NumrTag && feature != DnomTag)
+                {
+                    this.AddFeature(collection, index, count, feature);
+                }
+            }
+        }
+
+        protected void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag feature, bool enabled = true)
+        {
+            if (this.kerningMode == KerningMode.None)
+            {
+                if (feature == KernTag || feature == VKernTag)
+                {
+                    return;
+                }
+            }
+
+            int end = index + count;
+            for (int i = index; i < end; i++)
+            {
+                collection.AddShapingFeature(i, new TagEntry(feature, enabled));
+            }
+
+            if (!this.stageFeatures.Contains(feature))
+            {
+                this.stageFeatures.Add(feature);
+            }
+        }
+
+        public override IEnumerable<Tag> GetShapingStageFeatures() => this.stageFeatures;
+
+        private void AssignFractionalFeatures(IGlyphShapingCollection collection, int index, int count)
+        {
             // Enable contextual fractions.
             for (int i = index; i < index + count; i++)
             {
@@ -166,36 +210,39 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     i = end - 1;
                 }
             }
-
-            // Add user defined features.
-            foreach (Tag feature in this.featureTags)
-            {
-                this.AddFeature(collection, index, count, feature);
-            }
         }
 
-        protected void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag feature, bool enabled = true)
+        private bool HasFractions()
         {
-            if (this.kerningMode == KerningMode.None)
+            bool hasNmr = false;
+            bool hasDnom = false;
+
+            // My kingdom for a binary search on IReadOnlyList
+            for (int i = 0; i < this.featureTags.Count; i++)
             {
-                if (feature == KernTag || feature == VKernTag)
+                Tag feature = this.featureTags[i];
+                if (feature == FracTag)
                 {
-                    return;
+                    return true;
+                }
+
+                if (feature == DnomTag)
+                {
+                    hasDnom = true;
+                }
+
+                if (feature == NumrTag)
+                {
+                    hasNmr = true;
+                }
+
+                if (hasDnom && hasNmr)
+                {
+                    return true;
                 }
             }
 
-            int end = index + count;
-            for (int i = index; i < end; i++)
-            {
-                collection.AddShapingFeature(i, new TagEntry(feature, enabled));
-            }
-
-            if (!this.stageFeatures.Contains(feature))
-            {
-                this.stageFeatures.Add(feature);
-            }
+            return false;
         }
-
-        public override IEnumerable<Tag> GetShapingStageFeatures() => this.stageFeatures;
     }
 }
