@@ -155,8 +155,6 @@ namespace SixLabors.Fonts
         public void Replace(int index, ReadOnlySpan<int> removalIndices, ushort glyphId, int ligatureId)
         {
             // Remove the glyphs at each index.
-            // TODO: We will have to offset these indices by the leading index of the collection
-            // that the current shaper is working against.
             int codePointCount = 0;
             for (int i = removalIndices.Length - 1; i >= 0; i--)
             {
@@ -173,6 +171,36 @@ namespace SixLabors.Fonts
             current.CodePointCount += codePointCount;
             current.GlyphIds = new[] { glyphId };
             current.LigatureId = ligatureId;
+            current.LigatureComponent = -1;
+            current.MarkAttachment = -1;
+            current.CursiveAttachment = -1;
+        }
+
+        /// <summary>
+        /// Performs a 1:1 replacement of a glyph id at the given position while removing a series of glyph ids.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to replace.</param>
+        /// <param name="count">The number of glyphs to remove.</param>
+        /// <param name="glyphId">The replacement glyph id.</param>
+        public void Replace(int index, int count, ushort glyphId)
+        {
+            // Remove the glyphs at each index.
+            int codePointCount = 0;
+            for (int i = count - 1; i >= 0; i--)
+            {
+                int match = index + i;
+                int matchOffset = this.offsets[match];
+                codePointCount += this.glyphs[matchOffset].CodePointCount;
+                this.glyphs.Remove(matchOffset);
+                this.offsets.RemoveAt(match);
+            }
+
+            // Assign our new id at the index.
+            int offset = this.offsets[index];
+            GlyphShapingData current = this.glyphs[offset];
+            current.CodePointCount += codePointCount;
+            current.GlyphIds = new[] { glyphId };
+            current.LigatureId = 0;
             current.LigatureComponent = -1;
             current.MarkAttachment = -1;
             current.CursiveAttachment = -1;
