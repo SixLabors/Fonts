@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using SixLabors.Fonts.Native;
 using Xunit;
 
@@ -13,6 +14,11 @@ namespace SixLabors.Fonts.Tests.Native
         [Fact]
         public void TestReset()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return;
+            }
+
             using var enumerator = new MacSystemFontsEnumerator();
             var fonts1 = new HashSet<string>(enumerator);
             Assert.NotEmpty(fonts1);
