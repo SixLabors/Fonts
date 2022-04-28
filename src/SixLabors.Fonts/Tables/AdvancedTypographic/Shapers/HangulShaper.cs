@@ -19,19 +19,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static readonly Tag TjmoTag = Tag.Parse("tjmo");
 
-        private const int HANGUL_BASE = 0xac00;
-        private const int HANGUL_END = 0xd7a4;
-        private const int HANGUL_COUNT = HANGUL_END - HANGUL_BASE + 1;
-        private const int L_BASE = 0x1100; // lead
-        private const int V_BASE = 0x1161; // vowel
-        private const int T_BASE = 0x11a7; // trail
-        private const int L_COUNT = 19;
-        private const int V_COUNT = 21;
-        private const int T_COUNT = 28;
-        private const int L_END = L_BASE + L_COUNT - 1;
-        private const int V_END = V_BASE + V_COUNT - 1;
-        private const int T_END = T_BASE + T_COUNT - 1;
-        private const int DOTTED_CIRCLE = 0x25cc;
+        private const int HangulBase = 0xac00;
+        private const int HangulEnd = 0xd7a4;
+        private const int HangulCount = HangulEnd - HangulBase + 1;
+        private const int LBase = 0x1100; // lead
+        private const int VBase = 0x1161; // vowel
+        private const int TBase = 0x11a7; // trail
+        private const int LCount = 19;
+        private const int VCount = 21;
+        private const int TCount = 28;
+        private const int LEnd = LBase + LCount - 1;
+        private const int VEnd = VBase + VCount - 1;
+        private const int TEnd = TBase + TCount - 1;
+        private const int DottedCircle = 0x25cc;
 
         // Character categories
         private const byte X = 0; // Other character
@@ -80,6 +80,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
             base.AssignFeatures(collection, index, count);
 
+            for (int i = index; i < count; i++)
+            {
+                // Uniscribe does not apply 'calt' for Hangul, and certain fonts
+                // (Noto Sans CJK, Source Sans Han, etc) apply all of jamo lookups
+                // in calt, which is not desirable.
+                collection.DisableShapingFeature(i, CaltTag);
+            }
+
             // Apply the state machine to map glyphs to features.
             if (collection is GlyphSubstitutionCollection substitutionCollection)
             {
@@ -87,6 +95,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 int state = 0;
                 for (int i = 0; i < count; i++)
                 {
+                    if (i + index >= substitutionCollection.Count)
+                    {
+                        break;
+                    }
+
                     GlyphShapingData data = substitutionCollection.GetGlyphShapingData(i + index);
                     CodePoint codePoint = data.CodePoint;
                     int type = GetSyllableType(codePoint);
@@ -98,7 +111,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         case Decompose:
 
                             // Decompose the composed syllable if it is not supported by the font.
-                            if (!data.TextRun.Font!.FontMetrics.TryGetGlyphId(codePoint, out ushort _))
+                            if (data.GlyphIds[0] == 0)
                             {
                                 i = this.DecomposeGlyph(substitutionCollection, data, i);
                             }
@@ -129,6 +142,34 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // GPos
                 // Simply loop and enable based on type.
                 // Glyph substitution has handled [de]composition.
+                for (int i = 0; i < count; i++)
+                {
+                    if (i + index >= collection.Count)
+                    {
+                        break;
+                    }
+
+                    GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                    CodePoint codePoint = data.CodePoint;
+                    switch (GetSyllableType(codePoint))
+                    {
+                        case L:
+                            collection.EnableShapingFeature(i, LjmoTag);
+                            break;
+                        case V:
+                            collection.EnableShapingFeature(i, VjmoTag);
+                            break;
+                        case T:
+                            collection.EnableShapingFeature(i, TjmoTag);
+                            break;
+                        case LV:
+                            collection.EnableShapingFeature(i, LjmoTag);
+                            collection.EnableShapingFeature(i, VjmoTag);
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         }
 
@@ -163,18 +204,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         private int DecomposeGlyph(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
         {
             // Decompose the syllable into a sequence of glyphs.
-            int s = data.CodePoint.Value - HANGUL_BASE;
-            int t = T_BASE + (s % T_COUNT);
-            s = (s / T_COUNT) | 0;
-            int l = (L_BASE + (s / V_COUNT)) | 0;
-            int v = V_BASE + (s % V_COUNT);
+            int s = data.CodePoint.Value - HangulBase;
+            int t = TBase + (s % TCount);
+            s = (s / TCount) | 0;
+            int l = (LBase + (s / VCount)) | 0;
+            int v = VBase + (s % VCount);
 
             FontMetrics metrics = data.TextRun.Font!.FontMetrics;
 
             // Don't decompose if all of the components are not available
             if (!metrics.TryGetGlyphId(new(l), out ushort ljmo) ||
                 !metrics.TryGetGlyphId(new(v), out ushort vjmo) ||
-                (!metrics.TryGetGlyphId(new(t), out ushort tjmo) && t != T_BASE))
+                (!metrics.TryGetGlyphId(new(t), out ushort tjmo) && t != TBase))
             {
                 return index;
             }
@@ -188,7 +229,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             collection.EnableShapingFeature(index, LjmoTag);
             collection.EnableShapingFeature(index, VjmoTag);
 
-            if (t <= T_BASE)
+            if (t <= TBase)
             {
                 Span<ushort> ii = stackalloc ushort[2];
                 ii[0] = ljmo;
@@ -221,44 +262,44 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
             // Figure out what type of syllable we're dealing with
             CodePoint lv = default;
-            GlyphShapingData? ljmo = null, vjmo = null, tjmo = null;
+            int ljmo = -1, vjmo = -1, tjmo = -1;
 
             if (prevType == LV && type == T)
             {
                 // <LV,T>
                 lv = prevCodePoint;
-                tjmo = data;
+                tjmo = index;
             }
             else
             {
                 if (type == V)
                 {
                     // <L,V>
-                    ljmo = prev;
-                    vjmo = data;
+                    ljmo = index - 1;
+                    vjmo = index;
                 }
                 else
                 {
                     // <L,V,T>
-                    ljmo = collection.GetGlyphShapingData(index - 2);
-                    vjmo = prev;
-                    tjmo = data;
+                    ljmo = index - 2;
+                    vjmo = index - 1;
+                    tjmo = index;
                 }
 
-                CodePoint l = ljmo.CodePoint;
-                CodePoint v = vjmo.CodePoint;
+                CodePoint l = collection.GetGlyphShapingData(ljmo).CodePoint;
+                CodePoint v = collection.GetGlyphShapingData(vjmo).CodePoint;
 
                 // Make sure L and V are combining characters
-                if (isCombiningL(l) && isCombiningV(v))
+                if (IsCombiningL(l) && IsCombiningV(v))
                 {
-                    lv = new CodePoint(HANGUL_BASE + ((((l.Value - L_BASE) * V_COUNT) + (v.Value - V_BASE)) * T_COUNT));
+                    lv = new CodePoint(HangulBase + ((((l.Value - LBase) * VCount) + (v.Value - VBase)) * TCount));
                 }
             }
 
-            CodePoint t = tjmo?.CodePoint ?? new CodePoint(T_BASE);
-            if ((lv != default) && (t.Value == T_BASE || isCombiningT(t)))
+            CodePoint t = tjmo >= 0 ? collection.GetGlyphShapingData(tjmo).CodePoint : new CodePoint(TBase);
+            if ((lv != default) && (t.Value == TBase || IsCombiningT(t)))
             {
-                CodePoint s = new(lv.Value + (t.Value - T_BASE));
+                CodePoint s = new(lv.Value + (t.Value - TBase));
 
                 // Replace with a composed glyph if supported by the font,
                 // otherwise apply the proper OpenType features to each component.
@@ -267,25 +308,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 {
                     int del = prevType == V ? 3 : 2;
                     int idx = index - del + 1;
-                    collection.Replace(idx, del, id);
+                    collection.Replace(idx, del - 1, id);
                     return idx;
                 }
             }
 
             // Didn't compose (either a non-combining component or unsupported by font).
-            if (ljmo != null)
+            if (ljmo >= 0)
             {
-                collection.EnableShapingFeature(ljmo.GlyphIds[0], LjmoTag);
+                collection.EnableShapingFeature(ljmo, LjmoTag);
             }
 
-            if (vjmo != null)
+            if (vjmo >= 0)
             {
-                collection.EnableShapingFeature(vjmo.GlyphIds[0], VjmoTag);
+                collection.EnableShapingFeature(vjmo, VjmoTag);
             }
 
-            if (tjmo != null)
+            if (tjmo >= 0)
             {
-                collection.EnableShapingFeature(tjmo.GlyphIds[0], TjmoTag);
+                collection.EnableShapingFeature(tjmo, TjmoTag);
             }
 
             if (prevType == LV)
@@ -331,10 +372,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             return i;
         }
 
-        private static bool isCombiningL(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, L_BASE, L_END);
+        private static bool IsCombiningL(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, LBase, LEnd);
 
-        private static bool isCombiningV(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, V_BASE, V_END);
+        private static bool IsCombiningV(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, VBase, VEnd);
 
-        private static bool isCombiningT(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, T_BASE + 1, T_END);
+        private static bool IsCombiningT(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, TBase + 1, TEnd);
     }
 }

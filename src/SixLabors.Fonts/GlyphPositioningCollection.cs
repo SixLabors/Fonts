@@ -72,6 +72,19 @@ namespace SixLabors.Fonts
             }
         }
 
+        /// <inheritdoc />
+        public void DisableShapingFeature(int index, Tag feature)
+        {
+            foreach (TagEntry tagEntry in this.glyphs[index].Features)
+            {
+                if (tagEntry.Tag == feature)
+                {
+                    tagEntry.Enabled = false;
+                    break;
+                }
+            }
+        }
+
         /// <summary>
         /// Gets the glyph metrics at the given codepoint offset.
         /// </summary>

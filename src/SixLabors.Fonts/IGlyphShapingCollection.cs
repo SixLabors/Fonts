@@ -53,5 +53,12 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the element.</param>
         /// <param name="feature">The feature to enable.</param>
         void EnableShapingFeature(int index, Tag feature);
+
+        /// <summary>
+        /// Disables a previously added shaping feature.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element.</param>
+        /// <param name="feature">The feature to disable.</param>
+        void DisableShapingFeature(int index, Tag feature);
     }
 }

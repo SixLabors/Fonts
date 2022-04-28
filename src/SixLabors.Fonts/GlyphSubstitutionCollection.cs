@@ -83,6 +83,19 @@ namespace SixLabors.Fonts
             }
         }
 
+        /// <inheritdoc />
+        public void DisableShapingFeature(int index, Tag feature)
+        {
+            foreach (TagEntry tagEntry in this.glyphs[index].Data.Features)
+            {
+                if (tagEntry.Tag == feature)
+                {
+                    tagEntry.Enabled = false;
+                    break;
+                }
+            }
+        }
+
         /// <summary>
         /// Adds the glyph id and the codepoint it represents to the collection.
         /// </summary>
@@ -99,9 +112,33 @@ namespace SixLabors.Fonts
                 GlyphIds = new[] { glyphId },
             }));
 
-        // TODO: This can be made specific to the Hangul shaper.
+        /// <summary>
+        /// Moves the specified glyph to the specified position.
+        /// </summary>
+        /// <param name="fromIndex">The index to move from.</param>
+        /// <param name="toIndex">The index to move to.</param>
         public void MoveGlyph(int fromIndex, int toIndex)
-            => this.glyphs[toIndex].Data = this.glyphs[fromIndex].Data;
+        {
+            GlyphShapingData data = this.GetGlyphShapingData(fromIndex);
+            if (fromIndex > toIndex)
+            {
+                int idx = fromIndex;
+                while (idx > toIndex)
+                {
+                    this.glyphs[idx].Data = this.glyphs[idx - 1].Data;
+                }
+            }
+            else
+            {
+                int idx = toIndex;
+                while (idx > fromIndex)
+                {
+                    this.glyphs[idx - 1].Data = this.glyphs[idx].Data;
+                }
+            }
+
+            this.glyphs[toIndex].Data = data;
+        }
 
         /// <summary>
         /// Removes all elements from the collection.

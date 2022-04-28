@@ -237,6 +237,12 @@ namespace SixLabors.Fonts
         /// <exception cref="NotSupportedException">Too many control points</exception>
         internal void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, TextOptions options)
         {
+            // https://www.unicode.org/faq/unsup_char.html
+            if (ShouldSkipGlyphRendering(this.CodePoint))
+            {
+                return;
+            }
+
             float dpi = options.Dpi;
             location *= dpi;
             float scaledPPEM = dpi * pointSize;
@@ -255,7 +261,7 @@ namespace SixLabors.Fonts
 
             if (surface.BeginGlyph(box, parameters))
             {
-                if (!CodePoint.IsWhiteSpace(this.CodePoint))
+                if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
                 {
                     if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
                     {
@@ -450,6 +456,38 @@ namespace SixLabors.Fonts
             }
 
             surface.EndGlyph();
+        }
+
+        private static bool ShouldSkipGlyphRendering(CodePoint codePoint)
+        {
+            uint value = (uint)codePoint.Value;
+            return UnicodeUtility.IsDefaultIgnorableCodePoint(value) && !ShouldRenderWhiteSpaceOnly(codePoint);
+        }
+
+        private static bool ShouldRenderWhiteSpaceOnly(CodePoint codePoint)
+        {
+            if (CodePoint.IsWhiteSpace(codePoint))
+            {
+                return true;
+            }
+
+            // Note: While U+115F, U+1160, U+3164 and U+FFA0 are Default_Ignorable,
+            // we do NOT want to hide them, as the way Uniscribe has implemented them
+            // is with regular spacing glyphs, and that's the way fonts are made to work.
+            // As such, we make exceptions for those four.
+            // Also ignoring U+1BCA0..1BCA3. https://github.com/harfbuzz/harfbuzz/issues/503
+            uint value = (uint)codePoint.Value;
+            if (value is 0x115F or 0x1160 or 0x3164 or 0xFFA0)
+            {
+                return true;
+            }
+
+            if (UnicodeUtility.IsInRangeInclusive(value, 0x1BCA0, 0x1BCA3))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private static void AlignToGrid(ref Vector2 point)
