@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Unicode;
@@ -458,12 +459,14 @@ namespace SixLabors.Fonts
             surface.EndGlyph();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool ShouldSkipGlyphRendering(CodePoint codePoint)
         {
             uint value = (uint)codePoint.Value;
             return UnicodeUtility.IsDefaultIgnorableCodePoint(value) && !ShouldRenderWhiteSpaceOnly(codePoint);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool ShouldRenderWhiteSpaceOnly(CodePoint codePoint)
         {
             if (CodePoint.IsWhiteSpace(codePoint))

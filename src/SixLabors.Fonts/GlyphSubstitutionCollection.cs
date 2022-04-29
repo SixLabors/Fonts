@@ -126,6 +126,7 @@ namespace SixLabors.Fonts
                 while (idx > toIndex)
                 {
                     this.glyphs[idx].Data = this.glyphs[idx - 1].Data;
+                    idx--;
                 }
             }
             else
@@ -134,6 +135,7 @@ namespace SixLabors.Fonts
                 while (idx > fromIndex)
                 {
                     this.glyphs[idx - 1].Data = this.glyphs[idx].Data;
+                    idx--;
                 }
             }
 
@@ -192,32 +194,23 @@ namespace SixLabors.Fonts
         /// <param name="ligatureId">The ligature id.</param>
         public void Replace(int index, ReadOnlySpan<int> removalIndices, ushort glyphId, int ligatureId)
         {
-            if (removalIndices.Length > 0)
+            // Remove the glyphs at each index.
+            int codePointCount = 0;
+            for (int i = removalIndices.Length - 1; i >= 0; i--)
             {
-                // Remove the glyphs at each index.
-                int codePointCount = 0;
-                for (int i = removalIndices.Length - 1; i >= 0; i--)
-                {
-                    int match = removalIndices[i];
-                    codePointCount += this.glyphs[match].Data.CodePointCount;
-                    this.glyphs.RemoveAt(match);
-                }
+                int match = removalIndices[i];
+                codePointCount += this.glyphs[match].Data.CodePointCount;
+                this.glyphs.RemoveAt(match);
+            }
 
-                // Assign our new id at the index.
-                GlyphShapingData current = this.glyphs[index].Data;
-                current.CodePointCount += codePointCount;
-                current.GlyphIds = new[] { glyphId };
-                current.LigatureId = ligatureId;
-                current.LigatureComponent = -1;
-                current.MarkAttachment = -1;
-                current.CursiveAttachment = -1;
-            }
-            else
-            {
-                // Spec disallows removal of glyphs in this manner but it's common enough practice to allow it.
-                // https://github.com/MicrosoftDocs/typography-issues/issues/673
-                this.glyphs.RemoveAt(index);
-            }
+            // Assign our new id at the index.
+            GlyphShapingData current = this.glyphs[index].Data;
+            current.CodePointCount += codePointCount;
+            current.GlyphIds = new[] { glyphId };
+            current.LigatureId = ligatureId;
+            current.LigatureComponent = -1;
+            current.MarkAttachment = -1;
+            current.CursiveAttachment = -1;
         }
 
         /// <summary>
@@ -228,32 +221,23 @@ namespace SixLabors.Fonts
         /// <param name="glyphId">The replacement glyph id.</param>
         public void Replace(int index, int count, ushort glyphId)
         {
-            if (count > 0)
+            // Remove the glyphs at each index.
+            int codePointCount = 0;
+            for (int i = count - 1; i >= 0; i--)
             {
-                // Remove the glyphs at each index.
-                int codePointCount = 0;
-                for (int i = count - 1; i >= 0; i--)
-                {
-                    int match = index + i;
-                    codePointCount += this.glyphs[match].Data.CodePointCount;
-                    this.glyphs.RemoveAt(match);
-                }
+                int match = index + i;
+                codePointCount += this.glyphs[match].Data.CodePointCount;
+                this.glyphs.RemoveAt(match);
+            }
 
-                // Assign our new id at the index.
-                GlyphShapingData current = this.glyphs[index].Data;
-                current.CodePointCount += codePointCount;
-                current.GlyphIds = new[] { glyphId };
-                current.LigatureId = 0;
-                current.LigatureComponent = -1;
-                current.MarkAttachment = -1;
-                current.CursiveAttachment = -1;
-            }
-            else
-            {
-                // Spec disallows removal of glyphs in this manner but it's common enough practice to allow it.
-                // https://github.com/MicrosoftDocs/typography-issues/issues/673
-                this.glyphs.RemoveAt(index);
-            }
+            // Assign our new id at the index.
+            GlyphShapingData current = this.glyphs[index].Data;
+            current.CodePointCount += codePointCount;
+            current.GlyphIds = new[] { glyphId };
+            current.LigatureId = 0;
+            current.LigatureComponent = -1;
+            current.MarkAttachment = -1;
+            current.CursiveAttachment = -1;
         }
 
         /// <summary>
@@ -261,16 +245,26 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphIds">The collection of replacement glyph ids.</param>
-        public void Replace(int index, ReadOnlySpan<ushort> glyphIds)
+        /// <param name="offset">Whether individual glyph in the <see cref="GlyphShapingData.GlyphIds"/> collection should be offset from the preceding glyph.</param>
+        public void Replace(int index, ReadOnlySpan<ushort> glyphIds, bool offset)
         {
-            // TODO:
-            // Features most likely need to be bound to each glyph index.
-            // TODO: FontKit stores the ids in sequence with increasing ligature component values.
-            GlyphShapingData current = this.glyphs[index].Data;
-            current.GlyphIds = glyphIds.ToArray();
-            current.LigatureComponent = 0;
-            current.MarkAttachment = -1;
-            current.CursiveAttachment = -1;
+            if (glyphIds.Length > 0)
+            {
+                // TODO: Features most likely need to be bound to each glyph index.
+                // TODO: FontKit stores the ids in sequence with increasing ligature component values.
+                GlyphShapingData current = this.glyphs[index].Data;
+                current.GlyphIds = glyphIds.ToArray();
+                current.LigatureComponent = 0;
+                current.MarkAttachment = -1;
+                current.CursiveAttachment = -1;
+                current.OffsetGlyphs = offset;
+            }
+            else
+            {
+                // Spec disallows removal of glyphs in this manner but it's common enough practice to allow it.
+                // https://github.com/MicrosoftDocs/typography-issues/issues/673
+                this.glyphs.RemoveAt(index);
+            }
         }
 
         private class OffsetGlyphDataPair

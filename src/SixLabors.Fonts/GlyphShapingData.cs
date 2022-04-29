@@ -36,6 +36,7 @@ namespace SixLabors.Fonts
             this.LigatureComponent = data.LigatureComponent;
             this.MarkAttachment = data.MarkAttachment;
             this.CursiveAttachment = data.CursiveAttachment;
+            this.OffsetGlyphs = data.OffsetGlyphs;
 
             if (!clearFeatures)
             {
@@ -100,8 +101,13 @@ namespace SixLabors.Fonts
         /// </summary>
         public GlyphShapingBounds Bounds { get; set; } = new(0, 0, 0, 0);
 
+        /// <summary>
+        /// Gets or sets a value indicating whether individual glyph in the <see cref="GlyphIds"/> collection should be offset from the preceding glyph.
+        /// </summary>
+        public bool OffsetGlyphs { get; set; }
+
         private string DebuggerDisplay
             => FormattableString
-            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : [{string.Join(",", this.GlyphIds)}]");
+            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : [{string.Join(",", this.GlyphIds)}] : {this.OffsetGlyphs}");
     }
 }

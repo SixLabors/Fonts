@@ -20,8 +20,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         private static readonly Tag TjmoTag = Tag.Parse("tjmo");
 
         private const int HangulBase = 0xac00;
-        private const int HangulEnd = 0xd7a4;
-        private const int HangulCount = HangulEnd - HangulBase + 1;
         private const int LBase = 0x1100; // lead
         private const int VBase = 0x1161; // vowel
         private const int TBase = 0x11a7; // trail
@@ -131,8 +129,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                             break;
 
                         case Invalid:
-                            // Tone mark has no valid syllable to attach to, so insert a dotted circle
-                            i = this.InsertDottedCircle(data, i);
+
+                            // Tone mark has no valid syllable to attach to, so insert a dotted circle.
+                            this.InsertDottedCircle(substitutionCollection, data, i);
                             break;
                     }
                 }
@@ -165,6 +164,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         case LV:
                             collection.EnableShapingFeature(i, LjmoTag);
                             collection.EnableShapingFeature(i, VjmoTag);
+                            break;
+                        case LVT:
+                            collection.EnableShapingFeature(i, LjmoTag);
+                            collection.EnableShapingFeature(i, VjmoTag);
+                            collection.EnableShapingFeature(i, TjmoTag);
                             break;
                         default:
                             break;
@@ -235,7 +239,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 ii[0] = ljmo;
                 ii[1] = vjmo;
 
-                collection.Replace(index, ii);
+                collection.Replace(index, ii, true);
                 return index;
             }
 
@@ -245,7 +249,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             iii[1] = vjmo;
             iii[2] = tjmo;
 
-            collection.Replace(index, iii);
+            collection.Replace(index, iii, true);
             return index;
         }
 
@@ -335,17 +339,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Either the T was non-combining, or the LVT glyph wasn't supported.
                 // Decompose the glyph again and apply OT features.
                 data = collection.GetGlyphShapingData(index - 1);
-                this.DecomposeGlyph(collection, data, index - 1);
+                return this.DecomposeGlyph(collection, data, index - 1);
             }
 
             return index;
         }
 
-        private int ReOrderToneMark(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
+        private void ReOrderToneMark(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
         {
             if (index == 0)
             {
-                return index;
+                return;
             }
 
             // Move tone mark to the beginning of the previous syllable, unless it is zero width
@@ -355,21 +359,46 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             {
                 if (gm.Width == 0)
                 {
-                    return index;
+                    return;
                 }
             }
 
             GlyphShapingData prev = collection.GetGlyphShapingData(index - 1);
             int len = GetSyllableLength(prev.CodePoint);
             collection.MoveGlyph(index, index - len);
-            throw new NotImplementedException();
         }
 
-        private int InsertDottedCircle(GlyphShapingData data, int i)
+        private void InsertDottedCircle(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
         {
-            // TODO: Implement.
-            // We need to find a way to do this that doesn't require increasing the length of the collection.
-            return i;
+            bool after = false;
+            FontMetrics metrics = data.TextRun.Font!.FontMetrics;
+
+            if (metrics.TryGetGlyphId(new(DottedCircle), out ushort id))
+            {
+                foreach (GlyphMetrics gm in metrics.GetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport))
+                {
+                    if (gm.Width != 0)
+                    {
+                        after = true;
+                        break;
+                    }
+                }
+
+                // If the tone mark is zero width, insert the dotted circle before, otherwise after
+                Span<ushort> glyphs = stackalloc ushort[2];
+                if (after)
+                {
+                    glyphs[0] = data.GlyphIds[0];
+                    glyphs[1] = id;
+                }
+                else
+                {
+                    glyphs[0] = id;
+                    glyphs[1] = data.GlyphIds[0];
+                }
+
+                collection.Replace(index, glyphs, true);
+            }
         }
 
         private static bool IsCombiningL(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, LBase, LEnd);

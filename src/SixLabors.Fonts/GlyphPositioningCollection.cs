@@ -145,6 +145,8 @@ namespace SixLabors.Fonts
                 ushort[] glyphIds = data.GlyphIds;
                 var m = new List<GlyphMetrics>(glyphIds.Length);
 
+                ushort shiftXY = 0;
+                bool doShift = data.OffsetGlyphs;
                 foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
@@ -159,9 +161,25 @@ namespace SixLabors.Fonts
                             break;
                         }
 
+                        // Clone and offset the glyph based on it's position in the glyphId array.
                         // We slip the text run in here while we clone so we have
                         // it available to the renderer.
-                        m.Add(GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint));
+                        var clone = GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint);
+                        if (doShift)
+                        {
+                            if (!this.IsVerticalLayoutMode)
+                            {
+                                clone.ApplyOffset((short)shiftXY, 0);
+                                shiftXY += clone.AdvanceWidth;
+                            }
+                            else
+                            {
+                                clone.ApplyOffset(0, (short)shiftXY);
+                                shiftXY += clone.AdvanceHeight;
+                            }
+                        }
+
+                        m.Add(clone);
                     }
                 }
 
@@ -205,6 +223,8 @@ namespace SixLabors.Fonts
                 ushort[] glyphIds = data.GlyphIds;
                 var m = new List<GlyphMetrics>(glyphIds.Length);
 
+                ushort shiftXY = 0;
+                bool doShift = data.OffsetGlyphs;
                 foreach (ushort id in glyphIds)
                 {
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
@@ -216,9 +236,25 @@ namespace SixLabors.Fonts
                             hasFallBacks = true;
                         }
 
+                        // Clone and offset the glyph based on it's position in the glyphId array.
                         // We slip the text run in here while we clone so we have
                         // it available to the renderer.
-                        m.Add(GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint));
+                        var clone = GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint);
+                        if (doShift)
+                        {
+                            if (!this.IsVerticalLayoutMode)
+                            {
+                                clone.ApplyOffset((short)shiftXY, 0);
+                                shiftXY += clone.AdvanceWidth;
+                            }
+                            else
+                            {
+                                clone.ApplyOffset(0, (short)shiftXY);
+                                shiftXY += clone.AdvanceHeight;
+                            }
+                        }
+
+                        m.Add(clone);
                     }
                 }
 
