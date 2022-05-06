@@ -6,7 +6,7 @@ using System.Diagnostics;
 namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     [DebuggerDisplay("Tag: {Tag}, Enabled: {Enabled}")]
-    internal class TagEntry
+    internal struct TagEntry
     {
         public TagEntry(Tag tag, bool enabled)
         {

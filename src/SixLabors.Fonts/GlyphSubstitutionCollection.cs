@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
@@ -47,11 +48,15 @@ namespace SixLabors.Fonts
         public int LigatureId { get; set; } = 1;
 
         /// <inheritdoc />
-        public ReadOnlySpan<ushort> this[int index] => this.glyphs[index].Data.GlyphIds;
+        public ushort this[int index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.glyphs[index].Data.GlyphId;
+        }
 
         /// <inheritdoc />
-        public GlyphShapingData GetGlyphShapingData(int index)
-            => this.glyphs[index].Data;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index].Data;
 
         /// <summary>
         /// Gets the shaping data at the specified position.
@@ -73,11 +78,14 @@ namespace SixLabors.Fonts
         /// <inheritdoc />
         public void EnableShapingFeature(int index, Tag feature)
         {
-            foreach (TagEntry tagEntry in this.glyphs[index].Data.Features)
+            List<TagEntry> features = this.glyphs[index].Data.Features;
+            for (int i = 0; i < features.Count; i++)
             {
+                TagEntry tagEntry = features[i];
                 if (tagEntry.Tag == feature)
                 {
                     tagEntry.Enabled = true;
+                    features[i] = tagEntry;
                     break;
                 }
             }
@@ -86,11 +94,14 @@ namespace SixLabors.Fonts
         /// <inheritdoc />
         public void DisableShapingFeature(int index, Tag feature)
         {
-            foreach (TagEntry tagEntry in this.glyphs[index].Data.Features)
+            List<TagEntry> features = this.glyphs[index].Data.Features;
+            for (int i = 0; i < features.Count; i++)
             {
+                TagEntry tagEntry = features[i];
                 if (tagEntry.Tag == feature)
                 {
                     tagEntry.Enabled = false;
+                    features[i] = tagEntry;
                     break;
                 }
             }
@@ -109,7 +120,7 @@ namespace SixLabors.Fonts
             {
                 CodePoint = codePoint,
                 Direction = direction,
-                GlyphIds = new[] { glyphId },
+                GlyphId = glyphId,
             }));
 
         /// <summary>
@@ -164,17 +175,24 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the <see cref="GlyphSubstitutionCollection"/> contains glyph ids
         /// for the specified offset; otherwise, <see langword="false"/>.
         /// </returns>
-        public bool TryGetGlyphShapingDataAtOffset(int offset, [NotNullWhen(true)] out GlyphShapingData? data)
+        public bool TryGetGlyphShapingDataAtOffset(int offset, [NotNullWhen(true)] out IReadOnlyList<GlyphShapingData>? data)
         {
-            OffsetGlyphDataPair? pair = this.glyphs.Find(x => x.Offset == offset);
-            if (pair is null)
+            List<GlyphShapingData> match = new();
+            for (int i = 0; i < this.glyphs.Count; i++)
             {
-                data = null;
-                return false;
+                if (this.glyphs[i].Offset == offset)
+                {
+                    match.Add(this.glyphs[i].Data);
+                }
+                else if (match.Count > 0)
+                {
+                    // Offsets, though non-sequential, are sorted, so we can stop searching.
+                    break;
+                }
             }
 
-            data = pair.Data;
-            return true;
+            data = match;
+            return match.Count > 0;
         }
 
         /// <summary>
@@ -183,7 +201,7 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphId">The replacement glyph id.</param>
         public void Replace(int index, ushort glyphId)
-            => this.glyphs[index].Data.GlyphIds = new[] { glyphId };
+            => this.glyphs[index].Data.GlyphId = glyphId;
 
         /// <summary>
         /// Performs a 1:1 replacement of a glyph id at the given position while removing a series of glyph ids at the given positions within the sequence.
@@ -206,7 +224,7 @@ namespace SixLabors.Fonts
             // Assign our new id at the index.
             GlyphShapingData current = this.glyphs[index].Data;
             current.CodePointCount += codePointCount;
-            current.GlyphIds = new[] { glyphId };
+            current.GlyphId = glyphId;
             current.LigatureId = ligatureId;
             current.LigatureComponent = -1;
             current.MarkAttachment = -1;
@@ -223,7 +241,7 @@ namespace SixLabors.Fonts
         {
             // Remove the glyphs at each index.
             int codePointCount = 0;
-            for (int i = count - 1; i >= 0; i--)
+            for (int i = count; i > 0; i--)
             {
                 int match = index + i;
                 codePointCount += this.glyphs[match].Data.CodePointCount;
@@ -233,7 +251,7 @@ namespace SixLabors.Fonts
             // Assign our new id at the index.
             GlyphShapingData current = this.glyphs[index].Data;
             current.CodePointCount += codePointCount;
-            current.GlyphIds = new[] { glyphId };
+            current.GlyphId = glyphId;
             current.LigatureId = 0;
             current.LigatureComponent = -1;
             current.MarkAttachment = -1;
@@ -245,19 +263,34 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphIds">The collection of replacement glyph ids.</param>
-        /// <param name="offset">Whether individual glyph in the <see cref="GlyphShapingData.GlyphIds"/> collection should be offset from the preceding glyph.</param>
+        /// <param name="offset">Whether the additional glyphs should be positioned at the advance of the preceding glyph at the same codepoint offset.</param>
         public void Replace(int index, ReadOnlySpan<ushort> glyphIds, bool offset)
         {
             if (glyphIds.Length > 0)
             {
-                // TODO: Features most likely need to be bound to each glyph index.
-                // TODO: FontKit stores the ids in sequence with increasing ligature component values.
-                GlyphShapingData current = this.glyphs[index].Data;
-                current.GlyphIds = glyphIds.ToArray();
+                OffsetGlyphDataPair pair = this.glyphs[index];
+                GlyphShapingData current = pair.Data;
+                current.GlyphId = glyphIds[0];
                 current.LigatureComponent = 0;
                 current.MarkAttachment = -1;
                 current.CursiveAttachment = -1;
-                current.OffsetGlyphs = offset;
+                current.OffsetGlyph = offset;
+
+                // Add additional glyphs to the end of the sequence.
+                if (glyphIds.Length > 1)
+                {
+                    glyphIds = glyphIds.Slice(1);
+                    for (int i = 0; i < glyphIds.Length; i++)
+                    {
+                        GlyphShapingData data = new(current, false);
+                        data.GlyphId = glyphIds[i];
+                        data.LigatureComponent = i + 1;
+
+                        // TODO: We may have to shift the offset of the following glyphs.
+                        int o = offset ? pair.Offset + i + 1 : pair.Offset;
+                        this.glyphs.Insert(++index, new(o, data));
+                    }
+                }
             }
             else
             {

@@ -88,14 +88,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 // Implements Cursive Attachment Positioning Subtable:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
-                ushort glyphId = collection[index][0];
+                ushort glyphId = collection[index];
                 if (glyphId == 0)
                 {
                     return false;
                 }
 
                 ushort nextIndex = (ushort)(index + 1);
-                ushort nextGlyphId = collection[nextIndex][0];
+                ushort nextGlyphId = collection[nextIndex];
                 if (nextGlyphId == 0)
                 {
                     return false;
@@ -180,9 +180,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 int yOffset = entryXY.YCoordinate - exitXY.YCoordinate;
                 if (this.LookupFlags.HasFlag(LookupFlags.RightToLeft))
                 {
-                    int temp = child;
-                    child = parent;
-                    parent = temp;
+                    (parent, child) = (child, parent);
 
                     xOffset = -xOffset;
                     yOffset = -yOffset;

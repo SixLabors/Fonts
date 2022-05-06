@@ -20,6 +20,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         private static readonly Tag TjmoTag = Tag.Parse("tjmo");
 
         private const int HangulBase = 0xac00;
+        private const int HangulEnd = 0xd7a4;
+        private const int HangulCount = HangulEnd - HangulBase + 1;
         private const int LBase = 0x1100; // lead
         private const int VBase = 0x1161; // vowel
         private const int TBase = 0x11a7; // trail
@@ -109,7 +111,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         case Decompose:
 
                             // Decompose the composed syllable if it is not supported by the font.
-                            if (data.GlyphIds[0] == 0)
+                            if (data.GlyphId == 0)
                             {
                                 i = this.DecomposeGlyph(substitutionCollection, data, i);
                             }
@@ -224,15 +226,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return index;
             }
 
-            // TODO: Check the insertion here.
-            // We likely need to add the features separately to each of the newly
-            // embedded glyph ids.
-            //
             // Replace the current glyph with decomposed L, V, and T glyphs,
             // and apply the proper OpenType features to each component.
-            collection.EnableShapingFeature(index, LjmoTag);
-            collection.EnableShapingFeature(index, VjmoTag);
-
             if (t <= TBase)
             {
                 Span<ushort> ii = stackalloc ushort[2];
@@ -240,17 +235,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 ii[1] = vjmo;
 
                 collection.Replace(index, ii, true);
-                return index;
+                collection.EnableShapingFeature(index, LjmoTag);
+                collection.EnableShapingFeature(index + 1, VjmoTag);
+                return index + 1;
             }
 
-            collection.EnableShapingFeature(index, TjmoTag);
             Span<ushort> iii = stackalloc ushort[3];
             iii[0] = ljmo;
             iii[1] = vjmo;
             iii[2] = tjmo;
 
             collection.Replace(index, iii, true);
-            return index;
+            collection.EnableShapingFeature(index, LjmoTag);
+            collection.EnableShapingFeature(index + 1, VjmoTag);
+            collection.EnableShapingFeature(index + 2, TjmoTag);
+            return index + 2;
         }
 
         private int ComposeGlyph(GlyphSubstitutionCollection collection, GlyphShapingData data, int index, int type)
@@ -313,6 +312,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     int del = prevType == V ? 3 : 2;
                     int idx = index - del + 1;
                     collection.Replace(idx, del - 1, id);
+                    collection.GetGlyphShapingData(idx).CodePoint = s;
                     return idx;
                 }
             }
@@ -339,7 +339,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Either the T was non-combining, or the LVT glyph wasn't supported.
                 // Decompose the glyph again and apply OT features.
                 data = collection.GetGlyphShapingData(index - 1);
-                return this.DecomposeGlyph(collection, data, index - 1);
+                this.DecomposeGlyph(collection, data, index - 1);
+                return index + 1;
             }
 
             return index;
@@ -368,7 +369,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             collection.MoveGlyph(index, index - len);
         }
 
-        private void InsertDottedCircle(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
+        private int InsertDottedCircle(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
         {
             bool after = false;
             FontMetrics metrics = data.TextRun.Font!.FontMetrics;
@@ -388,17 +389,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 Span<ushort> glyphs = stackalloc ushort[2];
                 if (after)
                 {
-                    glyphs[0] = data.GlyphIds[0];
+                    glyphs[0] = data.GlyphId;
                     glyphs[1] = id;
                 }
                 else
                 {
                     glyphs[0] = id;
-                    glyphs[1] = data.GlyphIds[0];
+                    glyphs[1] = data.GlyphId;
                 }
 
                 collection.Replace(index, glyphs, true);
+                return index + 1;
             }
+
+            return index;
         }
 
         private static bool IsCombiningL(CodePoint code) => UnicodeUtility.IsInRangeInclusive((uint)code.Value, LBase, LEnd);

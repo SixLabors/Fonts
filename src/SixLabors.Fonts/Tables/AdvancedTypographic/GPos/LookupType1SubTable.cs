@@ -74,7 +74,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             ushort index,
             int count)
         {
-            ushort glyphId = collection[index][0];
+            ushort glyphId = collection[index];
             if (glyphId == 0)
             {
                 return false;
@@ -145,7 +145,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             ushort index,
             int count)
         {
-            ushort glyphId = collection[index][0];
+            ushort glyphId = collection[index];
             if (glyphId == 0)
             {
                 return false;

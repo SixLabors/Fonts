@@ -713,7 +713,7 @@ namespace SixLabors.Fonts
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
-                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out GlyphMetrics[]? metrics))
+                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out IReadOnlyList<GlyphMetrics>? metrics))
                     {
                         // Codepoint was skipped during original enumeration.
                         codePointIndex++;
@@ -736,7 +736,7 @@ namespace SixLabors.Fonts
                     {
                         glyphAdvance *= options.TabWidth;
                     }
-                    else if (metrics.Length == 1 && (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthNonJoiner(codePoint)))
+                    else if (metrics.Count == 1 && (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthNonJoiner(codePoint)))
                     {
                         // The zero-width joiner characters should be ignored when determining word or
                         // line break boundaries so are safe to skip here. Any existing instances are the result of font error
@@ -749,7 +749,7 @@ namespace SixLabors.Fonts
                         // Standard text. Use the largest advance for the metrics.
                         if (isHorizontal)
                         {
-                            for (int i = 1; i < metrics.Length; i++)
+                            for (int i = 1; i < metrics.Count; i++)
                             {
                                 float a = metrics[i].AdvanceWidth;
                                 if (a > glyphAdvance)
@@ -760,7 +760,7 @@ namespace SixLabors.Fonts
                         }
                         else
                         {
-                            for (int i = 1; i < metrics.Length; i++)
+                            for (int i = 1; i < metrics.Count; i++)
                             {
                                 float a = metrics[i].AdvanceHeight;
                                 if (a > glyphAdvance)
@@ -959,7 +959,7 @@ namespace SixLabors.Fonts
             public GlyphLayoutData this[int index] => this.data[index];
 
             public void Add(
-                GlyphMetrics[] metrics,
+                IReadOnlyList<GlyphMetrics> metrics,
                 float pointSize,
                 float scaledAdvance,
                 float scaledLineHeight,
@@ -1213,7 +1213,7 @@ namespace SixLabors.Fonts
             internal readonly struct GlyphLayoutData
             {
                 public GlyphLayoutData(
-                    GlyphMetrics[] metrics,
+                    IReadOnlyList<GlyphMetrics> metrics,
                     float pointSize,
                     float scaledAdvance,
                     float scaledLineHeight,
@@ -1238,7 +1238,7 @@ namespace SixLabors.Fonts
 
                 public CodePoint CodePoint => this.Metrics[0].CodePoint;
 
-                public GlyphMetrics[] Metrics { get; }
+                public IReadOnlyList<GlyphMetrics> Metrics { get; }
 
                 public float PointSize { get; }
 

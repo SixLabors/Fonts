@@ -27,24 +27,29 @@ namespace SixLabors.Fonts
         /// <param name="clearFeatures">Whether to clear features.</param>
         public GlyphShapingData(GlyphShapingData data, bool clearFeatures = false)
         {
+            this.GlyphId = data.GlyphId;
             this.CodePoint = data.CodePoint;
             this.CodePointCount = data.CodePointCount;
             this.Direction = data.Direction;
             this.TextRun = data.TextRun;
-            this.GlyphIds = data.GlyphIds;
             this.LigatureId = data.LigatureId;
             this.LigatureComponent = data.LigatureComponent;
             this.MarkAttachment = data.MarkAttachment;
             this.CursiveAttachment = data.CursiveAttachment;
-            this.OffsetGlyphs = data.OffsetGlyphs;
+            this.OffsetGlyph = data.OffsetGlyph;
 
             if (!clearFeatures)
             {
-                this.Features = data.Features;
+                this.Features = new(data.Features);
             }
 
             this.Bounds = data.Bounds;
         }
+
+        /// <summary>
+        /// Gets or sets the glyph id.
+        /// </summary>
+        public ushort GlyphId { get; set; }
 
         /// <summary>
         /// Gets or sets the leading codepoint.
@@ -65,11 +70,6 @@ namespace SixLabors.Fonts
         /// Gets or sets the text run this glyph belongs to.
         /// </summary>
         public TextRun TextRun { get; set; }
-
-        /// <summary>
-        /// Gets or sets the collection of glyph ids.
-        /// </summary>
-        public ushort[] GlyphIds { get; set; } = Array.Empty<ushort>();
 
         /// <summary>
         /// Gets or sets the id of any ligature this glyph is a member of.
@@ -102,12 +102,12 @@ namespace SixLabors.Fonts
         public GlyphShapingBounds Bounds { get; set; } = new(0, 0, 0, 0);
 
         /// <summary>
-        /// Gets or sets a value indicating whether individual glyph in the <see cref="GlyphIds"/> collection should be offset from the preceding glyph.
+        /// Gets or sets a value indicating whether this glyph should be positioned at the advance of the preceding glyph at the same codepoint offset.
         /// </summary>
-        public bool OffsetGlyphs { get; set; }
+        public bool OffsetGlyph { get; set; }
 
         private string DebuggerDisplay
             => FormattableString
-            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : [{string.Join(",", this.GlyphIds)}] : {this.OffsetGlyphs}");
+            .Invariant($" {this.GlyphId} : {this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : {this.OffsetGlyph}");
     }
 }
