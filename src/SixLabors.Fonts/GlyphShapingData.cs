@@ -36,7 +36,7 @@ namespace SixLabors.Fonts
             this.LigatureComponent = data.LigatureComponent;
             this.MarkAttachment = data.MarkAttachment;
             this.CursiveAttachment = data.CursiveAttachment;
-            this.OffsetGlyph = data.OffsetGlyph;
+            this.IsDecomposed = data.IsDecomposed;
 
             if (!clearFeatures)
             {
@@ -102,12 +102,12 @@ namespace SixLabors.Fonts
         public GlyphShapingBounds Bounds { get; set; } = new(0, 0, 0, 0);
 
         /// <summary>
-        /// Gets or sets a value indicating whether this glyph should be positioned at the advance of the preceding glyph at the same codepoint offset.
+        /// Gets or sets a value indicating whether this glyph is the result of a decomposition substitution
         /// </summary>
-        public bool OffsetGlyph { get; set; }
+        public bool IsDecomposed { get; set; }
 
         private string DebuggerDisplay
             => FormattableString
-            .Invariant($" {this.GlyphId} : {this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : {this.OffsetGlyph}");
+            .Invariant($" {this.GlyphId} : {this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : {this.IsDecomposed}");
     }
 }

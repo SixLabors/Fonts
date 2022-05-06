@@ -263,8 +263,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphIds">The collection of replacement glyph ids.</param>
-        /// <param name="offset">Whether the additional glyphs should be positioned at the advance of the preceding glyph at the same codepoint offset.</param>
-        public void Replace(int index, ReadOnlySpan<ushort> glyphIds, bool offset)
+        public void Replace(int index, ReadOnlySpan<ushort> glyphIds)
         {
             if (glyphIds.Length > 0)
             {
@@ -274,9 +273,9 @@ namespace SixLabors.Fonts
                 current.LigatureComponent = 0;
                 current.MarkAttachment = -1;
                 current.CursiveAttachment = -1;
-                current.OffsetGlyph = offset;
+                current.IsDecomposed = true;
 
-                // Add additional glyphs to the end of the sequence.
+                // Add additional glyphs from the rest of the sequence.
                 if (glyphIds.Length > 1)
                 {
                     glyphIds = glyphIds.Slice(1);
@@ -285,10 +284,7 @@ namespace SixLabors.Fonts
                         GlyphShapingData data = new(current, false);
                         data.GlyphId = glyphIds[i];
                         data.LigatureComponent = i + 1;
-
-                        // TODO: We may have to shift the offset of the following glyphs.
-                        int o = offset ? pair.Offset + i + 1 : pair.Offset;
-                        this.glyphs.Insert(++index, new(o, data));
+                        this.glyphs.Insert(++index, new(pair.Offset, data));
                     }
                 }
             }

@@ -101,7 +101,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
 
             if (offset > -1)
             {
-                collection.Replace(index, this.sequenceTables[offset].SubstituteGlyphs, false);
+                collection.Replace(index, this.sequenceTables[offset].SubstituteGlyphs);
                 return true;
             }
 

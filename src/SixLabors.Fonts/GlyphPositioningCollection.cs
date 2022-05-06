@@ -90,21 +90,24 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
         /// <param name="pointSize">The font size in PT units of the font containing this glyph.</param>
+        /// <param name="isDecomposed">Whether the glyph is the result of a decomposition substitution.</param>
         /// <param name="metrics">
         /// When this method returns, contains the glyph metrics associated with the specified offset,
         /// if the value is found; otherwise, the default value for the type of the metrics parameter.
         /// This parameter is passed uninitialized.
         /// </param>
         /// <returns>The metrics.</returns>
-        public bool TryGetGlyphMetricsAtOffset(int offset, out float pointSize, [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
+        public bool TryGetGlyphMetricsAtOffset(int offset, out float pointSize, out bool isDecomposed, [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
         {
             List<GlyphMetrics> match = new();
             pointSize = 0;
+            isDecomposed = false;
             for (int i = 0; i < this.glyphs.Count; i++)
             {
                 if (this.glyphs[i].Offset == offset)
                 {
                     GlyphPositioningData glyph = this.glyphs[i];
+                    isDecomposed = glyph.Data.IsDecomposed;
                     pointSize = glyph.PointSize;
                     match.AddRange(glyph.Metrics);
                 }
@@ -151,7 +154,7 @@ namespace SixLabors.Fonts
                         GlyphShapingData shape = data[j];
                         ushort id = shape.GlyphId;
                         CodePoint codePoint = shape.CodePoint;
-                        bool doShift = shape.OffsetGlyph;
+                        bool isDecomposed = shape.IsDecomposed;
 
                         // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                         // cache the original in the font metrics and only update our collection.
@@ -166,10 +169,11 @@ namespace SixLabors.Fonts
                                 break;
                             }
 
-                            // Clone and offset the glyph based on it's position in the offset group.
+                            // Clone and offset the glyph for rendering.
+                            // If the glyph is the result of a decomposition substitution we need to offset it.
                             // We slip the text run in here while we clone so we have it available to the renderer.
                             var clone = GlyphMetrics.CloneForRendering(gm, shape.TextRun, codePoint);
-                            if (doShift)
+                            if (isDecomposed)
                             {
                                 if (!this.IsVerticalLayoutMode)
                                 {
@@ -217,6 +221,7 @@ namespace SixLabors.Fonts
             bool hasFallBacks = false;
             FontMetrics fontMetrics = font.FontMetrics;
             ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
+            ushort shiftXY = 0;
             for (int i = 0; i < collection.Count; i++)
             {
                 GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
@@ -224,8 +229,11 @@ namespace SixLabors.Fonts
                 ushort id = data.GlyphId;
                 List<GlyphMetrics> metrics = new();
 
-                ushort shiftXY = 0;
-                bool doShift = data.OffsetGlyph;
+                bool isDecomposed = data.IsDecomposed;
+                if (!isDecomposed)
+                {
+                    shiftXY = 0;
+                }
 
                 // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                 // cache the original in the font metrics and only update our collection.
@@ -236,11 +244,11 @@ namespace SixLabors.Fonts
                         hasFallBacks = true;
                     }
 
-                    // Clone and offset the glyph based on it's position in the glyphId array.
-                    // We slip the text run in here while we clone so we have
-                    // it available to the renderer.
+                    // Clone and offset the glyph for rendering.
+                    // If the glyph is the result of a decomposition substitution we need to offset it.
+                    // We slip the text run in here while we clone so we have it available to the renderer.
                     var clone = GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint);
-                    if (doShift)
+                    if (isDecomposed)
                     {
                         if (!this.IsVerticalLayoutMode)
                         {

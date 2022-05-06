@@ -713,7 +713,7 @@ namespace SixLabors.Fonts
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
-                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out IReadOnlyList<GlyphMetrics>? metrics))
+                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out bool isDecomposed, out IReadOnlyList<GlyphMetrics>? metrics))
                     {
                         // Codepoint was skipped during original enumeration.
                         codePointIndex++;
@@ -746,13 +746,18 @@ namespace SixLabors.Fonts
                     }
                     else if (!CodePoint.IsNewLine(codePoint))
                     {
-                        // Standard text. Use the largest advance for the metrics.
+                        // Standard text.
+                        // If decomposed we need to add the advance; otherwise, use the largest advance for the metrics.
                         if (isHorizontal)
                         {
                             for (int i = 1; i < metrics.Count; i++)
                             {
                                 float a = metrics[i].AdvanceWidth;
-                                if (a > glyphAdvance)
+                                if (isDecomposed)
+                                {
+                                    glyphAdvance += a;
+                                }
+                                else if (a > glyphAdvance)
                                 {
                                     glyphAdvance = a;
                                 }
@@ -763,7 +768,11 @@ namespace SixLabors.Fonts
                             for (int i = 1; i < metrics.Count; i++)
                             {
                                 float a = metrics[i].AdvanceHeight;
-                                if (a > glyphAdvance)
+                                if (isDecomposed)
+                                {
+                                    glyphAdvance += a;
+                                }
+                                else if (a > glyphAdvance)
                                 {
                                     glyphAdvance = a;
                                 }

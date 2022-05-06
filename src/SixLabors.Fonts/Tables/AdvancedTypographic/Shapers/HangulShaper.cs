@@ -133,7 +133,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         case Invalid:
 
                             // Tone mark has no valid syllable to attach to, so insert a dotted circle.
-                            this.InsertDottedCircle(substitutionCollection, data, i);
+                            i = this.InsertDottedCircle(substitutionCollection, data, i);
                             break;
                     }
                 }
@@ -234,7 +234,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 ii[0] = ljmo;
                 ii[1] = vjmo;
 
-                collection.Replace(index, ii, true);
+                collection.Replace(index, ii);
                 collection.EnableShapingFeature(index, LjmoTag);
                 collection.EnableShapingFeature(index + 1, VjmoTag);
                 return index + 1;
@@ -245,7 +245,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             iii[1] = vjmo;
             iii[2] = tjmo;
 
-            collection.Replace(index, iii, true);
+            collection.Replace(index, iii);
             collection.EnableShapingFeature(index, LjmoTag);
             collection.EnableShapingFeature(index + 1, VjmoTag);
             collection.EnableShapingFeature(index + 2, TjmoTag);
@@ -398,7 +398,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     glyphs[1] = data.GlyphId;
                 }
 
-                collection.Replace(index, glyphs, true);
+                collection.Replace(index, glyphs);
                 return index + 1;
             }
 
