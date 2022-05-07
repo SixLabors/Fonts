@@ -884,10 +884,17 @@ namespace SixLabors.Fonts
                     GlyphMetrics metric = metrics[0];
                     float scaleY = pointSize / metric.ScaleFactor.Y;
                     float ascender = metric.FontMetrics.Ascender * scaleY;
-                    if (metric.TopSideBearing < 0)
+
+                    // Adjust ascender for glyphs with a negative tsb. e.g. emoji to prevent cutoff.
+                    short tsbOffset = 0;
+                    for (int i = 0; i < metrics.Count; i++)
                     {
-                        // Adjust for glyphs with a negative tsb. e.g. emoji.
-                        ascender -= metric.TopSideBearing * scaleY;
+                        tsbOffset = Math.Min(tsbOffset, metrics[i].TopSideBearing);
+                    }
+
+                    if (tsbOffset < 0)
+                    {
+                        ascender -= tsbOffset * scaleY;
                     }
 
                     float descender = Math.Abs(metric.FontMetrics.Descender * scaleY);

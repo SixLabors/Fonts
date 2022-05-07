@@ -20,8 +20,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         private static readonly Tag TjmoTag = Tag.Parse("tjmo");
 
         private const int HangulBase = 0xac00;
-        private const int HangulEnd = 0xd7a4;
-        private const int HangulCount = HangulEnd - HangulBase + 1;
         private const int LBase = 0x1100; // lead
         private const int VBase = 0x1161; // vowel
         private const int TBase = 0x11a7; // trail

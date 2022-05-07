@@ -7,7 +7,7 @@ using Xunit;
 
 namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
 {
-    public class GSubTableTests
+    public partial class GSubTableTests
     {
         [Theory]
         [InlineData("ا", 139)]
