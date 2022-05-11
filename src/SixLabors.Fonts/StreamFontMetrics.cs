@@ -8,10 +8,12 @@ using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Glyphs;
 using SixLabors.Fonts.Tables.Hinting;
+using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -24,25 +26,35 @@ namespace SixLabors.Fonts
     /// </summary>
     internal class StreamFontMetrics : FontMetrics
     {
+        private readonly TrueTypeFontTables? trueTypeFontTables;
+        private readonly CompactFontTables? compactFontTables;
+        private readonly OutlineType outlineType;
+
         // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
-        private readonly MaximumProfileTable maximumProfileTable;
-        private readonly CMapTable cmap;
-        private readonly GlyphTable glyphs;
-        private readonly HeadTable head;
-        private readonly OS2Table os2;
-        private readonly HorizontalMetricsTable horizontalMetrics;
-        private readonly VerticalMetricsTable? verticalMetricsTable;
         private readonly GlyphMetrics[][] glyphCache;
         private readonly GlyphMetrics[][]? colorGlyphCache;
-        private readonly KerningTable? kerningTable;
-        private readonly GSubTable? gSubTable;
-        private readonly GPosTable? gPosTable;
-        private readonly ColrTable? colrTable;
-        private readonly CpalTable? cpalTable;
-        private readonly GlyphDefinitionTable? glyphDefinitionTable;
-        private readonly FpgmTable? fpgm;
-        private readonly CvtTable? cvt;
-        private readonly PrepTable? prep;
+        private readonly FontDescription description;
+        private ushort unitsPerEm;
+        private float scaleFactor;
+        private short ascender;
+        private short descender;
+        private short lineGap;
+        private short lineHeight;
+        private short advanceWidthMax;
+        private short advanceHeightMax;
+        private short subscriptXSize;
+        private short subscriptYSize;
+        private short subscriptXOffset;
+        private short subscriptYOffset;
+        private short superscriptXSize;
+        private short superscriptYSize;
+        private short superscriptXOffset;
+        private short superscriptYOffset;
+        private short strikeoutSize;
+        private short strikeoutPosition;
+        private short underlinePosition;
+        private short underlineThickness;
+        private float italicAngle;
 
         [ThreadStatic]
         private Hinting.Interpreter? interpreter;
@@ -50,206 +62,104 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
         /// </summary>
-        /// <param name="nameTable">The name table.</param>
-        /// <param name="maximumProfileTable">The maximum profile table.</param>
-        /// <param name="cmap">The cmap table.</param>
-        /// <param name="glyphs">The glyph table.</param>
-        /// <param name="os2">The os2 table.</param>
-        /// <param name="horizontalHeadTable">The horizontal head table.</param>
-        /// <param name="horizontalMetrics">The horizontal metrics table.</param>
-        /// <param name="verticalHeadTable">The vertical head table.</param>
-        /// <param name="verticalMetrics">The vertical metrics table.</param>
-        /// <param name="head">The head table.</param>
-        /// <param name="kern">The kerning table.</param>
-        /// <param name="postTable">The table needed to use TrueType or OpenType fonts on PostScript printers.</param>
-        /// <param name="gSubTable">The glyph substitution table.</param>
-        /// <param name="gPosTable">The glyph positioning table.</param>
-        /// <param name="colrTable">The COLR table</param>
-        /// <param name="cpalTable">The CPAL table</param>
-        /// <param name="fpgm">The font program table.</param>
-        /// <param name="cvt">The control value table.</param>
-        /// <param name="prep">The control value program table.</param>
-        /// <param name="glyphDefinitionTable">The glyph definition table.</param>
-        internal StreamFontMetrics(
-            NameTable nameTable,
-            MaximumProfileTable maximumProfileTable,
-            CMapTable cmap,
-            GlyphTable glyphs,
-            OS2Table os2,
-            HorizontalHeadTable horizontalHeadTable,
-            HorizontalMetricsTable horizontalMetrics,
-            VerticalHeadTable? verticalHeadTable,
-            VerticalMetricsTable? verticalMetrics,
-            HeadTable head,
-            KerningTable? kern,
-            PostTable postTable,
-            GSubTable? gSubTable,
-            GPosTable? gPosTable,
-            ColrTable? colrTable,
-            CpalTable? cpalTable,
-            FpgmTable? fpgm,
-            CvtTable? cvt,
-            PrepTable? prep,
-            GlyphDefinitionTable? glyphDefinitionTable)
+        /// <param name="tables">The True Type font tables.</param>
+        internal StreamFontMetrics(TrueTypeFontTables tables)
         {
-            this.maximumProfileTable = maximumProfileTable;
-            this.cmap = cmap;
-            this.os2 = os2;
-            this.glyphs = glyphs;
-            this.horizontalMetrics = horizontalMetrics;
-            this.verticalMetricsTable = verticalMetrics;
-            this.head = head;
-            this.glyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
-            if (colrTable is not null)
+            this.trueTypeFontTables = tables;
+            this.outlineType = OutlineType.TrueType;
+            this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+            this.glyphCache = new GlyphMetrics[tables.Glyf.GlyphCount][];
+            if (tables.Colr is not null)
             {
-                this.colorGlyphCache = new GlyphMetrics[this.glyphs.GlyphCount][];
+                this.glyphCache = new GlyphMetrics[tables.Glyf.GlyphCount][];
             }
 
-            // https://www.microsoft.com/typography/otspec/recom.htm#tad
-            // We use the same approach as FreeType for calculating the the global  ascender, descender,  and
-            // height of  OpenType fonts for consistency.
-            //
-            // 1.If the OS/ 2 table exists and the fsSelection bit 7 is set (USE_TYPO_METRICS), trust the font
-            //   and use the Typo* metrics.
-            // 2.Otherwise, use the HorizontalHeadTable "hhea" table's metrics.
-            // 3.If they are zero and the OS/ 2 table exists,
-            //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
-            //    - Otherwise, use the OS / 2 table's usWin* metrics.
-            bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
-            if (useTypoMetrics)
-            {
-                this.Ascender = os2.TypoAscender;
-                this.Descender = os2.TypoDescender;
-                this.LineGap = os2.TypoLineGap;
-                this.LineHeight = (short)(this.Ascender - this.Descender + this.LineGap);
-            }
-            else
-            {
-                this.Ascender = horizontalHeadTable.Ascender;
-                this.Descender = horizontalHeadTable.Descender;
-                this.LineGap = horizontalHeadTable.LineGap;
-                this.LineHeight = (short)(this.Ascender - this.Descender + this.LineGap);
-            }
-
-            if (this.Ascender == 0 || this.Descender == 0)
-            {
-                if (os2.TypoAscender != 0 || os2.TypoDescender != 0)
-                {
-                    this.Ascender = os2.TypoAscender;
-                    this.Descender = os2.TypoDescender;
-                    this.LineGap = os2.TypoLineGap;
-                    this.LineHeight = (short)(this.Ascender - this.Descender + this.LineGap);
-                }
-                else
-                {
-                    this.Ascender = (short)os2.WinAscent;
-                    this.Descender = (short)-os2.WinDescent;
-                    this.LineHeight = (short)(this.Ascender - this.Descender);
-                }
-            }
-
-            this.UnitsPerEm = this.head.UnitsPerEm;
-
-            // 72 * UnitsPerEm means 1pt = 1px
-            this.ScaleFactor = this.UnitsPerEm * 72F;
-            this.AdvanceWidthMax = (short)horizontalHeadTable.AdvanceWidthMax;
-            this.AdvanceHeightMax = verticalHeadTable == null ? this.LineHeight : verticalHeadTable.AdvanceHeightMax;
-
-            this.SubscriptXSize = os2.SubscriptXSize;
-            this.SubscriptYSize = os2.SubscriptYSize;
-            this.SubscriptXOffset = os2.SubscriptXOffset;
-            this.SubscriptYOffset = os2.SubscriptYOffset;
-            this.SuperscriptXSize = os2.SuperscriptXSize;
-            this.SuperscriptYSize = os2.SuperscriptYSize;
-            this.SuperscriptXOffset = os2.SuperscriptXOffset;
-            this.SuperscriptYOffset = os2.SuperscriptYOffset;
-            this.StrikeoutSize = os2.StrikeoutSize;
-            this.StrikeoutPosition = os2.StrikeoutPosition;
-
-            this.UnderlinePosition = postTable.UnderlinePosition;
-            this.UnderlineThickness = postTable.UnderlineThickness;
-            this.ItalicAngle = postTable.ItalicAngle;
-
-            this.kerningTable = kern;
-            this.gSubTable = gSubTable;
-            this.gPosTable = gPosTable;
-            this.colrTable = colrTable;
-            this.cpalTable = cpalTable;
-            this.fpgm = fpgm;
-            this.cvt = cvt;
-            this.prep = prep;
-            this.glyphDefinitionTable = glyphDefinitionTable;
-            this.Description = new FontDescription(nameTable, os2, head);
-            this.HeadFlags = head.Flags;
+            this.Initialize(ref tables);
         }
 
-        public HeadTable.HeadFlags HeadFlags { get; }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
+        /// </summary>
+        /// <param name="tables">The Compact Fton tables.</param>
+        internal StreamFontMetrics(CompactFontTables tables)
+        {
+            this.compactFontTables = tables;
+            this.outlineType = OutlineType.CFF;
+            this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+
+            // TODO: Glyphcaches.
+            this.glyphCache = new GlyphMetrics[tables.Cff.Cff1FontSet._fonts[0]._glyphs.Length][];
+
+            this.Initialize(ref tables);
+        }
+
+        public HeadTable.HeadFlags HeadFlags { get; private set; }
 
         /// <inheritdoc/>
-        public override FontDescription Description { get; }
+        public override FontDescription Description => this.description;
 
         /// <inheritdoc/>
-        public override ushort UnitsPerEm { get; }
+        public override ushort UnitsPerEm => this.unitsPerEm;
 
         /// <inheritdoc/>
-        public override float ScaleFactor { get; }
+        public override float ScaleFactor => this.scaleFactor;
 
         /// <inheritdoc/>
-        public override short Ascender { get; }
+        public override short Ascender => this.ascender;
 
         /// <inheritdoc/>
-        public override short Descender { get; }
+        public override short Descender => this.descender;
 
         /// <inheritdoc/>
-        public override short LineGap { get; }
+        public override short LineGap => this.lineGap;
 
         /// <inheritdoc/>
-        public override short LineHeight { get; }
+        public override short LineHeight => this.lineHeight;
 
         /// <inheritdoc/>
-        public override short AdvanceWidthMax { get; }
+        public override short AdvanceWidthMax => this.advanceWidthMax;
 
         /// <inheritdoc/>
-        public override short AdvanceHeightMax { get; }
+        public override short AdvanceHeightMax => this.advanceHeightMax;
 
         /// <inheritdoc/>
-        public override short SubscriptXSize { get; }
+        public override short SubscriptXSize => this.subscriptXSize;
 
         /// <inheritdoc/>
-        public override short SubscriptYSize { get; }
+        public override short SubscriptYSize => this.subscriptYSize;
 
         /// <inheritdoc/>
-        public override short SubscriptXOffset { get; }
+        public override short SubscriptXOffset => this.subscriptXOffset;
 
         /// <inheritdoc/>
-        public override short SubscriptYOffset { get; }
+        public override short SubscriptYOffset => this.subscriptYOffset;
 
         /// <inheritdoc/>
-        public override short SuperscriptXSize { get; }
+        public override short SuperscriptXSize => this.superscriptXSize;
 
         /// <inheritdoc/>
-        public override short SuperscriptYSize { get; }
+        public override short SuperscriptYSize => this.superscriptYSize;
 
         /// <inheritdoc/>
-        public override short SuperscriptXOffset { get; }
+        public override short SuperscriptXOffset => this.superscriptXOffset;
 
         /// <inheritdoc/>
-        public override short SuperscriptYOffset { get; }
+        public override short SuperscriptYOffset => this.superscriptYOffset;
 
         /// <inheritdoc/>
-        public override short StrikeoutSize { get; }
+        public override short StrikeoutSize => this.strikeoutSize;
 
         /// <inheritdoc/>
-        public override short StrikeoutPosition { get; }
+        public override short StrikeoutPosition => this.strikeoutPosition;
 
         /// <inheritdoc/>
-        public override short UnderlinePosition { get; }
+        public override short UnderlinePosition => this.underlinePosition;
 
         /// <inheritdoc/>
-        public override short UnderlineThickness { get; }
+        public override short UnderlineThickness => this.underlineThickness;
 
         /// <inheritdoc/>
-        public override float ItalicAngle { get; }
+        public override float ItalicAngle => this.italicAngle;
 
         /// <inheritdoc/>
         internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
@@ -257,20 +167,34 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         internal override bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
-            => this.cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+        {
+            CMapTable cmap = this.outlineType == OutlineType.TrueType
+                ? this.trueTypeFontTables!.Value.Cmap
+                : this.compactFontTables!.Value.Cmap;
+
+            return cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+        }
 
         /// <inheritdoc/>
         internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
         {
+            GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
+                ? this.trueTypeFontTables!.Value.Gdef
+                : this.compactFontTables!.Value.Gdef;
+
             glyphClass = null;
-            return this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetGlyphClass(glyphId, out glyphClass);
+            return gdef is not null && gdef.TryGetGlyphClass(glyphId, out glyphClass);
         }
 
         /// <inheritdoc/>
         internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
         {
+            GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
+                ? this.trueTypeFontTables!.Value.Gdef
+                : this.compactFontTables!.Value.Gdef;
+
             markAttachmentClass = null;
-            return this.glyphDefinitionTable is not null && this.glyphDefinitionTable.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
+            return gdef is not null && gdef.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
         }
 
         /// <inheritdoc/>
@@ -315,20 +239,38 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
-            => this.gSubTable?.ApplySubstitution(this, collection);
+        {
+            GSubTable? gsub = this.outlineType == OutlineType.TrueType
+                ? this.trueTypeFontTables!.Value.GSub
+                : this.compactFontTables!.Value.GSub;
+
+            gsub?.ApplySubstitution(this, collection);
+        }
 
         /// <inheritdoc/>
         internal override void UpdatePositions(GlyphPositioningCollection collection)
         {
+            bool isTTF = this.outlineType == OutlineType.TrueType;
+            GPosTable? gpos = isTTF
+                ? this.trueTypeFontTables!.Value.GPos
+                : this.compactFontTables!.Value.GPos;
+
             bool kerned = false;
             KerningMode kerningMode = collection.TextOptions.KerningMode;
-            this.gPosTable?.TryUpdatePositions(this, collection, out kerned);
+            gpos?.TryUpdatePositions(this, collection, out kerned);
 
-            if (!kerned && kerningMode != KerningMode.None && this.kerningTable != null)
+            if (!kerned && kerningMode != KerningMode.None)
             {
-                for (ushort index = 1; index < collection.Count; index++)
+                KerningTable? kern = isTTF
+                    ? this.trueTypeFontTables!.Value.Kern
+                    : this.compactFontTables!.Value.Kern;
+
+                if (kern != null)
                 {
-                    this.kerningTable.UpdatePositions(this, collection, (ushort)(index - 1), index);
+                    for (ushort index = 1; index < collection.Count; index++)
+                    {
+                        kern.UpdatePositions(this, collection, (ushort)(index - 1), index);
+                    }
                 }
             }
         }
@@ -371,79 +313,155 @@ namespace SixLabors.Fonts
 
         internal static StreamFontMetrics LoadFont(FontReader reader)
         {
-            // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
-            // recommended order
-            HeadTable head = reader.GetTable<HeadTable>(); // head - not saving but loading in suggested order
-            HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>(); // hhea
-            MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>(); // maxp
-            OS2Table os2 = reader.GetTable<OS2Table>(); // OS/2
-
-            // LTSH - Linear threshold data
-            // VDMX - Vertical device metrics
-            // hdmx - Horizontal device metrics
-            HorizontalMetricsTable horizontalMetrics = reader.GetTable<HorizontalMetricsTable>(); // hmtx
-
-            VerticalHeadTable? vhea = reader.TryGetTable<VerticalHeadTable>();
-
-            // Vertical metrics are optional. Supported by AAF fonts.
-            VerticalMetricsTable? verticalMetrics = null;
-            if (vhea != null)
+            if (reader.OutlineType == OutlineType.TrueType)
             {
-                verticalMetrics = reader.GetTable<VerticalMetricsTable>();
-            }
-
-            CMapTable cmap = reader.GetTable<CMapTable>(); // cmap
-
-            FpgmTable? fpgm = reader.TryGetTable<FpgmTable>(); // fpgm - Font Program
-            PrepTable? prep = reader.TryGetTable<PrepTable>(); // prep -  Control Value Program
-            CvtTable? cvt = reader.TryGetTable<CvtTable>(); // cvt  - Control Value Table
-
-            reader.GetTable<IndexLocationTable>(); // loca
-            GlyphTable glyphs = reader.GetTable<GlyphTable>(); // glyf
-            KerningTable? kern = reader.TryGetTable<KerningTable>(); // kern - Kerning
-            NameTable nameTable = reader.GetTable<NameTable>(); // name
-            PostTable postTable = reader.GetTable<PostTable>(); // post - PostScript information
-
-            // gasp - Grid-fitting/Scan-conversion (optional table)
-            // PCLT - PCL 5 data
-            // DSIG - Digital signature
-            ColrTable? colrTable = reader.TryGetTable<ColrTable>(); // colr
-            CpalTable? cpalTable;
-            if (colrTable != null)
-            {
-                cpalTable = reader.GetTable<CpalTable>(); // CPAL - required if COLR is provided
+                return LoadTrueTypeFont(reader);
             }
             else
             {
-                cpalTable = reader.TryGetTable<CpalTable>(); // colr
+                return LoadCompactFont(reader);
+            }
+        }
+
+        private void Initialize<T>(ref T tables)
+            where T : IFontTables
+        {
+            HeadTable head = tables.Head;
+            HorizontalHeadTable hhea = tables.Hhea;
+            VerticalHeadTable? vhea = tables.Vhea;
+            OS2Table os2 = tables.Os2;
+            PostTable post = tables.Post;
+
+            this.HeadFlags = head.Flags;
+
+            // https://www.microsoft.com/typography/otspec/recom.htm#tad
+            // We use the same approach as FreeType for calculating the the global  ascender, descender,  and
+            // height of  OpenType fonts for consistency.
+            //
+            // 1.If the OS/ 2 table exists and the fsSelection bit 7 is set (USE_TYPO_METRICS), trust the font
+            //   and use the Typo* metrics.
+            // 2.Otherwise, use the HorizontalHeadTable "hhea" table's metrics.
+            // 3.If they are zero and the OS/ 2 table exists,
+            //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
+            //    - Otherwise, use the OS / 2 table's usWin* metrics.
+            bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
+            if (useTypoMetrics)
+            {
+                this.ascender = os2.TypoAscender;
+                this.descender = os2.TypoDescender;
+                this.lineGap = os2.TypoLineGap;
+                this.lineHeight = (short)(this.ascender - this.descender + this.lineGap);
+            }
+            else
+            {
+                this.ascender = hhea.Ascender;
+                this.descender = hhea.Descender;
+                this.lineGap = hhea.LineGap;
+                this.lineHeight = (short)(this.ascender - this.descender + this.lineGap);
             }
 
-            // Advanced Typographics instructions.
-            GSubTable? gSub = reader.TryGetTable<GSubTable>();
-            GPosTable? gPos = reader.TryGetTable<GPosTable>();
-            GlyphDefinitionTable? glyphDefinitionTable = reader.TryGetTable<GlyphDefinitionTable>();
+            if (this.ascender == 0 || this.descender == 0)
+            {
+                if (os2.TypoAscender != 0 || os2.TypoDescender != 0)
+                {
+                    this.ascender = os2.TypoAscender;
+                    this.descender = os2.TypoDescender;
+                    this.lineGap = os2.TypoLineGap;
+                    this.lineHeight = (short)(this.ascender - this.descender + this.lineGap);
+                }
+                else
+                {
+                    this.ascender = (short)os2.WinAscent;
+                    this.descender = (short)-os2.WinDescent;
+                    this.lineHeight = (short)(this.ascender - this.descender);
+                }
+            }
 
-            return new StreamFontMetrics(
-                nameTable,
-                maxp,
-                cmap,
-                glyphs,
-                os2,
-                hhea,
-                horizontalMetrics,
-                vhea,
-                verticalMetrics,
-                head,
-                kern,
-                postTable,
-                gSub,
-                gPos,
-                colrTable,
-                cpalTable,
-                fpgm,
-                cvt,
-                prep,
-                glyphDefinitionTable);
+            this.unitsPerEm = head.UnitsPerEm;
+
+            // 72 * UnitsPerEm means 1pt = 1px
+            this.scaleFactor = this.unitsPerEm * 72F;
+            this.advanceWidthMax = (short)hhea.AdvanceWidthMax;
+            this.advanceHeightMax = vhea == null ? this.LineHeight : vhea.AdvanceHeightMax;
+
+            this.subscriptXSize = os2.SubscriptXSize;
+            this.subscriptYSize = os2.SubscriptYSize;
+            this.subscriptXOffset = os2.SubscriptXOffset;
+            this.subscriptYOffset = os2.SubscriptYOffset;
+            this.superscriptXSize = os2.SuperscriptXSize;
+            this.superscriptYSize = os2.SuperscriptYSize;
+            this.superscriptXOffset = os2.SuperscriptXOffset;
+            this.superscriptYOffset = os2.SuperscriptYOffset;
+            this.strikeoutSize = os2.StrikeoutSize;
+            this.strikeoutPosition = os2.StrikeoutPosition;
+
+            this.underlinePosition = post.UnderlinePosition;
+            this.underlineThickness = post.UnderlineThickness;
+            this.italicAngle = post.ItalicAngle;
+        }
+
+        private static StreamFontMetrics LoadTrueTypeFont(FontReader reader)
+        {
+            // Load using recommended order for best performance.
+            // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
+            // 'head', 'hhea', 'maxp', OS/2, 'hmtx', LTSH, VDMX, 'hdmx', 'cmap', 'fpgm', 'prep', 'cvt ', 'loca', 'glyf', 'kern', 'name', 'post', 'gasp', PCLT, DSIG
+            TrueTypeFontTables tables = default;
+            tables.Head = reader.GetTable<HeadTable>();
+            tables.Hhea = reader.GetTable<HorizontalHeadTable>();
+            tables.Maxp = reader.GetTable<MaximumProfileTable>();
+            tables.Os2 = reader.GetTable<OS2Table>();
+            tables.Htmx = reader.GetTable<HorizontalMetricsTable>();
+            tables.Cmap = reader.GetTable<CMapTable>();
+            tables.Fpgm = reader.TryGetTable<FpgmTable>();
+            tables.Prep = reader.TryGetTable<PrepTable>();
+            tables.Cvt = reader.TryGetTable<CvtTable>();
+            tables.Loca = reader.GetTable<IndexLocationTable>();
+            tables.Glyf = reader.GetTable<GlyphTable>();
+            tables.Kern = reader.TryGetTable<KerningTable>();
+            tables.Name = reader.GetTable<NameTable>();
+            tables.Post = reader.GetTable<PostTable>();
+
+            tables.Vhea = reader.TryGetTable<VerticalHeadTable>();
+            tables.Vmtx = reader.TryGetTable<VerticalMetricsTable>();
+
+            tables.Gdef = reader.TryGetTable<GlyphDefinitionTable>();
+            tables.GSub = reader.TryGetTable<GSubTable>();
+            tables.GPos = reader.TryGetTable<GPosTable>();
+
+            tables.Colr = reader.TryGetTable<ColrTable>();
+            tables.Cpal = reader.TryGetTable<CpalTable>();
+
+            return new StreamFontMetrics(tables);
+        }
+
+        private static StreamFontMetrics LoadCompactFont(FontReader reader)
+        {
+            // Load using recommended order for best performance.
+            // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
+            // 'head', 'hhea', 'maxp', OS/2, 'name', 'cmap', 'post', 'CFF '
+            CompactFontTables tables = default;
+            tables.Head = reader.GetTable<HeadTable>();
+            tables.Hhea = reader.GetTable<HorizontalHeadTable>();
+            tables.Maxp = reader.GetTable<MaximumProfileTable>();
+            tables.Os2 = reader.GetTable<OS2Table>();
+            tables.Name = reader.GetTable<NameTable>();
+            tables.Cmap = reader.GetTable<CMapTable>();
+            tables.Post = reader.GetTable<PostTable>();
+            tables.Cff = reader.GetTable<CffTable>(); // TODO: CFF2, VORG
+
+            tables.Htmx = reader.GetTable<HorizontalMetricsTable>();
+            tables.Vhea = reader.TryGetTable<VerticalHeadTable>();
+            tables.Vmtx = reader.TryGetTable<VerticalMetricsTable>();
+            tables.Kern = reader.TryGetTable<KerningTable>();
+
+            tables.Gdef = reader.TryGetTable<GlyphDefinitionTable>();
+            tables.GSub = reader.TryGetTable<GSubTable>();
+            tables.GPos = reader.TryGetTable<GPosTable>();
+
+            tables.Colr = reader.TryGetTable<ColrTable>();
+            tables.Cpal = reader.TryGetTable<CpalTable>();
+
+            return new StreamFontMetrics(tables);
         }
 
         /// <summary>
@@ -485,23 +503,40 @@ namespace SixLabors.Fonts
                 return;
             }
 
+            bool isTTF = this.outlineType == OutlineType.TrueType;
             if (this.interpreter == null)
             {
-                this.interpreter = new Hinting.Interpreter(
-                    this.maximumProfileTable.MaxStackElements,
-                    this.maximumProfileTable.MaxStorage,
-                    this.maximumProfileTable.MaxFunctionDefs,
-                    this.maximumProfileTable.MaxInstructionDefs,
-                    this.maximumProfileTable.MaxTwilightPoints);
+                MaximumProfileTable maxp = isTTF
+                    ? this.trueTypeFontTables!.Value.Maxp
+                    : this.compactFontTables!.Value.Maxp;
 
-                if (this.fpgm != null)
+                this.interpreter = new Hinting.Interpreter(
+                    maxp.MaxStackElements,
+                    maxp.MaxStorage,
+                    maxp.MaxFunctionDefs,
+                    maxp.MaxInstructionDefs,
+                    maxp.MaxTwilightPoints);
+
+                FpgmTable? fpgm = isTTF
+                    ? this.trueTypeFontTables!.Value.Fpgm
+                    : null;
+
+                if (fpgm != null)
                 {
-                    this.interpreter.InitializeFunctionDefs(this.fpgm.Instructions);
+                    this.interpreter.InitializeFunctionDefs(fpgm.Instructions);
                 }
             }
 
+            CvtTable? cvt = null;
+            PrepTable? prep = null;
+            if (isTTF)
+            {
+                cvt = this.trueTypeFontTables!.Value.Cvt;
+                prep = this.trueTypeFontTables!.Value.Prep;
+            }
+
             float scaleFactor = scaledPPEM / this.UnitsPerEm;
-            this.interpreter.SetControlValueTable(this.cvt?.ControlValues, scaleFactor, scaledPPEM, this.prep?.Instructions);
+            this.interpreter.SetControlValueTable(cvt?.ControlValues, scaleFactor, scaledPPEM, prep?.Instructions);
 
             Bounds bounds = glyphVector.GetBounds();
 
@@ -515,7 +550,11 @@ namespace SixLabors.Fonts
 
         private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
-            if (this.colrTable == null || this.colorGlyphCache == null)
+            ColrTable? colr = this.outlineType == OutlineType.TrueType
+                ? this.trueTypeFontTables!.Value.Colr
+                : this.compactFontTables!.Value.Colr;
+
+            if (colr == null || this.colorGlyphCache == null)
             {
                 metrics = null;
                 return false;
@@ -525,7 +564,7 @@ namespace SixLabors.Fonts
             metrics = this.colorGlyphCache[glyphId];
             if (metrics is null)
             {
-                Span<LayerRecord> indexes = this.colrTable.GetLayers(glyphId);
+                Span<LayerRecord> indexes = colr.GetLayers(glyphId);
                 if (indexes.Length > 0)
                 {
                     metrics = new GlyphMetrics[indexes.Length];
@@ -550,18 +589,33 @@ namespace SixLabors.Fonts
             GlyphType glyphType,
             ushort palleteIndex = 0)
         {
-            GlyphVector vector = this.glyphs.GetGlyph(glyphId);
+            bool isTTF = this.outlineType == OutlineType.TrueType;
+            if (!isTTF)
+            {
+                // TODO: Implement
+                throw new NotImplementedException("TTF Only!!");
+            }
+
+            GlyphTable glyf = this.trueTypeFontTables!.Value.Glyf;
+            HorizontalMetricsTable htmx = isTTF
+                ? this.trueTypeFontTables!.Value.Htmx
+                : this.compactFontTables!.Value.Htmx;
+            VerticalMetricsTable? vtmx = isTTF
+                ? this.trueTypeFontTables!.Value.Vmtx
+                : this.compactFontTables!.Value.Vmtx;
+
+            GlyphVector vector = glyf.GetGlyph(glyphId);
             Bounds bounds = vector.GetBounds();
-            ushort advanceWidth = this.horizontalMetrics.GetAdvancedWidth(glyphId);
-            short lsb = this.horizontalMetrics.GetLeftSideBearing(glyphId);
+            ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
+            short lsb = htmx.GetLeftSideBearing(glyphId);
 
             // Provide a default for the advance height. This is overwritten for vertical fonts.
             ushort advancedHeight = (ushort)(this.Ascender - this.Descender);
             short tsb = (short)(this.Ascender - bounds.Max.Y);
-            if (this.verticalMetricsTable != null)
+            if (vtmx != null)
             {
-                advancedHeight = this.verticalMetricsTable.GetAdvancedHeight(glyphId);
-                tsb = this.verticalMetricsTable.GetTopSideBearing(glyphId);
+                advancedHeight = vtmx.GetAdvancedHeight(glyphId);
+                tsb = vtmx.GetTopSideBearing(glyphId);
             }
 
             GlyphColor? color = null;
@@ -570,7 +624,11 @@ namespace SixLabors.Fonts
                 // 0xFFFF is special index meaning use foreground color and thus leave unset
                 if (palleteIndex != 0xFFFF)
                 {
-                    color = this.cpalTable?.GetGlyphColor(0, palleteIndex);
+                    CpalTable? cpal = isTTF
+                        ? this.trueTypeFontTables!.Value.Cpal
+                        : this.compactFontTables!.Value.Cpal;
+
+                    color = cpal?.GetGlyphColor(0, palleteIndex);
                 }
             }
 

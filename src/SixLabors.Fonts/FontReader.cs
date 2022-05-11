@@ -50,7 +50,7 @@ namespace SixLabors.Fonts
                 // UInt32 | privOffset     | Offset to private data block, from beginning of WOFF file.
                 // UInt32 | privLength     | Length of private data block.
                 uint flavor = reader.ReadUInt32();
-                this.OutlineType = (OutlineTypes)flavor;
+                this.OutlineType = (OutlineType)flavor;
                 uint length = reader.ReadUInt32();
                 tableCount = reader.ReadUInt16();
                 ushort reserved = reader.ReadUInt16();
@@ -75,7 +75,7 @@ namespace SixLabors.Fonts
 #else
 
                 uint flavor = reader.ReadUInt32();
-                this.OutlineType = (OutlineTypes)flavor;
+                this.OutlineType = (OutlineType)flavor;
                 uint length = reader.ReadUInt32();
                 tableCount = reader.ReadUInt16();
                 ushort reserved = reader.ReadUInt16();
@@ -107,7 +107,7 @@ namespace SixLabors.Fonts
                 // This is a standard *.otf file (this is named the Offset Table).
                 this.TableFormat = TableFormat.Otf;
 
-                this.OutlineType = (OutlineTypes)version;
+                this.OutlineType = (OutlineType)version;
                 tableCount = reader.ReadUInt16();
                 ushort searchRange = reader.ReadUInt16();
                 ushort entrySelector = reader.ReadUInt16();
@@ -115,9 +115,9 @@ namespace SixLabors.Fonts
                 this.CompressedTableData = false;
             }
 
-            if (this.OutlineType != OutlineTypes.TrueType)
+            if (this.OutlineType != OutlineType.TrueType)
             {
-                throw new InvalidFontFileException("Invalid glyph format, only TTF glyph outlines supported.");
+                // throw new InvalidFontFileException("Invalid glyph format, only TTF glyph outlines supported.");
             }
 
             var headers = new Dictionary<string, TableHeader>(tableCount);
@@ -135,19 +135,13 @@ namespace SixLabors.Fonts
         {
         }
 
-        internal enum OutlineTypes : uint
-        {
-            TrueType = 0x00010000,
-            CFF = 0x4F54544F
-        }
-
         public TableFormat TableFormat { get; }
 
         public IReadOnlyDictionary<string, TableHeader> Headers { get; }
 
         public bool CompressedTableData { get; }
 
-        public OutlineTypes OutlineType { get; }
+        public OutlineType OutlineType { get; }
 
         public TTableType? TryGetTable<TTableType>()
             where TTableType : Table

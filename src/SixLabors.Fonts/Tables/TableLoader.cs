@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.Hinting;
 
@@ -41,6 +42,7 @@ namespace SixLabors.Fonts.Tables
             this.Register(PrepTable.Load);
             this.Register(GlyphDefinitionTable.Load);
             this.Register(PostTable.Load);
+            this.Register(CffTable.Load);
         }
 
         public static TableLoader Default { get; } = new();

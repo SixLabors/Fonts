@@ -7,6 +7,7 @@ using System.Linq;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Post;
+using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Fakes
@@ -14,69 +15,12 @@ namespace SixLabors.Fonts.Tests.Fakes
     internal class FakeFontInstance : StreamFontMetrics
     {
         internal FakeFontInstance(string text)
-            : this(GetGlyphs(text))
+            : this(CreateTrueTypeFontTables(text))
         {
         }
 
-        internal FakeFontInstance(List<FakeGlyphSource> glyphs)
-            : base(
-                  GenerateNameTable("name"),
-                  GenerateMaxpTable(glyphs),
-                  GenerateCMapTable(glyphs),
-                  new FakeGlyphTable(glyphs),
-                  GenerateOS2Table(),
-                  GenerateHorizontalHeadTable(),
-                  GenerateHorizontalMetricsTable(glyphs),
-                  GenerateVerticalHeadTable(),
-                  GenerateVerticalMetricsTable(glyphs),
-                  GenerateHeadTable(),
-                  new KerningTable(Array.Empty<KerningSubTable>()),
-                  GeneratePostTable(),
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null)
-        {
-        }
-
-        internal FakeFontInstance(
-            NameTable nameTable,
-            MaximumProfileTable maxpTable,
-            CMapTable cmap,
-            GlyphTable glyphs,
-            OS2Table os2,
-            HorizontalHeadTable horizontalHeadTable,
-            HorizontalMetricsTable horizontalMetrics,
-            VerticalHeadTable verticalHeadTable,
-            VerticalMetricsTable verticalMetrics,
-            HeadTable head,
-            KerningTable kern,
-            PostTable post)
-            : base(
-                  nameTable,
-                  maxpTable,
-                  cmap,
-                  glyphs,
-                  os2,
-                  horizontalHeadTable,
-                  horizontalMetrics,
-                  verticalHeadTable,
-                  verticalMetrics,
-                  head,
-                  kern,
-                  post,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null)
+        internal FakeFontInstance(TrueTypeFontTables tables)
+            : base(tables)
         {
         }
 
@@ -86,20 +30,41 @@ namespace SixLabors.Fonts.Tests.Fakes
         public static FakeFontInstance CreateFontWithVaryingVerticalFontMetrics(string text, string name = "name")
         {
             List<FakeGlyphSource> glyphs = GetGlyphs(text);
+            TrueTypeFontTables tables = default;
+            tables.Head = GenerateHeadTable();
+            tables.Hhea = GenerateHorizontalHeadTable();
+            tables.Name = GenerateNameTable(name);
+            tables.Maxp = GenerateMaxpTable(glyphs);
+            tables.Cmap = GenerateCMapTable(glyphs);
+            tables.Glyf = new FakeGlyphTable(glyphs);
+            tables.Post = GeneratePostTable();
+            tables.Kern = new KerningTable(Array.Empty<KerningSubTable>());
+            tables.Os2 = GenerateOS2TableWithVaryingVerticalFontMetrics();
+            tables.Htmx = GenerateHorizontalMetricsTable(glyphs);
+            tables.Vhea = GenerateVerticalHeadTable();
+            tables.Vmtx = GenerateVerticalMetricsTable(glyphs);
 
-            return new FakeFontInstance(
-                GenerateNameTable(name),
-                GenerateMaxpTable(glyphs),
-                GenerateCMapTable(glyphs),
-                new FakeGlyphTable(glyphs),
-                GenerateOS2TableWithVaryingVerticalFontMetrics(),
-                GenerateHorizontalHeadTable(),
-                GenerateHorizontalMetricsTable(glyphs),
-                GenerateVerticalHeadTable(),
-                GenerateVerticalMetricsTable(glyphs),
-                GenerateHeadTable(),
-                new KerningTable(Array.Empty<KerningSubTable>()),
-                GeneratePostTable());
+            return new FakeFontInstance(tables);
+        }
+
+        private static TrueTypeFontTables CreateTrueTypeFontTables(string text, string name = "name")
+        {
+            List<FakeGlyphSource> glyphs = GetGlyphs(text);
+            TrueTypeFontTables tables = default;
+            tables.Head = GenerateHeadTable();
+            tables.Hhea = GenerateHorizontalHeadTable();
+            tables.Name = GenerateNameTable(name);
+            tables.Maxp = GenerateMaxpTable(glyphs);
+            tables.Cmap = GenerateCMapTable(glyphs);
+            tables.Glyf = new FakeGlyphTable(glyphs);
+            tables.Post = GeneratePostTable();
+            tables.Kern = new KerningTable(Array.Empty<KerningSubTable>());
+            tables.Os2 = GenerateOS2Table();
+            tables.Htmx = GenerateHorizontalMetricsTable(glyphs);
+            tables.Vhea = GenerateVerticalHeadTable();
+            tables.Vmtx = GenerateVerticalMetricsTable(glyphs);
+
+            return tables;
         }
 
         private static List<FakeGlyphSource> GetGlyphs(string text)
