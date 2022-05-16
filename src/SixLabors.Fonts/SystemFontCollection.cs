@@ -63,41 +63,37 @@ namespace SixLabors.Fonts
         }
 
         public SystemFontCollection()
-            : this(StandardFontLocations)
         {
-        }
+            IEnumerable<string> paths;
+            Native.MacSystemFontsEnumerator? nativeEnumerator = null;
 
-        public SystemFontCollection(IEnumerable<string> paths)
-        {
-            string[] expanded = paths.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
-            this.searchDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
+            bool forceDirectoryEnumeration = AppContext.TryGetSwitch("Switch.SixLabors.Fonts.DoNotUseNativeSystemFontsEnumeration", out bool isEnabled) && isEnabled;
+            if (!forceDirectoryEnumeration && RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                nativeEnumerator = new Native.MacSystemFontsEnumerator();
 
-            this.collection = new FontCollection(this.searchDirectories);
+                // The CTFontManagerCopyAvailableFontURLs method might return duplicate paths, hence the call to Distinct()
+                paths = nativeEnumerator.Distinct();
 
-            // We do this to provide a consistent experience with case sensitive file systems.
-            IEnumerable<string> files = this.searchDirectories
-                                .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
-                                .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase)
+                this.searchDirectories = Array.Empty<string>();
+            }
+            else
+            {
+                string[] expanded = StandardFontLocations.Select(x => Environment.ExpandEnvironmentVariables(x)).ToArray();
+                string[] existingDirectories = expanded.Where(x => Directory.Exists(x)).ToArray();
+
+                // We do this to provide a consistent experience with case sensitive file systems.
+                paths = existingDirectories
+                    .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
+                    .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase)
                                 || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase));
 
-            foreach (string path in files)
-            {
-                try
-                {
-                    if (path.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase))
-                    {
-                        this.collection.AddCollection(path);
-                    }
-                    else
-                    {
-                        this.collection.Add(path);
-                    }
-                }
-                catch
-                {
-                    // We swallow exceptions installing system fonts as we hold no guarantees about permissions etc.
-                }
+                this.searchDirectories = existingDirectories;
             }
+
+            this.collection = CreateSystemFontCollection(paths, this.searchDirectories);
+
+            nativeEnumerator?.Dispose();
         }
 
         /// <inheritdoc/>
@@ -140,5 +136,31 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         IEnumerator<FontMetrics> IReadOnlyFontMetricsCollection.GetEnumerator()
             => ((IReadOnlyFontMetricsCollection)this.collection).GetEnumerator();
+
+        private static FontCollection CreateSystemFontCollection(IEnumerable<string> paths, IReadOnlyCollection<string> searchDirectories)
+        {
+            var collection = new FontCollection(searchDirectories);
+
+            foreach (string path in paths)
+            {
+                try
+                {
+                    if (path.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase))
+                    {
+                        collection.AddCollection(path);
+                    }
+                    else
+                    {
+                        collection.Add(path);
+                    }
+                }
+                catch
+                {
+                    // We swallow exceptions installing system fonts as we hold no guarantees about permissions etc.
+                }
+            }
+
+            return collection;
+        }
     }
 }
