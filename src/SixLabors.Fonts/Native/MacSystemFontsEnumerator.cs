@@ -62,7 +62,7 @@ namespace SixLabors.Fonts.Native
                 IntPtr fontPath = CFURLCopyFileSystemPath(fontUrl, CFURLPathStyle.kCFURLPOSIXPathStyle);
 
 #if !NETSTANDARD2_0
-                var current = Marshal.PtrToStringUTF8(CFStringGetCStringPtr(fontPath, CFStringEncoding.kCFStringEncodingUTF8));
+                string? current = Marshal.PtrToStringUTF8(CFStringGetCStringPtr(fontPath, CFStringEncoding.kCFStringEncodingUTF8));
                 if (current is not null)
                 {
                     this.Current = current;
@@ -70,9 +70,9 @@ namespace SixLabors.Fonts.Native
                 else
 #endif
                 {
-                    var fontPathLength = (int)CFStringGetLength(fontPath);
-                    var fontPathBufferSize = (fontPathLength + 1) * 2; // +1 for the NULL byte and *2 for UTF-16
-                    var fontPathBuffer = BytePool.Rent(fontPathBufferSize);
+                    int fontPathLength = (int)CFStringGetLength(fontPath);
+                    int fontPathBufferSize = (fontPathLength + 1) * 2; // +1 for the NULL byte and *2 for UTF-16
+                    byte[] fontPathBuffer = BytePool.Rent(fontPathBufferSize);
                     CFStringGetCString(fontPath, fontPathBuffer, fontPathBufferSize, CFStringEncoding.kCFStringEncodingUTF16LE);
                     this.Current = Encoding.Unicode.GetString(fontPathBuffer, 0, fontPathBufferSize - 2); // -2 for the UTF-16 NULL
                     BytePool.Return(fontPathBuffer);
