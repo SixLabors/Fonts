@@ -12,47 +12,47 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
     /// </summary>
     internal class DefaultShaper : BaseShaper
     {
-        private static readonly Tag RvnrTag = Tag.Parse("rvrn");
+        protected static readonly Tag RvnrTag = Tag.Parse("rvrn");
 
-        private static readonly Tag LtraTag = Tag.Parse("ltra");
+        protected static readonly Tag LtraTag = Tag.Parse("ltra");
 
-        private static readonly Tag LtrmTag = Tag.Parse("ltrm");
+        protected static readonly Tag LtrmTag = Tag.Parse("ltrm");
 
-        private static readonly Tag RtlaTag = Tag.Parse("rtla");
+        protected static readonly Tag RtlaTag = Tag.Parse("rtla");
 
-        private static readonly Tag RtlmTag = Tag.Parse("rtlm");
+        protected static readonly Tag RtlmTag = Tag.Parse("rtlm");
 
-        private static readonly Tag FracTag = Tag.Parse("frac");
+        protected static readonly Tag FracTag = Tag.Parse("frac");
 
-        private static readonly Tag NumrTag = Tag.Parse("numr");
+        protected static readonly Tag NumrTag = Tag.Parse("numr");
 
-        private static readonly Tag DnomTag = Tag.Parse("dnom");
+        protected static readonly Tag DnomTag = Tag.Parse("dnom");
 
-        private static readonly Tag CcmpTag = Tag.Parse("ccmp");
+        protected static readonly Tag CcmpTag = Tag.Parse("ccmp");
 
-        private static readonly Tag LoclTag = Tag.Parse("locl");
+        protected static readonly Tag LoclTag = Tag.Parse("locl");
 
-        private static readonly Tag RligTag = Tag.Parse("rlig");
+        protected static readonly Tag RligTag = Tag.Parse("rlig");
 
-        private static readonly Tag MarkTag = Tag.Parse("mark");
+        protected static readonly Tag MarkTag = Tag.Parse("mark");
 
-        private static readonly Tag MkmkTag = Tag.Parse("mkmk");
+        protected static readonly Tag MkmkTag = Tag.Parse("mkmk");
 
-        private static readonly Tag CaltTag = Tag.Parse("calt");
+        protected static readonly Tag CaltTag = Tag.Parse("calt");
 
-        private static readonly Tag CligTag = Tag.Parse("clig");
+        protected static readonly Tag CligTag = Tag.Parse("clig");
 
-        private static readonly Tag LigaTag = Tag.Parse("liga");
+        protected static readonly Tag LigaTag = Tag.Parse("liga");
 
-        private static readonly Tag RcltTag = Tag.Parse("rclt");
+        protected static readonly Tag RcltTag = Tag.Parse("rclt");
 
-        private static readonly Tag CursTag = Tag.Parse("curs");
+        protected static readonly Tag CursTag = Tag.Parse("curs");
 
-        private static readonly Tag KernTag = Tag.Parse("kern");
+        protected static readonly Tag KernTag = Tag.Parse("kern");
 
-        private static readonly Tag VertTag = Tag.Parse("vert");
+        protected static readonly Tag VertTag = Tag.Parse("vert");
 
-        private static readonly Tag VKernTag = Tag.Parse("vkrn");
+        protected static readonly Tag VKernTag = Tag.Parse("vkrn");
 
         private static readonly CodePoint FractionSlash = new(0x2044);
 

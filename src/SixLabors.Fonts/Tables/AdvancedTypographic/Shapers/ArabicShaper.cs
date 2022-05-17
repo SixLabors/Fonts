@@ -12,10 +12,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
     /// </summary>
     internal sealed class ArabicShaper : DefaultShaper
     {
-        private static readonly Tag CcmpTag = Tag.Parse("ccmp");
-
-        private static readonly Tag LoclTag = Tag.Parse("locl");
-
         private static readonly Tag MsetTag = Tag.Parse("mset");
 
         private static readonly Tag FinaTag = Tag.Parse("fina");

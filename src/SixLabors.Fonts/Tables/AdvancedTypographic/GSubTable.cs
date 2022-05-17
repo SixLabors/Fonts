@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
@@ -125,6 +126,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
                 // Assign Substitution features to each glyph.
                 shaper.AssignFeatures(collection, index, count);
+
+                // Shapers can adjust the count.
+                count = (ushort)Math.Min(count, collection.Count - index);
+
                 IEnumerable<Tag> stageFeatures = shaper.GetShapingStageFeatures();
 
                 int currentCount = collection.Count;

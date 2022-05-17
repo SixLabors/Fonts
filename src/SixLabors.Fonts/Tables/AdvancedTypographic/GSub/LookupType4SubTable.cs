@@ -120,7 +120,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             ushort index,
             int count)
         {
-            ushort glyphId = collection[index][0];
+            ushort glyphId = collection[index];
             if (glyphId == 0)
             {
                 return false;
@@ -183,7 +183,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                 for (int j = 0; j < matches.Length && isMarkLigature; j++)
                 {
                     GlyphShapingData match = collection.GetGlyphShapingData(matches[j]);
-                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, match.GlyphIds[0], match))
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, match.GlyphId, match))
                     {
                         isBaseLigature = false;
                         isMarkLigature = false;

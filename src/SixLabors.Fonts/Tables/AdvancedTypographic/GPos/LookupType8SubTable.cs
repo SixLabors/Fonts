@@ -59,7 +59,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // Implements Chained Contexts Substitution, Format 1:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#61-chained-contexts-substitution-format-1-simple-glyph-contexts
-                ushort glyphId = collection[index][0];
+                ushort glyphId = collection[index];
                 if (glyphId == 0)
                 {
                     return false;
@@ -160,7 +160,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // Implements Chained Contexts Substitution for Format 2:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#62-chained-contexts-substitution-format-2-class-based-glyph-contexts
-                ushort glyphId = collection[index][0];
+                ushort glyphId = collection[index];
                 if (glyphId == 0)
                 {
                     return false;
@@ -252,7 +252,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 ushort index,
                 int count)
             {
-                ushort glyphId = collection[index][0];
+                ushort glyphId = collection[index];
                 if (glyphId == 0)
                 {
                     return false;

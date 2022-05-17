@@ -91,7 +91,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             ushort index,
             int count)
         {
-            ushort glyphId = collection[index][0];
+            ushort glyphId = collection[index];
             if (glyphId == 0)
             {
                 return false;
@@ -101,8 +101,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
 
             if (offset > -1)
             {
-                // TODO: Looks like we should remove the glyph if the substitutes
-                // length = 0;
                 collection.Replace(index, this.sequenceTables[offset].SubstituteGlyphs);
                 return true;
             }

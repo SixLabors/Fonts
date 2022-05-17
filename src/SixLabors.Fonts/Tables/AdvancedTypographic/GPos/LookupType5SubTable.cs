@@ -95,7 +95,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // Mark-to-Ligature Attachment Positioning.
                 // Implements: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-5-mark-to-ligature-attachment-positioning-subtable
-                ushort glyphId = collection[index][0];
+                ushort glyphId = collection[index];
                 if (glyphId == 0)
                 {
                     return false;
@@ -112,7 +112,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 while (--baseGlyphIndex >= 0)
                 {
                     GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIndex);
-                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphIds[0], data))
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphId, data))
                     {
                         break;
                     }
@@ -123,7 +123,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                ushort baseGlyphId = collection[baseGlyphIndex][0];
+                ushort baseGlyphId = collection[baseGlyphIndex];
                 int ligatureIndex = this.ligatureCoverage.CoverageIndexOf(baseGlyphId);
                 if (ligatureIndex < 0)
                 {

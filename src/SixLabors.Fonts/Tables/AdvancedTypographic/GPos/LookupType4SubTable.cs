@@ -91,7 +91,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // Mark-to-Base Attachment Positioning Subtable.
                 // Implements: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-4-mark-to-base-attachment-positioning-subtable
-                ushort glyphId = collection[index][0];
+                ushort glyphId = collection[index];
                 if (glyphId == 0)
                 {
                     return false;
@@ -108,7 +108,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 while (--baseGlyphIndex >= 0)
                 {
                     GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIndex);
-                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphIds[0], data) && !(data.LigatureComponent > 0))
+                    if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphId, data) && !(data.LigatureComponent > 0))
                     {
                         break;
                     }
@@ -119,7 +119,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                ushort baseGlyphId = collection[baseGlyphIndex][0];
+                ushort baseGlyphId = collection[baseGlyphIndex];
                 int baseIndex = this.baseCoverage.CoverageIndexOf(baseGlyphId);
                 if (baseIndex < 0)
                 {

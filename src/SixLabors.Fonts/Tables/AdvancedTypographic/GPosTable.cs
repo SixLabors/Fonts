@@ -320,7 +320,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             {
                 int currentIndex = i + index;
                 GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
-                if (AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphIds[0], data))
+                if (AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphId, data))
                 {
                     data.Bounds.Width = 0;
                     data.Bounds.Height = 0;

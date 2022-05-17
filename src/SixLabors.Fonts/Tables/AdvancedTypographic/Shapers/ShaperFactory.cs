@@ -24,6 +24,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 or ScriptClass.Mandaic
                 or ScriptClass.Manichaean
                 or ScriptClass.PsalterPahlavi => new ArabicShaper(textOptions),
+                ScriptClass.Hangul => new HangulShaper(textOptions),
                 _ => new DefaultShaper(textOptions),
             };
     }

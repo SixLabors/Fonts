@@ -59,8 +59,8 @@ namespace SixLabors.Fonts.Tables.General
 
         public void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, ushort left, ushort right)
         {
-            ushort previous = collection[left][0];
-            ushort current = collection[right][0];
+            ushort previous = collection[left];
+            ushort current = collection[right];
             if (previous == 0 || current == 0)
             {
                 return;

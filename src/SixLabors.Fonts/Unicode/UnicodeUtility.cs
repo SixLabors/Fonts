@@ -231,6 +231,180 @@ namespace SixLabors.Fonts.Unicode
         }
 
         /// <summary>
+        /// Returns <see langword="true"/> if <paramref name="value"/> is a Default Ignorable Code Point.
+        /// </summary>
+        /// <remarks>
+        /// <see href="http://www.unicode.org/reports/tr44/#Default_Ignorable_Code_Point"/>
+        /// <see href="https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt"/>
+        /// </remarks>
+        public static bool IsDefaultIgnorableCodePoint(uint value)
+        {
+            // SOFT HYPHEN
+            if (value == 0x00AD)
+            {
+                return true;
+            }
+
+            // COMBINING GRAPHEME JOINER
+            if (value == 0x034F)
+            {
+                return true;
+            }
+
+            // COMBINING GRAPHEME JOINER
+            if (value == 0x061C)
+            {
+                return true;
+            }
+
+            // HANGUL CHOSEONG FILLER..HANGUL JUNGSEONG FILLER
+            if (IsInRangeInclusive(value, 0x115F, 0x1160))
+            {
+                return true;
+            }
+
+            // KHMER VOWEL INHERENT AQ..KHMER VOWEL INHERENT AA
+            if (IsInRangeInclusive(value, 0x17B4, 0x17B5))
+            {
+                return true;
+            }
+
+            // MONGOLIAN FREE VARIATION SELECTOR ONE..MONGOLIAN FREE VARIATION SELECTOR THREE
+            if (IsInRangeInclusive(value, 0x180B, 0x180D))
+            {
+                return true;
+            }
+
+            // MONGOLIAN VOWEL SEPARATOR
+            if (value == 0x180E)
+            {
+                return true;
+            }
+
+            // MONGOLIAN FREE VARIATION SELECTOR FOUR
+            if (value == 0x180F)
+            {
+                return true;
+            }
+
+            // ZERO WIDTH SPACE..RIGHT-TO-LEFT MARK
+            if (IsInRangeInclusive(value, 0x200B, 0x200F))
+            {
+                return true;
+            }
+
+            // LEFT-TO-RIGHT EMBEDDING..RIGHT-TO-LEFT OVERRIDE
+            if (IsInRangeInclusive(value, 0x202A, 0x202E))
+            {
+                return true;
+            }
+
+            // WORD JOINER..INVISIBLE PLUS
+            if (IsInRangeInclusive(value, 0x2060, 0x2064))
+            {
+                return true;
+            }
+
+            // <reserved-2065>
+            if (value == 0x2065)
+            {
+                return true;
+            }
+
+            // LEFT-TO-RIGHT ISOLATE..NOMINAL DIGIT SHAPES
+            if (IsInRangeInclusive(value, 0x2066, 0x206F))
+            {
+                return true;
+            }
+
+            // HANGUL FILLER
+            if (value == 0x3164)
+            {
+                return true;
+            }
+
+            // VARIATION SELECTOR-1..VARIATION SELECTOR-16
+            if (IsInRangeInclusive(value, 0xFE00, 0xFE0F))
+            {
+                return true;
+            }
+
+            // ZERO WIDTH NO-BREAK SPACE
+            if (value == 0xFEFF)
+            {
+                return true;
+            }
+
+            // HALFWIDTH HANGUL FILLER
+            if (value == 0xFFA0)
+            {
+                return true;
+            }
+
+            // <reserved-FFF0>..<reserved-FFF8>
+            if (IsInRangeInclusive(value, 0xFFF0, 0xFFF8))
+            {
+                return true;
+            }
+
+            // SHORTHAND FORMAT LETTER OVERLAP..SHORTHAND FORMAT UP STEP
+            if (IsInRangeInclusive(value, 0x1BCA0, 0x1BCA3))
+            {
+                return true;
+            }
+
+            // MUSICAL SYMBOL BEGIN BEAM..MUSICAL SYMBOL END PHRASE
+            if (IsInRangeInclusive(value, 0x1D173, 0x1D17A))
+            {
+                return true;
+            }
+
+            // <reserved-E0000>
+            if (value == 0xE0000)
+            {
+                return true;
+            }
+
+            // LANGUAGE TAG
+            if (value == 0xE0001)
+            {
+                return true;
+            }
+
+            // <reserved-E0002>..<reserved-E001F>
+            if (IsInRangeInclusive(value, 0xE0002, 0xE001F))
+            {
+                return true;
+            }
+
+            // TAG SPACE..CANCEL TAG
+            if (IsInRangeInclusive(value, 0xE0020, 0xE007F))
+            {
+                return true;
+            }
+
+            // <reserved-E0080>..<reserved-E00FF>
+            if (IsInRangeInclusive(value, 0xE0080, 0xE00FF))
+            {
+                return true;
+            }
+
+            // VARIATION SELECTOR-17..VARIATION SELECTOR-256
+            if (IsInRangeInclusive(value, 0xE0100, 0xE01EF))
+            {
+                return true;
+            }
+
+            // <reserved-E01F0>..<reserved-E0FFF>
+            if (IsInRangeInclusive(value, 0xE01F0, 0xE0FFF))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Returns the Unicode plane (0 through 16, inclusive) which contains this code point.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
