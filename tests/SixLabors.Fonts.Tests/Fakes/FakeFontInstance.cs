@@ -27,44 +27,56 @@ namespace SixLabors.Fonts.Tests.Fakes
         /// <summary>
         /// Creates a fake font with varying vertical font metrics to facilitate testing.
         /// </summary>
-        public static FakeFontInstance CreateFontWithVaryingVerticalFontMetrics(string text, string name = "name")
+        public static FakeFontInstance CreateFontWithVaryingVerticalFontMetrics(string text, string fontName = "name")
         {
             List<FakeGlyphSource> glyphs = GetGlyphs(text);
-            TrueTypeFontTables tables = default;
-            tables.Head = GenerateHeadTable();
-            tables.Hhea = GenerateHorizontalHeadTable();
-            tables.Name = GenerateNameTable(name);
-            tables.Maxp = GenerateMaxpTable(glyphs);
-            tables.Cmap = GenerateCMapTable(glyphs);
-            tables.Glyf = new FakeGlyphTable(glyphs);
-            tables.Post = GeneratePostTable();
-            tables.Kern = new KerningTable(Array.Empty<KerningSubTable>());
-            tables.Os2 = GenerateOS2TableWithVaryingVerticalFontMetrics();
-            tables.Htmx = GenerateHorizontalMetricsTable(glyphs);
-            tables.Vhea = GenerateVerticalHeadTable();
-            tables.Vmtx = GenerateVerticalMetricsTable(glyphs);
+            HeadTable head = GenerateHeadTable();
+            HorizontalHeadTable hhea = GenerateHorizontalHeadTable();
+            NameTable name = GenerateNameTable(fontName);
+            MaximumProfileTable maxp = GenerateMaxpTable(glyphs);
+            CMapTable cmap = GenerateCMapTable(glyphs);
+            var glyf = new FakeGlyphTable(glyphs);
+            PostTable post = GeneratePostTable();
+            var kern = new KerningTable(Array.Empty<KerningSubTable>());
+            OS2Table os2 = GenerateOS2TableWithVaryingVerticalFontMetrics();
+            HorizontalMetricsTable htmx = GenerateHorizontalMetricsTable(glyphs);
+            VerticalHeadTable vhea = GenerateVerticalHeadTable();
+            VerticalMetricsTable vmtx = GenerateVerticalMetricsTable(glyphs);
+            IndexLocationTable loca = GenerateIndexLocationTable(glyphs);
+
+            TrueTypeFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, glyf, loca)
+            {
+                Kern = kern,
+                Vhea = vhea,
+                Vmtx = vmtx
+            };
 
             return new FakeFontInstance(tables);
         }
 
-        private static TrueTypeFontTables CreateTrueTypeFontTables(string text, string name = "name")
+        private static TrueTypeFontTables CreateTrueTypeFontTables(string text, string fontName = "name")
         {
             List<FakeGlyphSource> glyphs = GetGlyphs(text);
-            TrueTypeFontTables tables = default;
-            tables.Head = GenerateHeadTable();
-            tables.Hhea = GenerateHorizontalHeadTable();
-            tables.Name = GenerateNameTable(name);
-            tables.Maxp = GenerateMaxpTable(glyphs);
-            tables.Cmap = GenerateCMapTable(glyphs);
-            tables.Glyf = new FakeGlyphTable(glyphs);
-            tables.Post = GeneratePostTable();
-            tables.Kern = new KerningTable(Array.Empty<KerningSubTable>());
-            tables.Os2 = GenerateOS2Table();
-            tables.Htmx = GenerateHorizontalMetricsTable(glyphs);
-            tables.Vhea = GenerateVerticalHeadTable();
-            tables.Vmtx = GenerateVerticalMetricsTable(glyphs);
+            HeadTable head = GenerateHeadTable();
+            HorizontalHeadTable hhea = GenerateHorizontalHeadTable();
+            NameTable name = GenerateNameTable(fontName);
+            MaximumProfileTable maxp = GenerateMaxpTable(glyphs);
+            CMapTable cmap = GenerateCMapTable(glyphs);
+            var glyf = new FakeGlyphTable(glyphs);
+            PostTable post = GeneratePostTable();
+            var kern = new KerningTable(Array.Empty<KerningSubTable>());
+            OS2Table os2 = GenerateOS2TableWithVaryingVerticalFontMetrics();
+            HorizontalMetricsTable htmx = GenerateHorizontalMetricsTable(glyphs);
+            VerticalHeadTable vhea = GenerateVerticalHeadTable();
+            VerticalMetricsTable vmtx = GenerateVerticalMetricsTable(glyphs);
+            IndexLocationTable loca = GenerateIndexLocationTable(glyphs);
 
-            return tables;
+            return new(cmap, head, hhea, htmx, maxp, name, os2, post, glyf, loca)
+            {
+                Kern = kern,
+                Vhea = vhea,
+                Vmtx = vmtx
+            };
         }
 
         private static List<FakeGlyphSource> GetGlyphs(string text)
@@ -117,6 +129,9 @@ namespace SixLabors.Fonts.Tests.Fakes
 
         private static VerticalMetricsTable GenerateVerticalMetricsTable(List<FakeGlyphSource> glyphs)
             => new(glyphs.Select(_ => (ushort)30).ToArray(), glyphs.Select(_ => (short)10).ToArray());
+
+        private static IndexLocationTable GenerateIndexLocationTable(List<FakeGlyphSource> glyphs)
+            => new(new uint[glyphs.Count + 1]);
 
         private static HeadTable GenerateHeadTable()
             => new(

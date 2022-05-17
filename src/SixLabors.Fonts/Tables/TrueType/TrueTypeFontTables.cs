@@ -7,8 +7,32 @@ using SixLabors.Fonts.Tables.Hinting;
 
 namespace SixLabors.Fonts.Tables.TrueType
 {
-    internal struct TrueTypeFontTables : IFontTables
+    internal sealed class TrueTypeFontTables : IFontTables
     {
+        public TrueTypeFontTables(
+            CMapTable cmap,
+            HeadTable head,
+            HorizontalHeadTable hhea,
+            HorizontalMetricsTable htmx,
+            MaximumProfileTable maxp,
+            NameTable name,
+            OS2Table os2,
+            PostTable post,
+            GlyphTable glyph,
+            IndexLocationTable loca)
+        {
+            this.Cmap = cmap;
+            this.Head = head;
+            this.Hhea = hhea;
+            this.Htmx = htmx;
+            this.Maxp = maxp;
+            this.Name = name;
+            this.Os2 = os2;
+            this.Post = post;
+            this.Glyf = glyph;
+            this.Loca = loca;
+        }
+
         public CMapTable Cmap { get; set; }
 
         public HeadTable Head { get; set; }

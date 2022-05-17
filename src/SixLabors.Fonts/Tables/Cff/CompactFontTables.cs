@@ -6,8 +6,30 @@ using SixLabors.Fonts.Tables.General;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal struct CompactFontTables : IFontTables
+    internal sealed class CompactFontTables : IFontTables
     {
+        public CompactFontTables(
+            CMapTable cmap,
+            HeadTable head,
+            HorizontalHeadTable hhea,
+            HorizontalMetricsTable htmx,
+            MaximumProfileTable maxp,
+            NameTable name,
+            OS2Table os2,
+            PostTable post,
+            CffTable cff)
+        {
+            this.Cmap = cmap;
+            this.Head = head;
+            this.Hhea = hhea;
+            this.Htmx = htmx;
+            this.Maxp = maxp;
+            this.Name = name;
+            this.Os2 = os2;
+            this.Post = post;
+            this.Cff = cff;
+        }
+
         public CMapTable Cmap { get; set; }
 
         public HeadTable Head { get; set; }

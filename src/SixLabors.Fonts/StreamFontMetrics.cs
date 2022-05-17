@@ -169,8 +169,8 @@ namespace SixLabors.Fonts
         internal override bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
         {
             CMapTable cmap = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Value.Cmap
-                : this.compactFontTables!.Value.Cmap;
+                ? this.trueTypeFontTables!.Cmap
+                : this.compactFontTables!.Cmap;
 
             return cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
         }
@@ -179,8 +179,8 @@ namespace SixLabors.Fonts
         internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
         {
             GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Value.Gdef
-                : this.compactFontTables!.Value.Gdef;
+                ? this.trueTypeFontTables!.Gdef
+                : this.compactFontTables!.Gdef;
 
             glyphClass = null;
             return gdef is not null && gdef.TryGetGlyphClass(glyphId, out glyphClass);
@@ -190,8 +190,8 @@ namespace SixLabors.Fonts
         internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
         {
             GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Value.Gdef
-                : this.compactFontTables!.Value.Gdef;
+                ? this.trueTypeFontTables!.Gdef
+                : this.compactFontTables!.Gdef;
 
             markAttachmentClass = null;
             return gdef is not null && gdef.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
@@ -241,8 +241,8 @@ namespace SixLabors.Fonts
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
         {
             GSubTable? gsub = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Value.GSub
-                : this.compactFontTables!.Value.GSub;
+                ? this.trueTypeFontTables!.GSub
+                : this.compactFontTables!.GSub;
 
             gsub?.ApplySubstitution(this, collection);
         }
@@ -252,8 +252,8 @@ namespace SixLabors.Fonts
         {
             bool isTTF = this.outlineType == OutlineType.TrueType;
             GPosTable? gpos = isTTF
-                ? this.trueTypeFontTables!.Value.GPos
-                : this.compactFontTables!.Value.GPos;
+                ? this.trueTypeFontTables!.GPos
+                : this.compactFontTables!.GPos;
 
             bool kerned = false;
             KerningMode kerningMode = collection.TextOptions.KerningMode;
@@ -262,8 +262,8 @@ namespace SixLabors.Fonts
             if (!kerned && kerningMode != KerningMode.None)
             {
                 KerningTable? kern = isTTF
-                    ? this.trueTypeFontTables!.Value.Kern
-                    : this.compactFontTables!.Value.Kern;
+                    ? this.trueTypeFontTables!.Kern
+                    : this.compactFontTables!.Kern;
 
                 if (kern != null)
                 {
@@ -405,31 +405,45 @@ namespace SixLabors.Fonts
             // Load using recommended order for best performance.
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // 'head', 'hhea', 'maxp', OS/2, 'hmtx', LTSH, VDMX, 'hdmx', 'cmap', 'fpgm', 'prep', 'cvt ', 'loca', 'glyf', 'kern', 'name', 'post', 'gasp', PCLT, DSIG
-            TrueTypeFontTables tables = default;
-            tables.Head = reader.GetTable<HeadTable>();
-            tables.Hhea = reader.GetTable<HorizontalHeadTable>();
-            tables.Maxp = reader.GetTable<MaximumProfileTable>();
-            tables.Os2 = reader.GetTable<OS2Table>();
-            tables.Htmx = reader.GetTable<HorizontalMetricsTable>();
-            tables.Cmap = reader.GetTable<CMapTable>();
-            tables.Fpgm = reader.TryGetTable<FpgmTable>();
-            tables.Prep = reader.TryGetTable<PrepTable>();
-            tables.Cvt = reader.TryGetTable<CvtTable>();
-            tables.Loca = reader.GetTable<IndexLocationTable>();
-            tables.Glyf = reader.GetTable<GlyphTable>();
-            tables.Kern = reader.TryGetTable<KerningTable>();
-            tables.Name = reader.GetTable<NameTable>();
-            tables.Post = reader.GetTable<PostTable>();
+            HeadTable head = reader.GetTable<HeadTable>();
+            HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>();
+            MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>();
+            OS2Table os2 = reader.GetTable<OS2Table>();
+            HorizontalMetricsTable htmx = reader.GetTable<HorizontalMetricsTable>();
+            CMapTable cmap = reader.GetTable<CMapTable>();
+            FpgmTable? fpgm = reader.TryGetTable<FpgmTable>();
+            PrepTable? prep = reader.TryGetTable<PrepTable>();
+            CvtTable? cvt = reader.TryGetTable<CvtTable>();
+            IndexLocationTable loca = reader.GetTable<IndexLocationTable>();
+            GlyphTable glyf = reader.GetTable<GlyphTable>();
+            KerningTable? kern = reader.TryGetTable<KerningTable>();
+            NameTable name = reader.GetTable<NameTable>();
+            PostTable post = reader.GetTable<PostTable>();
 
-            tables.Vhea = reader.TryGetTable<VerticalHeadTable>();
-            tables.Vmtx = reader.TryGetTable<VerticalMetricsTable>();
+            VerticalHeadTable? vhea = reader.TryGetTable<VerticalHeadTable>();
+            VerticalMetricsTable? vmtx = reader.TryGetTable<VerticalMetricsTable>();
 
-            tables.Gdef = reader.TryGetTable<GlyphDefinitionTable>();
-            tables.GSub = reader.TryGetTable<GSubTable>();
-            tables.GPos = reader.TryGetTable<GPosTable>();
+            GlyphDefinitionTable? gdef = reader.TryGetTable<GlyphDefinitionTable>();
+            GSubTable? gSub = reader.TryGetTable<GSubTable>();
+            GPosTable? gPos = reader.TryGetTable<GPosTable>();
 
-            tables.Colr = reader.TryGetTable<ColrTable>();
-            tables.Cpal = reader.TryGetTable<CpalTable>();
+            ColrTable? colr = reader.TryGetTable<ColrTable>();
+            CpalTable? cpal = reader.TryGetTable<CpalTable>();
+
+            TrueTypeFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, glyf, loca)
+            {
+                Fpgm = fpgm,
+                Prep = prep,
+                Cvt = cvt,
+                Kern = kern,
+                Vhea = vhea,
+                Vmtx = vmtx,
+                Gdef = gdef,
+                GSub = gSub,
+                GPos = gPos,
+                Colr = colr,
+                Cpal = cpal,
+            };
 
             return new StreamFontMetrics(tables);
         }
@@ -439,27 +453,38 @@ namespace SixLabors.Fonts
             // Load using recommended order for best performance.
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // 'head', 'hhea', 'maxp', OS/2, 'name', 'cmap', 'post', 'CFF '
-            CompactFontTables tables = default;
-            tables.Head = reader.GetTable<HeadTable>();
-            tables.Hhea = reader.GetTable<HorizontalHeadTable>();
-            tables.Maxp = reader.GetTable<MaximumProfileTable>();
-            tables.Os2 = reader.GetTable<OS2Table>();
-            tables.Name = reader.GetTable<NameTable>();
-            tables.Cmap = reader.GetTable<CMapTable>();
-            tables.Post = reader.GetTable<PostTable>();
-            tables.Cff = reader.GetTable<CffTable>(); // TODO: CFF2, VORG
+            HeadTable head = reader.GetTable<HeadTable>();
+            HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>();
+            MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>();
+            OS2Table os2 = reader.GetTable<OS2Table>();
+            NameTable name = reader.GetTable<NameTable>();
+            CMapTable cmap = reader.GetTable<CMapTable>();
+            PostTable post = reader.GetTable<PostTable>();
+            CffTable cff = reader.GetTable<CffTable>(); // TODO: CFF2, VORG
 
-            tables.Htmx = reader.GetTable<HorizontalMetricsTable>();
-            tables.Vhea = reader.TryGetTable<VerticalHeadTable>();
-            tables.Vmtx = reader.TryGetTable<VerticalMetricsTable>();
-            tables.Kern = reader.TryGetTable<KerningTable>();
+            HorizontalMetricsTable htmx = reader.GetTable<HorizontalMetricsTable>();
+            VerticalHeadTable? vhea = reader.TryGetTable<VerticalHeadTable>();
+            VerticalMetricsTable? vmtx = reader.TryGetTable<VerticalMetricsTable>();
+            KerningTable? kern = reader.TryGetTable<KerningTable>();
 
-            tables.Gdef = reader.TryGetTable<GlyphDefinitionTable>();
-            tables.GSub = reader.TryGetTable<GSubTable>();
-            tables.GPos = reader.TryGetTable<GPosTable>();
+            GlyphDefinitionTable? gdef = reader.TryGetTable<GlyphDefinitionTable>();
+            GSubTable? gSub = reader.TryGetTable<GSubTable>();
+            GPosTable? gPos = reader.TryGetTable<GPosTable>();
 
-            tables.Colr = reader.TryGetTable<ColrTable>();
-            tables.Cpal = reader.TryGetTable<CpalTable>();
+            ColrTable? colr = reader.TryGetTable<ColrTable>();
+            CpalTable? cpal = reader.TryGetTable<CpalTable>();
+
+            CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff)
+            {
+                Kern = kern,
+                Vhea = vhea,
+                Vmtx = vmtx,
+                Gdef = gdef,
+                GSub = gSub,
+                GPos = gPos,
+                Colr = colr,
+                Cpal = cpal,
+            };
 
             return new StreamFontMetrics(tables);
         }
@@ -507,8 +532,8 @@ namespace SixLabors.Fonts
             if (this.interpreter == null)
             {
                 MaximumProfileTable maxp = isTTF
-                    ? this.trueTypeFontTables!.Value.Maxp
-                    : this.compactFontTables!.Value.Maxp;
+                    ? this.trueTypeFontTables!.Maxp
+                    : this.compactFontTables!.Maxp;
 
                 this.interpreter = new Hinting.Interpreter(
                     maxp.MaxStackElements,
@@ -518,7 +543,7 @@ namespace SixLabors.Fonts
                     maxp.MaxTwilightPoints);
 
                 FpgmTable? fpgm = isTTF
-                    ? this.trueTypeFontTables!.Value.Fpgm
+                    ? this.trueTypeFontTables!.Fpgm
                     : null;
 
                 if (fpgm != null)
@@ -531,8 +556,8 @@ namespace SixLabors.Fonts
             PrepTable? prep = null;
             if (isTTF)
             {
-                cvt = this.trueTypeFontTables!.Value.Cvt;
-                prep = this.trueTypeFontTables!.Value.Prep;
+                cvt = this.trueTypeFontTables!.Cvt;
+                prep = this.trueTypeFontTables!.Prep;
             }
 
             float scaleFactor = scaledPPEM / this.UnitsPerEm;
@@ -551,8 +576,8 @@ namespace SixLabors.Fonts
         private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
             ColrTable? colr = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Value.Colr
-                : this.compactFontTables!.Value.Colr;
+                ? this.trueTypeFontTables!.Colr
+                : this.compactFontTables!.Colr;
 
             if (colr == null || this.colorGlyphCache == null)
             {
@@ -596,13 +621,13 @@ namespace SixLabors.Fonts
                 throw new NotImplementedException("TTF Only!!");
             }
 
-            GlyphTable glyf = this.trueTypeFontTables!.Value.Glyf;
+            GlyphTable glyf = this.trueTypeFontTables!.Glyf;
             HorizontalMetricsTable htmx = isTTF
-                ? this.trueTypeFontTables!.Value.Htmx
-                : this.compactFontTables!.Value.Htmx;
+                ? this.trueTypeFontTables!.Htmx
+                : this.compactFontTables!.Htmx;
             VerticalMetricsTable? vtmx = isTTF
-                ? this.trueTypeFontTables!.Value.Vmtx
-                : this.compactFontTables!.Value.Vmtx;
+                ? this.trueTypeFontTables!.Vmtx
+                : this.compactFontTables!.Vmtx;
 
             GlyphVector vector = glyf.GetGlyph(glyphId);
             Bounds bounds = vector.GetBounds();
@@ -625,8 +650,8 @@ namespace SixLabors.Fonts
                 if (palleteIndex != 0xFFFF)
                 {
                     CpalTable? cpal = isTTF
-                        ? this.trueTypeFontTables!.Value.Cpal
-                        : this.compactFontTables!.Value.Cpal;
+                        ? this.trueTypeFontTables!.Cpal
+                        : this.compactFontTables!.Cpal;
 
                     color = cpal?.GetGlyphColor(0, palleteIndex);
                 }
