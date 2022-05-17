@@ -71,10 +71,12 @@ namespace SixLabors.Fonts.Tables.Cff
         {
 
         }
+        
         public void Run(IGlyphTranslator tx, Cff1GlyphData glyphData, float scale = 1)
         {
             Run(tx, glyphData.GlyphInstructions, scale);
         }
+        
         internal void Run(IGlyphTranslator tx, Type2Instruction[] instructionList, float scale = 1)
         {
             // TODO:

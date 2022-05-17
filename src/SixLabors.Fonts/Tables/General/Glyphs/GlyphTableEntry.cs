@@ -3,7 +3,6 @@
 
 using System;
 using System.Numerics;
-using SixLabors.Fonts.Tables.Cff;
 
 namespace SixLabors.Fonts.Tables.General.Glyphs
 {
@@ -27,26 +26,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             ushort[] endPoints,
             Bounds bounds,
             ReadOnlyMemory<byte> instructions)
-            : this(controlPoints, onCurves, endPoints, bounds, instructions, null)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GlyphTableEntry"/> struct.
-        /// </summary>
-        /// <param name="controlPoints">The vectorial points defining the shape of this glyph.</param>
-        /// <param name="onCurves">A value indicating whether the corresponding <see cref="ControlPoints"/> item is on a curve.</param>
-        /// <param name="endPoints">The point indices for the last point of each contour, in increasing numeric order.</param>
-        /// <param name="bounds">The glyph bounds.</param>
-        /// <param name="instructions">The glyph hinting instructions.</param>
-        /// <param name="cff1GlyphData">The CFF type 1 glyph data.</param>
-        public GlyphTableEntry(
-            Vector2[] controlPoints,
-            bool[] onCurves,
-            ushort[] endPoints,
-            Bounds bounds,
-            ReadOnlyMemory<byte> instructions,
-            Cff1GlyphData? cff1GlyphData)
         {
             this.ControlPoints = controlPoints;
             this.OnCurves = onCurves;
@@ -62,7 +41,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             }
 
             this.Instructions = instructions;
-            this.Cff1GlyphData = cff1GlyphData;
         }
 
         /// <summary>
@@ -94,13 +72,6 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
         /// Gets or sets the hinting instructions.
         /// </summary>
         public ReadOnlyMemory<byte> Instructions { get; set; }
-
-        /// <summary>
-        /// Gets or sets the CFF type 1 glyph data.
-        /// TODO: Copying LayoutFarm and storing this seems like a REALLY BAD idea
-        /// Ideally I would like to convert the compiled data into a TTF GlyphEntry on demand
-        /// </summary>
-        public Cff1GlyphData? Cff1GlyphData { get; set; }
 
         /// <summary>
         /// Transforms a glyph vector by a specified 3x2 matrix.
@@ -159,20 +130,8 @@ namespace SixLabors.Fonts.Tables.General.Glyphs
             Bounds sourceBounds = src.Bounds;
             var newBounds = new Bounds(sourceBounds.Min.X, sourceBounds.Min.Y, sourceBounds.Max.X, sourceBounds.Max.Y);
 
-            // Clone CFF1 data
-            Cff1GlyphData? data = null;
-            if (src.Cff1GlyphData != null)
-            {
-                data = new();
-                data.Name = src.Cff1GlyphData.Name;
-                data.SIDName = src.Cff1GlyphData.SIDName;
-
-                // Instructions remain untouched.
-                data.GlyphInstructions = src.Cff1GlyphData.GlyphInstructions;
-            }
-
             // Instructions remain untouched.
-            return new GlyphTableEntry(controlPoints, onCurves, endPoints, newBounds, src.Instructions, data);
+            return new GlyphTableEntry(controlPoints, onCurves, endPoints, newBounds, src.Instructions);
         }
 
         private static Bounds CalculateBounds(Vector2[] controlPoints)

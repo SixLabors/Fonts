@@ -1,16 +1,21 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
-
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal class Cff1GlyphData
+    internal struct Cff1GlyphData
     {
-        public string? Name { get; set; }
+        public Cff1GlyphData(ushort glyphIndex, Type2Instruction[] glyphInstructions)
+        {
+            this.GlyphIndex = glyphIndex;
+            this.GlyphInstructions = glyphInstructions;
+            this.GlyphName = null;
+        }
 
-        public ushort SIDName { get; set; }
+        public ushort GlyphIndex { get; }
 
-        public Type2Instruction[] GlyphInstructions { get; set; } = Array.Empty<Type2Instruction>();
+        public Type2Instruction[] GlyphInstructions { get; }
+
+        public string? GlyphName { get; set; }
     }
 }

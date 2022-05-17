@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
-using SixLabors.Fonts.Tables.General.Glyphs;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
@@ -41,7 +40,7 @@ namespace SixLabors.Fonts.Tables.Cff
         // Copyright and Trademark  -
         private BigEndianBinaryReader _reader;
         private Cff1FontSet _cff1FontSet;
-        private Cff1Font _currentCff1Font;
+        private Cff1Font currentCff1Font;
         private List<CffDataDicEntry> _topDic;
         private long _cffStartAt;
         private int _charStringsOffset;
@@ -133,9 +132,9 @@ namespace SixLabors.Fonts.Tables.Cff
                 throw new NotSupportedException();
             }
 
-            this._currentCff1Font = new Cff1Font();
-            this._currentCff1Font.FontName = fontNames[0];
-            this._cff1FontSet._fonts.Add(this._currentCff1Font);
+            this.currentCff1Font = new Cff1Font();
+            this.currentCff1Font.FontName = fontNames[0];
+            this._cff1FontSet._fonts.Add(this.currentCff1Font);
         }
 
         private void ReadTopDICTIndex()
@@ -309,31 +308,31 @@ namespace SixLabors.Fonts.Tables.Cff
                     case "XUID":
                         break; // nothing
                     case "version":
-                        this._currentCff1Font.Version = this.GetSid((int)entry.operands[0].RealNumValue);
+                        this.currentCff1Font.Version = this.GetSid((int)entry.operands[0].RealNumValue);
                         break;
                     case "Notice":
-                        this._currentCff1Font.Notice = this.GetSid((int)entry.operands[0].RealNumValue);
+                        this.currentCff1Font.Notice = this.GetSid((int)entry.operands[0].RealNumValue);
                         break;
                     case "Copyright":
-                        this._currentCff1Font.CopyRight = this.GetSid((int)entry.operands[0].RealNumValue);
+                        this.currentCff1Font.CopyRight = this.GetSid((int)entry.operands[0].RealNumValue);
                         break;
                     case "FullName":
-                        this._currentCff1Font.FullName = this.GetSid((int)entry.operands[0].RealNumValue);
+                        this.currentCff1Font.FullName = this.GetSid((int)entry.operands[0].RealNumValue);
                         break;
                     case "FamilyName":
-                        this._currentCff1Font.FamilyName = this.GetSid((int)entry.operands[0].RealNumValue);
+                        this.currentCff1Font.FamilyName = this.GetSid((int)entry.operands[0].RealNumValue);
                         break;
                     case "Weight":
-                        this._currentCff1Font.Weight = this.GetSid((int)entry.operands[0].RealNumValue);
+                        this.currentCff1Font.Weight = this.GetSid((int)entry.operands[0].RealNumValue);
                         break;
                     case "UnderlinePosition":
-                        this._currentCff1Font.UnderlinePosition = entry.operands[0].RealNumValue;
+                        this.currentCff1Font.UnderlinePosition = entry.operands[0].RealNumValue;
                         break;
                     case "UnderlineThickness":
-                        this._currentCff1Font.UnderlineThickness = entry.operands[0].RealNumValue;
+                        this.currentCff1Font.UnderlineThickness = entry.operands[0].RealNumValue;
                         break;
                     case "FontBBox":
-                        this._currentCff1Font.FontBBox = new double[]
+                        this.currentCff1Font.FontBBox = new double[]
                         {
                             entry.operands[0].RealNumValue,
                             entry.operands[1].RealNumValue,
@@ -414,9 +413,9 @@ namespace SixLabors.Fonts.Tables.Cff
            // Global subrs are stored in an INDEX structure which follows the
            // String INDEX. A FontSet without any global subrs is represented
            // by an empty Global Subrs INDEX.
-           => this._currentCff1Font._globalSubrRawBufferList = this.ReadSubrBuffer();
+           => this.currentCff1Font._globalSubrRawBufferList = this.ReadSubrBuffer();
 
-        private void ReadLocalSubrs() => this._currentCff1Font._localSubrRawBufferList = this.ReadSubrBuffer();
+        private void ReadLocalSubrs() => this.currentCff1Font._localSubrRawBufferList = this.ReadSubrBuffer();
 
         private void ReadEncodings()
         {
@@ -464,8 +463,7 @@ namespace SixLabors.Fonts.Tables.Cff
             this._reader.BaseStream.Position = this._cffStartAt + this._charsetOffset;
 
             // TODO: ...
-            byte format = this._reader.ReadByte();
-            switch (format)
+            switch (this._reader.ReadByte())
             {
                 default:
                     throw new NotSupportedException();
@@ -495,12 +493,12 @@ namespace SixLabors.Fonts.Tables.Cff
             // CharStrings INDEX. (There is
             // one less element in the glyph name array than nGlyphs because
             // the .notdef glyph name is omitted.)
-            GlyphTableEntry[] cff1Glyphs = this._currentCff1Font._glyphs;
+            Cff1GlyphData[] cff1Glyphs = this.currentCff1Font._glyphs;
             int nGlyphs = cff1Glyphs.Length;
             for (int i = 1; i < nGlyphs; ++i)
             {
-                Cff1GlyphData d = cff1Glyphs[i].Cff1GlyphData!;
-                d.Name = this.GetSid(d.SIDName = this._reader.ReadUInt16());
+                ref Cff1GlyphData data = ref cff1Glyphs[i];
+                data.GlyphName = this.GetSid(this._reader.ReadUInt16());
             }
         }
 
@@ -521,16 +519,16 @@ namespace SixLabors.Fonts.Tables.Cff
             // utilizing this data simply processes ranges until all glyphs in the
             // font are covered. This format is particularly suited to charsets
             // that are well ordered
-            GlyphTableEntry[] cff1Glyphs = this._currentCff1Font._glyphs;
+            Cff1GlyphData[] cff1Glyphs = this.currentCff1Font._glyphs;
             int nGlyphs = cff1Glyphs.Length;
             for (int i = 1; i < nGlyphs;)
             {
                 int sid = this._reader.ReadUInt16(); // First glyph in range
-                int count = this._reader.ReadByte() + 1; // since it not include first elem
+                int count = this._reader.ReadByte() + 1; // since it does not include first element.
                 do
                 {
-                    Cff1GlyphData d = cff1Glyphs[i].Cff1GlyphData!;
-                    d.Name = this.GetSid(d.SIDName = (ushort)sid);
+                    ref Cff1GlyphData data = ref cff1Glyphs[i];
+                    data.GlyphName = this.GetSid(sid);
 
                     count--;
                     i++;
@@ -558,16 +556,16 @@ namespace SixLabors.Fonts.Tables.Cff
 
             // Format 2 differs from format 1 only in the size of the nLeft field in each range.
             // This format is most suitable for fonts with a large well - ordered charset — for example, for Asian CIDFonts.
-            GlyphTableEntry[] cff1Glyphs = this._currentCff1Font._glyphs;
+            Cff1GlyphData[] cff1Glyphs = this.currentCff1Font._glyphs;
             int nGlyphs = cff1Glyphs.Length;
             for (int i = 1; i < nGlyphs;)
             {
                 int sid = this._reader.ReadUInt16(); // First glyph in range
-                int count = this._reader.ReadUInt16() + 1; // since it not include first elem
+                int count = this._reader.ReadUInt16() + 1; // since it does not include first element.
                 do
                 {
-                    Cff1GlyphData d = cff1Glyphs[i].Cff1GlyphData!;
-                    d.Name = this.GetSid(d.SIDName = (ushort)sid);
+                    ref Cff1GlyphData data = ref cff1Glyphs[i];
+                    data.GlyphName = this.GetSid(sid);
 
                     count--;
                     i++;
@@ -692,7 +690,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 
             List<FontDict> fontDicts = new();
-            this._currentCff1Font._cidFontDict = fontDicts;
+            this.currentCff1Font._cidFontDict = fontDicts;
 
             for (int i = 0; i < offsets.Length; ++i)
             {
@@ -868,17 +866,16 @@ namespace SixLabors.Fonts.Tables.Cff
             // assume Type2
             // TODO: review here
 
-            var glyphs = new GlyphTableEntry[glyphCount];
-            this._currentCff1Font._glyphs = glyphs;
-            Type2CharStringParser type2Parser = new Type2CharStringParser();
-            type2Parser.SetCurrentCff1Font(this._currentCff1Font);
+            var glyphs = new Cff1GlyphData[glyphCount];
+            this.currentCff1Font._glyphs = glyphs;
+            Type2CharStringParser type2Parser = new();
+            type2Parser.SetCurrentCff1Font(this.currentCff1Font);
 
 #if DEBUG
             double total = 0;
 #endif
 
             // cid font or not
-
             var fdRangeProvider = new FDRangeProvider(this._cidFontInfo.fdRanges);
             bool isCidFont = this._cidFontInfo.fdRanges != null;
 
@@ -900,8 +897,8 @@ namespace SixLabors.Fonts.Tables.Cff
                     throw new Exception("invalid end byte?");
                 }
 #endif
-                // now we can parse the raw glyph instructions
-                Cff1GlyphData glyphData = new Cff1GlyphData();
+
+                // Now we can parse the raw glyph instructions
 #if DEBUG
                 type2Parser.dbugCurrentGlyphIndex = (ushort)i;
 #endif
@@ -910,9 +907,10 @@ namespace SixLabors.Fonts.Tables.Cff
                 {
                     // select  proper local private dict
                     fdRangeProvider.SetCurrentGlyphIndex((ushort)i);
-                    type2Parser.SetCidFontDict(this._currentCff1Font._cidFontDict[fdRangeProvider.SelectedFDArray]);
+                    type2Parser.SetCidFontDict(this.currentCff1Font._cidFontDict[fdRangeProvider.SelectedFDArray]);
                 }
 
+                Type2Instruction[]? instructions = null;
                 Type2GlyphInstructionList instList = type2Parser.ParseType2CharString(buffer);
                 if (instList != null)
                 {
@@ -922,20 +920,20 @@ namespace SixLabors.Fonts.Tables.Cff
                         // this is our extension,
                         // if you don't want compact version
                         // just use original
-                        glyphData.GlyphInstructions = this._instCompacter.Compact(instList.InnerInsts);
+                        instructions = this._instCompacter.Compact(instList.InnerInsts);
 
 #if DEBUG
-                        total += glyphData.GlyphInstructions.Length / (float)instList.InnerInsts.Count;
+                        total += instructions.Length / (float)instList.InnerInsts.Count;
 #endif
 
                     }
                     else
                     {
-                        glyphData.GlyphInstructions = instList.InnerInsts.ToArray();
+                        instructions = instList.InnerInsts.ToArray();
                     }
                 }
 
-                glyphs[i] = new GlyphTableEntry(glyphData, (ushort)i);
+                glyphs[i] = new((ushort)i, instructions ?? Array.Empty<Type2Instruction>());
             }
 
 #if DEBUG
@@ -1037,11 +1035,11 @@ namespace SixLabors.Fonts.Tables.Cff
                             break;
 
                         case "defaultWidthX":
-                            this._currentCff1Font._defaultWidthX = (int)dicEntry.operands[0].RealNumValue;
+                            this.currentCff1Font._defaultWidthX = (int)dicEntry.operands[0].RealNumValue;
                             break;
 
                         case "nominalWidthX":
-                            this._currentCff1Font._nominalWidthX = (int)dicEntry.operands[0].RealNumValue;
+                            this.currentCff1Font._nominalWidthX = (int)dicEntry.operands[0].RealNumValue;
                             break;
 
                         default:
