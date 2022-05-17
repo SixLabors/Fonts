@@ -86,7 +86,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         return false;
                     }
 
-                    return component == data.GlyphIds[0];
+                    return component == data.GlyphId;
                 },
                 matches);
 
@@ -108,7 +108,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 increment,
                 sequence,
                 iterator,
-                (component, data) => component == data.GlyphIds[0],
+                (component, data) => component == data.GlyphId,
                 default);
 
         public static bool MatchClassSequence(
@@ -120,7 +120,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 increment,
                 sequence,
                 iterator,
-                (component, data) => component == classDefinitionTable.ClassIndexOf(data.GlyphIds[0]),
+                (component, data) => component == classDefinitionTable.ClassIndexOf(data.GlyphId),
                 default);
 
         public static bool MatchCoverageSequence(
@@ -131,7 +131,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 increment,
                 coverageTable,
                 iterator,
-                (component, data) => component.CoverageIndexOf(data.GlyphIds[0]) >= 0,
+                (component, data) => component.CoverageIndexOf(data.GlyphId) >= 0,
                 default);
 
         public static bool ApplyChainedSequenceRule(SkippingGlyphIterator iterator, ChainedSequenceRuleTable rule)

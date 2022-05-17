@@ -27,23 +27,29 @@ namespace SixLabors.Fonts
         /// <param name="clearFeatures">Whether to clear features.</param>
         public GlyphShapingData(GlyphShapingData data, bool clearFeatures = false)
         {
+            this.GlyphId = data.GlyphId;
             this.CodePoint = data.CodePoint;
             this.CodePointCount = data.CodePointCount;
             this.Direction = data.Direction;
             this.TextRun = data.TextRun;
-            this.GlyphIds = data.GlyphIds;
             this.LigatureId = data.LigatureId;
             this.LigatureComponent = data.LigatureComponent;
             this.MarkAttachment = data.MarkAttachment;
             this.CursiveAttachment = data.CursiveAttachment;
+            this.IsDecomposed = data.IsDecomposed;
 
             if (!clearFeatures)
             {
-                this.Features = data.Features;
+                this.Features = new(data.Features);
             }
 
             this.Bounds = data.Bounds;
         }
+
+        /// <summary>
+        /// Gets or sets the glyph id.
+        /// </summary>
+        public ushort GlyphId { get; set; }
 
         /// <summary>
         /// Gets or sets the leading codepoint.
@@ -64,11 +70,6 @@ namespace SixLabors.Fonts
         /// Gets or sets the text run this glyph belongs to.
         /// </summary>
         public TextRun TextRun { get; set; }
-
-        /// <summary>
-        /// Gets or sets the collection of glyph ids.
-        /// </summary>
-        public ushort[] GlyphIds { get; set; } = Array.Empty<ushort>();
 
         /// <summary>
         /// Gets or sets the id of any ligature this glyph is a member of.
@@ -100,8 +101,13 @@ namespace SixLabors.Fonts
         /// </summary>
         public GlyphShapingBounds Bounds { get; set; } = new(0, 0, 0, 0);
 
+        /// <summary>
+        /// Gets or sets a value indicating whether this glyph is the result of a decomposition substitution
+        /// </summary>
+        public bool IsDecomposed { get; set; }
+
         private string DebuggerDisplay
             => FormattableString
-            .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : [{string.Join(",", this.GlyphIds)}]");
+            .Invariant($" {this.GlyphId} : {this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : {this.IsDecomposed}");
     }
 }

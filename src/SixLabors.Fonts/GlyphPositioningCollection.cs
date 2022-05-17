@@ -1,9 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
@@ -15,20 +15,9 @@ namespace SixLabors.Fonts
     internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     {
         /// <summary>
-        /// Contains a map between the index of a map within the collection, it's codepoint
-        /// and glyph ids.
+        /// Contains a map the index of a map within the collection, non-sequential codepoint offsets, and their glyph ids, point size, and mtrics.
         /// </summary>
-        private readonly List<GlyphShapingData> glyphs = new();
-
-        /// <summary>
-        /// Contains a map between the index of a map within the collection and its offset.
-        /// </summary>
-        private readonly List<int> offsets = new();
-
-        /// <summary>
-        /// Contains a map between non-sequential codepoint offsets and their glyphs.
-        /// </summary>
-        private readonly Dictionary<int, PointSizeMetricsPair> map = new();
+        private readonly List<GlyphPositioningData> glyphs = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
@@ -41,7 +30,7 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc />
-        public int Count => this.offsets.Count;
+        public int Count => this.glyphs.Count;
 
         /// <inheritdoc />
         public bool IsVerticalLayoutMode { get; }
@@ -50,23 +39,47 @@ namespace SixLabors.Fonts
         public TextOptions TextOptions { get; }
 
         /// <inheritdoc />
-        public ReadOnlySpan<ushort> this[int index] => this.glyphs[index].GlyphIds;
+        public ushort this[int index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.glyphs[index].Data.GlyphId;
+        }
 
         /// <inheritdoc />
-        public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index].Data;
 
         /// <inheritdoc />
         public void AddShapingFeature(int index, TagEntry feature)
-            => this.glyphs[index].Features.Add(feature);
+            => this.glyphs[index].Data.Features.Add(feature);
 
         /// <inheritdoc />
         public void EnableShapingFeature(int index, Tag feature)
         {
-            foreach (TagEntry tagEntry in this.glyphs[index].Features)
+            List<TagEntry> features = this.glyphs[index].Data.Features;
+            for (int i = 0; i < features.Count; i++)
             {
+                TagEntry tagEntry = features[i];
                 if (tagEntry.Tag == feature)
                 {
                     tagEntry.Enabled = true;
+                    features[i] = tagEntry;
+                    break;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public void DisableShapingFeature(int index, Tag feature)
+        {
+            List<TagEntry> features = this.glyphs[index].Data.Features;
+            for (int i = 0; i < features.Count; i++)
+            {
+                TagEntry tagEntry = features[i];
+                if (tagEntry.Tag == feature)
+                {
+                    tagEntry.Enabled = false;
+                    features[i] = tagEntry;
                     break;
                 }
             }
@@ -77,24 +90,36 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="offset">The zero-based index within the input codepoint collection.</param>
         /// <param name="pointSize">The font size in PT units of the font containing this glyph.</param>
+        /// <param name="isDecomposed">Whether the glyph is the result of a decomposition substitution.</param>
         /// <param name="metrics">
         /// When this method returns, contains the glyph metrics associated with the specified offset,
         /// if the value is found; otherwise, the default value for the type of the metrics parameter.
         /// This parameter is passed uninitialized.
         /// </param>
         /// <returns>The metrics.</returns>
-        public bool TryGetGlyphMetricsAtOffset(int offset, out float pointSize, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
+        public bool TryGetGlyphMetricsAtOffset(int offset, out float pointSize, out bool isDecomposed, [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
         {
-            if (this.map.TryGetValue(offset, out PointSizeMetricsPair? entry))
+            List<GlyphMetrics> match = new();
+            pointSize = 0;
+            isDecomposed = false;
+            for (int i = 0; i < this.glyphs.Count; i++)
             {
-                pointSize = entry.PointSize;
-                metrics = entry.Metrics;
-                return true;
+                if (this.glyphs[i].Offset == offset)
+                {
+                    GlyphPositioningData glyph = this.glyphs[i];
+                    isDecomposed = glyph.Data.IsDecomposed;
+                    pointSize = glyph.PointSize;
+                    match.AddRange(glyph.Metrics);
+                }
+                else if (match.Count > 0)
+                {
+                    // Offsets, though non-sequential, are sorted, so we can stop searching.
+                    break;
+                }
             }
 
-            pointSize = 0;
-            metrics = null;
-            return false;
+            metrics = match;
+            return match.Count > 0;
         }
 
         /// <summary>
@@ -109,65 +134,76 @@ namespace SixLabors.Fonts
             FontMetrics fontMetrics = font.FontMetrics;
             ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
             bool hasFallBacks = false;
-            List<int> orphans = new();
-            for (int i = 0; i < this.offsets.Count; i++)
+            for (int i = 0; i < this.glyphs.Count; i++)
             {
-                int offset = this.offsets[i];
-                if (!collection.TryGetGlyphShapingDataAtOffset(offset, out GlyphShapingData? data))
-                {
-                    // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
-                    // then we end up with orphaned fallbacks. We need to remove them.
-                    orphans.Add(i);
-                    continue;
-                }
-
-                PointSizeMetricsPair pair = this.map[offset];
-                if (pair.Metrics[0].GlyphType != GlyphType.Fallback)
+                GlyphPositioningData current = this.glyphs[i];
+                if (current.Metrics[0].GlyphType != GlyphType.Fallback)
                 {
                     // We've already got the correct glyph.
                     continue;
                 }
 
-                CodePoint codePoint = data.CodePoint;
-                ushort[] glyphIds = data.GlyphIds;
-                var m = new List<GlyphMetrics>(glyphIds.Length);
-
-                foreach (ushort id in glyphIds)
+                int offset = current.Offset;
+                float pointSize = current.PointSize;
+                if (collection.TryGetGlyphShapingDataAtOffset(offset, out IReadOnlyList<GlyphShapingData>? data))
                 {
-                    // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
-                    // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
+                    ushort shiftXY = 0;
+                    int replacementCount = 0;
+                    for (int j = 0; j < data.Count; j++)
                     {
-                        if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
+                        GlyphShapingData shape = data[j];
+                        ushort id = shape.GlyphId;
+                        CodePoint codePoint = shape.CodePoint;
+                        bool isDecomposed = shape.IsDecomposed;
+
+                        // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
+                        // cache the original in the font metrics and only update our collection.
+                        var metrics = new List<GlyphMetrics>(data.Count);
+                        foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
                         {
-                            // If the glyphs are fallbacks we don't want them as
-                            // we've already captured them on the first run.
-                            hasFallBacks = true;
-                            break;
+                            if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
+                            {
+                                // If the glyphs are fallbacks we don't want them as
+                                // we've already captured them on the first run.
+                                hasFallBacks = true;
+                                break;
+                            }
+
+                            // Clone and offset the glyph for rendering.
+                            // If the glyph is the result of a decomposition substitution we need to offset it.
+                            // We slip the text run in here while we clone so we have it available to the renderer.
+                            var clone = GlyphMetrics.CloneForRendering(gm, shape.TextRun, codePoint);
+                            if (isDecomposed)
+                            {
+                                if (!this.IsVerticalLayoutMode)
+                                {
+                                    clone.ApplyOffset((short)shiftXY, 0);
+                                    shiftXY += clone.AdvanceWidth;
+                                }
+                                else
+                                {
+                                    clone.ApplyOffset(0, (short)shiftXY);
+                                    shiftXY += clone.AdvanceHeight;
+                                }
+                            }
+
+                            metrics.Add(clone);
                         }
 
-                        // We slip the text run in here while we clone so we have
-                        // it available to the renderer.
-                        m.Add(GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint));
+                        if (metrics.Count > 0)
+                        {
+                            if (j == 0)
+                            {
+                                // There should only be a single fallback glyph at this position from the previous collection.
+                                this.glyphs.RemoveAt(i);
+                            }
+
+                            // Track the number of inserted glyphs at the offset so we can correctly increment our position.
+                            this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = new(0, 0, metrics[0].AdvanceWidth, metrics[0].AdvanceHeight) }, pointSize, metrics.ToArray()));
+                            replacementCount++;
+                        }
                     }
                 }
-
-                if (m.Count > 0)
-                {
-                    GlyphMetrics[] gm = m.ToArray();
-                    this.map[offset] = new(pair.PointSize, gm);
-                    this.glyphs[i] = new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, gm[0].AdvanceHeight) };
-                    this.offsets[i] = offset;
-                }
-            }
-
-            // Remove any orphans.
-            for (int i = orphans.Count - 1; i >= 0; i--)
-            {
-                int idx = orphans[i];
-                this.map.Remove(this.offsets[idx]);
-                this.offsets.RemoveAt(idx);
-                this.glyphs.RemoveAt(idx);
             }
 
             return !hasFallBacks;
@@ -185,44 +221,61 @@ namespace SixLabors.Fonts
             bool hasFallBacks = false;
             FontMetrics fontMetrics = font.FontMetrics;
             ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
+            ushort shiftXY = 0;
             for (int i = 0; i < collection.Count; i++)
             {
                 GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
                 CodePoint codePoint = data.CodePoint;
-                ushort[] glyphIds = data.GlyphIds;
-                var m = new List<GlyphMetrics>(glyphIds.Length);
+                ushort id = data.GlyphId;
+                List<GlyphMetrics> metrics = new();
 
-                foreach (ushort id in glyphIds)
+                bool isDecomposed = data.IsDecomposed;
+                if (!isDecomposed)
                 {
-                    // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
-                    // cache the original in the font metrics and only update our collection.
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
-                    {
-                        if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
-                        {
-                            hasFallBacks = true;
-                        }
-
-                        // We slip the text run in here while we clone so we have
-                        // it available to the renderer.
-                        m.Add(GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint));
-                    }
+                    shiftXY = 0;
                 }
 
-                if (m.Count > 0)
+                // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
+                // cache the original in the font metrics and only update our collection.
+                foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
                 {
-                    GlyphMetrics[] gm = m.ToArray();
-                    this.map[offset] = new(font.Size, gm);
+                    if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
+                    {
+                        hasFallBacks = true;
+                    }
+
+                    // Clone and offset the glyph for rendering.
+                    // If the glyph is the result of a decomposition substitution we need to offset it.
+                    // We slip the text run in here while we clone so we have it available to the renderer.
+                    var clone = GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint);
+                    if (isDecomposed)
+                    {
+                        if (!this.IsVerticalLayoutMode)
+                        {
+                            clone.ApplyOffset((short)shiftXY, 0);
+                            shiftXY += clone.AdvanceWidth;
+                        }
+                        else
+                        {
+                            clone.ApplyOffset(0, (short)shiftXY);
+                            shiftXY += clone.AdvanceHeight;
+                        }
+                    }
+
+                    metrics.Add(clone);
+                }
+
+                if (metrics.Count > 0)
+                {
+                    GlyphMetrics[] gm = metrics.ToArray();
                     if (this.IsVerticalLayoutMode)
                     {
-                        this.glyphs.Add(new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) });
+                        this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) }, font.Size, gm));
                     }
                     else
                     {
-                        this.glyphs.Add(new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, 0) });
+                        this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, 0) }, font.Size, gm));
                     }
-
-                    this.offsets.Add(offset);
                 }
             }
 
@@ -244,8 +297,8 @@ namespace SixLabors.Fonts
                 return;
             }
 
-            ushort glyphId = data.GlyphIds[0];
-            foreach (GlyphMetrics m in this.map[this.offsets[index]].Metrics)
+            ushort glyphId = data.GlyphId;
+            foreach (GlyphMetrics m in this.glyphs[index].Metrics)
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
@@ -274,7 +327,7 @@ namespace SixLabors.Fonts
         /// <param name="dy">The delta y-advance.</param>
         public void Advance(FontMetrics fontMetrics, ushort index, ushort glyphId, short dx, short dy)
         {
-            foreach (GlyphMetrics m in this.map[this.offsets[index]].Metrics)
+            foreach (GlyphMetrics m in this.glyphs[index].Metrics)
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
@@ -287,18 +340,24 @@ namespace SixLabors.Fonts
         /// Returns a value indicating whether the element at the given index should be processed.
         /// </summary>
         /// <param name="fontMetrics">The font face with metrics.</param>
-        /// <param name="index">The zero-based index of the elements to offset.</param>
+        /// <param name="index">The zero-based index of the elements to position.</param>
         /// <returns><see langword="true"/> if the element should be processed; otherwise, <see langword="false"/>.</returns>
         public bool ShouldProcess(FontMetrics fontMetrics, ushort index)
-            => this.map[this.offsets[index]].Metrics[0].FontMetrics == fontMetrics;
+            => this.glyphs[index].Metrics[0].FontMetrics == fontMetrics;
 
-        private class PointSizeMetricsPair
+        private class GlyphPositioningData
         {
-            public PointSizeMetricsPair(float pointSize, GlyphMetrics[] metrics)
+            public GlyphPositioningData(int offset, GlyphShapingData data, float pointSize, GlyphMetrics[] metrics)
             {
+                this.Offset = offset;
+                this.Data = data;
                 this.PointSize = pointSize;
                 this.Metrics = metrics;
             }
+
+            public int Offset { get; set; }
+
+            public GlyphShapingData Data { get; set; }
 
             public float PointSize { get; set; }
 
