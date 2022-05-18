@@ -51,9 +51,10 @@ namespace SixLabors.Fonts.Tables.Cff
 
                 case 2:
                 {
-                    Cff2Parser cff2 = new();
-                    cff2.ParseAfterHeader(reader);
-                    return new(null);
+                    // Cff2Parser cff2 = new();
+                    // cff2.ParseAfterHeader(reader);
+                    // return new(null);
+                    throw new NotSupportedException();
                 }
 
                 default:

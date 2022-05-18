@@ -2,22 +2,17 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
     internal class Type2EvaluationStack
     {
-
         internal double _currentX;
         internal double _currentY;
-
-        double[] _argStack = new double[50];
-        int _currentIndex = 0; // current stack index
-
-        IGlyphTranslator _glyphTranslator;
+        private readonly double[] argStack = new double[50];
+        private int currentIndex = 0; // current stack index
 #if DEBUG
 
         public int dbugGlyphIndex;
@@ -28,27 +23,23 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public void Reset()
         {
-            _currentIndex = 0;
-            _currentX = _currentY = 0;
-            _glyphTranslator = null;
+            this.currentIndex = 0;
+            this._currentX = this._currentY = 0;
+            this.GlyphRenderer = null;
         }
 
-        public IGlyphTranslator GlyphTranslator
-        {
-            get => _glyphTranslator;
-            set => _glyphTranslator = value;
-        }
+        public IGlyphRenderer GlyphRenderer { get; set; }
 
         public void Push(double value)
         {
-            _argStack[_currentIndex] = value;
-            _currentIndex++;
+            this.argStack[this.currentIndex] = value;
+            this.currentIndex++;
         }
 
         public void Push(int value)
         {
-            _argStack[_currentIndex] = value;
-            _currentIndex++;
+            this.argStack[this.currentIndex] = value;
+            this.currentIndex++;
         }
 
         // Many operators take their arguments from the bottom-most
@@ -83,17 +74,16 @@ namespace SixLabors.Fonts.Tables.Cff
             // a position at the relative coordinates(dx1, dy1)
             // see [NOTE4]
 #if DEBUG
-            if (_currentIndex != 2)
+            if (this.currentIndex != 2)
             {
                 throw new NotSupportedException();
             }
 #endif
 
+            this.GlyphRenderer.EndFigure();
+            this.GlyphRenderer.MoveTo(new Vector2((float)(this._currentX += this.argStack[0]), (float)(this._currentY += this.argStack[1])));
 
-            _glyphTranslator.CloseContour();
-            _glyphTranslator.MoveTo((float)(_currentX += _argStack[0]), (float)(_currentY += _argStack[1]));
-
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         /// <summary>
@@ -107,8 +97,8 @@ namespace SixLabors.Fonts.Tables.Cff
             // dx1 units in the horizontal direction
             // see [NOTE4]
 
-            _glyphTranslator.MoveTo((float)(_currentX += _argStack[0]), (float)_currentY);
-            _currentIndex = 0; // clear stack
+            this.GlyphRenderer.MoveTo(new Vector2((float)(this._currentX += this.argStack[0]), (float)this._currentY));
+            this.currentIndex = 0; // clear stack
         }
 
         public void V_MoveTo()
@@ -118,13 +108,13 @@ namespace SixLabors.Fonts.Tables.Cff
             // dy1 units in the vertical direction.
             // see [NOTE4]
 #if DEBUG
-            if (_currentIndex > 1)
+            if (this.currentIndex > 1)
             {
                 throw new NotSupportedException();
             }
 #endif
-            _glyphTranslator.MoveTo((float)_currentX, (float)(_currentY += _argStack[0]));
-            _currentIndex = 0; // clear stack
+            this.GlyphRenderer.MoveTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[0])));
+            this.currentIndex = 0; // clear stack
         }
 
         public void R_LineTo()
@@ -140,18 +130,18 @@ namespace SixLabors.Fonts.Tables.Cff
             // The number of
             // lines is determined from the number of arguments on the stack
 #if DEBUG
-            if ((_currentIndex % 2) != 0)
+            if ((this.currentIndex % 2) != 0)
             {
                 throw new NotSupportedException();
             }
 #endif
-            for (int i = 0; i < _currentIndex;)
+            for (int i = 0; i < this.currentIndex;)
             {
-                _glyphTranslator.LineTo((float)(_currentX += _argStack[i]), (float)(_currentY += _argStack[i + 1]));
+                this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i]), (float)(this._currentY += this.argStack[i + 1])));
                 i += 2;
             }
 
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void H_LineTo()
@@ -176,16 +166,16 @@ namespace SixLabors.Fonts.Tables.Cff
 
             // first elem
             int i = 0;
-            if ((_currentIndex % 2) != 0)
+            if ((this.currentIndex % 2) != 0)
             {
                 // |- dx1 {dya dxb}*  hlineto (6) |-
                 // odd number
-                _glyphTranslator.LineTo((float)(_currentX += _argStack[i]), (float)_currentY);
+                this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i]), (float)this._currentY));
                 i++;
-                for (; i < _currentIndex;)
+                for (; i < this.currentIndex;)
                 {
-                    _glyphTranslator.LineTo((float)(_currentX), (float)(_currentY += _argStack[i]));
-                    _glyphTranslator.LineTo((float)(_currentX += _argStack[i + 1]), (float)(_currentY));
+                    this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i])));
+                    this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i + 1]), (float)this._currentY));
                     i += 2;
                 }
             }
@@ -193,17 +183,17 @@ namespace SixLabors.Fonts.Tables.Cff
             {
                 // even number
                 // |- {dxa dyb}+  hlineto (6) |-
-                for (; i < _currentIndex;)
+                for (; i < this.currentIndex;)
                 {
                     // line to
-                    _glyphTranslator.LineTo((float)(_currentX += _argStack[i]), (float)(_currentY));
-                    _glyphTranslator.LineTo((float)(_currentX), (float)(_currentY += _argStack[i + 1]));
-                    //
+                    this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i]), (float)this._currentY));
+                    this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i + 1])));
+
                     i += 2;
                 }
             }
 
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void V_LineTo()
@@ -225,19 +215,19 @@ namespace SixLabors.Fonts.Tables.Cff
             // number of arguments on the stack.
             // first elem
             int i = 0;
-            if ((_currentIndex % 2) != 0)
+            if ((this.currentIndex % 2) != 0)
             {
                 // |- dy1 {dxa dyb}*  vlineto (7) |-
                 // odd number
-                _glyphTranslator.LineTo((float)_currentX, (float)(_currentY += _argStack[i]));
+                this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i])));
                 i++;
 
-                for (; i < _currentIndex;)
+                for (; i < this.currentIndex;)
                 {
                     // line to
-                    _glyphTranslator.LineTo((float)(_currentX += _argStack[i]), (float)(_currentY));
-                    _glyphTranslator.LineTo((float)(_currentX), (float)(_currentY += _argStack[i + 1]));
-                    //
+                    this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i]), (float)this._currentY));
+                    this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i + 1])));
+
                     i += 2;
                 }
             }
@@ -245,22 +235,21 @@ namespace SixLabors.Fonts.Tables.Cff
             {
                 // even number
                 // |- {dya dxb}+  vlineto (7) |-
-                for (; i < _currentIndex;)
+                for (; i < this.currentIndex;)
                 {
                     // line to
-                    _glyphTranslator.LineTo((float)(_currentX), (float)(_currentY += _argStack[i]));
-                    _glyphTranslator.LineTo((float)(_currentX += _argStack[i + 1]), (float)(_currentY));
-                    //
+                    this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i])));
+                    this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i + 1]), (float)this._currentY));
+
                     i += 2;
                 }
             }
 
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void RR_CurveTo()
         {
-
             // |- {dxa dya dxb dyb dxc dyc}+  rrcurveto (8) |-
 
             // appends a Bézier curve, defined by dxa...dyc, to the current point.
@@ -272,7 +261,6 @@ namespace SixLabors.Fonts.Tables.Cff
             // the number of arguments on the number stack and
             // is limited only by the size of the number stack
 
-
             // All Bézier curve path segments are drawn using six arguments,
             // dxa, dya, dxb, dyb, dxc, dyc; where dxa and dya are relative to
             // the current point, and all subsequent arguments are relative to
@@ -280,36 +268,33 @@ namespace SixLabors.Fonts.Tables.Cff
             // advantage of the situation where some tangent points are
             // horizontal or vertical(and hence the value is zero), thus
             // reducing the number of arguments needed.
-
             int i = 0;
 #if DEBUG
-            if ((_currentIndex % 6) != 0)
+            if ((this.currentIndex % 6) != 0)
             {
                 throw new NotSupportedException();
             }
 
 #endif
-            double curX = _currentX;
-            double curY = _currentY;
-            for (; i < _currentIndex;)
+            double curX = this._currentX;
+            double curY = this._currentY;
+            for (; i < this.currentIndex;)
             {
-                _glyphTranslator.Curve4(
-                    (float)(curX += _argStack[i + 0]), (float)(curY += _argStack[i + 1]), // dxa,dya
-                    (float)(curX += _argStack[i + 2]), (float)(curY += _argStack[i + 3]), // dxb,dyb
-                    (float)(curX += _argStack[i + 4]), (float)(curY += _argStack[i + 5])  // dxc,dyc
-                    );
+                this.GlyphRenderer.CubicBezierTo(
+                    new Vector2((float)(curX += this.argStack[i + 0]), (float)(curY += this.argStack[i + 1])), // dxa,dya
+                    new Vector2((float)(curX += this.argStack[i + 2]), (float)(curY += this.argStack[i + 3])), // dxb,dyb
+                    new Vector2((float)(curX += this.argStack[i + 4]), (float)(curY += this.argStack[i + 5]))); // dxc,dyc
                 //
                 i += 6;
             }
 
-            _currentX = curX;
-            _currentY = curY;
-            _currentIndex = 0; // clear stack
+            this._currentX = curX;
+            this._currentY = curY;
+            this.currentIndex = 0; // clear stack
         }
 
         public void HH_CurveTo()
         {
-
             // |- dy1? {dxa dxb dyb dxc}+ hhcurveto (27) |-
 
             // appends one or more Bézier curves, as described by the
@@ -317,23 +302,22 @@ namespace SixLabors.Fonts.Tables.Cff
             // For each curve, if there are 4 arguments,
             // the curve starts and ends horizontal.
 
-
             // The first curve need not start horizontal (the odd argument
             // case). Note the argument order for the odd argument case
 
             int i = 0;
-            int count = _currentIndex;
-            double curX = _currentX;
-            double curY = _currentY;
+            int count = this.currentIndex;
+            double curX = this._currentX;
+            double curY = this._currentY;
 
             if ((count % 2) != 0)
             {
                 // odd number
-                _glyphTranslator.Curve4(
-                   (float)(curX += _argStack[1]), (float)(curY += _argStack[0]), // dxa,+dy1?
-                   (float)(curX += _argStack[2]), (float)(curY += _argStack[3]), // dxb,dyb
-                   (float)(curX += _argStack[4]), (float)(curY)  // dxc,+0
-                   );
+                this.GlyphRenderer.CubicBezierTo(
+                   new Vector2((float)(curX += this.argStack[1]), (float)(curY += this.argStack[0])), // dxa,+dy1?
+                   new Vector2((float)(curX += this.argStack[2]), (float)(curY += this.argStack[3])), // dxb,dyb
+                   new Vector2((float)(curX += this.argStack[4]), (float)curY));  // dxc,+0
+
                 i += 5;
                 count -= 5;
             }
@@ -341,19 +325,18 @@ namespace SixLabors.Fonts.Tables.Cff
             // next
             while (count > 0)
             {
-                _glyphTranslator.Curve4(
-                    (float)(curX += _argStack[i + 0]), (float)(curY), // dxa,+0
-                    (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dxb,dyb
-                    (float)(curX += _argStack[i + 3]), (float)(curY)  // dxc,+0
-                    );
-                //
+                this.GlyphRenderer.CubicBezierTo(
+                    new Vector2((float)(curX += this.argStack[i + 0]), (float)curY), // dxa,+0
+                    new Vector2((float)(curX += this.argStack[i + 1]), (float)(curY += this.argStack[i + 2])), // dxb,dyb
+                    new Vector2((float)(curX += this.argStack[i + 3]), (float)curY));  // dxc,+0
+
                 i += 4;
                 count -= 4;
             }
 
-            _currentX = curX;
-            _currentY = curY;
-            _currentIndex = 0; // clear stack
+            this._currentX = curX;
+            this._currentY = curY;
+            this.currentIndex = 0; // clear stack
         }
 
         public void HV_CurveTo()
@@ -372,71 +355,62 @@ namespace SixLabors.Fonts.Tables.Cff
             // between start horizontal, end vertical, and start vertical, and
             // end horizontal.The last curve(the odd argument case) need not
             // end horizontal/ vertical.
-
-#if DEBUG
-
-#endif
             int i = 0;
             int remainder = 0;
 
-            switch (remainder = (_currentIndex % 8))
+            switch (remainder = this.currentIndex % 8)
             {
                 default:
+                {
                     throw new NotSupportedException();
+                }
                 case 0:
                 case 1:
                 {
                     // |- {dxa dxb dyb dyc dyd dxe dye dxf}+ dyf? hvcurveto (31) |-
+                    double cx = this._currentX;
+                    double cy = this._currentY;
 
-                    double curX = _currentX;
-                    double curY = _currentY;
-
-                    int count = _currentIndex;
-                    while (count > 0)
+                    int index = this.currentIndex;
+                    while (index > 0)
                     {
-                        _glyphTranslator.Curve4(
-                            (float)(curX += _argStack[i + 0]), (float)(curY), // +dxa,0
-                            (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dxb,dyb
-                            (float)(curX), (float)(curY += _argStack[i + 3])  // +0,dyc
-                            );
+                        this.GlyphRenderer.CubicBezierTo(
+                            new Vector2((float)(cx += this.argStack[i + 0]), (float)cy), // +dxa,0
+                            new Vector2((float)(cx += this.argStack[i + 1]), (float)(cy += this.argStack[i + 2])), // dxb,dyb
+                            new Vector2((float)cx, (float)(cy += this.argStack[i + 3])));  // +0,dyc
 
-
-                        if (count == 9)
+                        if (index == 9)
                         {
                             // last cycle
-                            _glyphTranslator.Curve4(
-                             (float)(curX), (float)(curY += _argStack[i + 4]), // +0,dyd
-                             (float)(curX += _argStack[i + 5]), (float)(curY += _argStack[i + 6]), // dxe,dye
-                             (float)(curX += _argStack[i + 7]), (float)(curY += _argStack[i + 8])  // dxf,+dyf
-                             );
-                            //
-                            count -= 9;
+                            this.GlyphRenderer.CubicBezierTo(
+                             new Vector2((float)cx, (float)(cy += this.argStack[i + 4])), // +0,dyd
+                             new Vector2((float)(cx += this.argStack[i + 5]), (float)(cy += this.argStack[i + 6])), // dxe,dye
+                             new Vector2((float)(cx += this.argStack[i + 7]), (float)(cy += this.argStack[i + 8])));  // dxf,+dyf
+
+                            index -= 9;
                             i += 9;
                         }
                         else
                         {
-                            _glyphTranslator.Curve4(
-                            (float)(curX), (float)(curY += _argStack[i + 4]), // +0,dyd
-                            (float)(curX += _argStack[i + 5]), (float)(curY += _argStack[i + 6]), // dxe,dye
-                            (float)(curX += _argStack[i + 7]), (float)(curY)  // dxf,+0
-                            );
-                            //
-                            count -= 8;
+                            this.GlyphRenderer.CubicBezierTo(
+                            new Vector2((float)cx, (float)(cy += this.argStack[i + 4])), // +0,dyd
+                            new Vector2((float)(cx += this.argStack[i + 5]), (float)(cy += this.argStack[i + 6])), // dxe,dye
+                            new Vector2((float)(cx += this.argStack[i + 7]), (float)cy));  // dxf,+0
+
+                            index -= 8;
                             i += 8;
                         }
 
                     }
 
-                    _currentX = curX;
-                    _currentY = curY;
+                    this._currentX = cx;
+                    this._currentY = cy;
+                    break;
                 }
-
-                break;
 
                 case 4:
                 case 5:
                 {
-
                     // |- dx1 dx2 dy2 dy3 {dya dxb dyb dxc dxd dxe dye dyf}* dxf? hvcurveto (31) |-
 
                     // If there is a multiple of four arguments, the curve starts
@@ -445,78 +419,72 @@ namespace SixLabors.Fonts.Tables.Cff
                     // end horizontal.The last curve(the odd argument case) need not
                     // end horizontal/ vertical.
 
-                    double curX = _currentX;
-                    double curY = _currentY;
+                    double curX = this._currentX;
+                    double curY = this._currentY;
 
-                    int count = _currentIndex;
+                    int count = this.currentIndex;
 
                     if (count == 5)
                     {
                         // last one
-                        _glyphTranslator.Curve4(
-                           (float)(curX += _argStack[i + 0]), (float)(curY), // dx1
-                           (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dx2,dy2
-                           (float)(curX += _argStack[i + 4]), (float)(curY += _argStack[i + 3])  // dx3,dy3
-                           );
+                        this.GlyphRenderer.CubicBezierTo(
+                           new Vector2((float)(curX += this.argStack[i + 0]), (float)curY), // dx1
+                           new Vector2((float)(curX += this.argStack[i + 1]), (float)(curY += this.argStack[i + 2])), // dx2,dy2
+                           new Vector2((float)(curX += this.argStack[i + 4]), (float)(curY += this.argStack[i + 3])));  // dx3,dy3
 
                         count -= 5;
                         i += 5;
                     }
                     else
                     {
-                        _glyphTranslator.Curve4(
-                           (float)(curX += _argStack[i + 0]), (float)(curY), // dx1
-                           (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dx2,dy2
-                           (float)(curX), (float)(curY += _argStack[i + 3])  // dy3
-                           );
+                        this.GlyphRenderer.CubicBezierTo(
+                           new Vector2((float)(curX += this.argStack[i + 0]), (float)curY), // dx1
+                           new Vector2((float)(curX += this.argStack[i + 1]), (float)(curY += this.argStack[i + 2])), // dx2,dy2
+                           new Vector2((float)curX, (float)(curY += this.argStack[i + 3])));  // dy3
 
                         count -= 4;
                         i += 4;
                     }
 
-
                     while (count > 0)
                     {
-                        _glyphTranslator.Curve4(
-                            (float)(curX), (float)(curY += _argStack[i + 0]), // 0,dya
-                            (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dxb,dyb
-                            (float)(curX += _argStack[i + 3]), (float)(curY)  // dxc, +0
-                            );
+                        this.GlyphRenderer.CubicBezierTo(
+                            new Vector2((float)curX, (float)(curY += this.argStack[i + 0])), // 0,dya
+                            new Vector2((float)(curX += this.argStack[i + 1]), (float)(curY += this.argStack[i + 2])), // dxb,dyb
+                            new Vector2((float)(curX += this.argStack[i + 3]), (float)curY));  // dxc, +0
 
                         if (count == 9)
                         {
                             // last cycle
-                            _glyphTranslator.Curve4(
-                             (float)(curX += _argStack[i + 4]), (float)(curY), // dxd,0
-                             (float)(curX += _argStack[i + 5]), (float)(curY += _argStack[i + 6]), // dxe,dye
-                             (float)(curX += _argStack[i + 8]), (float)(curY += _argStack[i + 7])  // dxf,dyf
-                             );
+                            this.GlyphRenderer.CubicBezierTo(
+                             new Vector2((float)(curX += this.argStack[i + 4]), (float)curY), // dxd,0
+                             new Vector2((float)(curX += this.argStack[i + 5]), (float)(curY += this.argStack[i + 6])), // dxe,dye
+                             new Vector2((float)(curX += this.argStack[i + 8]), (float)(curY += this.argStack[i + 7])));  // dxf,dyf
+
                             i += 9;
                             count -= 9;
                         }
                         else
                         {
-                            _glyphTranslator.Curve4(
-                            (float)(curX += _argStack[i + 4]), (float)(curY), // dxd,0
-                            (float)(curX += _argStack[i + 5]), (float)(curY += _argStack[i + 6]), // dxe,dye
-                            (float)(curX), (float)(curY += _argStack[i + 7])  // 0,dyf
-                            );
-                            //
+                            this.GlyphRenderer.CubicBezierTo(
+                            new Vector2((float)(curX += this.argStack[i + 4]), (float)curY), // dxd,0
+                            new Vector2((float)(curX += this.argStack[i + 5]), (float)(curY += this.argStack[i + 6])), // dxe,dye
+                            new Vector2((float)curX, (float)(curY += this.argStack[i + 7])));  // 0,dyf
+
                             i += 8;
                             count -= 8;
                         }
 
                     }
 
-                    _currentX = curX;
-                    _currentY = curY;
+                    this._currentX = curX;
+                    this._currentY = curY;
                 }
 
                 break;
             }
 
-
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void R_CurveLine()
@@ -533,77 +501,70 @@ namespace SixLabors.Fonts.Tables.Cff
             // The number of curves is determined from the count
             // on the argument stack.
 
-            double curX = _currentX;
-            double curY = _currentY;
+            double curX = this._currentX;
+            double curY = this._currentY;
 
             int i = 0;
-            int count = _currentIndex;
+            int count = this.currentIndex;
             while (count > 0)
             {
 
-                _glyphTranslator.Curve4(
-                    (float)(curX += _argStack[i + 0]), (float)(curY += _argStack[i + 1]), // dxa,dya
-                    (float)(curX += _argStack[i + 2]), (float)(curY += _argStack[i + 3]), // dxb,dyb
-                    (float)(curX += _argStack[i + 4]), (float)(curY += _argStack[i + 5])  // dxc,dyc
-                    );
-                //
+                this.GlyphRenderer.CubicBezierTo(
+                    new Vector2((float)(curX += this.argStack[i + 0]), (float)(curY += this.argStack[i + 1])), // dxa,dya
+                    new Vector2((float)(curX += this.argStack[i + 2]), (float)(curY += this.argStack[i + 3])), // dxb,dyb
+                    new Vector2((float)(curX += this.argStack[i + 4]), (float)(curY += this.argStack[i + 5])));  // dxc,dyc
+
                 i += 6;
                 count -= 6;
 
                 if (count == 2)
                 {
                     // last one
-                    _glyphTranslator.LineTo((float)(curX += _argStack[i]), (float)(curY += _argStack[i + 1]));
+                    this.GlyphRenderer.LineTo(new Vector2((float)(curX += this.argStack[i]), (float)(curY += this.argStack[i + 1])));
                     break;// exit while
                 }
             }
 
-            _currentX = curX;
-            _currentY = curY;
-            _currentIndex = 0; // clear stack
-
+            this._currentX = curX;
+            this._currentY = curY;
+            this.currentIndex = 0; // clear stack
         }
 
         public void R_LineCurve()
         {
-#if DEBUG
-
-#endif
             // |- { dxa dya} +dxb dyb dxc dyc dxd dyd rlinecurve(25) |-
 
             // is equivalent to one rlineto for each pair of arguments beyond
             // the six arguments dxb...dyd needed for the one
             // rrcurveto command.The number of lines is determined from the count of
             // items on the argument stack.
-
-            double curX = _currentX;
-            double curY = _currentY;
+            double curX = this._currentX;
+            double curY = this._currentY;
 
             int i = 0;
-            int count = _currentIndex;
+            int count = this.currentIndex;
             while (count > 0)
             {
-                _glyphTranslator.LineTo(
-                    (float)(curX += _argStack[i + 0]), (float)(curY += _argStack[i + 1]));
-                //
+                this.GlyphRenderer.LineTo(new Vector2((float)(curX += this.argStack[i + 0]), (float)(curY += this.argStack[i + 1])));
+
                 i += 2;
                 count -= 2;
 
                 if (count == 6)
                 {
                     // last one
-                    _glyphTranslator.Curve4(
-                    (float)(curX += _argStack[i + 0]), (float)(curY += _argStack[i + 1]), // dxa,dya
-                    (float)(curX += _argStack[i + 2]), (float)(curY += _argStack[i + 3]), // dxb,dyb
-                    (float)(curX += _argStack[i + 4]), (float)(curY += _argStack[i + 5])  // dxc,dyc
-                    );
+                    this.GlyphRenderer.CubicBezierTo(
+                    new Vector2((float)(curX += this.argStack[i + 0]), (float)(curY += this.argStack[i + 1])), // dxa,dya
+                    new Vector2((float)(curX += this.argStack[i + 2]), (float)(curY += this.argStack[i + 3])), // dxb,dyb
+                    new Vector2((float)(curX += this.argStack[i + 4]), (float)(curY += this.argStack[i + 5])));  // dxc,dyc
+
                     break;// exit while
                 }
             }
 
-            _currentX = curX;
-            _currentY = curY;
-            _currentIndex = 0; // clear stack
+            this._currentX = curX;
+            this._currentY = curY;
+            this.currentIndex = 0; // clear stack
 
         }
 
@@ -612,11 +573,9 @@ namespace SixLabors.Fonts.Tables.Cff
 
 #if DEBUG
 
-
 #endif
 
             // |- dy1 dx2 dy2 dx3 {dxa dxb dyb dyc dyd dxe dye dxf}* dyf? vhcurveto (30) |-
-
 
             // |- {dya dxb dyb dxc dxd dxe dye dyf}+ dxf? vhcurveto (30) |-
 
@@ -630,129 +589,123 @@ namespace SixLabors.Fonts.Tables.Cff
             int i = 0;
             int remainder = 0;
 
-            switch (remainder = (_currentIndex % 8))
+            switch (remainder = this.currentIndex % 8)
             {
                 default:
+                {
                     throw new NotSupportedException();
+                }
+
                 case 0:
                 case 1:
                 {
                     // |- {dya dxb dyb dxc dxd dxe dye dyf}+ dxf? vhcurveto (30) |-
-                    double curX = _currentX;
-                    double curY = _currentY;
-                    int ncount = _currentIndex;
+                    double curX = this._currentX;
+                    double curY = this._currentY;
+                    int ncount = this.currentIndex;
                     while (ncount > 0)
                     {
-                        _glyphTranslator.Curve4(
-                            (float)(curX), (float)(curY += _argStack[i + 0]), // +0,dya
-                            (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dxb,dyb
-                            (float)(curX += _argStack[i + 3]), (float)(curY)  // dxc,+0
-                            );
+                        this.GlyphRenderer.CubicBezierTo(
+                            new Vector2((float)curX, (float)(curY += this.argStack[i + 0])), // +0,dya
+                            new Vector2((float)(curX += this.argStack[i + 1]), (float)(curY += this.argStack[i + 2])), // dxb,dyb
+                            new Vector2((float)(curX += this.argStack[i + 3]), (float)curY));  // dxc,+0
 
                         if (ncount == 9)
                         {
                             // last cycle
-                            _glyphTranslator.Curve4(
-                             (float)(curX += _argStack[i + 4]), (float)(curY), // dxd,+0
-                             (float)(curX += _argStack[i + 5]), (float)(curY += _argStack[i + 6]), // dxe,dye
-                             (float)(curX += _argStack[i + 8]), (float)(curY += _argStack[i + 7])  // +dxf,dyf
-                             );
-                            //
+                            this.GlyphRenderer.CubicBezierTo(
+                             new Vector2((float)(curX += this.argStack[i + 4]), (float)curY), // dxd,+0
+                             new Vector2((float)(curX += this.argStack[i + 5]), (float)(curY += this.argStack[i + 6])), // dxe,dye
+                             new Vector2((float)(curX += this.argStack[i + 8]), (float)(curY += this.argStack[i + 7])));  // +dxf,dyf
+
                             i += 9;
                             ncount -= 9;
                         }
                         else
                         {
-                            _glyphTranslator.Curve4(
-                             (float)(curX += _argStack[i + 4]), (float)(curY), // dxd,+0
-                             (float)(curX += _argStack[i + 5]), (float)(curY += _argStack[i + 6]), // dxe,dye
-                             (float)(curX), (float)(curY += _argStack[i + 7])  // +0,dyf
-                             );
-                            //
+                            this.GlyphRenderer.CubicBezierTo(
+                             new Vector2((float)(curX += this.argStack[i + 4]), (float)curY), // dxd,+0
+                             new Vector2((float)(curX += this.argStack[i + 5]), (float)(curY += this.argStack[i + 6])), // dxe,dye
+                             new Vector2((float)curX, (float)(curY += this.argStack[i + 7])));  // +0,dyf
+
                             i += 8;
                             ncount -= 8;
                         }
                     }
 
-                    _currentX = curX;
-                    _currentY = curY;
+                    this._currentX = curX;
+                    this._currentY = curY;
+                    break;
                 }
-
-                break;
 
                 case 4:
                 case 5:
                 {
-
                     // |- dy1 dx2 dy2 dx3 {dxa dxb dyb dyc dyd dxe dye dxf}* dyf? vhcurveto (30) |-
-                    double curX = _currentX;
-                    double curY = _currentY;
+                    double curX = this._currentX;
+                    double curY = this._currentY;
 
-                    int ncount = _currentIndex;
+                    int ncount = this.currentIndex;
                     if (ncount == 5)
                     {
                         // only 1
-                        _glyphTranslator.Curve4(
-                          (float)(curX), (float)(curY += _argStack[i + 0]), // dy1
-                          (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dx2,dy2
-                          (float)(curX += _argStack[i + 3]), (float)(curY += _argStack[i + 4]) // dx3,dyf
-                          );
+                        this.GlyphRenderer.CubicBezierTo(
+                          new Vector2((float)curX, (float)(curY += this.argStack[i + 0])), // dy1
+                          new Vector2((float)(curX += this.argStack[i + 1]), (float)(curY += this.argStack[i + 2])), // dx2,dy2
+                          new Vector2((float)(curX += this.argStack[i + 3]), (float)(curY += this.argStack[i + 4]))); // dx3,dyf
+
                         i += 5;
                         ncount -= 5;
                     }
                     else
                     {
-                        _glyphTranslator.Curve4(
-                          (float)(curX), (float)(curY += _argStack[i + 0]), // dy1
-                          (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dx2,dy2
-                          (float)(curX += _argStack[i + 3]), (float)(curY) // dx3
-                          );
+                        this.GlyphRenderer.CubicBezierTo(
+                          new Vector2((float)curX, (float)(curY += this.argStack[i + 0])), // dy1
+                          new Vector2((float)(curX += this.argStack[i + 1]), (float)(curY += this.argStack[i + 2])), // dx2,dy2
+                          new Vector2((float)(curX += this.argStack[i + 3]), (float)curY)); // dx3
+
                         i += 4;
                         ncount -= 4;
                     }
 
                     while (ncount > 0)
                     {
-                        // line to
+                        this.GlyphRenderer.CubicBezierTo(
+                            new Vector2((float)(curX += this.argStack[i + 0]), (float)curY), // dxa,
+                            new Vector2((float)(curX += this.argStack[i + 1]), (float)(curY += this.argStack[i + 2])), // dxb,dyb
+                            new Vector2((float)curX, (float)(curY += this.argStack[i + 3])));  // +0, dyc
 
-                        _glyphTranslator.Curve4(
-                            (float)(curX += _argStack[i + 0]), (float)(curY), // dxa,
-                            (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dxb,dyb
-                            (float)(curX), (float)(curY += _argStack[i + 3])  // +0, dyc
-                            );
                         if (ncount == 9)
                         {
                             // last cycle
-                            _glyphTranslator.Curve4(
-                                (float)(curX), (float)(curY += _argStack[i + 4]), // +0,dyd
-                                (float)(curX += _argStack[i + 5]), (float)(curY += _argStack[i + 6]), // dxe,dye
-                                (float)(curX += _argStack[i + 7]), (float)(curY += _argStack[i + 8])  // dxf,dyf
-                                );
+                            this.GlyphRenderer.CubicBezierTo(
+                                new Vector2((float)curX, (float)(curY += this.argStack[i + 4])), // +0,dyd
+                                new Vector2((float)(curX += this.argStack[i + 5]), (float)(curY += this.argStack[i + 6])), // dxe,dye
+                                new Vector2((float)(curX += this.argStack[i + 7]), (float)(curY += this.argStack[i + 8])));  // dxf,dyf
+
                             i += 9;
                             ncount -= 9;
                         }
                         else
                         {
-                            _glyphTranslator.Curve4(
-                                (float)(curX), (float)(curY += _argStack[i + 4]), // +0,dyd
-                                (float)(curX += _argStack[i + 5]), (float)(curY += _argStack[i + 6]), // dxe,dye
-                                (float)(curX += _argStack[i + 7]), (float)(curY)  // dxf,0
-                                );
+                            this.GlyphRenderer.CubicBezierTo(
+                                new Vector2((float)curX, (float)(curY += this.argStack[i + 4])), // +0,dyd
+                                new Vector2((float)(curX += this.argStack[i + 5]), (float)(curY += this.argStack[i + 6])), // dxe,dye
+                                new Vector2((float)(curX += this.argStack[i + 7]), (float)curY));  // dxf,0
+
                             i += 8;
                             ncount -= 8;
                         }
                     }
 
-                    _currentX = curX;
-                    _currentY = curY;
+                    this._currentX = curX;
+                    this._currentY = curY;
                 }
 
                 break;
             }
 
-            _currentIndex = 0; // clear stack
-
-
+            this.currentIndex = 0; // clear stack
         }
 
         public void VV_CurveTo()
@@ -762,43 +715,42 @@ namespace SixLabors.Fonts.Tables.Cff
             // If the argument count is a multiple of four, the curve starts and ends vertical.
             // If the argument count is odd, the first curve does not begin with a vertical tangent.
             int i = 0;
-            int count = _currentIndex;
+            int count = this.currentIndex;
 
-            double curX = _currentX;
-            double curY = _currentY;
+            double curX = this._currentX;
+            double curY = this._currentY;
 
             if ((count % 2) != 0)
             {
                 // odd number
-                _glyphTranslator.Curve4(
-                   (float)(curX += _argStack[0]), (float)(curY += _argStack[1]), // dx1?,+dya
-                   (float)(curX += _argStack[2]), (float)(curY += _argStack[3]), // dxb,dyb
-                   (float)(curX), (float)(curY += _argStack[4])  // +0,+dyc
-                   );
+                this.GlyphRenderer.CubicBezierTo(
+                   new Vector2((float)(curX += this.argStack[0]), (float)(curY += this.argStack[1])), // dx1?,+dya
+                   new Vector2((float)(curX += this.argStack[2]), (float)(curY += this.argStack[3])), // dxb,dyb
+                   new Vector2((float)curX, (float)(curY += this.argStack[4])));  // +0,+dyc
+
                 i += 5;
                 count -= 5;
             }
 
             while (count > 0)
             {
-                _glyphTranslator.Curve4(
-                    (float)(curX), (float)(curY += _argStack[i + 0]), // +0,dya
-                    (float)(curX += _argStack[i + 1]), (float)(curY += _argStack[i + 2]), // dxb,dyb
-                    (float)(curX), (float)(curY += _argStack[i + 3])  // +0,dyc
-                    );
-                //
+                this.GlyphRenderer.CubicBezierTo(
+                    new Vector2((float)curX, (float)(curY += this.argStack[i + 0])), // +0,dya
+                    new Vector2((float)(curX += this.argStack[i + 1]), (float)(curY += this.argStack[i + 2])), // dxb,dyb
+                    new Vector2((float)curX, (float)(curY += this.argStack[i + 3])));  // +0,dyc
+
                 i += 4;
                 count -= 4;
             }
 
-            _currentX = curX;
-            _currentY = curY;
-            _currentIndex = 0; // clear stack
+            this._currentX = curX;
+            this._currentY = curY;
+            this.currentIndex = 0; // clear stack
         }
 
         public void EndChar()
         {
-            _currentIndex = 0;
+            this.currentIndex = 0;
         }
 
         public void Flex()
@@ -808,7 +760,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // shown in Figure 2 below), to be rendered as a straight line when
             // the flex depth is less than fd / 100 device pixels, and as curved lines
             // when the flex depth is greater than or equal to fd/ 100 device pixels
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void H_Flex()
@@ -825,7 +777,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // b) the joining point and the neighbor control points have
             // the same y value.
             // c) the flex depth is 50.
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void H_Flex1()
@@ -844,7 +796,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // b) the joining point and the neighbor control points have
             // the same y value.
             // c) the flex depth is 50.
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void Flex1()
@@ -865,10 +817,8 @@ namespace SixLabors.Fonts.Tables.Cff
             // its y - value is equal to y.
             //  Otherwise, the last point’s x-value is equal to x and its y-value is given by d6.
 
-
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
-
 
         //-------------------------------------------------------------------
         // 4.3 Hint Operators
@@ -876,28 +826,27 @@ namespace SixLabors.Fonts.Tables.Cff
         {
             // |- y dy {dya dyb}*  hstem (1) |-
 
-
 #if DEBUG
-            if ((_currentIndex % 2) != 0)
+            if ((this.currentIndex % 2) != 0)
             {
                 throw new NotSupportedException();
             }
 #endif
             // hintCount += _currentIndex / 2;
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void V_Stem()
         {
             // |- x dx {dxa dxb}*  vstem (3) |-
 #if DEBUG
-            if ((_currentIndex % 2) != 0)
+            if ((this.currentIndex % 2) != 0)
             {
                 throw new NotSupportedException();
             }
 #endif
             // hintCount += _currentIndex / 2;
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void V_StemHM()
@@ -905,20 +854,20 @@ namespace SixLabors.Fonts.Tables.Cff
 
             // |- x dx {dxa dxb}* vstemhm (23) |-
 #if DEBUG
-            if ((_currentIndex % 2) != 0)
+            if ((this.currentIndex % 2) != 0)
             {
                 throw new NotSupportedException();
             }
 #endif
             // hintCount += _currentIndex / 2;
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void H_StemHM()
         {
             // |- y dy {dya dyb}*  hstemhm (18) |-
 #if DEBUG
-            if ((_currentIndex % 2) != 0)
+            if ((this.currentIndex % 2) != 0)
             {
                 throw new NotSupportedException();
             }
@@ -929,7 +878,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // except that it must be used
             // in place of hstem  if the charstring contains one or more
             // hintmask operators.
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         //----------------------------------------
@@ -960,22 +909,22 @@ namespace SixLabors.Fonts.Tables.Cff
             // undefined.
 
             // |- hintmask (19 + mask) |-
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void HintMask2(int hintMaskValue)
         {
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void HintMask3(int hintMaskValue)
         {
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void HintMask4(int hintMaskValue)
         {
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         public void HintMaskBits(int bitCount)
@@ -984,12 +933,12 @@ namespace SixLabors.Fonts.Tables.Cff
             // calculate bytes need by
             // bytes need = (bitCount+7)/8
 #if DEBUG
-            if (_currentIndex != (bitCount + 7) / 8)
+            if (this.currentIndex != (bitCount + 7) / 8)
             {
 
             }
 #endif
-            _currentIndex = 0; // clear stack
+            this.currentIndex = 0; // clear stack
         }
 
         //----------------------------------------
@@ -1006,22 +955,22 @@ namespace SixLabors.Fonts.Tables.Cff
         // 1 and the accompanying example).
         public void CounterSpaceMask1(int cntMaskValue)
         {
-            _currentIndex = 0;// clear stack
+            this.currentIndex = 0;// clear stack
         }
 
         public void CounterSpaceMask2(int cntMaskValue)
         {
-            _currentIndex = 0;// clear stack
+            this.currentIndex = 0;// clear stack
         }
 
         public void CounterSpaceMask3(int cntMaskValue)
         {
-            _currentIndex = 0;// clear stack
+            this.currentIndex = 0;// clear stack
         }
 
         public void CounterSpaceMask4(int cntMaskValue)
         {
-            _currentIndex = 0;// clear stack
+            this.currentIndex = 0;// clear stack
         }
 
         public void CounterSpaceMaskBits(int bitCount)
@@ -1029,18 +978,16 @@ namespace SixLabors.Fonts.Tables.Cff
             // calculate bytes need by
             // bytes need = (bitCount+7)/8
 #if DEBUG
-            if (_currentIndex != (bitCount + 7) / 8)
+            if (this.currentIndex != (bitCount + 7) / 8)
             {
 
             }
 #endif
 
-            _currentIndex = 0;// clear stack
+            this.currentIndex = 0;// clear stack
         }
 
         //----------------------------------------
-
-
 
         // 4.4: Arithmetic Operators
 
@@ -1123,7 +1070,6 @@ namespace SixLabors.Fonts.Tables.Cff
             Debug.WriteLine("NOT_IMPLEMENT:" + nameof(Op_Dup));
         }
 
-
         //-------------------------
         // 4.5: Storage Operators
 
@@ -1178,28 +1124,28 @@ namespace SixLabors.Fonts.Tables.Cff
         public double Pop()
         {
 #if DEBUG
-            if (_currentIndex < 1)
+            if (this.currentIndex < 1)
             {
 
             }
 #endif
-            return (double)_argStack[--_currentIndex];// *** use prefix
+            return (double)this.argStack[--this.currentIndex];// *** use prefix
         }
 
         public void Ret()
         {
 #if DEBUG
-            if (_currentIndex > 0)
+            if (this.currentIndex > 0)
             {
 
             }
 #endif
-            _currentIndex = 0;
+            this.currentIndex = 0;
         }
 #if DEBUG
         public void dbugClearEvalStack()
         {
-            _currentIndex = 0;
+            this.currentIndex = 0;
         }
 #endif
     }

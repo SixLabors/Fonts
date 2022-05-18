@@ -3,97 +3,82 @@
 
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
     internal class CffEvaluationEngine
     {
-        private float _scale = 1;// default 
-        private readonly Stack<Type2EvaluationStack> _evalStackPool = new Stack<Type2EvaluationStack>();
+        private float _scale = 1; // default 
+        private readonly Stack<Type2EvaluationStack> evaluationStackPool = new();
 
-        private class PxScaleGlyphTx : IGlyphTranslator
+        private class PxScaleGlyphTx : IGlyphRenderer
         {
             private readonly float _scale;
-            private readonly IGlyphTranslator _tx;
+            private readonly IGlyphRenderer _tx;
             private bool _is_contour_opened;
 
-            public PxScaleGlyphTx(float scale, IGlyphTranslator tx)
+            public PxScaleGlyphTx(float scale, IGlyphRenderer tx)
             {
-                _scale = scale;
-                _tx = tx;
+                this._scale = scale;
+                this._tx = tx;
             }
 
             public void BeginRead(int contourCount)
             {
-                _tx.BeginRead(contourCount);
+                this._tx.BeginRead(contourCount);
             }
 
             public void CloseContour()
             {
-                _is_contour_opened = false;
-                _tx.CloseContour();
+                this._is_contour_opened = false;
+                this._tx.CloseContour();
             }
 
             public void Curve3(float x1, float y1, float x2, float y2)
             {
-                _is_contour_opened = true;
-                _tx.Curve3(x1 * _scale, y1 * _scale, x2 * _scale, y2 * _scale);
+                this._is_contour_opened = true;
+                this._tx.Curve3(x1 * this._scale, y1 * this._scale, x2 * this._scale, y2 * this._scale);
             }
 
             public void Curve4(float x1, float y1, float x2, float y2, float x3, float y3)
             {
-                _is_contour_opened = true;
-                _tx.Curve4(x1 * _scale, y1 * _scale, x2 * _scale, y2 * _scale, x3 * _scale, y3 * _scale);
+                this._is_contour_opened = true;
+                this._tx.Curve4(x1 * this._scale, y1 * this._scale, x2 * this._scale, y2 * this._scale, x3 * this._scale, y3 * this._scale);
             }
 
             public void EndRead()
             {
-                _tx.EndRead();
+                this._tx.EndRead();
             }
 
             public void LineTo(float x1, float y1)
             {
-                _is_contour_opened = true;
-                _tx.LineTo(x1 * _scale, y1 * _scale);
+                this._is_contour_opened = true;
+                this._tx.LineTo(x1 * this._scale, y1 * this._scale);
             }
 
             public void MoveTo(float x0, float y0)
             {
-                _tx.MoveTo(x0 * _scale, y0 * _scale);
+                this._tx.MoveTo(x0 * this._scale, y0 * this._scale);
             }
             //
 
-            public bool IsContourOpened => _is_contour_opened;
+            public bool IsContourOpened => this._is_contour_opened;
         }
 
-        public CffEvaluationEngine()
-        {
+        public void Run(IGlyphRenderer renderer, Cff1GlyphData glyphData, float scale = 1)
+            => this.Run(renderer, glyphData.GlyphInstructions, scale);
 
-        }
-        
-        public void Run(IGlyphTranslator tx, Cff1GlyphData glyphData, float scale = 1)
+        internal void Run(IGlyphRenderer renderer, Type2Instruction[] instructionList, float scale = 1)
         {
-            Run(tx, glyphData.GlyphInstructions, scale);
-        }
-        
-        internal void Run(IGlyphTranslator tx, Type2Instruction[] instructionList, float scale = 1)
-        {
-            // TODO:
-            // Translate the instruction list into a set of controlpoint, endpoint, and oncurves
-            // So that they are compatible with the rest of the codebase.
-            List<Vector2> controlPonts = new();
-            List<ushort> endPoints = new();
-            List<bool> onCurves = new();
-
             // all fields are set to new values*** 
 
-            _scale = scale;
+            this._scale = scale;
 
             double currentX = 0, currentY = 0;
 
 
-            var scaleTx = new PxScaleGlyphTx(scale, tx);
+            var scaleTx = new PxScaleGlyphTx(scale, renderer);
             //
             scaleTx.BeginRead(0);// unknown contour count  
             //
@@ -112,17 +97,17 @@ namespace SixLabors.Fonts.Tables.Cff
 
         }
 
-        private void Run(IGlyphTranslator tx, Type2Instruction[] instructionList, ref double currentX, ref double currentY)
+        private void Run(IGlyphRenderer renderer, Type2Instruction[] instructionList, ref double currentX, ref double currentY)
         {
             // recursive ***
 
-            Type2EvaluationStack evalStack = GetFreeEvalStack(); // **
+            Type2EvaluationStack evalStack = this.GetFreeEvalStack(); // **
 #if DEBUG
             // evalStack.dbugGlyphIndex = instructionList.dbugGlyphIndex;
 #endif
             evalStack._currentX = currentX;
             evalStack._currentY = currentY;
-            evalStack.GlyphTranslator = tx;
+            evalStack.GlyphRenderer = renderer;
 
             for (int i = 0; i < instructionList.Length; ++i)
             {
@@ -130,8 +115,8 @@ namespace SixLabors.Fonts.Tables.Cff
 
                 // ----------
                 // this part is our extension to the original
-                int merge_flags = inst.Op >> 6; // upper 2 bits is our extension flags
-                switch (merge_flags)
+                int mergeFlags = inst.Op >> 6; // upper 2 bits is our extension flags
+                switch (mergeFlags)
                 {
                     case 0: // nothing
                         break;
@@ -150,8 +135,8 @@ namespace SixLabors.Fonts.Tables.Cff
                         break;
                 }
 
-                //----------
-                switch ((OperatorName)((inst.Op & 0b111111)))// we use only 6 lower bits for op_name
+                // we use only 6 lower bits for op_name
+                switch ((OperatorName)(inst.Op & 0b111111))
                 {
                     default:
                         throw new NotSupportedException();
@@ -367,14 +352,14 @@ namespace SixLabors.Fonts.Tables.Cff
                 }
             }
 
-            ReleaseEvalStack(evalStack);// ****
+            this.ReleaseEvalStack(evalStack);// ****
         }
 
         private Type2EvaluationStack GetFreeEvalStack()
         {
-            if (_evalStackPool.Count > 0)
+            if (this.evaluationStackPool.Count > 0)
             {
-                return _evalStackPool.Pop();
+                return this.evaluationStackPool.Pop();
             }
             else
             {
@@ -385,7 +370,7 @@ namespace SixLabors.Fonts.Tables.Cff
         private void ReleaseEvalStack(Type2EvaluationStack evalStack)
         {
             evalStack.Reset();
-            _evalStackPool.Push(evalStack);
+            this.evaluationStackPool.Push(evalStack);
         }
     }
 }
