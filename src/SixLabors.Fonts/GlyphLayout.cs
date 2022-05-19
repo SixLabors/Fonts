@@ -94,6 +94,7 @@ namespace SixLabors.Fonts
         {
             FontRectangle box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
 
+            // TODO: Should this be in GlyphMetrics? We likely need to check more than whitespace.
             if (this.IsWhiteSpace())
             {
                 box = new FontRectangle(box.X, box.Y, this.Width * dpi, box.Height);

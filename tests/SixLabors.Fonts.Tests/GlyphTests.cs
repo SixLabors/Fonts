@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using Moq;
+using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
@@ -25,7 +26,7 @@ namespace SixLabors.Fonts.Tests
             CodePoint codePoint = this.AsCodePoint(text);
             Font font = CreateFont(text);
             FontMetrics metrics = font.FontMetrics;
-            GlyphMetrics glyphMetrics = new(
+            TrueTypeGlyphMetrics glyphMetrics = new(
                 (StreamFontMetrics)metrics,
                 codePoint,
                 new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, metrics.UnitsPerEm, 0, metrics.UnitsPerEm), Array.Empty<byte>()),
@@ -37,7 +38,7 @@ namespace SixLabors.Fonts.Tests
                 0);
 
             TextRun textRun = new() { Start = 0, End = 1, Font = font };
-            Glyph glyph = new(GlyphMetrics.CloneForRendering(glyphMetrics, textRun, codePoint), 10);
+            Glyph glyph = new(glyphMetrics.CloneForRendering(textRun, codePoint), 10);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
             glyph.RenderTo(this.renderer, locationInFontSpace, new TextOptions(font));
@@ -95,7 +96,7 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter A
             Glyph g = font.GetGlyphs(new CodePoint(41), ColorFontSupport.None).First();
-            GlyphOutline instance = g.GlyphMetrics.GetOutline();
+            GlyphOutline instance = ((TrueTypeGlyphMetrics)g.GlyphMetrics).GetOutline();
 
             Assert.Equal(20, instance.ControlPoints.Length);
             Assert.Equal(20, instance.OnCurves.Length);

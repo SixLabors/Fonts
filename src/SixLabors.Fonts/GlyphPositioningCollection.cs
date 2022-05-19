@@ -172,7 +172,7 @@ namespace SixLabors.Fonts
                             // Clone and offset the glyph for rendering.
                             // If the glyph is the result of a decomposition substitution we need to offset it.
                             // We slip the text run in here while we clone so we have it available to the renderer.
-                            var clone = GlyphMetrics.CloneForRendering(gm, shape.TextRun, codePoint);
+                            GlyphMetrics clone = gm.CloneForRendering(shape.TextRun, codePoint);
                             if (isDecomposed)
                             {
                                 if (!this.IsVerticalLayoutMode)
@@ -247,7 +247,7 @@ namespace SixLabors.Fonts
                     // Clone and offset the glyph for rendering.
                     // If the glyph is the result of a decomposition substitution we need to offset it.
                     // We slip the text run in here while we clone so we have it available to the renderer.
-                    var clone = GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint);
+                    GlyphMetrics clone = gm.CloneForRendering(data.TextRun, codePoint);
                     if (isDecomposed)
                     {
                         if (!this.IsVerticalLayoutMode)

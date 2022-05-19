@@ -669,7 +669,8 @@ namespace SixLabors.Fonts
                 }
             }
 
-            return new GlyphMetrics(
+            // TODO: Implement CFF metrics.
+            return new TrueTypeGlyphMetrics(
                 this,
                 codePoint,
                 vector,

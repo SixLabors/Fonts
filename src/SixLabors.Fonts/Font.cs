@@ -163,7 +163,7 @@ namespace SixLabors.Fonts
             TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes };
             foreach (GlyphMetrics metrics in this.FontMetrics.GetGlyphMetrics(codePoint, support))
             {
-                yield return new(GlyphMetrics.CloneForRendering(metrics, textRun, codePoint), this.Size);
+                yield return new(metrics.CloneForRendering(textRun, codePoint), this.Size);
             }
         }
 

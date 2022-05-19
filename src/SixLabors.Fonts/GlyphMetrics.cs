@@ -1,12 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
-using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using SixLabors.Fonts.Tables.General;
-using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -14,18 +10,14 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents a glyph metric from a particular font face.
     /// </summary>
-    public class GlyphMetrics
+    public abstract class GlyphMetrics
     {
         private static readonly Vector2 MirrorScale = new(1, -1);
-        private GlyphVector vector;
-        private readonly Dictionary<float, GlyphVector> scaledVector = new();
-        private Vector2 offset = Vector2.Zero;
-        private TextRun? textRun;
 
         internal GlyphMetrics(
             StreamFontMetrics font,
             CodePoint codePoint,
-            GlyphVector vector,
+            Bounds bounds,
             ushort advanceWidth,
             ushort advanceHeight,
             short leftSideBearing,
@@ -38,13 +30,10 @@ namespace SixLabors.Fonts
             this.FontMetrics = font;
             this.CodePoint = codePoint;
             this.UnitsPerEm = unitsPerEM;
-            this.vector = vector;
-
             this.AdvanceWidth = advanceWidth;
             this.AdvanceHeight = advanceHeight;
             this.GlyphId = glyphId;
-
-            Bounds bounds = this.vector.GetBounds();
+            this.Bounds = bounds;
             this.Width = bounds.Max.X - bounds.Min.X;
             this.Height = bounds.Max.Y - bounds.Min.Y;
             this.GlyphType = glyphType;
@@ -97,6 +86,11 @@ namespace SixLabors.Fonts
         public short BottomSideBearing { get; }
 
         /// <summary>
+        /// Gets the bounds, expressed in font units.
+        /// </summary>
+        internal Bounds Bounds { get; }
+
+        /// <summary>
         /// Gets the width, expressed in font units.
         /// </summary>
         public float Width { get; }
@@ -120,7 +114,9 @@ namespace SixLabors.Fonts
         public ushort UnitsPerEm { get; }
 
         /// <inheritdoc cref="FontMetrics.ScaleFactor"/>
-        public Vector2 ScaleFactor { get; private set; }
+        public Vector2 ScaleFactor { get; protected set; }
+
+        internal Vector2 Offset { get; set; }
 
         /// <summary>
         /// Gets the glyph Id.
@@ -131,58 +127,10 @@ namespace SixLabors.Fonts
         /// Performs a semi-deep clone (FontMetrics are not cloned) for rendering
         /// This allows caching the original in the font metrics.
         /// </summary>
-        /// <param name="other">The original glyph metrics.</param>
         /// <param name="textRun">The text run this glyph is a member of.</param>
         /// <param name="codePoint">The codepoint for this glyph.</param>
         /// <returns>The new <see cref="GlyphMetrics"/>.</returns>
-        internal static GlyphMetrics CloneForRendering(GlyphMetrics other, TextRun textRun, CodePoint codePoint)
-        {
-            StreamFontMetrics fontMetrics = other.FontMetrics;
-            Vector2 offset = other.offset;
-            Vector2 scaleFactor = other.ScaleFactor;
-            if (textRun.TextAttributes.HasFlag(TextAttributes.Subscript))
-            {
-                float units = other.UnitsPerEm;
-                scaleFactor /= new Vector2(fontMetrics.SubscriptXSize / units, fontMetrics.SubscriptYSize / units);
-                offset = new(other.FontMetrics.SubscriptXOffset, other.FontMetrics.SubscriptYOffset);
-            }
-            else if (textRun.TextAttributes.HasFlag(TextAttributes.Superscript))
-            {
-                float units = other.UnitsPerEm;
-                scaleFactor /= new Vector2(fontMetrics.SuperscriptXSize / units, fontMetrics.SuperscriptYSize / units);
-                offset = new(fontMetrics.SuperscriptXOffset, -fontMetrics.SuperscriptYOffset);
-            }
-
-            GlyphMetrics metrics = new(
-                fontMetrics,
-                codePoint,
-                GlyphVector.DeepClone(other.vector),
-                other.AdvanceWidth,
-                other.AdvanceHeight,
-                other.LeftSideBearing,
-                other.TopSideBearing,
-                other.UnitsPerEm,
-                other.GlyphId,
-                other.GlyphType,
-                other.GlyphColor);
-
-            metrics.offset = offset;
-            metrics.ScaleFactor = scaleFactor;
-            metrics.textRun = textRun;
-
-            return metrics;
-        }
-
-        /// <summary>
-        /// Gets the outline for the current glyph.
-        /// </summary>
-        /// <returns>The <see cref="GlyphOutline"/>.</returns>
-        public GlyphOutline GetOutline() => this.vector.GetOutline();
-
-        /// <summary>
-        /// Gets the bounds.
-        /// </summary>
-        internal Bounds GetBounds() => this.vector.GetBounds();
+        internal abstract GlyphMetrics CloneForRendering(TextRun textRun, CodePoint codePoint);
 
         /// <summary>
         /// Apply an offset to the glyph.
@@ -190,7 +138,7 @@ namespace SixLabors.Fonts
         /// <param name="x">The x-offset.</param>
         /// <param name="y">The y-offset.</param>
         internal void ApplyOffset(short x, short y)
-            => this.vector = GlyphVector.Translate(this.vector, x, y);
+            => this.Offset = Vector2.Transform(this.Offset, Matrix3x2.CreateTranslation(x, y));
 
         /// <summary>
         /// Applies an advance to the glyph.
@@ -220,9 +168,9 @@ namespace SixLabors.Fonts
         internal FontRectangle GetBoundingBox(Vector2 origin, float scaledPointSize)
         {
             Vector2 scale = new Vector2(scaledPointSize) / this.ScaleFactor;
-            Bounds bounds = this.GetBounds();
+            Bounds bounds = this.Bounds;
             Vector2 size = bounds.Size() * scale;
-            Vector2 loc = (new Vector2(bounds.Min.X, bounds.Max.Y) + this.offset) * scale * MirrorScale;
+            Vector2 loc = (new Vector2(bounds.Min.X, bounds.Max.Y) + this.Offset) * scale * MirrorScale;
             loc = origin + loc;
 
             return new FontRectangle(loc.X, loc.Y, size.X, size.Y);
@@ -235,239 +183,17 @@ namespace SixLabors.Fonts
         /// <param name="pointSize">Size of the point.</param>
         /// <param name="location">The location.</param>
         /// <param name="options">The options used to influence the rendering of this glyph.</param>
-        /// <exception cref="NotSupportedException">Too many control points</exception>
-        internal void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, TextOptions options)
-        {
-            // https://www.unicode.org/faq/unsup_char.html
-            if (ShouldSkipGlyphRendering(this.CodePoint))
-            {
-                return;
-            }
-
-            float dpi = options.Dpi;
-            location *= dpi;
-            float scaledPPEM = dpi * pointSize;
-            bool forcePPEMToInt = (this.FontMetrics.HeadFlags & HeadTable.HeadFlags.ForcePPEMToInt) != 0;
-
-            if (forcePPEMToInt)
-            {
-                scaledPPEM = MathF.Round(scaledPPEM);
-            }
-
-            FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
-
-            // TextRun is never null here as rendering is only accessable via a Glyph which
-            // uses the cloned metrics instance.
-            var parameters = new GlyphRendererParameters(this, this.textRun!, pointSize, dpi);
-
-            if (surface.BeginGlyph(box, parameters))
-            {
-                if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
-                {
-                    if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
-                    {
-                        colorSurface.SetColor(this.GlyphColor.Value);
-                    }
-
-                    if (!this.scaledVector.TryGetValue(scaledPPEM, out GlyphVector scaledVector))
-                    {
-                        // Scale and translate the glyph
-                        Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-                        var transform = Matrix3x2.CreateScale(scale);
-                        transform.Translation = this.offset * scale * MirrorScale;
-                        scaledVector = GlyphVector.Transform(this.vector, transform);
-                        this.FontMetrics.ApplyHinting(options.HintingMode, this, ref scaledVector, scale, scaledPPEM);
-                        this.scaledVector[scaledPPEM] = scaledVector;
-                    }
-
-                    GlyphOutline outline = scaledVector.GetOutline();
-                    ReadOnlySpan<Vector2> controlPoints = outline.ControlPoints.Span;
-                    ReadOnlySpan<ushort> endPoints = outline.EndPoints.Span;
-                    ReadOnlySpan<bool> onCurves = outline.OnCurves.Span;
-
-                    int endOfContour = -1;
-                    for (int i = 0; i < outline.EndPoints.Length; i++)
-                    {
-                        surface.BeginFigure();
-                        int startOfContour = endOfContour + 1;
-                        endOfContour = endPoints[i];
-
-                        Vector2 prev;
-                        Vector2 curr = (MirrorScale * controlPoints[endOfContour]) + location;
-                        Vector2 next = (MirrorScale * controlPoints[startOfContour]) + location;
-
-                        if (onCurves[endOfContour])
-                        {
-                            surface.MoveTo(curr);
-                        }
-                        else
-                        {
-                            if (onCurves[startOfContour])
-                            {
-                                surface.MoveTo(next);
-                            }
-                            else
-                            {
-                                // If both first and last points are off-curve, start at their middle.
-                                Vector2 startPoint = (curr + next) * .5F;
-                                surface.MoveTo(startPoint);
-                            }
-                        }
-
-                        int length = endOfContour - startOfContour + 1;
-                        for (int p = 0; p < length; p++)
-                        {
-                            prev = curr;
-                            curr = next;
-                            int currentIndex = startOfContour + p;
-                            int nextIndex = startOfContour + ((p + 1) % length);
-                            int prevIndex = startOfContour + ((length + p - 1) % length);
-                            next = (MirrorScale * controlPoints[nextIndex]) + location;
-
-                            if (onCurves[currentIndex])
-                            {
-                                // This is a straight line.
-                                surface.LineTo(curr);
-                            }
-                            else
-                            {
-                                Vector2 prev2 = prev;
-                                Vector2 next2 = next;
-
-                                if (!onCurves[prevIndex])
-                                {
-                                    prev2 = (curr + prev) * .5F;
-                                    surface.LineTo(prev2);
-                                }
-
-                                if (!onCurves[nextIndex])
-                                {
-                                    next2 = (curr + next) * .5F;
-                                }
-
-                                surface.LineTo(prev2);
-                                surface.QuadraticBezierTo(curr, next2);
-                            }
-                        }
-
-                        surface.EndFigure();
-                    }
-                }
-
-                (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float position)
-                {
-                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
-                    Vector2 offset = location + (this.offset * scale * MirrorScale);
-
-                    // Calculate the correct advance for the line.
-                    float width = this.AdvanceWidth;
-                    if (width == 0)
-                    {
-                        // For zero advance glyphs we must calculate our advance width from bearing + width;
-                        width = this.LeftSideBearing + this.Width;
-                    }
-
-                    Vector2 tl = (new Vector2(0, position) * scale) + offset;
-                    Vector2 tr = (new Vector2(width, position) * scale) + offset;
-                    Vector2 bl = (new Vector2(0, position + thickness) * scale) + offset;
-
-                    return (tl, tr, tl.Y - bl.Y);
-                }
-
-                void DrawLine(float thickness, float position)
-                {
-                    surface.BeginFigure();
-
-                    (Vector2 start, Vector2 end, float finalThickness) = GetEnds(thickness, position);
-                    var halfHeight = new Vector2(0, -finalThickness * .5F);
-
-                    Vector2 tl = start - halfHeight;
-                    Vector2 tr = end - halfHeight;
-                    Vector2 bl = start + halfHeight;
-                    Vector2 br = end + halfHeight;
-
-                    // Clamp the horizontal components to a whole pixel.
-                    tl.Y = MathF.Ceiling(tl.Y);
-                    tr.Y = MathF.Ceiling(tr.Y);
-                    br.Y = MathF.Floor(br.Y);
-                    bl.Y = MathF.Floor(bl.Y);
-
-                    // Do the same for vertical components.
-                    tl.X = MathF.Floor(tl.X);
-                    tr.X = MathF.Floor(tr.X);
-                    br.X = MathF.Floor(br.X);
-                    bl.X = MathF.Floor(bl.X);
-
-                    surface.MoveTo(tl);
-                    surface.LineTo(bl);
-                    surface.LineTo(br);
-                    surface.LineTo(tr);
-
-                    surface.EndFigure();
-                }
-
-                void SetDecoration(TextDecorations decorationType, float thickness, float position)
-                {
-                    (Vector2 start, Vector2 end, float calcThickness) = GetEnds(thickness, position);
-                    ((IGlyphDecorationRenderer)surface).SetDecoration(decorationType, start, end, calcThickness);
-                }
-
-                // There's no built in metrics for these values so we will need to infer them from the other metrics.
-                // Offset to avoid clipping.
-                float overlineThickness = this.FontMetrics.UnderlineThickness;
-                float overlinePosition = this.FontMetrics.Ascender - (overlineThickness * .5F);
-                if (surface is IGlyphDecorationRenderer decorationSurface)
-                {
-                    // allow the rendered to override the decorations to attach
-                    TextDecorations decorations = decorationSurface.EnabledDecorations();
-                    if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
-                    {
-                        SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
-                    }
-
-                    if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
-                    {
-                        SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
-                    }
-
-                    if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
-                    {
-                        SetDecoration(TextDecorations.Overline, overlineThickness, overlinePosition);
-                    }
-                }
-                else
-                {
-                    // TextRun is never null here as rendering is only accessable via a Glyph which
-                    // uses the cloned metrics instance.
-                    if ((this.textRun!.TextDecorations & TextDecorations.Underline) == TextDecorations.Underline)
-                    {
-                        DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
-                    }
-
-                    if ((this.textRun!.TextDecorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
-                    {
-                        DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
-                    }
-
-                    if ((this.textRun!.TextDecorations & TextDecorations.Overline) == TextDecorations.Overline)
-                    {
-                        DrawLine(overlineThickness, overlinePosition);
-                    }
-                }
-            }
-
-            surface.EndGlyph();
-        }
+        internal abstract void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, TextOptions options);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool ShouldSkipGlyphRendering(CodePoint codePoint)
+        internal static bool ShouldSkipGlyphRendering(CodePoint codePoint)
         {
             uint value = (uint)codePoint.Value;
             return UnicodeUtility.IsDefaultIgnorableCodePoint(value) && !ShouldRenderWhiteSpaceOnly(codePoint);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool ShouldRenderWhiteSpaceOnly(CodePoint codePoint)
+        internal static bool ShouldRenderWhiteSpaceOnly(CodePoint codePoint)
         {
             if (CodePoint.IsWhiteSpace(codePoint))
             {
@@ -491,73 +217,6 @@ namespace SixLabors.Fonts
             }
 
             return false;
-        }
-
-        private static void AlignToGrid(ref Vector2 point)
-        {
-            var floorPoint = new Vector2(MathF.Floor(point.X), MathF.Floor(point.Y));
-            Vector2 decimalPart = point - floorPoint;
-
-            decimalPart.X = decimalPart.X < 0.5f ? 0 : 1f;
-            decimalPart.Y = decimalPart.Y < 0.5f ? 0 : 1f;
-
-            point = floorPoint + decimalPart;
-        }
-
-        private static ControlPointCollection DrawPoints(IGlyphRenderer surface, ControlPointCollection points, Vector2 point)
-        {
-            switch (points.Count)
-            {
-                case 0:
-                    break;
-                case 1:
-                    surface.QuadraticBezierTo(
-                        points.SecondControlPoint,
-                        point);
-                    break;
-                case 2:
-                    surface.CubicBezierTo(
-                        points.SecondControlPoint,
-                        points.ThirdControlPoint,
-                        point);
-                    break;
-                default:
-                    throw new NotSupportedException("Too many control points");
-            }
-
-            points.Clear();
-            return points;
-        }
-
-        private struct ControlPointCollection
-        {
-            public Vector2 SecondControlPoint;
-            public Vector2 ThirdControlPoint;
-            public int Count;
-
-            public void Add(Vector2 point)
-            {
-                switch (this.Count++)
-                {
-                    case 0:
-                        this.SecondControlPoint = point;
-                        break;
-                    case 1:
-                        this.ThirdControlPoint = point;
-                        break;
-                    default:
-                        throw new NotSupportedException("Too many control points");
-                }
-            }
-
-            public void ReplaceLast(Vector2 point)
-            {
-                this.Count--;
-                this.Add(point);
-            }
-
-            public void Clear()
-                => this.Count = 0;
         }
     }
 }
