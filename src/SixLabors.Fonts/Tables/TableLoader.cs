@@ -8,7 +8,13 @@ using System.Reflection;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
-using SixLabors.Fonts.Tables.Hinting;
+using SixLabors.Fonts.Tables.General.Colr;
+using SixLabors.Fonts.Tables.General.Kern;
+using SixLabors.Fonts.Tables.General.Name;
+using SixLabors.Fonts.Tables.General.Post;
+using SixLabors.Fonts.Tables.TrueType;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Hinting;
 
 namespace SixLabors.Fonts.Tables
 {

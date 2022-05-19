@@ -3,7 +3,7 @@
 
 using System.IO;
 
-namespace SixLabors.Fonts.Tables
+namespace SixLabors.Fonts.Tables.Woff
 {
     internal sealed class WoffTableHeader : TableHeader
     {

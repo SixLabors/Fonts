@@ -8,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using SixLabors.Fonts.Tables;
+using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts
 {

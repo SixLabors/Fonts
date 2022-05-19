@@ -3,6 +3,10 @@
 
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.General.Colr;
+using SixLabors.Fonts.Tables.General.Kern;
+using SixLabors.Fonts.Tables.General.Name;
+using SixLabors.Fonts.Tables.General.Post;
 
 namespace SixLabors.Fonts.Tables.Cff
 {

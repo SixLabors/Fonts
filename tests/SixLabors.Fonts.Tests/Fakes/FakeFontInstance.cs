@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Kern;
+using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Tables.General.Post;
 using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Unicode;

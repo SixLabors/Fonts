@@ -6,11 +6,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Utilities;
 using SixLabors.Fonts.WellKnownIds;
 
-namespace SixLabors.Fonts.Tables.General
+namespace SixLabors.Fonts.Tables.General.Name
 {
     [TableName(TableName)]
     internal class NameTable : Table
@@ -124,7 +123,7 @@ namespace SixLabors.Fonts.Tables.General
             {
                 names[i] = NameRecord.Read(reader);
                 StringLoader? sr = names[i].StringReader;
-                if (sr is object)
+                if (sr is not null)
                 {
                     strings.Add(sr);
                 }

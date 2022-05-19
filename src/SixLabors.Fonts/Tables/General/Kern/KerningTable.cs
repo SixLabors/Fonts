@@ -4,9 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General.Kern;
 
-namespace SixLabors.Fonts.Tables.General
+namespace SixLabors.Fonts.Tables.General.Kern
 {
     [TableName(TableName)]
     internal sealed class KerningTable : Table

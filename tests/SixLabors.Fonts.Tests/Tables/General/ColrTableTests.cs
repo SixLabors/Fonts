@@ -1,7 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.General.Colr;
 using Xunit;
 using static SixLabors.Fonts.Tests.WriterExtensions;
 

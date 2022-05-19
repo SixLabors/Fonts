@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
-namespace SixLabors.Fonts.Tables
+namespace SixLabors.Fonts.Tables.Woff
 {
     // Source code is based on https://github.com/LayoutFarm/Typography
     // see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tables
             string tableName = knownTable == 0x3F ? reader.ReadTag() : KnownTableTags[knownTable];
 
             uint flags = 0;
-            byte xformVersion = (byte)((flagsByte >> 6) & 0x03);
+            byte xformVersion = (byte)(flagsByte >> 6 & 0x03);
 
             // 0 means xform for glyph/loca, non-0 for others
             if (tableName is "glyf" or "loca")
@@ -345,22 +345,22 @@ namespace SixLabors.Fonts.Tables
                             break;
                         case 8: // 8,0 or 8,8
                             x = enc.Tx(packedXY[0]);
-                            y = (enc.YBits == 8) ?
+                            y = enc.YBits == 8 ?
                                 enc.Ty(packedXY[1]) :
                                 0;
                             break;
                         case 12: // 12,12
-                            x = enc.Tx((packedXY[0] << 4) | (packedXY[1] >> 4));
-                            y = enc.Ty(((packedXY[1] & 0xF) << 8) | packedXY[2]);
+                            x = enc.Tx(packedXY[0] << 4 | packedXY[1] >> 4);
+                            y = enc.Ty((packedXY[1] & 0xF) << 8 | packedXY[2]);
                             break;
                         case 16: // 16,16
-                            x = enc.Tx((packedXY[0] << 8) | packedXY[1]);
-                            y = enc.Ty((packedXY[2] << 8) | packedXY[3]);
+                            x = enc.Tx(packedXY[0] << 8 | packedXY[1]);
+                            y = enc.Ty(packedXY[2] << 8 | packedXY[3]);
                             break;
                     }
 
                     // Most significant 1 bit -> on/off curve.
-                    onCurves[n] = (f >> 7) == 0;
+                    onCurves[n] = f >> 7 == 0;
                     controlPoints[n] = new Vector2(curX += x, curY += y);
                 }
             }
@@ -471,14 +471,14 @@ namespace SixLabors.Fonts.Tables
             for (int i = 0; i < orgBBoxBitmap.Length; i++)
             {
                 byte b = orgBBoxBitmap[i];
-                expandArr[index++] = (byte)((b >> 7) & 0x1);
-                expandArr[index++] = (byte)((b >> 6) & 0x1);
-                expandArr[index++] = (byte)((b >> 5) & 0x1);
-                expandArr[index++] = (byte)((b >> 4) & 0x1);
-                expandArr[index++] = (byte)((b >> 3) & 0x1);
-                expandArr[index++] = (byte)((b >> 2) & 0x1);
-                expandArr[index++] = (byte)((b >> 1) & 0x1);
-                expandArr[index++] = (byte)((b >> 0) & 0x1);
+                expandArr[index++] = (byte)(b >> 7 & 0x1);
+                expandArr[index++] = (byte)(b >> 6 & 0x1);
+                expandArr[index++] = (byte)(b >> 5 & 0x1);
+                expandArr[index++] = (byte)(b >> 4 & 0x1);
+                expandArr[index++] = (byte)(b >> 3 & 0x1);
+                expandArr[index++] = (byte)(b >> 2 & 0x1);
+                expandArr[index++] = (byte)(b >> 1 & 0x1);
+                expandArr[index++] = (byte)(b >> 0 & 0x1);
             }
 
             return expandArr;
@@ -529,7 +529,7 @@ namespace SixLabors.Fonts.Tables
                     return false;
                 }
 
-                accum = (accum << 7) | (uint)(data_byte & 0x7F);
+                accum = accum << 7 | (uint)(data_byte & 0x7F);
 
                 // Spin until most significant bit of data byte is false.
                 if ((data_byte & 0x80) == 0)
@@ -574,7 +574,7 @@ namespace SixLabors.Fonts.Tables
             }
             else if (code == OneMoreByteCode2)
             {
-                return (ushort)(reader.ReadByte() + (LowestUCode * 2));
+                return (ushort)(reader.ReadByte() + LowestUCode * 2);
             }
             else
             {

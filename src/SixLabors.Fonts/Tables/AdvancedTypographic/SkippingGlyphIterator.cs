@@ -2,9 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using SixLabors.Fonts.Tables.AdvancedTypographic;
 
-namespace SixLabors.Fonts.Tables
+namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     internal struct SkippingGlyphIterator
     {
@@ -74,10 +73,10 @@ namespace SixLabors.Fonts.Tables
         {
             GlyphShapingData data = this.Collection.GetGlyphShapingData(index);
             GlyphShapingClass shapingClass = AdvancedTypographicUtils.GetGlyphShapingClass(this.fontMetrics, data.GlyphId, data);
-            return (this.ignoreMarks && shapingClass.IsMark) ||
-                (this.ignoreBaseGlypghs && shapingClass.IsBase) ||
-                (this.ignoreLigatures && shapingClass.IsLigature) ||
-                (this.markAttachmentType > 0 && shapingClass.IsMark && shapingClass.MarkAttachmentType != this.markAttachmentType);
+            return this.ignoreMarks && shapingClass.IsMark ||
+                this.ignoreBaseGlypghs && shapingClass.IsBase ||
+                this.ignoreLigatures && shapingClass.IsLigature ||
+                this.markAttachmentType > 0 && shapingClass.IsMark && shapingClass.MarkAttachmentType != this.markAttachmentType;
         }
     }
 }

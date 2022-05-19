@@ -3,7 +3,7 @@
 
 using System;
 
-namespace SixLabors.Fonts.Tables.General.Glyphs
+namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 {
     /*
      ## Composite Glyph Flags

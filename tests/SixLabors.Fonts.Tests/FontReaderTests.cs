@@ -3,7 +3,7 @@
 
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
-
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests

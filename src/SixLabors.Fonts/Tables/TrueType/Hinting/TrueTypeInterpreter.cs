@@ -9,12 +9,12 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
-using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
 namespace SixLabors.Fonts.Hinting
 {
     // original version of this code taken from https://github.com/MikePopoloski/SharpFont/blob/b28555e8fae94c57f1b5ccd809cdd1260f0eb55f/SharpFont/FontFace.cs
-    internal class Interpreter
+    internal class TrueTypeInterpreter
     {
         private GraphicsState state;
         private GraphicsState cvtState;
@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Hinting
         private Zone zp0, zp1, zp2;
         private Zone points, twilight;
 
-        public Interpreter(int maxStack, int maxStorage, int maxFunctions, int maxInstructionDefs, int maxTwilightPoints)
+        public TrueTypeInterpreter(int maxStack, int maxStorage, int maxFunctions, int maxInstructionDefs, int maxTwilightPoints)
         {
             stack = new ExecutionStack(maxStack);
             storage = new int[maxStorage];

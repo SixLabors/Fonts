@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using Moq;
-using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
 using Xunit;

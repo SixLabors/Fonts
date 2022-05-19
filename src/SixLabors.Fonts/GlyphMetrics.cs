@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.General;
-using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts

@@ -11,9 +11,12 @@ using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
-using SixLabors.Fonts.Tables.General.Glyphs;
-using SixLabors.Fonts.Tables.Hinting;
+using SixLabors.Fonts.Tables.General.Kern;
+using SixLabors.Fonts.Tables.General.Name;
+using SixLabors.Fonts.Tables.General.Post;
 using SixLabors.Fonts.Tables.TrueType;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Hinting;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -57,7 +60,7 @@ namespace SixLabors.Fonts
         private float italicAngle;
 
         [ThreadStatic]
-        private Hinting.Interpreter? interpreter;
+        private Hinting.TrueTypeInterpreter? interpreter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
@@ -544,7 +547,7 @@ namespace SixLabors.Fonts
                     ? this.trueTypeFontTables!.Maxp
                     : this.compactFontTables!.Maxp;
 
-                this.interpreter = new Hinting.Interpreter(
+                this.interpreter = new Hinting.TrueTypeInterpreter(
                     maxp.MaxStackElements,
                     maxp.MaxStorage,
                     maxp.MaxFunctionDefs,

@@ -2,9 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using SixLabors.Fonts.Tables.General.Colr;
 
-namespace SixLabors.Fonts.Tables.General
+namespace SixLabors.Fonts.Tables.General.Colr
 {
     [TableName(TableName)]
     internal class ColrTable : Table

@@ -4,6 +4,7 @@
 using System;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.TrueType;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Tables.General

@@ -4,7 +4,7 @@
 using System;
 using System.Numerics;
 
-namespace SixLabors.Fonts.Tables.General.Glyphs
+namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 {
     /// <summary>
     /// Represents a single simple glyph table entry.

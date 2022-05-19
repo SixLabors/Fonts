@@ -3,9 +3,8 @@
 
 using System;
 using System.Text;
-using SixLabors.Fonts.Tables.General.Post;
 
-namespace SixLabors.Fonts.Tables.General
+namespace SixLabors.Fonts.Tables.General.Post
 {
     [TableName(TableName)]
     internal class PostTable : Table

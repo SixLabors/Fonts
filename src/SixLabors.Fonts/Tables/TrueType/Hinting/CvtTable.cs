@@ -1,7 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-namespace SixLabors.Fonts.Tables.Hinting
+namespace SixLabors.Fonts.Tables.TrueType.Hinting
 {
     [TableName(TableName)]
     internal class CvtTable : Table
