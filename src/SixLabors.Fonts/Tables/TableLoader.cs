@@ -42,7 +42,7 @@ namespace SixLabors.Fonts.Tables
             this.Register(PrepTable.Load);
             this.Register(GlyphDefinitionTable.Load);
             this.Register(PostTable.Load);
-            // this.Register(CffTable.Load);
+            this.Register(CffTable.Load);
         }
 
         public static TableLoader Default { get; } = new();
@@ -81,6 +81,8 @@ namespace SixLabors.Fonts.Tables
         private void Register<T>(Func<FontReader, T?> createFunc)
             where T : Table
         {
+            // TODO: static abstract members in interfaces when available.
+            // https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/tutorials/static-abstract-interface-methods
             string? name =
                 typeof(T).GetTypeInfo()
                     .CustomAttributes
@@ -106,7 +108,7 @@ namespace SixLabors.Fonts.Tables
                 return (TTable?)func.Invoke(reader);
             }
 
-            throw new Exception("font table not registered");
+            throw new Exception("Font table not registered.");
         }
     }
 }

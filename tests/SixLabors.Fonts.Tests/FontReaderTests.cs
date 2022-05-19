@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
-        public void ReadCcfOutlineType()
+        public void ReadCffOutlineType()
         {
             var writer = new BigEndianBinaryWriter();
             writer.WriteCffFileHeader(0, 0, 0, 0);

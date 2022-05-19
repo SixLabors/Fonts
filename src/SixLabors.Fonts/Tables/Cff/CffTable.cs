@@ -5,9 +5,10 @@ using System;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
+    [TableName(TableName)]
     internal class CffTable : Table
     {
-        internal const string TableName = "CFF";
+        internal const string TableName = "CFF "; // 4 chars
 
         public CffTable(Cff1FontSet? cff1FontSet) => this.Cff1FontSet = cff1FontSet;
 
