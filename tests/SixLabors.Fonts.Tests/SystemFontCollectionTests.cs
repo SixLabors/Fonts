@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -10,7 +11,7 @@ namespace SixLabors.Fonts.Tests
 {
     public class SystemFontCollectionTests
     {
-        private static readonly SystemFontCollection SysFontCollection = new SystemFontCollection();
+        private static readonly SystemFontCollection SysFontCollection = new();
 
         [Fact]
         public void SystemFonts_IsPopulated()
@@ -135,37 +136,37 @@ namespace SixLabors.Fonts.Tests
         [AppContextSwitch("Switch.SixLabors.Fonts.DoNotUseNativeSystemFontsEnumeration", true)]
         public void SystemFonts_FontFamilyNotFound_ThrowsWithSearchDirectories()
         {
-            void Action() => new SystemFontCollection().Get("AFontThatDoesNotExist");
+            static void Action() => new SystemFontCollection().Get("AFontThatDoesNotExist");
 
             FontFamilyNotFoundException exception = Assert.Throws<FontFamilyNotFoundException>(Action);
             Assert.Equal("AFontThatDoesNotExist", exception.FontFamily);
             Assert.Contains("AFontThatDoesNotExist", exception.Message);
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                Assert.Contains(@"Windows\Fonts", exception.Message);
-                Assert.Contains(exception.SearchDirectories, e => e.Contains(@"Windows\Fonts"));
+                Assert.Contains(@"Windows\Fonts", exception.Message, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains(exception.SearchDirectories, e => e.IndexOf(@"Windows\Fonts", StringComparison.OrdinalIgnoreCase) != -1);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                Assert.Contains(@"/share/fonts/", exception.Message);
-                Assert.Contains(exception.SearchDirectories, e => e.Contains(@"share/fonts"));
+                Assert.Contains(@"/share/fonts/", exception.Message, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains(exception.SearchDirectories, e => e.IndexOf("share/fonts", StringComparison.OrdinalIgnoreCase) != -1);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                Assert.Contains(@"/Library/Fonts/", exception.Message);
-                Assert.Contains(exception.SearchDirectories, e => e.Contains(@"Library/Fonts"));
+                Assert.Contains(@"/Library/Fonts/", exception.Message, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains(exception.SearchDirectories, e => e.IndexOf("Library/Fonts", StringComparison.OrdinalIgnoreCase) != -1);
             }
         }
 
         [Fact]
         public void SystemFonts_FontFamilyNotFound_ThrowsWithoutSearchDirectories()
         {
-            void Action() => new SystemFontCollection().Get("AFontThatDoesNotExist");
+            static void Action() => new SystemFontCollection().Get("AFontThatDoesNotExist");
 
             FontFamilyNotFoundException exception = Assert.Throws<FontFamilyNotFoundException>(Action);
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                Assert.DoesNotContain(@"/Library/Fonts/", exception.Message);
+                Assert.DoesNotContain("/Library/Fonts/", exception.Message);
                 Assert.Empty(exception.SearchDirectories);
             }
         }

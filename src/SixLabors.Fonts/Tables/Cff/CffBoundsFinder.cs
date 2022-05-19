@@ -6,7 +6,7 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal class CffBoundsFinder : IGlyphRenderer
+    internal sealed class CffBoundsFinder : IGlyphRenderer
     {
         private float minX;
         private float maxX;
@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Tables.Cff
         public void BeginFigure() => throw new NotSupportedException();
 
         public bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters)
-            => throw new NotSupportedException();
+            => true; // Do nothing.
 
         public void BeginText(FontRectangle bounds)
             => throw new NotSupportedException();
@@ -28,15 +28,13 @@ namespace SixLabors.Fonts.Tables.Cff
         public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
         {
             float eachstep = 1F / this.nsteps;
-            float t = eachstep; // start
+            float t = eachstep; // Start
 
             for (int n = 1; n < this.nsteps; ++n)
             {
                 float c = 1F - t;
-
-                this.UpdateMinMax(
-    (this.currentXY.X * c * c * c) + (secondControlPoint.X * 3 * t * c * c) + (thirdControlPoint.X * 3 * t * t * c) + (point.X * t * t * t),  // x
-    (this.currentXY.Y * c * c * c) + (secondControlPoint.Y * 3 * t * c * c) + (thirdControlPoint.Y * 3 * t * t * c) + (point.Y * t * t * t)); // y
+                Vector2 xy = (this.currentXY * c * c * c) + (secondControlPoint * 3 * t * c * c) + (thirdControlPoint * 3 * t * t * c) + (point * t * t * t);
+                this.UpdateMinMax(xy.X, xy.Y);
 
                 t += eachstep;
             }
@@ -52,7 +50,10 @@ namespace SixLabors.Fonts.Tables.Cff
             this.currentXY = Vector2.Zero;
         }
 
-        public void EndGlyph() => throw new NotSupportedException();
+        public void EndGlyph()
+        {
+            // Do nothing.
+        }
 
         public void EndText() => throw new NotSupportedException();
 

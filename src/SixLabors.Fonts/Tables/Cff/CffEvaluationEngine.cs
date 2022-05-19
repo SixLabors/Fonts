@@ -3,108 +3,36 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
     internal class CffEvaluationEngine
     {
-        private float _scale = 1; // default 
         private readonly Stack<Type2EvaluationStack> evaluationStackPool = new();
 
-        private class PxScaleGlyphTx : IGlyphRenderer
+        public void Run(IGlyphRenderer renderer, Type2Instruction[] instructions, Vector2 scale, FontRectangle bounds, GlyphRendererParameters parameters)
         {
-            private readonly float _scale;
-            private readonly IGlyphRenderer _tx;
-            private bool _is_contour_opened;
-
-            public PxScaleGlyphTx(float scale, IGlyphRenderer tx)
+            // Reset
+            double currentX = 0;
+            double currentY = 0;
+            ScalingGlyphRenderer scalingGlyphRenderer = new(scale, renderer);
+            if (scalingGlyphRenderer.BeginGlyph(bounds, parameters))
             {
-                this._scale = scale;
-                this._tx = tx;
+                this.Run(scalingGlyphRenderer, instructions, ref currentX, ref currentY);
+
+                // Some CFF end without closing the latest contour.
+                if (scalingGlyphRenderer.IsOpen)
+                {
+                    scalingGlyphRenderer.EndFigure();
+                }
             }
-
-            public void BeginRead(int contourCount)
-            {
-                this._tx.BeginRead(contourCount);
-            }
-
-            public void CloseContour()
-            {
-                this._is_contour_opened = false;
-                this._tx.CloseContour();
-            }
-
-            public void Curve3(float x1, float y1, float x2, float y2)
-            {
-                this._is_contour_opened = true;
-                this._tx.Curve3(x1 * this._scale, y1 * this._scale, x2 * this._scale, y2 * this._scale);
-            }
-
-            public void Curve4(float x1, float y1, float x2, float y2, float x3, float y3)
-            {
-                this._is_contour_opened = true;
-                this._tx.Curve4(x1 * this._scale, y1 * this._scale, x2 * this._scale, y2 * this._scale, x3 * this._scale, y3 * this._scale);
-            }
-
-            public void EndRead()
-            {
-                this._tx.EndRead();
-            }
-
-            public void LineTo(float x1, float y1)
-            {
-                this._is_contour_opened = true;
-                this._tx.LineTo(x1 * this._scale, y1 * this._scale);
-            }
-
-            public void MoveTo(float x0, float y0)
-            {
-                this._tx.MoveTo(x0 * this._scale, y0 * this._scale);
-            }
-            //
-
-            public bool IsContourOpened => this._is_contour_opened;
-        }
-
-        public void Run(IGlyphRenderer renderer, Cff1GlyphData glyphData, float scale = 1)
-            => this.Run(renderer, glyphData.GlyphInstructions, scale);
-
-        internal void Run(IGlyphRenderer renderer, Type2Instruction[] instructionList, float scale = 1)
-        {
-            // all fields are set to new values*** 
-
-            this._scale = scale;
-
-            double currentX = 0, currentY = 0;
-
-
-            var scaleTx = new PxScaleGlyphTx(scale, renderer);
-            //
-            scaleTx.BeginRead(0);// unknown contour count  
-            //
-            Run(scaleTx, instructionList, ref currentX, ref currentY);
-            //
-
-            //
-            // some cff end without closing the latest contour?
-
-            if (scaleTx.IsContourOpened)
-            {
-                scaleTx.CloseContour();
-            }
-
-            scaleTx.EndRead();
-
         }
 
         private void Run(IGlyphRenderer renderer, Type2Instruction[] instructionList, ref double currentX, ref double currentY)
         {
-            // recursive ***
-
-            Type2EvaluationStack evalStack = this.GetFreeEvalStack(); // **
-#if DEBUG
-            // evalStack.dbugGlyphIndex = instructionList.dbugGlyphIndex;
-#endif
+            // Recursive
+            Type2EvaluationStack evalStack = this.GetFreeEvalStack();
             evalStack._currentX = currentX;
             evalStack._currentY = currentY;
             evalStack.GlyphRenderer = renderer;
@@ -113,12 +41,11 @@ namespace SixLabors.Fonts.Tables.Cff
             {
                 Type2Instruction inst = instructionList[i];
 
-                // ----------
-                // this part is our extension to the original
-                int mergeFlags = inst.Op >> 6; // upper 2 bits is our extension flags
+                // This part is our extension to the original
+                int mergeFlags = inst.Op >> 6; // Upper 2 bits is our extension flags
                 switch (mergeFlags)
                 {
-                    case 0: // nothing
+                    case 0: // Nothing
                         break;
                     case 1:
                         evalStack.Push(inst.Value);
@@ -135,8 +62,8 @@ namespace SixLabors.Fonts.Tables.Cff
                         break;
                 }
 
-                // we use only 6 lower bits for op_name
-                switch ((OperatorName)(inst.Op & 0b111111))
+                // We use only 6 lower bits for op_name
+                switch ((OperatorName)(inst.Op & 0b11_1111))
                 {
                     default:
                         throw new NotSupportedException();
@@ -352,7 +279,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 }
             }
 
-            this.ReleaseEvalStack(evalStack);// ****
+            this.ReleaseEvalStack(evalStack);
         }
 
         private Type2EvaluationStack GetFreeEvalStack()
@@ -371,6 +298,74 @@ namespace SixLabors.Fonts.Tables.Cff
         {
             evalStack.Reset();
             this.evaluationStackPool.Push(evalStack);
+        }
+
+        private struct ScalingGlyphRenderer : IGlyphRenderer
+        {
+            private Vector2 scale;
+            private readonly IGlyphRenderer renderer;
+
+            public ScalingGlyphRenderer(Vector2 scale, IGlyphRenderer renderer)
+            {
+                this.scale = scale;
+                this.renderer = renderer;
+                this.IsOpen = false;
+            }
+
+            public bool IsOpen { get; set; }
+
+            public void BeginFigure()
+            {
+                this.IsOpen = true;
+                this.renderer.BeginFigure();
+            }
+
+            public bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters) => this.renderer.BeginGlyph(bounds, parameters);
+
+            public void BeginText(FontRectangle bounds) => this.renderer.BeginText(bounds);
+
+            public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
+            {
+                this.IsOpen = true;
+                this.renderer.CubicBezierTo(secondControlPoint * this.scale, thirdControlPoint * this.scale, point * this.scale);
+                throw new NotImplementedException();
+            }
+
+            public void EndFigure()
+            {
+                this.IsOpen = false;
+                this.renderer.EndFigure();
+            }
+
+            public void EndGlyph()
+            {
+                this.IsOpen = false;
+                this.renderer.EndGlyph();
+            }
+
+            public void EndText()
+            {
+                this.IsOpen = false;
+                this.renderer.EndText();
+            }
+
+            public void LineTo(Vector2 point)
+            {
+                this.IsOpen = true;
+                this.renderer.LineTo(point * this.scale);
+            }
+
+            public void MoveTo(Vector2 point)
+            {
+                this.IsOpen = true;
+                this.renderer.MoveTo(point * this.scale);
+            }
+
+            public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
+            {
+                this.IsOpen = true;
+                this.renderer.QuadraticBezierTo(secondControlPoint * this.scale, point * this.scale);
+            }
         }
     }
 }

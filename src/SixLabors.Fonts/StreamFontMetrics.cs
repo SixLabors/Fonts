@@ -421,7 +421,11 @@ namespace SixLabors.Fonts
             PostTable post = reader.GetTable<PostTable>();
 
             VerticalHeadTable? vhea = reader.TryGetTable<VerticalHeadTable>();
-            VerticalMetricsTable? vmtx = reader.TryGetTable<VerticalMetricsTable>();
+            VerticalMetricsTable? vmtx = null;
+            if (vhea is not null)
+            {
+                vmtx = reader.TryGetTable<VerticalMetricsTable>();
+            }
 
             GlyphDefinitionTable? gdef = reader.TryGetTable<GlyphDefinitionTable>();
             GSubTable? gSub = reader.TryGetTable<GSubTable>();
@@ -464,7 +468,12 @@ namespace SixLabors.Fonts
 
             HorizontalMetricsTable htmx = reader.GetTable<HorizontalMetricsTable>();
             VerticalHeadTable? vhea = reader.TryGetTable<VerticalHeadTable>();
-            VerticalMetricsTable? vmtx = reader.TryGetTable<VerticalMetricsTable>();
+            VerticalMetricsTable? vmtx = null;
+            if (vhea is not null)
+            {
+                vmtx = reader.TryGetTable<VerticalMetricsTable>();
+            }
+
             KerningTable? kern = reader.TryGetTable<KerningTable>();
 
             GlyphDefinitionTable? gdef = reader.TryGetTable<GlyphDefinitionTable>();
