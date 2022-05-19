@@ -65,7 +65,7 @@ namespace SixLabors.Fonts.Tests.Fakes
             var glyf = new FakeGlyphTable(glyphs);
             PostTable post = GeneratePostTable();
             var kern = new KerningTable(Array.Empty<KerningSubTable>());
-            OS2Table os2 = GenerateOS2TableWithVaryingVerticalFontMetrics();
+            OS2Table os2 = GenerateOS2Table();
             HorizontalMetricsTable htmx = GenerateHorizontalMetricsTable(glyphs);
             VerticalHeadTable vhea = GenerateVerticalHeadTable();
             VerticalMetricsTable vmtx = GenerateVerticalMetricsTable(glyphs);

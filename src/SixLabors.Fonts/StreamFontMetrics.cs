@@ -71,10 +71,10 @@ namespace SixLabors.Fonts
             this.glyphCache = new GlyphMetrics[tables.Glyf.GlyphCount][];
             if (tables.Colr is not null)
             {
-                this.glyphCache = new GlyphMetrics[tables.Glyf.GlyphCount][];
+                this.colorGlyphCache = new GlyphMetrics[tables.Glyf.GlyphCount][];
             }
 
-            this.Initialize(ref tables);
+            this.Initialize(tables);
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace SixLabors.Fonts
             // TODO: Glyphcaches.
             this.glyphCache = new GlyphMetrics[tables.Cff.Cff1FontSet._fonts[0]._glyphs.Length][];
 
-            this.Initialize(ref tables);
+            this.Initialize(tables);
         }
 
         public HeadTable.HeadFlags HeadFlags { get; private set; }
@@ -323,7 +323,7 @@ namespace SixLabors.Fonts
             }
         }
 
-        private void Initialize<T>(ref T tables)
+        private void Initialize<T>(T tables)
             where T : IFontTables
         {
             HeadTable head = tables.Head;
