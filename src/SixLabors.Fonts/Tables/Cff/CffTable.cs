@@ -10,9 +10,15 @@ namespace SixLabors.Fonts.Tables.Cff
     {
         internal const string TableName = "CFF "; // 4 chars
 
-        public CffTable(Cff1FontSet? cff1FontSet) => this.Cff1FontSet = cff1FontSet;
+        private readonly Cff1Font cff1Font;
 
-        public Cff1FontSet? Cff1FontSet { get; }
+        public CffTable(Cff1FontSet cff1FontSet) => this.cff1Font = cff1FontSet._fonts[0];
+
+        public int GlyphCount => this.cff1Font._glyphs.Length;
+
+        // TODO: Add support for CFF2 fonts
+        internal virtual Cff1GlyphData GetGlyph(int index)
+            => this.cff1Font._glyphs[index];
 
         public static CffTable? Load(FontReader fontReader)
         {

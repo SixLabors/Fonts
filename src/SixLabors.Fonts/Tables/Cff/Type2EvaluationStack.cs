@@ -7,28 +7,43 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal class Type2EvaluationStack
+    internal ref struct Type2EvaluationStack
     {
-        internal double _currentX;
-        internal double _currentY;
-        private readonly double[] argStack = new double[50];
+        private Buffer<double> buffer;
+        private readonly Span<double> argStack;
         private int currentIndex = 0; // current stack index
+        private bool isDisposed;
 #if DEBUG
 
-        public int dbugGlyphIndex;
+        public int dbugGlyphIndex = 0;
 #endif
-        public Type2EvaluationStack()
+        public Type2EvaluationStack(IGlyphRenderer glyphRenderer, double x, double y)
         {
-        }
-
-        public void Reset()
-        {
+            this.GlyphRenderer = glyphRenderer;
+            this.buffer = new Buffer<double>(50);
+            this.argStack = this.buffer.GetSpan();
+            this.CurrentX = x;
+            this.CurrentY = y;
             this.currentIndex = 0;
-            this._currentX = this._currentY = 0;
-            this.GlyphRenderer = null;
+            this.isDisposed = false;
         }
 
-        public IGlyphRenderer GlyphRenderer { get; set; }
+        public IGlyphRenderer GlyphRenderer { get; }
+
+        public double CurrentX { get; private set; }
+
+        public double CurrentY { get; private set; }
+
+        public void Dispose()
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+
+            this.buffer.Dispose();
+            this.isDisposed = true;
+        }
 
         public void Push(double value)
         {
@@ -81,7 +96,7 @@ namespace SixLabors.Fonts.Tables.Cff
 #endif
 
             this.GlyphRenderer.EndFigure();
-            this.GlyphRenderer.MoveTo(new Vector2((float)(this._currentX += this.argStack[0]), (float)(this._currentY += this.argStack[1])));
+            this.GlyphRenderer.MoveTo(new Vector2((float)(this.CurrentX += this.argStack[0]), (float)(this.CurrentY += this.argStack[1])));
 
             this.currentIndex = 0; // clear stack
         }
@@ -97,7 +112,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // dx1 units in the horizontal direction
             // see [NOTE4]
 
-            this.GlyphRenderer.MoveTo(new Vector2((float)(this._currentX += this.argStack[0]), (float)this._currentY));
+            this.GlyphRenderer.MoveTo(new Vector2((float)(this.CurrentX += this.argStack[0]), (float)this.CurrentY));
             this.currentIndex = 0; // clear stack
         }
 
@@ -113,7 +128,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 throw new NotSupportedException();
             }
 #endif
-            this.GlyphRenderer.MoveTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[0])));
+            this.GlyphRenderer.MoveTo(new Vector2((float)this.CurrentX, (float)(this.CurrentY += this.argStack[0])));
             this.currentIndex = 0; // clear stack
         }
 
@@ -137,7 +152,7 @@ namespace SixLabors.Fonts.Tables.Cff
 #endif
             for (int i = 0; i < this.currentIndex;)
             {
-                this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i]), (float)(this._currentY += this.argStack[i + 1])));
+                this.GlyphRenderer.LineTo(new Vector2((float)(this.CurrentX += this.argStack[i]), (float)(this.CurrentY += this.argStack[i + 1])));
                 i += 2;
             }
 
@@ -170,12 +185,12 @@ namespace SixLabors.Fonts.Tables.Cff
             {
                 // |- dx1 {dya dxb}*  hlineto (6) |-
                 // odd number
-                this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i]), (float)this._currentY));
+                this.GlyphRenderer.LineTo(new Vector2((float)(this.CurrentX += this.argStack[i]), (float)this.CurrentY));
                 i++;
                 for (; i < this.currentIndex;)
                 {
-                    this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i])));
-                    this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i + 1]), (float)this._currentY));
+                    this.GlyphRenderer.LineTo(new Vector2((float)this.CurrentX, (float)(this.CurrentY += this.argStack[i])));
+                    this.GlyphRenderer.LineTo(new Vector2((float)(this.CurrentX += this.argStack[i + 1]), (float)this.CurrentY));
                     i += 2;
                 }
             }
@@ -186,8 +201,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 for (; i < this.currentIndex;)
                 {
                     // line to
-                    this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i]), (float)this._currentY));
-                    this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i + 1])));
+                    this.GlyphRenderer.LineTo(new Vector2((float)(this.CurrentX += this.argStack[i]), (float)this.CurrentY));
+                    this.GlyphRenderer.LineTo(new Vector2((float)this.CurrentX, (float)(this.CurrentY += this.argStack[i + 1])));
 
                     i += 2;
                 }
@@ -219,14 +234,14 @@ namespace SixLabors.Fonts.Tables.Cff
             {
                 // |- dy1 {dxa dyb}*  vlineto (7) |-
                 // odd number
-                this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i])));
+                this.GlyphRenderer.LineTo(new Vector2((float)this.CurrentX, (float)(this.CurrentY += this.argStack[i])));
                 i++;
 
                 for (; i < this.currentIndex;)
                 {
                     // line to
-                    this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i]), (float)this._currentY));
-                    this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i + 1])));
+                    this.GlyphRenderer.LineTo(new Vector2((float)(this.CurrentX += this.argStack[i]), (float)this.CurrentY));
+                    this.GlyphRenderer.LineTo(new Vector2((float)this.CurrentX, (float)(this.CurrentY += this.argStack[i + 1])));
 
                     i += 2;
                 }
@@ -238,8 +253,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 for (; i < this.currentIndex;)
                 {
                     // line to
-                    this.GlyphRenderer.LineTo(new Vector2((float)this._currentX, (float)(this._currentY += this.argStack[i])));
-                    this.GlyphRenderer.LineTo(new Vector2((float)(this._currentX += this.argStack[i + 1]), (float)this._currentY));
+                    this.GlyphRenderer.LineTo(new Vector2((float)this.CurrentX, (float)(this.CurrentY += this.argStack[i])));
+                    this.GlyphRenderer.LineTo(new Vector2((float)(this.CurrentX += this.argStack[i + 1]), (float)this.CurrentY));
 
                     i += 2;
                 }
@@ -276,8 +291,8 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 
 #endif
-            double curX = this._currentX;
-            double curY = this._currentY;
+            double curX = this.CurrentX;
+            double curY = this.CurrentY;
             for (; i < this.currentIndex;)
             {
                 this.GlyphRenderer.CubicBezierTo(
@@ -288,8 +303,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 i += 6;
             }
 
-            this._currentX = curX;
-            this._currentY = curY;
+            this.CurrentX = curX;
+            this.CurrentY = curY;
             this.currentIndex = 0; // clear stack
         }
 
@@ -307,8 +322,8 @@ namespace SixLabors.Fonts.Tables.Cff
 
             int i = 0;
             int count = this.currentIndex;
-            double curX = this._currentX;
-            double curY = this._currentY;
+            double curX = this.CurrentX;
+            double curY = this.CurrentY;
 
             if ((count % 2) != 0)
             {
@@ -334,8 +349,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 count -= 4;
             }
 
-            this._currentX = curX;
-            this._currentY = curY;
+            this.CurrentX = curX;
+            this.CurrentY = curY;
             this.currentIndex = 0; // clear stack
         }
 
@@ -368,8 +383,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 case 1:
                 {
                     // |- {dxa dxb dyb dyc dyd dxe dye dxf}+ dyf? hvcurveto (31) |-
-                    double cx = this._currentX;
-                    double cy = this._currentY;
+                    double cx = this.CurrentX;
+                    double cy = this.CurrentY;
 
                     int index = this.currentIndex;
                     while (index > 0)
@@ -403,8 +418,8 @@ namespace SixLabors.Fonts.Tables.Cff
 
                     }
 
-                    this._currentX = cx;
-                    this._currentY = cy;
+                    this.CurrentX = cx;
+                    this.CurrentY = cy;
                     break;
                 }
 
@@ -419,8 +434,8 @@ namespace SixLabors.Fonts.Tables.Cff
                     // end horizontal.The last curve(the odd argument case) need not
                     // end horizontal/ vertical.
 
-                    double curX = this._currentX;
-                    double curY = this._currentY;
+                    double curX = this.CurrentX;
+                    double curY = this.CurrentY;
 
                     int count = this.currentIndex;
 
@@ -477,8 +492,8 @@ namespace SixLabors.Fonts.Tables.Cff
 
                     }
 
-                    this._currentX = curX;
-                    this._currentY = curY;
+                    this.CurrentX = curX;
+                    this.CurrentY = curY;
                 }
 
                 break;
@@ -501,8 +516,8 @@ namespace SixLabors.Fonts.Tables.Cff
             // The number of curves is determined from the count
             // on the argument stack.
 
-            double curX = this._currentX;
-            double curY = this._currentY;
+            double curX = this.CurrentX;
+            double curY = this.CurrentY;
 
             int i = 0;
             int count = this.currentIndex;
@@ -525,8 +540,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 }
             }
 
-            this._currentX = curX;
-            this._currentY = curY;
+            this.CurrentX = curX;
+            this.CurrentY = curY;
             this.currentIndex = 0; // clear stack
         }
 
@@ -538,8 +553,8 @@ namespace SixLabors.Fonts.Tables.Cff
             // the six arguments dxb...dyd needed for the one
             // rrcurveto command.The number of lines is determined from the count of
             // items on the argument stack.
-            double curX = this._currentX;
-            double curY = this._currentY;
+            double curX = this.CurrentX;
+            double curY = this.CurrentY;
 
             int i = 0;
             int count = this.currentIndex;
@@ -562,8 +577,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 }
             }
 
-            this._currentX = curX;
-            this._currentY = curY;
+            this.CurrentX = curX;
+            this.CurrentY = curY;
             this.currentIndex = 0; // clear stack
 
         }
@@ -600,8 +615,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 case 1:
                 {
                     // |- {dya dxb dyb dxc dxd dxe dye dyf}+ dxf? vhcurveto (30) |-
-                    double curX = this._currentX;
-                    double curY = this._currentY;
+                    double curX = this.CurrentX;
+                    double curY = this.CurrentY;
                     int ncount = this.currentIndex;
                     while (ncount > 0)
                     {
@@ -633,8 +648,8 @@ namespace SixLabors.Fonts.Tables.Cff
                         }
                     }
 
-                    this._currentX = curX;
-                    this._currentY = curY;
+                    this.CurrentX = curX;
+                    this.CurrentY = curY;
                     break;
                 }
 
@@ -642,8 +657,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 case 5:
                 {
                     // |- dy1 dx2 dy2 dx3 {dxa dxb dyb dyc dyd dxe dye dxf}* dyf? vhcurveto (30) |-
-                    double curX = this._currentX;
-                    double curY = this._currentY;
+                    double curX = this.CurrentX;
+                    double curY = this.CurrentY;
 
                     int ncount = this.currentIndex;
                     if (ncount == 5)
@@ -698,8 +713,8 @@ namespace SixLabors.Fonts.Tables.Cff
                         }
                     }
 
-                    this._currentX = curX;
-                    this._currentY = curY;
+                    this.CurrentX = curX;
+                    this.CurrentY = curY;
                 }
 
                 break;
@@ -717,8 +732,8 @@ namespace SixLabors.Fonts.Tables.Cff
             int i = 0;
             int count = this.currentIndex;
 
-            double curX = this._currentX;
-            double curY = this._currentY;
+            double curX = this.CurrentX;
+            double curY = this.CurrentY;
 
             if ((count % 2) != 0)
             {
@@ -743,8 +758,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 count -= 4;
             }
 
-            this._currentX = curX;
-            this._currentY = curY;
+            this.CurrentX = curX;
+            this.CurrentY = curY;
             this.currentIndex = 0; // clear stack
         }
 

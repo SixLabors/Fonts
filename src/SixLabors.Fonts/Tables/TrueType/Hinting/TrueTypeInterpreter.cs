@@ -11,7 +11,7 @@ using System.Numerics;
 using System.Text;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
-namespace SixLabors.Fonts.Hinting
+namespace SixLabors.Fonts.Tables.TrueType.Hinting
 {
     // original version of this code taken from https://github.com/MikePopoloski/SharpFont/blob/b28555e8fae94c57f1b5ccd809cdd1260f0eb55f/SharpFont/FontFace.cs
     internal class TrueTypeInterpreter

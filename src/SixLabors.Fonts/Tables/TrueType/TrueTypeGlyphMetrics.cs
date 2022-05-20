@@ -18,7 +18,6 @@ namespace SixLabors.Fonts.Tables.TrueType
         private static readonly Vector2 MirrorScale = new(1, -1);
         private readonly GlyphVector vector;
         private readonly Dictionary<float, GlyphVector> scaledVector = new();
-        private Vector2 offset = Vector2.Zero;
         private TextRun? textRun;
 
         internal TrueTypeGlyphMetrics(
@@ -40,7 +39,7 @@ namespace SixLabors.Fonts.Tables.TrueType
         internal override GlyphMetrics CloneForRendering(TextRun textRun, CodePoint codePoint)
         {
             StreamFontMetrics fontMetrics = this.FontMetrics;
-            Vector2 offset = this.offset;
+            Vector2 offset = this.Offset;
             Vector2 scaleFactor = this.ScaleFactor;
             if (textRun.TextAttributes.HasFlag(TextAttributes.Subscript))
             {
@@ -129,7 +128,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                         var transform = Matrix3x2.CreateScale(scale);
                         transform.Translation = this.Offset * scale * MirrorScale;
                         scaledVector = GlyphVector.Transform(this.vector, transform);
-                        this.FontMetrics.ApplyHinting(options.HintingMode, this, ref scaledVector, scale, scaledPPEM);
+                        this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref scaledVector, scale, scaledPPEM);
                         this.scaledVector[scaledPPEM] = scaledVector;
                     }
 
@@ -146,8 +145,8 @@ namespace SixLabors.Fonts.Tables.TrueType
                         endOfContour = endPoints[i];
 
                         Vector2 prev;
-                        Vector2 curr = MirrorScale * controlPoints[endOfContour] + location;
-                        Vector2 next = MirrorScale * controlPoints[startOfContour] + location;
+                        Vector2 curr = (MirrorScale * controlPoints[endOfContour]) + location;
+                        Vector2 next = (MirrorScale * controlPoints[startOfContour]) + location;
 
                         if (onCurves[endOfContour])
                         {
@@ -173,9 +172,9 @@ namespace SixLabors.Fonts.Tables.TrueType
                             prev = curr;
                             curr = next;
                             int currentIndex = startOfContour + p;
-                            int nextIndex = startOfContour + (p + 1) % length;
-                            int prevIndex = startOfContour + (length + p - 1) % length;
-                            next = MirrorScale * controlPoints[nextIndex] + location;
+                            int nextIndex = startOfContour + ((p + 1) % length);
+                            int prevIndex = startOfContour + ((length + p - 1) % length);
+                            next = (MirrorScale * controlPoints[nextIndex]) + location;
 
                             if (onCurves[currentIndex])
                             {
@@ -211,7 +210,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                 (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float position)
                 {
                     Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
-                    Vector2 offset = location + this.offset * scale * MirrorScale;
+                    Vector2 offset = location + (this.Offset * scale * MirrorScale);
 
                     // Calculate the correct advance for the line.
                     float width = this.AdvanceWidth;
@@ -221,9 +220,9 @@ namespace SixLabors.Fonts.Tables.TrueType
                         width = this.LeftSideBearing + this.Width;
                     }
 
-                    Vector2 tl = new Vector2(0, position) * scale + offset;
-                    Vector2 tr = new Vector2(width, position) * scale + offset;
-                    Vector2 bl = new Vector2(0, position + thickness) * scale + offset;
+                    Vector2 tl = (new Vector2(0, position) * scale) + offset;
+                    Vector2 tr = (new Vector2(width, position) * scale) + offset;
+                    Vector2 bl = (new Vector2(0, position + thickness) * scale) + offset;
 
                     return (tl, tr, tl.Y - bl.Y);
                 }
@@ -271,7 +270,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                 // There's no built in metrics for these values so we will need to infer them from the other metrics.
                 // Offset to avoid clipping.
                 float overlineThickness = this.FontMetrics.UnderlineThickness;
-                float overlinePosition = this.FontMetrics.Ascender - overlineThickness * .5F;
+                float overlinePosition = this.FontMetrics.Ascender - (overlineThickness * .5F);
                 if (surface is IGlyphDecorationRenderer decorationSurface)
                 {
                     // allow the rendered to override the decorations to attach

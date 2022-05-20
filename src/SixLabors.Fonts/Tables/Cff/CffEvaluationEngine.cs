@@ -2,24 +2,22 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
-using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal class CffEvaluationEngine
+    internal static class CffEvaluationEngine
     {
-        private readonly Stack<Type2EvaluationStack> evaluationStackPool = new();
-
-        public void Run(IGlyphRenderer renderer, Type2Instruction[] instructions, Vector2 scale, FontRectangle bounds, GlyphRendererParameters parameters)
+        public static void Run(ref IGlyphRenderer renderer, Type2Instruction[] instructions, Vector2 scale, Vector2 offset, FontRectangle bounds, GlyphRendererParameters parameters)
         {
-            // Reset
+            // TODO: There's likely no need to track these
             double currentX = 0;
             double currentY = 0;
-            ScalingGlyphRenderer scalingGlyphRenderer = new(scale, renderer);
+            TransformingGlyphRenderer scalingGlyphRenderer = new(scale, offset, renderer);
             if (scalingGlyphRenderer.BeginGlyph(bounds, parameters))
             {
-                this.Run(scalingGlyphRenderer, instructions, ref currentX, ref currentY);
+                Run(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
 
                 // Some CFF end without closing the latest contour.
                 if (scalingGlyphRenderer.IsOpen)
@@ -29,14 +27,9 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void Run(IGlyphRenderer renderer, Type2Instruction[] instructionList, ref double currentX, ref double currentY)
+        private static void Run(ref TransformingGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructionList, ref double currentX, ref double currentY)
         {
-            // Recursive
-            Type2EvaluationStack evalStack = this.GetFreeEvalStack();
-            evalStack._currentX = currentX;
-            evalStack._currentY = currentY;
-            evalStack.GlyphRenderer = renderer;
-
+            using Type2EvaluationStack evalStack = new(renderer, currentX, currentY);
             for (int i = 0; i < instructionList.Length; ++i)
             {
                 Type2Instruction inst = instructionList[i];
@@ -68,7 +61,8 @@ namespace SixLabors.Fonts.Tables.Cff
                     default:
                         throw new NotSupportedException();
                     case OperatorName.GlyphWidth:
-                        // TODO: 
+
+                        // TODO:
                         break;
                     case OperatorName.LoadInt:
                         evalStack.Push(inst.Value);
@@ -107,6 +101,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     case OperatorName.flex1:
                         evalStack.Flex1();
                         break;
+
                     //-------------------------
                     // 4.4: Arithmetic Operators
                     case OperatorName.abs:
@@ -150,13 +145,14 @@ namespace SixLabors.Fonts.Tables.Cff
                         break;
 
                     //-------------------------
-                    // 4.5: Storage Operators 
+                    // 4.5: Storage Operators
                     case OperatorName.put:
                         evalStack.Put();
                         break;
                     case OperatorName.get:
                         evalStack.Get();
                         break;
+
                     //-------------------------
                     // 4.6: Conditional
                     case OperatorName.and:
@@ -174,7 +170,6 @@ namespace SixLabors.Fonts.Tables.Cff
                     case OperatorName.ifelse:
                         evalStack.Op_IfElse();
                         break;
-                    // 
                     case OperatorName.rlineto:
                         evalStack.R_LineTo();
                         break;
@@ -205,7 +200,6 @@ namespace SixLabors.Fonts.Tables.Cff
                     case OperatorName.vvcurveto:
                         evalStack.VV_CurveTo();
                         break;
-                    //-------------------------------------------------------------------                     
                     case OperatorName.rmoveto:
                         evalStack.R_MoveTo();
                         break;
@@ -215,6 +209,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     case OperatorName.vmoveto:
                         evalStack.V_MoveTo();
                         break;
+
                     //-------------------------------------------------------------------
                     // 4.3 Hint Operators
                     case OperatorName.hstem:
@@ -229,7 +224,6 @@ namespace SixLabors.Fonts.Tables.Cff
                     case OperatorName.hstemhm:
                         evalStack.H_StemHM();
                         break;
-                    //--------------------------
                     case OperatorName.hintmask1:
                         evalStack.HintMask1(inst.Value);
                         break;
@@ -245,6 +239,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     case OperatorName.hintmask_bits:
                         evalStack.HintMaskBits(inst.Value);
                         break;
+
                     //------------------------------
                     case OperatorName.cntrmask1:
                         evalStack.CounterSpaceMask1(inst.Value);
@@ -266,48 +261,32 @@ namespace SixLabors.Fonts.Tables.Cff
                     // 4.7: Subroutine Operators
                     case OperatorName._return:
 
-                        // don't forget to return _evalStack's currentX, currentY to prev evl context
-                        currentX = evalStack._currentX;
-                        currentY = evalStack._currentY;
+                        // TODO: I don't think we need to actually track XY values here.
+                        // Don't forget to return evalStack's currentX, currentY to prev eval context
+                        currentX = evalStack.CurrentX;
+                        currentY = evalStack.CurrentY;
                         evalStack.Ret();
                         break;
 
-                    // should not occur!-> since we replace this in parsing step
+                    // Should not occur!-> since we replace this in parsing step
                     case OperatorName.callgsubr:
                     case OperatorName.callsubr:
                         throw new NotSupportedException();
                 }
             }
-
-            this.ReleaseEvalStack(evalStack);
         }
 
-        private Type2EvaluationStack GetFreeEvalStack()
-        {
-            if (this.evaluationStackPool.Count > 0)
-            {
-                return this.evaluationStackPool.Pop();
-            }
-            else
-            {
-                return new Type2EvaluationStack();
-            }
-        }
-
-        private void ReleaseEvalStack(Type2EvaluationStack evalStack)
-        {
-            evalStack.Reset();
-            this.evaluationStackPool.Push(evalStack);
-        }
-
-        private struct ScalingGlyphRenderer : IGlyphRenderer
+        private struct TransformingGlyphRenderer : IGlyphRenderer
         {
             private Vector2 scale;
+            private Vector2 offset;
             private readonly IGlyphRenderer renderer;
 
-            public ScalingGlyphRenderer(Vector2 scale, IGlyphRenderer renderer)
+            public TransformingGlyphRenderer(Vector2 scale, Vector2 offset, IGlyphRenderer renderer)
             {
+                // TODO: Validate scale and offset
                 this.scale = scale;
+                this.offset = offset;
                 this.renderer = renderer;
                 this.IsOpen = false;
             }
@@ -320,15 +299,16 @@ namespace SixLabors.Fonts.Tables.Cff
                 this.renderer.BeginFigure();
             }
 
-            public bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters) => this.renderer.BeginGlyph(bounds, parameters);
-
-            public void BeginText(FontRectangle bounds) => this.renderer.BeginText(bounds);
-
-            public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
+            public bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters)
             {
                 this.IsOpen = true;
-                this.renderer.CubicBezierTo(secondControlPoint * this.scale, thirdControlPoint * this.scale, point * this.scale);
-                throw new NotImplementedException();
+                return this.renderer.BeginGlyph(bounds, parameters);
+            }
+
+            public void BeginText(FontRectangle bounds)
+            {
+                this.IsOpen = true;
+                this.renderer.BeginText(bounds);
             }
 
             public void EndFigure()
@@ -352,20 +332,29 @@ namespace SixLabors.Fonts.Tables.Cff
             public void LineTo(Vector2 point)
             {
                 this.IsOpen = true;
-                this.renderer.LineTo(point * this.scale);
+                this.renderer.LineTo(this.Transform(point));
             }
 
             public void MoveTo(Vector2 point)
             {
                 this.IsOpen = true;
-                this.renderer.MoveTo(point * this.scale);
+                this.renderer.MoveTo(this.Transform(point));
+            }
+
+            public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
+            {
+                this.IsOpen = true;
+                this.renderer.CubicBezierTo(this.Transform(secondControlPoint), this.Transform(thirdControlPoint), this.Transform(point));
             }
 
             public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
             {
                 this.IsOpen = true;
-                this.renderer.QuadraticBezierTo(secondControlPoint * this.scale, point * this.scale);
+                this.renderer.QuadraticBezierTo(this.Transform(secondControlPoint), this.Transform(point));
             }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private Vector2 Transform(Vector2 point) => (point * this.scale) + this.offset;
         }
     }
 }

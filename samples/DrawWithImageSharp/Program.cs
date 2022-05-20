@@ -37,6 +37,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
 #if OS_WINDOWS
+            FontFamily notoKR = fonts.Add(@"Fonts\NotoSansKR-Regular.otf");
+            RenderText(notoKR, "Six Labors", pointSize: 72);
+            RenderText(notoKR, "모든인간", pointSize: 72);
+            return;
+
             FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
             FontFamily arabicFont = SystemFonts.Get("Dubai");

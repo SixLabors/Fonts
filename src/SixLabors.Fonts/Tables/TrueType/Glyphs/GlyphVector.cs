@@ -9,30 +9,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using SixLabors;
-using SixLabors.Fonts;
 #endif
-using SixLabors.Fonts.Hinting;
-
-/* Unmerged change from project 'SixLabors.Fonts (netstandard2.0)'
-Before:
-using SixLabors.Fonts.Tables.TrueType.Glyphs;
-After:
-using SixLabors.Fonts.Tables;
-using SixLabors.Fonts.Tables.General;
-using SixLabors.Fonts.Tables.General.Glyphs;
-using SixLabors.Fonts.Tables.TrueType.Glyphs;
-*/
-
-/* Unmerged change from project 'SixLabors.Fonts (netstandard2.1)'
-Before:
-using SixLabors.Fonts.Tables.TrueType.Glyphs;
-After:
-using SixLabors.Fonts.Tables;
-using SixLabors.Fonts.Tables.General;
-using SixLabors.Fonts.Tables.General.Glyphs;
-using SixLabors.Fonts.Tables.TrueType.Glyphs;
-*/
+using SixLabors.Fonts.Tables.TrueType.Hinting;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 {
@@ -203,7 +181,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             if (Avx.IsSupported)
             {
                 int length = controlPoints.Length;
-                remainder = length - ModuloP2(length * 2, Vector256<float>.Count) / 2;
+                remainder = length - (ModuloP2(length * 2, Vector256<float>.Count) / 2);
                 Span<Vector256<float>> vectors = MemoryMarshal.Cast<Vector2, Vector256<float>>(controlPoints);
                 Vector256<float> mutiplier = Avx.UnpackLow(Vector256.Create(scale), Vector256.Create(1F));
                 for (int i = 0; i < vectors.Length; i++)
@@ -214,7 +192,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             else if (Sse.IsSupported)
             {
                 int length = controlPoints.Length;
-                remainder = length - ModuloP2(length * 2, Vector128<float>.Count) / 2;
+                remainder = length - (ModuloP2(length * 2, Vector128<float>.Count) / 2);
                 Span<Vector128<float>> vectors = MemoryMarshal.Cast<Vector2, Vector128<float>>(controlPoints);
                 Vector128<float> mutiplier = Sse.UnpackLow(Vector128.Create(scale), Vector128.Create(1F));
                 for (int i = 0; i < vectors.Length; i++)
@@ -302,7 +280,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <paramref name="m"/> should be power of 2.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int ModuloP2(int x, int m) => x & m - 1;
+        private static int ModuloP2(int x, int m) => x & (m - 1);
 #endif
     }
 }

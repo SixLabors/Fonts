@@ -25,11 +25,9 @@ namespace SixLabors.Fonts.Tests
         {
             var writer = new BigEndianBinaryWriter();
             writer.WriteCffFileHeader(0, 0, 0, 0);
-            Assert.Throws<InvalidFontFileException>(
-                () =>
-                    {
-                        var reader = new FontReader(writer.GetStream());
-                    });
+
+            var reader = new FontReader(writer.GetStream());
+            Assert.Equal(OutlineType.CFF, reader.OutlineType);
         }
 
         [Fact]

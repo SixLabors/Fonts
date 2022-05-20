@@ -6,24 +6,82 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal sealed class CffBoundsFinder : IGlyphRenderer
+    internal struct CffBoundsFinder : IGlyphRenderer
     {
         private float minX;
         private float maxX;
         private float minY;
         private float maxY;
         private Vector2 currentXY;
-        private readonly int nsteps = 3;
+        private int nsteps;
         private bool contourOpen;
-        private bool firstEval = true;
+        private bool firstEval;
 
-        public void BeginFigure() => throw new NotSupportedException();
+        public static CffBoundsFinder Create()
+            => new()
+            {
+                minX = float.MaxValue,
+                maxX = float.MinValue,
+                minY = float.MaxValue,
+                maxY = float.MinValue,
+                nsteps = 3,
+                currentXY = Vector2.Zero,
+                contourOpen = false,
+                firstEval = true,
+            };
+
+        public void BeginFigure()
+        {
+            // Do nothing.
+        }
 
         public bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters)
             => true; // Do nothing.
 
         public void BeginText(FontRectangle bounds)
-            => throw new NotSupportedException();
+        {
+            // Do nothing.
+        }
+
+        public void EndFigure()
+        {
+            this.contourOpen = false;
+            this.currentXY = Vector2.Zero;
+        }
+
+        public void EndGlyph()
+        {
+            if (this.contourOpen)
+            {
+                this.EndFigure();
+            }
+        }
+
+        public void EndText()
+        {
+            if (this.contourOpen)
+            {
+                this.EndFigure();
+            }
+        }
+
+        public void LineTo(Vector2 point)
+        {
+            this.currentXY = point;
+            this.UpdateMinMax(point.X, point.Y);
+            this.contourOpen = true;
+        }
+
+        public void MoveTo(Vector2 point)
+        {
+            if (this.contourOpen)
+            {
+                this.EndFigure();
+            }
+
+            this.currentXY = point;
+            this.UpdateMinMax(point.X, point.Y);
+        }
 
         public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
         {
@@ -44,39 +102,24 @@ namespace SixLabors.Fonts.Tables.Cff
             this.contourOpen = true;
         }
 
-        public void EndFigure()
+        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
         {
-            this.contourOpen = false;
-            this.currentXY = Vector2.Zero;
-        }
+            float eachstep = 1F / this.nsteps;
+            float t = eachstep; // Start
 
-        public void EndGlyph()
-        {
-            // Do nothing.
-        }
-
-        public void EndText() => throw new NotSupportedException();
-
-        public void LineTo(Vector2 point)
-        {
-            this.currentXY = point;
-            this.UpdateMinMax(point.X, point.Y);
-            this.contourOpen = true;
-        }
-
-        public void MoveTo(Vector2 point)
-        {
-            if (this.contourOpen)
+            for (int n = 1; n < this.nsteps; ++n)
             {
-                this.EndFigure();
+                float c = 1F - t;
+                Vector2 xy = (this.currentXY * c * c) + (secondControlPoint * 2 * t * c) + (point * t * t);
+                this.UpdateMinMax(xy.X, xy.Y);
+
+                t += eachstep;
             }
 
             this.currentXY = point;
             this.UpdateMinMax(point.X, point.Y);
+            this.contourOpen = true;
         }
-
-        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
-            => throw new NotSupportedException();
 
         private void UpdateMinMax(float x0, float y0)
         {
