@@ -299,7 +299,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     new Vector2((float)(curX += this.argStack[i + 0]), (float)(curY += this.argStack[i + 1])), // dxa,dya
                     new Vector2((float)(curX += this.argStack[i + 2]), (float)(curY += this.argStack[i + 3])), // dxb,dyb
                     new Vector2((float)(curX += this.argStack[i + 4]), (float)(curY += this.argStack[i + 5]))); // dxc,dyc
-                //
+
                 i += 6;
             }
 

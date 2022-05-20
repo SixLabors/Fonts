@@ -7,9 +7,12 @@ using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
+    /// <summary>
+    /// Evaluates and translates the Type2 Instruction set for a given CFF glyph.
+    /// </summary>
     internal static class CffEvaluationEngine
     {
-        public static void Run(ref IGlyphRenderer renderer, Type2Instruction[] instructions, Vector2 scale, Vector2 offset, FontRectangle bounds, GlyphRendererParameters parameters)
+        public static void Run(ref IGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructions, Vector2 scale, Vector2 offset, FontRectangle bounds, GlyphRendererParameters parameters)
         {
             // TODO: There's likely no need to track these
             double currentX = 0;
@@ -276,6 +279,9 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
+        /// <summary>
+        /// Used to apply a transform against any glyphs rendered by the engine.
+        /// </summary>
         private struct TransformingGlyphRenderer : IGlyphRenderer
         {
             private Vector2 scale;
@@ -284,7 +290,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
             public TransformingGlyphRenderer(Vector2 scale, Vector2 offset, IGlyphRenderer renderer)
             {
-                // TODO: Validate scale and offset
                 this.scale = scale;
                 this.offset = offset;
                 this.renderer = renderer;

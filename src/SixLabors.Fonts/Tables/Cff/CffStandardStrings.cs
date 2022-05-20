@@ -1,19 +1,17 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal class Cff1FontSet
+    /// <summary>
+    /// Appendix A: Standard Strings
+    /// </summary>
+    internal static class CffStandardStrings
     {
-        internal string[] _fontNames;
-        internal List<Cff1Font> _fonts = new List<Cff1Font>();
-        internal string[] _uniqueStringTable;
-        internal const int N_STD_STRINGS = 390;
-        internal static readonly string[] s_StdStrings = new string[]
+        private static readonly string[] StringIdentifierToString =
         {
-            // Appendix A: Standard Strings
             ".notdef",
             "space",
             "exclam",
@@ -406,5 +404,10 @@ namespace SixLabors.Fonts.Tables.Cff
             "Roman",
             "Semibold"
         };
+
+        public static int Count { get; } = StringIdentifierToString.Length;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string GetName(int sid) => StringIdentifierToString[sid];
     }
 }
