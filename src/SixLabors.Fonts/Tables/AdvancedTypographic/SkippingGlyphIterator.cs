@@ -73,10 +73,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         {
             GlyphShapingData data = this.Collection.GetGlyphShapingData(index);
             GlyphShapingClass shapingClass = AdvancedTypographicUtils.GetGlyphShapingClass(this.fontMetrics, data.GlyphId, data);
-            return this.ignoreMarks && shapingClass.IsMark ||
-                this.ignoreBaseGlypghs && shapingClass.IsBase ||
-                this.ignoreLigatures && shapingClass.IsLigature ||
-                this.markAttachmentType > 0 && shapingClass.IsMark && shapingClass.MarkAttachmentType != this.markAttachmentType;
+            return (this.ignoreMarks && shapingClass.IsMark) ||
+                (this.ignoreBaseGlypghs && shapingClass.IsBase) ||
+                (this.ignoreLigatures && shapingClass.IsLigature) ||
+                (this.markAttachmentType > 0 && shapingClass.IsMark && shapingClass.MarkAttachmentType != this.markAttachmentType);
         }
     }
 }
