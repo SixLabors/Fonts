@@ -9,6 +9,10 @@ using System.Text;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
+    /// <summary>
+    /// Parses a Compact Font Format (CFF) font program as described in The Compact Font Format specification (Adobe Technical Note #5176).
+    /// A CFF font may contain multiple fonts and achieves compression by sharing details between fonts in the set.
+    /// </summary>
     internal class Cff1Parser
     {
         /// <summary>
@@ -43,8 +47,6 @@ namespace SixLabors.Fonts.Tables.Cff
         // Private DICT              per-font
         // Local Subr INDEX          per-font or per-Private DICT for CIDFonts
         // Copyright and Trademark  -
-        private BigEndianBinaryReader reader;
-        private CffFontCollection fontCollection;
         private Cff1Font currentCff1Font;
         private List<CffDataDicEntry> _topDic;
         private long _cffStartAt;
@@ -52,31 +54,39 @@ namespace SixLabors.Fonts.Tables.Cff
         private int _charsetOffset;
         private int _encodingOffset;
 
-        public void Load(BigEndianBinaryReader reader, long offset)
+        public CffFontSet Load(BigEndianBinaryReader reader, long offset)
         {
             this._cffStartAt = offset;
-            this.fontCollection = new CffFontCollection();
+            CffFontSet fontSet = new();
             this._cidFontInfo = new CIDFontInfo();
-            this.reader = reader;
 
-            this.ReadNameIndex();
-            this.ReadTopDICTIndex();
-            this.ReadStringIndex();
+            string fontName = this.ReadNameIndex(reader);
+
+            // TODO: Move this.
+            fontSet.FontName = fontName;
+            this.currentCff1Font = new Cff1Font();
+            this.currentCff1Font.FontName = fontName;
+            fontSet.Fonts.Add(this.currentCff1Font);
+
+            this.ReadTopDICTIndex(reader);
+            this.ReadStringIndex(reader);
+
+            // TODO: Move this.
+            fontSet._uniqueStringTable = this._uniqueStringTable;
+
             this.ResolveTopDictInfo();
-            this.ReadGlobalSubrIndex();
-            this.ReadFDSelect();
-            this.ReadFDArray();
-            this.ReadPrivateDict();
-            this.ReadCharStringsIndex();
-            this.ReadCharsets();
-            this.ReadEncodings();
+            this.ReadGlobalSubrIndex(reader);
+            this.ReadFDSelect(reader);
+            this.ReadFDArray(reader);
+            this.ReadPrivateDict(reader);
+            this.ReadCharStringsIndex(reader);
+            this.ReadCharsets(reader);
+            this.ReadEncodings(reader);
 
-            // ...
+            return fontSet;
         }
 
-        public CffFontCollection Cff1FontSet => this.fontCollection;
-
-        private void ReadNameIndex()
+        private string ReadNameIndex(BigEndianBinaryReader reader)
         {
             // 7. Name INDEX
             // This contains the PostScript language names(FontName or
@@ -110,39 +120,17 @@ namespace SixLabors.Fonts.Tables.Cff
             // software must detect deletions and restart the search at the
             // previous or next name in the INDEX to ensure that all
             // appropriate names are matched.
-            if (!this.TryReadIndexDataOffsets(out CffIndexOffset[]? nameIndexElems))
+            if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
-                return;
+                throw new InvalidFontFileException("No name index found.");
             }
 
-            int count = nameIndexElems.Length;
-            string[] fontNames = new string[count];
-            for (int i = 0; i < count; ++i)
-            {
-                // Read each FontName or CIDFontName
-                CffIndexOffset indexElem = nameIndexElems[i];
-
-                // TODO: review here again,
-                // check if we need to set _reader.BaseStream.Position or not
-                fontNames[i] = Iso88591.GetString(this.reader.ReadBytes(indexElem.Length), 0, indexElem.Length);
-            }
-
-            this.fontCollection._fontNames = fontNames;
-
-            // TODO: review here
-            // in this version
-            // count ==1
-            if (count != 1)
-            {
-                throw new NotSupportedException();
-            }
-
-            this.currentCff1Font = new Cff1Font();
-            this.currentCff1Font.FontName = fontNames[0];
-            this.fontCollection.Fonts.Add(this.currentCff1Font);
+            // The Name INDEX in the CFF data must contain only one entry; that is, there must be only one font in the CFF FontSet.
+            CffIndexOffset offset = offsets[0];
+            return Iso88591.GetString(reader.ReadBytes(offset.Length), 0, offset.Length);
         }
 
-        private void ReadTopDICTIndex()
+        private void ReadTopDICTIndex(BigEndianBinaryReader reader)
         {
             // 8. Top DICT INDEX
             // This contains the top - level DICTs of all the fonts in the FontSet
@@ -152,7 +140,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // the top-level dictionary of a PostScript font.
             // A font is identified by an entry in the Name INDEX and its data
             // is accessed via the corresponding Top DICT
-            if (!this.TryReadIndexDataOffsets(out CffIndexOffset[]? offsets))
+            if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
                 return;
             }
@@ -177,7 +165,7 @@ namespace SixLabors.Fonts.Tables.Cff
             for (int i = 0; i < count; ++i)
             {
                 // Read DICT data
-                this._topDic = this.ReadDICTData(offsets[i].Length);
+                this._topDic = this.ReadDICTData(reader, offsets[i].Length);
             }
         }
 
@@ -200,7 +188,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private CIDFontInfo _cidFontInfo;
 
-        private void ReadStringIndex()
+        private void ReadStringIndex(BigEndianBinaryReader reader)
         {
             // 10 String INDEX
             // All the strings, with the exception of the FontName and
@@ -236,7 +224,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // fetch from internal table,
             // otherwise, fetch string from the String
             // INDEX using a value of(SID – nStdStrings) as the index.
-            if (!this.TryReadIndexDataOffsets(out CffIndexOffset[]? offsets))
+            if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
                 return;
             }
@@ -256,7 +244,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 if (len < bufferSpan.Length)
                 {
                     Span<byte> slice = bufferSpan.Slice(0, len);
-                    int actualRead = this.reader.BaseStream.Read(slice);
+                    int actualRead = reader.BaseStream.Read(slice);
 #if DEBUG
                     if (actualRead != len)
                     {
@@ -267,11 +255,11 @@ namespace SixLabors.Fonts.Tables.Cff
                 }
                 else
                 {
-                    this._uniqueStringTable[i] = Iso88591.GetString(this.reader.ReadBytes(len), 0, len);
+                    this._uniqueStringTable[i] = Iso88591.GetString(reader.ReadBytes(len), 0, len);
                 }
             }
 
-            this.fontCollection._uniqueStringTable = this._uniqueStringTable;
+            // TODO: Return collection.
         }
 
         private string GetSid(int index)
@@ -381,7 +369,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void ReadGlobalSubrIndex()
+        private void ReadGlobalSubrIndex(BigEndianBinaryReader reader)
 
            // 16. Local / Global Subrs INDEXes
            // Both Type 1 and Type 2 charstrings support the notion of
@@ -410,11 +398,11 @@ namespace SixLabors.Fonts.Tables.Cff
            // Global subrs are stored in an INDEX structure which follows the
            // String INDEX. A FontSet without any global subrs is represented
            // by an empty Global Subrs INDEX.
-           => this.currentCff1Font._globalSubrRawBufferList = this.ReadSubrBuffer();
+           => this.currentCff1Font._globalSubrRawBufferList = this.ReadSubrBuffer(reader);
 
-        private void ReadLocalSubrs() => this.currentCff1Font._localSubrRawBufferList = this.ReadSubrBuffer();
+        private void ReadLocalSubrs(BigEndianBinaryReader reader) => this.currentCff1Font._localSubrRawBufferList = this.ReadSubrBuffer(reader);
 
-        private void ReadEncodings()
+        private void ReadEncodings(BigEndianBinaryReader reader)
         {
             // Encoding data is located via the offset operand to the
             // Encoding operator in the Top DICT.
@@ -429,7 +417,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // Each encoding is described by a format-type identifier byte
             // followed by format-specific data.Two formats are currently
             // defined as specified in Tables 11(Format 0) and 12(Format 1).
-            byte format = this.reader.ReadByte();
+            byte format = reader.ReadByte();
             switch (format)
             {
                 default:
@@ -438,17 +426,17 @@ namespace SixLabors.Fonts.Tables.Cff
 #endif
                     break;
                 case 0:
-                    this.ReadFormat0Encoding();
+                    this.ReadFormat0Encoding(reader);
                     break;
                 case 1:
-                    this.ReadFormat1Encoding();
+                    this.ReadFormat1Encoding(reader);
                     break;
             }
 
             // TODO: ...
         }
 
-        private void ReadCharsets()
+        private void ReadCharsets(BigEndianBinaryReader reader)
         {
             // Charset data is located via the offset operand to the
             // charset operator in the Top DICT.
@@ -457,26 +445,24 @@ namespace SixLabors.Fonts.Tables.Cff
             // type identifier byte followed by format-specific data.
             // Three formats are currently defined as shown in Tables
             // 17, 18, and 20.
-            this.reader.BaseStream.Position = this._cffStartAt + this._charsetOffset;
-
-            // TODO: ...
-            switch (this.reader.ReadByte())
+            reader.BaseStream.Position = this._cffStartAt + this._charsetOffset;
+            switch (reader.ReadByte())
             {
                 default:
                     throw new NotSupportedException();
                 case 0:
-                    this.ReadCharsetsFormat0();
+                    this.ReadCharsetsFormat0(reader);
                     break;
                 case 1:
-                    this.ReadCharsetsFormat1();
+                    this.ReadCharsetsFormat1(reader);
                     break;
                 case 2:
-                    this.ReadCharsetsFormat2();
+                    this.ReadCharsetsFormat2(reader);
                     break;
             }
         }
 
-        private void ReadCharsetsFormat0()
+        private void ReadCharsetsFormat0(BigEndianBinaryReader reader)
         {
             // Table 17: Format 0
             // Type     Name                Description
@@ -495,11 +481,11 @@ namespace SixLabors.Fonts.Tables.Cff
             for (int i = 1; i < nGlyphs; ++i)
             {
                 ref Cff1GlyphData data = ref cff1Glyphs[i];
-                data.GlyphName = this.GetSid(this.reader.ReadUInt16());
+                data.GlyphName = this.GetSid(reader.ReadUInt16());
             }
         }
 
-        private void ReadCharsetsFormat1()
+        private void ReadCharsetsFormat1(BigEndianBinaryReader reader)
         {
             // Table 18 Format 1
             // Type     Name                Description
@@ -520,8 +506,8 @@ namespace SixLabors.Fonts.Tables.Cff
             int nGlyphs = cff1Glyphs.Length;
             for (int i = 1; i < nGlyphs;)
             {
-                int sid = this.reader.ReadUInt16(); // First glyph in range
-                int count = this.reader.ReadByte() + 1; // since it does not include first element.
+                int sid = reader.ReadUInt16(); // First glyph in range
+                int count = reader.ReadByte() + 1; // since it does not include first element.
                 do
                 {
                     ref Cff1GlyphData data = ref cff1Glyphs[i];
@@ -535,7 +521,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void ReadCharsetsFormat2()
+        private void ReadCharsetsFormat2(BigEndianBinaryReader reader)
         {
             // note:eg, Adobe's source-code-pro font
 
@@ -557,8 +543,8 @@ namespace SixLabors.Fonts.Tables.Cff
             int nGlyphs = cff1Glyphs.Length;
             for (int i = 1; i < nGlyphs;)
             {
-                int sid = this.reader.ReadUInt16(); // First glyph in range
-                int count = this.reader.ReadUInt16() + 1; // since it does not include first element.
+                int sid = reader.ReadUInt16(); // First glyph in range
+                int count = reader.ReadUInt16() + 1; // since it does not include first element.
                 do
                 {
                     ref Cff1GlyphData data = ref cff1Glyphs[i];
@@ -572,7 +558,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void ReadFDSelect()
+        private void ReadFDSelect(BigEndianBinaryReader reader)
         {
             // http://wwwimages.adobe.com/www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5176.CFF.pdf
             // 19. FDSelect
@@ -631,24 +617,24 @@ namespace SixLabors.Fonts.Tables.Cff
             // (The sentinel GID is set equal to the number of glyphs in the font.
             // That is, its value is 1 greater than the last GID in the font.)
             // This format is particularly suited to FD indexes that are well ordered(the usual case).
-            this.reader.BaseStream.Position = this._cffStartAt + this._cidFontInfo.FDSelect;
-            byte format = this.reader.ReadByte();
+            reader.BaseStream.Position = this._cffStartAt + this._cidFontInfo.FDSelect;
+            byte format = reader.ReadByte();
 
             switch (format)
             {
                 case 3:
-                    ushort nRanges = this.reader.ReadUInt16();
+                    ushort nRanges = reader.ReadUInt16();
                     var ranges = new FDRange3[nRanges + 1];
 
                     this._cidFontInfo.fdSelectFormat = 3;
                     this._cidFontInfo.fdRanges = ranges;
                     for (int i = 0; i < nRanges; ++i)
                     {
-                        ranges[i] = new FDRange3(this.reader.ReadUInt16(), this.reader.ReadByte());
+                        ranges[i] = new FDRange3(reader.ReadUInt16(), reader.ReadByte());
                     }
 
                     // end with //sentinel
-                    ranges[nRanges] = new FDRange3(this.reader.ReadUInt16(), 0); // sentinel
+                    ranges[nRanges] = new FDRange3(reader.ReadUInt16(), 0); // sentinel
                     break;
 
                 default:
@@ -672,16 +658,16 @@ namespace SixLabors.Fonts.Tables.Cff
 #endif
         }
 
-        private void ReadFDArray()
+        private void ReadFDArray(BigEndianBinaryReader reader)
         {
             if (this._cidFontInfo.FDArray == 0)
             {
                 return;
             }
 
-            this.reader.BaseStream.Position = this._cffStartAt + this._cidFontInfo.FDArray;
+            reader.BaseStream.Position = this._cffStartAt + this._cidFontInfo.FDArray;
 
-            if (!this.TryReadIndexDataOffsets(out CffIndexOffset[]? offsets))
+            if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
                 return;
             }
@@ -692,7 +678,7 @@ namespace SixLabors.Fonts.Tables.Cff
             for (int i = 0; i < offsets.Length; ++i)
             {
                 // read DICT data
-                List<CffDataDicEntry> dic = this.ReadDICTData(offsets[i].Length);
+                List<CffDataDicEntry> dic = this.ReadDICTData(reader, offsets[i].Length);
 
                 // translate
                 int offset = 0;
@@ -722,9 +708,9 @@ namespace SixLabors.Fonts.Tables.Cff
 
             foreach (FontDict fdict in fontDicts)
             {
-                this.reader.BaseStream.Position = this._cffStartAt + fdict.PrivateDicOffset;
+                reader.BaseStream.Position = this._cffStartAt + fdict.PrivateDicOffset;
 
-                List<CffDataDicEntry> dicData = this.ReadDICTData(fdict.PrivateDicSize);
+                List<CffDataDicEntry> dicData = this.ReadDICTData(reader, fdict.PrivateDicSize);
 
                 if (dicData.Count > 0)
                 {
@@ -735,8 +721,8 @@ namespace SixLabors.Fonts.Tables.Cff
                         {
                             case "Subrs":
                                 int localSubrsOffset = (int)dicEntry.operands[0].RealNumValue;
-                                this.reader.BaseStream.Position = this._cffStartAt + fdict.PrivateDicOffset + localSubrsOffset;
-                                fdict.LocalSubr = this.ReadSubrBuffer();
+                                reader.BaseStream.Position = this._cffStartAt + fdict.PrivateDicOffset + localSubrsOffset;
+                                fdict.LocalSubr = this.ReadSubrBuffer(reader);
                                 break;
 
                             case "defaultWidthX":
@@ -817,7 +803,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void ReadCharStringsIndex()
+        private void ReadCharStringsIndex(BigEndianBinaryReader reader)
         {
             // 14. CharStrings INDEX
 
@@ -849,8 +835,8 @@ namespace SixLabors.Fonts.Tables.Cff
             // Type 2 charstrings are described in Adobe Technical Note #5177:
             // “Type 2 Charstring Format.” Other charstring types may also be
             // supported by this method.
-            this.reader.BaseStream.Position = this._cffStartAt + this._charStringsOffset;
-            if (!this.TryReadIndexDataOffsets(out CffIndexOffset[]? offsets))
+            reader.BaseStream.Position = this._cffStartAt + this._charStringsOffset;
+            if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
                 return;
             }
@@ -879,13 +865,13 @@ namespace SixLabors.Fonts.Tables.Cff
             for (int i = 0; i < glyphCount; ++i)
             {
                 CffIndexOffset offset = offsets[i];
-                byte[] buffer = this.reader.ReadBytes(offset.Length);
+                byte[] buffer = reader.ReadBytes(offset.Length);
 #if DEBUG
                 // check
                 byte lastByte = buffer[offset.Length - 1];
-                if (lastByte != (byte)Type2Operator1.endchar &&
-                    lastByte != (byte)Type2Operator1.callgsubr &&
-                    lastByte != (byte)Type2Operator1.callsubr)
+                if (lastByte is not (byte)Type2Operator1.endchar and
+                    not (byte)Type2Operator1.callgsubr and
+                    not (byte)Type2Operator1.callsubr)
                 {
                     // 5177.Type2
                     // Note 6 The charstring itself may end with a call(g)subr; the subroutine must
@@ -947,7 +933,7 @@ namespace SixLabors.Fonts.Tables.Cff
         private bool _useCompactInstruction = true;
         private Type2InstructionCompacter _instCompacter = new Type2InstructionCompacter();
 
-        private void ReadFormat0Encoding()
+        private void ReadFormat0Encoding(BigEndianBinaryReader reader)
         {
             // Table 11: Format 0
             // Type      Name            Description
@@ -961,11 +947,13 @@ namespace SixLabors.Fonts.Tables.Cff
 
             // we have read format field( 1st field) ..
             // so start with 2nd field
-            int nCodes = this.reader.ReadByte();
-            byte[] codes = this.reader.ReadBytes(nCodes);
+            int nCodes = reader.ReadByte();
+            byte[] codes = reader.ReadBytes(nCodes);
+
+            // TODO: Implement based on PDFPig
         }
 
-        private void ReadFormat1Encoding()
+        private void ReadFormat1Encoding(BigEndianBinaryReader reader)
         {
             // Table 12 Format 1
             // Type      Name              Description
@@ -973,7 +961,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // Card8     nRanges           Number of code ranges
             // struct    Range1[nRanges]   Range1 array(see Table  13)
             //--------------
-            int nRanges = this.reader.ReadByte();
+            int nRanges = reader.ReadByte();
 
             // Table 13 Range1 Format(Encoding)
             // Type        Name        Description
@@ -1007,7 +995,7 @@ namespace SixLabors.Fonts.Tables.Cff
         private int _privateDICTOffset;
         private int _privateDICTLen;
 
-        private void ReadPrivateDict()
+        private void ReadPrivateDict(BigEndianBinaryReader reader)
         {
             // per-font
             if (this._privateDICTLen == 0)
@@ -1015,8 +1003,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 return;
             }
 
-            this.reader.BaseStream.Position = this._cffStartAt + this._privateDICTOffset;
-            List<CffDataDicEntry> dicData = this.ReadDICTData(this._privateDICTLen);
+            reader.BaseStream.Position = this._cffStartAt + this._privateDICTOffset;
+            List<CffDataDicEntry> dicData = this.ReadDICTData(reader, this._privateDICTLen);
 
             if (dicData.Count > 0)
             {
@@ -1027,8 +1015,8 @@ namespace SixLabors.Fonts.Tables.Cff
                     {
                         case "Subrs":
                             int localSubrsOffset = (int)dicEntry.operands[0].RealNumValue;
-                            this.reader.BaseStream.Position = this._cffStartAt + this._privateDICTOffset + localSubrsOffset;
-                            this.ReadLocalSubrs();
+                            reader.BaseStream.Position = this._cffStartAt + this._privateDICTOffset + localSubrsOffset;
+                            this.ReadLocalSubrs(reader);
                             break;
 
                         case "defaultWidthX":
@@ -1049,29 +1037,29 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private List<byte[]> ReadSubrBuffer()
+        private List<byte[]> ReadSubrBuffer(BigEndianBinaryReader reader)
         {
             // TODO: Return either empty or make this a TryRead bool.
-            if (!this.TryReadIndexDataOffsets(out CffIndexOffset[]? offsets))
+            if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
                 return null;
             }
 
             //
             int nsubrs = offsets.Length;
-            List<byte[]> rawBufferList = new List<byte[]>();
+            List<byte[]> rawBufferList = new();
 
             for (int i = 0; i < nsubrs; ++i)
             {
                 CffIndexOffset offset = offsets[i];
-                byte[] charStringBuffer = this.reader.ReadBytes(offset.Length);
+                byte[] charStringBuffer = reader.ReadBytes(offset.Length);
                 rawBufferList.Add(charStringBuffer);
             }
 
             return rawBufferList;
         }
 
-        private List<CffDataDicEntry> ReadDICTData(int len)
+        private List<CffDataDicEntry> ReadDICTData(BigEndianBinaryReader reader, int len)
         {
             // 4. DICT Data
 
@@ -1086,18 +1074,18 @@ namespace SixLabors.Fonts.Tables.Cff
             //-----------------------------
             // A DICT is simply a sequence of
             // operand(s)/operator bytes concatenated together.
-            int endBefore = (int)(this.reader.BaseStream.Position + len);
+            int endBefore = (int)(reader.BaseStream.Position + len);
             List<CffDataDicEntry> dicData = new();
-            while (this.reader.BaseStream.Position < endBefore)
+            while (reader.BaseStream.Position < endBefore)
             {
-                CffDataDicEntry dicEntry = this.ReadEntry();
+                CffDataDicEntry dicEntry = this.ReadEntry(reader);
                 dicData.Add(dicEntry);
             }
 
             return dicData;
         }
 
-        private CffDataDicEntry ReadEntry()
+        private CffDataDicEntry ReadEntry(BigEndianBinaryReader reader)
         {
             //-----------------------------
             // An operator is preceded by the operand(s) that
@@ -1113,32 +1101,32 @@ namespace SixLabors.Fonts.Tables.Cff
             // Byte values 22–27, 31, and 255 are reserved.
 
             // An operator may be preceded by up to a maximum of 48 operands
-            CffDataDicEntry dicEntry = new CffDataDicEntry();
-            List<CffOperand> operands = new List<CffOperand>();
+            CffDataDicEntry dicEntry = new();
+            List<CffOperand> operands = new();
 
             while (true)
             {
-                byte b0 = this.reader.ReadByte();
+                byte b0 = reader.ReadByte();
 
-                if (b0 >= 0 && b0 <= 21)
+                if (b0 is >= 0 and <= 21)
                 {
                     // operators
-                    dicEntry._operator = this.ReadOperator(b0);
+                    dicEntry._operator = this.ReadOperator(reader, b0);
                     break; // **break after found operator
                 }
-                else if (b0 == 28 || b0 == 29)
+                else if (b0 is 28 or 29)
                 {
-                    int num = this.ReadIntegerNumber(b0);
+                    int num = this.ReadIntegerNumber(reader, b0);
                     operands.Add(new CffOperand(num, OperandKind.IntNumber));
                 }
                 else if (b0 == 30)
                 {
-                    double num = this.ReadRealNumber();
+                    double num = this.ReadRealNumber(reader);
                     operands.Add(new CffOperand(num, OperandKind.RealNumber));
                 }
-                else if (b0 >= 32 && b0 <= 254)
+                else if (b0 is >= 32 and <= 254)
                 {
-                    int num = this.ReadIntegerNumber(b0);
+                    int num = this.ReadIntegerNumber(reader, b0);
                     operands.Add(new CffOperand(num, OperandKind.IntNumber));
                 }
                 else
@@ -1151,14 +1139,14 @@ namespace SixLabors.Fonts.Tables.Cff
             return dicEntry;
         }
 
-        private CFFOperator ReadOperator(byte b0)
+        private CFFOperator ReadOperator(BigEndianBinaryReader reader, byte b0)
         {
             // read operator key
             byte b1 = 0;
             if (b0 == 12)
             {
                 // 2 bytes
-                b1 = this.reader.ReadByte();
+                b1 = reader.ReadByte();
             }
 
             // get registered operator by its key
@@ -1167,7 +1155,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private readonly StringBuilder _sbForReadRealNumber = new StringBuilder();
 
-        private double ReadRealNumber()
+        private double ReadRealNumber(BigEndianBinaryReader reader)
         {
             // from https://typekit.files.wordpress.com/2013/05/5176.cff.pdf
             // A real number operand is provided in addition to integer
@@ -1185,7 +1173,7 @@ namespace SixLabors.Fonts.Tables.Cff
             bool exponentMissing = false;
             while (!done)
             {
-                int b = this.reader.ReadByte();
+                int b = reader.ReadByte();
 
                 int nb_0 = (b >> 4) & 0xf;
                 int nb_1 = b & 0xf;
@@ -1259,37 +1247,37 @@ namespace SixLabors.Fonts.Tables.Cff
             return value;
         }
 
-        private int ReadIntegerNumber(byte b0)
+        private int ReadIntegerNumber(BigEndianBinaryReader reader, byte b0)
         {
             if (b0 == 28)
             {
-                return this.reader.ReadInt16();
+                return reader.ReadInt16();
             }
             else if (b0 == 29)
             {
-                return this.reader.ReadInt32();
+                return reader.ReadInt32();
             }
-            else if (b0 >= 32 && b0 <= 246)
+            else if (b0 is >= 32 and <= 246)
             {
                 return b0 - 139;
             }
-            else if (b0 >= 247 && b0 <= 250)
+            else if (b0 is >= 247 and <= 250)
             {
-                int b1 = this.reader.ReadByte();
-                return (b0 - 247) * 256 + b1 + 108;
+                int b1 = reader.ReadByte();
+                return ((b0 - 247) * 256) + b1 + 108;
             }
-            else if (b0 >= 251 && b0 <= 254)
+            else if (b0 is >= 251 and <= 254)
             {
-                int b1 = this.reader.ReadByte();
-                return -(b0 - 251) * 256 - b1 - 108;
+                int b1 = reader.ReadByte();
+                return (-(b0 - 251) * 256) - b1 - 108;
             }
             else
             {
-                throw new Exception();
+                throw new InvalidFontFileException("Invalid DICT data b0 byte: " + b0);
             }
         }
 
-        private bool TryReadIndexDataOffsets([NotNullWhen(true)] out CffIndexOffset[]? value)
+        private bool TryReadIndexDataOffsets(BigEndianBinaryReader reader, [NotNullWhen(true)] out CffIndexOffset[]? value)
         {
             // INDEX Data
             // An INDEX is an array of variable-sized objects.It comprises a
@@ -1324,19 +1312,19 @@ namespace SixLabors.Fonts.Tables.Cff
             // Note 2
             // An INDEX may be skipped by jumping to the offset specified by the last
             // element of the offset array
-            ushort count = this.reader.ReadUInt16();
+            ushort count = reader.ReadUInt16();
             if (count == 0)
             {
                 value = null;
                 return false;
             }
 
-            int offSize = this.reader.ReadByte();
+            int offSize = reader.ReadByte();
             int[] offsets = new int[count + 1];
             var indexElems = new CffIndexOffset[count];
             for (int i = 0; i <= count; ++i)
             {
-                offsets[i] = this.reader.ReadOffset(offSize);
+                offsets[i] = reader.ReadOffset(offSize);
             }
 
             for (int i = 0; i < count; ++i)

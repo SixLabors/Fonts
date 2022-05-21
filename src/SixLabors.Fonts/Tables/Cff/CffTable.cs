@@ -6,19 +6,18 @@ using System;
 namespace SixLabors.Fonts.Tables.Cff
 {
     [TableName(TableName)]
-    internal class CffTable : Table
+    internal sealed class CffTable : Table
     {
         internal const string TableName = "CFF "; // 4 chars
 
-        private readonly Cff1Font cff1Font;
+        private readonly Cff1GlyphData[] glyphs;
 
-        public CffTable(CffFontCollection cff1FontSet) => this.cff1Font = cff1FontSet.Fonts[0];
+        public CffTable(CffFontSet cff1FontSet) => this.glyphs = cff1FontSet.Fonts[0]._glyphs;
 
-        public int GlyphCount => this.cff1Font._glyphs.Length;
+        public int GlyphCount => this.glyphs.Length;
 
-        // TODO: Add support for CFF2 fonts
-        internal virtual Cff1GlyphData GetGlyph(int index)
-            => this.cff1Font._glyphs[index];
+        public Cff1GlyphData GetGlyph(int index)
+            => this.glyphs[index];
 
         public static CffTable? Load(FontReader fontReader)
         {
@@ -35,11 +34,17 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public static CffTable Load(BigEndianBinaryReader reader)
         {
-            // Type      Name      Description
-            // Card8     major     Format major version(starting at 1)
-            // Card8     minor     Format minor version(starting at 0)
-            // Card8     hdrSize   Header size(bytes)
-            // OffSize   offSize   Absolute offset(0) size
+            // +------+---------------+----------------------------------------+
+            // | Type | Name          | Description                            |
+            // +======+===============+========================================+
+            // | byte | majorVersion  | Format major version. Set to 1.        |
+            // +------+---------------+----------------------------------------+
+            // | byte | minorVersion  | Format minor version. Set to zero.     |
+            // +------+---------------+----------------------------------------+
+            // | byte | headerSize    | Header size (bytes).                   |
+            // +------+---------------+----------------------------------------+
+            // | byte | topDictLength | Length of Top DICT structure in bytes. |
+            // +------+---------------+----------------------------------------+
             long position = reader.BaseStream.Position;
             byte[] header = reader.ReadBytes(4);
             byte major = header[0];
@@ -50,19 +55,8 @@ namespace SixLabors.Fonts.Tables.Cff
             switch (major)
             {
                 case 1:
-                {
-                    Cff1Parser cff1 = new();
-                    cff1.Load(reader, position);
-                    return new(cff1.Cff1FontSet);
-                }
-
-                case 2:
-                {
-                    // Cff2Parser cff2 = new();
-                    // cff2.ParseAfterHeader(reader);
-                    // return new(null);
-                    throw new NotSupportedException();
-                }
+                    Cff1Parser parser = new();
+                    return new(parser.Load(reader, position));
 
                 default:
                     throw new NotSupportedException();

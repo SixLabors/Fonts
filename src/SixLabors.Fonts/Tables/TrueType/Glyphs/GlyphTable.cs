@@ -18,6 +18,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 
         public int GlyphCount => this.loaders.Length;
 
+        // TODO: Make this non-virtual
         internal virtual GlyphVector GetGlyph(int index)
             => this.loaders[index].CreateGlyph(this);
 

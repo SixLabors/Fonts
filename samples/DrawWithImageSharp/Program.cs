@@ -38,7 +38,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
 #if OS_WINDOWS
             FontFamily notoKR = fonts.Add(@"Fonts\NotoSansKR-Regular.otf");
-            RenderText(notoKR, "Six Labors", pointSize: 72);
+            RenderText(notoKR, "Sphinx of black quartz, judge my vow!", pointSize: 72);
             RenderText(notoKR, "모든인간", pointSize: 72);
             return;
 
