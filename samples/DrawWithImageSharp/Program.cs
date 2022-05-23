@@ -49,11 +49,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily tahoma = SystemFonts.Get("Tahoma");
             var textRuns = new List<TextRun>
             {
-                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
+                new TextRun { Start = 4, End = 10, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
                 new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttributes.Subscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline | TextDecorations.Overline }
             };
 
-            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns, fallbackFonts: new[] { emojiFont });
+            RenderText(uiFont, "The quick👩🏽‍🚒 brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns, fallbackFonts: new[] { emojiFont });
             return;
             string arabic = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ";
             textRuns = new List<TextRun>
