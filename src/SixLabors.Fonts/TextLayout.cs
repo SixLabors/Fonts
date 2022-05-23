@@ -35,14 +35,14 @@ namespace SixLabors.Fonts
                     new()
                     {
                         Start = 0,
-                        End = CodePoint.GetCodePointCount(text),
+                        End = text.GetGraphemeCount(),
                         Font = options.Font
                     }
                 };
             }
 
             int start = 0;
-            int end = CodePoint.GetCodePointCount(text);
+            int end = text.GetGraphemeCount();
             List<TextRun> textRuns = new();
             foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
             {
@@ -136,15 +136,18 @@ namespace SixLabors.Fonts
 
             // First do multiple font runs using the individual text runs.
             bool complete = true;
-            int runIndex = 0;
+            int textRunIndex = 0;
+            int codePointIndex = 0;
+            int bidiRunIndex = 0;
             foreach (TextRun textRun in textRuns)
             {
-                ref int index = ref runIndex;
                 if (!DoFontRun(
                     textRun.Slice(text),
                     textRun.Start,
                     textRuns,
-                    ref index,
+                    ref textRunIndex,
+                    ref codePointIndex,
+                    ref bidiRunIndex,
                     false,
                     textRun.Font!,
                     bidiRuns,
@@ -162,13 +165,16 @@ namespace SixLabors.Fonts
                 // We do a complete run here across the whole collection.
                 foreach (Font font in fallbackFonts)
                 {
-                    runIndex = 0;
-                    ref int index = ref runIndex;
+                    textRunIndex = 0;
+                    codePointIndex = 0;
+                    bidiRunIndex = 0;
                     if (DoFontRun(
                         text,
                         0,
                         textRuns,
-                        ref index,
+                        ref textRunIndex,
+                        ref codePointIndex,
+                        ref bidiRunIndex,
                         true,
                         font,
                         bidiRuns,
@@ -555,7 +561,9 @@ namespace SixLabors.Fonts
             ReadOnlySpan<char> text,
             int start,
             IReadOnlyList<TextRun> textRuns,
-            ref int textRun,
+            ref int textRunIndex,
+            ref int codePointIndex,
+            ref int bidiRunIndex,
             bool isFallbackRun,
             Font font,
             BidiRun[] bidiRuns,
@@ -568,19 +576,17 @@ namespace SixLabors.Fonts
             substitutions.Clear();
 
             // Enumerate through each grapheme in the text.
-            int graphemeIndex;
-            int codePointIndex = start;
-            int bidiRun = 0;
+            int graphemeIndex = start;
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
-            for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
+            while (graphemeEnumerator.MoveNext())
             {
                 int graphemeMax = graphemeEnumerator.Current.Length - 1;
                 int graphemeCodePointIndex = 0;
                 int charIndex = 0;
 
-                if (graphemeIndex == textRuns[textRun].End)
+                if (graphemeIndex == textRuns[textRunIndex].End)
                 {
-                    textRun++;
+                    textRunIndex++;
                 }
 
                 // Now enumerate through each codepoint in the grapheme.
@@ -588,9 +594,9 @@ namespace SixLabors.Fonts
                 var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
-                    if (codePointIndex == bidiRuns[bidiRun].End)
+                    if (codePointIndex == bidiRuns[bidiRunIndex].End)
                     {
-                        bidiRun++;
+                        bidiRunIndex++;
                     }
 
                     if (skipNextCodePoint)
@@ -600,7 +606,7 @@ namespace SixLabors.Fonts
                         continue;
                     }
 
-                    bidiMap[codePointIndex] = bidiRun;
+                    bidiMap[codePointIndex] = bidiRunIndex;
 
                     int charsConsumed = 0;
                     CodePoint current = codePointEnumerator.Current;
@@ -613,11 +619,13 @@ namespace SixLabors.Fonts
 
                     // Get the glyph id for the codepoint and add to the collection.
                     font.FontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
-                    substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRun].Direction, textRuns[textRun], codePointIndex);
+                    substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRunIndex].Direction, textRuns[textRunIndex], codePointIndex);
 
                     codePointIndex++;
                     graphemeCodePointIndex++;
                 }
+
+                graphemeIndex++;
             }
 
             // Apply the simple and complex substitutions.

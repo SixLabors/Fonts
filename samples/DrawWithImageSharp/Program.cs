@@ -40,7 +40,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily notoKR = fonts.Add(@"Fonts\NotoSansKR-Regular.otf");
             RenderText(notoKR, "Sphinx of black quartz, judge my vow!", pointSize: 72);
             RenderText(notoKR, "모든인간", pointSize: 72);
-            return;
+
 
             FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
@@ -53,19 +53,19 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttributes.Subscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline | TextDecorations.Overline }
             };
 
-            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns);
-
+            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns, fallbackFonts: new[] { emojiFont });
+            return;
             string arabic = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ";
             textRuns = new List<TextRun>
             {
-                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecorations.Underline }
+                new TextRun { Start = 0, End = arabic.GetGraphemeCount(), TextDecorations = TextDecorations.Underline }
             };
 
             RenderText(uiFont, arabic, pointSize: 72, textRuns: textRuns);
 
             textRuns = new List<TextRun>
             {
-                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecorations.Underline }
+                new TextRun { Start = 0, End = arabic.GetGraphemeCount(), TextDecorations = TextDecorations.Underline }
             };
             RenderText(bugzilla, arabic, pointSize: 72, textRuns: textRuns);
 
