@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Unicode;
@@ -118,6 +119,8 @@ namespace SixLabors.Fonts
 
         internal Vector2 Offset { get; set; }
 
+        internal TextRun? TextRun { get; set; }
+
         /// <summary>
         /// Gets the glyph Id.
         /// </summary>
@@ -179,11 +182,116 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
         /// </summary>
-        /// <param name="surface">The surface.</param>
+        /// <param name="renderer">The surface renderer.</param>
         /// <param name="pointSize">Size of the point.</param>
         /// <param name="location">The location.</param>
         /// <param name="options">The options used to influence the rendering of this glyph.</param>
-        internal abstract void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, TextOptions options);
+        internal abstract void RenderTo(IGlyphRenderer renderer, float pointSize, Vector2 location, TextOptions options);
+
+        internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, float scaledPPEM)
+        {
+            // TODO: Move to base class
+            (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float position)
+            {
+                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
+                Vector2 offset = location + (this.Offset * scale * MirrorScale);
+
+                // Calculate the correct advance for the line.
+                float width = this.AdvanceWidth;
+                if (width == 0)
+                {
+                    // For zero advance glyphs we must calculate our advance width from bearing + width;
+                    width = this.LeftSideBearing + this.Width;
+                }
+
+                Vector2 tl = (new Vector2(0, position) * scale) + offset;
+                Vector2 tr = (new Vector2(width, position) * scale) + offset;
+                Vector2 bl = (new Vector2(0, position + thickness) * scale) + offset;
+
+                return (tl, tr, tl.Y - bl.Y);
+            }
+
+            void DrawLine(float thickness, float position)
+            {
+                renderer.BeginFigure();
+
+                (Vector2 start, Vector2 end, float finalThickness) = GetEnds(thickness, position);
+                var halfHeight = new Vector2(0, -finalThickness * .5F);
+
+                Vector2 tl = start - halfHeight;
+                Vector2 tr = end - halfHeight;
+                Vector2 bl = start + halfHeight;
+                Vector2 br = end + halfHeight;
+
+                // Clamp the horizontal components to a whole pixel.
+                tl.Y = MathF.Ceiling(tl.Y);
+                tr.Y = MathF.Ceiling(tr.Y);
+                br.Y = MathF.Floor(br.Y);
+                bl.Y = MathF.Floor(bl.Y);
+
+                // Do the same for vertical components.
+                tl.X = MathF.Floor(tl.X);
+                tr.X = MathF.Floor(tr.X);
+                br.X = MathF.Floor(br.X);
+                bl.X = MathF.Floor(bl.X);
+
+                renderer.MoveTo(tl);
+                renderer.LineTo(bl);
+                renderer.LineTo(br);
+                renderer.LineTo(tr);
+
+                renderer.EndFigure();
+            }
+
+            void SetDecoration(TextDecorations decorationType, float thickness, float position)
+            {
+                (Vector2 start, Vector2 end, float calcThickness) = GetEnds(thickness, position);
+                ((IGlyphDecorationRenderer)renderer).SetDecoration(decorationType, start, end, calcThickness);
+            }
+
+            // There's no built in metrics for these values so we will need to infer them from the other metrics.
+            // Offset to avoid clipping.
+            float overlineThickness = this.FontMetrics.UnderlineThickness;
+            float overlinePosition = this.FontMetrics.Ascender - (overlineThickness * .5F);
+            if (renderer is IGlyphDecorationRenderer decorationRenderer)
+            {
+                // Allow the rendered to override the decorations to attach
+                TextDecorations decorations = decorationRenderer.EnabledDecorations();
+                if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
+                {
+                    SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
+                }
+
+                if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
+                {
+                    SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
+                }
+
+                if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
+                {
+                    SetDecoration(TextDecorations.Overline, overlineThickness, overlinePosition);
+                }
+            }
+            else
+            {
+                // TextRun is never null here as rendering is only accessable via a Glyph which
+                // uses the cloned metrics instance.
+                if ((this.TextRun!.TextDecorations & TextDecorations.Underline) == TextDecorations.Underline)
+                {
+                    DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
+                }
+
+                if ((this.TextRun!.TextDecorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
+                {
+                    DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
+                }
+
+                if ((this.TextRun!.TextDecorations & TextDecorations.Overline) == TextDecorations.Overline)
+                {
+                    DrawLine(overlineThickness, overlinePosition);
+                }
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool ShouldSkipGlyphRendering(CodePoint codePoint)

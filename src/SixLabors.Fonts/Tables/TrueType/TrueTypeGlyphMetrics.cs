@@ -18,7 +18,6 @@ namespace SixLabors.Fonts.Tables.TrueType
         private static readonly Vector2 MirrorScale = new(1, -1);
         private readonly GlyphVector vector;
         private readonly Dictionary<float, GlyphVector> scaledVector = new();
-        private TextRun? textRun;
 
         internal TrueTypeGlyphMetrics(
             StreamFontMetrics font,
@@ -69,7 +68,7 @@ namespace SixLabors.Fonts.Tables.TrueType
             {
                 Offset = offset,
                 ScaleFactor = scaleFactor,
-                textRun = textRun
+                TextRun = textRun
             };
         }
 
@@ -79,15 +78,8 @@ namespace SixLabors.Fonts.Tables.TrueType
         /// <returns>The <see cref="GlyphOutline"/>.</returns>
         public GlyphOutline GetOutline() => this.vector.GetOutline();
 
-        /// <summary>
-        /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
-        /// </summary>
-        /// <param name="surface">The surface.</param>
-        /// <param name="pointSize">Size of the point.</param>
-        /// <param name="location">The location.</param>
-        /// <param name="options">The options used to influence the rendering of this glyph.</param>
-        /// <exception cref="NotSupportedException">Too many control points</exception>
-        internal override void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, TextOptions options)
+        /// <inheritdoc/>
+        internal override void RenderTo(IGlyphRenderer renderer, float pointSize, Vector2 location, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -110,13 +102,13 @@ namespace SixLabors.Fonts.Tables.TrueType
 
             // TextRun is never null here as rendering is only accessable via a Glyph which
             // uses the cloned metrics instance.
-            var parameters = new GlyphRendererParameters(this, this.textRun!, pointSize, dpi);
+            var parameters = new GlyphRendererParameters(this, this.TextRun!, pointSize, dpi);
 
-            if (surface.BeginGlyph(box, parameters))
+            if (renderer.BeginGlyph(box, parameters))
             {
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
                 {
-                    if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
+                    if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)
                     {
                         colorSurface.SetColor(this.GlyphColor.Value);
                     }
@@ -140,7 +132,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                     int endOfContour = -1;
                     for (int i = 0; i < outline.EndPoints.Length; i++)
                     {
-                        surface.BeginFigure();
+                        renderer.BeginFigure();
                         int startOfContour = endOfContour + 1;
                         endOfContour = endPoints[i];
 
@@ -150,19 +142,19 @@ namespace SixLabors.Fonts.Tables.TrueType
 
                         if (onCurves[endOfContour])
                         {
-                            surface.MoveTo(curr);
+                            renderer.MoveTo(curr);
                         }
                         else
                         {
                             if (onCurves[startOfContour])
                             {
-                                surface.MoveTo(next);
+                                renderer.MoveTo(next);
                             }
                             else
                             {
                                 // If both first and last points are off-curve, start at their middle.
                                 Vector2 startPoint = (curr + next) * .5F;
-                                surface.MoveTo(startPoint);
+                                renderer.MoveTo(startPoint);
                             }
                         }
 
@@ -179,7 +171,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                             if (onCurves[currentIndex])
                             {
                                 // This is a straight line.
-                                surface.LineTo(curr);
+                                renderer.LineTo(curr);
                             }
                             else
                             {
@@ -189,7 +181,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                                 if (!onCurves[prevIndex])
                                 {
                                     prev2 = (curr + prev) * .5F;
-                                    surface.LineTo(prev2);
+                                    renderer.LineTo(prev2);
                                 }
 
                                 if (!onCurves[nextIndex])
@@ -197,121 +189,19 @@ namespace SixLabors.Fonts.Tables.TrueType
                                     next2 = (curr + next) * .5F;
                                 }
 
-                                surface.LineTo(prev2);
-                                surface.QuadraticBezierTo(curr, next2);
+                                renderer.LineTo(prev2);
+                                renderer.QuadraticBezierTo(curr, next2);
                             }
                         }
 
-                        surface.EndFigure();
+                        renderer.EndFigure();
                     }
                 }
 
-                // TODO: Move to base class
-                (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float position)
-                {
-                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
-                    Vector2 offset = location + (this.Offset * scale * MirrorScale);
-
-                    // Calculate the correct advance for the line.
-                    float width = this.AdvanceWidth;
-                    if (width == 0)
-                    {
-                        // For zero advance glyphs we must calculate our advance width from bearing + width;
-                        width = this.LeftSideBearing + this.Width;
-                    }
-
-                    Vector2 tl = (new Vector2(0, position) * scale) + offset;
-                    Vector2 tr = (new Vector2(width, position) * scale) + offset;
-                    Vector2 bl = (new Vector2(0, position + thickness) * scale) + offset;
-
-                    return (tl, tr, tl.Y - bl.Y);
-                }
-
-                // TODO: Move to base class
-                void DrawLine(float thickness, float position)
-                {
-                    surface.BeginFigure();
-
-                    (Vector2 start, Vector2 end, float finalThickness) = GetEnds(thickness, position);
-                    var halfHeight = new Vector2(0, -finalThickness * .5F);
-
-                    Vector2 tl = start - halfHeight;
-                    Vector2 tr = end - halfHeight;
-                    Vector2 bl = start + halfHeight;
-                    Vector2 br = end + halfHeight;
-
-                    // Clamp the horizontal components to a whole pixel.
-                    tl.Y = MathF.Ceiling(tl.Y);
-                    tr.Y = MathF.Ceiling(tr.Y);
-                    br.Y = MathF.Floor(br.Y);
-                    bl.Y = MathF.Floor(bl.Y);
-
-                    // Do the same for vertical components.
-                    tl.X = MathF.Floor(tl.X);
-                    tr.X = MathF.Floor(tr.X);
-                    br.X = MathF.Floor(br.X);
-                    bl.X = MathF.Floor(bl.X);
-
-                    surface.MoveTo(tl);
-                    surface.LineTo(bl);
-                    surface.LineTo(br);
-                    surface.LineTo(tr);
-
-                    surface.EndFigure();
-                }
-
-                // TODO: Move to base class
-                void SetDecoration(TextDecorations decorationType, float thickness, float position)
-                {
-                    (Vector2 start, Vector2 end, float calcThickness) = GetEnds(thickness, position);
-                    ((IGlyphDecorationRenderer)surface).SetDecoration(decorationType, start, end, calcThickness);
-                }
-
-                // There's no built in metrics for these values so we will need to infer them from the other metrics.
-                // Offset to avoid clipping.
-                float overlineThickness = this.FontMetrics.UnderlineThickness;
-                float overlinePosition = this.FontMetrics.Ascender - (overlineThickness * .5F);
-                if (surface is IGlyphDecorationRenderer decorationSurface)
-                {
-                    // allow the rendered to override the decorations to attach
-                    TextDecorations decorations = decorationSurface.EnabledDecorations();
-                    if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
-                    {
-                        SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
-                    }
-
-                    if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
-                    {
-                        SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
-                    }
-
-                    if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
-                    {
-                        SetDecoration(TextDecorations.Overline, overlineThickness, overlinePosition);
-                    }
-                }
-                else
-                {
-                    // TextRun is never null here as rendering is only accessable via a Glyph which
-                    // uses the cloned metrics instance.
-                    if ((this.textRun!.TextDecorations & TextDecorations.Underline) == TextDecorations.Underline)
-                    {
-                        DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
-                    }
-
-                    if ((this.textRun!.TextDecorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
-                    {
-                        DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
-                    }
-
-                    if ((this.textRun!.TextDecorations & TextDecorations.Overline) == TextDecorations.Overline)
-                    {
-                        DrawLine(overlineThickness, overlinePosition);
-                    }
-                }
+                this.RenderDecorationsTo(renderer, location, scaledPPEM);
             }
 
-            surface.EndGlyph();
+            renderer.EndGlyph();
         }
     }
 }

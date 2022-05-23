@@ -15,7 +15,6 @@ namespace SixLabors.Fonts.Tables.Cff
     {
         private static readonly Vector2 MirrorScale = new(1, -1);
         private Cff1GlyphData glyphData;
-        private TextRun? textRun;
 
         public CffGlyphMetrics(
             StreamFontMetrics font,
@@ -68,12 +67,12 @@ namespace SixLabors.Fonts.Tables.Cff
             {
                 Offset = offset,
                 ScaleFactor = scaleFactor,
-                textRun = textRun
+                TextRun = textRun
             };
         }
 
         /// <inheritdoc/>
-        internal override void RenderTo(IGlyphRenderer surface, float pointSize, Vector2 location, TextOptions options)
+        internal override void RenderTo(IGlyphRenderer renderer, float pointSize, Vector2 location, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -95,25 +94,25 @@ namespace SixLabors.Fonts.Tables.Cff
 
             // TextRun is never null here as rendering is only accessable via a Glyph which
             // uses the cloned metrics instance.
-            var parameters = new GlyphRendererParameters(this, this.textRun!, pointSize, dpi);
-            if (surface.BeginGlyph(box, parameters))
+            var parameters = new GlyphRendererParameters(this, this.TextRun!, pointSize, dpi);
+            if (renderer.BeginGlyph(box, parameters))
             {
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
                 {
-                    if (this.GlyphColor.HasValue && surface is IColorGlyphRenderer colorSurface)
+                    if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)
                     {
                         colorSurface.SetColor(this.GlyphColor.Value);
                     }
 
                     Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
                     Vector2 offset = location + (this.Offset * scale * MirrorScale);
-                    CffEvaluationEngine.Run(ref surface, this.glyphData.GlyphInstructions.Span, scale, offset);
+                    CffEvaluationEngine.Run(ref renderer, this.glyphData.GlyphInstructions.Span, scale, offset);
                 }
 
-                // TODO: Rich text
+                this.RenderDecorationsTo(renderer, location, scaledPPEM);
             }
 
-            surface.EndGlyph();
+            renderer.EndGlyph();
         }
     }
 }
