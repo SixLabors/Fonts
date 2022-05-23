@@ -19,7 +19,5 @@ namespace SixLabors.Fonts.Tables.Cff
         /// Gets the individual fonts contained within this collection
         /// </summary>
         public List<Cff1Font> Fonts { get; } = new List<Cff1Font>();
-
-        internal string[] _uniqueStringTable;
     }
 }

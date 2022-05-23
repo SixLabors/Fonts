@@ -21,12 +21,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public string? GlyphName { get; set; }
 
-        public Bounds GetBounds()
-        {
-            // TODO: Boxing.
-            IGlyphRenderer finder = CffBoundsFinder.Create();
-            CffEvaluationEngine.Run(ref finder, this.GlyphInstructions.Span, Vector2.One, Vector2.Zero, default, default);
-            return ((CffBoundsFinder)finder).GetBounds();
-        }
+        public Bounds GetBounds() => CffEvaluationEngine.GetBounds(this.GlyphInstructions.Span, Vector2.One, Vector2.Zero);
     }
 }

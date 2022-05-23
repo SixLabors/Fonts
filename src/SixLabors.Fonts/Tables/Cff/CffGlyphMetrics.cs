@@ -107,7 +107,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
                     Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
                     Vector2 offset = location + (this.Offset * scale * MirrorScale);
-                    CffEvaluationEngine.Run(ref surface, this.glyphData.GlyphInstructions.Span, scale, offset, box, parameters);
+                    CffEvaluationEngine.Run(ref surface, this.glyphData.GlyphInstructions.Span, scale, offset);
                 }
 
                 // TODO: Rich text

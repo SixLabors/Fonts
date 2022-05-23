@@ -12,21 +12,40 @@ namespace SixLabors.Fonts.Tables.Cff
     /// </summary>
     internal static class CffEvaluationEngine
     {
-        public static void Run(ref IGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructions, Vector2 scale, Vector2 offset, FontRectangle bounds, GlyphRendererParameters parameters)
+        public static Bounds GetBounds(ReadOnlySpan<Type2Instruction> instructions, Vector2 scale, Vector2 offset)
+        {
+            // TODO: There's likely no need to track these
+            double currentX = 0;
+            double currentY = 0;
+            var finder = CffBoundsFinder.Create();
+            TransformingGlyphRenderer scalingGlyphRenderer = new(scale, offset, finder);
+
+            // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
+            Run(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
+
+            // Some CFF end without closing the latest contour.
+            if (scalingGlyphRenderer.IsOpen)
+            {
+                scalingGlyphRenderer.EndFigure();
+            }
+
+            return finder.GetBounds();
+        }
+
+        public static void Run(ref IGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructions, Vector2 scale, Vector2 offset)
         {
             // TODO: There's likely no need to track these
             double currentX = 0;
             double currentY = 0;
             TransformingGlyphRenderer scalingGlyphRenderer = new(scale, offset, renderer);
-            if (scalingGlyphRenderer.BeginGlyph(bounds, parameters))
-            {
-                Run(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
 
-                // Some CFF end without closing the latest contour.
-                if (scalingGlyphRenderer.IsOpen)
-                {
-                    scalingGlyphRenderer.EndFigure();
-                }
+            // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
+            Run(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
+
+            // Some CFF end without closing the latest contour.
+            if (scalingGlyphRenderer.IsOpen)
+            {
+                scalingGlyphRenderer.EndFigure();
             }
         }
 
