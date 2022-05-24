@@ -252,6 +252,8 @@ namespace SixLabors.Fonts
             // There's no built in metrics for these values so we will need to infer them from the other metrics.
             // Offset to avoid clipping.
             float overlineThickness = this.FontMetrics.UnderlineThickness;
+
+            // TODO: Check this. Segoe UI glyphs live outside the metrics so the overline covers the glyph.
             float overlinePosition = this.FontMetrics.Ascender - (overlineThickness * .5F);
             if (renderer is IGlyphDecorationRenderer decorationRenderer)
             {
@@ -295,10 +297,7 @@ namespace SixLabors.Fonts
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool ShouldSkipGlyphRendering(CodePoint codePoint)
-        {
-            uint value = (uint)codePoint.Value;
-            return UnicodeUtility.IsDefaultIgnorableCodePoint(value) && !ShouldRenderWhiteSpaceOnly(codePoint);
-        }
+            => UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) && !ShouldRenderWhiteSpaceOnly(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool ShouldRenderWhiteSpaceOnly(CodePoint codePoint)

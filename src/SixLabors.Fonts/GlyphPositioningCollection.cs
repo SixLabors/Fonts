@@ -216,8 +216,7 @@ namespace SixLabors.Fonts
             // Remove any orphans.
             for (int i = orphans.Count - 1; i >= 0; i--)
             {
-                int idx = orphans[i];
-                this.glyphs.RemoveAt(idx);
+                this.glyphs.RemoveAt(orphans[i]);
             }
 
             return !hasFallBacks;

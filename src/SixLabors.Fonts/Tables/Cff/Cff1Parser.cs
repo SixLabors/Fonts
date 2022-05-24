@@ -47,38 +47,31 @@ namespace SixLabors.Fonts.Tables.Cff
         // Private DICT              per-font
         // Local Subr INDEX          per-font or per-Private DICT for CIDFonts
         // Copyright and Trademark  -
-        private Cff1Font currentCff1Font;
         private long _cffStartAt;
         private int _charStringsOffset;
         private int _charsetOffset;
         private int _encodingOffset = -1;
 
-        public CffFontSet Load(BigEndianBinaryReader reader, long offset)
+        public Cff1Font Load(BigEndianBinaryReader reader, long offset)
         {
             this._cffStartAt = offset;
-            CffFontSet fontSet = new();
-            this._cidFontInfo = new CidFontInfo();
 
             string fontName = this.ReadNameIndex(reader);
-
-            // TODO: Move this.
-            fontSet.FontName = fontName;
-            this.currentCff1Font = new Cff1Font();
-            this.currentCff1Font.FontName = fontName;
-            fontSet.Fonts.Add(this.currentCff1Font);
-
             List<CffDataDicEntry>? dataDicEntries = this.ReadTopDICTIndex(reader);
             string[] stringIndex = this.ReadStringIndex(reader);
-            this.ResolveTopDictInfo(dataDicEntries, stringIndex);
-            this.ReadGlobalSubrIndex(reader);
-            this.ReadFDSelect(reader);
-            this.ReadFDArray(reader);
-            this.ReadPrivateDict(reader);
-            this.ReadCharStringsIndex(reader);
-            this.ReadCharsets(reader, stringIndex);
+            CffTopDictionary topDictionary = this.ResolveTopDictInfo(dataDicEntries, stringIndex);
+            byte[][] globalSubrRawBuffers = this.ReadGlobalSubrIndex(reader);
+            this.ReadFDSelect(reader, topDictionary.CidFontInfo);
+            FontDict[] fontDicts = this.ReadFDArray(reader, topDictionary.CidFontInfo);
+            CffPrivateDictionary? privateDictionary = this.ReadPrivateDict(reader);
+            Cff1GlyphData[] glyphs = this.ReadCharStringsIndex(reader, topDictionary, globalSubrRawBuffers, fontDicts, privateDictionary);
+
+            this.ReadCharsets(reader, stringIndex, glyphs);
             this.ReadEncodings(reader);
 
-            return fontSet;
+            Cff1Font font = new(fontName, topDictionary, glyphs);
+
+            return font;
         }
 
         private string ReadNameIndex(BigEndianBinaryReader reader)
@@ -152,8 +145,6 @@ namespace SixLabors.Fonts.Tables.Cff
             // Default, notes  column of Table 9)
             return this.ReadDICTData(reader, offsets[0].Length);
         }
-
-        private CidFontInfo _cidFontInfo;
 
         private string[] ReadStringIndex(BigEndianBinaryReader reader)
         {
@@ -243,9 +234,10 @@ namespace SixLabors.Fonts.Tables.Cff
             return "SID" + index;
         }
 
-        private void ResolveTopDictInfo(List<CffDataDicEntry> entries, string[] stringIndex)
+        private CffTopDictionary ResolveTopDictInfo(List<CffDataDicEntry> entries, string[] stringIndex)
         {
-            // translate top-dic***
+            // TODO: Is CID mandatory?
+            CffTopDictionary metrics = new();
             foreach (CffDataDicEntry entry in entries)
             {
                 switch (entry.Operator.Name)
@@ -258,31 +250,31 @@ namespace SixLabors.Fonts.Tables.Cff
                     case "XUID":
                         break; // nothing
                     case "version":
-                        this.currentCff1Font.Version = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                        metrics.Version = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                         break;
                     case "Notice":
-                        this.currentCff1Font.Notice = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                        metrics.Notice = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                         break;
                     case "Copyright":
-                        this.currentCff1Font.CopyRight = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                        metrics.CopyRight = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                         break;
                     case "FullName":
-                        this.currentCff1Font.FullName = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                        metrics.FullName = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                         break;
                     case "FamilyName":
-                        this.currentCff1Font.FamilyName = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                        metrics.FamilyName = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                         break;
                     case "Weight":
-                        this.currentCff1Font.Weight = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                        metrics.Weight = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                         break;
                     case "UnderlinePosition":
-                        this.currentCff1Font.UnderlinePosition = entry.Operands[0].RealNumValue;
+                        metrics.UnderlinePosition = entry.Operands[0].RealNumValue;
                         break;
                     case "UnderlineThickness":
-                        this.currentCff1Font.UnderlineThickness = entry.Operands[0].RealNumValue;
+                        metrics.UnderlineThickness = entry.Operands[0].RealNumValue;
                         break;
                     case "FontBBox":
-                        this.currentCff1Font.FontBBox = new double[]
+                        metrics.FontBBox = new double[]
                         {
                             entry.Operands[0].RealNumValue,
                             entry.Operands[1].RealNumValue,
@@ -312,28 +304,30 @@ namespace SixLabors.Fonts.Tables.Cff
 
                         // ROS operator combines the Registry, Ordering, and Supplement keys together.
                         // see Adobe Cmap resource , https://github.com/adobe-type-tools/cmap-resources
-                        this._cidFontInfo.ROS_Register = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
-                        this._cidFontInfo.ROS_Ordering = this.GetSid((int)entry.Operands[1].RealNumValue, stringIndex);
-                        this._cidFontInfo.ROS_Supplement = this.GetSid((int)entry.Operands[2].RealNumValue, stringIndex);
+                        metrics.CidFontInfo.ROS_Register = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                        metrics.CidFontInfo.ROS_Ordering = this.GetSid((int)entry.Operands[1].RealNumValue, stringIndex);
+                        metrics.CidFontInfo.ROS_Supplement = this.GetSid((int)entry.Operands[2].RealNumValue, stringIndex);
 
                         break;
                     case "CIDFontVersion":
-                        this._cidFontInfo.CIDFontVersion = entry.Operands[0].RealNumValue;
+                        metrics.CidFontInfo.CIDFontVersion = entry.Operands[0].RealNumValue;
                         break;
                     case "CIDCount":
-                        this._cidFontInfo.CIDFountCount = (int)entry.Operands[0].RealNumValue;
+                        metrics.CidFontInfo.CIDFountCount = (int)entry.Operands[0].RealNumValue;
                         break;
                     case "FDSelect":
-                        this._cidFontInfo.FDSelect = (int)entry.Operands[0].RealNumValue;
+                        metrics.CidFontInfo.FDSelect = (int)entry.Operands[0].RealNumValue;
                         break;
                     case "FDArray":
-                        this._cidFontInfo.FDArray = (int)entry.Operands[0].RealNumValue;
+                        metrics.CidFontInfo.FDArray = (int)entry.Operands[0].RealNumValue;
                         break;
                 }
             }
+
+            return metrics;
         }
 
-        private void ReadGlobalSubrIndex(BigEndianBinaryReader reader)
+        private byte[][] ReadGlobalSubrIndex(BigEndianBinaryReader reader)
 
            // 16. Local / Global Subrs INDEXes
            // Both Type 1 and Type 2 charstrings support the notion of
@@ -362,9 +356,9 @@ namespace SixLabors.Fonts.Tables.Cff
            // Global subrs are stored in an INDEX structure which follows the
            // String INDEX. A FontSet without any global subrs is represented
            // by an empty Global Subrs INDEX.
-           => this.currentCff1Font._globalSubrRawBufferList = this.ReadSubrBuffer(reader);
+           => this.ReadSubrBuffer(reader);
 
-        private void ReadLocalSubrs(BigEndianBinaryReader reader) => this.currentCff1Font._localSubrRawBufferList = this.ReadSubrBuffer(reader);
+        private byte[][] ReadLocalSubrs(BigEndianBinaryReader reader) => this.ReadSubrBuffer(reader);
 
         private void ReadEncodings(BigEndianBinaryReader reader)
         {
@@ -400,7 +394,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // TODO: ...
         }
 
-        private void ReadCharsets(BigEndianBinaryReader reader, string[] stringIndex)
+        private void ReadCharsets(BigEndianBinaryReader reader, string[] stringIndex, Cff1GlyphData[] glyphs)
         {
             // Charset data is located via the offset operand to the
             // charset operator in the Top DICT.
@@ -415,18 +409,18 @@ namespace SixLabors.Fonts.Tables.Cff
                 default:
                     throw new NotSupportedException();
                 case 0:
-                    this.ReadCharsetsFormat0(reader, stringIndex);
+                    this.ReadCharsetsFormat0(reader, stringIndex, glyphs);
                     break;
                 case 1:
-                    this.ReadCharsetsFormat1(reader, stringIndex);
+                    this.ReadCharsetsFormat1(reader, stringIndex, glyphs);
                     break;
                 case 2:
-                    this.ReadCharsetsFormat2(reader, stringIndex);
+                    this.ReadCharsetsFormat2(reader, stringIndex, glyphs);
                     break;
             }
         }
 
-        private void ReadCharsetsFormat0(BigEndianBinaryReader reader, string[] stringIndex)
+        private void ReadCharsetsFormat0(BigEndianBinaryReader reader, string[] stringIndex, Cff1GlyphData[] glyphs)
         {
             // Table 17: Format 0
             // Type     Name                Description
@@ -440,16 +434,14 @@ namespace SixLabors.Fonts.Tables.Cff
             // CharStrings INDEX. (There is
             // one less element in the glyph name array than nGlyphs because
             // the .notdef glyph name is omitted.)
-            Cff1GlyphData[] cff1Glyphs = this.currentCff1Font._glyphs;
-            int nGlyphs = cff1Glyphs.Length;
-            for (int i = 1; i < nGlyphs; ++i)
+            for (int i = 1; i < glyphs.Length; ++i)
             {
-                ref Cff1GlyphData data = ref cff1Glyphs[i];
+                ref Cff1GlyphData data = ref glyphs[i];
                 data.GlyphName = this.GetSid(reader.ReadUInt16(), stringIndex);
             }
         }
 
-        private void ReadCharsetsFormat1(BigEndianBinaryReader reader, string[] stringIndex)
+        private void ReadCharsetsFormat1(BigEndianBinaryReader reader, string[] stringIndex, Cff1GlyphData[] glyphs)
         {
             // Table 18 Format 1
             // Type     Name                Description
@@ -466,15 +458,13 @@ namespace SixLabors.Fonts.Tables.Cff
             // utilizing this data simply processes ranges until all glyphs in the
             // font are covered. This format is particularly suited to charsets
             // that are well ordered
-            Cff1GlyphData[] cff1Glyphs = this.currentCff1Font._glyphs;
-            int nGlyphs = cff1Glyphs.Length;
-            for (int i = 1; i < nGlyphs;)
+            for (int i = 1; i < glyphs.Length;)
             {
                 int sid = reader.ReadUInt16(); // First glyph in range
                 int count = reader.ReadByte() + 1; // since it does not include first element.
                 do
                 {
-                    ref Cff1GlyphData data = ref cff1Glyphs[i];
+                    ref Cff1GlyphData data = ref glyphs[i];
                     data.GlyphName = this.GetSid(sid, stringIndex);
 
                     count--;
@@ -485,7 +475,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void ReadCharsetsFormat2(BigEndianBinaryReader reader, string[] stringIndex)
+        private void ReadCharsetsFormat2(BigEndianBinaryReader reader, string[] stringIndex, Cff1GlyphData[] glyphs)
         {
             // note:eg, Adobe's source-code-pro font
 
@@ -503,15 +493,13 @@ namespace SixLabors.Fonts.Tables.Cff
 
             // Format 2 differs from format 1 only in the size of the nLeft field in each range.
             // This format is most suitable for fonts with a large well - ordered charset — for example, for Asian CIDFonts.
-            Cff1GlyphData[] cff1Glyphs = this.currentCff1Font._glyphs;
-            int nGlyphs = cff1Glyphs.Length;
-            for (int i = 1; i < nGlyphs;)
+            for (int i = 1; i < glyphs.Length;)
             {
                 int sid = reader.ReadUInt16(); // First glyph in range
                 int count = reader.ReadUInt16() + 1; // since it does not include first element.
                 do
                 {
-                    ref Cff1GlyphData data = ref cff1Glyphs[i];
+                    ref Cff1GlyphData data = ref glyphs[i];
                     data.GlyphName = this.GetSid(sid, stringIndex);
 
                     count--;
@@ -522,7 +510,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void ReadFDSelect(BigEndianBinaryReader reader)
+        private void ReadFDSelect(BigEndianBinaryReader reader, CidFontInfo cidFontInfo)
         {
             // http://wwwimages.adobe.com/www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5176.CFF.pdf
             // 19. FDSelect
@@ -538,7 +526,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // TODO: ...
 
             // FDSelect   12 37  number      –, FDSelect offset
-            if (this._cidFontInfo.FDSelect == 0)
+            if (cidFontInfo.FDSelect == 0)
             {
                 return;
             }
@@ -581,7 +569,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // (The sentinel GID is set equal to the number of glyphs in the font.
             // That is, its value is 1 greater than the last GID in the font.)
             // This format is particularly suited to FD indexes that are well ordered(the usual case).
-            reader.BaseStream.Position = this._cffStartAt + this._cidFontInfo.FDSelect;
+            reader.BaseStream.Position = this._cffStartAt + cidFontInfo.FDSelect;
             byte format = reader.ReadByte();
 
             switch (format)
@@ -590,8 +578,8 @@ namespace SixLabors.Fonts.Tables.Cff
                     ushort nRanges = reader.ReadUInt16();
                     var ranges = new FDRange3[nRanges + 1];
 
-                    this._cidFontInfo.FdSelectFormat = 3;
-                    this._cidFontInfo.FdRanges = ranges;
+                    cidFontInfo.FdSelectFormat = 3;
+                    cidFontInfo.FdRanges = ranges;
                     for (int i = 0; i < nRanges; ++i)
                     {
                         ranges[i] = new FDRange3(reader.ReadUInt16(), reader.ReadByte());
@@ -606,40 +594,22 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private readonly struct FDRange3
+        private FontDict[] ReadFDArray(BigEndianBinaryReader reader, CidFontInfo cidFontInfo)
         {
-            public readonly ushort first;
-            public readonly byte fd;
-
-            public FDRange3(ushort first, byte fd)
+            if (cidFontInfo.FDArray == 0)
             {
-                this.first = first;
-                this.fd = fd;
+                return Array.Empty<FontDict>();
             }
 
-#if DEBUG
-            public override string ToString() => "first:" + this.first + ",fd:" + this.fd;
-#endif
-        }
-
-        private void ReadFDArray(BigEndianBinaryReader reader)
-        {
-            if (this._cidFontInfo.FDArray == 0)
-            {
-                return;
-            }
-
-            reader.BaseStream.Position = this._cffStartAt + this._cidFontInfo.FDArray;
+            reader.BaseStream.Position = this._cffStartAt + cidFontInfo.FDArray;
 
             if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
-                return;
+                return Array.Empty<FontDict>();
             }
 
-            List<FontDict> fontDicts = new();
-            this.currentCff1Font._cidFontDict = fontDicts;
-
-            for (int i = 0; i < offsets.Length; ++i)
+            var fontDicts = new FontDict[offsets.Length];
+            for (int i = 0; i < fontDicts.Length; ++i)
             {
                 // read DICT data
                 List<CffDataDicEntry> dic = this.ReadDICTData(reader, offsets[i].Length);
@@ -665,9 +635,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     }
                 }
 
-                FontDict fontdict = new(size, offset);
-                fontdict.FontName = name;
-                fontDicts.Add(fontdict);
+                fontDicts[i] = new FontDict(name, size, offset);
             }
 
             foreach (FontDict fdict in fontDicts)
@@ -678,7 +646,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
                 if (dicData.Count > 0)
                 {
-                    // interpret the values of private dict
+                    // Interpret the values of private dict
                     foreach (CffDataDicEntry dicEntry in dicData)
                     {
                         switch (dicEntry.Operator.Name)
@@ -702,6 +670,8 @@ namespace SixLabors.Fonts.Tables.Cff
                     }
                 }
             }
+
+            return fontDicts;
         }
 
         private struct FDRangeProvider
@@ -766,7 +736,12 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void ReadCharStringsIndex(BigEndianBinaryReader reader)
+        private Cff1GlyphData[] ReadCharStringsIndex(
+            BigEndianBinaryReader reader,
+            CffTopDictionary topDictionary,
+            byte[][] globalSubrRawBuffers,
+            FontDict[] fontDicts,
+            CffPrivateDictionary? privateDictionary)
         {
             // 14. CharStrings INDEX
 
@@ -801,26 +776,26 @@ namespace SixLabors.Fonts.Tables.Cff
             reader.BaseStream.Position = this._cffStartAt + this._charStringsOffset;
             if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
-                return;
+                throw new InvalidFontFileException("No glyph data found.");
             }
 
 #if DEBUG
             if (offsets.Length > ushort.MaxValue)
-            { throw new NotSupportedException(); }
+            {
+                throw new NotSupportedException();
+            }
 #endif
             int glyphCount = offsets.Length;
             var glyphs = new Cff1GlyphData[glyphCount];
-            this.currentCff1Font._glyphs = glyphs;
-            Type2CharStringParser type2Parser = new();
-            type2Parser.SetCurrentCff1Font(this.currentCff1Font);
+            Type2CharStringParser type2Parser = new(globalSubrRawBuffers, privateDictionary);
 
 #if DEBUG
             double total = 0;
 #endif
 
             // cid font or not
-            var fdRangeProvider = new FDRangeProvider(this._cidFontInfo.FdRanges);
-            bool isCidFont = this._cidFontInfo.FdRanges != null;
+            var fdRangeProvider = new FDRangeProvider(topDictionary.CidFontInfo.FdRanges);
+            bool isCidFont = topDictionary.CidFontInfo.FdRanges.Length > 0;
 
             for (int i = 0; i < glyphCount; ++i)
             {
@@ -850,7 +825,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 {
                     // select  proper local private dict
                     fdRangeProvider.SetCurrentGlyphIndex((ushort)i);
-                    type2Parser.SetCidFontDict(this.currentCff1Font._cidFontDict[fdRangeProvider.SelectedFDArray]);
+                    type2Parser.SetCidFontDict(fontDicts[fdRangeProvider.SelectedFDArray]);
                 }
 
                 Type2Instruction[]? instructions = null;
@@ -887,6 +862,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 #endif
 
+            return glyphs;
         }
 
         //---------------
@@ -955,20 +931,23 @@ namespace SixLabors.Fonts.Tables.Cff
         private int _privateDICTOffset;
         private int _privateDICTLen;
 
-        private void ReadPrivateDict(BigEndianBinaryReader reader)
+        private CffPrivateDictionary? ReadPrivateDict(BigEndianBinaryReader reader)
         {
             // per-font
             if (this._privateDICTLen == 0)
             {
-                return;
+                return null;
             }
 
             reader.BaseStream.Position = this._cffStartAt + this._privateDICTOffset;
             List<CffDataDicEntry> dicData = this.ReadDICTData(reader, this._privateDICTLen);
+            byte[][] localSubrRawBuffers = Array.Empty<byte[]>();
+            int defaultWidthX = 0;
+            int nominalWidthX = 0;
 
             if (dicData.Count > 0)
             {
-                // interpret the values of private dict
+                // Interpret the values of private dict
                 foreach (CffDataDicEntry dicEntry in dicData)
                 {
                     switch (dicEntry.Operator.Name)
@@ -976,15 +955,15 @@ namespace SixLabors.Fonts.Tables.Cff
                         case "Subrs":
                             int localSubrsOffset = (int)dicEntry.Operands[0].RealNumValue;
                             reader.BaseStream.Position = this._cffStartAt + this._privateDICTOffset + localSubrsOffset;
-                            this.ReadLocalSubrs(reader);
+                            localSubrRawBuffers = this.ReadLocalSubrs(reader);
                             break;
 
                         case "defaultWidthX":
-                            this.currentCff1Font._defaultWidthX = (int)dicEntry.Operands[0].RealNumValue;
+                            defaultWidthX = (int)dicEntry.Operands[0].RealNumValue;
                             break;
 
                         case "nominalWidthX":
-                            this.currentCff1Font._nominalWidthX = (int)dicEntry.Operands[0].RealNumValue;
+                            nominalWidthX = (int)dicEntry.Operands[0].RealNumValue;
                             break;
 
                         default:
@@ -995,25 +974,23 @@ namespace SixLabors.Fonts.Tables.Cff
                     }
                 }
             }
+
+            return new CffPrivateDictionary(localSubrRawBuffers, defaultWidthX, nominalWidthX);
         }
 
-        private List<byte[]> ReadSubrBuffer(BigEndianBinaryReader reader)
+        private byte[][] ReadSubrBuffer(BigEndianBinaryReader reader)
         {
-            // TODO: Return either empty or make this a TryRead bool.
             if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
-                return null;
+                return Array.Empty<byte[]>();
             }
 
-            //
-            int nsubrs = offsets.Length;
-            List<byte[]> rawBufferList = new();
+            byte[][] rawBufferList = new byte[offsets.Length][];
 
-            for (int i = 0; i < nsubrs; ++i)
+            for (int i = 0; i < rawBufferList.Length; ++i)
             {
                 CffIndexOffset offset = offsets[i];
-                byte[] charStringBuffer = reader.ReadBytes(offset.Length);
-                rawBufferList.Add(charStringBuffer);
+                rawBufferList[i] = reader.ReadBytes(offset.Length);
             }
 
             return rawBufferList;
@@ -1293,27 +1270,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
             value = indexElems;
             return true;
-        }
-
-        private class CidFontInfo
-        {
-            public string? ROS_Register { get; set; }
-
-            public string? ROS_Ordering { get; set; }
-
-            public string? ROS_Supplement { get; set; }
-
-            public double CIDFontVersion { get; set; }
-
-            public int CIDFountCount { get; set; }
-
-            public int FDSelect { get; set; }
-
-            public int FDArray { get; set; }
-
-            public int FdSelectFormat { get; set; }
-
-            public FDRange3[] FdRanges { get; set; }
         }
 
         private readonly struct CffIndexOffset

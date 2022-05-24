@@ -1,14 +1,13 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Generic;
-
 namespace SixLabors.Fonts.Tables.Cff
 {
     internal class FontDict
     {
-        public FontDict(int dictSize, int dictOffset)
+        public FontDict(int name, int dictSize, int dictOffset)
         {
+            this.FontName = name;
             this.PrivateDicSize = dictSize;
             this.PrivateDicOffset = dictOffset;
         }
@@ -19,6 +18,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public int PrivateDicOffset { get; }
 
-        public List<byte[]>? LocalSubr { get; set; }
+        public byte[][]? LocalSubr { get; set; }
     }
 }

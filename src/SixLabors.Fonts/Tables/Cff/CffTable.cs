@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private readonly Cff1GlyphData[] glyphs;
 
-        public CffTable(CffFontSet cff1FontSet) => this.glyphs = cff1FontSet.Fonts[0]._glyphs;
+        public CffTable(Cff1Font cff1Font) => this.glyphs = cff1Font.Glyphs;
 
         public int GlyphCount => this.glyphs.Length;
 

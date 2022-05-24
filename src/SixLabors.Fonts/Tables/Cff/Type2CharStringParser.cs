@@ -8,6 +8,9 @@ namespace SixLabors.Fonts.Tables.Cff
 {
     internal class Type2CharStringParser
     {
+        private readonly byte[][] globalSubrRawBuffers;
+        private readonly CffPrivateDictionary? privateDictionary;
+
         // from https://www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5177.Type2.pdf
         // Type 2 Charstring Organization:
         // ...
@@ -31,44 +34,39 @@ namespace SixLabors.Fonts.Tables.Cff
         // width: If the charstring has a width other than that of defaultWidthX(see Technical Note #5176, “The Compact Font Format Specification”),
         // it must be specified as the first number in the charstring,
         // and encoded as the difference from nominalWidthX
-
-        public Type2CharStringParser()
+        public Type2CharStringParser(byte[][] globalSubrRawBuffers, CffPrivateDictionary? privateDictionary)
         {
+            this.globalSubrRawBuffers = globalSubrRawBuffers;
+            this.privateDictionary = privateDictionary;
+
+            if (globalSubrRawBuffers.Length > 0)
+            {
+                this._globalSubrBias = CalculateBias(globalSubrRawBuffers.Length);
+            }
+
+            if (this.privateDictionary?.LocalSubrRawBuffers.Length > 0)
+            {
+                this._localSubrBias = CalculateBias(this.privateDictionary.LocalSubrRawBuffers.Length);
+            }
         }
 
 #if DEBUG
-        int _dbugCount = 0;
-        int _dbugInstructionListMark = 0;
+        private int _dbugCount = 0;
+        private int _dbugInstructionListMark = 0;
 #endif
-        int _hintStemCount = 0;
-        bool _foundSomeStem = false;
-        bool _enterPathConstructionSeq = false;
+        private int _hintStemCount = 0;
+        private bool _foundSomeStem = false;
+        private bool _enterPathConstructionSeq = false;
+        private Type2GlyphInstructionList _insts;
+        private int _current_integer_count = 0;
+        private bool _doStemCount = true;
 
-        Type2GlyphInstructionList _insts;
-        int _current_integer_count = 0;
-        bool _doStemCount = true;
-        Cff1Font _currentCff1Font;
-        int _globalSubrBias;
-        int _localSubrBias;
+        //Cff1Font _currentCff1Font;
+        private FontDict _currentFontDict;
+        private int _globalSubrBias;
+        private int _localSubrBias;
 
-        public void SetCurrentCff1Font(Cff1Font currentCff1Font)
-        {
-            // this will provide subr buffer for callsubr callgsubr
-            this._currentFontDict = null; // reset
-            this._currentCff1Font = currentCff1Font;
-
-            if (this._currentCff1Font._globalSubrRawBufferList != null)
-            {
-                this._globalSubrBias = CalculateBias(currentCff1Font._globalSubrRawBufferList.Count);
-            }
-            if (this._currentCff1Font._localSubrRawBufferList != null)
-            {
-                this._localSubrBias = CalculateBias(currentCff1Font._localSubrRawBufferList.Count);
-            }
-        }
-
-
-        static int CalculateBias(int nsubr)
+        private static int CalculateBias(int nsubr)
         {
             //-------------
             // from Technical Note #5176 (CFF spec)
@@ -87,10 +85,10 @@ namespace SixLabors.Fonts.Tables.Cff
             return (nsubr < 1240) ? 107 : (nsubr < 33900) ? 1131 : 32768;
         }
 
-        struct SimpleBinaryReader
+        private struct SimpleBinaryReader
         {
-            byte[] _buffer;
-            int _pos;
+            private byte[] _buffer;
+            private int _pos;
 
             public SimpleBinaryReader(byte[] buffer)
             {
@@ -122,7 +120,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        void ParseType2CharStringBuffer(byte[] buffer)
+        private void ParseType2CharStringBuffer(byte[] buffer)
         {
             byte b0 = 0;
 
@@ -397,58 +395,54 @@ namespace SixLabors.Fonts.Tables.Cff
                         {
                             throw new NotSupportedException();
                         }
-
 #endif
                         return;
                     //-------------------------------------------------------------------
                     case (byte)Type2Operator1.callsubr:
 
                         // get local subr proc
-                        if (this._currentCff1Font != null)
+                        Type2Instruction inst = this._insts.RemoveLast();
+                        if (!inst.IsLoadInt)
                         {
-                            Type2Instruction inst = this._insts.RemoveLast();
-                            if (!inst.IsLoadInt)
-                            {
-                                throw new NotSupportedException();
-                            }
-                            if (this._doStemCount)
-                            {
-                                this._current_integer_count--;
-                            }
-                            // subr_no must be adjusted with proper bias value
-                            if (this._currentCff1Font._localSubrRawBufferList != null)
-                            {
-                                this.ParseType2CharStringBuffer(this._currentCff1Font._localSubrRawBufferList[inst.Value + this._localSubrBias]);
-                            }
-                            else if (this._currentFontDict != null)
-                            {
-                                // use private dict
-                                this.ParseType2CharStringBuffer(this._currentFontDict.LocalSubr[inst.Value + this._localSubrBias]);
-                            }
-                            else
-                            {
-                                throw new NotSupportedException();
-                            }
+                            throw new NotSupportedException();
+                        }
+
+                        if (this._doStemCount)
+                        {
+                            this._current_integer_count--;
+                        }
+
+                        // subr_no must be adjusted with proper bias value
+                        if (this.privateDictionary?.LocalSubrRawBuffers.Length > 0)
+                        {
+                            this.ParseType2CharStringBuffer(this.privateDictionary.LocalSubrRawBuffers[inst.Value + this._localSubrBias]);
+                        }
+                        else if (this._currentFontDict.LocalSubr != null)
+                        {
+                            // use private dict
+                            this.ParseType2CharStringBuffer(this._currentFontDict.LocalSubr[inst.Value + this._localSubrBias]);
+                        }
+                        else
+                        {
+                            throw new NotSupportedException();
                         }
 
                         break;
                     case (byte)Type2Operator1.callgsubr:
 
-                        if (this._currentCff1Font != null)
+                        Type2Instruction inst2 = this._insts.RemoveLast();
+                        if (!inst2.IsLoadInt)
                         {
-                            Type2Instruction inst = this._insts.RemoveLast();
-                            if (!inst.IsLoadInt)
-                            {
-                                throw new NotSupportedException();
-                            }
-                            if (this._doStemCount)
-                            {
-                                this._current_integer_count--;
-                            }
-                            // subr_no must be adjusted with proper bias value
-                            // load global subr
-                            this.ParseType2CharStringBuffer(this._currentCff1Font._globalSubrRawBufferList[inst.Value + this._globalSubrBias]);
+                            throw new NotSupportedException();
                         }
+                        if (this._doStemCount)
+                        {
+                            this._current_integer_count--;
+                        }
+
+                        // subr_no must be adjusted with proper bias value
+                        // load global subr
+                        this.ParseType2CharStringBuffer(this.globalSubrRawBuffers[inst2.Value + this._globalSubrBias]);
 
                         break;
                 }
@@ -458,7 +452,7 @@ namespace SixLabors.Fonts.Tables.Cff
 #if DEBUG
         public ushort dbugCurrentGlyphIndex;
 #endif
-        FontDict _currentFontDict;
+
 
         public void SetCidFontDict(FontDict fontdic)
         {
@@ -472,7 +466,7 @@ namespace SixLabors.Fonts.Tables.Cff
             this._currentFontDict = fontdic;
             if (fontdic.LocalSubr != null)
             {
-                this._localSubrBias = CalculateBias(this._currentFontDict.LocalSubr.Count);
+                this._localSubrBias = CalculateBias(this._currentFontDict.LocalSubr.Length);
             }
             else
             {
@@ -493,10 +487,7 @@ namespace SixLabors.Fonts.Tables.Cff
             //--------------------
 #if DEBUG
             this._dbugInstructionListMark++;
-            if (this._currentCff1Font == null)
-            {
-                throw new NotSupportedException();
-            }
+
             //
             this._insts.dbugGlyphIndex = this.dbugCurrentGlyphIndex;
 
@@ -516,15 +507,15 @@ namespace SixLabors.Fonts.Tables.Cff
             return this._insts;
         }
 
-        void StopStemCount()
+        private void StopStemCount()
         {
             this._current_integer_count = 0;
             this._doStemCount = false;
         }
 
-        OperatorName _latestOpName = OperatorName.Unknown;
+        private OperatorName _latestOpName = OperatorName.Unknown;
 
-        void AddEndCharOp()
+        private void AddEndCharOp()
         {
             // from https://www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5177.Type2.pdf
             // Note 4 The first stack - clearing operator, which must be one of
@@ -551,7 +542,7 @@ namespace SixLabors.Fonts.Tables.Cff
         /// for hmoveto, vmoveto, rmoveto
         /// </summary>
         /// <param name="op"></param>
-        void AddMoveToOp(OperatorName op)
+        private void AddMoveToOp(OperatorName op)
         {
             // from https://www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5177.Type2.pdf
             // Note 4 The first stack - clearing operator, which must be one of
@@ -589,7 +580,7 @@ namespace SixLabors.Fonts.Tables.Cff
         /// for hstem, hstemhm, vstem, vstemhm
         /// </summary>
         /// <param name="stemName"></param>
-        void AddStemToList(OperatorName stemName)
+        private void AddStemToList(OperatorName stemName)
         {
             // from https://www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5177.Type2.pdf
             // Note 4 The first stack - clearing operator, which must be one of
@@ -639,11 +630,12 @@ namespace SixLabors.Fonts.Tables.Cff
             this._foundSomeStem = true;
             this._latestOpName = stemName;
         }
+
         /// <summary>
         /// add hintmask
         /// </summary>
         /// <param name="reader"></param>
-        void AddHintMaskToList(ref SimpleBinaryReader reader)
+        private void AddHintMaskToList(ref SimpleBinaryReader reader)
         {
             if (this._foundSomeStem && this._current_integer_count > 0)
             {
@@ -782,32 +774,30 @@ namespace SixLabors.Fonts.Tables.Cff
                     case 2:
                         this._insts.AddOp(OperatorName.hintmask2,
                             (reader.ReadByte() << 24) |
-                            (reader.ReadByte() << 16)
-                            );
+                            (reader.ReadByte() << 16));
                         break;
                     case 3:
                         this._insts.AddOp(OperatorName.hintmask3,
                             (reader.ReadByte() << 24) |
                             (reader.ReadByte() << 16) |
-                            (reader.ReadByte() << 8)
-                            );
+                            (reader.ReadByte() << 8));
                         break;
                     case 4:
                         this._insts.AddOp(OperatorName.hintmask4,
                             (reader.ReadByte() << 24) |
                             (reader.ReadByte() << 16) |
                             (reader.ReadByte() << 8) |
-                            (reader.ReadByte())
-                            );
+                            (reader.ReadByte()));
                         break;
                 }
             }
         }
+
         /// <summary>
         /// cntrmask
         /// </summary>
         /// <param name="reader"></param>
-        void AddCounterMaskToList(ref SimpleBinaryReader reader)
+        private void AddCounterMaskToList(ref SimpleBinaryReader reader)
         {
             if (this._hintStemCount == 0)
             {
@@ -910,7 +900,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        static int ReadIntegerNumber(ref SimpleBinaryReader _reader, byte b0)
+        private static int ReadIntegerNumber(ref SimpleBinaryReader _reader, byte b0)
         {
             if (b0 >= 32 && b0 <= 246)
             {

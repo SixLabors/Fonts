@@ -7,9 +7,18 @@ namespace SixLabors.Fonts.Tables.Cff
 {
     internal class Cff1Font
     {
-        internal string FontName { get; set; }
+        public Cff1Font(string name, CffTopDictionary metrics, Cff1GlyphData[] glyphs)
+        {
+            this.FontName = name;
+            this.Metrics = metrics;
+            this.Glyphs = glyphs;
+        }
 
-        public Cff1GlyphData[] _glyphs { get; internal set; }
+        public string FontName { get; set; }
+
+        public CffTopDictionary Metrics { get; set; }
+
+        public Cff1GlyphData[] Glyphs { get; }
 
         internal List<byte[]> _localSubrRawBufferList;
         internal List<byte[]> _globalSubrRawBufferList;
@@ -18,29 +27,6 @@ namespace SixLabors.Fonts.Tables.Cff
         internal int _nominalWidthX;
         internal List<FontDict> _cidFontDict;
 
-        public string Version { get; set; } // CFF SID
 
-        public string Notice { get; set; }// CFF SID
-
-        public string CopyRight { get; set; }// CFF SID
-
-        public string FullName { get; set; }// CFF SID
-
-        public string FamilyName { get; set; }// CFF SID
-
-        public string Weight { get; set; }// CFF SID
-
-        public double UnderlinePosition { get; set; }
-
-        public double UnderlineThickness { get; set; }
-
-        public double[] FontBBox { get; set; }
-
-#if DEBUG
-        public Cff1Font()
-        {
-        }
-
-#endif
     }
 }
