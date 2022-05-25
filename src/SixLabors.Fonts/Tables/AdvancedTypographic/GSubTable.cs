@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 using SixLabors.Fonts.Unicode;
@@ -19,14 +20,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     {
         internal const string TableName = "GSUB";
 
-        public GSubTable(ScriptList scriptList, FeatureListTable featureList, LookupListTable lookupList)
+        public GSubTable(ScriptList? scriptList, FeatureListTable featureList, LookupListTable lookupList)
         {
             this.ScriptList = scriptList;
             this.FeatureList = featureList;
             this.LookupList = lookupList;
         }
 
-        public ScriptList ScriptList { get; }
+        public ScriptList? ScriptList { get; }
 
         public FeatureListTable FeatureList { get; }
 
@@ -136,8 +137,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
                 foreach (Tag stageFeature in stageFeatures)
                 {
-                    List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = this.GetFeatureLookups(in stageFeature, current);
-                    if (lookups.Count == 0)
+                    if (!this.TryGetFeatureLookups(in stageFeature, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
                     {
                         continue;
                     }
@@ -172,8 +172,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
         }
 
-        private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, ScriptClass script)
+        private bool TryGetFeatureLookups(
+            in Tag stageFeature,
+            ScriptClass script,
+            [NotNullWhen(true)] out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? value)
         {
+            if (this.ScriptList is null)
+            {
+                value = null;
+                return false;
+            }
+
             ScriptListTable scriptListTable = this.ScriptList.Default();
             Tag[] tags = UnicodeScriptTagMap.Instance[script];
             for (int i = 0; i < tags.Length; i++)
@@ -188,10 +197,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
             if (defaultLangSysTable != null)
             {
-                return this.GetFeatureLookups(stageFeature, defaultLangSysTable);
+                value = this.GetFeatureLookups(stageFeature, defaultLangSysTable);
+                return value.Count > 0;
             }
 
-            return this.GetFeatureLookups(stageFeature, scriptListTable.LangSysTables);
+            value = this.GetFeatureLookups(stageFeature, scriptListTable.LangSysTables);
+            return value.Count > 0;
         }
 
         private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, params LangSysTable[] langSysTables)
