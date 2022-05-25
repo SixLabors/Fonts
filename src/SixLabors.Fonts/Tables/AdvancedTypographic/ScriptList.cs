@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         private ScriptList(Tag scriptTag) => this.scriptTag = scriptTag;
 
-        public static ScriptList Load(BigEndianBinaryReader reader, long offset)
+        public static ScriptList? Load(BigEndianBinaryReader reader, long offset)
         {
             // ScriptListTable
             // +--------------+----------------------------+-------------------------------------------------------------+
@@ -57,7 +57,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 scriptList!.Add(scriptTag, scriptTable);
             }
 
-            return scriptList!;
+            return scriptList;
         }
 
         // Dictionaries are unordered.
