@@ -7,15 +7,122 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
 {
     /// <content>
     /// Tests adapted from <see href="https://github.com/foliojs/fontkit/blob/417af0c79c5664271a07a783574ec7fac7ebad0c/test/shaping.js"/>.
+    /// All output has been visually checked.
     /// </content>
     public partial class GSubTableTests
     {
-        // TODO: Switch to NotoSansKR-Regular when we have CFF support.
-#if OS_WINDOWS
-        private readonly Font hangulFont = SystemFonts.CreateFont("Malgun Gothic", 12);
+        private readonly Font hangulFontCFF = CreateFont();
+
+        private static Font CreateFont()
+        {
+            var collection = new FontCollection();
+            FontFamily family = collection.Add(TestFonts.NotoSansKRRegular);
+            return family.CreateFont(12);
+        }
 
         [Fact]
-        public void ShouldUseComposedSyllables()
+        public void ShouldUseComposedSyllablesCFF()
+        {
+            // arrange
+            const string input = "\uD734\uAC00\u0020\uAC00\u002D\u002D\u0020\u0028\uC624\u002D\u002D\u0029";
+            ColorGlyphRenderer renderer = new();
+            int[] expectedGlyphIndices = { 21324, 10264, 1, 10264, 14, 14, 1, 9, 16956, 14, 14, 10 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void ShouldComposeDecomposedSyllablesCFF()
+        {
+            // arrange
+            const string input = "\u1112\u1172\u1100\u1161\u0020\u1100\u1161\u002D\u002D\u0020\u0028\u110B\u1169\u002D\u002D\u0029";
+            ColorGlyphRenderer renderer = new();
+            int[] expectedGlyphIndices = { 21324, 10264, 1, 10264, 14, 14, 1, 9, 16956, 14, 14, 10 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void ShouldUseOTFeaturesForNonCombining_L_V_T_CFF()
+        {
+            // arrange
+            const string input = "\ua960\ud7b0\ud7cb";
+            ColorGlyphRenderer renderer = new();
+            int[] expectedGlyphIndices = { 23511, 23860, 24202 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void ShouldDecompose_LV_T_To_L_V_T_If_LVT_IsNotSupportedCFF()
+        {
+            // <L,V> combine at first, but the T is non-combining, so this
+            // tests that the <LV> gets decomposed again in this case.
+
+            // arrange
+            const string input = "\u1100\u1161\ud7cb";
+            ColorGlyphRenderer renderer = new();
+            int[] expectedGlyphIndices = { 23168, 23789, 24065 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+        [Fact]
+        public void ShouldReorderToneMarksToBeginningOf_L_V_SyllablesCFF()
+        {
+            // arrange
+            const string input = "\ua960\ud7b0\u302f";
+            ColorGlyphRenderer renderer = new();
+            int[] expectedGlyphIndices = { 1443, 23759, 23954 };
+
+            // act
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontCFF));
+
+            // assert
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+            }
+        }
+
+#if OS_WINDOWS
+        private readonly Font hangulFontTTF = SystemFonts.CreateFont("Malgun Gothic", 12);
+
+        [Fact]
+        public void ShouldUseComposedSyllablesTTF()
         {
             // arrange
             const string input = "\uD734\uAC00\u0020\uAC00\u002D\u002D\u0020\u0028\uC624\u002D\u002D\u0029";
@@ -23,7 +130,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int[] expectedGlyphIndices = { 2953, 636, 3, 636, 16, 16, 3, 11, 2077, 16, 16, 12 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFont));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -34,7 +141,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         }
 
         [Fact]
-        public void ShouldComposeDecomposedSyllables()
+        public void ShouldComposeDecomposedSyllablesTTF()
         {
             // arrange
             const string input = "\u1112\u1172\u1100\u1161\u0020\u1100\u1161\u002D\u002D\u0020\u0028\u110B\u1169\u002D\u002D\u0029";
@@ -42,7 +149,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int[] expectedGlyphIndices = { 2953, 636, 3, 636, 16, 16, 3, 11, 2077, 16, 16, 12 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFont));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -53,7 +160,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         }
 
         [Fact]
-        public void ShouldUseOTFeaturesForNonCombining_L_V_T()
+        public void ShouldUseOTFeaturesForNonCombining_L_V_T_TTF()
         {
             // arrange
             const string input = "\ua960\ud7b0\ud7cb";
@@ -61,7 +168,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int[] expectedGlyphIndices = { 21150, 21436, 21569 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFont));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -72,7 +179,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         }
 
         [Fact]
-        public void ShouldDecompose_LV_T_To_L_V_T_If_LVT_IsNotSupported()
+        public void ShouldDecompose_LV_T_To_L_V_T_If_LVT_IsNotSupportedTTF()
         {
             // <L,V> combine at first, but the T is non-combining, so this
             // tests that the <LV> gets decomposed again in this case.
@@ -83,7 +190,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int[] expectedGlyphIndices = { 20667, 21294, 21569 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFont));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -94,7 +201,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
         }
 
         [Fact]
-        public void ShouldReorderToneMarksToBeginningOf_L_V_Syllables()
+        public void ShouldReorderToneMarksToBeginningOf_L_V_SyllablesTTF()
         {
             // arrange
             const string input = "\ua960\ud7b0\u302f";
@@ -102,7 +209,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int[] expectedGlyphIndices = { 20665, 21150, 21435 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFont));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -121,7 +228,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int[] expectedGlyphIndices = { 20665, 21150, 21436, 21569 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFont));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -140,7 +247,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int[] expectedGlyphIndices = { 20665, 636 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFont));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -159,7 +266,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int[] expectedGlyphIndices = { 20665, 637 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFont));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
@@ -178,7 +285,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             int[] expectedGlyphIndices = { 2986, 20665, 21620, 3078 };
 
             // act
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFont));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.hangulFontTTF));
 
             // assert
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
