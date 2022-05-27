@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Generic;
-
 namespace SixLabors.Fonts.Tables.Cff
 {
     internal class Cff1Font
@@ -19,14 +17,5 @@ namespace SixLabors.Fonts.Tables.Cff
         public CffTopDictionary Metrics { get; set; }
 
         public Cff1GlyphData[] Glyphs { get; }
-
-        internal List<byte[]> _localSubrRawBufferList;
-        internal List<byte[]> _globalSubrRawBufferList;
-
-        internal int _defaultWidthX;
-        internal int _nominalWidthX;
-        internal List<FontDict> _cidFontDict;
-
-
     }
 }

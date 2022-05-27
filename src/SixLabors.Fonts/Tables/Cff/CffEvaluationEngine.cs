@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.Cff
             TransformingGlyphRenderer scalingGlyphRenderer = new(scale, offset, finder);
 
             // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
-            Run(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
+            RenderTo(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
 
             // Some CFF end without closing the latest contour.
             if (scalingGlyphRenderer.IsOpen)
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Tables.Cff
             return finder.GetBounds();
         }
 
-        public static void Run(ref IGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructions, Vector2 scale, Vector2 offset)
+        public static void RenderTo(ref IGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructions, Vector2 scale, Vector2 offset)
         {
             // TODO: There's likely no need to track these
             double currentX = 0;
@@ -40,7 +40,7 @@ namespace SixLabors.Fonts.Tables.Cff
             TransformingGlyphRenderer scalingGlyphRenderer = new(scale, offset, renderer);
 
             // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
-            Run(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
+            RenderTo(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
 
             // Some CFF end without closing the latest contour.
             if (scalingGlyphRenderer.IsOpen)
@@ -49,7 +49,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private static void Run(ref TransformingGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructionList, ref double currentX, ref double currentY)
+        private static void RenderTo(ref TransformingGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructionList, ref double currentX, ref double currentY)
         {
             using Type2EvaluationStack evalStack = new(renderer, currentX, currentY);
             for (int i = 0; i < instructionList.Length; ++i)

@@ -20,6 +20,16 @@ namespace SixLabors.Fonts.Tables.Cff
         /// </summary>
         private static readonly Encoding Iso88591 = Encoding.GetEncoding("ISO-8859-1");
 
+        private readonly StringBuilder pooledStringBuilder = new();
+        private readonly bool useCompactInstruction = true;
+        private readonly Type2InstructionCompacter instCompacter = new();
+        private long offset;
+        private int charStringsOffset;
+        private int charsetOffset;
+        private int encodingOffset = -1;
+        private int privateDICTOffset;
+        private int privateDICTLength;
+
         // from: Adobe's The Compact Font Format Specification, version1.0, Dec 2003
 
         // Table 2 CFF Data Types
@@ -47,14 +57,9 @@ namespace SixLabors.Fonts.Tables.Cff
         // Private DICT              per-font
         // Local Subr INDEX          per-font or per-Private DICT for CIDFonts
         // Copyright and Trademark  -
-        private long _cffStartAt;
-        private int _charStringsOffset;
-        private int _charsetOffset;
-        private int _encodingOffset = -1;
-
         public Cff1Font Load(BigEndianBinaryReader reader, long offset)
         {
-            this._cffStartAt = offset;
+            this.offset = offset;
 
             string fontName = this.ReadNameIndex(reader);
             List<CffDataDicEntry>? dataDicEntries = this.ReadTopDICTIndex(reader);
@@ -69,9 +74,7 @@ namespace SixLabors.Fonts.Tables.Cff
             this.ReadCharsets(reader, stringIndex, glyphs);
             this.ReadEncodings(reader);
 
-            Cff1Font font = new(fontName, topDictionary, glyphs);
-
-            return font;
+            return new(fontName, topDictionary, glyphs);
         }
 
         private string ReadNameIndex(BigEndianBinaryReader reader)
@@ -283,18 +286,18 @@ namespace SixLabors.Fonts.Tables.Cff
                         };
                         break;
                     case "CharStrings":
-                        this._charStringsOffset = (int)entry.Operands[0].RealNumValue;
+                        this.charStringsOffset = (int)entry.Operands[0].RealNumValue;
                         break;
                     case "charset":
-                        this._charsetOffset = (int)entry.Operands[0].RealNumValue;
+                        this.charsetOffset = (int)entry.Operands[0].RealNumValue;
                         break;
                     case "Encoding":
-                        this._encodingOffset = (int)entry.Operands[0].RealNumValue;
+                        this.encodingOffset = (int)entry.Operands[0].RealNumValue;
                         break;
                     case "Private":
                         // private DICT size and offset
-                        this._privateDICTLen = (int)entry.Operands[0].RealNumValue;
-                        this._privateDICTOffset = (int)entry.Operands[1].RealNumValue;
+                        this.privateDICTLength = (int)entry.Operands[0].RealNumValue;
+                        this.privateDICTOffset = (int)entry.Operands[1].RealNumValue;
                         break;
                     case "ROS":
                         // http://wwwimages.adobe.com/www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5176.CFF.pdf
@@ -403,7 +406,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // type identifier byte followed by format-specific data.
             // Three formats are currently defined as shown in Tables
             // 17, 18, and 20.
-            reader.BaseStream.Position = this._cffStartAt + this._charsetOffset;
+            reader.BaseStream.Position = this.offset + this.charsetOffset;
             switch (reader.ReadByte())
             {
                 default:
@@ -569,7 +572,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // (The sentinel GID is set equal to the number of glyphs in the font.
             // That is, its value is 1 greater than the last GID in the font.)
             // This format is particularly suited to FD indexes that are well ordered(the usual case).
-            reader.BaseStream.Position = this._cffStartAt + cidFontInfo.FDSelect;
+            reader.BaseStream.Position = this.offset + cidFontInfo.FDSelect;
             byte format = reader.ReadByte();
 
             switch (format)
@@ -601,7 +604,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 return Array.Empty<FontDict>();
             }
 
-            reader.BaseStream.Position = this._cffStartAt + cidFontInfo.FDArray;
+            reader.BaseStream.Position = this.offset + cidFontInfo.FDArray;
 
             if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
@@ -640,7 +643,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
             foreach (FontDict fdict in fontDicts)
             {
-                reader.BaseStream.Position = this._cffStartAt + fdict.PrivateDicOffset;
+                reader.BaseStream.Position = this.offset + fdict.PrivateDicOffset;
 
                 List<CffDataDicEntry> dicData = this.ReadDICTData(reader, fdict.PrivateDicSize);
 
@@ -653,7 +656,7 @@ namespace SixLabors.Fonts.Tables.Cff
                         {
                             case "Subrs":
                                 int localSubrsOffset = (int)dicEntry.Operands[0].RealNumValue;
-                                reader.BaseStream.Position = this._cffStartAt + fdict.PrivateDicOffset + localSubrsOffset;
+                                reader.BaseStream.Position = this.offset + fdict.PrivateDicOffset + localSubrsOffset;
                                 fdict.LocalSubr = this.ReadSubrBuffer(reader);
                                 break;
 
@@ -672,68 +675,6 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 
             return fontDicts;
-        }
-
-        private struct FDRangeProvider
-        {
-            // helper class
-            private FDRange3[] _ranges;
-            private ushort _currentGlyphIndex;
-            private ushort _endGlyphIndexLim;
-            private byte _selectedFdArray;
-            private FDRange3 _currentRange;
-            private int _currentSelectedRangeIndex;
-
-            public FDRangeProvider(FDRange3[] ranges)
-            {
-                this._ranges = ranges;
-                this._currentGlyphIndex = 0;
-                this._currentSelectedRangeIndex = 0;
-
-                if (ranges != null)
-                {
-                    this._currentRange = ranges[0];
-                    this._endGlyphIndexLim = ranges[1].first;
-                }
-                else
-                {
-                    // empty
-                    this._currentRange = new FDRange3();
-                    this._endGlyphIndexLim = 0;
-                }
-
-                this._selectedFdArray = 0;
-            }
-
-            public byte SelectedFDArray => this._selectedFdArray;
-
-            public void SetCurrentGlyphIndex(ushort index)
-            {
-                // find proper range for selected index
-                if (index >= this._currentRange.first && index < this._endGlyphIndexLim)
-                {
-                    // ok, in current range
-                    this._selectedFdArray = this._currentRange.fd;
-                }
-                else
-                {
-                    // move to next range
-                    this._currentSelectedRangeIndex++;
-                    this._currentRange = this._ranges[this._currentSelectedRangeIndex];
-
-                    this._endGlyphIndexLim = this._ranges[this._currentSelectedRangeIndex + 1].first;
-                    if (index >= this._currentRange.first && index < this._endGlyphIndexLim)
-                    {
-                        this._selectedFdArray = this._currentRange.fd;
-                    }
-                    else
-                    {
-                        throw new NotSupportedException();
-                    }
-                }
-
-                this._currentGlyphIndex = index;
-            }
         }
 
         private Cff1GlyphData[] ReadCharStringsIndex(
@@ -773,7 +714,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // Type 2 charstrings are described in Adobe Technical Note #5177:
             // “Type 2 Charstring Format.” Other charstring types may also be
             // supported by this method.
-            reader.BaseStream.Position = this._cffStartAt + this._charStringsOffset;
+            reader.BaseStream.Position = this.offset + this.charStringsOffset;
             if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
                 throw new InvalidFontFileException("No glyph data found.");
@@ -833,12 +774,12 @@ namespace SixLabors.Fonts.Tables.Cff
                 if (instList != null)
                 {
                     // use compact form or not
-                    if (this._useCompactInstruction)
+                    if (this.useCompactInstruction)
                     {
                         // this is our extension,
                         // if you don't want compact version
                         // just use original
-                        instructions = this._instCompacter.Compact(instList.InnerInsts);
+                        instructions = this.instCompacter.Compact(instList.InnerInsts);
 
 #if DEBUG
                         total += instructions.Length / (float)instList.InnerInsts.Count;
@@ -855,7 +796,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 
 #if DEBUG
-            if (this._useCompactInstruction)
+            if (this.useCompactInstruction)
             {
                 double avg = total / glyphCount;
                 System.Diagnostics.Debug.WriteLine("cff instruction compact avg:" + avg + "%");
@@ -864,10 +805,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
             return glyphs;
         }
-
-        //---------------
-        private bool _useCompactInstruction = true;
-        private Type2InstructionCompacter _instCompacter = new Type2InstructionCompacter();
 
         private void ReadFormat0Encoding(BigEndianBinaryReader reader)
         {
@@ -927,20 +864,17 @@ namespace SixLabors.Fonts.Tables.Cff
             // Card8     code        Encoding
             // SID       glyph       Name
         }
-
-        private int _privateDICTOffset;
-        private int _privateDICTLen;
-
+        
         private CffPrivateDictionary? ReadPrivateDict(BigEndianBinaryReader reader)
         {
             // per-font
-            if (this._privateDICTLen == 0)
+            if (this.privateDICTLength == 0)
             {
                 return null;
             }
 
-            reader.BaseStream.Position = this._cffStartAt + this._privateDICTOffset;
-            List<CffDataDicEntry> dicData = this.ReadDICTData(reader, this._privateDICTLen);
+            reader.BaseStream.Position = this.offset + this.privateDICTOffset;
+            List<CffDataDicEntry> dicData = this.ReadDICTData(reader, this.privateDICTLength);
             byte[][] localSubrRawBuffers = Array.Empty<byte[]>();
             int defaultWidthX = 0;
             int nominalWidthX = 0;
@@ -954,7 +888,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     {
                         case "Subrs":
                             int localSubrsOffset = (int)dicEntry.Operands[0].RealNumValue;
-                            reader.BaseStream.Position = this._cffStartAt + this._privateDICTOffset + localSubrsOffset;
+                            reader.BaseStream.Position = this.offset + this.privateDICTOffset + localSubrsOffset;
                             localSubrRawBuffers = this.ReadLocalSubrs(reader);
                             break;
 
@@ -1089,8 +1023,6 @@ namespace SixLabors.Fonts.Tables.Cff
             return CFFOperator.GetOperatorByKey(b0, b1);
         }
 
-        private readonly StringBuilder _sbForReadRealNumber = new StringBuilder();
-
         private double ReadRealNumber(BigEndianBinaryReader reader)
         {
             // from https://typekit.files.wordpress.com/2013/05/5176.cff.pdf
@@ -1102,7 +1034,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // The first nibble of a
             // pair is stored in the most significant 4 bits of a byte and the
             // second nibble of a pair is stored in the least significant 4 bits of a byte
-            StringBuilder sb = this._sbForReadRealNumber;
+            StringBuilder sb = this.pooledStringBuilder;
             sb.Clear(); // reset
 
             bool done = false;
@@ -1291,12 +1223,69 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 
 #if DEBUG
-            public override string ToString()
-            {
-                return "offset:" + this.Start + ",len:" + this.Length;
-            }
+            public override string ToString() => "offset:" + this.Start + ",len:" + this.Length;
 #endif
         }
 
+        private struct FDRangeProvider
+        {
+            // helper class
+            private readonly FDRange3[] ranges;
+            private ushort currentGlyphIndex;
+            private ushort endGlyphIndexMax;
+            private FDRange3 currentRange;
+            private int currentSelectedRangeIndex;
+
+            public FDRangeProvider(FDRange3[] ranges)
+            {
+                this.ranges = ranges;
+                this.currentGlyphIndex = 0;
+                this.currentSelectedRangeIndex = 0;
+
+                if (ranges != null)
+                {
+                    this.currentRange = ranges[0];
+                    this.endGlyphIndexMax = ranges[1].First;
+                }
+                else
+                {
+                    // empty
+                    this.currentRange = default;
+                    this.endGlyphIndexMax = 0;
+                }
+
+                this.SelectedFDArray = 0;
+            }
+
+            public byte SelectedFDArray { get; private set; }
+
+            public void SetCurrentGlyphIndex(ushort index)
+            {
+                // find proper range for selected index
+                if (index >= this.currentRange.First && index < this.endGlyphIndexMax)
+                {
+                    // ok, in current range
+                    this.SelectedFDArray = this.currentRange.Fd;
+                }
+                else
+                {
+                    // move to next range
+                    this.currentSelectedRangeIndex++;
+                    this.currentRange = this.ranges[this.currentSelectedRangeIndex];
+
+                    this.endGlyphIndexMax = this.ranges[this.currentSelectedRangeIndex + 1].First;
+                    if (index >= this.currentRange.First && index < this.endGlyphIndexMax)
+                    {
+                        this.SelectedFDArray = this.currentRange.Fd;
+                    }
+                    else
+                    {
+                        throw new NotSupportedException();
+                    }
+                }
+
+                this.currentGlyphIndex = index;
+            }
+        }
     }
 }

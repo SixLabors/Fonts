@@ -5,13 +5,14 @@ namespace SixLabors.Fonts.Tables.Cff
 {
     internal readonly struct GlyphNameMap
     {
-        public readonly ushort glyphIndex;
-        public readonly string glyphName;
+        public readonly ushort GlyphIndex;
+
+        public readonly string GlyphName;
 
         public GlyphNameMap(ushort glyphIndex, string glyphName)
         {
-            this.glyphIndex = glyphIndex;
-            this.glyphName = glyphName;
+            this.GlyphIndex = glyphIndex;
+            this.GlyphName = glyphName;
         }
     }
 }
