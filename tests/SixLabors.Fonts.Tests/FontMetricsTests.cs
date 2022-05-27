@@ -91,35 +91,34 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void FontMetricsVerticalFontMatchesReferenceCFF()
         {
-            // Compared to EveryFonts TTFDump metrics
-            // https://everythingfonts.com/ttfdump
+            // Compared to OpenTypeJS Font Inspector metrics
+            // https://opentype.js.org/font-inspector.html
             var collection = new FontCollection();
             FontFamily family = collection.Add(TestFonts.NotoSansKRRegular);
             Font font = family.CreateFont(12);
 
-            // TODO: Fix this test
             Assert.Equal(1000, font.FontMetrics.UnitsPerEm);
-            Assert.Equal(806, font.FontMetrics.Ascender);
-            Assert.Equal(-256, font.FontMetrics.Descender);
-            Assert.Equal(90, font.FontMetrics.LineGap);
-            Assert.Equal(1152, font.FontMetrics.LineHeight);
-            Assert.Equal(1000, font.FontMetrics.AdvanceWidthMax);
-            Assert.Equal(1000, font.FontMetrics.AdvanceHeightMax);
+            Assert.Equal(1160, font.FontMetrics.Ascender);
+            Assert.Equal(-288, font.FontMetrics.Descender);
+            Assert.Equal(0, font.FontMetrics.LineGap);
+            Assert.Equal(1448, font.FontMetrics.LineHeight);
+            Assert.Equal(3000, font.FontMetrics.AdvanceWidthMax);
+            Assert.Equal(3000, font.FontMetrics.AdvanceHeightMax);
 
             Assert.Equal(650, font.FontMetrics.SubscriptXSize);
-            Assert.Equal(700, font.FontMetrics.SubscriptYSize);
+            Assert.Equal(600, font.FontMetrics.SubscriptYSize);
             Assert.Equal(0, font.FontMetrics.SubscriptXOffset);
-            Assert.Equal(140, font.FontMetrics.SubscriptYOffset);
+            Assert.Equal(75, font.FontMetrics.SubscriptYOffset);
 
             Assert.Equal(650, font.FontMetrics.SuperscriptXSize);
-            Assert.Equal(700, font.FontMetrics.SuperscriptYSize);
+            Assert.Equal(600, font.FontMetrics.SuperscriptYSize);
             Assert.Equal(0, font.FontMetrics.SuperscriptXOffset);
-            Assert.Equal(480, font.FontMetrics.SuperscriptYOffset);
+            Assert.Equal(350, font.FontMetrics.SuperscriptYOffset);
 
-            Assert.Equal(49, font.FontMetrics.StrikeoutSize);
-            Assert.Equal(258, font.FontMetrics.StrikeoutPosition);
+            Assert.Equal(50, font.FontMetrics.StrikeoutSize);
+            Assert.Equal(325, font.FontMetrics.StrikeoutPosition);
 
-            Assert.Equal(-75, font.FontMetrics.UnderlinePosition);
+            Assert.Equal(-125, font.FontMetrics.UnderlinePosition);
             Assert.Equal(50, font.FontMetrics.UnderlineThickness);
 
             Assert.Equal(0, font.FontMetrics.ItalicAngle);
