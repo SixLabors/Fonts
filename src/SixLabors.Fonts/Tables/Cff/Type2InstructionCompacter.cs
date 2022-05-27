@@ -3,102 +3,89 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    class Type2InstructionCompacter
+    // TODO: We might actually be able to dump this whole class. See the comments in the caller.
+    internal class Type2InstructionCompacter
     {
-        //This is our extension
+        // This is our extension
         //-----------------------
-#if DEBUG
-        public static bool s_dbugBreakMe;
-#endif
-        List<Type2Instruction> _step1List;
-        List<Type2Instruction> _step2List;
+        private List<Type2Instruction> step1List = new();
+        private List<Type2Instruction> step2List = new();
 
-        void CompactStep1OnlyLoadInt(List<Type2Instruction> insts)
+        private void CompactStep1OnlyLoadInt(List<Type2Instruction> insts)
         {
             int j = insts.Count;
-            CompactRange _latestCompactRange = CompactRange.None;
-            int startCollectAt = -1;
-            int collecting_count = 0;
+            CompactRange latestCompactRange = CompactRange.None;
+            int start = -1;
+            int count = 0;
             void FlushWaitingNumbers()
             {
-                //Nested method
-                //flush waiting integer
-                if (_latestCompactRange == CompactRange.Short)
+                // Nested method
+                // flush waiting integer
+                if (latestCompactRange == CompactRange.Short)
                 {
-                    switch (collecting_count)
+                    switch (count)
                     {
                         default:
                             throw new NotSupportedException();
                         case 0:
-                            break; //nothing
+                            break; // nothing
                         case 2:
-                            _step1List.Add(new Type2Instruction(OperatorName.LoadShort2,
-                                      (((ushort)insts[startCollectAt].Value) << 16) |
-                                      (((ushort)insts[startCollectAt + 1].Value))
-                                      ));
-                            startCollectAt += 2;
-                            collecting_count -= 2;
+                            this.step1List.Add(
+                                new Type2Instruction(OperatorName.LoadShort2, (((ushort)insts[start].Value) << 16) | ((ushort)insts[start + 1].Value)));
+                            start += 2;
+                            count -= 2;
                             break;
                         case 1:
-                            _step1List.Add(insts[startCollectAt]);
-                            startCollectAt += 1;
-                            collecting_count -= 1;
+                            this.step1List.Add(insts[start]);
+                            start += 1;
+                            count -= 1;
                             break;
-
                     }
                 }
                 else
                 {
-                    switch (collecting_count)
+                    switch (count)
                     {
                         default:
                             throw new NotSupportedException();
                         case 0:
-                            break;//nothing
+                            break; // nothing
                         case 4:
-                        {
-                            _step1List.Add(new Type2Instruction(OperatorName.LoadSbyte4,
-                               (((byte)insts[startCollectAt].Value) << 24) |
-                               (((byte)insts[startCollectAt + 1].Value) << 16) |
-                               (((byte)insts[startCollectAt + 2].Value) << 8) |
-                               (((byte)insts[startCollectAt + 3].Value) << 0)
-                               ));
-                            startCollectAt += 4;
-                            collecting_count -= 4;
-                        }
-                        break;
+
+                            this.step1List.Add(
+                                new Type2Instruction(
+                                    OperatorName.LoadSbyte4,
+                                    (((byte)insts[start].Value) << 24) | (((byte)insts[start + 1].Value) << 16) | (((byte)insts[start + 2].Value) << 8) | (((byte)insts[start + 3].Value) << 0)));
+                            start += 4;
+                            count -= 4;
+                            break;
                         case 3:
-                            _step1List.Add(new Type2Instruction(OperatorName.LoadSbyte3,
-                                (((byte)insts[startCollectAt].Value) << 24) |
-                                (((byte)insts[startCollectAt + 1].Value) << 16) |
-                                (((byte)insts[startCollectAt + 2].Value) << 8)
-                                ));
-                            startCollectAt += 3;
-                            collecting_count -= 3;
+                            this.step1List.Add(new Type2Instruction(
+                                OperatorName.LoadSbyte3,
+                                (((byte)insts[start].Value) << 24) | (((byte)insts[start + 1].Value) << 16) | (((byte)insts[start + 2].Value) << 8)));
+                            start += 3;
+                            count -= 3;
                             break;
                         case 2:
-                            _step1List.Add(new Type2Instruction(OperatorName.LoadShort2,
-                              (((ushort)insts[startCollectAt].Value) << 16) |
-                              ((ushort)insts[startCollectAt + 1].Value)
-                              ));
-                            startCollectAt += 2;
-                            collecting_count -= 2;
+                            this.step1List.Add(new Type2Instruction(
+                                OperatorName.LoadShort2,
+                                (((ushort)insts[start].Value) << 16) | ((ushort)insts[start + 1].Value)));
+                            start += 2;
+                            count -= 2;
                             break;
                         case 1:
-                            _step1List.Add(insts[startCollectAt]);
-                            startCollectAt += 1;
-                            collecting_count -= 1;
+                            this.step1List.Add(insts[start]);
+                            start += 1;
+                            count -= 1;
                             break;
-
                     }
                 }
 
-                startCollectAt = -1;
-                collecting_count = 0;
+                start = -1;
+                count = 0;
             }
 
             for (int i = 0; i < j; ++i)
@@ -106,8 +93,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 Type2Instruction inst = insts[i];
                 if (inst.IsLoadInt)
                 {
-                    //check waiting data in queue
-                    //get compact range
+                    // check waiting data in queue
+                    // get compact range
                     CompactRange c1 = GetCompactRange(inst.Value);
                     switch (c1)
                     {
@@ -115,120 +102,124 @@ namespace SixLabors.Fonts.Tables.Cff
                             throw new NotSupportedException();
                         case CompactRange.None:
                         {
-                            if (collecting_count > 0)
+                            if (count > 0)
                             {
                                 FlushWaitingNumbers();
-                            }
-                            _step1List.Add(inst);
-                            _latestCompactRange = CompactRange.None;
-                        }
-                        break;
-                        case CompactRange.SByte:
-                        {
-                            if (_latestCompactRange == CompactRange.Short)
-                            {
-                                FlushWaitingNumbers();
-                                _latestCompactRange = CompactRange.SByte;
                             }
 
-                            switch (collecting_count)
+                            this.step1List.Add(inst);
+                            latestCompactRange = CompactRange.None;
+                            break;
+                        }
+
+                        case CompactRange.SByte:
+                        {
+                            if (latestCompactRange == CompactRange.Short)
+                            {
+                                FlushWaitingNumbers();
+                                latestCompactRange = CompactRange.SByte;
+                            }
+
+                            switch (count)
                             {
                                 default:
                                     throw new NotSupportedException();
                                 case 0:
-                                    startCollectAt = i;
-                                    _latestCompactRange = CompactRange.SByte;
+                                    start = i;
+                                    latestCompactRange = CompactRange.SByte;
                                     break;
                                 case 1:
                                     break;
                                 case 2:
                                     break;
                                 case 3:
-                                    //we already have 3 bytes
-                                    //so this is 4th byte
-                                    collecting_count++;
+                                    // we already have 3 bytes
+                                    // so this is 4th byte
+                                    count++;
                                     FlushWaitingNumbers();
                                     continue;
                             }
-                            collecting_count++;
+
+                            count++;
+                            break;
                         }
-                        break;
+
                         case CompactRange.Short:
                         {
-                            if (_latestCompactRange == CompactRange.SByte)
+                            if (latestCompactRange == CompactRange.SByte)
                             {
                                 FlushWaitingNumbers();
-                                _latestCompactRange = CompactRange.Short;
+                                latestCompactRange = CompactRange.Short;
                             }
 
-                            switch (collecting_count)
+                            switch (count)
                             {
                                 default:
                                     throw new NotSupportedException();
                                 case 0:
-                                    startCollectAt = i;
-                                    _latestCompactRange = CompactRange.Short;
+                                    start = i;
+                                    latestCompactRange = CompactRange.Short;
                                     break;
                                 case 1:
-                                    //we already have 1 so this is 2nd 
-                                    collecting_count++;
+                                    // we already have 1 so this is 2nd
+                                    count++;
                                     FlushWaitingNumbers();
                                     continue;
                             }
 
-                            collecting_count++;
+                            count++;
+                            break;
                         }
-                        break;
                     }
                 }
                 else
                 {
-                    //other cmds
-                    //flush waiting cmd
-                    if (collecting_count > 0)
+                    // other cmds
+                    // flush waiting cmd
+                    if (count > 0)
                     {
                         FlushWaitingNumbers();
                     }
 
-                    _step1List.Add(inst);
-                    _latestCompactRange = CompactRange.None;
+                    this.step1List.Add(inst);
+                    latestCompactRange = CompactRange.None;
                 }
             }
         }
 
+        private static byte IsLoadIntOrMergeableLoadIntExtension(OperatorName opName) => opName switch
+        {
+            // case OperatorName.LoadSbyte3://except LoadSbyte3 ***
+            // merge-able
+            OperatorName.LoadInt => 1,
 
-        static byte IsLoadIntOrMergeableLoadIntExtension(OperatorName opName)
+            // merge-able
+            OperatorName.LoadShort2 => 2,
+
+            // merge-able
+            OperatorName.LoadSbyte4 => 3,
+            _ => 0,
+        };
+
+        private void CompactStep2MergeLoadIntWithNextCommand()
         {
-            switch (opName)
-            {
-                //case OperatorName.LoadSbyte3://except LoadSbyte3 ***                
-                case OperatorName.LoadInt: //merge-able
-                    return 1;
-                case OperatorName.LoadShort2://merge-able
-                    return 2;
-                case OperatorName.LoadSbyte4://merge-able
-                    return 3;
-            }
-            return 0;
-        }
-        void CompactStep2MergeLoadIntWithNextCommand()
-        {
-            //a second pass
-            //check if we can merge some load int( LoadInt, LoadSByte4, LoadShort2) except LoadSByte3 
-            //to next instruction command or not
-            int j = _step1List.Count;
+            // a second pass
+            // check if we can merge some load int( LoadInt, LoadSByte4, LoadShort2) except LoadSByte3
+            // to next instruction command or not
+            int j = this.step1List.Count;
             for (int i = 0; i < j; ++i)
             {
-                Type2Instruction i0 = _step1List[i];
+                Type2Instruction i0 = this.step1List[i];
 
                 if (i + 1 < j)
                 {
-                    //has next cmd           
+                    // has next cmd
                     byte merge_flags = IsLoadIntOrMergeableLoadIntExtension((OperatorName)i0.Op);
                     if (merge_flags > 0)
                     {
-                        Type2Instruction i1 = _step1List[i + 1];
-                        //check i1 has empty space for i0 or not
+                        Type2Instruction i1 = this.step1List[i + 1];
+
+                        // check i1 has empty space for i0 or not
                         bool canbe_merged = false;
                         switch ((OperatorName)i1.Op)
                         {
@@ -253,72 +244,65 @@ namespace SixLabors.Fonts.Tables.Cff
                                 canbe_merged = true;
                                 break;
                         }
+
                         if (canbe_merged)
                         {
-
 #if DEBUG
                             if (merge_flags > 3)
-                            { throw new NotSupportedException(); }
+                            {
+                                throw new NotSupportedException();
+                            }
 #endif
 
-                            _step2List.Add(new Type2Instruction((byte)((merge_flags << 6) | i1.Op), i0.Value));
+                            this.step2List.Add(new Type2Instruction((byte)((merge_flags << 6) | i1.Op), i0.Value));
                             i += 1;
                         }
                         else
                         {
-                            _step2List.Add(i0);
+                            this.step2List.Add(i0);
                         }
                     }
                     else
                     {
-                        //this is the last one
-                        _step2List.Add(i0);
+                        // this is the last one
+                        this.step2List.Add(i0);
                     }
-
                 }
                 else
                 {
-                    //this is the last one
-                    _step2List.Add(i0);
+                    // this is the last one
+                    this.step2List.Add(i0);
                 }
             }
         }
+
         public Type2Instruction[] Compact(List<Type2Instruction> insts)
         {
-            //for simpicity
-            //we have 2 passes
-            //1. compact consecutive numbers
-            //2. compact other cmd
+            // for simpicity
+            // we have 2 passes
+            // 1. compact consecutive numbers
+            // 2. compact other cmd
 
-            //reset
-            if (_step1List == null)
-            {
-                _step1List = new List<Type2Instruction>();
-            }
-            if (_step2List == null)
-            {
-                _step2List = new List<Type2Instruction>();
-            }
-            _step1List.Clear();
-            _step2List.Clear();
-            //
-            CompactStep1OnlyLoadInt(insts);
-            CompactStep2MergeLoadIntWithNextCommand();
+            // reset
+            this.step1List.Clear();
+            this.step2List.Clear();
+            this.CompactStep1OnlyLoadInt(insts);
+            this.CompactStep2MergeLoadIntWithNextCommand();
 #if DEBUG
 
-            //you can check/compare the compact form and the original form
-            dbugReExpandAndCompare_ForStep1(_step1List, insts);
-            dbugReExpandAndCompare_ForStep2(_step2List, insts);
+            // you can check/compare the compact form and the original form
+            this.DbugReExpandAndCompare_ForStep1(this.step1List, insts);
+            this.DbugReExpandAndCompare_ForStep2(this.step2List, insts);
 #endif
-            return _step2List.ToArray();
-            //return _step1List.ToArray();
+            return this.step2List.ToArray();
 
+            // return _step1List.ToArray();
         }
 
 #if DEBUG
-        void dbugReExpandAndCompare_ForStep1(List<Type2Instruction> step1, List<Type2Instruction> org)
+        private void DbugReExpandAndCompare_ForStep1(List<Type2Instruction> step1, List<Type2Instruction> org)
         {
-            List<Type2Instruction> expand1 = new List<Type2Instruction>(org.Count);
+            List<Type2Instruction> expand1 = new(org.Count);
             {
                 int j = step1.Count;
                 for (int i = 0; i < j; ++i)
@@ -330,7 +314,7 @@ namespace SixLabors.Fonts.Tables.Cff
                             expand1.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 24)));
                             expand1.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 16)));
                             expand1.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 8)));
-                            expand1.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value)));
+                            expand1.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)inst.Value));
                             break;
                         case OperatorName.LoadSbyte3:
                             expand1.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 24)));
@@ -339,7 +323,7 @@ namespace SixLabors.Fonts.Tables.Cff
                             break;
                         case OperatorName.LoadShort2:
                             expand1.Add(new Type2Instruction(OperatorName.LoadInt, (short)(inst.Value >> 16)));
-                            expand1.Add(new Type2Instruction(OperatorName.LoadInt, (short)(inst.Value)));
+                            expand1.Add(new Type2Instruction(OperatorName.LoadInt, (short)inst.Value));
                             break;
                         default:
                             expand1.Add(inst);
@@ -347,10 +331,11 @@ namespace SixLabors.Fonts.Tables.Cff
                     }
                 }
             }
+
             //--------------------------------------------
             if (expand1.Count != org.Count)
             {
-                //ERR=> then find first diff
+                // ERR=> then find first diff
                 int min = Math.Min(expand1.Count, org.Count);
                 for (int i = 0; i < min; ++i)
                 {
@@ -365,7 +350,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
             else
             {
-                //compare command-by-command
+                // compare command-by-command
                 int j = step1.Count;
                 for (int i = 0; i < j; ++i)
                 {
@@ -378,29 +363,29 @@ namespace SixLabors.Fonts.Tables.Cff
                     }
                 }
             }
-
         }
-        void dbugReExpandAndCompare_ForStep2(List<Type2Instruction> step2, List<Type2Instruction> org)
+
+        private void DbugReExpandAndCompare_ForStep2(List<Type2Instruction> step2, List<Type2Instruction> org)
         {
-            List<Type2Instruction> expand2 = new List<Type2Instruction>(org.Count);
+            List<Type2Instruction> expand2 = new(org.Count);
             {
                 int j = step2.Count;
                 for (int i = 0; i < j; ++i)
                 {
-
                     Type2Instruction inst = step2[i];
 
-                    //we use upper 2 bits to indicate that this is merged cmd or not
+                    // we use upper 2 bits to indicate that this is merged cmd or not
                     byte merge_flags = (byte)(inst.Op >> 6);
-                    //lower 6 bits is actual cmd
-                    OperatorName onlyOpName = (OperatorName)(inst.Op & 0b111111);
+
+                    // lower 6 bits is actual cmd
+                    var onlyOpName = (OperatorName)(inst.Op & 0b111111);
                     switch (onlyOpName)
                     {
                         case OperatorName.LoadSbyte4:
                             expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 24)));
                             expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 16)));
                             expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 8)));
-                            expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value)));
+                            expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)inst.Value));
                             break;
                         case OperatorName.LoadSbyte3:
                             expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 24)));
@@ -409,7 +394,7 @@ namespace SixLabors.Fonts.Tables.Cff
                             break;
                         case OperatorName.LoadShort2:
                             expand2.Add(new Type2Instruction(OperatorName.LoadInt, (short)(inst.Value >> 16)));
-                            expand2.Add(new Type2Instruction(OperatorName.LoadInt, (short)(inst.Value)));
+                            expand2.Add(new Type2Instruction(OperatorName.LoadInt, (short)inst.Value));
                             break;
                         default:
                         {
@@ -424,22 +409,24 @@ namespace SixLabors.Fonts.Tables.Cff
                                     break;
                                 case 2:
                                     expand2.Add(new Type2Instruction(OperatorName.LoadInt, (short)(inst.Value >> 16)));
-                                    expand2.Add(new Type2Instruction(OperatorName.LoadInt, (short)(inst.Value)));
+                                    expand2.Add(new Type2Instruction(OperatorName.LoadInt, (short)inst.Value));
                                     expand2.Add(new Type2Instruction(onlyOpName, 0));
                                     break;
                                 case 3:
                                     expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 24)));
                                     expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 16)));
                                     expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value >> 8)));
-                                    expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)(inst.Value)));
+                                    expand2.Add(new Type2Instruction(OperatorName.LoadInt, (sbyte)inst.Value));
                                     expand2.Add(new Type2Instruction(onlyOpName, 0));
                                     break;
                             }
+
+                            break;
                         }
-                        break;
                     }
                 }
             }
+
             //--------------------------------------------
             if (expand2.Count != org.Count)
             {
@@ -447,7 +434,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
             else
             {
-                //compare command-by-command
+                // compare command-by-command
                 int j = step2.Count;
                 for (int i = 0; i < j; ++i)
                 {
@@ -460,24 +447,25 @@ namespace SixLabors.Fonts.Tables.Cff
                     }
                 }
             }
-
         }
 #endif
-        enum CompactRange
+
+#pragma warning disable SA1201 // Elements should appear in the correct order
+        private enum CompactRange
+#pragma warning restore SA1201 // Elements should appear in the correct order
         {
             None,
-            //
             SByte,
             Short,
         }
 
-        static CompactRange GetCompactRange(int value)
+        private static CompactRange GetCompactRange(int value)
         {
-            if (value > sbyte.MinValue && value < sbyte.MaxValue)
+            if (value is > sbyte.MinValue and < sbyte.MaxValue)
             {
                 return CompactRange.SByte;
             }
-            else if (value > short.MinValue && value < short.MaxValue)
+            else if (value is > short.MinValue and < short.MaxValue)
             {
                 return CompactRange.Short;
             }

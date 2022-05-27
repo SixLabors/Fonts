@@ -447,7 +447,7 @@ namespace SixLabors.Fonts.Tables.Cff
 #if DEBUG
             this.dbugInstructionListMark++;
 
-            this.instructionList.dbugGlyphIndex = this.DbugCurrentGlyphIndex;
+            this.instructionList.DbugGlyphIndex = this.DbugCurrentGlyphIndex;
 
             if (this.DbugCurrentGlyphIndex == 496)
             {
@@ -564,9 +564,6 @@ namespace SixLabors.Fonts.Tables.Cff
                 // all kind has even number of stem
                 if (this.foundSomeStem)
                 {
-#if DEBUG
-                    this.instructionList.dbugDumpInstructionListToFile("test_type2_" + (this.dbugInstructionListMark - 1) + ".txt");
-#endif
                     throw new NotSupportedException();
                 }
                 else

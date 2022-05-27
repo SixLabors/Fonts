@@ -7,26 +7,33 @@ namespace SixLabors.Fonts.Tables.Cff
 {
     internal class CffDataDicEntry
     {
-        public CffOperand[] Operands;
-        public CFFOperator Operator;
+        public CffDataDicEntry(CFFOperator @operator, CffOperand[] operands)
+        {
+            this.Operator = @operator;
+            this.Operands = operands;
+        }
+
+        public CFFOperator Operator { get; }
+
+        public CffOperand[] Operands { get; }
 
 #if DEBUG
         public override string ToString()
         {
-
-            StringBuilder stbuilder = new StringBuilder();
-            int j = Operands.Length;
+            StringBuilder stbuilder = new();
+            int j = this.Operands.Length;
             for (int i = 0; i < j; ++i)
             {
                 if (i > 0)
                 {
                     stbuilder.Append(" ");
                 }
-                stbuilder.Append(Operands[i].ToString());
+
+                stbuilder.Append(this.Operands[i].ToString());
             }
 
             stbuilder.Append(" ");
-            stbuilder.Append(Operator.ToString());
+            stbuilder.Append(this.Operator?.ToString() ?? string.Empty);
             return stbuilder.ToString();
         }
 #endif

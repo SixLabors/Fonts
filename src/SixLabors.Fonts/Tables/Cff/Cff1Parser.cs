@@ -779,16 +779,16 @@ namespace SixLabors.Fonts.Tables.Cff
                         // this is our extension,
                         // if you don't want compact version
                         // just use original
-                        instructions = this.instCompacter.Compact(instList.InnerInsts);
+                        instructions = this.instCompacter.Compact(instList.Instructions);
 
 #if DEBUG
-                        total += instructions.Length / (float)instList.InnerInsts.Count;
+                        total += instructions.Length / (float)instList.Instructions.Count;
 #endif
 
                     }
                     else
                     {
-                        instructions = instList.InnerInsts.ToArray();
+                        instructions = instList.Instructions.ToArray();
                     }
                 }
 
@@ -864,7 +864,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // Card8     code        Encoding
             // SID       glyph       Name
         }
-        
+
         private CffPrivateDictionary? ReadPrivateDict(BigEndianBinaryReader reader)
         {
             // per-font
@@ -971,7 +971,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // Byte values 22–27, 31, and 255 are reserved.
 
             // An operator may be preceded by up to a maximum of 48 operands
-            CffDataDicEntry dicEntry = new();
+            CFFOperator? @operator = null;
             List<CffOperand> operands = new();
 
             while (true)
@@ -981,7 +981,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 if (b0 is >= 0 and <= 21)
                 {
                     // operators
-                    dicEntry.Operator = this.ReadOperator(reader, b0);
+                    @operator = this.ReadOperator(reader, b0);
                     break; // **break after found operator
                 }
                 else if (b0 is 28 or 29)
@@ -1005,8 +1005,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 }
             }
 
-            dicEntry.Operands = operands.ToArray();
-            return dicEntry;
+            // I'm fairly confident that the operator can never be null.
+            return new CffDataDicEntry(@operator!, operands.ToArray());
         }
 
         private CFFOperator ReadOperator(BigEndianBinaryReader reader, byte b0)
