@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tables.Cff
         Array,
         Delta,
 
-        // compound
+        // Compound
         NumberNumber,
         SID_SID_Number,
     }

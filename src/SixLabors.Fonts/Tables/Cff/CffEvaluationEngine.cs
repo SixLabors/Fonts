@@ -108,180 +108,180 @@ namespace SixLabors.Fonts.Tables.Cff
                     case OperatorName.LoadFloat:
                         evalStack.Push(inst.ReadValueAsFixed1616());
                         break;
-                    case OperatorName.endchar:
+                    case OperatorName.Endchar:
                         evalStack.EndChar();
                         break;
-                    case OperatorName.flex:
+                    case OperatorName.Flex:
                         evalStack.Flex();
                         break;
-                    case OperatorName.hflex:
+                    case OperatorName.Hflex:
                         evalStack.H_Flex();
                         break;
-                    case OperatorName.hflex1:
+                    case OperatorName.Hflex1:
                         evalStack.H_Flex1();
                         break;
-                    case OperatorName.flex1:
+                    case OperatorName.Flex1:
                         evalStack.Flex1();
                         break;
 
                     //-------------------------
                     // 4.4: Arithmetic Operators
-                    case OperatorName.abs:
+                    case OperatorName.Abs:
                         evalStack.Op_Abs();
                         break;
-                    case OperatorName.add:
+                    case OperatorName.Add:
                         evalStack.Op_Add();
                         break;
-                    case OperatorName.sub:
+                    case OperatorName.Sub:
                         evalStack.Op_Sub();
                         break;
-                    case OperatorName.div:
+                    case OperatorName.Div:
                         evalStack.Op_Div();
                         break;
-                    case OperatorName.neg:
+                    case OperatorName.Neg:
                         evalStack.Op_Neg();
                         break;
-                    case OperatorName.random:
+                    case OperatorName.Random:
                         evalStack.Op_Random();
                         break;
-                    case OperatorName.mul:
+                    case OperatorName.Mul:
                         evalStack.Op_Mul();
                         break;
-                    case OperatorName.sqrt:
+                    case OperatorName.Sqrt:
                         evalStack.Op_Sqrt();
                         break;
-                    case OperatorName.drop:
+                    case OperatorName.Drop:
                         evalStack.Op_Drop();
                         break;
-                    case OperatorName.exch:
+                    case OperatorName.Exch:
                         evalStack.Op_Exch();
                         break;
-                    case OperatorName.index:
+                    case OperatorName.Index:
                         evalStack.Op_Index();
                         break;
-                    case OperatorName.roll:
+                    case OperatorName.Roll:
                         evalStack.Op_Roll();
                         break;
-                    case OperatorName.dup:
+                    case OperatorName.Dup:
                         evalStack.Op_Dup();
                         break;
 
                     //-------------------------
                     // 4.5: Storage Operators
-                    case OperatorName.put:
+                    case OperatorName.Put:
                         evalStack.Put();
                         break;
-                    case OperatorName.get:
+                    case OperatorName.Get:
                         evalStack.Get();
                         break;
 
                     //-------------------------
                     // 4.6: Conditional
-                    case OperatorName.and:
+                    case OperatorName.And:
                         evalStack.Op_And();
                         break;
-                    case OperatorName.or:
+                    case OperatorName.Or:
                         evalStack.Op_Or();
                         break;
-                    case OperatorName.not:
+                    case OperatorName.Not:
                         evalStack.Op_Not();
                         break;
-                    case OperatorName.eq:
+                    case OperatorName.Eq:
                         evalStack.Op_Eq();
                         break;
-                    case OperatorName.ifelse:
+                    case OperatorName.Ifelse:
                         evalStack.Op_IfElse();
                         break;
-                    case OperatorName.rlineto:
+                    case OperatorName.Rlineto:
                         evalStack.R_LineTo();
                         break;
-                    case OperatorName.hlineto:
+                    case OperatorName.Hlineto:
                         evalStack.H_LineTo();
                         break;
-                    case OperatorName.vlineto:
+                    case OperatorName.Vlineto:
                         evalStack.V_LineTo();
                         break;
-                    case OperatorName.rrcurveto:
+                    case OperatorName.Rrcurveto:
                         evalStack.RR_CurveTo();
                         break;
-                    case OperatorName.hhcurveto:
+                    case OperatorName.Hhcurveto:
                         evalStack.HH_CurveTo();
                         break;
-                    case OperatorName.hvcurveto:
+                    case OperatorName.Hvcurveto:
                         evalStack.HV_CurveTo();
                         break;
-                    case OperatorName.rcurveline:
+                    case OperatorName.Rcurveline:
                         evalStack.R_CurveLine();
                         break;
-                    case OperatorName.rlinecurve:
+                    case OperatorName.Rlinecurve:
                         evalStack.R_LineCurve();
                         break;
-                    case OperatorName.vhcurveto:
+                    case OperatorName.Vhcurveto:
                         evalStack.VH_CurveTo();
                         break;
-                    case OperatorName.vvcurveto:
+                    case OperatorName.Vvcurveto:
                         evalStack.VV_CurveTo();
                         break;
-                    case OperatorName.rmoveto:
+                    case OperatorName.Rmoveto:
                         evalStack.R_MoveTo();
                         break;
-                    case OperatorName.hmoveto:
+                    case OperatorName.Hmoveto:
                         evalStack.H_MoveTo();
                         break;
-                    case OperatorName.vmoveto:
+                    case OperatorName.Vmoveto:
                         evalStack.V_MoveTo();
                         break;
 
                     //-------------------------------------------------------------------
                     // 4.3 Hint Operators
-                    case OperatorName.hstem:
+                    case OperatorName.Hstem:
                         evalStack.H_Stem();
                         break;
-                    case OperatorName.vstem:
+                    case OperatorName.Vstem:
                         evalStack.V_Stem();
                         break;
-                    case OperatorName.vstemhm:
+                    case OperatorName.Vstemhm:
                         evalStack.V_StemHM();
                         break;
-                    case OperatorName.hstemhm:
+                    case OperatorName.Hstemhm:
                         evalStack.H_StemHM();
                         break;
-                    case OperatorName.hintmask1:
+                    case OperatorName.Hintmask1:
                         evalStack.HintMask1(inst.Value);
                         break;
-                    case OperatorName.hintmask2:
+                    case OperatorName.Hintmask2:
                         evalStack.HintMask2(inst.Value);
                         break;
-                    case OperatorName.hintmask3:
+                    case OperatorName.Hintmask3:
                         evalStack.HintMask3(inst.Value);
                         break;
-                    case OperatorName.hintmask4:
+                    case OperatorName.Hintmask4:
                         evalStack.HintMask4(inst.Value);
                         break;
-                    case OperatorName.hintmask_bits:
+                    case OperatorName.Hintmask_bits:
                         evalStack.HintMaskBits(inst.Value);
                         break;
 
                     //------------------------------
-                    case OperatorName.cntrmask1:
+                    case OperatorName.Cntrmask1:
                         evalStack.CounterSpaceMask1(inst.Value);
                         break;
-                    case OperatorName.cntrmask2:
+                    case OperatorName.Cntrmask2:
                         evalStack.CounterSpaceMask2(inst.Value);
                         break;
-                    case OperatorName.cntrmask3:
+                    case OperatorName.Cntrmask3:
                         evalStack.CounterSpaceMask3(inst.Value);
                         break;
-                    case OperatorName.cntrmask4:
+                    case OperatorName.Cntrmask4:
                         evalStack.CounterSpaceMask4(inst.Value);
                         break;
-                    case OperatorName.cntrmask_bits:
+                    case OperatorName.Cntrmask_bits:
                         evalStack.CounterSpaceMaskBits(inst.Value);
                         break;
 
                     //-------------------------
                     // 4.7: Subroutine Operators
-                    case OperatorName._return:
+                    case OperatorName.Return:
 
                         // TODO: I don't think we need to actually track XY values here.
                         // Don't forget to return evalStack's currentX, currentY to prev eval context
@@ -291,8 +291,8 @@ namespace SixLabors.Fonts.Tables.Cff
                         break;
 
                     // Should not occur!-> since we replace this in parsing step
-                    case OperatorName.callgsubr:
-                    case OperatorName.callsubr:
+                    case OperatorName.Callgsubr:
+                    case OperatorName.Callsubr:
                         throw new NotSupportedException();
                 }
             }

@@ -10,6 +10,20 @@ namespace SixLabors.Fonts.Tables.Cff
     {
         private readonly byte[][] globalSubrRawBuffers;
         private readonly CffPrivateDictionary? privateDictionary;
+#if DEBUG
+        private int dbugCount = 0;
+        private int dbugInstructionListMark = 0;
+#endif
+        private int hintStemCount = 0;
+        private bool foundSomeStem = false;
+        private bool enterPathConstructionSeq = false;
+        private Type2GlyphInstructionList instructionList = new();
+        private int currentIntegerCount = 0;
+        private bool doStemCount = true;
+        private FontDict? currentFontDict;
+        private readonly int globalSubrBias;
+        private int localSubrBias;
+        private OperatorName latestOpName = OperatorName.Unknown;
 
         // from https://www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5177.Type2.pdf
         // Type 2 Charstring Organization:
@@ -41,84 +55,34 @@ namespace SixLabors.Fonts.Tables.Cff
 
             if (globalSubrRawBuffers.Length > 0)
             {
-                this._globalSubrBias = CalculateBias(globalSubrRawBuffers.Length);
+                this.globalSubrBias = CalculateBias(globalSubrRawBuffers.Length);
             }
 
             if (this.privateDictionary?.LocalSubrRawBuffers.Length > 0)
             {
-                this._localSubrBias = CalculateBias(this.privateDictionary.LocalSubrRawBuffers.Length);
+                this.localSubrBias = CalculateBias(this.privateDictionary.LocalSubrRawBuffers.Length);
             }
         }
 
 #if DEBUG
-        private int _dbugCount = 0;
-        private int _dbugInstructionListMark = 0;
+        public ushort DbugCurrentGlyphIndex { get; set; }
 #endif
-        private int _hintStemCount = 0;
-        private bool _foundSomeStem = false;
-        private bool _enterPathConstructionSeq = false;
-        private Type2GlyphInstructionList _insts;
-        private int _current_integer_count = 0;
-        private bool _doStemCount = true;
 
-        //Cff1Font _currentCff1Font;
-        private FontDict _currentFontDict;
-        private int _globalSubrBias;
-        private int _localSubrBias;
-
-        private static int CalculateBias(int nsubr)
-        {
-            //-------------
-            // from Technical Note #5176 (CFF spec)
-            // resolve with bias
-            // Card16 bias;
-            // Card16 nSubrs = subrINDEX.count;
-            // if (CharstringType == 1)
-            //    bias = 0;
-            // else if (nSubrs < 1240)
-            //    bias = 107;
-            // else if (nSubrs < 33900)
-            //    bias = 1131;
-            // else
-            //    bias = 32768;
-            // find local subroutine
-            return (nsubr < 1240) ? 107 : (nsubr < 33900) ? 1131 : 32768;
-        }
-
-        private struct SimpleBinaryReader
-        {
-            private byte[] _buffer;
-            private int _pos;
-
-            public SimpleBinaryReader(byte[] buffer)
-            {
-                this._buffer = buffer;
-                this._pos = 0;
-            }
-
-            public bool IsEnd() => this._pos >= this._buffer.Length;
-
-            public byte ReadByte()
-            {
-                // read current byte to stack and advance pos after read
-                return this._buffer[this._pos++];
-            }
-
-            public int BufferLength => this._buffer.Length;
-
-            public int Position => this._pos;
-
-            public int ReadFloatFixed1616()
-            {
-                byte b0 = this._buffer[this._pos];
-                byte b1 = this._buffer[this._pos + 1];
-                byte b2 = this._buffer[this._pos + 2];
-                byte b3 = this._buffer[this._pos + 3];
-
-                this._pos += 4;
-                return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
-            }
-        }
+        //-------------
+        // from Technical Note #5176 (CFF spec)
+        // resolve with bias
+        // Card16 bias;
+        // Card16 nSubrs = subrINDEX.count;
+        // if (CharstringType == 1)
+        //    bias = 0;
+        // else if (nSubrs < 1240)
+        //    bias = 107;
+        // else if (nSubrs < 33900)
+        //    bias = 1131;
+        // else
+        //    bias = 32768;
+        // find local subroutine
+        private static int CalculateBias(int nsubr) => (nsubr < 1240) ? 107 : (nsubr < 33900) ? 1131 : 32768;
 
         private void ParseType2CharStringBuffer(byte[] buffer)
         {
@@ -132,10 +96,9 @@ namespace SixLabors.Fonts.Tables.Cff
                 b0 = reader.ReadByte();
 #if DEBUG
                 // easy for debugging here
-                this._dbugCount++;
+                this.dbugCount++;
                 if (b0 < 32)
                 {
-
                 }
 #endif
                 switch (b0)
@@ -148,11 +111,10 @@ namespace SixLabors.Fonts.Tables.Cff
                             return;
                         }
 
-                        //
-                        this._insts.AddInt(ReadIntegerNumber(ref reader, b0));
-                        if (this._doStemCount)
+                        this.instructionList.AddInt(ReadIntegerNumber(ref reader, b0));
+                        if (this.doStemCount)
                         {
-                            this._current_integer_count++;
+                            this.currentIntegerCount++;
                         }
 
                         break;
@@ -167,45 +129,44 @@ namespace SixLabors.Fonts.Tables.Cff
                         // the fourth byte contains the lowest order bits.
 
                         // eg. found in font Asana Math regular, glyph_index: 114 , 292, 1070 etc.
+                        this.instructionList.AddFloat(reader.ReadFloatFixed1616());
 
-                        this._insts.AddFloat(reader.ReadFloatFixed1616());
-
-                        if (this._doStemCount)
+                        if (this.doStemCount)
                         {
-                            this._current_integer_count++;
+                            this.currentIntegerCount++;
                         }
 
                         break;
-                    case (byte)Type2Operator1.shortint: // 28
+                    case (byte)Type2Operator1.Shortint: // 28
 
                         // shortint
                         // First byte of a 3-byte sequence specifying a number.
                         // a ShortInt value is specified by using the operator (28) followed by two bytes
                         // which represent numbers between –32768 and + 32767.The
                         // most significant byte follows the(28)
-                        byte s_b0 = reader.ReadByte();
-                        byte s_b1 = reader.ReadByte();
-                        this._insts.AddInt((short)((s_b0 << 8) | (s_b1)));
-                        //
-                        if (this._doStemCount)
+                        byte sb0 = reader.ReadByte();
+                        byte sb1 = reader.ReadByte();
+                        this.instructionList.AddInt((short)((sb0 << 8) | sb1));
+
+                        if (this.doStemCount)
                         {
-                            this._current_integer_count++;
+                            this.currentIntegerCount++;
                         }
+
                         break;
+
                     //---------------------------------------------------
-                    case (byte)Type2Operator1._Reserved0_:// ???
-                    case (byte)Type2Operator1._Reserved2_:// ???
-                    case (byte)Type2Operator1._Reserved9_:// ???
-                    case (byte)Type2Operator1._Reserved13_:// ???
-                    case (byte)Type2Operator1._Reserved15_:// ???
-                    case (byte)Type2Operator1._Reserved16_: // ???
-                    case (byte)Type2Operator1._Reserved17_: // ???
+                    case (byte)Type2Operator1.Reserved0_: // ???
+                    case (byte)Type2Operator1.Reserved2_: // ???
+                    case (byte)Type2Operator1.Reserved9_: // ???
+                    case (byte)Type2Operator1.Reserved13_: // ???
+                    case (byte)Type2Operator1.Reserved15_: // ???
+                    case (byte)Type2Operator1.Reserved16_: // ???
+                    case (byte)Type2Operator1.Reserved17_: // ???
                         // reserved, do nothing ?
                         break;
 
-                    case (byte)Type2Operator1.escape: // 12
-
-
+                    case (byte)Type2Operator1.Escape: // 12
                         b0 = reader.ReadByte();
                         switch ((Type2Operator2)b0)
                         {
@@ -215,88 +176,91 @@ namespace SixLabors.Fonts.Tables.Cff
                                     Debug.WriteLine("err!:" + b0);
                                     return;
                                 }
+
                                 break;
+
                             //-------------------------
                             // 4.1: Path Construction Operators
-                            case Type2Operator2.flex:
-                                this._insts.AddOp(OperatorName.flex);
+                            case Type2Operator2.Flex:
+                                this.instructionList.AddOp(OperatorName.Flex);
                                 break;
-                            case Type2Operator2.hflex:
-                                this._insts.AddOp(OperatorName.hflex);
+                            case Type2Operator2.Hflex:
+                                this.instructionList.AddOp(OperatorName.Hflex);
                                 break;
-                            case Type2Operator2.hflex1:
-                                this._insts.AddOp(OperatorName.hflex1);
+                            case Type2Operator2.Hflex1:
+                                this.instructionList.AddOp(OperatorName.Hflex1);
                                 break;
-                            case Type2Operator2.flex1:
-                                this._insts.AddOp(OperatorName.flex1);
-                                ;
+                            case Type2Operator2.Flex1:
+                                this.instructionList.AddOp(OperatorName.Flex1);
                                 break;
+
                             //-------------------------
                             // 4.4: Arithmetic Operators
-                            case Type2Operator2.abs:
-                                this._insts.AddOp(OperatorName.abs);
+                            case Type2Operator2.Abs:
+                                this.instructionList.AddOp(OperatorName.Abs);
                                 break;
-                            case Type2Operator2.add:
-                                this._insts.AddOp(OperatorName.add);
+                            case Type2Operator2.Add:
+                                this.instructionList.AddOp(OperatorName.Add);
                                 break;
-                            case Type2Operator2.sub:
-                                this._insts.AddOp(OperatorName.sub);
+                            case Type2Operator2.Sub:
+                                this.instructionList.AddOp(OperatorName.Sub);
                                 break;
-                            case Type2Operator2.div:
-                                this._insts.AddOp(OperatorName.div);
+                            case Type2Operator2.Div:
+                                this.instructionList.AddOp(OperatorName.Div);
                                 break;
-                            case Type2Operator2.neg:
-                                this._insts.AddOp(OperatorName.neg);
+                            case Type2Operator2.Neg:
+                                this.instructionList.AddOp(OperatorName.Neg);
                                 break;
-                            case Type2Operator2.random:
-                                this._insts.AddOp(OperatorName.random);
+                            case Type2Operator2.Random:
+                                this.instructionList.AddOp(OperatorName.Random);
                                 break;
-                            case Type2Operator2.mul:
-                                this._insts.AddOp(OperatorName.mul);
+                            case Type2Operator2.Mul:
+                                this.instructionList.AddOp(OperatorName.Mul);
                                 break;
-                            case Type2Operator2.sqrt:
-                                this._insts.AddOp(OperatorName.sqrt);
+                            case Type2Operator2.Sqrt:
+                                this.instructionList.AddOp(OperatorName.Sqrt);
                                 break;
-                            case Type2Operator2.drop:
-                                this._insts.AddOp(OperatorName.drop);
+                            case Type2Operator2.Drop:
+                                this.instructionList.AddOp(OperatorName.Drop);
                                 break;
-                            case Type2Operator2.exch:
-                                this._insts.AddOp(OperatorName.exch);
+                            case Type2Operator2.Exch:
+                                this.instructionList.AddOp(OperatorName.Exch);
                                 break;
-                            case Type2Operator2.index:
-                                this._insts.AddOp(OperatorName.index);
+                            case Type2Operator2.Index:
+                                this.instructionList.AddOp(OperatorName.Index);
                                 break;
-                            case Type2Operator2.roll:
-                                this._insts.AddOp(OperatorName.roll);
+                            case Type2Operator2.Roll:
+                                this.instructionList.AddOp(OperatorName.Roll);
                                 break;
-                            case Type2Operator2.dup:
-                                this._insts.AddOp(OperatorName.dup);
+                            case Type2Operator2.Dup:
+                                this.instructionList.AddOp(OperatorName.Dup);
                                 break;
 
                             //-------------------------
                             // 4.5: Storage Operators
-                            case Type2Operator2.put:
-                                this._insts.AddOp(OperatorName.put);
+                            case Type2Operator2.Put:
+                                this.instructionList.AddOp(OperatorName.Put);
                                 break;
-                            case Type2Operator2.get:
-                                this._insts.AddOp(OperatorName.get);
+                            case Type2Operator2.Get:
+                                this.instructionList.AddOp(OperatorName.Get);
                                 break;
+
                             //-------------------------
                             // 4.6: Conditional
-                            case Type2Operator2.and:
-                                this._insts.AddOp(OperatorName.and);
+                            case Type2Operator2.And:
+                                this.instructionList.AddOp(OperatorName.And);
                                 break;
-                            case Type2Operator2.or:
-                                this._insts.AddOp(OperatorName.or);
+                            case Type2Operator2.Or:
+                                this.instructionList.AddOp(OperatorName.Or);
                                 break;
-                            case Type2Operator2.not:
-                                this._insts.AddOp(OperatorName.not);
+                            case Type2Operator2.Not:
+                                this.instructionList.AddOp(OperatorName.Not);
                                 break;
-                            case Type2Operator2.eq:
-                                this._insts.AddOp(OperatorName.eq);
+                            case Type2Operator2.Eq:
+                                this.instructionList.AddOp(OperatorName.Eq);
                                 break;
-                            case Type2Operator2.ifelse:
-                                this._insts.AddOp(OperatorName.ifelse);
+                            case Type2Operator2.Ifelse:
+                                this.instructionList.AddOp(OperatorName.Ifelse);
                                 break;
                         }
 
@@ -305,91 +269,96 @@ namespace SixLabors.Fonts.Tables.Cff
                         break;
 
                     //---------------------------------------------------------------------------
-                    case (byte)Type2Operator1.endchar:
+                    case (byte)Type2Operator1.Endchar:
                         this.AddEndCharOp();
                         cont = false;
+
                         // when we found end char
                         // stop reading this...
                         break;
-                    case (byte)Type2Operator1.rmoveto:
-                        this.AddMoveToOp(OperatorName.rmoveto);
+                    case (byte)Type2Operator1.Rmoveto:
+                        this.AddMoveToOp(OperatorName.Rmoveto);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.hmoveto:
-                        this.AddMoveToOp(OperatorName.hmoveto);
+                    case (byte)Type2Operator1.Hmoveto:
+                        this.AddMoveToOp(OperatorName.Hmoveto);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.vmoveto:
-                        this.AddMoveToOp(OperatorName.vmoveto);
+                    case (byte)Type2Operator1.Vmoveto:
+                        this.AddMoveToOp(OperatorName.Vmoveto);
                         this.StopStemCount();
                         break;
+
                     //---------------------------------------------------------------------------
-                    case (byte)Type2Operator1.rlineto:
-                        this._insts.AddOp(OperatorName.rlineto);
+                    case (byte)Type2Operator1.Rlineto:
+                        this.instructionList.AddOp(OperatorName.Rlineto);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.hlineto:
-                        this._insts.AddOp(OperatorName.hlineto);
+                    case (byte)Type2Operator1.Hlineto:
+                        this.instructionList.AddOp(OperatorName.Hlineto);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.vlineto:
-                        this._insts.AddOp(OperatorName.vlineto);
+                    case (byte)Type2Operator1.Vlineto:
+                        this.instructionList.AddOp(OperatorName.Vlineto);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.rrcurveto:
-                        this._insts.AddOp(OperatorName.rrcurveto);
+                    case (byte)Type2Operator1.Rrcurveto:
+                        this.instructionList.AddOp(OperatorName.Rrcurveto);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.hhcurveto:
-                        this._insts.AddOp(OperatorName.hhcurveto);
+                    case (byte)Type2Operator1.Hhcurveto:
+                        this.instructionList.AddOp(OperatorName.Hhcurveto);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.hvcurveto:
-                        this._insts.AddOp(OperatorName.hvcurveto);
+                    case (byte)Type2Operator1.Hvcurveto:
+                        this.instructionList.AddOp(OperatorName.Hvcurveto);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.rcurveline:
-                        this._insts.AddOp(OperatorName.rcurveline);
+                    case (byte)Type2Operator1.Rcurveline:
+                        this.instructionList.AddOp(OperatorName.Rcurveline);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.rlinecurve:
-                        this._insts.AddOp(OperatorName.rlinecurve);
+                    case (byte)Type2Operator1.Rlinecurve:
+                        this.instructionList.AddOp(OperatorName.Rlinecurve);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.vhcurveto:
-                        this._insts.AddOp(OperatorName.vhcurveto);
+                    case (byte)Type2Operator1.Vhcurveto:
+                        this.instructionList.AddOp(OperatorName.Vhcurveto);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.vvcurveto:
-                        this._insts.AddOp(OperatorName.vvcurveto);
+                    case (byte)Type2Operator1.Vvcurveto:
+                        this.instructionList.AddOp(OperatorName.Vvcurveto);
                         this.StopStemCount();
                         break;
+
                     //-------------------------------------------------------------------
                     // 4.3 Hint Operators
-                    case (byte)Type2Operator1.hstem:
-                        this.AddStemToList(OperatorName.hstem);
+                    case (byte)Type2Operator1.Hstem:
+                        this.AddStemToList(OperatorName.Hstem);
                         break;
-                    case (byte)Type2Operator1.vstem:
-                        this.AddStemToList(OperatorName.vstem);
+                    case (byte)Type2Operator1.Vstem:
+                        this.AddStemToList(OperatorName.Vstem);
                         break;
-                    case (byte)Type2Operator1.vstemhm:
-                        this.AddStemToList(OperatorName.vstemhm);
+                    case (byte)Type2Operator1.Vstemhm:
+                        this.AddStemToList(OperatorName.Vstemhm);
                         break;
-                    case (byte)Type2Operator1.hstemhm:
-                        this.AddStemToList(OperatorName.hstemhm);
+                    case (byte)Type2Operator1.Hstemhm:
+                        this.AddStemToList(OperatorName.Hstemhm);
                         break;
+
                     //-------------------------------------------------------------------
-                    case (byte)Type2Operator1.hintmask:
+                    case (byte)Type2Operator1.Hintmask:
                         this.AddHintMaskToList(ref reader);
                         this.StopStemCount();
                         break;
-                    case (byte)Type2Operator1.cntrmask:
+                    case (byte)Type2Operator1.Cntrmask:
                         this.AddCounterMaskToList(ref reader);
                         this.StopStemCount();
                         break;
+
                     //-------------------------------------------------------------------
                     // 4.7: Subroutine Operators
-                    case (byte)Type2Operator1._return:
+                    case (byte)Type2Operator1.Return:
 #if DEBUG
                         if (!reader.IsEnd())
                         {
@@ -397,30 +366,31 @@ namespace SixLabors.Fonts.Tables.Cff
                         }
 #endif
                         return;
+
                     //-------------------------------------------------------------------
-                    case (byte)Type2Operator1.callsubr:
+                    case (byte)Type2Operator1.Callsubr:
 
                         // get local subr proc
-                        Type2Instruction inst = this._insts.RemoveLast();
+                        Type2Instruction inst = this.instructionList.RemoveLast();
                         if (!inst.IsLoadInt)
                         {
                             throw new NotSupportedException();
                         }
 
-                        if (this._doStemCount)
+                        if (this.doStemCount)
                         {
-                            this._current_integer_count--;
+                            this.currentIntegerCount--;
                         }
 
                         // subr_no must be adjusted with proper bias value
                         if (this.privateDictionary?.LocalSubrRawBuffers.Length > 0)
                         {
-                            this.ParseType2CharStringBuffer(this.privateDictionary.LocalSubrRawBuffers[inst.Value + this._localSubrBias]);
+                            this.ParseType2CharStringBuffer(this.privateDictionary.LocalSubrRawBuffers[inst.Value + this.localSubrBias]);
                         }
-                        else if (this._currentFontDict.LocalSubr != null)
+                        else if (this.currentFontDict?.LocalSubr != null)
                         {
                             // use private dict
-                            this.ParseType2CharStringBuffer(this._currentFontDict.LocalSubr[inst.Value + this._localSubrBias]);
+                            this.ParseType2CharStringBuffer(this.currentFontDict.LocalSubr[inst.Value + this.localSubrBias]);
                         }
                         else
                         {
@@ -428,92 +398,77 @@ namespace SixLabors.Fonts.Tables.Cff
                         }
 
                         break;
-                    case (byte)Type2Operator1.callgsubr:
+                    case (byte)Type2Operator1.Callgsubr:
 
-                        Type2Instruction inst2 = this._insts.RemoveLast();
+                        Type2Instruction inst2 = this.instructionList.RemoveLast();
                         if (!inst2.IsLoadInt)
                         {
                             throw new NotSupportedException();
                         }
-                        if (this._doStemCount)
+
+                        if (this.doStemCount)
                         {
-                            this._current_integer_count--;
+                            this.currentIntegerCount--;
                         }
 
                         // subr_no must be adjusted with proper bias value
                         // load global subr
-                        this.ParseType2CharStringBuffer(this.globalSubrRawBuffers[inst2.Value + this._globalSubrBias]);
+                        this.ParseType2CharStringBuffer(this.globalSubrRawBuffers[inst2.Value + this.globalSubrBias]);
 
                         break;
                 }
             }
         }
 
-#if DEBUG
-        public ushort dbugCurrentGlyphIndex;
-#endif
-
-
         public void SetCidFontDict(FontDict fontdic)
         {
-#if DEBUG
-            if (fontdic == null)
-            {
-                throw new NotSupportedException();
-            }
-#endif
-
-            this._currentFontDict = fontdic;
+            this.currentFontDict = fontdic;
             if (fontdic.LocalSubr != null)
             {
-                this._localSubrBias = CalculateBias(this._currentFontDict.LocalSubr.Length);
+                this.localSubrBias = CalculateBias(fontdic.LocalSubr.Length);
             }
             else
             {
-                this._localSubrBias = 0;
+                this.localSubrBias = 0;
             }
         }
 
         public Type2GlyphInstructionList ParseType2CharString(byte[] buffer)
         {
-            // reset
-            this._hintStemCount = 0;
-            this._current_integer_count = 0;
-            this._foundSomeStem = false;
-            this._enterPathConstructionSeq = false;
-            this._doStemCount = true;
+            // Reset
+            this.hintStemCount = 0;
+            this.currentIntegerCount = 0;
+            this.foundSomeStem = false;
+            this.enterPathConstructionSeq = false;
+            this.doStemCount = true;
+            this.instructionList = new Type2GlyphInstructionList();
 
-            this._insts = new Type2GlyphInstructionList();
             //--------------------
 #if DEBUG
-            this._dbugInstructionListMark++;
+            this.dbugInstructionListMark++;
 
-            //
-            this._insts.dbugGlyphIndex = this.dbugCurrentGlyphIndex;
+            this.instructionList.dbugGlyphIndex = this.DbugCurrentGlyphIndex;
 
-            if (this.dbugCurrentGlyphIndex == 496)
+            if (this.DbugCurrentGlyphIndex == 496)
             {
-
             }
 #endif
             this.ParseType2CharStringBuffer(buffer);
 
 #if DEBUG
-            if (this.dbugCurrentGlyphIndex == 496)
+            if (this.DbugCurrentGlyphIndex == 496)
             {
                 // _insts.dbugDumpInstructionListToFile("glyph_496.txt");
             }
 #endif
-            return this._insts;
+            return this.instructionList;
         }
 
         private void StopStemCount()
         {
-            this._current_integer_count = 0;
-            this._doStemCount = false;
+            this.currentIntegerCount = 0;
+            this.doStemCount = false;
         }
-
-        private OperatorName _latestOpName = OperatorName.Unknown;
 
         private void AddEndCharOp()
         {
@@ -524,24 +479,22 @@ namespace SixLabors.Fonts.Tables.Cff
             // hmoveto, vmoveto, rmoveto,
             // or endchar,
             // takes an additional argument — the width(as described earlier), which may be expressed as zero or one numeric argument
-
-            if (!this._foundSomeStem && !this._enterPathConstructionSeq)
+            if (!this.foundSomeStem && !this.enterPathConstructionSeq)
             {
-                if (this._insts.Count > 0)
+                if (this.instructionList.Count > 0)
                 {
-                    this._insts.ChangeFirstInstToGlyphWidthValue();
+                    this.instructionList.ChangeFirstInstToGlyphWidthValue();
                 }
             }
+
             // takes an additional argument — the width(as described earlier), which may be expressed as zero or one numeric argument
-            this._insts.AddOp(OperatorName.endchar);
+            this.instructionList.AddOp(OperatorName.Endchar);
         }
-
-
 
         /// <summary>
         /// for hmoveto, vmoveto, rmoveto
         /// </summary>
-        /// <param name="op"></param>
+        /// <param name="op">The operator name.</param>
         private void AddMoveToOp(OperatorName op)
         {
             // from https://www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5177.Type2.pdf
@@ -552,34 +505,34 @@ namespace SixLabors.Fonts.Tables.Cff
             // or endchar,
             // takes an additional argument — the width(as described earlier), which may be expressed as zero or one numeric argument
             // just add
-
-            if (!this._foundSomeStem && !this._enterPathConstructionSeq)
+            if (!this.foundSomeStem && !this.enterPathConstructionSeq)
             {
-                if (op == OperatorName.rmoveto)
+                if (op == OperatorName.Rmoveto)
                 {
-                    if ((this._insts.Count % 2) != 0)
+                    if ((this.instructionList.Count % 2) != 0)
                     {
-                        this._insts.ChangeFirstInstToGlyphWidthValue();
+                        this.instructionList.ChangeFirstInstToGlyphWidthValue();
                     }
                 }
                 else
                 {
                     // vmoveto, hmoveto
-                    if (this._insts.Count > 1)
+                    if (this.instructionList.Count > 1)
                     {
                         // ...
-                        this._insts.ChangeFirstInstToGlyphWidthValue();
+                        this.instructionList.ChangeFirstInstToGlyphWidthValue();
                     }
                 }
             }
-            this._enterPathConstructionSeq = true;
-            this._insts.AddOp(op);
+
+            this.enterPathConstructionSeq = true;
+            this.instructionList.AddOp(op);
         }
 
         /// <summary>
         /// for hstem, hstemhm, vstem, vstemhm
         /// </summary>
-        /// <param name="stemName"></param>
+        /// <param name="stemName">The operator name.</param>
         private void AddStemToList(OperatorName stemName)
         {
             // from https://www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5177.Type2.pdf
@@ -606,84 +559,80 @@ namespace SixLabors.Fonts.Tables.Cff
             // The sequence and form of a Type 2 charstring program may be
             // represented as:
             // w? { hs* vs*cm * hm * mt subpath}? { mt subpath} *endchar
-
-            if ((this._current_integer_count % 2) != 0)
+            if ((this.currentIntegerCount % 2) != 0)
             {
                 // all kind has even number of stem
-                if (this._foundSomeStem)
+                if (this.foundSomeStem)
                 {
 #if DEBUG
-                    this._insts.dbugDumpInstructionListToFile("test_type2_" + (this._dbugInstructionListMark - 1) + ".txt");
+                    this.instructionList.dbugDumpInstructionListToFile("test_type2_" + (this.dbugInstructionListMark - 1) + ".txt");
 #endif
                     throw new NotSupportedException();
                 }
                 else
                 {
                     // the first one is 'width'
-                    this._insts.ChangeFirstInstToGlyphWidthValue();
-                    this._current_integer_count--;
+                    this.instructionList.ChangeFirstInstToGlyphWidthValue();
+                    this.currentIntegerCount--;
                 }
             }
-            this._hintStemCount += (this._current_integer_count / 2); // save a snapshot of stem count
-            this._insts.AddOp(stemName);
-            this._current_integer_count = 0;// clear
-            this._foundSomeStem = true;
-            this._latestOpName = stemName;
+
+            this.hintStemCount += this.currentIntegerCount / 2; // save a snapshot of stem count
+            this.instructionList.AddOp(stemName);
+            this.currentIntegerCount = 0; // clear
+            this.foundSomeStem = true;
+            this.latestOpName = stemName;
         }
 
         /// <summary>
         /// add hintmask
         /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="reader">The binary reader.</param>
         private void AddHintMaskToList(ref SimpleBinaryReader reader)
         {
-            if (this._foundSomeStem && this._current_integer_count > 0)
+            if (this.foundSomeStem && this.currentIntegerCount > 0)
             {
-
                 // type2 5177.pdf
                 // ...
                 // If hstem and vstem hints are both declared at the beginning of
                 // a charstring, and this sequence is followed directly by the
                 // hintmask or cntrmask operators, ...
                 // the vstem hint operator need not be included ***
-
 #if DEBUG
-                if ((this._current_integer_count % 2) != 0)
+                if ((this.currentIntegerCount % 2) != 0)
                 {
                     throw new NotSupportedException();
                 }
                 else
                 {
-
                 }
 #endif
-                if (this._doStemCount)
+                if (this.doStemCount)
                 {
-                    switch (this._latestOpName)
+                    switch (this.latestOpName)
                     {
-                        case OperatorName.hstem:
+                        case OperatorName.Hstem:
                             // add vstem  ***( from reason above)
-
-                            this._hintStemCount += (this._current_integer_count / 2); // save a snapshot of stem count
-                            this._insts.AddOp(OperatorName.vstem);
-                            this._latestOpName = OperatorName.vstem;
-                            this._current_integer_count = 0; // clear
+                            this.hintStemCount += this.currentIntegerCount / 2; // save a snapshot of stem count
+                            this.instructionList.AddOp(OperatorName.Vstem);
+                            this.latestOpName = OperatorName.Vstem;
+                            this.currentIntegerCount = 0; // clear
                             break;
-                        case OperatorName.hstemhm:
+                        case OperatorName.Hstemhm:
                             // add vstem  ***( from reason above) ??
-                            this._hintStemCount += (this._current_integer_count / 2); // save a snapshot of stem count
-                            this._insts.AddOp(OperatorName.vstem);
-                            this._latestOpName = OperatorName.vstem;
-                            this._current_integer_count = 0;// clear
+                            this.hintStemCount += this.currentIntegerCount / 2; // save a snapshot of stem count
+                            this.instructionList.AddOp(OperatorName.Vstem);
+                            this.latestOpName = OperatorName.Vstem;
+                            this.currentIntegerCount = 0; // clear
                             break;
-                        case OperatorName.vstemhm:
+                        case OperatorName.Vstemhm:
                             //-------
                             // TODO: review here?
                             // found this in xits.otf
-                            this._hintStemCount += (this._current_integer_count / 2); // save a snapshot of stem count
-                            this._insts.AddOp(OperatorName.vstem);
-                            this._latestOpName = OperatorName.vstem;
-                            this._current_integer_count = 0;// clear
+                            this.hintStemCount += this.currentIntegerCount / 2; // save a snapshot of stem count
+                            this.instructionList.AddOp(OperatorName.Vstem);
+                            this.latestOpName = OperatorName.Vstem;
+                            this.currentIntegerCount = 0; // clear
                             break;
                         default:
                             throw new NotSupportedException();
@@ -691,20 +640,20 @@ namespace SixLabors.Fonts.Tables.Cff
                 }
                 else
                 {
-
                 }
             }
 
-            if (this._hintStemCount == 0)
+            if (this.hintStemCount == 0)
             {
-                if (!this._foundSomeStem)
+                if (!this.foundSomeStem)
                 {
-                    this._hintStemCount = (this._current_integer_count / 2);
-                    if (this._hintStemCount == 0)
+                    this.hintStemCount = this.currentIntegerCount / 2;
+                    if (this.hintStemCount == 0)
                     {
                         return;
                     }
-                    this._foundSomeStem = true;// ?
+
+                    this.foundSomeStem = true; // ?
                 }
                 else
                 {
@@ -714,51 +663,52 @@ namespace SixLabors.Fonts.Tables.Cff
 
             //----------------------
             // this is my hintmask extension, => to fit with our Evaluation stack
-            int properNumberOfMaskBytes = (this._hintStemCount + 7) / 8;
+            int properNumberOfMaskBytes = (this.hintStemCount + 7) / 8;
 
             if (reader.Position + properNumberOfMaskBytes >= reader.BufferLength)
             {
                 throw new NotSupportedException();
             }
+
             if (properNumberOfMaskBytes > 4)
             {
                 int remaining = properNumberOfMaskBytes;
 
                 for (; remaining > 3;)
                 {
-                    this._insts.AddInt((
+                    this.instructionList.AddInt(
                        (reader.ReadByte() << 24) |
                        (reader.ReadByte() << 16) |
                        (reader.ReadByte() << 8) |
-                       (reader.ReadByte())
-                       ));
+                       reader.ReadByte());
                     remaining -= 4; // ***
                 }
+
                 switch (remaining)
                 {
                     case 0:
                         // do nothing
                         break;
                     case 1:
-                        this._insts.AddInt(reader.ReadByte() << 24);
+                        this.instructionList.AddInt(reader.ReadByte() << 24);
                         break;
                     case 2:
-                        this._insts.AddInt(
+                        this.instructionList.AddInt(
                             (reader.ReadByte() << 24) |
                             (reader.ReadByte() << 16));
 
                         break;
                     case 3:
-                        this._insts.AddInt(
+                        this.instructionList.AddInt(
                             (reader.ReadByte() << 24) |
                             (reader.ReadByte() << 16) |
                             (reader.ReadByte() << 8));
                         break;
                     default:
-                        throw new NotSupportedException();// should not occur !
+                        throw new NotSupportedException(); // should not occur !
                 }
 
-                this._insts.AddOp(OperatorName.hintmask_bits, properNumberOfMaskBytes);
+                this.instructionList.AddOp(OperatorName.Hintmask_bits, properNumberOfMaskBytes);
             }
             else
             {
@@ -767,27 +717,18 @@ namespace SixLabors.Fonts.Tables.Cff
                 {
                     case 0:
                     default:
-                        throw new NotSupportedException();// should not occur !
+                        throw new NotSupportedException(); // should not occur !
                     case 1:
-                        this._insts.AddOp(OperatorName.hintmask1, (reader.ReadByte() << 24));
+                        this.instructionList.AddOp(OperatorName.Hintmask1, reader.ReadByte() << 24);
                         break;
                     case 2:
-                        this._insts.AddOp(OperatorName.hintmask2,
-                            (reader.ReadByte() << 24) |
-                            (reader.ReadByte() << 16));
+                        this.instructionList.AddOp(OperatorName.Hintmask2, (reader.ReadByte() << 24) | (reader.ReadByte() << 16));
                         break;
                     case 3:
-                        this._insts.AddOp(OperatorName.hintmask3,
-                            (reader.ReadByte() << 24) |
-                            (reader.ReadByte() << 16) |
-                            (reader.ReadByte() << 8));
+                        this.instructionList.AddOp(OperatorName.Hintmask3, (reader.ReadByte() << 24) | (reader.ReadByte() << 16) | (reader.ReadByte() << 8));
                         break;
                     case 4:
-                        this._insts.AddOp(OperatorName.hintmask4,
-                            (reader.ReadByte() << 24) |
-                            (reader.ReadByte() << 16) |
-                            (reader.ReadByte() << 8) |
-                            (reader.ReadByte()));
+                        this.instructionList.AddOp(OperatorName.Hintmask4, (reader.ReadByte() << 24) | (reader.ReadByte() << 16) | (reader.ReadByte() << 8) | reader.ReadByte());
                         break;
                 }
             }
@@ -796,16 +737,16 @@ namespace SixLabors.Fonts.Tables.Cff
         /// <summary>
         /// cntrmask
         /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="reader">The binary reader.</param>
         private void AddCounterMaskToList(ref SimpleBinaryReader reader)
         {
-            if (this._hintStemCount == 0)
+            if (this.hintStemCount == 0)
             {
-                if (!this._foundSomeStem)
+                if (!this.foundSomeStem)
                 {
                     // ????
-                    this._hintStemCount = (this._current_integer_count / 2);
-                    this._foundSomeStem = true;// ?
+                    this.hintStemCount = this.currentIntegerCount / 2;
+                    this.foundSomeStem = true; // ?
                 }
                 else
                 {
@@ -814,11 +755,12 @@ namespace SixLabors.Fonts.Tables.Cff
             }
             else
             {
-                this._hintStemCount += (this._current_integer_count / 2);
+                this.hintStemCount += this.currentIntegerCount / 2;
             }
+
             //----------------------
             // this is my hintmask extension, => to fit with our Evaluation stack
-            int properNumberOfMaskBytes = (this._hintStemCount + 7) / 8;
+            int properNumberOfMaskBytes = (this.hintStemCount + 7) / 8;
             if (reader.Position + properNumberOfMaskBytes >= reader.BufferLength)
             {
                 throw new NotSupportedException();
@@ -830,39 +772,39 @@ namespace SixLabors.Fonts.Tables.Cff
 
                 for (; remaining > 3;)
                 {
-                    this._insts.AddInt((
+                    this.instructionList.AddInt(
                        (reader.ReadByte() << 24) |
                        (reader.ReadByte() << 16) |
                        (reader.ReadByte() << 8) |
-                       (reader.ReadByte())
-                       ));
+                       reader.ReadByte());
                     remaining -= 4; // ***
                 }
+
                 switch (remaining)
                 {
                     case 0:
                         // do nothing
                         break;
                     case 1:
-                        this._insts.AddInt(reader.ReadByte() << 24);
+                        this.instructionList.AddInt(reader.ReadByte() << 24);
                         break;
                     case 2:
-                        this._insts.AddInt(
+                        this.instructionList.AddInt(
                             (reader.ReadByte() << 24) |
                             (reader.ReadByte() << 16));
 
                         break;
                     case 3:
-                        this._insts.AddInt(
+                        this.instructionList.AddInt(
                             (reader.ReadByte() << 24) |
                             (reader.ReadByte() << 16) |
                             (reader.ReadByte() << 8));
                         break;
                     default:
-                        throw new NotSupportedException();// should not occur !
+                        throw new NotSupportedException(); // should not occur !
                 }
 
-                this._insts.AddOp(OperatorName.cntrmask_bits, properNumberOfMaskBytes);
+                this.instructionList.AddOp(OperatorName.Cntrmask_bits, properNumberOfMaskBytes);
             }
             else
             {
@@ -871,54 +813,83 @@ namespace SixLabors.Fonts.Tables.Cff
                 {
                     case 0:
                     default:
-                        throw new NotSupportedException();// should not occur !
+                        throw new NotSupportedException(); // should not occur !
                     case 1:
-                        this._insts.AddOp(OperatorName.cntrmask1, (reader.ReadByte() << 24));
+                        this.instructionList.AddOp(OperatorName.Cntrmask1, reader.ReadByte() << 24);
                         break;
                     case 2:
-                        this._insts.AddOp(OperatorName.cntrmask2,
-                            (reader.ReadByte() << 24) |
-                            (reader.ReadByte() << 16)
-                            );
+                        this.instructionList.AddOp(
+                            OperatorName.Cntrmask2,
+                            (reader.ReadByte() << 24) | (reader.ReadByte() << 16));
                         break;
                     case 3:
-                        this._insts.AddOp(OperatorName.cntrmask3,
-                            (reader.ReadByte() << 24) |
-                            (reader.ReadByte() << 16) |
-                            (reader.ReadByte() << 8)
-                            );
+                        this.instructionList.AddOp(
+                            OperatorName.Cntrmask3,
+                            (reader.ReadByte() << 24) | (reader.ReadByte() << 16) | (reader.ReadByte() << 8));
                         break;
                     case 4:
-                        this._insts.AddOp(OperatorName.cntrmask4,
-                            (reader.ReadByte() << 24) |
-                            (reader.ReadByte() << 16) |
-                            (reader.ReadByte() << 8) |
-                            (reader.ReadByte())
-                            );
+                        this.instructionList.AddOp(
+                            OperatorName.Cntrmask4,
+                            (reader.ReadByte() << 24) | (reader.ReadByte() << 16) | (reader.ReadByte() << 8) | reader.ReadByte());
                         break;
                 }
             }
         }
 
-        private static int ReadIntegerNumber(ref SimpleBinaryReader _reader, byte b0)
+        private static int ReadIntegerNumber(ref SimpleBinaryReader reader, byte b0)
         {
-            if (b0 >= 32 && b0 <= 246)
+            if (b0 is >= 32 and <= 246)
             {
                 return b0 - 139;
             }
-            else if (b0 <= 250)  // && b0 >= 247 , *** if-else sequence is important! ***
+            else if (b0 <= 250)
             {
-                byte b1 = _reader.ReadByte();
-                return (b0 - 247) * 256 + b1 + 108;
+                // && b0 >= 247 , *** if-else sequence is important! ***
+                byte b1 = reader.ReadByte();
+                return ((b0 - 247) * 256) + b1 + 108;
             }
-            else if (b0 <= 254)  // &&  b0 >= 251 ,*** if-else sequence is important! ***
+            else if (b0 <= 254)
             {
-                byte b1 = _reader.ReadByte();
-                return -(b0 - 251) * 256 - b1 - 108;
+                // &&  b0 >= 251 ,*** if-else sequence is important! ***
+                byte b1 = reader.ReadByte();
+                return (-(b0 - 251) * 256) - b1 - 108;
             }
             else
             {
                 throw new NotSupportedException();
+            }
+        }
+
+        private struct SimpleBinaryReader
+        {
+            private readonly byte[] buffer;
+
+            public SimpleBinaryReader(byte[] buffer)
+            {
+                this.buffer = buffer;
+                this.Position = 0;
+            }
+
+            public int BufferLength => this.buffer.Length;
+
+            public int Position { get; private set; }
+
+            public bool IsEnd() => this.Position >= this.buffer.Length;
+
+            public byte ReadByte()
+
+                // read current byte to stack and advance pos after read
+                => this.buffer[this.Position++];
+
+            public int ReadFloatFixed1616()
+            {
+                byte b0 = this.buffer[this.Position];
+                byte b1 = this.buffer[this.Position + 1];
+                byte b2 = this.buffer[this.Position + 2];
+                byte b3 = this.buffer[this.Position + 3];
+
+                this.Position += 4;
+                return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
             }
         }
     }

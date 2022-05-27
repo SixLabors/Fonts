@@ -128,11 +128,11 @@ namespace SixLabors.Fonts.Tables.Cff
                         dbugSb.Append((sbyte)(this.Value >> 24) + " " + (sbyte)(this.Value >> 16) + " " + (sbyte)(this.Value >> 8));
                         break;
 
-                    case OperatorName.hintmask1:
-                    case OperatorName.hintmask2:
-                    case OperatorName.hintmask3:
-                    case OperatorName.hintmask4:
-                    case OperatorName.hintmask_bits:
+                    case OperatorName.Hintmask1:
+                    case OperatorName.Hintmask2:
+                    case OperatorName.Hintmask3:
+                    case OperatorName.Hintmask4:
+                    case OperatorName.Hintmask_bits:
                         dbugSb.Append(op_name.ToString() + " " + Convert.ToString(this.Value, 2));
                         break;
                     default:

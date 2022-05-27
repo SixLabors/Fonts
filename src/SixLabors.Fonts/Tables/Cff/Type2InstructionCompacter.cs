@@ -238,16 +238,16 @@ namespace SixLabors.Fonts.Tables.Cff
                             case OperatorName.LoadSbyte3:
                             case OperatorName.LoadFloat:
 
-                            case OperatorName.hintmask1:
-                            case OperatorName.hintmask2:
-                            case OperatorName.hintmask3:
-                            case OperatorName.hintmask4:
-                            case OperatorName.hintmask_bits:
-                            case OperatorName.cntrmask1:
-                            case OperatorName.cntrmask2:
-                            case OperatorName.cntrmask3:
-                            case OperatorName.cntrmask4:
-                            case OperatorName.cntrmask_bits:
+                            case OperatorName.Hintmask1:
+                            case OperatorName.Hintmask2:
+                            case OperatorName.Hintmask3:
+                            case OperatorName.Hintmask4:
+                            case OperatorName.Hintmask_bits:
+                            case OperatorName.Cntrmask1:
+                            case OperatorName.Cntrmask2:
+                            case OperatorName.Cntrmask3:
+                            case OperatorName.Cntrmask4:
+                            case OperatorName.Cntrmask_bits:
                                 break;
                             default:
                                 canbe_merged = true;

@@ -745,9 +745,9 @@ namespace SixLabors.Fonts.Tables.Cff
 #if DEBUG
                 // check
                 byte lastByte = buffer[offset.Length - 1];
-                if (lastByte is not (byte)Type2Operator1.endchar and
-                    not (byte)Type2Operator1.callgsubr and
-                    not (byte)Type2Operator1.callsubr)
+                if (lastByte is not (byte)Type2Operator1.Endchar and
+                    not (byte)Type2Operator1.Callgsubr and
+                    not (byte)Type2Operator1.Callsubr)
                 {
                     // 5177.Type2
                     // Note 6 The charstring itself may end with a call(g)subr; the subroutine must
@@ -759,7 +759,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
                 // Now we can parse the raw glyph instructions
 #if DEBUG
-                type2Parser.dbugCurrentGlyphIndex = (ushort)i;
+                type2Parser.DbugCurrentGlyphIndex = (ushort)i;
 #endif
 
                 if (isCidFont)
