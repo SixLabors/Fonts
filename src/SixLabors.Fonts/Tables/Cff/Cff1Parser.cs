@@ -21,8 +21,6 @@ namespace SixLabors.Fonts.Tables.Cff
         private static readonly Encoding Iso88591 = Encoding.GetEncoding("ISO-8859-1");
 
         private readonly StringBuilder pooledStringBuilder = new();
-        private readonly bool useCompactInstruction = true;
-        private readonly Type2InstructionCompacter instCompacter = new();
         private long offset;
         private int charStringsOffset;
         private int charsetOffset;
@@ -773,35 +771,11 @@ namespace SixLabors.Fonts.Tables.Cff
                 Type2GlyphInstructionList instList = type2Parser.ParseType2CharString(buffer);
                 if (instList != null)
                 {
-                    // use compact form or not
-                    if (this.useCompactInstruction)
-                    {
-                        // this is our extension,
-                        // if you don't want compact version
-                        // just use original
-                        instructions = this.instCompacter.Compact(instList.Instructions);
-
-#if DEBUG
-                        total += instructions.Length / (float)instList.Instructions.Count;
-#endif
-
-                    }
-                    else
-                    {
-                        instructions = instList.Instructions.ToArray();
-                    }
+                    instructions = instList.Instructions.ToArray();
                 }
 
                 glyphs[i] = new((ushort)i, instructions ?? Array.Empty<Type2Instruction>());
             }
-
-#if DEBUG
-            if (this.useCompactInstruction)
-            {
-                double avg = total / glyphCount;
-                System.Diagnostics.Debug.WriteLine("cff instruction compact avg:" + avg + "%");
-            }
-#endif
 
             return glyphs;
         }
