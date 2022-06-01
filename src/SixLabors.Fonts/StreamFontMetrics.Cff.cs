@@ -81,7 +81,7 @@ namespace SixLabors.Fonts
             HorizontalMetricsTable htmx = tables.Htmx;
             VerticalMetricsTable? vtmx = tables.Vmtx;
 
-            Cff1GlyphData vector = cff.GetGlyph(glyphId);
+            CffGlyphData vector = cff.GetGlyph(glyphId);
             Bounds bounds = vector.GetBounds();
             ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
             short lsb = htmx.GetLeftSideBearing(glyphId);

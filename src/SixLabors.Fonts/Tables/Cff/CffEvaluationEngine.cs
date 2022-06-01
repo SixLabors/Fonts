@@ -54,234 +54,235 @@ namespace SixLabors.Fonts.Tables.Cff
             using Type2EvaluationStack evalStack = new(renderer, currentX, currentY);
             for (int i = 0; i < instructionList.Length; ++i)
             {
-                Type2Instruction inst = instructionList[i];
+                Type2Instruction instruction = instructionList[i];
 
+                // TODO: What is this? I can't figure why it exists.
                 // This part is our extension to the original
-                int mergeFlags = inst.Op >> 6; // Upper 2 bits is our extension flags
+                int mergeFlags = instruction.Operator >> 6; // Upper 2 bits is our extension flags
                 switch (mergeFlags)
                 {
                     case 0: // Nothing
                         break;
                     case 1:
-                        evalStack.Push(inst.Value);
+                        evalStack.Push(instruction.Value);
                         break;
                     case 2:
-                        evalStack.Push((short)(inst.Value >> 16));
-                        evalStack.Push((short)(inst.Value >> 0));
+                        evalStack.Push((short)(instruction.Value >> 16));
+                        evalStack.Push((short)(instruction.Value >> 0));
                         break;
                     case 3:
-                        evalStack.Push((sbyte)(inst.Value >> 24));
-                        evalStack.Push((sbyte)(inst.Value >> 16));
-                        evalStack.Push((sbyte)(inst.Value >> 8));
-                        evalStack.Push((sbyte)(inst.Value >> 0));
+                        evalStack.Push((sbyte)(instruction.Value >> 24));
+                        evalStack.Push((sbyte)(instruction.Value >> 16));
+                        evalStack.Push((sbyte)(instruction.Value >> 8));
+                        evalStack.Push((sbyte)(instruction.Value >> 0));
                         break;
                 }
 
                 // We use only 6 lower bits for op_name
-                switch ((OperatorName)(inst.Op & 0b11_1111))
+                switch ((Type2InstructionKind)(instruction.Operator & 0b11_1111))
                 {
                     default:
                         throw new NotSupportedException();
-                    case OperatorName.GlyphWidth:
+                    case Type2InstructionKind.GlyphWidth:
 
                         // TODO:
                         break;
-                    case OperatorName.LoadInt:
-                        evalStack.Push(inst.Value);
+                    case Type2InstructionKind.LoadInt:
+                        evalStack.Push(instruction.Value);
                         break;
-                    case OperatorName.LoadSbyte4:
+                    case Type2InstructionKind.LoadSbyte4:
                         // 4 consecutive sbyte
-                        evalStack.Push((sbyte)(inst.Value >> 24));
-                        evalStack.Push((sbyte)(inst.Value >> 16));
-                        evalStack.Push((sbyte)(inst.Value >> 8));
-                        evalStack.Push((sbyte)(inst.Value >> 0));
+                        evalStack.Push((sbyte)(instruction.Value >> 24));
+                        evalStack.Push((sbyte)(instruction.Value >> 16));
+                        evalStack.Push((sbyte)(instruction.Value >> 8));
+                        evalStack.Push((sbyte)(instruction.Value >> 0));
                         break;
-                    case OperatorName.LoadSbyte3:
-                        evalStack.Push((sbyte)(inst.Value >> 24));
-                        evalStack.Push((sbyte)(inst.Value >> 16));
-                        evalStack.Push((sbyte)(inst.Value >> 8));
+                    case Type2InstructionKind.LoadSbyte3:
+                        evalStack.Push((sbyte)(instruction.Value >> 24));
+                        evalStack.Push((sbyte)(instruction.Value >> 16));
+                        evalStack.Push((sbyte)(instruction.Value >> 8));
                         break;
-                    case OperatorName.LoadShort2:
-                        evalStack.Push((short)(inst.Value >> 16));
-                        evalStack.Push((short)(inst.Value >> 0));
+                    case Type2InstructionKind.LoadShort2:
+                        evalStack.Push((short)(instruction.Value >> 16));
+                        evalStack.Push((short)(instruction.Value >> 0));
                         break;
-                    case OperatorName.LoadFloat:
-                        evalStack.Push(inst.ReadValueAsFixed1616());
+                    case Type2InstructionKind.LoadFloat:
+                        evalStack.Push(instruction.ReadValueAsFixed1616());
                         break;
-                    case OperatorName.Endchar:
+                    case Type2InstructionKind.Endchar:
                         evalStack.EndChar();
                         break;
-                    case OperatorName.Flex:
+                    case Type2InstructionKind.Flex:
                         evalStack.Flex();
                         break;
-                    case OperatorName.Hflex:
+                    case Type2InstructionKind.Hflex:
                         evalStack.H_Flex();
                         break;
-                    case OperatorName.Hflex1:
+                    case Type2InstructionKind.Hflex1:
                         evalStack.H_Flex1();
                         break;
-                    case OperatorName.Flex1:
+                    case Type2InstructionKind.Flex1:
                         evalStack.Flex1();
                         break;
 
                     //-------------------------
                     // 4.4: Arithmetic Operators
-                    case OperatorName.Abs:
+                    case Type2InstructionKind.Abs:
                         evalStack.Op_Abs();
                         break;
-                    case OperatorName.Add:
+                    case Type2InstructionKind.Add:
                         evalStack.Op_Add();
                         break;
-                    case OperatorName.Sub:
+                    case Type2InstructionKind.Sub:
                         evalStack.Op_Sub();
                         break;
-                    case OperatorName.Div:
+                    case Type2InstructionKind.Div:
                         evalStack.Op_Div();
                         break;
-                    case OperatorName.Neg:
+                    case Type2InstructionKind.Neg:
                         evalStack.Op_Neg();
                         break;
-                    case OperatorName.Random:
+                    case Type2InstructionKind.Random:
                         evalStack.Op_Random();
                         break;
-                    case OperatorName.Mul:
+                    case Type2InstructionKind.Mul:
                         evalStack.Op_Mul();
                         break;
-                    case OperatorName.Sqrt:
+                    case Type2InstructionKind.Sqrt:
                         evalStack.Op_Sqrt();
                         break;
-                    case OperatorName.Drop:
+                    case Type2InstructionKind.Drop:
                         evalStack.Op_Drop();
                         break;
-                    case OperatorName.Exch:
+                    case Type2InstructionKind.Exch:
                         evalStack.Op_Exch();
                         break;
-                    case OperatorName.Index:
+                    case Type2InstructionKind.Index:
                         evalStack.Op_Index();
                         break;
-                    case OperatorName.Roll:
+                    case Type2InstructionKind.Roll:
                         evalStack.Op_Roll();
                         break;
-                    case OperatorName.Dup:
+                    case Type2InstructionKind.Dup:
                         evalStack.Op_Dup();
                         break;
 
                     //-------------------------
                     // 4.5: Storage Operators
-                    case OperatorName.Put:
+                    case Type2InstructionKind.Put:
                         evalStack.Put();
                         break;
-                    case OperatorName.Get:
+                    case Type2InstructionKind.Get:
                         evalStack.Get();
                         break;
 
                     //-------------------------
                     // 4.6: Conditional
-                    case OperatorName.And:
+                    case Type2InstructionKind.And:
                         evalStack.Op_And();
                         break;
-                    case OperatorName.Or:
+                    case Type2InstructionKind.Or:
                         evalStack.Op_Or();
                         break;
-                    case OperatorName.Not:
+                    case Type2InstructionKind.Not:
                         evalStack.Op_Not();
                         break;
-                    case OperatorName.Eq:
+                    case Type2InstructionKind.Eq:
                         evalStack.Op_Eq();
                         break;
-                    case OperatorName.Ifelse:
+                    case Type2InstructionKind.Ifelse:
                         evalStack.Op_IfElse();
                         break;
-                    case OperatorName.Rlineto:
+                    case Type2InstructionKind.Rlineto:
                         evalStack.R_LineTo();
                         break;
-                    case OperatorName.Hlineto:
+                    case Type2InstructionKind.Hlineto:
                         evalStack.H_LineTo();
                         break;
-                    case OperatorName.Vlineto:
+                    case Type2InstructionKind.Vlineto:
                         evalStack.V_LineTo();
                         break;
-                    case OperatorName.Rrcurveto:
+                    case Type2InstructionKind.Rrcurveto:
                         evalStack.RR_CurveTo();
                         break;
-                    case OperatorName.Hhcurveto:
+                    case Type2InstructionKind.Hhcurveto:
                         evalStack.HH_CurveTo();
                         break;
-                    case OperatorName.Hvcurveto:
+                    case Type2InstructionKind.Hvcurveto:
                         evalStack.HV_CurveTo();
                         break;
-                    case OperatorName.Rcurveline:
+                    case Type2InstructionKind.Rcurveline:
                         evalStack.R_CurveLine();
                         break;
-                    case OperatorName.Rlinecurve:
+                    case Type2InstructionKind.Rlinecurve:
                         evalStack.R_LineCurve();
                         break;
-                    case OperatorName.Vhcurveto:
+                    case Type2InstructionKind.Vhcurveto:
                         evalStack.VH_CurveTo();
                         break;
-                    case OperatorName.Vvcurveto:
+                    case Type2InstructionKind.Vvcurveto:
                         evalStack.VV_CurveTo();
                         break;
-                    case OperatorName.Rmoveto:
+                    case Type2InstructionKind.Rmoveto:
                         evalStack.R_MoveTo();
                         break;
-                    case OperatorName.Hmoveto:
+                    case Type2InstructionKind.Hmoveto:
                         evalStack.H_MoveTo();
                         break;
-                    case OperatorName.Vmoveto:
+                    case Type2InstructionKind.Vmoveto:
                         evalStack.V_MoveTo();
                         break;
 
                     //-------------------------------------------------------------------
                     // 4.3 Hint Operators
-                    case OperatorName.Hstem:
+                    case Type2InstructionKind.Hstem:
                         evalStack.H_Stem();
                         break;
-                    case OperatorName.Vstem:
+                    case Type2InstructionKind.Vstem:
                         evalStack.V_Stem();
                         break;
-                    case OperatorName.Vstemhm:
+                    case Type2InstructionKind.Vstemhm:
                         evalStack.V_StemHM();
                         break;
-                    case OperatorName.Hstemhm:
+                    case Type2InstructionKind.Hstemhm:
                         evalStack.H_StemHM();
                         break;
-                    case OperatorName.Hintmask1:
-                        evalStack.HintMask1(inst.Value);
+                    case Type2InstructionKind.Hintmask1:
+                        evalStack.HintMask1(instruction.Value);
                         break;
-                    case OperatorName.Hintmask2:
-                        evalStack.HintMask2(inst.Value);
+                    case Type2InstructionKind.Hintmask2:
+                        evalStack.HintMask2(instruction.Value);
                         break;
-                    case OperatorName.Hintmask3:
-                        evalStack.HintMask3(inst.Value);
+                    case Type2InstructionKind.Hintmask3:
+                        evalStack.HintMask3(instruction.Value);
                         break;
-                    case OperatorName.Hintmask4:
-                        evalStack.HintMask4(inst.Value);
+                    case Type2InstructionKind.Hintmask4:
+                        evalStack.HintMask4(instruction.Value);
                         break;
-                    case OperatorName.Hintmask_bits:
-                        evalStack.HintMaskBits(inst.Value);
+                    case Type2InstructionKind.Hintmask_bits:
+                        evalStack.HintMaskBits(instruction.Value);
                         break;
 
                     //------------------------------
-                    case OperatorName.Cntrmask1:
-                        evalStack.CounterSpaceMask1(inst.Value);
+                    case Type2InstructionKind.Cntrmask1:
+                        evalStack.CounterSpaceMask1(instruction.Value);
                         break;
-                    case OperatorName.Cntrmask2:
-                        evalStack.CounterSpaceMask2(inst.Value);
+                    case Type2InstructionKind.Cntrmask2:
+                        evalStack.CounterSpaceMask2(instruction.Value);
                         break;
-                    case OperatorName.Cntrmask3:
-                        evalStack.CounterSpaceMask3(inst.Value);
+                    case Type2InstructionKind.Cntrmask3:
+                        evalStack.CounterSpaceMask3(instruction.Value);
                         break;
-                    case OperatorName.Cntrmask4:
-                        evalStack.CounterSpaceMask4(inst.Value);
+                    case Type2InstructionKind.Cntrmask4:
+                        evalStack.CounterSpaceMask4(instruction.Value);
                         break;
-                    case OperatorName.Cntrmask_bits:
-                        evalStack.CounterSpaceMaskBits(inst.Value);
+                    case Type2InstructionKind.Cntrmask_bits:
+                        evalStack.CounterSpaceMaskBits(instruction.Value);
                         break;
 
                     //-------------------------
                     // 4.7: Subroutine Operators
-                    case OperatorName.Return:
+                    case Type2InstructionKind.Return:
 
                         // TODO: I don't think we need to actually track XY values here.
                         // Don't forget to return evalStack's currentX, currentY to prev eval context
@@ -290,9 +291,9 @@ namespace SixLabors.Fonts.Tables.Cff
                         evalStack.Ret();
                         break;
 
-                    // Should not occur!-> since we replace this in parsing step
-                    case OperatorName.Callgsubr:
-                    case OperatorName.Callsubr:
+                    // Should not occur, since we replace this in parsing step
+                    case Type2InstructionKind.Callgsubr:
+                    case Type2InstructionKind.Callsubr:
                         throw new NotSupportedException();
                 }
             }

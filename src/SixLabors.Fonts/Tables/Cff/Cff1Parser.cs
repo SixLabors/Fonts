@@ -67,7 +67,7 @@ namespace SixLabors.Fonts.Tables.Cff
             this.ReadFDSelect(reader, topDictionary.CidFontInfo);
             FontDict[] fontDicts = this.ReadFDArray(reader, topDictionary.CidFontInfo);
             CffPrivateDictionary? privateDictionary = this.ReadPrivateDict(reader);
-            Cff1GlyphData[] glyphs = this.ReadCharStringsIndex(reader, topDictionary, globalSubrRawBuffers, fontDicts, privateDictionary);
+            CffGlyphData[] glyphs = this.ReadCharStringsIndex(reader, topDictionary, globalSubrRawBuffers, fontDicts, privateDictionary);
 
             this.ReadCharsets(reader, stringIndex, glyphs);
             this.ReadEncodings(reader);
@@ -395,7 +395,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // TODO: ...
         }
 
-        private void ReadCharsets(BigEndianBinaryReader reader, string[] stringIndex, Cff1GlyphData[] glyphs)
+        private void ReadCharsets(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
         {
             // Charset data is located via the offset operand to the
             // charset operator in the Top DICT.
@@ -421,7 +421,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void ReadCharsetsFormat0(BigEndianBinaryReader reader, string[] stringIndex, Cff1GlyphData[] glyphs)
+        private void ReadCharsetsFormat0(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
         {
             // Table 17: Format 0
             // Type     Name                Description
@@ -437,12 +437,12 @@ namespace SixLabors.Fonts.Tables.Cff
             // the .notdef glyph name is omitted.)
             for (int i = 1; i < glyphs.Length; ++i)
             {
-                ref Cff1GlyphData data = ref glyphs[i];
+                ref CffGlyphData data = ref glyphs[i];
                 data.GlyphName = this.GetSid(reader.ReadUInt16(), stringIndex);
             }
         }
 
-        private void ReadCharsetsFormat1(BigEndianBinaryReader reader, string[] stringIndex, Cff1GlyphData[] glyphs)
+        private void ReadCharsetsFormat1(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
         {
             // Table 18 Format 1
             // Type     Name                Description
@@ -465,7 +465,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 int count = reader.ReadByte() + 1; // since it does not include first element.
                 do
                 {
-                    ref Cff1GlyphData data = ref glyphs[i];
+                    ref CffGlyphData data = ref glyphs[i];
                     data.GlyphName = this.GetSid(sid, stringIndex);
 
                     count--;
@@ -476,7 +476,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private void ReadCharsetsFormat2(BigEndianBinaryReader reader, string[] stringIndex, Cff1GlyphData[] glyphs)
+        private void ReadCharsetsFormat2(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
         {
             // note:eg, Adobe's source-code-pro font
 
@@ -500,7 +500,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 int count = reader.ReadUInt16() + 1; // since it does not include first element.
                 do
                 {
-                    ref Cff1GlyphData data = ref glyphs[i];
+                    ref CffGlyphData data = ref glyphs[i];
                     data.GlyphName = this.GetSid(sid, stringIndex);
 
                     count--;
@@ -675,7 +675,7 @@ namespace SixLabors.Fonts.Tables.Cff
             return fontDicts;
         }
 
-        private Cff1GlyphData[] ReadCharStringsIndex(
+        private CffGlyphData[] ReadCharStringsIndex(
             BigEndianBinaryReader reader,
             CffTopDictionary topDictionary,
             byte[][] globalSubrRawBuffers,
@@ -725,7 +725,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 #endif
             int glyphCount = offsets.Length;
-            var glyphs = new Cff1GlyphData[glyphCount];
+            var glyphs = new CffGlyphData[glyphCount];
             Type2CharStringParser type2Parser = new(globalSubrRawBuffers, privateDictionary);
 
 #if DEBUG
@@ -756,25 +756,16 @@ namespace SixLabors.Fonts.Tables.Cff
 #endif
 
                 // Now we can parse the raw glyph instructions
-#if DEBUG
-                type2Parser.DbugCurrentGlyphIndex = (ushort)i;
-#endif
-
                 if (isCidFont)
                 {
-                    // select  proper local private dict
+                    // Select  proper local private dict
                     fdRangeProvider.SetCurrentGlyphIndex((ushort)i);
                     type2Parser.SetCidFontDict(fontDicts[fdRangeProvider.SelectedFDArray]);
                 }
 
-                Type2Instruction[]? instructions = null;
-                Type2GlyphInstructionList instList = type2Parser.ParseType2CharString(buffer);
-                if (instList != null)
-                {
-                    instructions = instList.Instructions.ToArray();
-                }
-
-                glyphs[i] = new((ushort)i, instructions ?? Array.Empty<Type2Instruction>());
+                // TODO: Can we avoid this allocation?
+                Type2GlyphInstructionCollection instructions = type2Parser.ParseType2CharString(buffer);
+                glyphs[i] = new CffGlyphData((ushort)i, instructions.ToArray());
             }
 
             return glyphs;
@@ -932,6 +923,8 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private CffDataDicEntry ReadEntry(BigEndianBinaryReader reader)
         {
+            List<CffOperand> operands = new();
+
             //-----------------------------
             // An operator is preceded by the operand(s) that
             // specify its value.
@@ -945,9 +938,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // Byte values 22–27, 31, and 255 are reserved.
 
             // An operator may be preceded by up to a maximum of 48 operands
-            CFFOperator? @operator = null;
-            List<CffOperand> operands = new();
-
+            CFFOperator? @operator;
             while (true)
             {
                 byte b0 = reader.ReadByte();

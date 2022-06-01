@@ -4,17 +4,31 @@
 namespace SixLabors.Fonts.Tables.Cff
 {
     /// <summary>
-    /// Merged ccf operators,(op1 and op2, note on attribute of each field)
+    /// Contains the combined collection of Type2 Operators plus custom instructions.
+    /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5177.Type2.pdf"/>
     /// </summary>
-    internal enum OperatorName : byte
+    internal enum Type2InstructionKind : byte
     {
         Unknown,
         LoadInt,
         LoadFloat,
         GlyphWidth,
 
+        // Custom Instructions
+
+        /// <summary>
+        /// Load 4 consecutive signed bytes.
+        /// </summary>
         LoadSbyte4, // my extension, 4 sbyte in an int32
+
+        /// <summary>
+        /// Load 3 consecutive signed bytes.
+        /// </summary>
         LoadSbyte3, // my extension, 3 sbytes in an int32
+
+        /// <summary>
+        /// Load 2 consecutive signed short.
+        /// </summary>
         LoadShort2, // my extension, 2 short in an int32
 
         //---------------------

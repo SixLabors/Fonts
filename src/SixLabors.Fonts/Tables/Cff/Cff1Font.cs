@@ -5,7 +5,7 @@ namespace SixLabors.Fonts.Tables.Cff
 {
     internal class Cff1Font
     {
-        public Cff1Font(string name, CffTopDictionary metrics, Cff1GlyphData[] glyphs)
+        public Cff1Font(string name, CffTopDictionary metrics, CffGlyphData[] glyphs)
         {
             this.FontName = name;
             this.Metrics = metrics;
@@ -16,6 +16,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public CffTopDictionary Metrics { get; set; }
 
-        public Cff1GlyphData[] Glyphs { get; }
+        public CffGlyphData[] Glyphs { get; }
     }
 }

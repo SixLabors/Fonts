@@ -6,9 +6,9 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal struct Cff1GlyphData
+    internal struct CffGlyphData
     {
-        public Cff1GlyphData(ushort glyphIndex, ReadOnlyMemory<Type2Instruction> glyphInstructions)
+        public CffGlyphData(ushort glyphIndex, ReadOnlyMemory<Type2Instruction> glyphInstructions)
         {
             this.GlyphIndex = glyphIndex;
             this.GlyphInstructions = glyphInstructions;

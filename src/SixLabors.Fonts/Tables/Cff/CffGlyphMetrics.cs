@@ -14,12 +14,12 @@ namespace SixLabors.Fonts.Tables.Cff
     internal class CffGlyphMetrics : GlyphMetrics
     {
         private static readonly Vector2 MirrorScale = new(1, -1);
-        private Cff1GlyphData glyphData;
+        private CffGlyphData glyphData;
 
         public CffGlyphMetrics(
             StreamFontMetrics font,
             CodePoint codePoint,
-            Cff1GlyphData glyphData,
+            CffGlyphData glyphData,
             Bounds bounds,
             ushort advanceWidth,
             ushort advanceHeight,

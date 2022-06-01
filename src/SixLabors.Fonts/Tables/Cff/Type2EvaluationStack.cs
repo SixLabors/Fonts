@@ -624,7 +624,6 @@ namespace SixLabors.Fonts.Tables.Cff
         {
             // calculate bytes need by
             // bytes need = (bitCount+7)/8
-
             this.argStack.Clear(); // clear stack
         }
 
@@ -786,9 +785,6 @@ namespace SixLabors.Fonts.Tables.Cff
     /// <summary>
     /// A ref struct stack implementation that uses a pooled span to store the data.
     /// </summary>
-    /// <remarks>
-    /// Naming differes from the runtime stack and follows JavaScript array conventions for ease of porting from FontKit. 
-    /// </remarks>
     /// <typeparam name="T">The type of elements in the stack.</typeparam>
     internal ref struct RefStack<T>
         where T : struct

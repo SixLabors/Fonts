@@ -10,13 +10,13 @@ namespace SixLabors.Fonts.Tables.Cff
     {
         internal const string TableName = "CFF "; // 4 chars
 
-        private readonly Cff1GlyphData[] glyphs;
+        private readonly CffGlyphData[] glyphs;
 
         public CffTable(Cff1Font cff1Font) => this.glyphs = cff1Font.Glyphs;
 
         public int GlyphCount => this.glyphs.Length;
 
-        public Cff1GlyphData GetGlyph(int index)
+        public CffGlyphData GetGlyph(int index)
             => this.glyphs[index];
 
         public static CffTable? Load(FontReader fontReader)
