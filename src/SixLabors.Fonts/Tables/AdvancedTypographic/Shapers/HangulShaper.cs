@@ -376,7 +376,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             {
                 foreach (GlyphMetrics gm in metrics.GetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport))
                 {
-                    if (gm.Width != 0)
+                    if (gm.AdvanceWidth != 0)
                     {
                         after = true;
                         break;
