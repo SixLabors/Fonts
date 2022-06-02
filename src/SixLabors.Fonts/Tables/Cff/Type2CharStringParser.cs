@@ -667,7 +667,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
             else
             {
-                // last remaining <4 bytes
+                // Last remaining < 4 bytes
                 switch (properNumberOfMaskBytes)
                 {
                     case 0:

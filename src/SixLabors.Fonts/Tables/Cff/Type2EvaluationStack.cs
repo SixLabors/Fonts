@@ -32,15 +32,9 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public double CurrentY { get; private set; }
 
-        public void Push(double value)
-        {
-            this.argStack.Push(value);
-        }
+        public void Push(double value) => this.argStack.Push(value);
 
-        public void Ret()
-        {
-            this.argStack.Clear();
-        }
+        public void Return() => this.argStack.Clear();
 
         public void Dispose()
         {
@@ -89,7 +83,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // TODO: FK does width check.
             this.CurrentX += this.argStack.Shift();
             this.CurrentY += this.argStack.Shift();
-            this.GlyphRenderer.MoveTo(new Vector2((float)(this.CurrentX), (float)(this.CurrentY)));
+            this.GlyphRenderer.MoveTo(new Vector2((float)this.CurrentX, (float)this.CurrentY));
             this.argStack.Clear();
         }
 
@@ -106,7 +100,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
             // TODO: FK does width check.
             this.CurrentX += this.argStack.Shift();
-            this.GlyphRenderer.MoveTo(new Vector2((float)(this.CurrentX), (float)this.CurrentY));
+            this.GlyphRenderer.MoveTo(new Vector2((float)this.CurrentX, (float)this.CurrentY));
             this.argStack.Clear();
         }
 
@@ -119,7 +113,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
             // TODO: FK does width check.
             this.CurrentY += this.argStack.Shift();
-            this.GlyphRenderer.MoveTo(new Vector2((float)this.CurrentX, (float)(this.CurrentY)));
+            this.GlyphRenderer.MoveTo(new Vector2((float)this.CurrentX, (float)this.CurrentY));
             this.argStack.Clear();
         }
 
@@ -139,7 +133,7 @@ namespace SixLabors.Fonts.Tables.Cff
             {
                 this.CurrentX += this.argStack.Shift();
                 this.CurrentY += this.argStack.Shift();
-                this.GlyphRenderer.LineTo(new Vector2((float)(this.CurrentX), (float)(this.CurrentY)));
+                this.GlyphRenderer.LineTo(new Vector2((float)this.CurrentX, (float)this.CurrentY));
             }
 
             this.argStack.Clear();
@@ -175,7 +169,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     this.CurrentY += this.argStack.Shift();
                 }
 
-                this.GlyphRenderer.LineTo(new Vector2((float)(this.CurrentX), (float)(this.CurrentY)));
+                this.GlyphRenderer.LineTo(new Vector2((float)this.CurrentX, (float)this.CurrentY));
                 phase = !phase;
             }
 
@@ -212,7 +206,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     this.CurrentY += this.argStack.Shift();
                 }
 
-                this.GlyphRenderer.LineTo(new Vector2((float)(this.CurrentX), (float)(this.CurrentY)));
+                this.GlyphRenderer.LineTo(new Vector2((float)this.CurrentX, (float)this.CurrentY));
                 phase = !phase;
             }
 
@@ -244,9 +238,9 @@ namespace SixLabors.Fonts.Tables.Cff
             while (this.argStack.Length > 0)
             {
                 this.GlyphRenderer.CubicBezierTo(
-                    new Vector2((float)(x += argStack.Shift()), (float)(y += argStack.Shift())),
-                    new Vector2((float)(x += argStack.Shift()), (float)(y += argStack.Shift())),
-                    new Vector2((float)(x += argStack.Shift()), (float)(y += argStack.Shift())));
+                    new Vector2((float)(x += this.argStack.Shift()), (float)(y += this.argStack.Shift())),
+                    new Vector2((float)(x += this.argStack.Shift()), (float)(y += this.argStack.Shift())),
+                    new Vector2((float)(x += this.argStack.Shift()), (float)(y += this.argStack.Shift())));
             }
 
             this.CurrentX = x;
@@ -281,7 +275,10 @@ namespace SixLabors.Fonts.Tables.Cff
                 x = c2x + this.argStack.Shift();
                 y = c2y;
 
-                this.GlyphRenderer.CubicBezierTo(new((float)c1x, (float)c1y), new((float)c2x, (float)c2y), new((float)x, (float)y));
+                this.GlyphRenderer.CubicBezierTo(
+                    new Vector2((float)c1x, (float)c1y),
+                    new Vector2((float)c2x, (float)c2y),
+                    new Vector2((float)x, (float)y));
             }
 
             this.CurrentX = x;
@@ -333,7 +330,11 @@ namespace SixLabors.Fonts.Tables.Cff
                     y = c2y + (this.argStack.Length == 1 ? this.argStack.Shift() : 0);
                 }
 
-                this.GlyphRenderer.CubicBezierTo(new((float)c1x, (float)c1y), new((float)c2x, (float)c2y), new((float)x, (float)y));
+                this.GlyphRenderer.CubicBezierTo(
+                    new Vector2((float)c1x, (float)c1y),
+                    new Vector2((float)c2x, (float)c2y),
+                    new Vector2((float)x, (float)y));
+
                 phase = !phase;
             }
 
@@ -384,7 +385,6 @@ namespace SixLabors.Fonts.Tables.Cff
                 x += this.argStack.Shift();
                 y += this.argStack.Shift();
                 this.GlyphRenderer.LineTo(new Vector2((float)x, (float)y));
-
             }
 
             double c1x = x + this.argStack.Shift();
@@ -394,7 +394,11 @@ namespace SixLabors.Fonts.Tables.Cff
             x = c2x + this.argStack.Shift();
             y = c2y + this.argStack.Shift();
 
-            this.GlyphRenderer.CubicBezierTo(new((float)c1x, (float)c1y), new((float)c2x, (float)c2y), new((float)x, (float)y));
+            this.GlyphRenderer.CubicBezierTo(
+                new Vector2((float)c1x, (float)c1y),
+                new Vector2((float)c2x, (float)c2y),
+                new Vector2((float)x, (float)y));
+
             this.CurrentX = x;
             this.CurrentY = y;
             this.argStack.Clear();
@@ -818,7 +822,7 @@ namespace SixLabors.Fonts.Tables.Cff
         /// <param name="value">The item to add.</param>
         public void Push(T value)
         {
-            if ((uint)size < (uint)stack.Length)
+            if ((uint)this.size < (uint)this.stack.Length)
             {
                 this.size++;
                 this.stack[++this.currentIndex] = value;
@@ -851,7 +855,7 @@ namespace SixLabors.Fonts.Tables.Cff
         /// <returns>The <typeparamref name="T"/> element.</returns>
         public T Shift()
         {
-            int newSize = size - 1;
+            int newSize = this.size - 1;
             if (newSize < 0)
             {
                 ThrowForEmptyStack();
@@ -868,7 +872,7 @@ namespace SixLabors.Fonts.Tables.Cff
         /// <returns>The <typeparamref name="T"/> element.</returns>
         public T Pop()
         {
-            int newSize = size - 1;
+            int newSize = this.size - 1;
             if (newSize < 0)
             {
                 ThrowForEmptyStack();

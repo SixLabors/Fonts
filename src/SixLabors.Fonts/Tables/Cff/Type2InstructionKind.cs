@@ -4,7 +4,7 @@
 namespace SixLabors.Fonts.Tables.Cff
 {
     /// <summary>
-    /// Contains the combined collection of Type2 Operators plus custom instructions.
+    /// Contains the combined collection of Type2 Charstring Operators plus custom instructions.
     /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5177.Type2.pdf"/>
     /// </summary>
     internal enum Type2InstructionKind : byte
@@ -15,6 +15,7 @@ namespace SixLabors.Fonts.Tables.Cff
         GlyphWidth,
 
         // Custom Instructions
+        // TODO: What are they used for?
 
         /// <summary>
         /// Load 4 consecutive signed bytes.

@@ -288,7 +288,7 @@ namespace SixLabors.Fonts.Tables.Cff
                         // Don't forget to return evalStack's currentX, currentY to prev eval context
                         currentX = evalStack.CurrentX;
                         currentY = evalStack.CurrentY;
-                        evalStack.Ret();
+                        evalStack.Return();
                         break;
 
                     // Should not occur, since we replace this in parsing step
