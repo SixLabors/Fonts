@@ -1,26 +1,57 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
     internal struct CffGlyphData
     {
-        public CffGlyphData(ushort glyphIndex, ReadOnlyMemory<Type2Instruction> glyphInstructions)
+        private readonly byte[][] globalSubrBuffers;
+        private readonly byte[][] localSubrBuffers;
+        private readonly byte[] charStrings;
+        private readonly int nominalWidthX;
+
+        public CffGlyphData(
+            ushort glyphIndex,
+            byte[][] globalSubrBuffers,
+            byte[][] localSubrBuffers,
+            int nominalWidthX,
+            byte[] charStrings)
         {
             this.GlyphIndex = glyphIndex;
-            this.GlyphInstructions = glyphInstructions;
+            this.globalSubrBuffers = globalSubrBuffers;
+            this.localSubrBuffers = localSubrBuffers;
+            this.nominalWidthX = nominalWidthX;
+            this.charStrings = charStrings;
+
             this.GlyphName = null;
         }
 
         public readonly ushort GlyphIndex { get; }
 
-        public ReadOnlyMemory<Type2Instruction> GlyphInstructions { get; }
-
         public string? GlyphName { get; set; }
 
-        public Bounds GetBounds() => CffEvaluationEngine.GetBounds(this.GlyphInstructions.Span, Vector2.One, Vector2.Zero);
+        public Bounds GetBounds()
+        {
+            using var engine = new CffEvaluationEngine(
+                this.charStrings,
+                this.globalSubrBuffers,
+                this.localSubrBuffers,
+                this.nominalWidthX);
+
+            return engine.GetBounds();
+        }
+
+        public void RenderTo(IGlyphRenderer renderer, Vector2 scale, Vector2 offset)
+        {
+            using var engine = new CffEvaluationEngine(
+                 this.charStrings,
+                 this.globalSubrBuffers,
+                 this.localSubrBuffers,
+                 this.nominalWidthX);
+
+            engine.RenderTo(renderer, scale, offset);
+        }
     }
 }

@@ -678,7 +678,7 @@ namespace SixLabors.Fonts.Tables.Cff
         private CffGlyphData[] ReadCharStringsIndex(
             BigEndianBinaryReader reader,
             CffTopDictionary topDictionary,
-            byte[][] globalSubrRawBuffers,
+            byte[][] globalSubrBuffers,
             FontDict[] fontDicts,
             CffPrivateDictionary? privateDictionary)
         {
@@ -726,23 +726,19 @@ namespace SixLabors.Fonts.Tables.Cff
 #endif
             int glyphCount = offsets.Length;
             var glyphs = new CffGlyphData[glyphCount];
-            Type2CharStringParser type2Parser = new(globalSubrRawBuffers, privateDictionary);
+            byte[][]? localSubBuffer = privateDictionary?.LocalSubrRawBuffers;
 
-#if DEBUG
-            double total = 0;
-#endif
-
-            // cid font or not
-            var fdRangeProvider = new FDRangeProvider(topDictionary.CidFontInfo.FdRanges);
+            // Is the font a CID font?
+            FDRangeProvider fdRangeProvider = new(topDictionary.CidFontInfo.FdRanges);
             bool isCidFont = topDictionary.CidFontInfo.FdRanges.Length > 0;
 
             for (int i = 0; i < glyphCount; ++i)
             {
                 CffIndexOffset offset = offsets[i];
-                byte[] buffer = reader.ReadBytes(offset.Length);
+                byte[] charstringsBuffer = reader.ReadBytes(offset.Length);
 #if DEBUG
-                // check
-                byte lastByte = buffer[offset.Length - 1];
+                // Check
+                byte lastByte = charstringsBuffer[offset.Length - 1];
                 if (lastByte is not (byte)Type2Operator1.Endchar and
                     not (byte)Type2Operator1.Callgsubr and
                     not (byte)Type2Operator1.Callsubr)
@@ -760,12 +756,15 @@ namespace SixLabors.Fonts.Tables.Cff
                 {
                     // Select  proper local private dict
                     fdRangeProvider.SetCurrentGlyphIndex((ushort)i);
-                    type2Parser.SetCidFontDict(fontDicts[fdRangeProvider.SelectedFDArray]);
+                    localSubBuffer = fontDicts[fdRangeProvider.SelectedFDArray].LocalSubr;
                 }
 
-                // TODO: Can we avoid this allocation?
-                Type2GlyphInstructionCollection instructions = type2Parser.ParseType2CharString(buffer);
-                glyphs[i] = new CffGlyphData((ushort)i, instructions.ToArray());
+                glyphs[i] = new CffGlyphData(
+                    (ushort)i,
+                    globalSubrBuffers,
+                    localSubBuffer ?? Array.Empty<byte[]>(),
+                    privateDictionary?.NominalWidthX ?? 0,
+                    charstringsBuffer);
             }
 
             return glyphs;

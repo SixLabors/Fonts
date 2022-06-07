@@ -2,384 +2,704 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
     /// <summary>
-    /// Evaluates and translates the Type2 Instruction set for a given CFF glyph.
+    /// Decodes the commands and numbers making up a Type 2 CharString. A Type 2 CharString extends on the Type 1 CharString format.
+    /// Compared to the Type 1 format, the Type 2 encoding offers smaller size and an opportunity for better rendering quality and
+    /// performance. The Type 2 charstring operators are (with one exception) a superset of the Type 1 operators.
     /// </summary>
-    internal static class CffEvaluationEngine
+    /// <remarks>
+    /// A Type 2 charstring program is a sequence of unsigned 8-bit bytes that encode numbers and operators.
+    /// The byte value specifies a operator, a number, or subsequent bytes that are to be interpreted in a specific manner
+    /// </remarks>
+    internal ref struct CffEvaluationEngine
     {
-        public static Bounds GetBounds(ReadOnlySpan<Type2Instruction> instructions, Vector2 scale, Vector2 offset)
+        private static readonly Random Random = new();
+        private float? width;
+        private int nStems;
+        private float x;
+        private float y;
+        private RefStack<float> stack;
+        private readonly ReadOnlySpan<byte> charStrings;
+        private readonly ReadOnlySpan<byte[]> globalSubrBuffers;
+        private readonly ReadOnlySpan<byte[]> localSubrBuffers;
+        private TransformingGlyphRenderer transforming;
+        private readonly int nominalWidthX;
+        private readonly int globalBias;
+        private readonly int localBias;
+        private readonly Dictionary<int, float> trans = new();
+        private bool isDisposed;
+
+        public CffEvaluationEngine(
+            ReadOnlySpan<byte> charStrings,
+            ReadOnlySpan<byte[]> globalSubrBuffers,
+            ReadOnlySpan<byte[]> localSubrBuffers,
+            int nominalWidthX)
         {
-            // TODO: There's likely no need to track these
-            double currentX = 0;
-            double currentY = 0;
+            this.transforming = default;
+            this.charStrings = charStrings;
+            this.globalSubrBuffers = globalSubrBuffers;
+            this.localSubrBuffers = localSubrBuffers;
+            this.nominalWidthX = nominalWidthX;
+
+            this.globalBias = CalculateBias(this.globalSubrBuffers.Length);
+            this.localBias = CalculateBias(this.localSubrBuffers.Length);
+
+            this.x = 0;
+            this.y = 0;
+            this.width = null;
+            this.nStems = 0;
+            this.stack = new(50);
+            this.isDisposed = false;
+        }
+
+        public Bounds GetBounds()
+        {
+            this.Reset();
+
             var finder = CffBoundsFinder.Create();
-            TransformingGlyphRenderer scalingGlyphRenderer = new(scale, offset, finder);
+            this.transforming = new(Vector2.One, Vector2.Zero, finder);
 
             // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
-            RenderTo(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
+            this.Parse(this.charStrings);
 
             // Some CFF end without closing the latest contour.
-            if (scalingGlyphRenderer.IsOpen)
+            if (this.transforming.IsOpen)
             {
-                scalingGlyphRenderer.EndFigure();
+                this.transforming.EndFigure();
             }
 
-            return finder.GetBounds();
+            // TODO: Fix this. It's not worth using a struct since it gets boxed anyway.
+            return ((CffBoundsFinder)this.transforming.renderer).GetBounds();
         }
 
-        public static void RenderTo(ref IGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructions, Vector2 scale, Vector2 offset)
+        public void RenderTo(IGlyphRenderer renderer, Vector2 scale, Vector2 offset)
         {
-            // TODO: There's likely no need to track these
-            double currentX = 0;
-            double currentY = 0;
-            TransformingGlyphRenderer scalingGlyphRenderer = new(scale, offset, renderer);
+            this.Reset();
+
+            this.transforming = new(scale, offset, renderer);
 
             // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
-            RenderTo(ref scalingGlyphRenderer, instructions, ref currentX, ref currentY);
+            this.Parse(this.charStrings);
 
             // Some CFF end without closing the latest contour.
-            if (scalingGlyphRenderer.IsOpen)
+            if (this.transforming.IsOpen)
             {
-                scalingGlyphRenderer.EndFigure();
+                this.transforming.EndFigure();
             }
         }
 
-        private static void RenderTo(ref TransformingGlyphRenderer renderer, ReadOnlySpan<Type2Instruction> instructionList, ref double currentX, ref double currentY)
+        private void Parse(ReadOnlySpan<byte> buffer)
         {
-            using Type2EvaluationStack evalStack = new(renderer, currentX, currentY);
-            for (int i = 0; i < instructionList.Length; ++i)
+            SimpleBinaryReader reader = new(buffer);
+            bool endCharEncountered = false;
+            while (!endCharEncountered && reader.CanRead())
             {
-                Type2Instruction instruction = instructionList[i];
-
-                // TODO: What is this? I can't figure why it exists.
-                // This part is our extension to the original
-                int mergeFlags = instruction.Operator >> 6; // Upper 2 bits is our extension flags
-                switch (mergeFlags)
+                byte @operator = reader.ReadByte();
+                if (@operator < 32)
                 {
-                    case 0: // Nothing
-                        break;
-                    case 1:
-                        evalStack.Push(instruction.Value);
-                        break;
-                    case 2:
-                        evalStack.Push((short)(instruction.Value >> 16));
-                        evalStack.Push((short)(instruction.Value >> 0));
-                        break;
-                    case 3:
-                        evalStack.Push((sbyte)(instruction.Value >> 24));
-                        evalStack.Push((sbyte)(instruction.Value >> 16));
-                        evalStack.Push((sbyte)(instruction.Value >> 8));
-                        evalStack.Push((sbyte)(instruction.Value >> 0));
-                        break;
+                    int index;
+                    ReadOnlySpan<byte> subr;
+                    bool phase;
+                    float c1x;
+                    float c1y;
+                    float c2x;
+                    float c2y;
+
+                    var instruction = (Type2Operator1)@operator;
+                    switch (instruction)
+                    {
+                        case Type2Operator1.Hstem:
+                        case Type2Operator1.Vstem:
+                        case Type2Operator1.Hstemhm:
+                        case Type2Operator1.Vstemhm:
+
+                            this.ParseStems();
+                            break;
+
+                        case Type2Operator1.Vmoveto:
+
+                            if (this.stack.Length > 1)
+                            {
+                                this.CheckWidth();
+                            }
+
+                            this.y += this.stack.Shift();
+                            this.transforming.MoveTo(new Vector2(this.x, this.y));
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Rlineto:
+
+                            while (this.stack.Length >= 2)
+                            {
+                                this.x += this.stack.Shift();
+                                this.y += this.stack.Shift();
+                                this.transforming.LineTo(new Vector2(this.x, this.y));
+                            }
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Hlineto:
+                        case Type2Operator1.Vlineto:
+                            phase = instruction == Type2Operator1.Hlineto;
+
+                            while (this.stack.Length >= 1)
+                            {
+                                if (phase)
+                                {
+                                    this.x += this.stack.Shift();
+                                }
+                                else
+                                {
+                                    this.y += this.stack.Shift();
+                                }
+
+                                this.transforming.LineTo(new Vector2(this.x, this.y));
+                                phase = !phase;
+                            }
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Rrcurveto:
+
+                            while (this.stack.Length > 0)
+                            {
+                                this.transforming.CubicBezierTo(
+                                    new Vector2(this.x += this.stack.Shift(), this.y += this.stack.Shift()),
+                                    new Vector2(this.x += this.stack.Shift(), this.y += this.stack.Shift()),
+                                    new Vector2(this.x += this.stack.Shift(), this.y += this.stack.Shift()));
+                            }
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Callsubr:
+                            index = (int)this.stack.Pop() + this.localBias;
+                            subr = this.localSubrBuffers[index];
+
+                            if (subr.Length > 0)
+                            {
+                                this.Parse(subr);
+                            }
+
+                            break;
+
+                        case Type2Operator1.Return:
+
+                            // TODO: CFF2
+                            return;
+
+                        case Type2Operator1.Endchar:
+
+                            // TODO: CFF2
+                            if (this.stack.Length > 0)
+                            {
+                                this.CheckWidth();
+                            }
+
+                            endCharEncountered = true;
+                            break;
+
+                        case Type2Operator1.Reserved15_:
+
+                            // TODO: CFF2
+                            break;
+                        case Type2Operator1.Reserved16_:
+
+                            // TODO: CFF2
+                            break;
+                        case Type2Operator1.Hintmask:
+                        case Type2Operator1.Cntrmask:
+
+                            this.ParseStems();
+                            reader.Position += (this.nStems + 7) >> 3;
+
+                            break;
+
+                        case Type2Operator1.Rmoveto:
+
+                            if (this.stack.Length > 2)
+                            {
+                                this.CheckWidth();
+                            }
+
+                            this.x += this.stack.Shift();
+                            this.y += this.stack.Shift();
+                            this.transforming.MoveTo(new Vector2(this.x, this.y));
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Hmoveto:
+
+                            if (this.stack.Length > 1)
+                            {
+                                this.CheckWidth();
+                            }
+
+                            this.x += this.stack.Shift();
+                            this.transforming.MoveTo(new Vector2(this.x, this.y));
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Rcurveline:
+
+                            while (this.stack.Length >= 8)
+                            {
+                                this.transforming.CubicBezierTo(
+                                    new Vector2(this.x += this.stack.Shift(), this.y += this.stack.Shift()),
+                                    new Vector2(this.x += this.stack.Shift(), this.y += this.stack.Shift()),
+                                    new Vector2(this.x += this.stack.Shift(), this.y += this.stack.Shift()));
+                            }
+
+                            this.transforming.LineTo(new Vector2(this.x += this.stack.Shift(), this.y += this.stack.Shift()));
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Rlinecurve:
+
+                            while (this.stack.Length >= 8)
+                            {
+                                this.x += this.stack.Shift();
+                                this.y += this.stack.Shift();
+                                this.transforming.LineTo(new Vector2(this.x, this.y));
+                            }
+
+                            c1x = this.x + this.stack.Shift();
+                            c1y = this.y + this.stack.Shift();
+                            c2x = c1x + this.stack.Shift();
+                            c2y = c1y + this.stack.Shift();
+                            this.x = c2x + this.stack.Shift();
+                            this.y = c2y + this.stack.Shift();
+
+                            this.transforming.CubicBezierTo(
+                                new Vector2(c1x, c1y),
+                                new Vector2(c2x, c2y),
+                                new Vector2(this.x, this.y));
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Vvcurveto:
+
+                            if (this.stack.Length % 2 != 0)
+                            {
+                                this.x += this.stack.Shift();
+                            }
+
+                            while (this.stack.Length >= 4)
+                            {
+                                c1x = this.x;
+                                c1y = this.y + this.stack.Shift();
+                                c2x = c1x + this.stack.Shift();
+                                c2y = c1y + this.stack.Shift();
+                                this.x = c2x;
+                                this.y = c2y + this.stack.Shift();
+
+                                this.transforming.CubicBezierTo(
+                                    new Vector2(c1x, c1y),
+                                    new Vector2(c2x, c2y),
+                                    new Vector2(this.x, this.y));
+                            }
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Hhcurveto:
+
+                            if (this.stack.Length % 2 != 0)
+                            {
+                                this.y += this.stack.Shift();
+                            }
+
+                            while (this.stack.Length >= 4)
+                            {
+                                c1x = this.x + this.stack.Shift();
+                                c1y = this.y;
+                                c2x = c1x + this.stack.Shift();
+                                c2y = c1y + this.stack.Shift();
+                                this.x = c2x + this.stack.Shift();
+                                this.y = c2y;
+
+                                this.transforming.CubicBezierTo(
+                                    new Vector2(c1x, c1y),
+                                    new Vector2(c2x, c2y),
+                                    new Vector2(this.x, this.y));
+                            }
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Shortint:
+
+                            this.stack.Push(reader.ReadInt16BE());
+                            break;
+
+                        case Type2Operator1.Callgsubr:
+
+                            index = (int)this.stack.Pop() + this.globalBias;
+                            subr = this.globalSubrBuffers[index];
+
+                            if (subr.Length > 0)
+                            {
+                                this.Parse(subr);
+                            }
+
+                            break;
+
+                        case Type2Operator1.Vhcurveto:
+                        case Type2Operator1.Hvcurveto:
+
+                            phase = instruction == Type2Operator1.Hvcurveto;
+                            while (this.stack.Length >= 4)
+                            {
+                                if (phase)
+                                {
+                                    c1x = this.x + this.stack.Shift();
+                                    c1y = this.y;
+                                    c2x = c1x + this.stack.Shift();
+                                    c2y = c1y + this.stack.Shift();
+                                    this.y = c2y + this.stack.Shift();
+                                    this.x = c2x + (this.stack.Length == 1 ? this.stack.Shift() : 0);
+                                }
+                                else
+                                {
+                                    c1x = this.x;
+                                    c1y = this.y + this.stack.Shift();
+                                    c2x = c1x + this.stack.Shift();
+                                    c2y = c1y + this.stack.Shift();
+                                    this.x = c2x + this.stack.Shift();
+                                    this.y = c2y + (this.stack.Length == 1 ? this.stack.Shift() : 0);
+                                }
+
+                                this.transforming.CubicBezierTo(new Vector2(c1x, c1y), new Vector2(c2x, c2y), new Vector2(this.x, this.y));
+                                phase = !phase;
+                            }
+
+                            this.stack.Clear();
+                            break;
+
+                        case Type2Operator1.Escape:
+
+                            bool a;
+                            bool b;
+                            switch ((Type2Operator2)reader.ReadByte())
+                            {
+                                case Type2Operator2.And:
+
+                                    a = this.stack.Pop() != 0;
+                                    b = this.stack.Pop() != 0;
+                                    this.stack.Push((a && b) ? 1 : 0);
+                                    break;
+
+                                case Type2Operator2.Or:
+
+                                    a = this.stack.Pop() != 0;
+                                    b = this.stack.Pop() != 0;
+                                    this.stack.Push((a || b) ? 1 : 0);
+                                    break;
+
+                                case Type2Operator2.Not:
+
+                                    a = this.stack.Pop() != 0;
+                                    this.stack.Push(a ? 1 : 0);
+                                    break;
+
+                                case Type2Operator2.Abs:
+
+                                    this.stack.Push(Math.Abs(this.stack.Pop()));
+                                    break;
+
+                                case Type2Operator2.Add:
+
+                                    this.stack.Push(this.stack.Pop() + this.stack.Pop());
+                                    break;
+
+                                case Type2Operator2.Sub:
+
+                                    this.stack.Push(this.stack.Pop() - this.stack.Pop());
+                                    break;
+
+                                case Type2Operator2.Div:
+
+                                    this.stack.Push(this.stack.Pop() / this.stack.Pop());
+                                    break;
+
+                                case Type2Operator2.Neg:
+
+                                    this.stack.Push(-this.stack.Pop());
+                                    break;
+
+                                case Type2Operator2.Eq:
+
+                                    this.stack.Push(this.stack.Pop() == this.stack.Pop() ? 1 : 0);
+                                    break;
+
+                                case Type2Operator2.Drop:
+
+                                    this.stack.Pop();
+                                    break;
+
+                                case Type2Operator2.Put:
+
+                                    float val = this.stack.Pop();
+                                    int idx = (int)this.stack.Pop();
+
+                                    this.trans[idx] = val;
+                                    break;
+
+                                case Type2Operator2.Get:
+
+                                    idx = (int)this.stack.Pop();
+                                    this.trans.TryGetValue(idx, out float v);
+                                    this.stack.Push(v);
+                                    this.trans.Remove(idx);
+                                    break;
+
+                                case Type2Operator2.Ifelse:
+
+                                    float s1 = this.stack.Pop();
+                                    float s2 = this.stack.Pop();
+                                    float v1 = this.stack.Pop();
+                                    float v2 = this.stack.Pop();
+
+                                    this.stack.Push(v1 <= v2 ? s1 : s2);
+                                    break;
+
+                                case Type2Operator2.Random:
+                                    this.stack.Push((float)Random.NextDouble());
+                                    break;
+
+                                case Type2Operator2.Mul:
+
+                                    this.stack.Push(this.stack.Pop() * this.stack.Pop());
+                                    break;
+
+                                case Type2Operator2.Sqrt:
+
+                                    this.stack.Push(MathF.Sqrt(this.stack.Pop()));
+                                    break;
+
+                                case Type2Operator2.Dup:
+
+                                    float m = this.stack.Pop();
+                                    this.stack.Push(m);
+                                    this.stack.Push(m);
+                                    break;
+
+                                case Type2Operator2.Exch:
+
+                                    float ex = this.stack.Pop();
+                                    float ch = this.stack.Pop();
+                                    this.stack.Push(ch);
+                                    this.stack.Push(ex);
+                                    break;
+
+                                case Type2Operator2.Index:
+
+                                    idx = (int)this.stack.Pop();
+                                    if (idx < 0)
+                                    {
+                                        idx = 0;
+                                    }
+                                    else if (idx > this.stack.Length - 1)
+                                    {
+                                        idx = this.stack.Length - 1;
+                                    }
+
+                                    this.stack.Push(this.stack[idx]);
+                                    break;
+
+                                case Type2Operator2.Roll:
+
+                                    int n = (int)this.stack.Pop();
+                                    float j = this.stack.Pop();
+
+                                    if (j >= 0)
+                                    {
+                                        while (j > 0)
+                                        {
+                                            float t = this.stack[n - 1];
+                                            for (int i = n - 2; i >= 0; i--)
+                                            {
+                                                this.stack[i + 1] = this.stack[i];
+                                            }
+
+                                            this.stack[0] = t;
+                                            j--;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        while (j < 0)
+                                        {
+                                            float t = this.stack[0];
+                                            for (int i = 0; i <= n; i++)
+                                            {
+                                                this.stack[i] = this.stack[i + 1];
+                                            }
+
+                                            this.stack[n - 1] = t;
+                                            j++;
+                                        }
+                                    }
+
+                                    break;
+
+                                case Type2Operator2.Hflex:
+
+                                    c1x = this.x + this.stack.Shift();
+                                    c1y = this.y;
+                                    c2x = c1x + this.stack.Shift();
+                                    c2y = c1y + this.stack.Shift();
+                                    float c3x = c2x + this.stack.Shift();
+                                    float c3y = c2y;
+                                    float c4x = c3x + this.stack.Shift();
+                                    float c4y = c3y;
+                                    float c5x = c4x + this.stack.Shift();
+                                    float c5y = c4y;
+                                    float c6x = c5x + this.stack.Shift();
+                                    float c6y = c5y;
+                                    this.x = c6x;
+                                    this.y = c6y;
+
+                                    this.transforming.CubicBezierTo(new Vector2(c1x, c1y), new Vector2(c2x, c2y), new Vector2(c3x, c3y));
+                                    this.transforming.CubicBezierTo(new Vector2(c4x, c4y), new Vector2(c5x, c5y), new Vector2(c6x, c6y));
+
+                                    this.stack.Clear();
+                                    break;
+
+                                case Type2Operator2.Flex:
+
+                                    this.transforming.CubicBezierTo(new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()));
+                                    this.transforming.CubicBezierTo(new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()));
+
+                                    this.stack.Shift();
+
+                                    this.stack.Clear();
+                                    break;
+
+                                case Type2Operator2.Hflex1:
+
+                                    c1x = this.x + this.stack.Shift();
+                                    c1y = this.y + this.stack.Shift();
+                                    c2x = c1x + this.stack.Shift();
+                                    c2y = c1y + this.stack.Shift();
+                                    c3x = c2x + this.stack.Shift();
+                                    c3y = c2y;
+                                    c4x = c3x + this.stack.Shift();
+                                    c4y = c3y;
+                                    c5x = c4x + this.stack.Shift();
+                                    c5y = c4y + this.stack.Shift();
+                                    c6x = c5x + this.stack.Shift();
+                                    c6y = c5y;
+                                    this.x = c6x;
+                                    this.y = c6y;
+
+                                    this.transforming.CubicBezierTo(new Vector2(c1x, c1y), new Vector2(c2x, c2y), new Vector2(c3x, c3y));
+                                    this.transforming.CubicBezierTo(new Vector2(c4x, c4y), new Vector2(c5x, c5y), new Vector2(c6x, c6y));
+
+                                    this.stack.Clear();
+                                    break;
+
+                                case Type2Operator2.Flex1:
+
+                                    // TODO:
+                                    this.stack.Clear();
+                                    break;
+                            }
+
+                            break;
+                        default:
+
+                            // stack.Clear();
+                            break;
+                    }
                 }
-
-                // We use only 6 lower bits for op_name
-                switch ((Type2InstructionKind)(instruction.Operator & 0b11_1111))
+                else if (@operator < 247)
                 {
-                    default:
-                        throw new NotSupportedException();
-                    case Type2InstructionKind.GlyphWidth:
-
-                        // TODO:
-                        break;
-                    case Type2InstructionKind.LoadInt:
-                        evalStack.Push(instruction.Value);
-                        break;
-                    case Type2InstructionKind.LoadSbyte4:
-                        // 4 consecutive sbyte
-                        evalStack.Push((sbyte)(instruction.Value >> 24));
-                        evalStack.Push((sbyte)(instruction.Value >> 16));
-                        evalStack.Push((sbyte)(instruction.Value >> 8));
-                        evalStack.Push((sbyte)(instruction.Value >> 0));
-                        break;
-                    case Type2InstructionKind.LoadSbyte3:
-                        evalStack.Push((sbyte)(instruction.Value >> 24));
-                        evalStack.Push((sbyte)(instruction.Value >> 16));
-                        evalStack.Push((sbyte)(instruction.Value >> 8));
-                        break;
-                    case Type2InstructionKind.LoadShort2:
-                        evalStack.Push((short)(instruction.Value >> 16));
-                        evalStack.Push((short)(instruction.Value >> 0));
-                        break;
-                    case Type2InstructionKind.LoadFloat:
-                        evalStack.Push(instruction.ReadValueAsFixed1616());
-                        break;
-                    case Type2InstructionKind.Endchar:
-                        evalStack.EndChar();
-                        break;
-                    case Type2InstructionKind.Flex:
-                        evalStack.Flex();
-                        break;
-                    case Type2InstructionKind.Hflex:
-                        evalStack.H_Flex();
-                        break;
-                    case Type2InstructionKind.Hflex1:
-                        evalStack.H_Flex1();
-                        break;
-                    case Type2InstructionKind.Flex1:
-                        evalStack.Flex1();
-                        break;
-
-                    //-------------------------
-                    // 4.4: Arithmetic Operators
-                    case Type2InstructionKind.Abs:
-                        evalStack.Op_Abs();
-                        break;
-                    case Type2InstructionKind.Add:
-                        evalStack.Op_Add();
-                        break;
-                    case Type2InstructionKind.Sub:
-                        evalStack.Op_Sub();
-                        break;
-                    case Type2InstructionKind.Div:
-                        evalStack.Op_Div();
-                        break;
-                    case Type2InstructionKind.Neg:
-                        evalStack.Op_Neg();
-                        break;
-                    case Type2InstructionKind.Random:
-                        evalStack.Op_Random();
-                        break;
-                    case Type2InstructionKind.Mul:
-                        evalStack.Op_Mul();
-                        break;
-                    case Type2InstructionKind.Sqrt:
-                        evalStack.Op_Sqrt();
-                        break;
-                    case Type2InstructionKind.Drop:
-                        evalStack.Op_Drop();
-                        break;
-                    case Type2InstructionKind.Exch:
-                        evalStack.Op_Exch();
-                        break;
-                    case Type2InstructionKind.Index:
-                        evalStack.Op_Index();
-                        break;
-                    case Type2InstructionKind.Roll:
-                        evalStack.Op_Roll();
-                        break;
-                    case Type2InstructionKind.Dup:
-                        evalStack.Op_Dup();
-                        break;
-
-                    //-------------------------
-                    // 4.5: Storage Operators
-                    case Type2InstructionKind.Put:
-                        evalStack.Put();
-                        break;
-                    case Type2InstructionKind.Get:
-                        evalStack.Get();
-                        break;
-
-                    //-------------------------
-                    // 4.6: Conditional
-                    case Type2InstructionKind.And:
-                        evalStack.Op_And();
-                        break;
-                    case Type2InstructionKind.Or:
-                        evalStack.Op_Or();
-                        break;
-                    case Type2InstructionKind.Not:
-                        evalStack.Op_Not();
-                        break;
-                    case Type2InstructionKind.Eq:
-                        evalStack.Op_Eq();
-                        break;
-                    case Type2InstructionKind.Ifelse:
-                        evalStack.Op_IfElse();
-                        break;
-                    case Type2InstructionKind.Rlineto:
-                        evalStack.R_LineTo();
-                        break;
-                    case Type2InstructionKind.Hlineto:
-                        evalStack.H_LineTo();
-                        break;
-                    case Type2InstructionKind.Vlineto:
-                        evalStack.V_LineTo();
-                        break;
-                    case Type2InstructionKind.Rrcurveto:
-                        evalStack.RR_CurveTo();
-                        break;
-                    case Type2InstructionKind.Hhcurveto:
-                        evalStack.HH_CurveTo();
-                        break;
-                    case Type2InstructionKind.Hvcurveto:
-                        evalStack.HV_CurveTo();
-                        break;
-                    case Type2InstructionKind.Rcurveline:
-                        evalStack.R_CurveLine();
-                        break;
-                    case Type2InstructionKind.Rlinecurve:
-                        evalStack.R_LineCurve();
-                        break;
-                    case Type2InstructionKind.Vhcurveto:
-                        evalStack.VH_CurveTo();
-                        break;
-                    case Type2InstructionKind.Vvcurveto:
-                        evalStack.VV_CurveTo();
-                        break;
-                    case Type2InstructionKind.Rmoveto:
-                        evalStack.R_MoveTo();
-                        break;
-                    case Type2InstructionKind.Hmoveto:
-                        evalStack.H_MoveTo();
-                        break;
-                    case Type2InstructionKind.Vmoveto:
-                        evalStack.V_MoveTo();
-                        break;
-
-                    //-------------------------------------------------------------------
-                    // 4.3 Hint Operators
-                    case Type2InstructionKind.Hstem:
-                        evalStack.H_Stem();
-                        break;
-                    case Type2InstructionKind.Vstem:
-                        evalStack.V_Stem();
-                        break;
-                    case Type2InstructionKind.Vstemhm:
-                        evalStack.V_StemHM();
-                        break;
-                    case Type2InstructionKind.Hstemhm:
-                        evalStack.H_StemHM();
-                        break;
-                    case Type2InstructionKind.Hintmask1:
-                        evalStack.HintMask1(instruction.Value);
-                        break;
-                    case Type2InstructionKind.Hintmask2:
-                        evalStack.HintMask2(instruction.Value);
-                        break;
-                    case Type2InstructionKind.Hintmask3:
-                        evalStack.HintMask3(instruction.Value);
-                        break;
-                    case Type2InstructionKind.Hintmask4:
-                        evalStack.HintMask4(instruction.Value);
-                        break;
-                    case Type2InstructionKind.Hintmask_bits:
-                        evalStack.HintMaskBits(instruction.Value);
-                        break;
-
-                    //------------------------------
-                    case Type2InstructionKind.Cntrmask1:
-                        evalStack.CounterSpaceMask1(instruction.Value);
-                        break;
-                    case Type2InstructionKind.Cntrmask2:
-                        evalStack.CounterSpaceMask2(instruction.Value);
-                        break;
-                    case Type2InstructionKind.Cntrmask3:
-                        evalStack.CounterSpaceMask3(instruction.Value);
-                        break;
-                    case Type2InstructionKind.Cntrmask4:
-                        evalStack.CounterSpaceMask4(instruction.Value);
-                        break;
-                    case Type2InstructionKind.Cntrmask_bits:
-                        evalStack.CounterSpaceMaskBits(instruction.Value);
-                        break;
-
-                    //-------------------------
-                    // 4.7: Subroutine Operators
-                    case Type2InstructionKind.Return:
-
-                        // TODO: I don't think we need to actually track XY values here.
-                        // Don't forget to return evalStack's currentX, currentY to prev eval context
-                        currentX = evalStack.CurrentX;
-                        currentY = evalStack.CurrentY;
-                        evalStack.Return();
-                        break;
-
-                    // Should not occur, since we replace this in parsing step
-                    case Type2InstructionKind.Callgsubr:
-                    case Type2InstructionKind.Callsubr:
-                        throw new NotSupportedException();
+                    this.stack.Push(@operator - 139);
+                }
+                else if (@operator < 251)
+                {
+                    byte b1 = reader.ReadByte();
+                    this.stack.Push(((@operator - 247) * 256) + b1 + 108);
+                }
+                else if (@operator < 255)
+                {
+                    byte b1 = reader.ReadByte();
+                    this.stack.Push((-(@operator - 251) * 256) - b1 - 108);
+                }
+                else
+                {
+                    this.stack.Push(reader.ReadFloatFixed1616());
                 }
             }
         }
 
-        /// <summary>
-        /// Used to apply a transform against any glyphs rendered by the engine.
-        /// </summary>
-        private struct TransformingGlyphRenderer : IGlyphRenderer
+        public void Dispose()
         {
-            private Vector2 scale;
-            private Vector2 offset;
-            private readonly IGlyphRenderer renderer;
-
-            public TransformingGlyphRenderer(Vector2 scale, Vector2 offset, IGlyphRenderer renderer)
+            if (this.isDisposed)
             {
-                this.scale = scale;
-                this.offset = offset;
-                this.renderer = renderer;
-                this.IsOpen = false;
+                return;
             }
 
-            public bool IsOpen { get; set; }
+            this.stack.Dispose();
+            this.isDisposed = true;
+        }
 
-            public void BeginFigure()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int CalculateBias(int count)
+        {
+            if (count == 0)
             {
-                this.IsOpen = true;
-                this.renderer.BeginFigure();
+                return 0;
             }
 
-            public bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters)
+            return (count < 1240) ? 107 : (count < 33900) ? 1131 : 32768;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ParseStems()
+        {
+            if (this.stack.Length % 2 != 0)
             {
-                this.IsOpen = true;
-                return this.renderer.BeginGlyph(bounds, parameters);
+                this.CheckWidth();
             }
 
-            public void BeginText(FontRectangle bounds)
-            {
-                this.IsOpen = true;
-                this.renderer.BeginText(bounds);
-            }
+            this.nStems += this.stack.Length >> 1;
+            this.stack.Clear();
+        }
 
-            public void EndFigure()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void CheckWidth()
+        {
+            if (this.width == null)
             {
-                this.IsOpen = false;
-                this.renderer.EndFigure();
+                this.width = this.stack.Shift() + this.nominalWidthX;
             }
+        }
 
-            public void EndGlyph()
-            {
-                this.IsOpen = false;
-                this.renderer.EndGlyph();
-            }
-
-            public void EndText()
-            {
-                this.IsOpen = false;
-                this.renderer.EndText();
-            }
-
-            public void LineTo(Vector2 point)
-            {
-                this.IsOpen = true;
-                this.renderer.LineTo(this.Transform(point));
-            }
-
-            public void MoveTo(Vector2 point)
-            {
-                this.IsOpen = true;
-                this.renderer.MoveTo(this.Transform(point));
-            }
-
-            public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
-            {
-                this.IsOpen = true;
-                this.renderer.CubicBezierTo(this.Transform(secondControlPoint), this.Transform(thirdControlPoint), this.Transform(point));
-            }
-
-            public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
-            {
-                this.IsOpen = true;
-                this.renderer.QuadraticBezierTo(this.Transform(secondControlPoint), this.Transform(point));
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private Vector2 Transform(Vector2 point) => (point * this.scale) + this.offset;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Reset()
+        {
+            this.x = 0;
+            this.y = 0;
+            this.width = null;
+            this.nStems = 0;
+            this.stack.Clear();
+            this.trans.Clear();
         }
     }
 }
