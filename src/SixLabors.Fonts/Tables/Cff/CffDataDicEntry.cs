@@ -20,21 +20,21 @@ namespace SixLabors.Fonts.Tables.Cff
 #if DEBUG
         public override string ToString()
         {
-            StringBuilder stbuilder = new();
+            StringBuilder builder = new();
             int j = this.Operands.Length;
             for (int i = 0; i < j; ++i)
             {
                 if (i > 0)
                 {
-                    stbuilder.Append(" ");
+                    builder.Append(" ");
                 }
 
-                stbuilder.Append(this.Operands[i].ToString());
+                builder.Append(this.Operands[i].ToString());
             }
 
-            stbuilder.Append(" ");
-            stbuilder.Append(this.Operator?.ToString() ?? string.Empty);
-            return stbuilder.ToString();
+            builder.Append(" ");
+            builder.Append(this.Operator?.ToString() ?? string.Empty);
+            return builder.ToString();
         }
 #endif
     }

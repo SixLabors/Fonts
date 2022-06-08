@@ -6,20 +6,20 @@ using System;
 namespace SixLabors.Fonts.Tables.Cff
 {
     [TableName(TableName)]
-    internal sealed class CffTable : Table
+    internal sealed class Cff1Table : Table, ICffTable
     {
         internal const string TableName = "CFF "; // 4 chars
 
         private readonly CffGlyphData[] glyphs;
 
-        public CffTable(Cff1Font cff1Font) => this.glyphs = cff1Font.Glyphs;
+        public Cff1Table(CffFont cff1Font) => this.glyphs = cff1Font.Glyphs;
 
         public int GlyphCount => this.glyphs.Length;
 
         public CffGlyphData GetGlyph(int index)
             => this.glyphs[index];
 
-        public static CffTable? Load(FontReader fontReader)
+        public static Cff1Table? Load(FontReader fontReader)
         {
             if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
             {
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        public static CffTable Load(BigEndianBinaryReader reader)
+        public static Cff1Table Load(BigEndianBinaryReader reader)
         {
             // +------+---------------+----------------------------------------+
             // | Type | Name          | Description                            |
@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tables.Cff
             switch (major)
             {
                 case 1:
-                    Cff1Parser parser = new();
+                    CffParser parser = new();
                     return new(parser.Load(reader, position));
 
                 default:

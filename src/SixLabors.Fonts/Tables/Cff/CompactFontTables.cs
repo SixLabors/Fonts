@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.Cff
             NameTable name,
             OS2Table os2,
             PostTable post,
-            CffTable cff)
+            ICffTable cff)
         {
             this.Cmap = cmap;
             this.Head = head;
@@ -76,6 +76,6 @@ namespace SixLabors.Fonts.Tables.Cff
         // +------+----------------------------------+
         // | VORG | Vertical Origin (optional table) |
         // +------+----------------------------------+
-        public CffTable Cff { get; set; }
+        public ICffTable Cff { get; set; }
     }
 }

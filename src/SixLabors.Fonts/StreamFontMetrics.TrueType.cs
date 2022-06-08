@@ -122,12 +122,6 @@ namespace SixLabors.Fonts
             GlyphType glyphType,
             ushort palleteIndex = 0)
         {
-            // TODO: Do we need this?
-            if (this.outlineType != OutlineType.TrueType)
-            {
-                throw new InvalidOperationException("Only TrueType fonts can be used with this method.");
-            }
-
             TrueTypeFontTables tables = this.trueTypeFontTables!;
             GlyphTable glyf = tables.Glyf;
             HorizontalMetricsTable htmx = tables.Htmx;

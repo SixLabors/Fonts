@@ -3,9 +3,9 @@
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal class Cff1Font
+    internal class CffFont
     {
-        public Cff1Font(string name, CffTopDictionary metrics, CffGlyphData[] glyphs)
+        public CffFont(string name, CffTopDictionary metrics, CffGlyphData[] glyphs)
         {
             this.FontName = name;
             this.Metrics = metrics;

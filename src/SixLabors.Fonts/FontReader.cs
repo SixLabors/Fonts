@@ -116,11 +116,6 @@ namespace SixLabors.Fonts
                 this.CompressedTableData = false;
             }
 
-            if (this.OutlineType != OutlineType.TrueType)
-            {
-                // throw new InvalidFontFileException("Invalid glyph format, only TTF glyph outlines supported.");
-            }
-
             var headers = new Dictionary<string, TableHeader>(tableCount);
             for (int i = 0; i < tableCount; i++)
             {

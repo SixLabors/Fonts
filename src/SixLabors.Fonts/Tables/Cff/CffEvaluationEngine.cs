@@ -62,7 +62,8 @@ namespace SixLabors.Fonts.Tables.Cff
         {
             this.Reset();
 
-            var finder = CffBoundsFinder.Create();
+            // TODO: It would be nice to avoid the allocation here.
+            CffBoundsFinder finder = new();
             this.transforming = new(Vector2.One, Vector2.Zero, finder);
 
             // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
@@ -74,8 +75,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 this.transforming.EndFigure();
             }
 
-            // TODO: Fix this. It's not worth using a struct since it gets boxed anyway.
-            return ((CffBoundsFinder)this.transforming.renderer).GetBounds();
+            return finder.GetBounds();
         }
 
         public void RenderTo(IGlyphRenderer renderer, Vector2 scale, Vector2 offset)
@@ -100,8 +100,8 @@ namespace SixLabors.Fonts.Tables.Cff
             bool endCharEncountered = false;
             while (!endCharEncountered && reader.CanRead())
             {
-                byte @operator = reader.ReadByte();
-                if (@operator < 32)
+                byte b0 = reader.ReadByte();
+                if (b0 < 32)
                 {
                     int index;
                     ReadOnlySpan<byte> subr;
@@ -111,8 +111,8 @@ namespace SixLabors.Fonts.Tables.Cff
                     float c2x;
                     float c2y;
 
-                    var instruction = (Type2Operator1)@operator;
-                    switch (instruction)
+                    var oneByteOperator = (Type2Operator1)b0;
+                    switch (oneByteOperator)
                     {
                         case Type2Operator1.Hstem:
                         case Type2Operator1.Vstem:
@@ -149,7 +149,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
                         case Type2Operator1.Hlineto:
                         case Type2Operator1.Vlineto:
-                            phase = instruction == Type2Operator1.Hlineto;
+                            phase = oneByteOperator == Type2Operator1.Hlineto;
 
                             while (this.stack.Length >= 1)
                             {
@@ -361,7 +361,7 @@ namespace SixLabors.Fonts.Tables.Cff
                         case Type2Operator1.Vhcurveto:
                         case Type2Operator1.Hvcurveto:
 
-                            phase = instruction == Type2Operator1.Hvcurveto;
+                            phase = oneByteOperator == Type2Operator1.Hvcurveto;
                             while (this.stack.Length >= 4)
                             {
                                 if (phase)
@@ -394,252 +394,291 @@ namespace SixLabors.Fonts.Tables.Cff
 
                             bool a;
                             bool b;
-                            switch ((Type2Operator2)reader.ReadByte())
+                            byte twoByteOperator = reader.ReadByte();
+                            if (twoByteOperator < 38)
                             {
-                                case Type2Operator2.And:
+                                switch ((Type2Operator2)twoByteOperator)
+                                {
+                                    case Type2Operator2.And:
 
-                                    a = this.stack.Pop() != 0;
-                                    b = this.stack.Pop() != 0;
-                                    this.stack.Push((a && b) ? 1 : 0);
-                                    break;
+                                        a = this.stack.Pop() != 0;
+                                        b = this.stack.Pop() != 0;
+                                        this.stack.Push((a && b) ? 1 : 0);
+                                        break;
 
-                                case Type2Operator2.Or:
+                                    case Type2Operator2.Or:
 
-                                    a = this.stack.Pop() != 0;
-                                    b = this.stack.Pop() != 0;
-                                    this.stack.Push((a || b) ? 1 : 0);
-                                    break;
+                                        a = this.stack.Pop() != 0;
+                                        b = this.stack.Pop() != 0;
+                                        this.stack.Push((a || b) ? 1 : 0);
+                                        break;
 
-                                case Type2Operator2.Not:
+                                    case Type2Operator2.Not:
 
-                                    a = this.stack.Pop() != 0;
-                                    this.stack.Push(a ? 1 : 0);
-                                    break;
+                                        a = this.stack.Pop() != 0;
+                                        this.stack.Push(a ? 1 : 0);
+                                        break;
 
-                                case Type2Operator2.Abs:
+                                    case Type2Operator2.Abs:
 
-                                    this.stack.Push(Math.Abs(this.stack.Pop()));
-                                    break;
+                                        this.stack.Push(Math.Abs(this.stack.Pop()));
+                                        break;
 
-                                case Type2Operator2.Add:
+                                    case Type2Operator2.Add:
 
-                                    this.stack.Push(this.stack.Pop() + this.stack.Pop());
-                                    break;
+                                        this.stack.Push(this.stack.Pop() + this.stack.Pop());
+                                        break;
 
-                                case Type2Operator2.Sub:
+                                    case Type2Operator2.Sub:
 
-                                    this.stack.Push(this.stack.Pop() - this.stack.Pop());
-                                    break;
+                                        this.stack.Push(this.stack.Pop() - this.stack.Pop());
+                                        break;
 
-                                case Type2Operator2.Div:
+                                    case Type2Operator2.Div:
 
-                                    this.stack.Push(this.stack.Pop() / this.stack.Pop());
-                                    break;
+                                        this.stack.Push(this.stack.Pop() / this.stack.Pop());
+                                        break;
 
-                                case Type2Operator2.Neg:
+                                    case Type2Operator2.Neg:
 
-                                    this.stack.Push(-this.stack.Pop());
-                                    break;
+                                        this.stack.Push(-this.stack.Pop());
+                                        break;
 
-                                case Type2Operator2.Eq:
+                                    case Type2Operator2.Eq:
 
-                                    this.stack.Push(this.stack.Pop() == this.stack.Pop() ? 1 : 0);
-                                    break;
+                                        this.stack.Push(this.stack.Pop() == this.stack.Pop() ? 1 : 0);
+                                        break;
 
-                                case Type2Operator2.Drop:
+                                    case Type2Operator2.Drop:
 
-                                    this.stack.Pop();
-                                    break;
+                                        this.stack.Pop();
+                                        break;
 
-                                case Type2Operator2.Put:
+                                    case Type2Operator2.Put:
 
-                                    float val = this.stack.Pop();
-                                    int idx = (int)this.stack.Pop();
+                                        float val = this.stack.Pop();
+                                        int idx = (int)this.stack.Pop();
 
-                                    this.trans[idx] = val;
-                                    break;
+                                        this.trans[idx] = val;
+                                        break;
 
-                                case Type2Operator2.Get:
+                                    case Type2Operator2.Get:
 
-                                    idx = (int)this.stack.Pop();
-                                    this.trans.TryGetValue(idx, out float v);
-                                    this.stack.Push(v);
-                                    this.trans.Remove(idx);
-                                    break;
+                                        idx = (int)this.stack.Pop();
+                                        this.trans.TryGetValue(idx, out float v);
+                                        this.stack.Push(v);
+                                        this.trans.Remove(idx);
+                                        break;
 
-                                case Type2Operator2.Ifelse:
+                                    case Type2Operator2.Ifelse:
 
-                                    float s1 = this.stack.Pop();
-                                    float s2 = this.stack.Pop();
-                                    float v1 = this.stack.Pop();
-                                    float v2 = this.stack.Pop();
+                                        float s1 = this.stack.Pop();
+                                        float s2 = this.stack.Pop();
+                                        float v1 = this.stack.Pop();
+                                        float v2 = this.stack.Pop();
 
-                                    this.stack.Push(v1 <= v2 ? s1 : s2);
-                                    break;
+                                        this.stack.Push(v1 <= v2 ? s1 : s2);
+                                        break;
 
-                                case Type2Operator2.Random:
-                                    this.stack.Push((float)Random.NextDouble());
-                                    break;
+                                    case Type2Operator2.Random:
+                                        this.stack.Push((float)Random.NextDouble());
+                                        break;
 
-                                case Type2Operator2.Mul:
+                                    case Type2Operator2.Mul:
 
-                                    this.stack.Push(this.stack.Pop() * this.stack.Pop());
-                                    break;
+                                        this.stack.Push(this.stack.Pop() * this.stack.Pop());
+                                        break;
 
-                                case Type2Operator2.Sqrt:
+                                    case Type2Operator2.Sqrt:
 
-                                    this.stack.Push(MathF.Sqrt(this.stack.Pop()));
-                                    break;
+                                        this.stack.Push(MathF.Sqrt(this.stack.Pop()));
+                                        break;
 
-                                case Type2Operator2.Dup:
+                                    case Type2Operator2.Dup:
 
-                                    float m = this.stack.Pop();
-                                    this.stack.Push(m);
-                                    this.stack.Push(m);
-                                    break;
+                                        float m = this.stack.Pop();
+                                        this.stack.Push(m);
+                                        this.stack.Push(m);
+                                        break;
 
-                                case Type2Operator2.Exch:
+                                    case Type2Operator2.Exch:
 
-                                    float ex = this.stack.Pop();
-                                    float ch = this.stack.Pop();
-                                    this.stack.Push(ch);
-                                    this.stack.Push(ex);
-                                    break;
+                                        float ex = this.stack.Pop();
+                                        float ch = this.stack.Pop();
+                                        this.stack.Push(ch);
+                                        this.stack.Push(ex);
+                                        break;
 
-                                case Type2Operator2.Index:
+                                    case Type2Operator2.Index:
 
-                                    idx = (int)this.stack.Pop();
-                                    if (idx < 0)
-                                    {
-                                        idx = 0;
-                                    }
-                                    else if (idx > this.stack.Length - 1)
-                                    {
-                                        idx = this.stack.Length - 1;
-                                    }
-
-                                    this.stack.Push(this.stack[idx]);
-                                    break;
-
-                                case Type2Operator2.Roll:
-
-                                    int n = (int)this.stack.Pop();
-                                    float j = this.stack.Pop();
-
-                                    if (j >= 0)
-                                    {
-                                        while (j > 0)
+                                        idx = (int)this.stack.Pop();
+                                        if (idx < 0)
                                         {
-                                            float t = this.stack[n - 1];
-                                            for (int i = n - 2; i >= 0; i--)
-                                            {
-                                                this.stack[i + 1] = this.stack[i];
-                                            }
-
-                                            this.stack[0] = t;
-                                            j--;
+                                            idx = 0;
                                         }
-                                    }
-                                    else
-                                    {
-                                        while (j < 0)
+                                        else if (idx > this.stack.Length - 1)
                                         {
-                                            float t = this.stack[0];
-                                            for (int i = 0; i <= n; i++)
-                                            {
-                                                this.stack[i] = this.stack[i + 1];
-                                            }
-
-                                            this.stack[n - 1] = t;
-                                            j++;
+                                            idx = this.stack.Length - 1;
                                         }
-                                    }
 
-                                    break;
+                                        this.stack.Push(this.stack[idx]);
+                                        break;
 
-                                case Type2Operator2.Hflex:
+                                    case Type2Operator2.Roll:
 
-                                    c1x = this.x + this.stack.Shift();
-                                    c1y = this.y;
-                                    c2x = c1x + this.stack.Shift();
-                                    c2y = c1y + this.stack.Shift();
-                                    float c3x = c2x + this.stack.Shift();
-                                    float c3y = c2y;
-                                    float c4x = c3x + this.stack.Shift();
-                                    float c4y = c3y;
-                                    float c5x = c4x + this.stack.Shift();
-                                    float c5y = c4y;
-                                    float c6x = c5x + this.stack.Shift();
-                                    float c6y = c5y;
-                                    this.x = c6x;
-                                    this.y = c6y;
+                                        int n = (int)this.stack.Pop();
+                                        float j = this.stack.Pop();
 
-                                    this.transforming.CubicBezierTo(new Vector2(c1x, c1y), new Vector2(c2x, c2y), new Vector2(c3x, c3y));
-                                    this.transforming.CubicBezierTo(new Vector2(c4x, c4y), new Vector2(c5x, c5y), new Vector2(c6x, c6y));
+                                        if (j >= 0)
+                                        {
+                                            while (j > 0)
+                                            {
+                                                float t = this.stack[n - 1];
+                                                for (int i = n - 2; i >= 0; i--)
+                                                {
+                                                    this.stack[i + 1] = this.stack[i];
+                                                }
 
-                                    this.stack.Clear();
-                                    break;
+                                                this.stack[0] = t;
+                                                j--;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            while (j < 0)
+                                            {
+                                                float t = this.stack[0];
+                                                for (int i = 0; i <= n; i++)
+                                                {
+                                                    this.stack[i] = this.stack[i + 1];
+                                                }
 
-                                case Type2Operator2.Flex:
+                                                this.stack[n - 1] = t;
+                                                j++;
+                                            }
+                                        }
 
-                                    this.transforming.CubicBezierTo(new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()));
-                                    this.transforming.CubicBezierTo(new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()));
+                                        break;
 
-                                    this.stack.Shift();
+                                    case Type2Operator2.Hflex:
 
-                                    this.stack.Clear();
-                                    break;
+                                        c1x = this.x + this.stack.Shift();
+                                        c1y = this.y;
+                                        c2x = c1x + this.stack.Shift();
+                                        c2y = c1y + this.stack.Shift();
+                                        float c3x = c2x + this.stack.Shift();
+                                        float c3y = c2y;
+                                        float c4x = c3x + this.stack.Shift();
+                                        float c4y = c3y;
+                                        float c5x = c4x + this.stack.Shift();
+                                        float c5y = c4y;
+                                        float c6x = c5x + this.stack.Shift();
+                                        float c6y = c5y;
+                                        this.x = c6x;
+                                        this.y = c6y;
 
-                                case Type2Operator2.Hflex1:
+                                        this.transforming.CubicBezierTo(new Vector2(c1x, c1y), new Vector2(c2x, c2y), new Vector2(c3x, c3y));
+                                        this.transforming.CubicBezierTo(new Vector2(c4x, c4y), new Vector2(c5x, c5y), new Vector2(c6x, c6y));
 
-                                    c1x = this.x + this.stack.Shift();
-                                    c1y = this.y + this.stack.Shift();
-                                    c2x = c1x + this.stack.Shift();
-                                    c2y = c1y + this.stack.Shift();
-                                    c3x = c2x + this.stack.Shift();
-                                    c3y = c2y;
-                                    c4x = c3x + this.stack.Shift();
-                                    c4y = c3y;
-                                    c5x = c4x + this.stack.Shift();
-                                    c5y = c4y + this.stack.Shift();
-                                    c6x = c5x + this.stack.Shift();
-                                    c6y = c5y;
-                                    this.x = c6x;
-                                    this.y = c6y;
+                                        this.stack.Clear();
+                                        break;
 
-                                    this.transforming.CubicBezierTo(new Vector2(c1x, c1y), new Vector2(c2x, c2y), new Vector2(c3x, c3y));
-                                    this.transforming.CubicBezierTo(new Vector2(c4x, c4y), new Vector2(c5x, c5y), new Vector2(c6x, c6y));
+                                    case Type2Operator2.Flex:
 
-                                    this.stack.Clear();
-                                    break;
+                                        this.transforming.CubicBezierTo(new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()));
+                                        this.transforming.CubicBezierTo(new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()), new Vector2(this.stack.Shift(), this.stack.Shift()));
 
-                                case Type2Operator2.Flex1:
+                                        this.stack.Shift();
 
-                                    // TODO:
-                                    this.stack.Clear();
-                                    break;
+                                        this.stack.Clear();
+                                        break;
+
+                                    case Type2Operator2.Hflex1:
+
+                                        c1x = this.x + this.stack.Shift();
+                                        c1y = this.y + this.stack.Shift();
+                                        c2x = c1x + this.stack.Shift();
+                                        c2y = c1y + this.stack.Shift();
+                                        c3x = c2x + this.stack.Shift();
+                                        c3y = c2y;
+                                        c4x = c3x + this.stack.Shift();
+                                        c4y = c3y;
+                                        c5x = c4x + this.stack.Shift();
+                                        c5y = c4y + this.stack.Shift();
+                                        c6x = c5x + this.stack.Shift();
+                                        c6y = c5y;
+                                        this.x = c6x;
+                                        this.y = c6y;
+
+                                        this.transforming.CubicBezierTo(new Vector2(c1x, c1y), new Vector2(c2x, c2y), new Vector2(c3x, c3y));
+                                        this.transforming.CubicBezierTo(new Vector2(c4x, c4y), new Vector2(c5x, c5y), new Vector2(c6x, c6y));
+
+                                        this.stack.Clear();
+                                        break;
+
+                                    case Type2Operator2.Flex1:
+
+                                        float startX = this.x;
+                                        float startY = this.y;
+
+                                        c1x = this.x + this.stack.Shift();
+                                        c1y = this.y + this.stack.Shift();
+
+                                        c2x = c1x + this.stack.Shift();
+                                        c2y = c1y + this.stack.Shift();
+
+                                        c3x = c2x + this.stack.Shift();
+                                        c3y = c2y + this.stack.Shift();
+
+                                        c4x = c3x + this.stack.Shift();
+                                        c4y = c3y + this.stack.Shift();
+
+                                        c5x = c4x + this.stack.Shift();
+                                        c5y = c4y + this.stack.Shift();
+
+                                        if (MathF.Abs(this.x - startX) > Math.Abs(this.y - startY))
+                                        {
+                                            // horizontal
+                                            c6x = c5x + this.stack.Shift();
+                                            c6y = startY;
+                                        }
+                                        else
+                                        {
+                                            c6x = startX;
+                                            c6y = c5y + this.stack.Shift();
+                                        }
+
+                                        this.x = c6x;
+                                        this.y = c6y;
+
+                                        this.transforming.CubicBezierTo(new Vector2(c1x, c1y), new Vector2(c2x, c2y), new Vector2(c3x, c3y));
+                                        this.transforming.CubicBezierTo(new Vector2(c4x, c4y), new Vector2(c5x, c5y), new Vector2(c6x, c6y));
+
+                                        this.stack.Clear();
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                ThrowInvalidOperator(twoByteOperator);
                             }
 
                             break;
-                        default:
-
-                            // stack.Clear();
-                            break;
                     }
                 }
-                else if (@operator < 247)
+                else if (b0 < 247)
                 {
-                    this.stack.Push(@operator - 139);
+                    this.stack.Push(b0 - 139);
                 }
-                else if (@operator < 251)
+                else if (b0 < 251)
                 {
                     byte b1 = reader.ReadByte();
-                    this.stack.Push(((@operator - 247) * 256) + b1 + 108);
+                    this.stack.Push(((b0 - 247) * 256) + b1 + 108);
                 }
-                else if (@operator < 255)
+                else if (b0 < 255)
                 {
                     byte b1 = reader.ReadByte();
-                    this.stack.Push((-(@operator - 251) * 256) - b1 - 108);
+                    this.stack.Push((-(b0 - 251) * 256) - b1 - 108);
                 }
                 else
                 {
@@ -701,5 +740,8 @@ namespace SixLabors.Fonts.Tables.Cff
             this.stack.Clear();
             this.trans.Clear();
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidOperator(byte @operator) => throw new InvalidFontFileException($"Unknown operator:{@operator}");
     }
 }

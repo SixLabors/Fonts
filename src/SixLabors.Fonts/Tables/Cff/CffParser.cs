@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tables.Cff
     /// Parses a Compact Font Format (CFF) font program as described in The Compact Font Format specification (Adobe Technical Note #5176).
     /// A CFF font may contain multiple fonts and achieves compression by sharing details between fonts in the set.
     /// </summary>
-    internal class Cff1Parser
+    internal class CffParser
     {
         /// <summary>
         /// Latin 1 Encoding: ISO 8859-1 is a single-byte encoding that can represent the first 256 Unicode characters.
@@ -28,44 +28,22 @@ namespace SixLabors.Fonts.Tables.Cff
         private int privateDICTOffset;
         private int privateDICTLength;
 
-        // from: Adobe's The Compact Font Format Specification, version1.0, Dec 2003
-
-        // Table 2 CFF Data Types
-        // Name       Range          Description
-        // Card8      0 – 255           1-byte unsigned number
-        // Card16     0 – 65535         2-byte unsigned number
-        // Offset     varies        1, 2, 3, or 4 byte offset(specified by  OffSize field)
-        // OffSize   1–4            1-byte unsigned number specifies the
-        //                          size of an Offset field or fields
-        // SID      0 – 64999       2-byte string identifier
-        //-----------------
-
-        // Table 1 CFF Data Layout
-        // Entry                     Comments
-        // Header                   –
-        // Name INDEX               –
-        // Top DICT INDEX           –
-        // String INDEX             –
-        // Global Subr INDEX            –
-        // Encodings                    –
-        // Charsets                 –
-        // FDSelect                  CIDFonts only
-        // CharStrings INDEX         per-font
-        // Font DICT INDEX           per-font, CIDFonts only
-        // Private DICT              per-font
-        // Local Subr INDEX          per-font or per-Private DICT for CIDFonts
-        // Copyright and Trademark  -
-        public Cff1Font Load(BigEndianBinaryReader reader, long offset)
+        public CffFont Load(BigEndianBinaryReader reader, long offset)
         {
             this.offset = offset;
 
             string fontName = this.ReadNameIndex(reader);
+
             List<CffDataDicEntry>? dataDicEntries = this.ReadTopDICTIndex(reader);
             string[] stringIndex = this.ReadStringIndex(reader);
+
             CffTopDictionary topDictionary = this.ResolveTopDictInfo(dataDicEntries, stringIndex);
+
             byte[][] globalSubrRawBuffers = this.ReadGlobalSubrIndex(reader);
+
             this.ReadFDSelect(reader, topDictionary.CidFontInfo);
             FontDict[] fontDicts = this.ReadFDArray(reader, topDictionary.CidFontInfo);
+
             CffPrivateDictionary? privateDictionary = this.ReadPrivateDict(reader);
             CffGlyphData[] glyphs = this.ReadCharStringsIndex(reader, topDictionary, globalSubrRawBuffers, fontDicts, privateDictionary);
 
@@ -77,38 +55,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private string ReadNameIndex(BigEndianBinaryReader reader)
         {
-            // 7. Name INDEX
-            // This contains the PostScript language names(FontName or
-            // CIDFontName) of all the fonts in the FontSet stored in an INDEX
-            // structure.The font names are sorted, thereby permitting a
-            // binary search to be performed when locating a specific font
-            // within a FontSet. The sort order is based on character codes
-            // treated as 8 - bit unsigned integers. A given font name precedes
-            //  another font name having the first name as its prefix.There
-            //  must be at least one entry in this INDEX, i.e.the FontSet must
-            // contain at least one font.
-
-            // For compatibility with client software, such as PostScript
-            // interpreters and Acrobat®, font names should be no longer
-            // than 127 characters and should not contain any of the following
-            // ASCII characters: [, ], (, ), {, }, <, >, /, %, null(NUL), space, tab,
-            // carriage return, line feed, form feed.It is recommended that
-            // font names be restricted to the printable ASCII subset, codes 33
-            // through 126.Adobe Type Manager® (ATM®) software imposes
-            // a further restriction on the font name length of 63 characters.
-
-            // Note 3
-            // For compatibility with earlier PostScript
-            // interpreters, see Technical Note
-            // #5088, “Font Naming Issues.”
-
-            // A font may be deleted from a FontSet without removing its data
-            // by setting the first byte of its name in the Name INDEX to 0
-            // (NUL).This kind of deletion offers a simple way to handle font
-            // upgrades without rebuilding entire fontsets.Binary search
-            // software must detect deletions and restart the search at the
-            // previous or next name in the INDEX to ensure that all
-            // appropriate names are matched.
             if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
                 throw new InvalidFontFileException("No name index found.");
@@ -117,7 +63,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // For Open Type the Name INDEX in the CFF data must contain only one entry;
             // that is, there must be only one font in the CFF FontSet.
             CffIndexOffset offset = offsets[0];
-            return Iso88591.GetString(reader.ReadBytes(offset.Length), 0, offset.Length);
+            return reader.ReadString(offset.Length, Iso88591);
         }
 
         private List<CffDataDicEntry> ReadTopDICTIndex(BigEndianBinaryReader reader)
@@ -149,40 +95,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private string[] ReadStringIndex(BigEndianBinaryReader reader)
         {
-            // 10 String INDEX
-            // All the strings, with the exception of the FontName and
-            // CIDFontName strings which appear in the Name INDEX, used by
-            // different fonts within the FontSet are collected together into an
-            // INDEX structure and are referenced by a 2 - byte unsigned
-            // number called a string identifier or SID.
-
-            // Only unique strings are stored in the table
-            // thereby removing duplication across fonts.
-
-            // Further space saving is obtained by allocating commonly
-            // occurring strings to predefined SIDs.
-            // These strings, known as the standard strings,
-            // describe all the names used in the ISOAdobe and
-            // Expert character sets along with a few other strings
-            // common to Type 1 fonts.
-
-            // A complete list of standard strings is given in Appendix A
-
-            // The client program will contain an array of standard strings with
-            // nStdStrings elements.
-            // Thus, the standard strings take SIDs in the
-            // range 0 to(nStdStrings –1).
-
-            // The first string in the String INDEX
-            // corresponds to the SID whose value is equal to nStdStrings, the
-            // first non - standard string, and so on.
-
-            // When the client needs to
-            // determine the string that corresponds to a particular SID it
-            // performs the following: test if SID is in standard range then
-            // fetch from internal table,
-            // otherwise, fetch string from the String
-            // INDEX using a value of(SID – nStdStrings) as the index.
             if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
             {
                 return Array.Empty<string>();
@@ -201,17 +113,16 @@ namespace SixLabors.Fonts.Tables.Cff
                 {
                     Span<byte> slice = bufferSpan.Slice(0, length);
                     int actualRead = reader.BaseStream.Read(slice);
-#if DEBUG
                     if (actualRead != length)
                     {
-                        throw new NotSupportedException();
+                        throw new InvalidFontFileException("Invalid string length.");
                     }
-#endif
+
                     stringIndex[i] = Iso88591.GetString(slice);
                 }
                 else
                 {
-                    stringIndex[i] = Iso88591.GetString(reader.ReadBytes(length), 0, length);
+                    stringIndex[i] = reader.ReadString(length, Iso88591);
                 }
             }
 
@@ -361,6 +272,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private byte[][] ReadLocalSubrs(BigEndianBinaryReader reader) => this.ReadSubrBuffer(reader);
 
+        // TODO: We don't actually need this right now. Will be important though if we ever introduce subsetting. 
         private void ReadEncodings(BigEndianBinaryReader reader)
         {
             // Encoding data is located via the offset operand to the
@@ -376,23 +288,23 @@ namespace SixLabors.Fonts.Tables.Cff
             // Each encoding is described by a format-type identifier byte
             // followed by format-specific data.Two formats are currently
             // defined as specified in Tables 11(Format 0) and 12(Format 1).
-            byte format = reader.ReadByte();
-            switch (format)
+            if (this.encodingOffset != -1)
             {
-                default:
-#if DEBUG
-                    System.Diagnostics.Debug.WriteLine("cff_parser_read_encodings:" + format);
-#endif
-                    break;
-                case 0:
-                    this.ReadFormat0Encoding(reader);
-                    break;
-                case 1:
-                    this.ReadFormat1Encoding(reader);
-                    break;
-            }
+                byte encoding = reader.ReadByte();
+                switch (encoding)
+                {
+                    case 0:
+                        this.ReadFormat0Encoding(reader);
+                        break;
+                    case 1:
+                        this.ReadFormat1Encoding(reader);
+                        break;
+                    default:
 
-            // TODO: ...
+                        // TODO: Seek.
+                        break;
+                }
+            }
         }
 
         private void ReadCharsets(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
@@ -513,67 +425,13 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private void ReadFDSelect(BigEndianBinaryReader reader, CidFontInfo cidFontInfo)
         {
-            // http://wwwimages.adobe.com/www.adobe.com/content/dam/acom/en/devnet/font/pdfs/5176.CFF.pdf
-            // 19. FDSelect
-
-            // The FDSelect associates an FD(Font DICT) with a glyph by
-            // specifying an FD index for that glyph. The FD index is used to
-            // access one of the Font DICTs stored in the Font DICT INDEX.
-
-            // FDSelect data is located via the offset operand to the
-            // FDSelect operator in the Top DICT.FDSelect data specifies a format - type
-            // identifier byte followed by format-specific data.Two formats
-            // are currently defined, as shown in Tables  27 and 28.
-            // TODO: ...
-
-            // FDSelect   12 37  number      –, FDSelect offset
             if (cidFontInfo.FDSelect == 0)
             {
                 return;
             }
 
-            // Table 27 Format 0
-            //------------
-            // Type    Name              Description
-            //------------
-            // Card8   format            =0
-            // Card8   fd[nGlyphs]       FD selector array
-
-            // Each element of the fd array(fds) represents the FD index of the corresponding glyph.
-            // This format should be used when the FD indexes are in a fairly random order.
-            // The number of glyphs(nGlyphs) is the value of the count field in the CharStrings INDEX.
-            // (This format is identical to charset format 0 except that the.notdef glyph is included in this case.)
-
-            // Table 28 Format 3
-            //------------
-            // Type    Name              Description
-            //------------
-            // Card8   format            =3
-            // Card16  nRanges           Number of ranges
-            // struct  Range3[nRanges]   Range3 array (see Table 29)
-            // Card16  sentinel          Sentinel GID (see below)
-            //------------
-
-            // Table 29 Range3
-            //------------
-            // Type    Name              Description
-            //------------
-            // Card16  first             First glyph index in range
-            // Card8   fd                FD index for all glyphs in range
-
-            // Each Range3 describes a group of sequential GIDs that have the same FD index.
-            // Each range includes GIDs from the ‘first’ GID up to, but not including,
-            // the ‘first’ GID of the next range element.
-            // Thus, elements of the Range3 array are ordered by increasing ‘first’ GIDs.
-            // The first range must have a ‘first’ GID of 0.
-            // A sentinel GID follows the last range element and serves to delimit the last range in the array.
-            // (The sentinel GID is set equal to the number of glyphs in the font.
-            // That is, its value is 1 greater than the last GID in the font.)
-            // This format is particularly suited to FD indexes that are well ordered(the usual case).
             reader.BaseStream.Position = this.offset + cidFontInfo.FDSelect;
-            byte format = reader.ReadByte();
-
-            switch (format)
+            switch (reader.ReadByte())
             {
                 case 3:
                     ushort nRanges = reader.ReadUInt16();
@@ -586,7 +444,6 @@ namespace SixLabors.Fonts.Tables.Cff
                         ranges[i] = new FDRange3(reader.ReadUInt16(), reader.ReadByte());
                     }
 
-                    // end with //sentinel
                     ranges[nRanges] = new FDRange3(reader.ReadUInt16(), 0); // sentinel
                     break;
 
@@ -661,12 +518,6 @@ namespace SixLabors.Fonts.Tables.Cff
                             case "defaultWidthX":
                             case "nominalWidthX":
                                 break;
-
-                            default:
-#if DEBUG
-                                System.Diagnostics.Debug.WriteLine("cff_pri_dic:" + dicEntry.Operator.Name);
-#endif
-                                break;
                         }
                     }
                 }
@@ -718,12 +569,6 @@ namespace SixLabors.Fonts.Tables.Cff
                 throw new InvalidFontFileException("No glyph data found.");
             }
 
-#if DEBUG
-            if (offsets.Length > ushort.MaxValue)
-            {
-                throw new NotSupportedException();
-            }
-#endif
             int glyphCount = offsets.Length;
             var glyphs = new CffGlyphData[glyphCount];
             byte[][]? localSubBuffer = privateDictionary?.LocalSubrRawBuffers;
@@ -736,20 +581,6 @@ namespace SixLabors.Fonts.Tables.Cff
             {
                 CffIndexOffset offset = offsets[i];
                 byte[] charstringsBuffer = reader.ReadBytes(offset.Length);
-#if DEBUG
-                // Check
-                byte lastByte = charstringsBuffer[offset.Length - 1];
-                if (lastByte is not (byte)Type2Operator1.Endchar and
-                    not (byte)Type2Operator1.Callgsubr and
-                    not (byte)Type2Operator1.Callsubr)
-                {
-                    // 5177.Type2
-                    // Note 6 The charstring itself may end with a call(g)subr; the subroutine must
-                    // then end with an endchar operator
-                    // endchar
-                    throw new Exception("invalid end byte?");
-                }
-#endif
 
                 // Now we can parse the raw glyph instructions
                 if (isCidFont)
@@ -862,12 +693,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
                         case "nominalWidthX":
                             nominalWidthX = (int)dicEntry.Operands[0].RealNumValue;
-                            break;
-
-                        default:
-#if DEBUG
-                            System.Diagnostics.Debug.WriteLine("cff_pri_dic:" + dicEntry.Operator.Name);
-#endif
                             break;
                     }
                 }
@@ -1166,90 +991,6 @@ namespace SixLabors.Fonts.Tables.Cff
 
             value = indexElems;
             return true;
-        }
-
-        private readonly struct CffIndexOffset
-        {
-            /// <summary>
-            /// The starting offset
-            /// </summary>
-            public readonly int Start;
-
-            /// <summary>
-            /// The length
-            /// </summary>
-            public readonly int Length;
-
-            public CffIndexOffset(int start, int len)
-            {
-                this.Start = start;
-                this.Length = len;
-            }
-
-#if DEBUG
-            public override string ToString() => "offset:" + this.Start + ",len:" + this.Length;
-#endif
-        }
-
-        private struct FDRangeProvider
-        {
-            // helper class
-            private readonly FDRange3[] ranges;
-            private ushort currentGlyphIndex;
-            private ushort endGlyphIndexMax;
-            private FDRange3 currentRange;
-            private int currentSelectedRangeIndex;
-
-            public FDRangeProvider(FDRange3[] ranges)
-            {
-                this.ranges = ranges;
-                this.currentGlyphIndex = 0;
-                this.currentSelectedRangeIndex = 0;
-
-                if (ranges != null)
-                {
-                    this.currentRange = ranges[0];
-                    this.endGlyphIndexMax = ranges[1].First;
-                }
-                else
-                {
-                    // empty
-                    this.currentRange = default;
-                    this.endGlyphIndexMax = 0;
-                }
-
-                this.SelectedFDArray = 0;
-            }
-
-            public byte SelectedFDArray { get; private set; }
-
-            public void SetCurrentGlyphIndex(ushort index)
-            {
-                // find proper range for selected index
-                if (index >= this.currentRange.First && index < this.endGlyphIndexMax)
-                {
-                    // ok, in current range
-                    this.SelectedFDArray = this.currentRange.Fd;
-                }
-                else
-                {
-                    // move to next range
-                    this.currentSelectedRangeIndex++;
-                    this.currentRange = this.ranges[this.currentSelectedRangeIndex];
-
-                    this.endGlyphIndexMax = this.ranges[this.currentSelectedRangeIndex + 1].First;
-                    if (index >= this.currentRange.First && index < this.endGlyphIndexMax)
-                    {
-                        this.SelectedFDArray = this.currentRange.Fd;
-                    }
-                    else
-                    {
-                        throw new NotSupportedException();
-                    }
-                }
-
-                this.currentGlyphIndex = index;
-            }
         }
     }
 }

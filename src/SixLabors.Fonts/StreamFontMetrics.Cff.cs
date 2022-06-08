@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
@@ -30,8 +29,10 @@ namespace SixLabors.Fonts
             NameTable name = reader.GetTable<NameTable>();
             CMapTable cmap = reader.GetTable<CMapTable>();
             PostTable post = reader.GetTable<PostTable>();
-            CffTable cff = reader.GetTable<CffTable>(); // TODO: CFF2, VORG
 
+            ICffTable? cff = reader.TryGetTable<Cff1Table>() ?? (ICffTable?)reader.TryGetTable<Cff2Table>();
+
+            // TODO: VORG
             HorizontalMetricsTable htmx = reader.GetTable<HorizontalMetricsTable>();
             VerticalHeadTable? vhea = reader.TryGetTable<VerticalHeadTable>();
             VerticalMetricsTable? vmtx = null;
@@ -49,7 +50,7 @@ namespace SixLabors.Fonts
             ColrTable? colr = reader.TryGetTable<ColrTable>();
             CpalTable? cpal = reader.TryGetTable<CpalTable>();
 
-            CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff)
+            CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff!)
             {
                 Kern = kern,
                 Vhea = vhea,
@@ -70,14 +71,8 @@ namespace SixLabors.Fonts
             GlyphType glyphType,
             ushort palleteIndex = 0)
         {
-            // TODO: Do we need this?
-            if (this.outlineType != OutlineType.CFF)
-            {
-                throw new InvalidOperationException("Only CFF fonts can be used with this method.");
-            }
-
             CompactFontTables tables = this.compactFontTables!;
-            CffTable cff = tables.Cff;
+            ICffTable cff = tables.Cff;
             HorizontalMetricsTable htmx = tables.Htmx;
             VerticalMetricsTable? vtmx = tables.Vmtx;
 

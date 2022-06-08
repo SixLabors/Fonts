@@ -6,29 +6,28 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    internal struct CffBoundsFinder : IGlyphRenderer
+    internal class CffBoundsFinder : IGlyphRenderer
     {
         private float minX;
         private float maxX;
         private float minY;
         private float maxY;
         private Vector2 currentXY;
-        private int nsteps;
-        private bool contourOpen;
+        private readonly int nsteps;
+        private bool open;
         private bool firstEval;
 
-        public static CffBoundsFinder Create()
-            => new()
-            {
-                minX = float.MaxValue,
-                maxX = float.MinValue,
-                minY = float.MaxValue,
-                maxY = float.MinValue,
-                nsteps = 3,
-                currentXY = Vector2.Zero,
-                contourOpen = false,
-                firstEval = true,
-            };
+        public CffBoundsFinder()
+        {
+            this.minX = float.MaxValue;
+            this.maxX = float.MinValue;
+            this.minY = float.MaxValue;
+            this.maxY = float.MinValue;
+            this.nsteps = 3;
+            this.currentXY = Vector2.Zero;
+            this.open = false;
+            this.firstEval = true;
+        }
 
         public void BeginFigure()
         {
@@ -45,13 +44,13 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public void EndFigure()
         {
-            this.contourOpen = false;
+            this.open = false;
             this.currentXY = Vector2.Zero;
         }
 
         public void EndGlyph()
         {
-            if (this.contourOpen)
+            if (this.open)
             {
                 this.EndFigure();
             }
@@ -59,7 +58,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public void EndText()
         {
-            if (this.contourOpen)
+            if (this.open)
             {
                 this.EndFigure();
             }
@@ -69,12 +68,12 @@ namespace SixLabors.Fonts.Tables.Cff
         {
             this.currentXY = point;
             this.UpdateMinMax(point.X, point.Y);
-            this.contourOpen = true;
+            this.open = true;
         }
 
         public void MoveTo(Vector2 point)
         {
-            if (this.contourOpen)
+            if (this.open)
             {
                 this.EndFigure();
             }
@@ -99,7 +98,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
             this.currentXY = point;
             this.UpdateMinMax(point.X, point.Y);
-            this.contourOpen = true;
+            this.open = true;
         }
 
         public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
@@ -118,7 +117,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
             this.currentXY = point;
             this.UpdateMinMax(point.X, point.Y);
-            this.contourOpen = true;
+            this.open = true;
         }
 
         private void UpdateMinMax(float x0, float y0)

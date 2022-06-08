@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tables.Cff
     {
         private Vector2 scale;
         private Vector2 offset;
-        internal readonly IGlyphRenderer renderer;
+        private readonly IGlyphRenderer renderer;
 
         public TransformingGlyphRenderer(Vector2 scale, Vector2 offset, IGlyphRenderer renderer)
         {
@@ -69,7 +69,11 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public void MoveTo(Vector2 point)
         {
-            this.IsOpen = false;
+            if (this.IsOpen)
+            {
+                this.EndFigure();
+            }
+
             this.renderer.MoveTo(this.Transform(point));
         }
 

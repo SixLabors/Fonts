@@ -48,7 +48,8 @@ namespace SixLabors.Fonts.Tables
             this.Register(PrepTable.Load);
             this.Register(GlyphDefinitionTable.Load);
             this.Register(PostTable.Load);
-            this.Register(CffTable.Load);
+            this.Register(Cff1Table.Load);
+            this.Register(Cff2Table.Load);
         }
 
         public static TableLoader Default { get; } = new();

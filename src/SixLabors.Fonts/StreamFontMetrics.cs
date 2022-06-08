@@ -76,7 +76,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
         /// </summary>
-        /// <param name="tables">The Compact Fton tables.</param>
+        /// <param name="tables">The Compact Font tables.</param>
         internal StreamFontMetrics(CompactFontTables tables)
         {
             this.compactFontTables = tables;

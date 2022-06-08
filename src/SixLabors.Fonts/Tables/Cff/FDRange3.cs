@@ -4,28 +4,26 @@
 namespace SixLabors.Fonts.Tables.Cff
 {
     /// <summary>
-    /// Represents an element in an FD array.
+    /// Represents an element in an font dictionary array.
     /// </summary>
     internal readonly struct FDRange3
     {
-        /// <summary>
-        /// First glyph index in range
-        /// </summary>
-        public readonly ushort First;
-
-        /// <summary>
-        /// FD index for all glyphs in range
-        /// </summary>
-        public readonly byte Fd;
-
-        public FDRange3(ushort first, byte fd)
+        public FDRange3(ushort first, byte fontDictionary)
         {
             this.First = first;
-            this.Fd = fd;
+            this.FontDictionary = fontDictionary;
         }
 
-#if DEBUG
-        public override string ToString() => "first:" + this.First + ",fd:" + this.Fd;
-#endif
+        /// <summary>
+        /// Gets the first glyph index in range
+        /// </summary>
+        public ushort First { get; }
+
+        /// <summary>
+        /// Gets the font dictionary index for all glyphs in range
+        /// </summary>
+        public byte FontDictionary { get; }
+
+        public override string ToString() => $"First {this.First}, Dictionary {this.FontDictionary}.";
     }
 }
