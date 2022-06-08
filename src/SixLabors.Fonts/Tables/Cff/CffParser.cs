@@ -272,7 +272,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private byte[][] ReadLocalSubrs(BigEndianBinaryReader reader) => this.ReadSubrBuffer(reader);
 
-        // TODO: We don't actually need this right now. Will be important though if we ever introduce subsetting. 
+        // TODO: We don't actually need this right now. Will be important though if we ever introduce subsetting.
         private void ReadEncodings(BigEndianBinaryReader reader)
         {
             // Encoding data is located via the offset operand to the

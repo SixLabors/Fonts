@@ -17,7 +17,6 @@ namespace SixLabors.Fonts.Tables.Cff
         private Buffer<T> buffer;
         private Span<T> stack;
         private bool isDisposed;
-        private int length;
 
         public RefStack(int capacity)
         {
@@ -29,15 +28,10 @@ namespace SixLabors.Fonts.Tables.Cff
             this.buffer = new Buffer<T>(capacity);
             this.stack = this.buffer.GetSpan();
             this.isDisposed = false;
-            this.length = 0;
             this.Length = 0;
         }
 
-        public int Length
-        {
-            get => length;
-            private set => length = value;
-        }
+        public int Length { get; private set; }
 
         public T this[int index]
         {
