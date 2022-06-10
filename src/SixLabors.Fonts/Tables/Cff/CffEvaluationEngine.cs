@@ -396,7 +396,11 @@ namespace SixLabors.Fonts.Tables.Cff
                             bool a;
                             bool b;
                             byte twoByteOperator = reader.ReadByte();
-                            if (twoByteOperator < 38)
+                            if (twoByteOperator >= 38)
+                            {
+                                ThrowInvalidOperator(twoByteOperator);
+                            }
+                            else
                             {
                                 switch ((Type2Operator2)twoByteOperator)
                                 {
@@ -658,10 +662,6 @@ namespace SixLabors.Fonts.Tables.Cff
                                         this.stack.Clear();
                                         break;
                                 }
-                            }
-                            else
-                            {
-                                ThrowInvalidOperator(twoByteOperator);
                             }
 
                             break;
