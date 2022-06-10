@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
+using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts

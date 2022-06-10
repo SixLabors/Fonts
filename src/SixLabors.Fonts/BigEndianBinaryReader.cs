@@ -123,6 +123,18 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Reads a 32-bit signed integer from the stream, using the bit converter
+        /// for this reader. 4 bytes are read.
+        /// </summary>
+        /// <returns>The 32-bit integer read</returns>
+        public int ReadInt32()
+        {
+            this.ReadInternal(this.buffer, 4);
+
+            return BinaryPrimitives.ReadInt32BigEndian(this.buffer);
+        }
+
+        /// <summary>
         /// Reads a 64-bit signed integer from the stream.
         /// 8 bytes are read.
         /// </summary>
@@ -344,6 +356,22 @@ namespace SixLabors.Fonts
 
             return Encoding.UTF8.GetString(this.buffer, 0, 4);
         }
+
+        /// <summary>
+        /// Reads an offset consuming the given nuber of bytes.
+        /// </summary>
+        /// <param name="size">The offset size in bytes.</param>
+        /// <returns>The 32-bit signed integer representing the offset.</returns>
+        /// <exception cref="InvalidOperationException">Size is not in range.</exception>
+        public int ReadOffset(int size)
+            => size switch
+            {
+                1 => this.ReadByte(),
+                2 => (this.ReadByte() << 8) | (this.ReadByte() << 0),
+                3 => (this.ReadByte() << 16) | (this.ReadByte() << 8) | (this.ReadByte() << 0),
+                4 => (this.ReadByte() << 24) | (this.ReadByte() << 16) | (this.ReadByte() << 8) | (this.ReadByte() << 0),
+                _ => throw new InvalidOperationException(),
+            };
 
         /// <summary>
         /// Reads the given number of bytes from the stream, throwing an exception

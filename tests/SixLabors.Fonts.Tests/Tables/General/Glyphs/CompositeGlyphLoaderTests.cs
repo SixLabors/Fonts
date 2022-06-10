@@ -3,8 +3,7 @@
 
 using System;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General;
-using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Tables.General.Glyphs

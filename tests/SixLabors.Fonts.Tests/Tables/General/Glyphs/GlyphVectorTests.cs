@@ -4,7 +4,7 @@
 using System;
 using System.Linq;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Tables.General.Glyphs

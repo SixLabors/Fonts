@@ -134,6 +134,7 @@ namespace SixLabors.Fonts
             FontMetrics fontMetrics = font.FontMetrics;
             ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
             bool hasFallBacks = false;
+            List<int> orphans = new();
             for (int i = 0; i < this.glyphs.Count; i++)
             {
                 GlyphPositioningData current = this.glyphs[i];
@@ -172,7 +173,7 @@ namespace SixLabors.Fonts
                             // Clone and offset the glyph for rendering.
                             // If the glyph is the result of a decomposition substitution we need to offset it.
                             // We slip the text run in here while we clone so we have it available to the renderer.
-                            var clone = GlyphMetrics.CloneForRendering(gm, shape.TextRun, codePoint);
+                            GlyphMetrics clone = gm.CloneForRendering(shape.TextRun, codePoint);
                             if (isDecomposed)
                             {
                                 if (!this.IsVerticalLayoutMode)
@@ -204,6 +205,18 @@ namespace SixLabors.Fonts
                         }
                     }
                 }
+                else
+                {
+                    // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
+                    // then we end up with orphaned fallbacks. We need to remove them.
+                    orphans.Add(i);
+                }
+            }
+
+            // Remove any orphans.
+            for (int i = orphans.Count - 1; i >= 0; i--)
+            {
+                this.glyphs.RemoveAt(orphans[i]);
             }
 
             return !hasFallBacks;
@@ -247,7 +260,7 @@ namespace SixLabors.Fonts
                     // Clone and offset the glyph for rendering.
                     // If the glyph is the result of a decomposition substitution we need to offset it.
                     // We slip the text run in here while we clone so we have it available to the renderer.
-                    var clone = GlyphMetrics.CloneForRendering(gm, data.TextRun, codePoint);
+                    GlyphMetrics clone = gm.CloneForRendering(data.TextRun, codePoint);
                     if (isDecomposed)
                     {
                         if (!this.IsVerticalLayoutMode)

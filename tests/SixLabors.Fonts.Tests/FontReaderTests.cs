@@ -1,12 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.General;
-
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests
@@ -20,19 +17,17 @@ namespace SixLabors.Fonts.Tests
             writer.WriteTrueTypeFileHeader(0, 0, 0, 0);
 
             var reader = new FontReader(writer.GetStream());
-            Assert.Equal(FontReader.OutlineTypes.TrueType, reader.OutlineType);
+            Assert.Equal(OutlineType.TrueType, reader.OutlineType);
         }
 
         [Fact]
-        public void ReadCcfOutlineType()
+        public void ReadCffOutlineType()
         {
             var writer = new BigEndianBinaryWriter();
             writer.WriteCffFileHeader(0, 0, 0, 0);
-            Assert.Throws<InvalidFontFileException>(
-                () =>
-                    {
-                        var reader = new FontReader(writer.GetStream());
-                    });
+
+            var reader = new FontReader(writer.GetStream());
+            Assert.Equal(OutlineType.CFF, reader.OutlineType);
         }
 
         [Fact]

@@ -202,6 +202,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string NotoSansSCThinFile => GetFullPath("NotoSansSC-Thin.ttf");
 
+        public static string NotoSansKRRegular => GetFullPath("NotoSansKR-Regular.otf");
+
         public static string HelveticaTTCFile => GetFullPath("Helvetica.ttc");
 
         public static string MeQuranFile => GetFullPath("me_quran_volt_newmet.ttf");

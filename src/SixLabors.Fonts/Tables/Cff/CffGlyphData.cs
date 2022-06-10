@@ -1,0 +1,57 @@
+// Copyright (c) Six Labors.
+// Licensed under the Apache License, Version 2.0.
+
+using System.Numerics;
+
+namespace SixLabors.Fonts.Tables.Cff
+{
+    internal struct CffGlyphData
+    {
+        private readonly byte[][] globalSubrBuffers;
+        private readonly byte[][] localSubrBuffers;
+        private readonly byte[] charStrings;
+        private readonly int nominalWidthX;
+
+        public CffGlyphData(
+            ushort glyphIndex,
+            byte[][] globalSubrBuffers,
+            byte[][] localSubrBuffers,
+            int nominalWidthX,
+            byte[] charStrings)
+        {
+            this.GlyphIndex = glyphIndex;
+            this.globalSubrBuffers = globalSubrBuffers;
+            this.localSubrBuffers = localSubrBuffers;
+            this.nominalWidthX = nominalWidthX;
+            this.charStrings = charStrings;
+
+            this.GlyphName = null;
+        }
+
+        public readonly ushort GlyphIndex { get; }
+
+        public string? GlyphName { get; set; }
+
+        public Bounds GetBounds()
+        {
+            using var engine = new CffEvaluationEngine(
+                this.charStrings,
+                this.globalSubrBuffers,
+                this.localSubrBuffers,
+                this.nominalWidthX);
+
+            return engine.GetBounds();
+        }
+
+        public void RenderTo(IGlyphRenderer renderer, Vector2 scale, Vector2 offset)
+        {
+            using var engine = new CffEvaluationEngine(
+                 this.charStrings,
+                 this.globalSubrBuffers,
+                 this.localSubrBuffers,
+                 this.nominalWidthX);
+
+            engine.RenderTo(renderer, scale, offset);
+        }
+    }
+}

@@ -89,6 +89,45 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
+        public void FontMetricsVerticalFontMatchesReferenceCFF()
+        {
+            // Compared to OpenTypeJS Font Inspector metrics
+            // https://opentype.js.org/font-inspector.html
+            var collection = new FontCollection();
+            FontFamily family = collection.Add(TestFonts.NotoSansKRRegular);
+            Font font = family.CreateFont(12);
+
+            Assert.Equal(1000, font.FontMetrics.UnitsPerEm);
+            Assert.Equal(1160, font.FontMetrics.Ascender);
+            Assert.Equal(-288, font.FontMetrics.Descender);
+            Assert.Equal(0, font.FontMetrics.LineGap);
+            Assert.Equal(1448, font.FontMetrics.LineHeight);
+            Assert.Equal(3000, font.FontMetrics.AdvanceWidthMax);
+            Assert.Equal(3000, font.FontMetrics.AdvanceHeightMax);
+
+            Assert.Equal(650, font.FontMetrics.SubscriptXSize);
+            Assert.Equal(600, font.FontMetrics.SubscriptYSize);
+            Assert.Equal(0, font.FontMetrics.SubscriptXOffset);
+            Assert.Equal(75, font.FontMetrics.SubscriptYOffset);
+
+            Assert.Equal(650, font.FontMetrics.SuperscriptXSize);
+            Assert.Equal(600, font.FontMetrics.SuperscriptYSize);
+            Assert.Equal(0, font.FontMetrics.SuperscriptXOffset);
+            Assert.Equal(350, font.FontMetrics.SuperscriptYOffset);
+
+            Assert.Equal(50, font.FontMetrics.StrikeoutSize);
+            Assert.Equal(325, font.FontMetrics.StrikeoutPosition);
+
+            Assert.Equal(-125, font.FontMetrics.UnderlinePosition);
+            Assert.Equal(50, font.FontMetrics.UnderlineThickness);
+
+            Assert.Equal(0, font.FontMetrics.ItalicAngle);
+
+            Assert.False(font.IsBold);
+            Assert.False(font.IsItalic);
+        }
+
+        [Fact]
         public void GlyphMetricsMatchesReference()
         {
             // Compared to EveryFonts TTFDump metrics

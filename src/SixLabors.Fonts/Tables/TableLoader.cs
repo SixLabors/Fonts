@@ -6,8 +6,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
-using SixLabors.Fonts.Tables.Hinting;
+using SixLabors.Fonts.Tables.General.Colr;
+using SixLabors.Fonts.Tables.General.Kern;
+using SixLabors.Fonts.Tables.General.Name;
+using SixLabors.Fonts.Tables.General.Post;
+using SixLabors.Fonts.Tables.TrueType;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Hinting;
 
 namespace SixLabors.Fonts.Tables
 {
@@ -41,6 +48,8 @@ namespace SixLabors.Fonts.Tables
             this.Register(PrepTable.Load);
             this.Register(GlyphDefinitionTable.Load);
             this.Register(PostTable.Load);
+            this.Register(Cff1Table.Load);
+            this.Register(Cff2Table.Load);
         }
 
         public static TableLoader Default { get; } = new();
@@ -79,6 +88,8 @@ namespace SixLabors.Fonts.Tables
         private void Register<T>(Func<FontReader, T?> createFunc)
             where T : Table
         {
+            // TODO: static abstract members in interfaces when available.
+            // https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/tutorials/static-abstract-interface-methods
             string? name =
                 typeof(T).GetTypeInfo()
                     .CustomAttributes
@@ -104,7 +115,7 @@ namespace SixLabors.Fonts.Tables
                 return (TTable?)func.Invoke(reader);
             }
 
-            throw new Exception("font table not registered");
+            throw new Exception("Font table not registered.");
         }
     }
 }

@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
+using SixLabors.Fonts.Tables.TrueType;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -113,7 +114,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     foreach (GlyphMetrics metric in fontMetrics.GetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport))
                     {
-                        ReadOnlyMemory<Vector2> points = metric.GetOutline().ControlPoints;
+                        // TODO: What does HarfBuzz do here?
+                        if (metric is not TrueTypeGlyphMetrics ttmetric)
+                        {
+                            break;
+                        }
+
+                        ReadOnlyMemory<Vector2> points = ttmetric.GetOutline().ControlPoints;
                         if (this.anchorPointIndex < points.Length)
                         {
                             Vector2 point = points.Span[this.anchorPointIndex];

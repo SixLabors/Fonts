@@ -36,7 +36,21 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily sunflower = fonts.Add(@"Fonts\Sunflower-Medium.ttf");
             FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
 
+            FontFamily notoKR = fonts.Add(@"Fonts\NotoSansKR-Regular.otf");
+
+            RenderText(notoKR, "\uD734", pointSize: 72);
+            RenderText(notoKR, "Sphinx of black quartz, judge my vow!", pointSize: 72);
+            RenderText(notoKR, "모든인간", pointSize: 72);
+            RenderText(notoKR, "\uD734\uAC00\u0020\uAC00\u002D\u002D\u0020\u0028\uC624\u002D\u002D\u0029", pointSize: 72);
+            RenderText(notoKR, "\u1112\u1172\u1100\u1161\u0020\u1100\u1161\u002D\u002D\u0020\u0028\u110B\u1169\u002D\u002D\u0029", pointSize: 72);
+            RenderText(notoKR, "\ua960\ud7b0\ud7cb", pointSize: 72);
+            RenderText(notoKR, "\u1100\u1161\ud7cb", pointSize: 72);
+            RenderText(notoKR, "\ua960\ud7b0\u302f", pointSize: 72);
+            RenderText(notoKR, "\u1100\u302f\u1161", pointSize: 72);
+            RenderText(notoKR, "\u1100", pointSize: 72);
+
 #if OS_WINDOWS
+
             FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
             FontFamily uiFont = SystemFonts.Get("Segoe UI");
             FontFamily arabicFont = SystemFonts.Get("Dubai");
@@ -44,23 +58,23 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily tahoma = SystemFonts.Get("Tahoma");
             var textRuns = new List<TextRun>
             {
-                new TextRun { Start = 4, End = 9, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
+                new TextRun { Start = 4, End = 10, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
                 new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttributes.Subscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline | TextDecorations.Overline }
             };
 
-            RenderText(uiFont, "The quick brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns);
+            RenderText(uiFont, "The quick👩🏽‍🚒 brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns, fallbackFonts: new[] { emojiFont });
 
             string arabic = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ";
             textRuns = new List<TextRun>
             {
-                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecorations.Underline }
+                new TextRun { Start = 0, End = arabic.GetGraphemeCount(), TextDecorations = TextDecorations.Underline }
             };
 
             RenderText(uiFont, arabic, pointSize: 72, textRuns: textRuns);
 
             textRuns = new List<TextRun>
             {
-                new TextRun { Start = 0, End = CodePoint.GetCodePointCount(arabic), TextDecorations = TextDecorations.Underline }
+                new TextRun { Start = 0, End = arabic.GetGraphemeCount(), TextDecorations = TextDecorations.Underline }
             };
             RenderText(bugzilla, arabic, pointSize: 72, textRuns: textRuns);
 

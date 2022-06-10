@@ -456,7 +456,7 @@ namespace SixLabors.Fonts.Unicode
         /// Returns the number of codepoints in a given string buffer.
         /// </summary>
         /// <param name="source">The source buffer to parse.</param>
-        /// <returns>The <see cref="int"/>.</returns>
+        /// <returns>The <see cref="int"/> count.</returns>
         public static int GetCodePointCount(ReadOnlySpan<char> source)
         {
             if (source.IsEmpty)

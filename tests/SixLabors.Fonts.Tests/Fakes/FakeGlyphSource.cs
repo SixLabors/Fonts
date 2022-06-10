@@ -3,7 +3,7 @@
 
 using System;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General.Glyphs;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tests.Fakes

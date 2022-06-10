@@ -55,24 +55,24 @@ namespace SixLabors.Fonts
             SpanGraphemeEnumerator graphemeEnumerator = new(text);
             while (graphemeEnumerator.MoveNext())
             {
+                if (count == this.Start)
+                {
+                    start = chars;
+                }
+
                 SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current);
                 while (codePointEnumerator.MoveNext())
                 {
-                    if (count == this.Start)
-                    {
-                        start = chars;
-                    }
-
                     chars += codePointEnumerator.Current.Utf16SequenceLength;
                     length = chars - start;
-                    if (++count == this.End)
-                    {
-                        goto End;
-                    }
+                }
+
+                if (++count == this.End)
+                {
+                    break;
                 }
             }
 
-            End:
             return text.Slice(start, length);
         }
 
