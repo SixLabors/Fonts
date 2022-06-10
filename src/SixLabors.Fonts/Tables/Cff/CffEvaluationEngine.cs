@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Tables.Cff
         private readonly int nominalWidthX;
         private readonly int globalBias;
         private readonly int localBias;
-        private readonly Dictionary<int, float> trans = new();
+        private readonly Dictionary<int, float> trans;
         private bool isDisposed;
 
         public CffEvaluationEngine(
@@ -49,6 +49,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
             this.globalBias = CalculateBias(this.globalSubrBuffers.Length);
             this.localBias = CalculateBias(this.localSubrBuffers.Length);
+            this.trans = new();
 
             this.x = 0;
             this.y = 0;
