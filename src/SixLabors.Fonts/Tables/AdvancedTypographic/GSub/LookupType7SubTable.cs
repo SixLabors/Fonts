@@ -27,7 +27,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             return substFormat switch
             {
                 1 => LookupType7Format1SubTable.Load(reader, offset, lookupFlags, subTableLoader),
-                _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1'."),
+                _ => new NotImplementedSubTable(),
             };
         }
     }

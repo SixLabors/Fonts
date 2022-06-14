@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 1 => LookupType8Format1SubTable.Load(reader, offset, lookupFlags),
                 2 => LookupType8Format2SubTable.Load(reader, offset, lookupFlags),
                 3 => LookupType8Format3SubTable.Load(reader, offset, lookupFlags),
-                _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {substFormat}. Should be '1', '2', or '3'."),
+                _ => new NotImplementedSubTable(),
             };
         }
 

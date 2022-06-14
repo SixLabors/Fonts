@@ -208,6 +208,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string MeQuranFile => GetFullPath("me_quran_volt_newmet.ttf");
 
+        public static string AliceFrancesHMKRegularFile => GetFullPath("AliceFrancesHMK-Regular.ttf");
+
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
         public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);

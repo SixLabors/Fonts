@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             return subTableFormat switch
             {
                 1 => LookupType6Format1SubTable.Load(reader, offset, lookupFlags),
-                _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {subTableFormat}. Should be '1'."),
+                _ => new NotImplementedSubTable(),
             };
         }
 
