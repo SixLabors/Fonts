@@ -19,7 +19,7 @@ namespace SixLabors.Fonts.Unicode
         public JoiningClass(CodePoint codePoint)
         {
             UnicodeCategory category = CodePoint.GetGeneralCategory(codePoint);
-            uint value = UnicodeData.GetJoiningClass(codePoint.Value);
+            uint value = UnicodeData.GetJoiningClass((uint)codePoint.Value);
             this.JoiningType = GetJoiningType(codePoint, value, category);
             this.JoiningGroup = (JoiningGroup)((value >> 16) & 0xFF);
         }

@@ -20,25 +20,25 @@ namespace SixLabors.Fonts.Unicode
         private static readonly Lazy<UnicodeTrie> LazyShapingTrie = new(() => GetTrie("ArabicShaping.trie"));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint GetBidiData(int codePoint) => LazyBidiTrie.Value.Get(codePoint);
+        public static uint GetBidiData(uint codePoint) => LazyBidiTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint GetBidiMirror(int codePoint) => LazyBidiMirrorTrie.Value.Get(codePoint);
+        public static uint GetBidiMirror(uint codePoint) => LazyBidiMirrorTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static GraphemeClusterClass GetGraphemeClusterClass(int codePoint) => (GraphemeClusterClass)LazyGraphemeTrie.Value.Get(codePoint);
+        public static GraphemeClusterClass GetGraphemeClusterClass(uint codePoint) => (GraphemeClusterClass)LazyGraphemeTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static LineBreakClass GetLineBreakClass(int codePoint) => (LineBreakClass)LazyLinebreakTrie.Value.Get(codePoint);
+        public static LineBreakClass GetLineBreakClass(uint codePoint) => (LineBreakClass)LazyLinebreakTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ScriptClass GetScriptClass(int codePoint) => (ScriptClass)LazyScriptTrie.Value.Get(codePoint);
+        public static ScriptClass GetScriptClass(uint codePoint) => (ScriptClass)LazyScriptTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint GetJoiningClass(int codePoint) => LazyShapingTrie.Value.Get(codePoint);
+        public static uint GetJoiningClass(uint codePoint) => LazyShapingTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static UnicodeCategory GetUnicodeCategory(int codePoint) => (UnicodeCategory)LazyCategoryTrie.Value.Get(codePoint);
+        public static UnicodeCategory GetUnicodeCategory(uint codePoint) => (UnicodeCategory)LazyCategoryTrie.Value.Get(codePoint);
 
         private static UnicodeTrie GetTrie(string name)
         {
