@@ -3,7 +3,6 @@
 
 namespace SixLabors.Fonts.Tables.General
 {
-    [TableName(TableName)]
     internal class HorizontalHeadTable : Table
     {
         internal const string TableName = "hhea";

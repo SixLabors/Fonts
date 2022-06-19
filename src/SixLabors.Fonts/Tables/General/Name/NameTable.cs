@@ -11,7 +11,6 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General.Name
 {
-    [TableName(TableName)]
     internal class NameTable : Table
     {
         internal const string TableName = "name";

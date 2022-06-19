@@ -7,7 +7,6 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.General.Kern
 {
-    [TableName(TableName)]
     internal sealed class KerningTable : Table
     {
         internal const string TableName = "kern";

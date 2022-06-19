@@ -5,7 +5,6 @@ using System;
 
 namespace SixLabors.Fonts.Tables.General
 {
-    [TableName(TableName)]
     internal class HeadTable : Table
     {
         internal const string TableName = "head";

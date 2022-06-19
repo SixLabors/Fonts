@@ -15,7 +15,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     /// such as cursively-connecting forms in Arabic script, or for advanced typographic effects, such as ligatures.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gsub"/>
     /// </summary>
-    [TableName(TableName)]
     internal class GSubTable : Table
     {
         internal const string TableName = "GSUB";
