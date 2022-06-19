@@ -11,7 +11,6 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.General
 {
-    [TableName(TableName)]
     internal sealed class CMapTable : Table
     {
         internal const string TableName = "cmap";

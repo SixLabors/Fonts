@@ -12,7 +12,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     /// and 3. ligature caret lists that provide information for caret positioning and text selection involving ligatures.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gdef"/>
     /// </summary>
-    [TableName(TableName)]
     internal sealed class GlyphDefinitionTable : Table
     {
         internal const string TableName = "GDEF";

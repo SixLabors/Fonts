@@ -5,7 +5,6 @@ using System;
 
 namespace SixLabors.Fonts.Tables.General.Colr
 {
-    [TableName(TableName)]
     internal class ColrTable : Table
     {
         internal const string TableName = "COLR";

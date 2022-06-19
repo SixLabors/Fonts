@@ -14,7 +14,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     /// sophisticated text layout and rendering in each script and language system that a font supports.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos"/>
     /// </summary>
-    [TableName(TableName)]
     internal class GPosTable : Table
     {
         private static readonly Tag KernTag = Tag.Parse("kern");

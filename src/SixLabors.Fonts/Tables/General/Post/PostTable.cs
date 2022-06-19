@@ -6,7 +6,6 @@ using System.Text;
 
 namespace SixLabors.Fonts.Tables.General.Post
 {
-    [TableName(TableName)]
     internal class PostTable : Table
     {
         internal const string TableName = "post";

@@ -7,7 +7,6 @@ using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 {
-    [TableName(TableName)]
     internal class GlyphTable : Table
     {
         internal const string TableName = "glyf";
