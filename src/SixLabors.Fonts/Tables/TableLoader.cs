@@ -42,7 +42,7 @@ namespace SixLabors.Fonts.Tables
             this.Register(ColrTable.TableName, ColrTable.Load);
             this.Register(CpalTable.TableName, CpalTable.Load);
             this.Register(GPosTable.TableName, GPosTable.Load);
-            this.Register(GPosTable.TableName, GPosTable.Load);
+            this.Register(GSubTable.TableName, GSubTable.Load);
             this.Register(CvtTable.TableName, CvtTable.Load);
             this.Register(FpgmTable.TableName, FpgmTable.Load);
             this.Register(PrepTable.TableName, PrepTable.Load);
