@@ -31,6 +31,11 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Gets or sets the number of lookups visited by this collection.
+        /// </summary>
+        public int LookupCount { get; set; }
+
+        /// <summary>
         /// Gets the number of glyphs ids contained in the collection.
         /// This may be more or less than original input codepoint count (due to substitution process).
         /// </summary>
@@ -160,6 +165,7 @@ namespace SixLabors.Fonts
         {
             this.glyphs.Clear();
             this.LigatureId = 1;
+            this.LookupCount = 0;
         }
 
         /// <summary>
@@ -281,9 +287,12 @@ namespace SixLabors.Fonts
                     glyphIds = glyphIds.Slice(1);
                     for (int i = 0; i < glyphIds.Length; i++)
                     {
-                        GlyphShapingData data = new(current, false);
-                        data.GlyphId = glyphIds[i];
-                        data.LigatureComponent = i + 1;
+                        GlyphShapingData data = new(current, false)
+                        {
+                            GlyphId = glyphIds[i],
+                            LigatureComponent = i + 1
+                        };
+
                         this.glyphs.Insert(++index, new(pair.Offset, data));
                     }
                 }

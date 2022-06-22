@@ -19,6 +19,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     {
         internal const string TableName = "GSUB";
 
+        /// <summary>
+        /// The maximum number of times a lookup can be applied during shaping.
+        /// Used to protect against infinite loops.
+        /// See hb-ot-layout-common.hh in HarfBuzz.
+        /// </summary>
+        private const int MaxLookupCount = 35000;
+
         public GSubTable(ScriptList? scriptList, FeatureListTable featureList, LookupListTable lookupList)
         {
             this.ScriptList = scriptList;
@@ -154,6 +161,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                             {
                                 iterator.Next();
                                 continue;
+                            }
+
+                            // Avoid infinite loops.
+                            if (collection.LookupCount++ > MaxLookupCount)
+                            {
+                                return;
                             }
 
                             featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));

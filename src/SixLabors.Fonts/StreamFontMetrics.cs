@@ -263,7 +263,7 @@ namespace SixLabors.Fonts
                     ? this.trueTypeFontTables!.Kern
                     : this.compactFontTables!.Kern;
 
-                if (kern != null)
+                if (kern?.Count > 0)
                 {
                     for (ushort index = 1; index < collection.Count; index++)
                     {

@@ -368,5 +368,15 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
                 Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
             }
         }
+
+        [Fact]
+        public void BillionLaughsAttackDoesNotThrowException()
+        {
+            // Arrange
+            Font font = new FontCollection().Add(TestFonts.GSubLookupType2BillionLaughs).CreateFont(12);
+
+            // Act
+            TextMeasurer.Measure("lol", new TextOptions(font));
+        }
     }
 }
