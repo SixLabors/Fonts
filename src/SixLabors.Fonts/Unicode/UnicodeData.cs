@@ -4,7 +4,6 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Unicode
@@ -43,7 +42,6 @@ namespace SixLabors.Fonts.Unicode
         private static UnicodeTrie GetTrie(string name)
         {
             Stream? stream = typeof(UnicodeData)
-                .GetTypeInfo()
                 .Assembly
                 .GetManifestResourceStream("SixLabors.Fonts.Unicode.Resources." + name);
 
