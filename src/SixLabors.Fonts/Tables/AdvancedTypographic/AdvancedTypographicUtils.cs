@@ -15,16 +15,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         // Based on HarfBuzz hb-buffer.hh
         public const int MaxContextLength = 64;
         private const int MaxLengthFactor = 64;
-        private const int MaxLengthMinumum = 16384;
+        private const int MaxLengthMinimum = 16384;
         private const int MaxOperationsFactor = 1024;
-        private const int MaxOperationsMinumum = 16384;
+        private const int MaxOperationsMinimum = 16384;
         private const int MaxShapingCharsLength = 0x3FFFFFFF; // Half int max.
 
         public static int GetMaxAllowableShapingCollectionCount(int length)
-            => (int)Math.Min(Math.Max((long)length * MaxLengthFactor, MaxLengthMinumum), MaxShapingCharsLength);
+            => (int)Math.Min(Math.Max((long)length * MaxLengthFactor, MaxLengthMinimum), MaxShapingCharsLength);
 
         public static int GetMaxAllowableShapingOperationsCount(int length)
-            => (int)Math.Min(Math.Max((long)length * MaxOperationsFactor, MaxOperationsMinumum), MaxShapingCharsLength);
+            => (int)Math.Min(Math.Max((long)length * MaxOperationsFactor, MaxOperationsMinimum), MaxShapingCharsLength);
 
         public static bool ApplyLookupList(
             FontMetrics fontMetrics,
