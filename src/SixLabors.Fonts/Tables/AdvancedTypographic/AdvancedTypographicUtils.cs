@@ -10,10 +10,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 {
     internal static class AdvancedTypographicUtils
     {
-        /// <summary>
-        /// The maximum length of a context. Taken from HarfBuzz - hb-ot-layout-common.hh
-        /// </summary>
+        // The following properties are used to prevent overflows caused
+        // by maliciously crafted fonts.
+        // Based on HarfBuzz hb-buffer.hh
         public const int MaxContextLength = 64;
+        private const int MaxLengthFactor = 64;
+        private const int MaxLengthMinumum = 16384;
+        private const int MaxOperationsFactor = 1024;
+        private const int MaxOperationsMinumum = 16384;
+        private const int MaxShapingCharsLength = 0x3FFFFFFF; // Half int max.
+
+        public static int GetMaxAllowableShapingCollectionCount(int length)
+            => (int)Math.Min(Math.Max((long)length * MaxLengthFactor, MaxLengthMinumum), MaxShapingCharsLength);
+
+        public static int GetMaxAllowableShapingOperationsCount(int length)
+            => (int)Math.Min(Math.Max((long)length * MaxOperationsFactor, MaxOperationsMinumum), MaxShapingCharsLength);
 
         public static bool ApplyLookupList(
             FontMetrics fontMetrics,
@@ -22,7 +33,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LookupFlags lookupFlags,
             SequenceLookupRecord[] records,
             GlyphSubstitutionCollection collection,
-            ushort index,
+            int index,
             int count)
         {
             bool hasChanged = false;
@@ -56,7 +67,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             LookupFlags lookupFlags,
             SequenceLookupRecord[] records,
             GlyphPositioningCollection collection,
-            ushort index,
+            int index,
             int count)
         {
             bool hasChanged = false;
@@ -189,7 +200,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             FontMetrics fontMetrics,
             LookupFlags lookupFlags,
             IGlyphShapingCollection collection,
-            ushort index,
+            int index,
             int count,
             CoverageTable[] input,
             CoverageTable[] backtrack,
@@ -224,7 +235,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         public static void ApplyAnchor(
             FontMetrics fontMetrics,
             GlyphPositioningCollection collection,
-            ushort index,
+            int index,
             AnchorTable baseAnchor,
             MarkRecord markRecord,
             int baseGlyphIndex)
@@ -242,7 +253,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public static void ApplyPosition(
             GlyphPositioningCollection collection,
-            ushort index,
+            int index,
             ValueRecord record)
         {
             GlyphShapingData current = collection.GetGlyphShapingData(index);
@@ -302,8 +313,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             Func<T, GlyphShapingData, bool> condition,
             Span<int> matches)
         {
-            ushort position = iterator.Index;
-            ushort offset = iterator.Increment(increment);
+            int position = iterator.Index;
+            int offset = iterator.Increment(increment);
             IGlyphShapingCollection collection = iterator.Collection;
 
             int i = 0;

@@ -300,7 +300,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="fontMetrics">The font metrics.</param>
         /// <param name="index">The zero-based index of the element.</param>
-        public void UpdatePosition(FontMetrics fontMetrics, ushort index)
+        public void UpdatePosition(FontMetrics fontMetrics, int index)
         {
             GlyphShapingData data = this.GetGlyphShapingData(index);
             bool isDirtyXY = data.Bounds.IsDirtyXY;
@@ -338,7 +338,7 @@ namespace SixLabors.Fonts
         /// <param name="glyphId">The id of the glyph to offset.</param>
         /// <param name="dx">The delta x-advance.</param>
         /// <param name="dy">The delta y-advance.</param>
-        public void Advance(FontMetrics fontMetrics, ushort index, ushort glyphId, short dx, short dy)
+        public void Advance(FontMetrics fontMetrics, int index, ushort glyphId, short dx, short dy)
         {
             foreach (GlyphMetrics m in this.glyphs[index].Metrics)
             {
@@ -355,7 +355,7 @@ namespace SixLabors.Fonts
         /// <param name="fontMetrics">The font face with metrics.</param>
         /// <param name="index">The zero-based index of the elements to position.</param>
         /// <returns><see langword="true"/> if the element should be processed; otherwise, <see langword="false"/>.</returns>
-        public bool ShouldProcess(FontMetrics fontMetrics, ushort index)
+        public bool ShouldProcess(FontMetrics fontMetrics, int index)
             => this.glyphs[index].Metrics[0].FontMetrics == fontMetrics;
 
         private class GlyphPositioningData

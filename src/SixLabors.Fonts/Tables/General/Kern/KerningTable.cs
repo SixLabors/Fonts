@@ -57,7 +57,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
             return new KerningTable(tables.ToArray());
         }
 
-        public void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, ushort left, ushort right)
+        public void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, int left, int right)
         {
             if (this.Count == 0)
             {

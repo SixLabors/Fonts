@@ -31,11 +31,6 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Gets or sets the number of lookups visited by this collection.
-        /// </summary>
-        public int LookupCount { get; set; }
-
-        /// <summary>
         /// Gets the number of glyphs ids contained in the collection.
         /// This may be more or less than original input codepoint count (due to substitution process).
         /// </summary>
@@ -165,7 +160,6 @@ namespace SixLabors.Fonts
         {
             this.glyphs.Clear();
             this.LigatureId = 1;
-            this.LookupCount = 0;
         }
 
         /// <summary>

@@ -255,6 +255,7 @@ namespace SixLabors.Fonts
 
             bool kerned = false;
             KerningMode kerningMode = collection.TextOptions.KerningMode;
+
             gpos?.TryUpdatePositions(this, collection, out kerned);
 
             if (!kerned && kerningMode != KerningMode.None)
@@ -265,9 +266,16 @@ namespace SixLabors.Fonts
 
                 if (kern?.Count > 0)
                 {
-                    for (ushort index = 1; index < collection.Count; index++)
+                    // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
+                    int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(collection.Count);
+                    for (int index = 1; index < collection.Count; index++)
                     {
-                        kern.UpdatePositions(this, collection, (ushort)(index - 1), index);
+                        if (index >= maxCount)
+                        {
+                            break;
+                        }
+
+                        kern.UpdatePositions(this, collection, index - 1, index);
                     }
                 }
             }

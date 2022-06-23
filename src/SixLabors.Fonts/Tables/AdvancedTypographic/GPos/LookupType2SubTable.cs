@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
-                ushort index,
+                int index,
                 int count)
             {
                 if (count <= 1)
@@ -122,7 +122,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         AdvancedTypographicUtils.ApplyPosition(collection, index, record1);
 
                         ValueRecord record2 = pairValueRecord.ValueRecord2;
-                        AdvancedTypographicUtils.ApplyPosition(collection, (ushort)(index + 1), record2);
+                        AdvancedTypographicUtils.ApplyPosition(collection, index + 1, record2);
 
                         return true;
                     }
@@ -257,7 +257,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
-                ushort index,
+                int index,
                 int count)
             {
                 if (count <= 1)
@@ -290,7 +290,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     AdvancedTypographicUtils.ApplyPosition(collection, index, record1);
 
                     ValueRecord record2 = class2Record.ValueRecord2;
-                    AdvancedTypographicUtils.ApplyPosition(collection, (ushort)(index + 1), record2);
+                    AdvancedTypographicUtils.ApplyPosition(collection, index + 1, record2);
 
                     return true;
                 }

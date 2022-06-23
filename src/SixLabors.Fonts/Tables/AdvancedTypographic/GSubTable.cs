@@ -19,13 +19,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     {
         internal const string TableName = "GSUB";
 
-        /// <summary>
-        /// The maximum number of times a lookup can be applied during shaping.
-        /// Used to protect against infinite loops.
-        /// See hb-ot-layout-common.hh in HarfBuzz.
-        /// </summary>
-        private const int MaxLookupCount = 35000;
-
         public GSubTable(ScriptList? scriptList, FeatureListTable featureList, LookupListTable lookupList)
         {
             this.ScriptList = scriptList;
@@ -106,15 +99,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public void ApplySubstitution(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
         {
-            for (ushort i = 0; i < collection.Count; i++)
+            // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
+            int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(collection.Count);
+            int maxOperationsCount = AdvancedTypographicUtils.GetMaxAllowableShapingOperationsCount(collection.Count);
+            int currentOperations = 0;
+
+            for (int i = 0; i < collection.Count; i++)
             {
                 // Choose a shaper based on the script.
                 // This determines which features to apply to which glyphs.
                 ScriptClass current = CodePoint.GetScriptClass(collection.GetGlyphShapingData(i).CodePoint);
                 BaseShaper shaper = ShaperFactory.Create(current, collection.TextOptions);
 
-                ushort index = i;
-                ushort count = 1;
+                int index = i;
+                int count = 1;
                 while (i < collection.Count - 1)
                 {
                     // We want to assign the same feature lookups to individual sections of the text rather
@@ -129,13 +127,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
                     i++;
                     count++;
+
+                    if (i >= maxCount)
+                    {
+                        break;
+                    }
                 }
 
                 // Assign Substitution features to each glyph.
                 shaper.AssignFeatures(collection, index, count);
 
                 // Shapers can adjust the count.
-                count = (ushort)Math.Min(count, collection.Count - index);
+                count = Math.Min(count, collection.Count - index);
 
                 IEnumerable<Tag> stageFeatures = shaper.GetShapingStageFeatures();
 
@@ -156,17 +159,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
                         while (iterator.Index < index + count)
                         {
+                            if (collection.Count >= maxCount || currentOperations++ >= maxOperationsCount)
+                            {
+                                return;
+                            }
+
                             List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
                             if (!HasFeature(glyphFeatures, in feature))
                             {
                                 iterator.Next();
                                 continue;
-                            }
-
-                            // Avoid infinite loops.
-                            if (collection.LookupCount++ > MaxLookupCount)
-                            {
-                                return;
                             }
 
                             featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
@@ -175,7 +177,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                             // Account for substitutions changing the length of the collection.
                             if (collection.Count != currentCount)
                             {
-                                count = (ushort)(count - (currentCount - collection.Count));
+                                count = count - (currentCount - collection.Count);
                                 currentCount = collection.Count;
                             }
                         }

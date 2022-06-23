@@ -88,7 +88,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
-                ushort index,
+                int index,
                 int count)
             {
                 // Mark to mark positioning.
