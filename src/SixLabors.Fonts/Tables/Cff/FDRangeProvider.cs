@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Tables.Cff
             this.currentGlyphIndex = 0;
             this.currentSelectedRangeIndex = 0;
 
-            if (ranges != null)
+            if (ranges?.Length > 0)
             {
                 this.currentRange = ranges[0];
                 this.endGlyphIndexMax = ranges[1].First;

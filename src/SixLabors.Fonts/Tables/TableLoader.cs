@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
@@ -50,6 +51,9 @@ namespace SixLabors.Fonts.Tables
             this.Register(PostTable.Load);
             this.Register(Cff1Table.Load);
             this.Register(Cff2Table.Load);
+            this.Register(FVarTable.Load);
+            this.Register(AVarTable.Load);
+            this.Register(GVarTable.Load);
         }
 
         public static TableLoader Default { get; } = new();

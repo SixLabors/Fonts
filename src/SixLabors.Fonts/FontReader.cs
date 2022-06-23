@@ -146,17 +146,15 @@ namespace SixLabors.Fonts
             {
                 return (TTableType)table;
             }
-            else
-            {
-                TTableType? loadedTable = this.loader.Load<TTableType>(this);
-                if (loadedTable is null)
-                {
-                    return null;
-                }
 
-                table = loadedTable;
-                this.loadedTables.Add(typeof(TTableType), loadedTable);
+            TTableType? loadedTable = this.loader.Load<TTableType>(this);
+            if (loadedTable is null)
+            {
+                return null;
             }
+
+            table = loadedTable;
+            this.loadedTables.Add(typeof(TTableType), loadedTable);
 
             return (TTableType)table;
         }

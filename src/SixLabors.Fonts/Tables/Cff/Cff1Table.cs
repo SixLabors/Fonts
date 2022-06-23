@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tables.Cff
             switch (major)
             {
                 case 1:
-                    CffParser parser = new();
+                    Cff1Parser parser = new();
                     return new(parser.Load(reader, position));
 
                 default:

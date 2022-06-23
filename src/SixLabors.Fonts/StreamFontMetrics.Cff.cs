@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
@@ -29,7 +30,6 @@ namespace SixLabors.Fonts
             NameTable name = reader.GetTable<NameTable>();
             CMapTable cmap = reader.GetTable<CMapTable>();
             PostTable post = reader.GetTable<PostTable>();
-
             ICffTable? cff = reader.TryGetTable<Cff1Table>() ?? (ICffTable?)reader.TryGetTable<Cff2Table>();
 
             // TODO: VORG
@@ -50,6 +50,11 @@ namespace SixLabors.Fonts
             ColrTable? colr = reader.TryGetTable<ColrTable>();
             CpalTable? cpal = reader.TryGetTable<CpalTable>();
 
+            // Variations related tables.
+            FVarTable? fVar = reader.TryGetTable<FVarTable>();
+            AVarTable? aVar = reader.TryGetTable<AVarTable>();
+            // GVarTable? gVar = reader.TryGetTable<GVarTable>();
+
             CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff!)
             {
                 Kern = kern,
@@ -60,6 +65,8 @@ namespace SixLabors.Fonts
                 GPos = gPos,
                 Colr = colr,
                 Cpal = cpal,
+                FVar = fVar,
+                AVar = aVar
             };
 
             return new StreamFontMetrics(tables);
@@ -75,9 +82,11 @@ namespace SixLabors.Fonts
             ICffTable cff = tables.Cff;
             HorizontalMetricsTable htmx = tables.Htmx;
             VerticalMetricsTable? vtmx = tables.Vmtx;
+            FVarTable? fVar = tables.FVar;
+            AVarTable? aVar = tables.AVar;
 
             CffGlyphData vector = cff.GetGlyph(glyphId);
-            Bounds bounds = vector.GetBounds();
+            Bounds bounds = vector.GetBounds(fVar, aVar);
             ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
             short lsb = htmx.GetLeftSideBearing(glyphId);
 
@@ -93,7 +102,7 @@ namespace SixLabors.Fonts
             GlyphColor? color = null;
             if (glyphType == GlyphType.ColrLayer)
             {
-                // 0xFFFF is special index meaning use foreground color and thus leave unset
+                // 0xFFFF is special index meaning use foreground color and thus leave unset.
                 if (palleteIndex != 0xFFFF)
                 {
                     CpalTable? cpal = tables.Cpal;

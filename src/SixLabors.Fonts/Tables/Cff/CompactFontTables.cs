@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
@@ -65,6 +66,10 @@ namespace SixLabors.Fonts.Tables.Cff
         public VerticalHeadTable? Vhea { get; set; }
 
         public VerticalMetricsTable? Vmtx { get; set; }
+
+        public FVarTable? FVar { get; set; }
+
+        public AVarTable? AVar { get; set; }
 
         // Tables Related to CFF Outlines
         // +------+----------------------------------+

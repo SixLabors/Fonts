@@ -32,6 +32,24 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        public static Cff2Table Load(BigEndianBinaryReader reader) => throw new NotSupportedException("CFF2 Fonts are not currently supported.");
+        public static Cff2Table Load(BigEndianBinaryReader reader)
+        {
+            long position = reader.BaseStream.Position;
+            byte major = reader.ReadUInt8();
+            byte minor = reader.ReadUInt8();
+            byte hdrSize = reader.ReadUInt8();
+            ushort topDictLength = reader.ReadUInt16();
+
+            switch (major)
+            {
+                case 2:
+                    Cff2Parser parser = new();
+                    parser.Load(reader, hdrSize, topDictLength, position);
+                    return new(parser.Load(reader, hdrSize, topDictLength, position));
+
+                default:
+                    throw new NotSupportedException("CFF version 2 is expected");
+            }
+        }
     }
 }

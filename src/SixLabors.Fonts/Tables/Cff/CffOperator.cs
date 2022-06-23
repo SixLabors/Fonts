@@ -97,6 +97,10 @@ namespace SixLabors.Fonts.Tables.Cff
             Register(dictionary, 20, "defaultWidthX", OperatorOperandKind.Number);
             Register(dictionary, 21, "nominalWidthX", OperatorOperandKind.Number);
 
+            Register(dictionary, 22, "vsindex", OperatorOperandKind.Number);
+            Register(dictionary, 23, "blend", OperatorOperandKind.Number);
+            Register(dictionary, 24, "vstore", OperatorOperandKind.Number);
+
             return dictionary;
         }
 
