@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -22,6 +21,19 @@ namespace SixLabors.Fonts.Unicode
         private readonly int highStart;
         private readonly uint errorValue;
 
+        public UnicodeTrie(ReadOnlySpan<byte> rawData)
+        {
+            var header = UnicodeTrieHeader.Parse(rawData);
+            int length = header.DataLength;
+            uint[] data = new uint[length / sizeof(uint)];
+            MemoryMarshal.Cast<byte, uint>(rawData.Slice(rawData.Length - length))
+                .CopyTo(data);
+
+            this.highStart = header.HighStart;
+            this.errorValue = header.ErrorValue;
+            this.data = data;
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="UnicodeTrie"/> class.
         /// </summary>
@@ -37,8 +49,7 @@ namespace SixLabors.Fonts.Unicode
             }
 
             // Read the data in compressed format.
-            using (var inflater = new DeflateStream(stream, CompressionMode.Decompress, true))
-            using (var br = new BinaryReader(inflater, Encoding.UTF8, true))
+            using (var br = new BinaryReader(stream, Encoding.UTF8, true))
             {
                 for (int i = 0; i < this.data.Length; i++)
                 {
@@ -128,15 +139,40 @@ namespace SixLabors.Fonts.Unicode
                 bw.Write(this.data.Length * sizeof(uint));
             }
 
-            // Write the data in compressed format.
-            using (var deflater = new DeflateStream(stream, CompressionLevel.Optimal, true))
-            using (var bw = new BinaryWriter(deflater, Encoding.UTF8, true))
+            // Write the data.
+            using (var bw = new BinaryWriter(stream, Encoding.UTF8, true))
             {
                 for (int i = 0; i < this.data.Length; i++)
                 {
                     bw.Write(this.data[i]);
                 }
             }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        private struct UnicodeTrieHeader
+        {
+            public int HighStart
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get;
+            }
+
+            public uint ErrorValue
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get;
+            }
+
+            public int DataLength
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static UnicodeTrieHeader Parse(ReadOnlySpan<byte> data)
+                => MemoryMarshal.Cast<byte, UnicodeTrieHeader>(data)[0];
         }
     }
 }
