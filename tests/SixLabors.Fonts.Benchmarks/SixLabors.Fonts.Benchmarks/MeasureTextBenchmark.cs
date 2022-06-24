@@ -7,6 +7,14 @@ using SkiaSharp;
 
 namespace SixLabors.Fonts.Benchmarks
 {
+    /// <summary>
+    /// <para>
+    /// This benchmark is not actually measuring the same operation as SkiSharp is
+    /// not doing any layout or shaping operations. However it is useful as a marker to measure
+    /// performance against.
+    /// </para>
+    /// <para>We should see if we can include the Skia HarfBuzz extensions to see how we compare.</para>
+    /// </summary>
     [MediumRunJob]
     public class MeasureTextBenchmark : IDisposable
     {
