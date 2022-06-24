@@ -476,6 +476,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(76, runs[1].End);
         }
 
+#if OS_WINDOWS
         [Fact]
         public FontRectangle BenchmarkTest()
         {
@@ -484,6 +485,7 @@ namespace SixLabors.Fonts.Tests
         }
 
         private static readonly Font Arial = SystemFonts.CreateFont("Arial", 12);
+#endif
 
         public static Font CreateFont(string text)
         {

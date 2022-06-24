@@ -53,7 +53,7 @@ namespace SixLabors.Fonts.Tests.Tables.General
                 var reader = new FontReader(stream);
                 ColrTable tbl = reader.GetTable<ColrTable>();
 
-                System.Span<Fonts.Tables.General.Colr.LayerRecord> layers = tbl.GetLayers(15);
+                System.Span<LayerRecord> layers = tbl.GetLayers(15);
                 Assert.Equal(2, layers.Length);
             }
         }
