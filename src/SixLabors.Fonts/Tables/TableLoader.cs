@@ -27,29 +27,29 @@ namespace SixLabors.Fonts.Tables
         public TableLoader()
         {
             // We will hard code mapping registration in here for all the tables
-            this.Register(NameTable.Load);
-            this.Register(CMapTable.Load);
-            this.Register(HeadTable.Load);
-            this.Register(HorizontalHeadTable.Load);
-            this.Register(HorizontalMetricsTable.Load);
-            this.Register(VerticalHeadTable.Load);
-            this.Register(VerticalMetricsTable.Load);
-            this.Register(MaximumProfileTable.Load);
-            this.Register(OS2Table.Load);
-            this.Register(IndexLocationTable.Load);
-            this.Register(GlyphTable.Load);
-            this.Register(KerningTable.Load);
-            this.Register(ColrTable.Load);
-            this.Register(CpalTable.Load);
-            this.Register(GPosTable.Load);
-            this.Register(GSubTable.Load);
-            this.Register(CvtTable.Load);
-            this.Register(FpgmTable.Load);
-            this.Register(PrepTable.Load);
-            this.Register(GlyphDefinitionTable.Load);
-            this.Register(PostTable.Load);
-            this.Register(Cff1Table.Load);
-            this.Register(Cff2Table.Load);
+            this.Register(NameTable.TableName, NameTable.Load);
+            this.Register(CMapTable.TableName, CMapTable.Load);
+            this.Register(HeadTable.TableName, HeadTable.Load);
+            this.Register(HorizontalHeadTable.TableName, HorizontalHeadTable.Load);
+            this.Register(HorizontalMetricsTable.TableName, HorizontalMetricsTable.Load);
+            this.Register(VerticalHeadTable.TableName, VerticalHeadTable.Load);
+            this.Register(VerticalMetricsTable.TableName, VerticalMetricsTable.Load);
+            this.Register(MaximumProfileTable.TableName, MaximumProfileTable.Load);
+            this.Register(OS2Table.TableName, OS2Table.Load);
+            this.Register(IndexLocationTable.TableName, IndexLocationTable.Load);
+            this.Register(GlyphTable.TableName, GlyphTable.Load);
+            this.Register(KerningTable.TableName, KerningTable.Load);
+            this.Register(ColrTable.TableName, ColrTable.Load);
+            this.Register(CpalTable.TableName, CpalTable.Load);
+            this.Register(GPosTable.TableName, GPosTable.Load);
+            this.Register(GSubTable.TableName, GSubTable.Load);
+            this.Register(CvtTable.TableName, CvtTable.Load);
+            this.Register(FpgmTable.TableName, FpgmTable.Load);
+            this.Register(PrepTable.TableName, PrepTable.Load);
+            this.Register(GlyphDefinitionTable.TableName, GlyphDefinitionTable.Load);
+            this.Register(PostTable.TableName, PostTable.Load);
+            this.Register(Cff1Table.TableName, Cff1Table.Load);
+            this.Register(Cff2Table.TableName, Cff2Table.Load);
         }
 
         public static TableLoader Default { get; } = new();
@@ -83,20 +83,6 @@ namespace SixLabors.Fonts.Tables
                     this.typesLoaders.Add(typeof(T), createFunc);
                 }
             }
-        }
-
-        private void Register<T>(Func<FontReader, T?> createFunc)
-            where T : Table
-        {
-            // TODO: static abstract members in interfaces when available.
-            // https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/tutorials/static-abstract-interface-methods
-            string? name =
-                typeof(T).GetTypeInfo()
-                    .CustomAttributes
-                    .First(x => x.AttributeType == typeof(TableNameAttribute))
-                    .ConstructorArguments[0].Value!.ToString();
-
-            this.Register(name!, createFunc);
         }
 
         internal Table? Load(string tag, FontReader reader)

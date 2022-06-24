@@ -6,7 +6,6 @@ using SixLabors.Fonts.Tables.General;
 
 namespace SixLabors.Fonts.Tables.TrueType
 {
-    [TableName(TableName)]
     internal sealed class IndexLocationTable : Table
     {
         internal const string TableName = "loca";

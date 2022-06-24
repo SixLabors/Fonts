@@ -3,7 +3,6 @@
 
 namespace SixLabors.Fonts.Tables.TrueType.Hinting
 {
-    [TableName(TableName)]
     internal class FpgmTable : Table
     {
         internal const string TableName = "fpgm";

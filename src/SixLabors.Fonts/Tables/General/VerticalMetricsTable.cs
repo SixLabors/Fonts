@@ -3,7 +3,6 @@
 
 namespace SixLabors.Fonts.Tables.General
 {
-    [TableName(TableName)]
     internal sealed class VerticalMetricsTable : Table
     {
         internal const string TableName = "vmtx";
