@@ -15,6 +15,8 @@ namespace SixLabors.Fonts.Tables.General.Kern
         public KerningTable(KerningSubTable[] kerningSubTable)
             => this.kerningSubTable = kerningSubTable;
 
+        public int Count => this.kerningSubTable.Length;
+
         public static KerningTable Load(FontReader fontReader)
         {
             if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
@@ -55,8 +57,13 @@ namespace SixLabors.Fonts.Tables.General.Kern
             return new KerningTable(tables.ToArray());
         }
 
-        public void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, ushort left, ushort right)
+        public void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, int left, int right)
         {
+            if (this.Count == 0)
+            {
+                return;
+            }
+
             ushort previous = collection[left];
             ushort current = collection[right];
             if (previous == 0 || current == 0)
@@ -65,12 +72,16 @@ namespace SixLabors.Fonts.Tables.General.Kern
             }
 
             Vector2 result = Vector2.Zero;
+            bool kerned = false;
             foreach (KerningSubTable sub in this.kerningSubTable)
             {
-                sub.ApplyOffset(previous, current, ref result);
+                kerned |= sub.TryApplyOffset(previous, current, ref result);
             }
 
-            collection.Advance(fontMetrics, right, current, (short)result.X, (short)result.Y);
+            if (kerned)
+            {
+                collection.Advance(fontMetrics, right, current, (short)result.X, (short)result.Y);
+            }
         }
     }
 }
