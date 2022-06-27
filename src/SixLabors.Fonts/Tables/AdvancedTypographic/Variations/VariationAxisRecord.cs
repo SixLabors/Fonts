@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Diagnostics;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
@@ -9,14 +10,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     /// Defines a VariationAxisRecord.
     /// <see href="https://docs.microsoft.com/de-de/typography/opentype/spec/fvar#variationaxisrecord"/>
     /// </summary>
+    [DebuggerDisplay("Tag: {Tag}, MinValue: {MinValue}, MaxValue: {MaxValue}, DefaultValue: {DefaultValue}, AxisNameId: {AxisNameId}")]
     internal class VariationAxisRecord
     {
         internal VariationAxisRecord(string tag, float minValue, float defaultValue, float maxValue, ushort flags, ushort axisNameId)
         {
             this.Tag = tag;
             this.MinValue = minValue;
-            this.DefaultValue = defaultValue;
             this.MaxValue = maxValue;
+            this.DefaultValue = defaultValue;
             this.Flags = flags;
             this.AxisNameId = axisNameId;
         }

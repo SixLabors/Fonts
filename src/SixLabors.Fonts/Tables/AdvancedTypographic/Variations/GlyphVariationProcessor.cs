@@ -70,8 +70,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                         {
                             AxisValueMapRecord prev = segment.AxisValueMap[j - 1];
                             normalized[i] = ((((normalized[i] - prev.FromCoordinate) * (pair.ToCoordinate - prev.ToCoordinate)) + float.Epsilon) /
-                                            (pair.FromCoordinate - prev.FromCoordinate + float.Epsilon)) +
-                                            prev.ToCoordinate;
+                                            (pair.FromCoordinate - prev.FromCoordinate + float.Epsilon)) + prev.ToCoordinate;
                         }
                     }
                 }

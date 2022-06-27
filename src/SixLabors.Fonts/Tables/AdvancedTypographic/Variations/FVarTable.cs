@@ -79,7 +79,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             var axesArray = new VariationAxisRecord[axisCount];
             for (int i = 0; i < axisCount; i++)
             {
-                axesArray[i] = VariationAxisRecord.Load(reader, axesArrayOffset + axisSize);
+                axesArray[i] = VariationAxisRecord.Load(reader, axesArrayOffset + (axisSize * i));
             }
 
             var instances = new InstanceRecord[instanceCount];
