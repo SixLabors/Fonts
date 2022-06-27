@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 {
     /// <summary>
@@ -21,6 +23,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
         private readonly float[] normalizedCoords;
 
+        private readonly Dictionary<ItemVariationData, float[]> blendVectors;
+
         /// <summary>
         /// Epsilon as used in fontkit reference implementation.
         /// </summary>
@@ -35,6 +39,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             this.fvar = fVar;
             this.avar = aVar;
             this.normalizedCoords = this.NormalizeDefaultCoords();
+            this.blendVectors = new Dictionary<ItemVariationData, float[]>();
         }
 
         private float[] NormalizeDefaultCoords()
@@ -88,6 +93,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
         public float[] BlendVector(int outerIndex)
         {
             ItemVariationData variationData = this.itemStore.ItemVariations[outerIndex];
+            if (this.blendVectors.ContainsKey(variationData))
+            {
+                return this.blendVectors[variationData];
+            }
 
             float[] blendVector = new float[variationData.RegionIndexes.Length];
 
@@ -148,6 +157,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
                 blendVector[i] = scalar;
             }
+
+            this.blendVectors[variationData] = blendVector;
 
             return blendVector;
         }

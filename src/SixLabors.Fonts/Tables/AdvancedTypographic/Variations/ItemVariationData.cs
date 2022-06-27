@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Diagnostics;
 using System.IO;
 
@@ -56,5 +57,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
             return new ItemVariationData(itemCount, wordDeltaCount, regionIndexes);
         }
+
+        /// <inheritdoc />
+        public override int GetHashCode() => HashCode.Combine(this.ItemCount, this.WordDeltaCount, this.RegionIndexes);
     }
 }
