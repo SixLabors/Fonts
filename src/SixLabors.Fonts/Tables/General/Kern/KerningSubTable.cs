@@ -41,7 +41,7 @@ namespace SixLabors.Fonts.Tables.General.Kern
 
         protected abstract bool TryGetOffset(ushort index1, ushort index2, out short offset);
 
-        public void ApplyOffset(ushort index1, ushort index2, ref Vector2 result)
+        public bool TryApplyOffset(ushort index1, ushort index2, ref Vector2 result)
         {
             if (this.TryGetOffset(index1, index2, out short offset))
             {
@@ -69,7 +69,11 @@ namespace SixLabors.Fonts.Tables.General.Kern
                         result.Y += offset;
                     }
                 }
+
+                return true;
             }
+
+            return false;
         }
     }
 }

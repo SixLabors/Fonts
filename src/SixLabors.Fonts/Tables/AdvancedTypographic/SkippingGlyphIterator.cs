@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         private bool ignoreLigatures;
         private ushort markAttachmentType;
 
-        public SkippingGlyphIterator(FontMetrics fontMetrics, IGlyphShapingCollection collection, ushort index, LookupFlags lookupFlags)
+        public SkippingGlyphIterator(FontMetrics fontMetrics, IGlyphShapingCollection collection, int index, LookupFlags lookupFlags)
         {
             this.fontMetrics = fontMetrics;
             this.Collection = collection;
@@ -26,15 +26,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public IGlyphShapingCollection Collection { get; }
 
-        public ushort Index { get; set; }
+        public int Index { get; set; }
 
-        public ushort Next()
+        public int Next()
         {
             this.Move(1);
             return this.Index;
         }
 
-        public ushort Increment(int count = 1)
+        public int Increment(int count = 1)
         {
             int direction = count < 0 ? -1 : 1;
             count = Math.Abs(count);
@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return this.Index;
         }
 
-        public void Reset(ushort index, LookupFlags lookupFlags)
+        public void Reset(int index, LookupFlags lookupFlags)
         {
             this.Index = index;
             this.ignoreMarks = (lookupFlags & LookupFlags.IgnoreMarks) != 0;
@@ -57,7 +57,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         private void Move(int direction)
         {
-            this.Index = (ushort)(this.Index + direction);
+            this.Index += direction;
             while (this.Index >= 0 && this.Index < this.Collection.Count)
             {
                 if (!this.ShouldIgnore(this.Index))
@@ -65,7 +65,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     break;
                 }
 
-                this.Index = (ushort)(this.Index + direction);
+                this.Index += direction;
             }
         }
 

@@ -281,9 +281,12 @@ namespace SixLabors.Fonts
                     glyphIds = glyphIds.Slice(1);
                     for (int i = 0; i < glyphIds.Length; i++)
                     {
-                        GlyphShapingData data = new(current, false);
-                        data.GlyphId = glyphIds[i];
-                        data.LigatureComponent = i + 1;
+                        GlyphShapingData data = new(current, false)
+                        {
+                            GlyphId = glyphIds[i],
+                            LigatureComponent = i + 1
+                        };
+
                         this.glyphs.Insert(++index, new(pair.Offset, data));
                     }
                 }

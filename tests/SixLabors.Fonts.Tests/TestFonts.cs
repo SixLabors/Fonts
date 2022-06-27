@@ -65,6 +65,11 @@ namespace SixLabors.Fonts.Tests
         public static string GSubTestFontFile3 => GetFullPath("TestShapeEthi.ttf");
 
         /// <summary>
+        /// Gets a gsub test file specifically crafted to intiate a billion laughs attack.
+        /// </summary>
+        public static string GSubLookupType2BillionLaughs => GetFullPath("TestGSUBThree.ttf");
+
+        /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
         /// - Context Substitution Format 1:
         /// "6566" ("\u0041\u0042") -> "6576"
