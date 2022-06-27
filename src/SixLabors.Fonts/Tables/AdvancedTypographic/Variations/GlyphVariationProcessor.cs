@@ -21,6 +21,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
         private readonly float[] normalizedCoords;
 
+        /// <summary>
+        /// Epsilon as used in fontkit reference implementation.
+        /// </summary>
+        private const float Epsilon = 2.2204460492503130808472633361816E-16F;
+
         public GlyphVariationProcessor(ItemVariationStore itemStore, FVarTable fVar, AVarTable? aVar = null)
         {
             DebugGuard.NotNull(itemStore, nameof(itemStore));
@@ -48,11 +53,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                 VariationAxisRecord axis = this.fvar.Axes[i];
                 if (coords[i] < axis.DefaultValue)
                 {
-                    normalized[i] = (coords[i] - axis.DefaultValue + float.Epsilon) / (axis.DefaultValue - axis.MinValue + float.Epsilon);
+                    normalized[i] = (coords[i] - axis.DefaultValue + Epsilon) / (axis.DefaultValue - axis.MinValue + Epsilon);
                 }
                 else
                 {
-                    normalized[i] = (coords[i] - axis.DefaultValue + float.Epsilon) / (axis.MaxValue - axis.DefaultValue + float.Epsilon);
+                    normalized[i] = (coords[i] - axis.DefaultValue + Epsilon) / (axis.MaxValue - axis.DefaultValue + Epsilon);
                 }
             }
 
@@ -69,8 +74,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                         if (j >= 1 && normalized[i] < pair.FromCoordinate)
                         {
                             AxisValueMapRecord prev = segment.AxisValueMap[j - 1];
-                            normalized[i] = ((((normalized[i] - prev.FromCoordinate) * (pair.ToCoordinate - prev.ToCoordinate)) + float.Epsilon) /
-                                            (pair.FromCoordinate - prev.FromCoordinate + float.Epsilon)) + prev.ToCoordinate;
+                            normalized[i] = ((((normalized[i] - prev.FromCoordinate) * (pair.ToCoordinate - prev.ToCoordinate)) + Epsilon) /
+                                            (pair.FromCoordinate - prev.FromCoordinate + Epsilon)) + prev.ToCoordinate;
+                            break;
                         }
                     }
                 }
@@ -126,13 +132,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                         }
                         else if (this.normalizedCoords[j] < axis.PeakCoord)
                         {
-                            axisScalar = (this.normalizedCoords[j] - axis.StartCoord + float.Epsilon) /
-                                         (axis.PeakCoord - axis.StartCoord + float.Epsilon);
+                            axisScalar = (this.normalizedCoords[j] - axis.StartCoord + Epsilon) /
+                                         (axis.PeakCoord - axis.StartCoord + Epsilon);
                         }
                         else
                         {
-                            axisScalar = (axis.EndCoord - this.normalizedCoords[j] + float.Epsilon) /
-                                         (axis.EndCoord - axis.PeakCoord + float.Epsilon);
+                            axisScalar = (axis.EndCoord - this.normalizedCoords[j] + Epsilon) /
+                                         (axis.EndCoord - axis.PeakCoord + Epsilon);
                         }
                     }
 
