@@ -22,7 +22,7 @@ namespace SixLabors.Fonts
         {
             // Load using recommended order for best performance.
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
-            // 'head', 'hhea', 'maxp', OS/2, 'name', 'cmap', 'post', 'CFF '
+            // 'head', 'hhea', 'maxp', OS/2, 'name', 'cmap', 'post', 'CFF ' / 'CFF2'
             HeadTable head = reader.GetTable<HeadTable>();
             HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>();
             MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>();
@@ -54,6 +54,16 @@ namespace SixLabors.Fonts
             FVarTable? fVar = reader.TryGetTable<FVarTable>();
             AVarTable? aVar = reader.TryGetTable<AVarTable>();
             // GVarTable? gVar = reader.TryGetTable<GVarTable>();
+            GlyphVariationProcessor glyphVariationProcessor = null;
+            if (cff?.ItemVariationStore != null)
+            {
+                if (fVar is null)
+                {
+                    throw new InvalidFontFileException("missing fvar table required for glyph variations processing");
+                }
+
+                glyphVariationProcessor = new GlyphVariationProcessor(cff.ItemVariationStore, fVar, aVar);
+            }
 
             CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff!)
             {
@@ -69,7 +79,7 @@ namespace SixLabors.Fonts
                 AVar = aVar
             };
 
-            return new StreamFontMetrics(tables);
+            return new StreamFontMetrics(tables, glyphVariationProcessor);
         }
 
         private GlyphMetrics CreateCffGlyphMetrics(
@@ -86,7 +96,9 @@ namespace SixLabors.Fonts
             AVarTable? aVar = tables.AVar;
 
             CffGlyphData vector = cff.GetGlyph(glyphId);
-            Bounds bounds = vector.GetBounds(fVar, aVar);
+            vector.FVar = fVar;
+            vector.AVar = aVar;
+            Bounds bounds = vector.GetBounds();
             ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
             short lsb = htmx.GetLeftSideBearing(glyphId);
 

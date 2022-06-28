@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
@@ -77,12 +78,14 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
         /// </summary>
         /// <param name="tables">The Compact Font tables.</param>
-        internal StreamFontMetrics(CompactFontTables tables)
+        /// <param name="glyphVariationProcessor">Processor which handles glyph variations.</param>
+        internal StreamFontMetrics(CompactFontTables tables, GlyphVariationProcessor? glyphVariationProcessor = null)
         {
             this.compactFontTables = tables;
             this.outlineType = OutlineType.CFF;
             this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
             this.glyphCache = new GlyphMetrics[tables.Cff.GlyphCount][];
+            this.GlyphVariationProcessor = glyphVariationProcessor;
             if (tables.Colr is not null)
             {
                 this.colorGlyphCache = new GlyphMetrics[tables.Cff.GlyphCount][];
@@ -92,6 +95,8 @@ namespace SixLabors.Fonts
         }
 
         public HeadTable.HeadFlags HeadFlags { get; private set; }
+
+        public GlyphVariationProcessor? GlyphVariationProcessor { get; private set; }
 
         /// <inheritdoc/>
         public override FontDescription Description => this.description;

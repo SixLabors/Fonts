@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
@@ -15,6 +16,8 @@ namespace SixLabors.Fonts.Tables.Cff
         public Cff1Table(CffFont cff1Font) => this.glyphs = cff1Font.Glyphs;
 
         public int GlyphCount => this.glyphs.Length;
+
+        public ItemVariationStore ItemVariationStore => throw new InvalidFontFileException("CFF1 does not support variations");
 
         public CffGlyphData GetGlyph(int index)
             => this.glyphs[index];

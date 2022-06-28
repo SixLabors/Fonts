@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
@@ -12,9 +13,15 @@ namespace SixLabors.Fonts.Tables.Cff
 
         private readonly CffGlyphData[] glyphs;
 
-        public Cff2Table(CffFont cff1Font) => this.glyphs = cff1Font.Glyphs;
+        public Cff2Table(CffFont cffFont, ItemVariationStore itemVariationStore)
+        {
+            this.glyphs = cffFont.Glyphs;
+            this.ItemVariationStore = itemVariationStore;
+        }
 
         public int GlyphCount => this.glyphs.Length;
+
+        public ItemVariationStore ItemVariationStore { get; }
 
         public CffGlyphData GetGlyph(int index)
             => this.glyphs[index];
@@ -44,8 +51,8 @@ namespace SixLabors.Fonts.Tables.Cff
             {
                 case 2:
                     Cff2Parser parser = new();
-                    parser.Load(reader, hdrSize, topDictLength, position);
-                    return new(parser.Load(reader, hdrSize, topDictLength, position));
+                    Cff2Font cffFont = parser.Load(reader, hdrSize, topDictLength, position);
+                    return new(parser.Load(reader, hdrSize, topDictLength, position), cffFont.ItemVariationStore);
 
                 default:
                     throw new NotSupportedException("CFF version 2 is expected");

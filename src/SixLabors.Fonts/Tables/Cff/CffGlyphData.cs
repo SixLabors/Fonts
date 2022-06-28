@@ -33,13 +33,21 @@ namespace SixLabors.Fonts.Tables.Cff
             this.itemVariationStore = itemVariationStore;
 
             this.GlyphName = null;
+
+            // Variations tables are only present for CFF2 format.
+            this.FVar = null;
+            this.AVar = null;
         }
 
         public ushort GlyphIndex { get; }
 
         public string? GlyphName { get; set; }
 
-        public Bounds GetBounds(FVarTable? fVar = null, AVarTable? aVar = null)
+        public FVarTable? FVar { get; set; }
+
+        public AVarTable? AVar { get; set; }
+
+        public Bounds GetBounds()
         {
             using var engine = new CffEvaluationEngine(
                 this.charStrings,
@@ -48,8 +56,8 @@ namespace SixLabors.Fonts.Tables.Cff
                 this.nominalWidthX,
                 this.version,
                 this.itemVariationStore,
-                fVar,
-                aVar);
+                this.FVar,
+                this.AVar);
 
             return engine.GetBounds();
         }
@@ -62,7 +70,9 @@ namespace SixLabors.Fonts.Tables.Cff
                  this.localSubrBuffers,
                  this.nominalWidthX,
                  this.version,
-                 this.itemVariationStore);
+                 this.itemVariationStore,
+                 this.FVar,
+                 this.AVar);
 
             engine.RenderTo(renderer, scale, offset);
         }

@@ -20,10 +20,9 @@ namespace SixLabors.Fonts.Tables.Cff
         private int charStringIndexOffset;
         private int variationStoreOffset;
         private int fdArrayOffset;
-
         private ItemVariationStore? itemVariationStore;
 
-        public CffFont Load(BigEndianBinaryReader reader, byte hdrSize, ushort topDictLength, long offset)
+        public Cff2Font Load(BigEndianBinaryReader reader, byte hdrSize, ushort topDictLength, long offset)
         {
             this.offset = offset;
             reader.Seek(hdrSize, SeekOrigin.Begin);
@@ -56,7 +55,7 @@ namespace SixLabors.Fonts.Tables.Cff
             int glyphCount = charStringOffsets.Length;
             CffGlyphData[] glyphs = this.ReadCharStringsIndex(topDictionary, globalSubrRawBuffers, fontDicts, privateDictionary, charStringBuffers, glyphCount);
 
-            return new(fontName, topDictionary, glyphs);
+            return new(fontName, topDictionary, glyphs, itemVariationStore);
         }
 
         private void ReadTopDictData(BigEndianBinaryReader reader, ushort topDictLength)
