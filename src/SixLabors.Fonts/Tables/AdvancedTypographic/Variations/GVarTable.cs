@@ -14,10 +14,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     {
         internal const string TableName = "gvar";
 
-        public static GVarTable Load(FontReader reader)
+        public static GVarTable? Load(FontReader reader)
         {
-            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
-            return Load(binaryReader);
+            if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
+            {
+                return null;
+            }
+
+            using (binaryReader)
+            {
+                return Load(binaryReader);
+            }
         }
 
         public static GVarTable Load(BigEndianBinaryReader reader)

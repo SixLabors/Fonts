@@ -53,7 +53,7 @@ namespace SixLabors.Fonts
             // Variations related tables.
             FVarTable? fVar = reader.TryGetTable<FVarTable>();
             AVarTable? aVar = reader.TryGetTable<AVarTable>();
-            // GVarTable? gVar = reader.TryGetTable<GVarTable>();
+            GVarTable? gVar = reader.TryGetTable<GVarTable>();
             GlyphVariationProcessor glyphVariationProcessor = null;
             if (cff?.ItemVariationStore != null)
             {
@@ -62,7 +62,7 @@ namespace SixLabors.Fonts
                     throw new InvalidFontFileException("missing fvar table required for glyph variations processing");
                 }
 
-                glyphVariationProcessor = new GlyphVariationProcessor(cff.ItemVariationStore, fVar, aVar);
+                glyphVariationProcessor = new GlyphVariationProcessor(cff.ItemVariationStore, fVar, aVar, gVar);
             }
 
             CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff!)

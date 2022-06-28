@@ -24,10 +24,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
         public SegmentMapRecord[] SegmentMaps { get; }
 
-        public static AVarTable Load(FontReader reader)
+        public static AVarTable? Load(FontReader reader)
         {
-            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
-            return Load(binaryReader);
+            if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
+            {
+                return null;
+            }
+
+            using (binaryReader)
+            {
+                return Load(binaryReader);
+            }
         }
 
         public static AVarTable Load(BigEndianBinaryReader reader)

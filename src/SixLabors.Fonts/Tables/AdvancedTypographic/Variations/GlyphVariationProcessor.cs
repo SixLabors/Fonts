@@ -21,6 +21,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
         private readonly AVarTable? avar;
 
+        private readonly GVarTable? gVar;
+
         private readonly float[] normalizedCoords;
 
         private readonly Dictionary<ItemVariationData, float[]> blendVectors;
@@ -30,7 +32,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
         /// </summary>
         private const float Epsilon = 2.2204460492503130808472633361816E-16F;
 
-        public GlyphVariationProcessor(ItemVariationStore itemStore, FVarTable fVar, AVarTable? aVar = null)
+        public GlyphVariationProcessor(ItemVariationStore itemStore, FVarTable fVar, AVarTable? aVar = null, GVarTable? gVar = null)
         {
             DebugGuard.NotNull(itemStore, nameof(itemStore));
             DebugGuard.NotNull(fVar, nameof(fVar));
@@ -38,6 +40,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             this.itemStore = itemStore;
             this.fvar = fVar;
             this.avar = aVar;
+            this.gVar = gVar;
             this.normalizedCoords = this.NormalizeDefaultCoords();
             this.blendVectors = new Dictionary<ItemVariationData, float[]>();
         }
