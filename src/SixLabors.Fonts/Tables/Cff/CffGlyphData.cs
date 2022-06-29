@@ -37,6 +37,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // Variations tables are only present for CFF2 format.
             this.FVar = null;
             this.AVar = null;
+            this.GVar = null;
         }
 
         public ushort GlyphIndex { get; }
@@ -46,6 +47,8 @@ namespace SixLabors.Fonts.Tables.Cff
         public FVarTable? FVar { get; set; }
 
         public AVarTable? AVar { get; set; }
+
+        public GVarTable? GVar { get; set; }
 
         public Bounds GetBounds()
         {

@@ -1,11 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.IO;
-
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 {
-    internal class TupleVariationHeader
+    internal class TupleVariation
     {
         /// <summary>
         /// Flag indicating that this tuple variation header includes an embedded peak tuple record, immediately after the tupleIndex field.
@@ -32,9 +30,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
         /// </summary>
         internal const int TupleIndexMask = 0x0FFF;
 
-        public static TupleVariationHeader Load(BigEndianBinaryReader reader)
+        public TupleVariation(int axisCount, float[]? embeddedPeak, float[]? intermediateStartRegion, float[]? intermediateEndRegion)
         {
-            // TupleVariationHeader
+            this.AxisCount = axisCount;
+            this.EmbeddedPeak = embeddedPeak;
+            this.IntermediateStartRegion = intermediateStartRegion;
+            this.IntermediateEndRegion = intermediateEndRegion;
+        }
+
+        public int AxisCount { get; }
+
+        public float[]? EmbeddedPeak { get; }
+
+        public float[]? IntermediateStartRegion { get; }
+
+        public float[]? IntermediateEndRegion { get; }
+
+        public static TupleVariation Load(BigEndianBinaryReader reader, int axisCount)
+        {
+            // TupleVariation
             // +----------------------+-------------------------------------------+------------------------------------------------------------------------------+
             // | Type                 | Name                                      | Description                                                                  |
             // +======================+===========================================+==============================================================================+
@@ -53,17 +67,46 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             // |                      |                                           | optional, determined by flags in the tupleIndex value.                       |
             // +----------------------+-------------------------------------------+------------------------------------------------------------------------------+
             ushort variationDataSize = reader.ReadUInt16();
+            int bytesRead = 0;
             ushort tupleIndex = reader.ReadUInt16();
+            bytesRead += 2;
 
-            int sharedTupleRecordsIndex = tupleIndex & TupleIndexMask;
-            bool privatePointNumbers = (tupleIndex & PrivatePointNumbersMask) == PrivatePointNumbersMask;
-            bool embeddedPeakTuple = (tupleIndex & EmbeddedPeakTupleMask) == EmbeddedPeakTupleMask;
-            bool intermediateRegion = (tupleIndex & IntermediateRegionMask) == IntermediateRegionMask;
+            int sharedTupleRecords = tupleIndex & TupleIndexMask;
+            bool hasPrivatePointNumbers = (tupleIndex & PrivatePointNumbersMask) == PrivatePointNumbersMask;
+            bool hasEmbeddedPeakTuple = (tupleIndex & EmbeddedPeakTupleMask) == EmbeddedPeakTupleMask;
+            bool hasIntermediateRegion = (tupleIndex & IntermediateRegionMask) == IntermediateRegionMask;
 
-            // TODO: read tuple data. Skipping data for now.
-            reader.Seek(variationDataSize - 2, SeekOrigin.Current);
+            float[]? embeddedPeak = null;
+            if (hasEmbeddedPeakTuple)
+            {
+                embeddedPeak = new float[axisCount];
+                for (int i = 0; i < axisCount; i++)
+                {
+                    embeddedPeak[i] = reader.ReadF2dot14();
+                    bytesRead += 2;
+                }
+            }
 
-            return new TupleVariationHeader();
+            float[]? intermediateStartRegion = null;
+            float[]? intermediateEndRegion = null;
+            if (hasIntermediateRegion)
+            {
+                intermediateStartRegion = new float[axisCount];
+                for (int i = 0; i < axisCount; i++)
+                {
+                    intermediateStartRegion[i] = reader.ReadF2dot14();
+                    bytesRead += 2;
+                }
+
+                intermediateEndRegion = new float[axisCount];
+                for (int i = 0; i < axisCount; i++)
+                {
+                    intermediateEndRegion[i] = reader.ReadF2dot14();
+                    bytesRead += 2;
+                }
+            }
+
+            return new TupleVariation(axisCount, embeddedPeak, intermediateStartRegion, intermediateEndRegion);
         }
     }
 }

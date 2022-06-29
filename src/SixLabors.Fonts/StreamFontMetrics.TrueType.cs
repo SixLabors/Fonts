@@ -4,6 +4,7 @@
 using System;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
@@ -66,6 +67,11 @@ namespace SixLabors.Fonts
 
         private static StreamFontMetrics LoadTrueTypeFont(FontReader reader)
         {
+            // Load glyph variations related tables first, because glyph table needs them.
+            FVarTable? fvar = reader.TryGetTable<FVarTable>();
+            AVarTable? avar = reader.TryGetTable<AVarTable>();
+            GVarTable? gvar = reader.TryGetTable<GVarTable>();
+
             // Load using recommended order for best performance.
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
             // 'head', 'hhea', 'maxp', OS/2, 'hmtx', LTSH, VDMX, 'hdmx', 'cmap', 'fpgm', 'prep', 'cvt ', 'loca', 'glyf', 'kern', 'name', 'post', 'gasp', PCLT, DSIG

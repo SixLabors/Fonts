@@ -76,7 +76,8 @@ namespace SixLabors.Fonts
                 Colr = colr,
                 Cpal = cpal,
                 FVar = fVar,
-                AVar = aVar
+                AVar = aVar,
+                GVar = gVar,
             };
 
             return new StreamFontMetrics(tables, glyphVariationProcessor);
@@ -94,10 +95,12 @@ namespace SixLabors.Fonts
             VerticalMetricsTable? vtmx = tables.Vmtx;
             FVarTable? fVar = tables.FVar;
             AVarTable? aVar = tables.AVar;
+            GVarTable? gVar = tables.GVar;
 
             CffGlyphData vector = cff.GetGlyph(glyphId);
             vector.FVar = fVar;
             vector.AVar = aVar;
+            vector.GVar = gVar;
             Bounds bounds = vector.GetBounds();
             ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
             short lsb = htmx.GetLeftSideBearing(glyphId);

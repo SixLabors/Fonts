@@ -320,10 +320,8 @@ namespace SixLabors.Fonts
             {
                 return LoadTrueTypeFont(reader);
             }
-            else
-            {
-                return LoadCompactFont(reader);
-            }
+
+            return LoadCompactFont(reader);
         }
 
         private void Initialize<T>(T tables)

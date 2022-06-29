@@ -14,13 +14,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     {
         internal const string TableName = "avar";
 
-        public AVarTable(uint axixCount, SegmentMapRecord[] segmentMaps)
+        public AVarTable(uint axisCount, SegmentMapRecord[] segmentMaps)
         {
-            this.AxixCount = axixCount;
+            this.AxisCount = axisCount;
             this.SegmentMaps = segmentMaps;
         }
 
-        public uint AxixCount { get; }
+        public uint AxisCount { get; }
 
         public SegmentMapRecord[] SegmentMaps { get; }
 

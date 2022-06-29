@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 {
@@ -13,6 +14,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     internal class GVarTable : Table
     {
         internal const string TableName = "gvar";
+
+        public GVarTable(int axisCount, float[,] sharedTuples, GlyphVariationData[] glyphVariations)
+        {
+            this.AxisCount = axisCount;
+            this.SharedTuples = sharedTuples;
+            this.GlyphVariations = glyphVariations;
+        }
+
+        public int AxisCount { get; }
+
+        public float[,] SharedTuples { get; }
+
+        public GlyphVariationData[] GlyphVariations { get; }
 
         public static GVarTable? Load(FontReader reader)
         {
@@ -60,6 +74,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             // | Offset16 or     | glyphVariationDataOffsets[glyphCount+1]| Offsets from the start of the GlyphVariationData array to each          |
             // | Offset32        |                                        | GlyphVariationData table.                                               |
             // +-----------------+----------------------------------------+-------------------------------------------------------------------------+
+            long startOffset = reader.BaseStream.Position;
             ushort major = reader.ReadUInt16();
             ushort minor = reader.ReadUInt16();
             ushort axisCount = reader.ReadUInt16();
@@ -67,6 +82,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             ushort sharedTuplesOffset = reader.ReadOffset16();
             ushort glyphCount = reader.ReadUInt16();
             ushort flags = reader.ReadUInt16();
+            bool is32BitOffset = (flags & 1) == 1;
             ushort glyphVariationDataArrayOffset = reader.ReadOffset16();
 
             if (major != 1)
@@ -74,14 +90,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                 throw new NotSupportedException("Only version 1 of gvar table is supported");
             }
 
+            reader.Seek(startOffset + sharedTuplesOffset, SeekOrigin.Begin);
+            float[,] sharedTuples = new float[sharedTupleCount, axisCount];
             for (int i = 0; i < sharedTupleCount; i++)
             {
-                // TODO: parse shared tuples.
+                for (int j = 0; j < axisCount; j++)
+                {
+                    sharedTuples[i, j] = reader.ReadF2dot14();
+                }
             }
 
-            var glyphVariations = GlyphVariationData.Load(reader, glyphVariationDataArrayOffset);
+            int glyphVariationsCount = glyphCount + 1;
+            var glyphVariations = new GlyphVariationData[glyphVariationsCount];
+            for (int i = 0; i < glyphVariationsCount; i++)
+            {
+                var glyphVariation = GlyphVariationData.Load(reader, glyphVariationDataArrayOffset, is32BitOffset, axisCount);
+                glyphVariations[i] = glyphVariation;
+            }
 
-            return new GVarTable();
+            return new GVarTable(axisCount, sharedTuples, glyphVariations);
         }
     }
 }

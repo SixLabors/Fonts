@@ -71,6 +71,8 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public AVarTable? AVar { get; set; }
 
+        public GVarTable? GVar { get; set; }
+
         // Tables Related to CFF Outlines
         // +------+----------------------------------+
         // | Tag  | Name                             |
