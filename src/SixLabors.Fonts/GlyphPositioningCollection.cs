@@ -20,6 +20,11 @@ namespace SixLabors.Fonts
         private readonly List<GlyphPositioningData> glyphs = new();
 
         /// <summary>
+        /// To Increases the speed of TryGetGlyphMetricsAtOffset
+        /// </summary>
+        private readonly Dictionary<int, GlyphPositioningDataFastData> fastGlyphMetrics = new();
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
         /// </summary>
         /// <param name="textOptions">The text options.</param>
@@ -99,27 +104,20 @@ namespace SixLabors.Fonts
         /// <returns>The metrics.</returns>
         public bool TryGetGlyphMetricsAtOffset(int offset, out float pointSize, out bool isDecomposed, [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
         {
-            List<GlyphMetrics> match = new();
-            pointSize = 0;
-            isDecomposed = false;
-            for (int i = 0; i < this.glyphs.Count; i++)
+            if (this.fastGlyphMetrics.TryGetValue(offset, out GlyphPositioningDataFastData glyphPositioningDataFastData))
             {
-                if (this.glyphs[i].Offset == offset)
-                {
-                    GlyphPositioningData glyph = this.glyphs[i];
-                    isDecomposed = glyph.Data.IsDecomposed;
-                    pointSize = glyph.PointSize;
-                    match.AddRange(glyph.Metrics);
-                }
-                else if (match.Count > 0)
-                {
-                    // Offsets, though non-sequential, are sorted, so we can stop searching.
-                    break;
-                }
+                pointSize = glyphPositioningDataFastData.PointSize;
+                isDecomposed = glyphPositioningDataFastData.IsDecomposed;
+                metrics = glyphPositioningDataFastData.GlyphMetrics;
+                return true;
             }
-
-            metrics = match;
-            return match.Count > 0;
+            else
+            {
+                pointSize = 0;
+                isDecomposed = false;
+                metrics = new GlyphMetrics[0];
+                return false;
+            }
         }
 
         /// <summary>
@@ -219,6 +217,7 @@ namespace SixLabors.Fonts
                 this.glyphs.RemoveAt(orphans[i]);
             }
 
+            this.UpdateGlyphSort();
             return !hasFallBacks;
         }
 
@@ -292,6 +291,7 @@ namespace SixLabors.Fonts
                 }
             }
 
+            this.UpdateGlyphSort();
             return !hasFallBacks;
         }
 
@@ -357,6 +357,53 @@ namespace SixLabors.Fonts
         /// <returns><see langword="true"/> if the element should be processed; otherwise, <see langword="false"/>.</returns>
         public bool ShouldProcess(FontMetrics fontMetrics, int index)
             => this.glyphs[index].Metrics[0].FontMetrics == fontMetrics;
+
+        private void UpdateGlyphSort()
+        {
+            this.fastGlyphMetrics.Clear();
+            var glyphMetrics = new List<GlyphMetrics>();
+            bool isDecomposed = false;
+            float pointSize = 0f;
+            int currentIndex = 0;
+            for (int i = 0; i < this.glyphs.Count; i++)
+            {
+                if (this.glyphs[i].Offset == currentIndex)
+                {
+                    GlyphPositioningData glyph = this.glyphs[i];
+                    isDecomposed = glyph.Data.IsDecomposed;
+                    pointSize = glyph.PointSize;
+                    glyphMetrics.AddRange(glyph.Metrics);
+                }
+                else
+                {
+                    if (glyphMetrics.Count > 0)
+                    {
+                        this.fastGlyphMetrics.Add(currentIndex, new GlyphPositioningDataFastData { IsDecomposed = isDecomposed, GlyphMetrics = glyphMetrics.ToArray(), PointSize = pointSize });
+                    }
+
+                    glyphMetrics.Clear();
+                    currentIndex = this.glyphs[i].Offset;
+                    GlyphPositioningData glyph = this.glyphs[i];
+                    isDecomposed = glyph.Data.IsDecomposed;
+                    pointSize = glyph.PointSize;
+                    glyphMetrics.AddRange(glyph.Metrics);
+                }
+            }
+
+            if (glyphMetrics.Count > 0)
+            {
+                this.fastGlyphMetrics.Add(currentIndex, new GlyphPositioningDataFastData { IsDecomposed = isDecomposed, GlyphMetrics = glyphMetrics.ToArray(), PointSize = pointSize });
+            }
+        }
+
+        private struct GlyphPositioningDataFastData
+        {
+            internal bool IsDecomposed;
+
+            internal float PointSize;
+
+            internal GlyphMetrics[] GlyphMetrics;
+        }
 
         private class GlyphPositioningData
         {
