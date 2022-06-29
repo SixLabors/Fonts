@@ -127,7 +127,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                     continue;
                 }
 
-                var codePoints = new List<int>();
+                var codePoints = new List<uint>();
                 var breakPoints = new List<int>();
 
                 // Parse the test
@@ -161,7 +161,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                     }
 
                     string codePointStr = line.Substring(codePointPos, p - codePointPos);
-                    int codePoint = Convert.ToInt32(codePointStr, 16);
+                    uint codePoint = Convert.ToUInt32(codePointStr, 16);
                     codePoints.Add(codePoint);
                 }
 
@@ -180,7 +180,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
                 foundBreaks.Clear();
 
-                string text = Encoding.UTF32.GetString(MemoryMarshal.Cast<int, byte>(t.CodePoints).ToArray());
+                string text = Encoding.UTF32.GetString(MemoryMarshal.Cast<uint, byte>(t.CodePoints).ToArray());
 
                 // Always a leading boundary
                 int boundary = 0;
@@ -229,7 +229,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
         private readonly struct Test
         {
-            public Test(int lineNumber, int[] codePoints, int[] breakPoints)
+            public Test(int lineNumber, uint[] codePoints, int[] breakPoints)
             {
                 this.LineNumber = lineNumber;
                 this.CodePoints = codePoints;
@@ -238,7 +238,7 @@ namespace SixLabors.Fonts.Tests.Unicode
 
             public int LineNumber { get; }
 
-            public int[] CodePoints { get; }
+            public uint[] CodePoints { get; }
 
             public int[] BreakPoints { get; }
         }

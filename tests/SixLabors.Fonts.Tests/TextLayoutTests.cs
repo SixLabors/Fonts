@@ -476,6 +476,17 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(76, runs[1].End);
         }
 
+#if OS_WINDOWS
+        [Fact]
+        public FontRectangle BenchmarkTest()
+        {
+            Font font = Arial;
+            return TextMeasurer.Measure("The quick brown fox jumped over the lazy dog", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        }
+
+        private static readonly Font Arial = SystemFonts.CreateFont("Arial", 12);
+#endif
+
         public static Font CreateFont(string text)
         {
             var fc = (IFontMetricsCollection)new FontCollection();

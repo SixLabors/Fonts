@@ -8,13 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SixLabors.Fonts\SixLabors.Fonts.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Moq" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <None Update="Fonts\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
