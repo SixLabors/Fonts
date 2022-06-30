@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -23,11 +24,26 @@ namespace SixLabors.Fonts.Unicode
 
         public UnicodeTrie(ReadOnlySpan<byte> rawData)
         {
-            var header = UnicodeTrieHeader.Parse(rawData);
+            var header = MemoryMarshal.Read<UnicodeTrieHeader>(rawData);
+
+            if (!BitConverter.IsLittleEndian)
+            {
+                header.HighStart = BinaryPrimitives.ReverseEndianness(header.HighStart);
+                header.ErrorValue = BinaryPrimitives.ReverseEndianness(header.ErrorValue);
+                header.DataLength = BinaryPrimitives.ReverseEndianness(header.DataLength);
+            }
+
             int length = header.DataLength;
             uint[] data = new uint[length / sizeof(uint)];
-            MemoryMarshal.Cast<byte, uint>(rawData.Slice(rawData.Length - length))
-                .CopyTo(data);
+            rawData.Slice(rawData.Length - length).CopyTo(MemoryMarshal.AsBytes(data.AsSpan()));
+
+            if (!BitConverter.IsLittleEndian)
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    data[i] = BinaryPrimitives.ReverseEndianness(data[i]);
+                }
+            }
 
             this.highStart = header.HighStart;
             this.errorValue = header.ErrorValue;
@@ -149,30 +165,11 @@ namespace SixLabors.Fonts.Unicode
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct UnicodeTrieHeader
         {
-            public int HighStart
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get;
-            }
-
-            public uint ErrorValue
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get;
-            }
-
-            public int DataLength
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static UnicodeTrieHeader Parse(ReadOnlySpan<byte> data)
-                => MemoryMarshal.Cast<byte, UnicodeTrieHeader>(data)[0];
+            public int HighStart;
+            public uint ErrorValue;
+            public int DataLength;
         }
     }
 }
