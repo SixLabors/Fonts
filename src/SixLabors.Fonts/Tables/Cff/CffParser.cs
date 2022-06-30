@@ -433,7 +433,17 @@ namespace SixLabors.Fonts.Tables.Cff
             reader.BaseStream.Position = this.offset + cidFontInfo.FDSelect;
             switch (reader.ReadByte())
             {
+                case 0:
+                    cidFontInfo.FdSelectFormat = 0;
+                    for (int i = 0; i < cidFontInfo.CIDFountCount; i++)
+                    {
+                        cidFontInfo.FdSelectMap[i] = reader.ReadByte();
+                    }
+
+                    break;
+
                 case 3:
+                    cidFontInfo.FdSelectFormat = 3;
                     ushort nRanges = reader.ReadUInt16();
                     var ranges = new FDRange3[nRanges + 1];
 
@@ -448,7 +458,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     break;
 
                 default:
-                    throw new NotSupportedException();
+                    throw new NotSupportedException("Only FD Select format 0 and 3 are supported");
             }
         }
 
@@ -574,7 +584,7 @@ namespace SixLabors.Fonts.Tables.Cff
             byte[][]? localSubBuffer = privateDictionary?.LocalSubrRawBuffers;
 
             // Is the font a CID font?
-            FDRangeProvider fdRangeProvider = new(topDictionary.CidFontInfo.FdRanges);
+            FDRangeProvider fdRangeProvider = new(topDictionary.CidFontInfo);
             bool isCidFont = topDictionary.CidFontInfo.FdRanges.Length > 0;
 
             for (int i = 0; i < glyphCount; ++i)
