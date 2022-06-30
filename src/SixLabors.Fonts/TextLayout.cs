@@ -788,8 +788,7 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    float advanceScale = pointSize / (isHorizontal ? glyph.ScaleFactor.X : glyph.ScaleFactor.Y);
-                    glyphAdvance *= advanceScale;
+                    glyphAdvance *= (float)(pointSize / (isHorizontal ? glyph.ScaleFactor.X : glyph.ScaleFactor.Y));
 
                     // Should we start a new line?
                     bool requiredBreak = false;
@@ -916,7 +915,6 @@ namespace SixLabors.Fonts
                         metrics,
                         pointSize,
                         glyphAdvance,
-                        advanceScale,
                         lineHeight,
                         ascender,
                         descender,
@@ -995,7 +993,6 @@ namespace SixLabors.Fonts
                 IReadOnlyList<GlyphMetrics> metrics,
                 float pointSize,
                 float scaledAdvance,
-                float advanceScale,
                 float scaledLineHeight,
                 float scaledAscender,
                 float scaledDescender,
@@ -1015,7 +1012,7 @@ namespace SixLabors.Fonts
                 this.ScaledMaxDescender = MathF.Max(this.ScaledMaxDescender, scaledDescender);
                 this.ScaledMaxLineGap = MathF.Max(this.ScaledMaxLineGap, scaledLineGap);
 
-                this.data.Add(new(metrics, pointSize, scaledAdvance, advanceScale, scaledLineHeight, scaledAscender, scaledDescender, scaledLineGap, bidiRun, graphemeIndex, offset));
+                this.data.Add(new(metrics, pointSize, scaledAdvance, scaledLineHeight, scaledAscender, scaledDescender, scaledLineGap, bidiRun, graphemeIndex, offset));
             }
 
             public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
@@ -1324,7 +1321,6 @@ namespace SixLabors.Fonts
                     IReadOnlyList<GlyphMetrics> metrics,
                     float pointSize,
                     float scaledAdvance,
-                    float advanceScale,
                     float scaledLineHeight,
                     float scaledAscender,
                     float scaledDescender,
@@ -1336,7 +1332,6 @@ namespace SixLabors.Fonts
                     this.Metrics = metrics;
                     this.PointSize = pointSize;
                     this.ScaledAdvance = scaledAdvance;
-                    this.AdvanceScale = advanceScale;
                     this.ScaledLineHeight = scaledLineHeight;
                     this.ScaledAscender = scaledAscender;
                     this.ScaledDescender = scaledDescender;
@@ -1353,8 +1348,6 @@ namespace SixLabors.Fonts
                 public float PointSize { get; }
 
                 public float ScaledAdvance { get; set; }
-
-                public float AdvanceScale { get; }
 
                 public float ScaledLineHeight { get; }
 
