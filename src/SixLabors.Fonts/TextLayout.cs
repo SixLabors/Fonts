@@ -788,7 +788,7 @@ namespace SixLabors.Fonts
                         }
                     }
 
-                    glyphAdvance *= (float)(pointSize / (isHorizontal ? glyph.ScaleFactor.X : glyph.ScaleFactor.Y));
+                    glyphAdvance *= pointSize / (isHorizontal ? glyph.ScaleFactor.X : glyph.ScaleFactor.Y);
 
                     // Should we start a new line?
                     bool requiredBreak = false;
