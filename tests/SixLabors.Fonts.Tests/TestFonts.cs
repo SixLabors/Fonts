@@ -42,6 +42,9 @@ namespace SixLabors.Fonts.Tests
 
         public static string TimesNewRomanFile => GetFullPath("TimesNewRoman.ttf");
 
+        // FdSelect format 0: https://github.com/adobe-fonts/fdarray-test/
+        public static string FDArrayTest257File => GetFullPath("FDArrayTest257.otf");
+
         /// <summary>
         /// Gets a gsub test font file which has the following substitution for unit tests:
         /// - Single Substitution: A -> B
