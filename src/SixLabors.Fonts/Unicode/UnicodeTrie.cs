@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Unicode
 
         public UnicodeTrie(ReadOnlySpan<byte> rawData)
         {
-            var header = MemoryMarshal.Read<UnicodeTrieHeader>(rawData);
+            UnicodeTrieHeader header = MemoryMarshal.Read<UnicodeTrieHeader>(rawData);
 
             if (!BitConverter.IsLittleEndian)
             {

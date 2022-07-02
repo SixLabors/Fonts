@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     public static class TextMeasurer
     {
         /// <summary>
-        /// Measures the text.
+        /// Measures the size of the text in pixel units.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The text shaping options.</param>
@@ -23,7 +23,7 @@ namespace SixLabors.Fonts
             => Measure(text.AsSpan(), options);
 
         /// <summary>
-        /// Measures the text.
+        /// Measures the size of the text in pixel units.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The text shaping options.</param>
@@ -32,7 +32,7 @@ namespace SixLabors.Fonts
             => GetSize(TextLayout.GenerateLayout(text, options), options.Dpi);
 
         /// <summary>
-        /// Measures the text.
+        /// Measures the text bounds in pixel units.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The text shaping options.</param>
@@ -41,7 +41,7 @@ namespace SixLabors.Fonts
             => MeasureBounds(text.AsSpan(), options);
 
         /// <summary>
-        /// Measures the text.
+        /// Measures the text bounds in pixel units.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The text shaping options.</param>
@@ -50,7 +50,27 @@ namespace SixLabors.Fonts
             => GetBounds(TextLayout.GenerateLayout(text, options), options.Dpi);
 
         /// <summary>
-        /// Measures the character bounds of the text. For each control character the list contains a <c>null</c> element.
+        /// Measures the size of each character of the text in pixel units.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The text shaping options.</param>
+        /// <param name="characterBounds">The list of character dimensions of the text if it was to be rendered.</param>
+        /// <returns>Whether any of the characters had non-empty dimensions.</returns>
+        public static bool TryMeasureCharacterDimensions(string text, TextOptions options, out GlyphBounds[] characterBounds)
+            => TryMeasureCharacterDimensions(text.AsSpan(), options, out characterBounds);
+
+        /// <summary>
+        /// Measures the size of each character of the text in pixel units.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="options">The text shaping options.</param>
+        /// <param name="characterBounds">The list of character dimensions of the text if it was to be rendered.</param>
+        /// <returns>Whether any of the characters had non-empty dimensions.</returns>
+        public static bool TryMeasureCharacterDimensions(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] characterBounds)
+            => TryGetCharacterDimensions(TextLayout.GenerateLayout(text, options), options.Dpi, out characterBounds);
+
+        /// <summary>
+        /// Measures the character bounds of the text in pixel units.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The text shaping options.</param>
@@ -60,7 +80,7 @@ namespace SixLabors.Fonts
             => TryMeasureCharacterBounds(text.AsSpan(), options, out characterBounds);
 
         /// <summary>
-        /// Measures the character bounds of the text. For each control character the list contains a <c>null</c> element.
+        /// Measures the character bounds of the text in pixel units.
         /// </summary>
         /// <param name="text">The text.</param>
         /// <param name="options">The text shaping options.</param>
@@ -178,6 +198,28 @@ namespace SixLabors.Fonts
             return FontRectangle.FromLTRB(left, top, right, bottom);
         }
 
+        internal static bool TryGetCharacterDimensions(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out GlyphBounds[] characterBounds)
+        {
+            bool hasSize = false;
+            if (glyphLayouts.Count == 0)
+            {
+                characterBounds = Array.Empty<GlyphBounds>();
+                return hasSize;
+            }
+
+            var characterBoundsList = new GlyphBounds[glyphLayouts.Count];
+            for (int i = 0; i < glyphLayouts.Count; i++)
+            {
+                GlyphLayout glyph = glyphLayouts[i];
+                FontRectangle bounds = new(0, 0, glyph.Width * dpi, glyph.Height * dpi);
+                hasSize |= bounds.Width > 0 || bounds.Height > 0;
+                characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, bounds);
+            }
+
+            characterBounds = characterBoundsList;
+            return hasSize;
+        }
+
         internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out GlyphBounds[] characterBounds)
         {
             bool hasSize = false;
@@ -191,8 +233,9 @@ namespace SixLabors.Fonts
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
                 GlyphLayout g = glyphLayouts[i];
-                hasSize |= !g.IsStartOfLine;
-                characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, g.BoundingBox(dpi));
+                FontRectangle bounds = g.BoundingBox(dpi);
+                hasSize |= bounds.Width > 0 || bounds.Height > 0;
+                characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, bounds);
             }
 
             characterBounds = characterBoundsList;
