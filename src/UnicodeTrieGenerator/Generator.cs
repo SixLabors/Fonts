@@ -18,6 +18,8 @@ namespace UnicodeTrieGenerator
     /// </summary>
     public static class Generator
     {
+        // Aliases and enum derived from
+        // https://www.unicode.org/Public/14.0.0/ucd/PropertyValueAliases.txt
         private static readonly Dictionary<string, UnicodeCategory> UnicodeCategoryMap
             = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -61,8 +63,6 @@ namespace UnicodeTrieGenerator
                 { "C", BidiPairedBracketType.Close }
             };
 
-        // Aliases and enum derived from
-        // https://www.unicode.org/Public/13.0.0/ucd/PropertyValueAliases.txt
         private static readonly Dictionary<string, GraphemeClusterClass> GraphemeClusterClassMap
             = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -413,6 +413,27 @@ namespace UnicodeTrieGenerator
                 { "Vowel_Independent", IndicSyllabicCategory.VowelIndependent },
             };
 
+        private static readonly Dictionary<string, IndicPositionalCategory> IndicPositionalCategoryMap
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Bottom", IndicPositionalCategory.Bottom },
+                { "Bottom_And_Left", IndicPositionalCategory.BottomAndLeft },
+                { "Bottom_And_Right", IndicPositionalCategory.BottomAndRight },
+                { "Left", IndicPositionalCategory.Left },
+                { "Left_And_Right", IndicPositionalCategory.LeftAndRight },
+                { "NA", IndicPositionalCategory.NA },
+                { "Overstruck", IndicPositionalCategory.Overstruck },
+                { "Right", IndicPositionalCategory.Right },
+                { "Top", IndicPositionalCategory.Top },
+                { "Top_And_Bottom", IndicPositionalCategory.TopAndBottom },
+                { "Top_And_Bottom_And_Left", IndicPositionalCategory.TopAndBottomAndLeft },
+                { "Top_And_Bottom_And_Right", IndicPositionalCategory.TopAndBottomAndRight },
+                { "Top_And_Left", IndicPositionalCategory.TopAndLeft },
+                { "Top_And_Left_And_Right", IndicPositionalCategory.TopAndLeftAndRight },
+                { "Top_And_Right", IndicPositionalCategory.TopAndRight },
+                { "Visual_Order_Left", IndicPositionalCategory.VisualOrderLeft },
+            };
+
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
@@ -436,6 +457,7 @@ namespace UnicodeTrieGenerator
             GenerateGraphemeBreakTrie();
             GenerateArabicShapingTrie();
             GenerateIndicSyllabicCategoryTrie();
+            GenerateIndicPositionalCategoryTrie();
         }
 
         private static void ProcessUnicodeData()
@@ -763,6 +785,41 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("IndicSyllabicCategory", trie);
+        }
+
+        /// <summary>
+        /// Generates the UnicodeTrie for the indic syllabic category code point ranges.
+        /// </summary>
+        private static void GenerateIndicPositionalCategoryTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+            var builder = new UnicodeTrieBuilder((uint)IndicPositionalCategory.NA);
+
+            using (StreamReader sr = GetStreamReader("IndicPositionalCategory.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string point = match.Groups[3].Value;
+
+                        if (end?.Length == 0)
+                        {
+                            end = start;
+                        }
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)IndicPositionalCategoryMap[point], true);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+            GenerateTrieClass("IndicPositionalCategory", trie);
         }
 
         /// <summary>

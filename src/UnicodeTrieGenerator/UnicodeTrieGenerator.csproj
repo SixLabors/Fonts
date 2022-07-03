@@ -14,6 +14,7 @@
     <Compile Include="..\SixLabors.Fonts\Unicode\GraphemeClusterClass.cs" Link="GraphemeClusterClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\ArabicJoiningGroup.cs" Link="ArabicJoiningGroup.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\ArabicJoiningType.cs" Link="ArabicJoiningType.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\IndicPositionalCategory.cs" Link="IndicPositionalCategory.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\IndicSyllabicCategory.cs" Link="IndicSyllabicCategory.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\LineBreakClass.cs" Link="LineBreakClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\ScriptClass.cs" Link="ScriptClass.cs" />
