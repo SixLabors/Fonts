@@ -22,8 +22,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             return posFormat switch
             {
                 1 => LookupType3Format1SubTable.Load(reader, offset, lookupFlags),
-                _ => throw new InvalidFontFileException(
-                    $"Invalid value for 'posFormat' {posFormat}. Should be '1'.")
+                _ => new NotImplementedSubTable(),
             };
         }
 
@@ -78,7 +77,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
-                ushort index,
+                int index,
                 int count)
             {
                 if (count <= 1)
@@ -94,7 +93,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                ushort nextIndex = (ushort)(index + 1);
+                int nextIndex = index + 1;
                 ushort nextGlyphId = collection[nextIndex];
                 if (nextGlyphId == 0)
                 {

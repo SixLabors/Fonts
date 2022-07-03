@@ -329,7 +329,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="value">The value.</param>
         public void Set(int codePoint, uint value)
         {
-            if ((codePoint < 0) || (codePoint > 0x10ffff))
+            if (codePoint is < 0 or > 0x10ffff)
             {
                 throw new ArgumentOutOfRangeException("Invalid code point");
             }
@@ -592,7 +592,7 @@ namespace SixLabors.Fonts.Unicode
 
         private uint Get(int c, bool fromLSCP)
         {
-            if ((c < 0) || (c > 0x10ffff))
+            if (c is < 0 or > 0x10ffff)
             {
                 return this.errorValue;
             }

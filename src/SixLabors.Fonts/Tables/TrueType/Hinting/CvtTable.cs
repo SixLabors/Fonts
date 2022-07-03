@@ -3,7 +3,6 @@
 
 namespace SixLabors.Fonts.Tables.TrueType.Hinting
 {
-    [TableName(TableName)]
     internal class CvtTable : Table
     {
         internal const string TableName = "cvt "; // space on the end of cvt is important/required

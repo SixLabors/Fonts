@@ -42,6 +42,7 @@ namespace SixLabors.Fonts
             this.WordBreaking = options.WordBreaking;
             this.TextDirection = options.TextDirection;
             this.TextAlignment = options.TextAlignment;
+            this.TextJustification = options.TextJustification;
             this.HorizontalAlignment = options.HorizontalAlignment;
             this.VerticalAlignment = options.VerticalAlignment;
             this.LayoutMode = options.LayoutMode;
@@ -151,6 +152,11 @@ namespace SixLabors.Fonts
         /// Gets or sets the text alignment of the text within the box.
         /// </summary>
         public TextAlignment TextAlignment { get; set; }
+
+        /// <summary>
+        /// Gets or sets the justification of the text within the box.
+        /// </summary>
+        public TextJustification TextJustification { get; set; }
 
         /// <summary>
         /// Gets or sets the horizontal alignment of the text box.

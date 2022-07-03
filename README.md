@@ -89,16 +89,15 @@ git submodule update --init --recursive
 
 ### Features
 - Reading font description (name, family, subname etc plus other string metadata).
-- Loading True type fonts.
+- Loading OpenType fonts with with CFF1 and True Type outlines.
+- Loading True Type fonts.
 - Loading [WOFF fonts](https://www.w3.org/Submission/WOFF/).
 - Loading [WOFF2 fonts](https://www.w3.org/TR/WOFF2).
 - Load all compatible fonts from local machine store.
+- Suppord for line breaking based on [UAX 14](https://www.unicode.org/reports/tr14/)
 - Support for rendering left to right, right to left and bidirectional text.
 - Support for ligatures.
 - Support for advanced OpenType features glyph substitution ([GSUB](https://docs.microsoft.com/en-us/typography/opentype/spec/gsub)) and glyph positioning ([GPOS](https://docs.microsoft.com/en-us/typography/opentype/spec/gpos))
-
-#### Limitations
-We currently only support otf and woff/woff2 fonts with True Type outlines.
 
 ## API Examples
 

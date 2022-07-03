@@ -294,6 +294,14 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Fact]
+        public void DefaultTextOptionsTextJustification()
+        {
+            const TextJustification expected = TextJustification.None;
+            Assert.Equal(expected, this.newTextOptions.TextJustification);
+            Assert.Equal(expected, this.clonedTextOptions.TextJustification);
+        }
+
+        [Fact]
         public void NonDefaultClone()
         {
             TextOptions expected = new(this.fakeFont)
@@ -324,15 +332,17 @@ namespace SixLabors.Fonts.Tests
         public void CloneIsDeep()
         {
             var expected = new TextOptions(this.fakeFont);
-            TextOptions actual = new(expected);
-
-            actual.KerningMode = KerningMode.None;
-            actual.Dpi = 46F;
-            actual.HorizontalAlignment = HorizontalAlignment.Center;
-            actual.TabWidth = 3F;
-            actual.LineSpacing = 2F;
-            actual.VerticalAlignment = VerticalAlignment.Bottom;
-            actual.WrappingLength = 42F;
+            TextOptions actual = new(expected)
+            {
+                KerningMode = KerningMode.None,
+                Dpi = 46F,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TabWidth = 3F,
+                LineSpacing = 2F,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                TextJustification = TextJustification.InterCharacter,
+                WrappingLength = 42F
+            };
 
             Assert.NotEqual(expected.KerningMode, actual.KerningMode);
             Assert.NotEqual(expected.Dpi, actual.Dpi);
@@ -341,6 +351,7 @@ namespace SixLabors.Fonts.Tests
             Assert.NotEqual(expected.TabWidth, actual.TabWidth);
             Assert.NotEqual(expected.VerticalAlignment, actual.VerticalAlignment);
             Assert.NotEqual(expected.WrappingLength, actual.WrappingLength);
+            Assert.NotEqual(expected.TextJustification, actual.TextJustification);
         }
 
         private static void VerifyPropertyDefault(TextOptions options)
@@ -351,6 +362,7 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(HorizontalAlignment.Left, options.HorizontalAlignment);
             Assert.Equal(VerticalAlignment.Top, options.VerticalAlignment);
             Assert.Equal(TextAlignment.Start, options.TextAlignment);
+            Assert.Equal(TextJustification.None, options.TextJustification);
             Assert.Equal(TextDirection.Auto, options.TextDirection);
             Assert.Equal(LayoutMode.HorizontalTopBottom, options.LayoutMode);
             Assert.Equal(1, options.LineSpacing);

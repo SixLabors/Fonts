@@ -476,6 +476,215 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(76, runs[1].End);
         }
 
+        [Theory]
+        [InlineData(TextDirection.LeftToRight)]
+        [InlineData(TextDirection.RightToLeft)]
+        public void TextJustification_InterCharacter_Horizontal(TextDirection direction)
+        {
+            const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
+            const float wrappingLength = 400;
+            const float pointSize = 20;
+            Font font = CreateFont(text, pointSize);
+            TextOptions options = new(font)
+            {
+                TextDirection = direction,
+                WrappingLength = wrappingLength,
+                TextJustification = TextJustification.InterCharacter
+            };
+
+            // Collect the first line so we can compare it to the target wrapping length.
+            IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
+            IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
+            TextMeasurer.TryGetCharacterDimensions(justifiedLine, options.Dpi, out GlyphBounds[] justifiedCharacterBounds);
+
+            Assert.Equal(wrappingLength, justifiedCharacterBounds.Sum(x => x.Bounds.Width), 4);
+
+            // Now compare character widths.
+            options.TextJustification = TextJustification.None;
+            IReadOnlyList<GlyphLayout> glyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
+            IReadOnlyList<GlyphLayout> line = CollectFirstLine(glyphs);
+            TextMeasurer.TryGetCharacterDimensions(line, options.Dpi, out GlyphBounds[] characterBounds);
+
+            // All but the last justified character advance should be greater than the
+            // corresponding character advance.
+            for (int i = 0; i < characterBounds.Length; i++)
+            {
+                if (i == characterBounds.Length - 1)
+                {
+                    Assert.Equal(justifiedCharacterBounds[i].Bounds.Width, characterBounds[i].Bounds.Width);
+                }
+                else
+                {
+                    Assert.True(justifiedCharacterBounds[i].Bounds.Width > characterBounds[i].Bounds.Width);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(TextDirection.LeftToRight)]
+        [InlineData(TextDirection.RightToLeft)]
+        public void TextJustification_InterWord_Horizontal(TextDirection direction)
+        {
+            const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
+            const float wrappingLength = 400;
+            const float pointSize = 20;
+            Font font = CreateFont(text, pointSize);
+            TextOptions options = new(font)
+            {
+                TextDirection = direction,
+                WrappingLength = wrappingLength,
+                TextJustification = TextJustification.InterWord
+            };
+
+            // Collect the first line so we can compare it to the target wrapping length.
+            IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
+            IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
+            TextMeasurer.TryGetCharacterDimensions(justifiedLine, options.Dpi, out GlyphBounds[] justifiedCharacterBounds);
+
+            Assert.Equal(wrappingLength, justifiedCharacterBounds.Sum(x => x.Bounds.Width), 4);
+
+            // Now compare character widths.
+            options.TextJustification = TextJustification.None;
+            IReadOnlyList<GlyphLayout> glyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
+            IReadOnlyList<GlyphLayout> line = CollectFirstLine(glyphs);
+            TextMeasurer.TryGetCharacterDimensions(line, options.Dpi, out GlyphBounds[] characterBounds);
+
+            // All but the last justified whitespace character advance should be greater than the
+            // corresponding character advance.
+            for (int i = 0; i < characterBounds.Length; i++)
+            {
+                if (CodePoint.IsWhiteSpace(characterBounds[i].Codepoint) && i != characterBounds.Length - 1)
+                {
+                    Assert.True(justifiedCharacterBounds[i].Bounds.Width > characterBounds[i].Bounds.Width);
+                }
+                else
+                {
+                    Assert.Equal(justifiedCharacterBounds[i].Bounds.Width, characterBounds[i].Bounds.Width);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(TextDirection.LeftToRight)]
+        [InlineData(TextDirection.RightToLeft)]
+        public void TextJustification_InterCharacter_Vertical(TextDirection direction)
+        {
+            const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
+            const float wrappingLength = 400;
+            const float pointSize = 20;
+            Font font = CreateFont(text, pointSize);
+            TextOptions options = new(font)
+            {
+                LayoutMode = LayoutMode.VerticalLeftRight,
+                TextDirection = direction,
+                WrappingLength = wrappingLength,
+                TextJustification = TextJustification.InterCharacter
+            };
+
+            // Collect the first line so we can compare it to the target wrapping length.
+            IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
+            IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
+            TextMeasurer.TryGetCharacterDimensions(justifiedLine, options.Dpi, out GlyphBounds[] justifiedCharacterBounds);
+
+            Assert.Equal(wrappingLength, justifiedCharacterBounds.Sum(x => x.Bounds.Height), 4);
+
+            // Now compare character widths.
+            options.TextJustification = TextJustification.None;
+            IReadOnlyList<GlyphLayout> glyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
+            IReadOnlyList<GlyphLayout> line = CollectFirstLine(glyphs);
+            TextMeasurer.TryGetCharacterDimensions(line, options.Dpi, out GlyphBounds[] characterBounds);
+
+            // All but the last justified character advance should be greater than the
+            // corresponding character advance.
+            for (int i = 0; i < characterBounds.Length; i++)
+            {
+                if (i == characterBounds.Length - 1)
+                {
+                    Assert.Equal(justifiedCharacterBounds[i].Bounds.Height, characterBounds[i].Bounds.Height);
+                }
+                else
+                {
+                    Assert.True(justifiedCharacterBounds[i].Bounds.Height > characterBounds[i].Bounds.Height);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(TextDirection.LeftToRight)]
+        [InlineData(TextDirection.RightToLeft)]
+        public void TextJustification_InterWord_Vertical(TextDirection direction)
+        {
+            const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
+            const float wrappingLength = 400;
+            const float pointSize = 20;
+            Font font = CreateFont(text, pointSize);
+            TextOptions options = new(font)
+            {
+                LayoutMode = LayoutMode.VerticalLeftRight,
+                TextDirection = direction,
+                WrappingLength = wrappingLength,
+                TextJustification = TextJustification.InterWord
+            };
+
+            // Collect the first line so we can compare it to the target wrapping length.
+            IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
+            IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
+            TextMeasurer.TryGetCharacterDimensions(justifiedLine, options.Dpi, out GlyphBounds[] justifiedCharacterBounds);
+
+            Assert.Equal(wrappingLength, justifiedCharacterBounds.Sum(x => x.Bounds.Height), 4);
+
+            // Now compare character widths.
+            options.TextJustification = TextJustification.None;
+            IReadOnlyList<GlyphLayout> glyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
+            IReadOnlyList<GlyphLayout> line = CollectFirstLine(glyphs);
+            TextMeasurer.TryGetCharacterDimensions(line, options.Dpi, out GlyphBounds[] characterBounds);
+
+            // All but the last justified whitespace character advance should be greater than the
+            // corresponding character advance.
+            for (int i = 0; i < characterBounds.Length; i++)
+            {
+                if (CodePoint.IsWhiteSpace(characterBounds[i].Codepoint) && i != characterBounds.Length - 1)
+                {
+                    Assert.True(justifiedCharacterBounds[i].Bounds.Height > characterBounds[i].Bounds.Height);
+                }
+                else
+                {
+                    Assert.Equal(justifiedCharacterBounds[i].Bounds.Height, characterBounds[i].Bounds.Height);
+                }
+            }
+        }
+
+        private static IReadOnlyList<GlyphLayout> CollectFirstLine(IReadOnlyList<GlyphLayout> glyphs)
+        {
+            List<GlyphLayout> line = new()
+            {
+                glyphs[0]
+            };
+
+            for (int i = 1; i < glyphs.Count; i++)
+            {
+                if (glyphs[i].IsStartOfLine)
+                {
+                    break;
+                }
+
+                line.Add(glyphs[i]);
+            }
+
+            return line;
+        }
+
+#if OS_WINDOWS
+        [Fact]
+        public FontRectangle BenchmarkTest()
+        {
+            Font font = Arial;
+            return TextMeasurer.Measure("The quick brown fox jumped over the lazy dog", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        }
+
+        private static readonly Font Arial = SystemFonts.CreateFont("Arial", 12);
+#endif
+
         public static Font CreateFont(string text)
         {
             var fc = (IFontMetricsCollection)new FontCollection();

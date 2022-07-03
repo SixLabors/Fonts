@@ -16,4 +16,8 @@
   <!-- Import the solution .props file. -->
   <Import Project="$(MSBuildThisFileDirectory)..\Directory.Build.props" />
 
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\SixLabors.Fonts\SixLabors.Fonts.csproj" />
+  </ItemGroup>
+
 </Project>

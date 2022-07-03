@@ -42,6 +42,9 @@ namespace SixLabors.Fonts.Tests
 
         public static string TimesNewRomanFile => GetFullPath("TimesNewRoman.ttf");
 
+        // FdSelect format 0: https://github.com/adobe-fonts/fdarray-test/
+        public static string FDArrayTest257File => GetFullPath("FDArrayTest257.otf");
+
         /// <summary>
         /// Gets a gsub test font file which has the following substitution for unit tests:
         /// - Single Substitution: A -> B
@@ -63,6 +66,11 @@ namespace SixLabors.Fonts.Tests
         /// "\u1361\u136B\u1361" -> The character in the middle should be replaced with the final form.
         /// </summary>
         public static string GSubTestFontFile3 => GetFullPath("TestShapeEthi.ttf");
+
+        /// <summary>
+        /// Gets a gsub test file specifically crafted to intiate a billion laughs attack.
+        /// </summary>
+        public static string GSubLookupType2BillionLaughs => GetFullPath("TestGSUBThree.ttf");
 
         /// <summary>
         /// Gets a gsub test font file (from harfbuzz tests) which has the following substitution for unit tests:
@@ -207,6 +215,8 @@ namespace SixLabors.Fonts.Tests
         public static string HelveticaTTCFile => GetFullPath("Helvetica.ttc");
 
         public static string MeQuranFile => GetFullPath("me_quran_volt_newmet.ttf");
+
+        public static string AliceFrancesHMKRegularFile => GetFullPath("AliceFrancesHMK-Regular.ttf");
 
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 

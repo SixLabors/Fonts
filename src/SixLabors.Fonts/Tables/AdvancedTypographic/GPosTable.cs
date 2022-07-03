@@ -14,7 +14,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     /// sophisticated text layout and rendering in each script and language system that a font supports.
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos"/>
     /// </summary>
-    [TableName(TableName)]
     internal class GPosTable : Table
     {
         private static readonly Tag KernTag = Tag.Parse("kern");
@@ -103,9 +102,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         public bool TryUpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, out bool kerned)
         {
+            // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
+            int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(collection.Count);
+            int maxOperationsCount = AdvancedTypographicUtils.GetMaxAllowableShapingOperationsCount(collection.Count);
+            int currentOperations = 0;
+            bool maxOperationsReached = false;
+
             kerned = false;
             bool updated = false;
-            for (ushort i = 0; i < collection.Count; i++)
+            for (int i = 0; i < collection.Count; i++)
             {
                 if (!collection.ShouldProcess(fontMetrics, i))
                 {
@@ -115,8 +120,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 ScriptClass current = CodePoint.GetScriptClass(collection.GetGlyphShapingData(i).CodePoint);
                 BaseShaper shaper = ShaperFactory.Create(current, collection.TextOptions);
 
-                ushort index = i;
-                ushort count = 1;
+                int index = i;
+                int count = 1;
                 while (i < collection.Count - 1)
                 {
                     // We want to assign the same feature lookups to individual sections of the text rather
@@ -131,6 +136,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
                     i++;
                     count++;
+
+                    if (i >= maxCount)
+                    {
+                        break;
+                    }
                 }
 
                 if (shaper.MarkZeroingMode == MarkZeroingMode.PreGPos)
@@ -157,6 +167,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
                         while (iterator.Index < index + count)
                         {
+                            if (currentOperations++ >= maxOperationsCount)
+                            {
+                                maxOperationsReached = true;
+                                goto EndLookups;
+                            }
+
                             List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
                             if (!HasFeature(glyphFeatures, in feature))
                             {
@@ -172,6 +188,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     }
                 }
 
+                EndLookups:
                 if (shaper.MarkZeroingMode == MarkZeroingMode.PostGpos)
                 {
                     ZeroMarkAdvances(fontMetrics, collection, index, count);
@@ -180,6 +197,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 FixCursiveAttachment(collection, index, count);
                 FixMarkAttachment(collection, index, count);
                 UpdatePositions(fontMetrics, collection, index, count);
+
+                if (i >= maxCount || maxOperationsReached)
+                {
+                    return updated;
+                }
             }
 
             return updated;
@@ -262,7 +284,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return false;
         }
 
-        private static void FixCursiveAttachment(GlyphPositioningCollection collection, ushort index, int count)
+        private static void FixCursiveAttachment(GlyphPositioningCollection collection, int index, int count)
         {
             for (int i = 0; i < count; i++)
             {
@@ -290,7 +312,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
         }
 
-        private static void FixMarkAttachment(GlyphPositioningCollection collection, ushort index, int count)
+        private static void FixMarkAttachment(GlyphPositioningCollection collection, int index, int count)
         {
             for (int i = 0; i < count; i++)
             {
@@ -325,7 +347,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
         }
 
-        private static void ZeroMarkAdvances(FontMetrics fontMetrics, GlyphPositioningCollection collection, ushort index, int count)
+        private static void ZeroMarkAdvances(FontMetrics fontMetrics, GlyphPositioningCollection collection, int index, int count)
         {
             for (int i = 0; i < count; i++)
             {
@@ -339,11 +361,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
         }
 
-        private static void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, ushort index, int count)
+        private static void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, int index, int count)
         {
-            for (ushort i = 0; i < count; i++)
+            for (int i = 0; i < count; i++)
             {
-                ushort currentIndex = (ushort)(i + index);
+                int currentIndex = i + index;
                 collection.UpdatePosition(fontMetrics, currentIndex);
             }
         }

@@ -275,7 +275,7 @@ namespace SixLabors.Fonts.Tests.Unicode
                 while (cp < v.CodePoint)
                 {
                     Assert.Equal(v.Value, builder.Get(cp));
-                    Assert.Equal(v.Value, frozen.Get(cp));
+                    Assert.Equal(v.Value, frozen.Get((uint)cp));
                     cp++;
                 }
             }

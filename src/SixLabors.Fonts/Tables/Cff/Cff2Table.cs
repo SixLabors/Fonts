@@ -6,7 +6,6 @@ using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
-    [TableName(TableName)]
     internal sealed class Cff2Table : Table, ICffTable
     {
         internal const string TableName = "CFF2";

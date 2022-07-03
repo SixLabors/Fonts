@@ -3,51 +3,54 @@
 
 using System;
 using System.Globalization;
-using System.IO;
-using System.Reflection;
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Unicode.Resources;
 
 namespace SixLabors.Fonts.Unicode
 {
     internal static class UnicodeData
     {
-        private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new(() => GetTrie("Bidi.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyBidiMirrorTrie = new(() => GetTrie("BidiMirror.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new(() => GetTrie("Grapheme.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyLinebreakTrie = new(() => GetTrie("LineBreak.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetTrie("Script.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new(() => GetTrie("UnicodeCategory.trie"));
-        private static readonly Lazy<UnicodeTrie> LazyShapingTrie = new(() => GetTrie("ArabicShaping.trie"));
+        private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new(() => GetBidiTrie());
+        private static readonly Lazy<UnicodeTrie> LazyBidiMirrorTrie = new(() => GetBidiMirrorTrie());
+        private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new(() => GetGraphemeTrie());
+        private static readonly Lazy<UnicodeTrie> LazyLinebreakTrie = new(() => GetLineBreakTrie());
+        private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetScriptTrie());
+        private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new(() => GetCategoryTrie());
+        private static readonly Lazy<UnicodeTrie> LazyArabicShapingTrie = new(() => GetArabicShapingTrie());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint GetBidiData(int codePoint) => LazyBidiTrie.Value.Get(codePoint);
+        public static uint GetBidiData(uint codePoint) => LazyBidiTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint GetBidiMirror(int codePoint) => LazyBidiMirrorTrie.Value.Get(codePoint);
+        public static uint GetBidiMirror(uint codePoint) => LazyBidiMirrorTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static GraphemeClusterClass GetGraphemeClusterClass(int codePoint) => (GraphemeClusterClass)LazyGraphemeTrie.Value.Get(codePoint);
+        public static GraphemeClusterClass GetGraphemeClusterClass(uint codePoint) => (GraphemeClusterClass)LazyGraphemeTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static LineBreakClass GetLineBreakClass(int codePoint) => (LineBreakClass)LazyLinebreakTrie.Value.Get(codePoint);
+        public static LineBreakClass GetLineBreakClass(uint codePoint) => (LineBreakClass)LazyLinebreakTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ScriptClass GetScriptClass(int codePoint) => (ScriptClass)LazyScriptTrie.Value.Get(codePoint);
+        public static ScriptClass GetScriptClass(uint codePoint) => (ScriptClass)LazyScriptTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint GetJoiningClass(int codePoint) => LazyShapingTrie.Value.Get(codePoint);
+        public static uint GetJoiningClass(uint codePoint) => LazyArabicShapingTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static UnicodeCategory GetUnicodeCategory(int codePoint) => (UnicodeCategory)LazyCategoryTrie.Value.Get(codePoint);
+        public static UnicodeCategory GetUnicodeCategory(uint codePoint) => (UnicodeCategory)LazyCategoryTrie.Value.Get(codePoint);
 
-        private static UnicodeTrie GetTrie(string name)
-        {
-            Stream? stream = typeof(UnicodeData)
-                .GetTypeInfo()
-                .Assembly
-                .GetManifestResourceStream("SixLabors.Fonts.Unicode.Resources." + name);
+        private static UnicodeTrie GetBidiTrie() => new(BidiTrie.Data);
 
-            return new UnicodeTrie(stream!);
-        }
+        private static UnicodeTrie GetBidiMirrorTrie() => new(BidiMirrorTrie.Data);
+
+        private static UnicodeTrie GetGraphemeTrie() => new(GraphemeTrie.Data);
+
+        private static UnicodeTrie GetLineBreakTrie() => new(LineBreakTrie.Data);
+
+        private static UnicodeTrie GetScriptTrie() => new(ScriptTrie.Data);
+
+        private static UnicodeTrie GetCategoryTrie() => new(UnicodeCategoryTrie.Data);
+
+        private static UnicodeTrie GetArabicShapingTrie() => new(ArabicShapingTrie.Data);
     }
 }

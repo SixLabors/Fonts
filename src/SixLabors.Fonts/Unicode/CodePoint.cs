@@ -435,22 +435,18 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a new line indicator; otherwise, <see langword="false"/></returns>
         public static bool IsNewLine(CodePoint codePoint)
-        {
-            // See https://www.unicode.org/standard/reports/tr13/tr13-5.html
-            switch (codePoint.Value)
-            {
-                case 0x000A: // LINE FEED (LF)
-                case 0x000B: // LINE TABULATION (VT)
-                case 0x000C: // FORM FEED (FF)
-                case 0x000D: // CARRIAGE RETURN (CR)
-                case 0x0085: // NEXT LINE (NEL)
-                case 0x2028: // LINE SEPARATOR (LS)
-                case 0x2029: // PARAGRAPH SEPARATOR (PS)
-                    return true;
-                default:
-                    return false;
-            }
-        }
+           => codePoint.Value switch
+           {
+               // See https://www.unicode.org/standard/reports/tr13/tr13-5.html
+               0x000A // LINE FEED (LF)
+               or 0x000B // LINE TABULATION (VT)
+               or 0x000C // FORM FEED (FF)
+               or 0x000D // CARRIAGE RETURN (CR)
+               or 0x0085 // NEXT LINE (NEL)
+               or 0x2028 // LINE SEPARATOR (LS)
+               or 0x2029 => true, // PARAGRAPH SEPARATOR (PS)
+               _ => false,
+           };
 
         /// <summary>
         /// Returns the number of codepoints in a given string buffer.
@@ -518,7 +514,7 @@ namespace SixLabors.Fonts.Unicode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGetBidiMirror(CodePoint codePoint, out CodePoint mirror)
         {
-            uint value = UnicodeData.GetBidiMirror(codePoint.Value);
+            uint value = UnicodeData.GetBidiMirror(codePoint.value);
 
             if (value == 0u)
             {
@@ -561,7 +557,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="LineBreakClass"/>.</returns>
         public static LineBreakClass GetLineBreakClass(CodePoint codePoint)
-            => UnicodeData.GetLineBreakClass(codePoint.Value);
+            => UnicodeData.GetLineBreakClass(codePoint.value);
 
         /// <summary>
         /// Gets the <see cref="GraphemeClusterClass"/> for the given codepoint.
@@ -569,7 +565,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="GraphemeClusterClass"/>.</returns>
         public static GraphemeClusterClass GetGraphemeClusterClass(CodePoint codePoint)
-            => UnicodeData.GetGraphemeClusterClass(codePoint.Value);
+            => UnicodeData.GetGraphemeClusterClass(codePoint.value);
 
         /// <summary>
         /// Gets the <see cref="JoiningClass"/> for the given codepoint.
@@ -585,7 +581,7 @@ namespace SixLabors.Fonts.Unicode
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="ScriptClass"/>.</returns>
         internal static ScriptClass GetScriptClass(CodePoint codePoint)
-            => UnicodeData.GetScriptClass(codePoint.Value);
+            => UnicodeData.GetScriptClass(codePoint.value);
 
         /// <summary>
         /// Gets the <see cref="UnicodeCategory"/> for the given codepoint.
@@ -599,7 +595,7 @@ namespace SixLabors.Fonts.Unicode
                 return (UnicodeCategory)(AsciiCharInfo[codePoint.Value] & UnicodeCategoryMask);
             }
 
-            return UnicodeData.GetUnicodeCategory(codePoint.Value);
+            return UnicodeData.GetUnicodeCategory(codePoint.value);
         }
 
         /// <summary>

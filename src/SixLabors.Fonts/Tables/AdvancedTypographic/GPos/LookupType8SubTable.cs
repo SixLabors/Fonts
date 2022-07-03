@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 1 => LookupType8Format1SubTable.Load(reader, offset, lookupFlags),
                 2 => LookupType8Format2SubTable.Load(reader, offset, lookupFlags),
                 3 => LookupType8Format3SubTable.Load(reader, offset, lookupFlags),
-                _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {substFormat}. Should be '1', '2', or '3'."),
+                _ => new NotImplementedSubTable(),
             };
         }
 
@@ -54,7 +54,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
-                ushort index,
+                int index,
                 int count)
             {
                 // Implements Chained Contexts Substitution, Format 1:
@@ -100,7 +100,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
                         LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
                         ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
+                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, index + sequenceIndex, 1))
                         {
                             hasChanged = true;
                         }
@@ -155,7 +155,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
-                ushort index,
+                int index,
                 int count)
             {
                 // Implements Chained Contexts Substitution for Format 2:
@@ -198,7 +198,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                         SequenceLookupRecord sequenceLookupRecord = rule.SequenceLookupRecords[j];
                         LookupTable lookup = table.LookupList.LookupTables[sequenceLookupRecord.LookupListIndex];
                         ushort sequenceIndex = sequenceLookupRecord.SequenceIndex;
-                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), 1))
+                        if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, index + sequenceIndex, 1))
                         {
                             hasChanged = true;
                         }
@@ -249,7 +249,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
-                ushort index,
+                int index,
                 int count)
             {
                 ushort glyphId = collection[index];
@@ -271,7 +271,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     ushort lookupIndex = lookupRecord.LookupListIndex;
 
                     LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, (ushort)(index + sequenceIndex), count - sequenceIndex))
+                    if (lookup.TryUpdatePosition(fontMetrics, table, collection, feature, index + sequenceIndex, count - sequenceIndex))
                     {
                         hasChanged = true;
                     }

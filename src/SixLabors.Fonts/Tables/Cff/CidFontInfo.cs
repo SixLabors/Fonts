@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 
 namespace SixLabors.Fonts.Tables.Cff
 {
@@ -24,5 +25,10 @@ namespace SixLabors.Fonts.Tables.Cff
         public int FdSelectFormat { get; set; }
 
         public FDRange3[] FdRanges { get; set; } = Array.Empty<FDRange3>();
+
+        /// <summary>
+        /// Gets or sets the fd select map, which maps glyph # to font #.
+        /// </summary>
+        public Dictionary<int, byte> FdSelectMap { get; set; } = new();
     }
 }

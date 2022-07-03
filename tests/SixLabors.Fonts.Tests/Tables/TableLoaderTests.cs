@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Tests.Tables
                     typeof(Table).GetTypeInfo()
                         .Assembly.DefinedTypes
                         .Where(x => tableTypeInfo.IsAssignableFrom(x))
-                        .Select(x => new object[] { x.AsType(), x.GetCustomAttribute<TableNameAttribute>()?.Name })
+                        .Select(x => new object[] { x.AsType(), x.GetField("TableName", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)?.GetValue(null) })
                         .Where(x => x[1] != null);
             }
         }

@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
-            ushort index,
+            int index,
             int count)
             => false;
     }

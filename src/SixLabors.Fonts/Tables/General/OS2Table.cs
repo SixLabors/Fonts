@@ -3,7 +3,6 @@
 
 namespace SixLabors.Fonts.Tables.General
 {
-    [TableName(TableName)]
     internal sealed class OS2Table : Table
     {
         internal const string TableName = "OS/2";

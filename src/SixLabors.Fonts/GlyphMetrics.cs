@@ -190,7 +190,6 @@ namespace SixLabors.Fonts
 
         internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, float scaledPPEM)
         {
-            // TODO: Move to base class
             (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float position)
             {
                 Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;

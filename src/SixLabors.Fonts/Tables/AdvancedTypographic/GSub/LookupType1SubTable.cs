@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             {
                 1 => LookupType1Format1SubTable.Load(reader, offset, lookupFlags),
                 2 => LookupType1Format2SubTable.Load(reader, offset, lookupFlags),
-                _ => throw new InvalidFontFileException($"Invalid value for 'substFormat' {substFormat}. Should be '1' or '2'.")
+                _ => new NotImplementedSubTable(),
             };
         }
     }
@@ -65,7 +65,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
-            ushort index,
+            int index,
             int count)
         {
             ushort glyphId = collection[index];
@@ -124,7 +124,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
-            ushort index,
+            int index,
             int count)
         {
             ushort glyphId = collection[index];

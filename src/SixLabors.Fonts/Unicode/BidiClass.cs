@@ -18,7 +18,7 @@ namespace SixLabors.Fonts.Unicode
         /// </summary>
         /// <param name="codePoint">The codepoint.</param>
         public BidiClass(CodePoint codePoint)
-            => this.bidiValue = UnicodeData.GetBidiData(codePoint.Value);
+            => this.bidiValue = UnicodeData.GetBidiData((uint)codePoint.Value);
 
         /// <summary>
         /// Gets the Unicode Bidirectional character type.

@@ -10,7 +10,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     /// Implements reading the Font Variations Table `gvar`.
     /// <see href="https://docs.microsoft.com/de-de/typography/opentype/spec/gvar"/>
     /// </summary>
-    [TableName(TableName)]
     internal class GVarTable : Table
     {
         internal const string TableName = "gvar";

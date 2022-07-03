@@ -9,7 +9,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     /// Implements reading the Font Variations Table `fvar`.
     /// <see href="https://docs.microsoft.com/de-de/typography/opentype/spec/fvar"/>
     /// </summary>
-    [TableName(TableName)]
     internal class FVarTable : Table
     {
         internal const string TableName = "fvar";

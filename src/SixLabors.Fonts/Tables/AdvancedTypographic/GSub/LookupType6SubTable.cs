@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                 1 => LookupType6Format1SubTable.Load(reader, offset, lookupFlags),
                 2 => LookupType6Format2SubTable.Load(reader, offset, lookupFlags),
                 3 => LookupType6Format3SubTable.Load(reader, offset, lookupFlags),
-                _ => throw new InvalidFontFileException($"Invalid value for 'subTableFormat' {substFormat}. Should be '1', '2', or '3'."),
+                _ => new NotImplementedSubTable(),
             };
         }
     }
@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
-            ushort index,
+            int index,
             int count)
         {
             // Implements Chained Contexts Substitution, Format 1:
@@ -142,7 +142,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
-            ushort index,
+            int index,
             int count)
         {
             // Implements Chained Contexts Substitution for Format 2:
@@ -231,7 +231,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             GSubTable table,
             GlyphSubstitutionCollection collection,
             Tag feature,
-            ushort index,
+            int index,
             int count)
         {
             ushort glyphId = collection[index];

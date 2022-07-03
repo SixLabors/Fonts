@@ -273,7 +273,7 @@ namespace SixLabors.Fonts.Tables.Cff
             byte[][]? localSubBuffer = privateDictionary?.LocalSubrRawBuffers;
 
             // Is the font a CID font?
-            FDRangeProvider fdRangeProvider = new(topDictionary.CidFontInfo.FdRanges);
+            FDRangeProvider fdRangeProvider = new(topDictionary.CidFontInfo);
             bool isCidFont = topDictionary.CidFontInfo.FdRanges.Length > 0;
             for (int i = 0; i < glyphCount; ++i)
             {

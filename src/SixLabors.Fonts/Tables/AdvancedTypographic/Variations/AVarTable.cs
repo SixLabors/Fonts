@@ -9,7 +9,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     /// Implements reading the Font Variations Table `avar`.
     /// <see href="https://docs.microsoft.com/de-de/typography/opentype/spec/avar"/>
     /// </summary>
-    [TableName(TableName)]
     internal class AVarTable : Table
     {
         internal const string TableName = "avar";

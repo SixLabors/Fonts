@@ -29,7 +29,12 @@ namespace SixLabors.Fonts.Tests
             TrueTypeGlyphMetrics glyphMetrics = new(
                 (StreamFontMetrics)metrics,
                 codePoint,
-                new GlyphVector(new Vector2[0], new bool[0], new ushort[0], new Bounds(0, metrics.UnitsPerEm, 0, metrics.UnitsPerEm), Array.Empty<byte>()),
+                new GlyphVector(
+                    Array.Empty<Vector2>(),
+                    Array.Empty<bool>(),
+                    Array.Empty<ushort>(),
+                    new Bounds(0, metrics.UnitsPerEm, 0, metrics.UnitsPerEm),
+                    Array.Empty<byte>()),
                 0,
                 0,
                 0,

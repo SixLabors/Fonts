@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             return format switch
             {
                 1 => LookupType4Format1SubTable.Load(reader, offset, lookupFlags),
-                _ => throw new InvalidFontFileException($"Invalid MarkBasePos table format {format}, only format '1' is supported.")
+                _ => new NotImplementedSubTable(),
             };
         }
 
@@ -86,7 +86,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 GPosTable table,
                 GlyphPositioningCollection collection,
                 Tag feature,
-                ushort index,
+                int index,
                 int count)
             {
                 // Mark-to-Base Attachment Positioning Subtable.

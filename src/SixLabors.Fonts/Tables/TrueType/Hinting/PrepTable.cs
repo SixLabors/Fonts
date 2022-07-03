@@ -3,7 +3,6 @@
 
 namespace SixLabors.Fonts.Tables.TrueType.Hinting
 {
-    [TableName(TableName)]
     internal class PrepTable : Table
     {
         internal const string TableName = "prep";
