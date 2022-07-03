@@ -372,6 +372,47 @@ namespace UnicodeTrieGenerator
                 { "Zhain", JoiningGroup.Zhain }
             };
 
+        private static readonly Dictionary<string, IndicSyllabicCategory> IndicSyllabicCategoryMap
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Avagraha", IndicSyllabicCategory.Avagraha },
+                { "Bindu", IndicSyllabicCategory.Bindu },
+                { "Brahmi_Joining_Number", IndicSyllabicCategory.BrahmiJoiningNumber },
+                { "Cantillation_Mark", IndicSyllabicCategory.Cantillation_Mark },
+                { "Consonant", IndicSyllabicCategory.Consonant },
+                { "Consonant_Dead", IndicSyllabicCategory.ConsonantDead },
+                { "Consonant_Final", IndicSyllabicCategory.ConsonantFinal },
+                { "Consonant_Head_Letter", IndicSyllabicCategory.ConsonantHeadLetter },
+                { "Consonant_Initial_Postfixed", IndicSyllabicCategory.ConsonantInitialPostfixed },
+                { "Consonant_Killer", IndicSyllabicCategory.ConsonantKiller },
+                { "Consonant_Medial", IndicSyllabicCategory.ConsonantMedial },
+                { "Consonant_Placeholder", IndicSyllabicCategory.ConsonantPlaceholder },
+                { "Consonant_Preceding_Repha", IndicSyllabicCategory.ConsonantPrecedingRepha },
+                { "Consonant_Prefixed", IndicSyllabicCategory.ConsonantPrefixed },
+                { "Consonant_Subjoined", IndicSyllabicCategory.ConsonantSubjoined },
+                { "Consonant_Succeeding_Repha", IndicSyllabicCategory.ConsonantSucceedingRepha },
+                { "Consonant_With_Stacker", IndicSyllabicCategory.ConsonantWithStacker },
+                { "Gemination_Mark", IndicSyllabicCategory.GeminationMark },
+                { "Invisible_Stacker", IndicSyllabicCategory.InvisibleStacker },
+                { "Joiner", IndicSyllabicCategory.Joiner },
+                { "Modifying_Letter", IndicSyllabicCategory.ModifyingLetter },
+                { "Non_Joiner", IndicSyllabicCategory.NonJoiner },
+                { "Nukta", IndicSyllabicCategory.Nukta },
+                { "Number", IndicSyllabicCategory.Number },
+                { "Number_Joiner", IndicSyllabicCategory.NumberJoiner },
+                { "Other", IndicSyllabicCategory.Other },
+                { "Pure_Killer", IndicSyllabicCategory.PureKiller },
+                { "Register_Shifter", IndicSyllabicCategory.RegisterShifter },
+                { "Syllable_Modifier", IndicSyllabicCategory.SyllableModifier },
+                { "Tone_Letter", IndicSyllabicCategory.ToneLetter },
+                { "Tone_Mark", IndicSyllabicCategory.ToneMark },
+                { "Virama", IndicSyllabicCategory.Virama },
+                { "Visarga", IndicSyllabicCategory.Visarga },
+                { "Vowel", IndicSyllabicCategory.Vowel },
+                { "Vowel_Dependent", IndicSyllabicCategory.VowelDependent },
+                { "Vowel_Independent", IndicSyllabicCategory.VowelIndependent },
+            };
+
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
@@ -394,6 +435,7 @@ namespace UnicodeTrieGenerator
             GenerateScriptTrie();
             GenerateGraphemeBreakTrie();
             GenerateArabicShapingTrie();
+            GenerateIndicSyllabicCategoryTrie();
         }
 
         private static void ProcessUnicodeData()
@@ -686,6 +728,41 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("ArabicShaping", trie);
+        }
+
+        /// <summary>
+        /// Generates the UnicodeTrie for the indic syllabic category code point ranges.
+        /// </summary>
+        private static void GenerateIndicSyllabicCategoryTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+            var builder = new UnicodeTrieBuilder((uint)IndicSyllabicCategory.Other);
+
+            using (StreamReader sr = GetStreamReader("IndicSyllabicCategory.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string point = match.Groups[3].Value;
+
+                        if (end?.Length == 0)
+                        {
+                            end = start;
+                        }
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)IndicSyllabicCategoryMap[point], true);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+            GenerateTrieClass("IndicSyllabicCategory", trie);
         }
 
         /// <summary>
