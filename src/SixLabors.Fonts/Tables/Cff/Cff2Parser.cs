@@ -19,7 +19,8 @@ namespace SixLabors.Fonts.Tables.Cff
         private int fontMatrixOffset;
         private int charStringIndexOffset;
         private int variationStoreOffset;
-        private int fdArrayOffset;
+        private int? fdArrayOffset;
+        private int? fdSelectOffset;
         private ItemVariationStore? itemVariationStore;
 
         public Cff2Font Load(BigEndianBinaryReader reader, byte hdrSize, ushort topDictLength, long offset)
@@ -42,12 +43,13 @@ namespace SixLabors.Fonts.Tables.Cff
             CffIndexOffset[] charStringOffsets = this.ReadCharStringIndex(reader);
             byte[][] charStringBuffers = this.ReadCharStringBuffers(reader, charStringOffsets);
 
-            FontDict[] fontDicts = this.ReadFdArray(reader);
+            int fdArrayOffset = this.fdArrayOffset.GetValueOrDefault();
+            FontDict[] fontDicts = this.ReadFdArray(reader, this.offset, fdArrayOffset);
             var topDictionary = new CffTopDictionary
             {
                 CidFontInfo = new CidFontInfo()
                 {
-                    FDArray = this.fdArrayOffset
+                    FDArray = fdArrayOffset,
                 }
             };
 
@@ -77,7 +79,7 @@ namespace SixLabors.Fonts.Tables.Cff
                         this.fdArrayOffset = (int)dataDicEntry.Operands[0].RealNumValue;
                         break;
                     case "FDSelect":
-                        this.fdArrayOffset = (int)dataDicEntry.Operands[0].RealNumValue;
+                        this.fdSelectOffset = (int)dataDicEntry.Operands[0].RealNumValue;
                         break;
                     case "vstore":
                         this.variationStoreOffset = (int)dataDicEntry.Operands[0].RealNumValue;
@@ -86,75 +88,6 @@ namespace SixLabors.Fonts.Tables.Cff
                         throw new InvalidFontFileException("Error parsing TopDictData.");
                 }
             }
-        }
-
-        private FontDict[] ReadFdArray(BigEndianBinaryReader reader)
-        {
-            reader.BaseStream.Position = this.offset + this.fdArrayOffset;
-
-            if (!this.TryReadIndexDataOffsets(reader, true, out CffIndexOffset[]? offsets))
-            {
-                return Array.Empty<FontDict>();
-            }
-
-            var fontDicts = new FontDict[offsets.Length];
-            for (int i = 0; i < fontDicts.Length; ++i)
-            {
-                // read DICT data
-                List<CffDataDicEntry> dic = this.ReadDICTData(reader, offsets[i].Length);
-
-                // translate
-                int offset = 0;
-                int size = 0;
-                int name = 0;
-
-                foreach (CffDataDicEntry entry in dic)
-                {
-                    switch (entry.Operator.Name)
-                    {
-                        default:
-                            throw new NotSupportedException();
-                        case "FontName":
-                            name = (int)entry.Operands[0].RealNumValue;
-                            break;
-                        case "Private": // private dic
-                            size = (int)entry.Operands[0].RealNumValue;
-                            offset = (int)entry.Operands[1].RealNumValue;
-                            break;
-                    }
-                }
-
-                fontDicts[i] = new FontDict(name, size, offset);
-            }
-
-            foreach (FontDict fdict in fontDicts)
-            {
-                reader.BaseStream.Position = this.offset + fdict.PrivateDicOffset;
-
-                List<CffDataDicEntry> dicData = this.ReadDICTData(reader, fdict.PrivateDicSize);
-
-                if (dicData.Count > 0)
-                {
-                    // Interpret the values of private dict
-                    foreach (CffDataDicEntry dicEntry in dicData)
-                    {
-                        switch (dicEntry.Operator.Name)
-                        {
-                            case "Subrs":
-                                int localSubrsOffset = (int)dicEntry.Operands[0].RealNumValue;
-                                reader.BaseStream.Position = this.offset + fdict.PrivateDicOffset + localSubrsOffset;
-                                fdict.LocalSubr = this.ReadSubrBuffer(reader);
-                                break;
-
-                            case "defaultWidthX":
-                            case "nominalWidthX":
-                                break;
-                        }
-                    }
-                }
-            }
-
-            return fontDicts;
         }
 
         private byte[][] ReadGlobalSubrIndex(BigEndianBinaryReader reader, bool cff2 = true)

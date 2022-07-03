@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace SixLabors.Fonts.Tables.Cff
@@ -32,7 +31,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
             string fontName = this.ReadNameIndex(reader);
 
-            List<CffDataDicEntry>? dataDicEntries = this.ReadTopDICTIndex(reader);
+            List<CffDataDicEntry>? dataDicEntries = this.ReadTopDictIndex(reader);
             string[] stringIndex = this.ReadStringIndex(reader);
 
             CffTopDictionary topDictionary = this.ResolveTopDictInfo(dataDicEntries, stringIndex);
@@ -40,7 +39,7 @@ namespace SixLabors.Fonts.Tables.Cff
             byte[][] globalSubrRawBuffers = this.ReadGlobalSubrIndex(reader);
 
             this.ReadFDSelect(reader, topDictionary.CidFontInfo);
-            FontDict[] fontDicts = this.ReadFDArray(reader, topDictionary.CidFontInfo);
+            FontDict[] fontDicts = this.ReadFdArray(reader, this.offset, topDictionary.CidFontInfo.FDArray);
 
             CffPrivateDictionary? privateDictionary = this.ReadPrivateDict(reader);
             CffGlyphData[] glyphs = this.ReadCharStringsIndex(reader, topDictionary, globalSubrRawBuffers, fontDicts, privateDictionary);
@@ -64,7 +63,7 @@ namespace SixLabors.Fonts.Tables.Cff
             return reader.ReadString(offset.Length, Iso88591);
         }
 
-        private List<CffDataDicEntry> ReadTopDICTIndex(BigEndianBinaryReader reader)
+        private List<CffDataDicEntry> ReadTopDictIndex(BigEndianBinaryReader reader)
         {
             // 8. Top DICT INDEX
             // This contains the top - level DICTs of all the fonts in the FontSet
@@ -88,7 +87,7 @@ namespace SixLabors.Fonts.Tables.Cff
             // been grouped together with the Top DICT operators for
             // simplicity.The keys from the FontInfo dict are indicated in the
             // Default, notes  column of Table 9)
-            return this.ReadDICTData(reader, offsets[0].Length);
+            return this.ReadDictData(reader, offsets[0].Length);
         }
 
         private string[] ReadStringIndex(BigEndianBinaryReader reader)
@@ -481,80 +480,6 @@ namespace SixLabors.Fonts.Tables.Cff
             }
         }
 
-        private FontDict[] ReadFDArray(BigEndianBinaryReader reader, CidFontInfo cidFontInfo)
-        {
-            if (cidFontInfo.FDArray == 0)
-            {
-                return Array.Empty<FontDict>();
-            }
-
-            reader.BaseStream.Position = this.offset + cidFontInfo.FDArray;
-
-            if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
-            {
-                return Array.Empty<FontDict>();
-            }
-
-            var fontDicts = new FontDict[offsets.Length];
-            for (int i = 0; i < fontDicts.Length; ++i)
-            {
-                // read DICT data
-                List<CffDataDicEntry> dic = this.ReadDICTData(reader, offsets[i].Length);
-
-                // translate
-                int offset = 0;
-                int size = 0;
-                int name = 0;
-
-                foreach (CffDataDicEntry entry in dic)
-                {
-                    switch (entry.Operator.Name)
-                    {
-                        default:
-                            throw new NotSupportedException();
-                        case "FontName":
-                            name = (int)entry.Operands[0].RealNumValue;
-                            break;
-                        case "Private": // private dic
-                            size = (int)entry.Operands[0].RealNumValue;
-                            offset = (int)entry.Operands[1].RealNumValue;
-                            break;
-                    }
-                }
-
-                fontDicts[i] = new FontDict(name, size, offset);
-            }
-
-            foreach (FontDict fdict in fontDicts)
-            {
-                reader.BaseStream.Position = this.offset + fdict.PrivateDicOffset;
-
-                List<CffDataDicEntry> dicData = this.ReadDICTData(reader, fdict.PrivateDicSize);
-
-                if (dicData.Count > 0)
-                {
-                    // Interpret the values of private dict
-                    foreach (CffDataDicEntry dicEntry in dicData)
-                    {
-                        switch (dicEntry.Operator.Name)
-                        {
-                            case "Subrs":
-                                int localSubrsOffset = (int)dicEntry.Operands[0].RealNumValue;
-                                reader.BaseStream.Position = this.offset + fdict.PrivateDicOffset + localSubrsOffset;
-                                fdict.LocalSubr = this.ReadSubrBuffer(reader);
-                                break;
-
-                            case "defaultWidthX":
-                            case "nominalWidthX":
-                                break;
-                        }
-                    }
-                }
-            }
-
-            return fontDicts;
-        }
-
         private CffGlyphData[] ReadCharStringsIndex(
             BigEndianBinaryReader reader,
             CffTopDictionary topDictionary,
@@ -699,7 +624,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 
             reader.BaseStream.Position = this.offset + this.privateDICTOffset;
-            List<CffDataDicEntry> dicData = this.ReadDICTData(reader, this.privateDICTLength);
+            List<CffDataDicEntry> dicData = this.ReadDictData(reader, this.privateDICTLength);
             byte[][] localSubrRawBuffers = Array.Empty<byte[]>();
             int defaultWidthX = 0;
             int nominalWidthX = 0;
@@ -729,108 +654,6 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 
             return new CffPrivateDictionary(localSubrRawBuffers, defaultWidthX, nominalWidthX);
-        }
-
-        private byte[][] ReadSubrBuffer(BigEndianBinaryReader reader)
-        {
-            if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
-            {
-                return Array.Empty<byte[]>();
-            }
-
-            byte[][] rawBufferList = new byte[offsets.Length][];
-
-            for (int i = 0; i < rawBufferList.Length; ++i)
-            {
-                CffIndexOffset offset = offsets[i];
-                rawBufferList[i] = reader.ReadBytes(offset.Length);
-            }
-
-            return rawBufferList;
-        }
-
-        private List<CffDataDicEntry> ReadDICTData(BigEndianBinaryReader reader, int length)
-        {
-            // 4. DICT Data
-
-            // Font dictionary data comprising key-value pairs is represented
-            // in a compact tokenized format that is similar to that used to
-            // represent Type 1 charstrings.
-
-            // Dictionary keys are encoded as 1- or 2-byte operators and dictionary values are encoded as
-            // variable-size numeric operands that represent either integer or
-            // real values.
-
-            //-----------------------------
-            // A DICT is simply a sequence of
-            // operand(s)/operator bytes concatenated together.
-            int maxIndex = (int)(reader.BaseStream.Position + length);
-            List<CffDataDicEntry> dicData = new();
-            while (reader.BaseStream.Position < maxIndex)
-            {
-                CffDataDicEntry dicEntry = this.ReadEntry(reader);
-                dicData.Add(dicEntry);
-            }
-
-            return dicData;
-        }
-        private bool TryReadIndexDataOffsets(BigEndianBinaryReader reader, [NotNullWhen(true)] out CffIndexOffset[]? value)
-        {
-            // INDEX Data
-            // An INDEX is an array of variable-sized objects.It comprises a
-            // header, an offset array, and object data.
-            // The offset array specifies offsets within the object data.
-            // An object is retrieved by
-            // indexing the offset array and fetching the object at the
-            // specified offset.
-            // The object’s length can be determined by subtracting its offset
-            // from the next offset in the offset array.
-            // An additional offset is added at the end of the offset array so the
-            // length of the last object may be determined.
-            // The INDEX format is shown in Table 7
-
-            // Table 7 INDEX Format
-            // Type        Name                  Description
-            // Card16      count                 Number of objects stored in INDEX
-            // OffSize     offSize               Offset array element size
-            // Offset      offset[count + 1]     Offset array(from byte preceding object data)
-            // Card8       data[<varies>]        Object data
-
-            // Offsets in the offset array are relative to the byte that precedes
-            // the object data. Therefore the first element of the offset array
-            // is always 1. (This ensures that every object has a corresponding
-            // offset which is always nonzero and permits the efficient
-            // implementation of dynamic object loading.)
-
-            // An empty INDEX is represented by a count field with a 0 value
-            // and no additional fields.Thus, the total size of an empty INDEX
-            // is 2 bytes.
-
-            // Note 2
-            // An INDEX may be skipped by jumping to the offset specified by the last
-            // element of the offset array
-            ushort count = reader.ReadUInt16();
-            if (count == 0)
-            {
-                value = null;
-                return false;
-            }
-
-            int offSize = reader.ReadByte();
-            int[] offsets = new int[count + 1];
-            var indexElems = new CffIndexOffset[count];
-            for (int i = 0; i <= count; ++i)
-            {
-                offsets[i] = reader.ReadOffset(offSize);
-            }
-
-            for (int i = 0; i < count; ++i)
-            {
-                indexElems[i] = new CffIndexOffset(offsets[i], offsets[i + 1] - offsets[i]);
-            }
-
-            value = indexElems;
-            return true;
         }
     }
 }
