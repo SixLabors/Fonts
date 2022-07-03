@@ -4,10 +4,10 @@
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
-    /// Unicode Joining Groups
+    /// Unicode Arabic Joining Groups
     /// <see href="https://www.unicode.org/versions/Unicode13.0.0/ch09.pdf"/>.
     /// </summary>
-    public enum JoiningGroup
+    public enum ArabicJoiningGroup
     {
         /// <summary>
         /// African_Feh

@@ -568,11 +568,11 @@ namespace SixLabors.Fonts.Unicode
             => UnicodeData.GetGraphemeClusterClass(codePoint.value);
 
         /// <summary>
-        /// Gets the <see cref="JoiningClass"/> for the given codepoint.
+        /// Gets the <see cref="ArabicJoiningClass"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="BidiClass"/>.</returns>
-        internal static JoiningClass GetJoiningClass(CodePoint codePoint)
+        internal static ArabicJoiningClass GetArabicJoiningClass(CodePoint codePoint)
             => new(codePoint);
 
         /// <summary>

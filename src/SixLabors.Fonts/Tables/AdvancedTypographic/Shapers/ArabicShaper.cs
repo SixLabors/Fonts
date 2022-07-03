@@ -99,9 +99,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             for (int i = 0; i < count; i++)
             {
                 GlyphShapingData data = collection.GetGlyphShapingData(i + index);
-                JoiningClass joiningClass = CodePoint.GetJoiningClass(data.CodePoint);
-                JoiningType joiningType = joiningClass.JoiningType;
-                if (joiningType == JoiningType.Transparent)
+                ArabicJoiningClass joiningClass = CodePoint.GetArabicJoiningClass(data.CodePoint);
+                ArabicJoiningType joiningType = joiningClass.JoiningType;
+                if (joiningType == ArabicJoiningType.Transparent)
                 {
                     actions[i] = None;
                     continue;
@@ -152,16 +152,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             }
         }
 
-        private static int GetShapingClassIndex(JoiningType joiningType) => joiningType switch
+        private static int GetShapingClassIndex(ArabicJoiningType joiningType) => joiningType switch
         {
-            JoiningType.NonJoining => 0,
-            JoiningType.LeftJoining => 1,
-            JoiningType.RightJoining => 2,
-            JoiningType.DualJoining or JoiningType.JoinCausing => 3,
+            ArabicJoiningType.NonJoining => 0,
+            ArabicJoiningType.LeftJoining => 1,
+            ArabicJoiningType.RightJoining => 2,
+            ArabicJoiningType.DualJoining or ArabicJoiningType.JoinCausing => 3,
 
             // TODO: ALAPH: 4
             // TODO: DALATH RISH': 5
-            JoiningType.Transparent => 6,
+            ArabicJoiningType.Transparent => 6,
             _ => 0,
         };
     }

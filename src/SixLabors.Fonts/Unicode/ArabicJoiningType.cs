@@ -4,10 +4,10 @@
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
-    /// Unicode Joining Types
+    /// Unicode Arabic Joining Types
     /// <see href="https://www.unicode.org/versions/Unicode13.0.0/ch09.pdf"/> Table 9-3.
     /// </summary>
-    public enum JoiningType
+    public enum ArabicJoiningType
     {
         /// <summary>
         /// Right Joining (R)
