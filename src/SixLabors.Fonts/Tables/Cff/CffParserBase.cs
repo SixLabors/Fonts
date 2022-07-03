@@ -13,6 +13,66 @@ namespace SixLabors.Fonts.Tables.Cff
     {
         private readonly StringBuilder pooledStringBuilder = new();
 
+        protected void ReadFdSelect(BigEndianBinaryReader reader, long offset, CidFontInfo cidFontInfo)
+        {
+            if (cidFontInfo.FDSelect is 0)
+            {
+                return;
+            }
+
+            reader.BaseStream.Position = offset + cidFontInfo.FDSelect;
+            switch (reader.ReadByte())
+            {
+                case 0:
+                {
+                    cidFontInfo.FdSelectFormat = 0;
+                    for (int i = 0; i < cidFontInfo.CIDFountCount; i++)
+                    {
+                        cidFontInfo.FdSelectMap[i] = reader.ReadByte();
+                    }
+
+                    break;
+                }
+
+                case 3:
+                {
+                    cidFontInfo.FdSelectFormat = 3;
+                    ushort nRanges = reader.ReadUInt16();
+                    var ranges = new FDRange[nRanges + 1];
+
+                    cidFontInfo.FdSelectFormat = 3;
+                    cidFontInfo.FdRanges = ranges;
+                    for (int i = 0; i < nRanges; ++i)
+                    {
+                        ranges[i] = new FDRange(reader.ReadUInt16(), reader.ReadByte());
+                    }
+
+                    ranges[nRanges] = new FDRange(reader.ReadUInt16(), 0); // sentinel
+                    break;
+                }
+
+                case 4:
+                {
+                    cidFontInfo.FdSelectFormat = 4;
+                    uint nRanges = reader.ReadUInt32();
+                    var ranges = new FDRange[nRanges + 1];
+
+                    cidFontInfo.FdSelectFormat = 3;
+                    cidFontInfo.FdRanges = ranges;
+                    for (int i = 0; i < nRanges; ++i)
+                    {
+                        ranges[i] = new FDRange(reader.ReadUInt32(), reader.ReadUInt16());
+                    }
+
+                    ranges[nRanges] = new FDRange(reader.ReadUInt32(), 0); // sentinel
+                    break;
+                }
+
+                default:
+                    throw new NotSupportedException("Only FD Select format 0, 3 and 4 are supported");
+            }
+        }
+
         protected FontDict[] ReadFdArray(BigEndianBinaryReader reader, long offset, long fdArrayOffset)
         {
             if (fdArrayOffset is 0)

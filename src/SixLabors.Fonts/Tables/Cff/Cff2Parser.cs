@@ -35,11 +35,21 @@ namespace SixLabors.Fonts.Tables.Cff
             this.ReadTopDictData(reader, topDictLength);
             reader.Seek(hdrSize + topDictLength, SeekOrigin.Begin);
 
+            var cidFontInfo = new CidFontInfo()
+            {
+                FDArray = this.fdArrayOffset.GetValueOrDefault(),
+                FDSelect = this.fdSelectOffset.GetValueOrDefault(),
+            };
+
             byte[][] globalSubrRawBuffers = this.ReadGlobalSubrIndex(reader);
 
             this.itemVariationStore = ItemVariationStore.Load(reader, this.variationStoreOffset);
 
-            // TODO: FDSelect?
+            if (this.fdSelectOffset.HasValue)
+            {
+                this.ReadFdSelect(reader, this.offset, cidFontInfo);
+            }
+
             CffIndexOffset[] charStringOffsets = this.ReadCharStringIndex(reader);
             byte[][] charStringBuffers = this.ReadCharStringBuffers(reader, charStringOffsets);
 
@@ -47,10 +57,7 @@ namespace SixLabors.Fonts.Tables.Cff
             FontDict[] fontDicts = this.ReadFdArray(reader, this.offset, fdArrayOffset);
             var topDictionary = new CffTopDictionary
             {
-                CidFontInfo = new CidFontInfo()
-                {
-                    FDArray = fdArrayOffset,
-                }
+                CidFontInfo = cidFontInfo
             };
 
             var privateDictionary = new CffPrivateDictionary(fontDicts[0].LocalSubr, 0, 0);

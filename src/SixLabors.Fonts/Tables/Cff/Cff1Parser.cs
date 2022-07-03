@@ -31,14 +31,14 @@ namespace SixLabors.Fonts.Tables.Cff
 
             string fontName = this.ReadNameIndex(reader);
 
-            List<CffDataDicEntry>? dataDicEntries = this.ReadTopDictIndex(reader);
+            List<CffDataDicEntry> dataDicEntries = this.ReadTopDictIndex(reader);
             string[] stringIndex = this.ReadStringIndex(reader);
 
             CffTopDictionary topDictionary = this.ResolveTopDictInfo(dataDicEntries, stringIndex);
 
             byte[][] globalSubrRawBuffers = this.ReadGlobalSubrIndex(reader);
 
-            this.ReadFDSelect(reader, topDictionary.CidFontInfo);
+            this.ReadFdSelect(reader, this.offset, topDictionary.CidFontInfo);
             FontDict[] fontDicts = this.ReadFdArray(reader, this.offset, topDictionary.CidFontInfo.FDArray);
 
             CffPrivateDictionary? privateDictionary = this.ReadPrivateDict(reader);
@@ -417,66 +417,6 @@ namespace SixLabors.Fonts.Tables.Cff
                     sid++;
                 }
                 while (count > 0);
-            }
-        }
-
-        private void ReadFDSelect(BigEndianBinaryReader reader, CidFontInfo cidFontInfo)
-        {
-            if (cidFontInfo.FDSelect == 0)
-            {
-                return;
-            }
-
-            reader.BaseStream.Position = this.offset + cidFontInfo.FDSelect;
-            switch (reader.ReadByte())
-            {
-                case 0:
-                {
-                    cidFontInfo.FdSelectFormat = 0;
-                    for (int i = 0; i < cidFontInfo.CIDFountCount; i++)
-                    {
-                        cidFontInfo.FdSelectMap[i] = reader.ReadByte();
-                    }
-
-                    break;
-                }
-
-                case 3:
-                {
-                    cidFontInfo.FdSelectFormat = 3;
-                    ushort nRanges = reader.ReadUInt16();
-                    var ranges = new FDRange[nRanges + 1];
-
-                    cidFontInfo.FdSelectFormat = 3;
-                    cidFontInfo.FdRanges = ranges;
-                    for (int i = 0; i < nRanges; ++i)
-                    {
-                        ranges[i] = new FDRange(reader.ReadUInt16(), reader.ReadByte());
-                    }
-
-                    ranges[nRanges] = new FDRange(reader.ReadUInt16(), 0); // sentinel
-                    break;
-                }
-
-                case 4:
-                {
-                    cidFontInfo.FdSelectFormat = 4;
-                    uint nRanges = reader.ReadUInt32();
-                    var ranges = new FDRange[nRanges + 1];
-
-                    cidFontInfo.FdSelectFormat = 3;
-                    cidFontInfo.FdRanges = ranges;
-                    for (int i = 0; i < nRanges; ++i)
-                    {
-                        ranges[i] = new FDRange(reader.ReadUInt32(), reader.ReadUInt16());
-                    }
-
-                    ranges[nRanges] = new FDRange(reader.ReadUInt32(), 0); // sentinel
-                    break;
-                }
-
-                default:
-                    throw new NotSupportedException("Only FD Select format 0 and 3 are supported");
             }
         }
 
