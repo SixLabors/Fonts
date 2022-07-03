@@ -55,7 +55,7 @@ namespace SixLabors.Fonts.Tables.Cff
             int glyphCount = charStringOffsets.Length;
             CffGlyphData[] glyphs = this.ReadCharStringsIndex(topDictionary, globalSubrRawBuffers, fontDicts, privateDictionary, charStringBuffers, glyphCount);
 
-            return new(fontName, topDictionary, glyphs, itemVariationStore);
+            return new(fontName, topDictionary, glyphs, this.itemVariationStore);
         }
 
         private void ReadTopDictData(BigEndianBinaryReader reader, ushort topDictLength)

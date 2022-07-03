@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tables.Cff
         /// Gets the item variation store.
         /// </summary>
         /// <returns>The item variation store. If CFF1, there is no variations and null will be returned instead.</returns>
-        ItemVariationStore ItemVariationStore
+        ItemVariationStore? ItemVariationStore
         {
             get;
         }

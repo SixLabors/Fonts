@@ -16,7 +16,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public int GlyphCount => this.glyphs.Length;
 
-        public ItemVariationStore ItemVariationStore => throw new InvalidFontFileException("CFF1 does not support variations");
+        public ItemVariationStore? ItemVariationStore => null;
 
         public CffGlyphData GetGlyph(int index)
             => this.glyphs[index];

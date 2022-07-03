@@ -10,11 +10,11 @@ namespace SixLabors.Fonts.Tables.Cff
     {
         // helper class
         private readonly int format;
-        private readonly FDRange3[] ranges;
+        private readonly FDRange[] ranges;
         private readonly Dictionary<int, byte> fdSelectMap;
-        private ushort currentGlyphIndex;
-        private ushort endGlyphIndexMax;
-        private FDRange3 currentRange;
+        private uint currentGlyphIndex;
+        private uint endGlyphIndexMax;
+        private FDRange currentRange;
         private int currentSelectedRangeIndex;
 
         public FDRangeProvider(CidFontInfo cidFontInfo)
@@ -40,7 +40,7 @@ namespace SixLabors.Fonts.Tables.Cff
             this.SelectedFDArray = 0;
         }
 
-        public byte SelectedFDArray { get; private set; }
+        public ushort SelectedFDArray { get; private set; }
 
         public void SetCurrentGlyphIndex(ushort index)
         {
@@ -51,6 +51,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     break;
 
                 case 3:
+                case 4:
                     // Find proper range for selected index.
                     if (index >= this.currentRange.First && index < this.endGlyphIndexMax)
                     {

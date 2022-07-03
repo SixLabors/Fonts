@@ -16,10 +16,8 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             {
                 return SimpleGlyphLoader.LoadSimpleGlyph(reader, contoursCount, bounds);
             }
-            else
-            {
-                return CompositeGlyphLoader.LoadCompositeGlyph(reader, bounds);
-            }
+
+            return CompositeGlyphLoader.LoadCompositeGlyph(reader, bounds);
         }
     }
 }

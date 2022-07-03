@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public int FdSelectFormat { get; set; }
 
-        public FDRange3[] FdRanges { get; set; } = Array.Empty<FDRange3>();
+        public FDRange[] FdRanges { get; set; } = Array.Empty<FDRange>();
 
         /// <summary>
         /// Gets or sets the fd select map, which maps glyph # to font #.

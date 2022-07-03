@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.Woff;
 
@@ -26,6 +27,13 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
             Bounds fallbackEmptyBounds = reader.GetTable<HeadTable>().Bounds;
 
+            FVarTable? fvar = reader.TryGetTable<FVarTable>();
+            AVarTable? avar = reader.TryGetTable<AVarTable>();
+            GVarTable? gvar = reader.TryGetTable<GVarTable>();
+
+            
+            //GlyphVariationProcessor? glyphVariationProcessor = fvar is null ? null : new GlyphVariationProcessor(itemStore, fvar, avar, gvar);
+            
             using (BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(binaryReader, reader.TableFormat, locations, fallbackEmptyBounds);

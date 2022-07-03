@@ -54,7 +54,7 @@ namespace SixLabors.Fonts
             FVarTable? fVar = reader.TryGetTable<FVarTable>();
             AVarTable? aVar = reader.TryGetTable<AVarTable>();
             GVarTable? gVar = reader.TryGetTable<GVarTable>();
-            GlyphVariationProcessor glyphVariationProcessor = null;
+            GlyphVariationProcessor? glyphVariationProcessor = null;
             if (cff?.ItemVariationStore != null)
             {
                 if (fVar is null)

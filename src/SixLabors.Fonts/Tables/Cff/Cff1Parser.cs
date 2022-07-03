@@ -432,6 +432,7 @@ namespace SixLabors.Fonts.Tables.Cff
             switch (reader.ReadByte())
             {
                 case 0:
+                {
                     cidFontInfo.FdSelectFormat = 0;
                     for (int i = 0; i < cidFontInfo.CIDFountCount; i++)
                     {
@@ -439,21 +440,41 @@ namespace SixLabors.Fonts.Tables.Cff
                     }
 
                     break;
+                }
 
                 case 3:
+                {
                     cidFontInfo.FdSelectFormat = 3;
                     ushort nRanges = reader.ReadUInt16();
-                    var ranges = new FDRange3[nRanges + 1];
+                    var ranges = new FDRange[nRanges + 1];
 
                     cidFontInfo.FdSelectFormat = 3;
                     cidFontInfo.FdRanges = ranges;
                     for (int i = 0; i < nRanges; ++i)
                     {
-                        ranges[i] = new FDRange3(reader.ReadUInt16(), reader.ReadByte());
+                        ranges[i] = new FDRange(reader.ReadUInt16(), reader.ReadByte());
                     }
 
-                    ranges[nRanges] = new FDRange3(reader.ReadUInt16(), 0); // sentinel
+                    ranges[nRanges] = new FDRange(reader.ReadUInt16(), 0); // sentinel
                     break;
+                }
+
+                case 4:
+                {
+                    cidFontInfo.FdSelectFormat = 4;
+                    uint nRanges = reader.ReadUInt32();
+                    var ranges = new FDRange[nRanges + 1];
+
+                    cidFontInfo.FdSelectFormat = 3;
+                    cidFontInfo.FdRanges = ranges;
+                    for (int i = 0; i < nRanges; ++i)
+                    {
+                        ranges[i] = new FDRange(reader.ReadUInt32(), reader.ReadUInt16());
+                    }
+
+                    ranges[nRanges] = new FDRange(reader.ReadUInt32(), 0); // sentinel
+                    break;
+                }
 
                 default:
                     throw new NotSupportedException("Only FD Select format 0 and 3 are supported");

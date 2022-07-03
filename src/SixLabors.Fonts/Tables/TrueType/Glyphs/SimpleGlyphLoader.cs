@@ -71,7 +71,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             // uint16         | instructionLength   | Total number of bytes for instructions.
             // uint8          | instructions[n]     | Array of instructions for each glyph; n is the number of instructions.
             // uint8          | flags[n]            | Array of flags for each coordinate in outline; n is the number of flags.
-            // uint8 or int16 | xCoordinates[ ]     | First coordinates relative to(0, 0); others are relative to previous point.
+            // uint8 or int16 | xCoordinates[]      | First coordinates relative to(0, 0); others are relative to previous point.
             // uint8 or int16 | yCoordinates[]      | First coordinates relative to (0, 0); others are relative to previous point.
             ushort[] endPoints = reader.ReadUInt16Array(count);
 
