@@ -140,48 +140,51 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 // Shapers can adjust the count.
                 count = Math.Min(count, collection.Count - index);
 
-                IEnumerable<Tag> stageFeatures = shaper.GetShapingStageFeatures();
+                IEnumerable<ShapingStage> stages = shaper.GetShapingStages();
 
                 int currentCount = collection.Count;
                 SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
-                foreach (Tag stageFeature in stageFeatures)
+                foreach (ShapingStage stage in stages)
                 {
-                    if (!this.TryGetFeatureLookups(in stageFeature, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
-                    {
-                        continue;
-                    }
+                    stage.PreProcessFeature(collection, index, count);
 
-                    // Apply features in order.
-                    foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
+                    Tag featureTag = stage.FeatureTag;
+                    if (this.TryGetFeatureLookups(in featureTag, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
                     {
-                        Tag feature = featureLookup.Feature;
-                        iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
-
-                        while (iterator.Index < index + count)
+                        // Apply features in order.
+                        foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
                         {
-                            if (collection.Count >= maxCount || currentOperations++ >= maxOperationsCount)
-                            {
-                                return;
-                            }
+                            Tag feature = featureLookup.Feature;
+                            iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
 
-                            List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
-                            if (!HasFeature(glyphFeatures, in feature))
+                            while (iterator.Index < index + count)
                             {
+                                if (collection.Count >= maxCount || currentOperations++ >= maxOperationsCount)
+                                {
+                                    return;
+                                }
+
+                                List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
+                                if (!HasFeature(glyphFeatures, in feature))
+                                {
+                                    iterator.Next();
+                                    continue;
+                                }
+
+                                featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
                                 iterator.Next();
-                                continue;
-                            }
 
-                            featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
-                            iterator.Next();
-
-                            // Account for substitutions changing the length of the collection.
-                            if (collection.Count != currentCount)
-                            {
-                                count = count - (currentCount - collection.Count);
-                                currentCount = collection.Count;
+                                // Account for substitutions changing the length of the collection.
+                                if (collection.Count != currentCount)
+                                {
+                                    count -= currentCount - collection.Count;
+                                    currentCount = collection.Count;
+                                }
                             }
                         }
                     }
+
+                    stage.PostProcessFeature(collection, index, count);
                 }
             }
         }

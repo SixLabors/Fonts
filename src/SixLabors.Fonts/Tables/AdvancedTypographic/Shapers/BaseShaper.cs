@@ -17,6 +17,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         /// <param name="count">The number of elements to assign.</param>
         public abstract void AssignFeatures(IGlyphShapingCollection collection, int index, int count);
 
-        public abstract IEnumerable<Tag> GetShapingStageFeatures();
+        public abstract IEnumerable<ShapingStage> GetShapingStages();
     }
 }

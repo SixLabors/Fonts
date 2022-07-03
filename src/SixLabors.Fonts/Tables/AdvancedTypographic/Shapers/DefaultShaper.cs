@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using SixLabors.Fonts.Unicode;
 
@@ -58,7 +59,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static readonly CodePoint Slash = new(0x002F);
 
-        private readonly List<Tag> stageFeatures = new();
+        private readonly HashSet<ShapingStage> shapingStages = new();
 
         private readonly KerningMode kerningMode;
 
@@ -146,7 +147,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             }
         }
 
-        protected void AddFeature(IGlyphShapingCollection collection, int index, int count, Tag feature, bool enabled = true)
+        protected void AddFeature(
+            IGlyphShapingCollection collection,
+            int index,
+            int count,
+            Tag feature,
+            bool enabled = true,
+            Action<IGlyphShapingCollection, int, int>? preAction = null,
+            Action<IGlyphShapingCollection, int, int>? postAction = null)
         {
             if (this.kerningMode == KerningMode.None)
             {
@@ -162,13 +170,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 collection.AddShapingFeature(i, new TagEntry(feature, enabled));
             }
 
-            if (!this.stageFeatures.Contains(feature))
-            {
-                this.stageFeatures.Add(feature);
-            }
+            this.shapingStages.Add(new ShapingStage(feature, preAction, postAction));
         }
 
-        public override IEnumerable<Tag> GetShapingStageFeatures() => this.stageFeatures;
+        public override IEnumerable<ShapingStage> GetShapingStages() => this.shapingStages;
 
         private void AssignFractionalFeatures(IGlyphShapingCollection collection, int index, int count)
         {
