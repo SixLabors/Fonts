@@ -6,6 +6,10 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 {
+    /// <summary>
+    /// Implements loading Simple Glyph Description which is part of the `glyph`table.
+    /// </summary>
+    /// <see href="https://docs.microsoft.com/en-us/typography/opentype/otspec160/glyf#simple-glyph-description"/>
     internal class SimpleGlyphLoader : GlyphLoader
     {
         private readonly short[] xs;
@@ -67,12 +71,25 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 return new SimpleGlyphLoader(bounds);
             }
 
-            // uint16         | endPtsOfContours[n] | Array of last points of each contour; n is the number of contours.
-            // uint16         | instructionLength   | Total number of bytes for instructions.
-            // uint8          | instructions[n]     | Array of instructions for each glyph; n is the number of instructions.
-            // uint8          | flags[n]            | Array of flags for each coordinate in outline; n is the number of flags.
-            // uint8 or int16 | xCoordinates[]      | First coordinates relative to(0, 0); others are relative to previous point.
-            // uint8 or int16 | yCoordinates[]      | First coordinates relative to (0, 0); others are relative to previous point.
+            // +-----------------+----------------------------------------+--------------------------------------------------------------------+
+            // | Type            | Name                                   | Description                                                        |
+            // +=================+========================================+====================================================================+
+            // | uint16          | endPtsOfContours[n]                    | Array of last points of each contour; n is the number of contours. |
+            // +-----------------+----------------------------------------+--------------------------------------------------------------------+
+            // | uint16          | instructionLength                      | Total number of bytes for instructions.                            |
+            // +-----------------+----------------------------------------+--------------------------------------------------------------------+
+            // | uint8           | instructions[n]                        | Array of instructions for each glyph;                              |
+            // |                 |                                        | n is the number of instructions.                                   |
+            // +-----------------+----------------------------------------+--------------------------------------------------------------------+
+            // | uint8           | flags[n]                               | Array of flags for each coordinate in outline;                     |
+            // |                 |                                        | n is the number of flags.                                          |
+            // +-----------------+----------------------------------------+--------------------------------------------------------------------+
+            // | uint8 or int16  | xCoordinates[]                         | First coordinates relative to(0, 0);                               |
+            // |                 |                                        | others are relative to previous point.                             |
+            // +-----------------+----------------------------------------+--------------------------------------------------------------------+
+            // | uint8 or int16  | yCoordinates[]                         | First coordinates relative to (0, 0);                              |
+            // |                 |                                        | others are relative to previous point.                             |
+            // +-----------------+----------------------------------------+--------------------------------------------------------------------+
             ushort[] endPoints = reader.ReadUInt16Array(count);
 
             ushort instructionSize = reader.ReadUInt16();
