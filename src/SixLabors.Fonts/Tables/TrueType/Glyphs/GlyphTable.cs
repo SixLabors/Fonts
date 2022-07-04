@@ -31,9 +31,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             AVarTable? avar = reader.TryGetTable<AVarTable>();
             GVarTable? gvar = reader.TryGetTable<GVarTable>();
 
-            
-            //GlyphVariationProcessor? glyphVariationProcessor = fvar is null ? null : new GlyphVariationProcessor(itemStore, fvar, avar, gvar);
-            
+            // GlyphVariationProcessor? glyphVariationProcessor = fvar is null ? null : new GlyphVariationProcessor(itemStore, fvar, avar, gvar);
             using (BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
             {
                 return Load(binaryReader, reader.TableFormat, locations, fallbackEmptyBounds);

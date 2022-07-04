@@ -41,12 +41,46 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         [Flags]
         private enum Flags : byte
         {
+            /// <summary>
+            /// The point is is off the curve.
+            /// </summary>
             ControlPoint = 0,
+
+            /// <summary>
+            /// The point is on the curve.
+            /// </summary>
             OnCurve = 1,
+
+            /// <summary>
+            /// If set, the corresponding x-coordinate is 1 byte long. If not set, 2 bytes.
+            /// </summary>
             XByte = 2,
+
+            /// <summary>
+            /// If set, the corresponding y-coordinate is 1 byte long. If not set, 2 bytes.
+            /// </summary>
             YByte = 4,
+
+            /// <summary>
+            /// f set, the next byte specifies the number of additional times this set of flags is to be repeated.
+            /// In this way, the number of flags listed can be smaller than the number of points in a character.
+            /// </summary>
             Repeat = 8,
+
+            /// <summary>
+            /// This flag has two meanings, depending on how the x-Short Vector flag is set.
+            /// If x-Short Vector is set, this bit describes the sign of the value, with 1 equalling positive and 0 negative.
+            /// If the x-Short Vector bit is not set and this bit is set, then the current x-coordinate is the same as the previous x-coordinate.
+            /// If the x-Short Vector bit is not set and this bit is also not set, the current x-coordinate is a signed 16-bit delta vector.
+            /// </summary>
             XSignOrSame = 16,
+
+            /// <summary>
+            /// This flag has two meanings, depending on how the y-Short Vector flag is set.
+            /// If y-Short Vector is set, this bit describes the sign of the value, with 1 equalling positive and 0 negative.
+            /// If the y-Short Vector bit is not set and this bit is set, then the current y-coordinate is the same as the previous y-coordinate.
+            /// If the y-Short Vector bit is not set and this bit is also not set, the current y-coordinate is a signed 16-bit delta vector.
+            /// </summary>
             YSignOrSame = 32
         }
 
