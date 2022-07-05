@@ -54,6 +54,7 @@ namespace SixLabors.Fonts.Tables
             this.Register(AVarTable.TableName, AVarTable.Load);
             this.Register(GVarTable.TableName, GVarTable.Load);
             this.Register(FVarTable.TableName, FVarTable.Load);
+            this.Register(HVarTable.TableName, HVarTable.Load);
         }
 
         public static TableLoader Default { get; } = new();

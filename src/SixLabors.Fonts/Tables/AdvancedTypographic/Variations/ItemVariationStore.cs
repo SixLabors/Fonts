@@ -6,6 +6,10 @@ using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 {
+    /// <summary>
+    /// Implements reading the item variation store, which is used in most glyph variation data.
+    /// <see href="https://docs.microsoft.com/de-de/typography/opentype/spec/otvarcommonformats#item-variation-store"/>
+    /// </summary>
     internal class ItemVariationStore
     {
         private static readonly ItemVariationStore EmptyItemVariationStoreTable = new(VariationRegionList.EmptyVariationRegionList, Array.Empty<ItemVariationData>());

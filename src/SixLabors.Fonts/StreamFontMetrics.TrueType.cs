@@ -71,6 +71,7 @@ namespace SixLabors.Fonts
             FVarTable? fvar = reader.TryGetTable<FVarTable>();
             AVarTable? avar = reader.TryGetTable<AVarTable>();
             GVarTable? gvar = reader.TryGetTable<GVarTable>();
+            HVarTable? hvar = reader.TryGetTable<HVarTable>();
 
             // Load using recommended order for best performance.
             // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
