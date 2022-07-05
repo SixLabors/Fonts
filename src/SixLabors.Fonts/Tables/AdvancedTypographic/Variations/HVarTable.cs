@@ -6,12 +6,12 @@ using System;
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 {
     /// <summary>
-    /// Implements reading the font variations table `hvar`.
+    /// Implements reading the font variations table `HVAR`.
     /// <see href="https://docs.microsoft.com/de-de/typography/opentype/spec/hvar"/>
     /// </summary>
     internal class HVarTable : Table
     {
-        internal const string TableName = "hvar";
+        internal const string TableName = "HVAR";
 
         public HVarTable(ItemVariationStore itemVariationStore) => this.ItemVariationStore = itemVariationStore;
 

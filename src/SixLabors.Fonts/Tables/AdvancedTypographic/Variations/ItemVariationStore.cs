@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
@@ -12,8 +11,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     /// </summary>
     internal class ItemVariationStore
     {
-        private static readonly ItemVariationStore EmptyItemVariationStoreTable = new(VariationRegionList.EmptyVariationRegionList, Array.Empty<ItemVariationData>());
-
         public ItemVariationStore(VariationRegionList variationRegionList, ItemVariationData[] itemVariations)
         {
             this.VariationRegionList = variationRegionList;
@@ -24,18 +21,23 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
         public ItemVariationData[] ItemVariations { get; }
 
-        public static ItemVariationStore Load(BigEndianBinaryReader reader, long offset)
+        public static ItemVariationStore Load(BigEndianBinaryReader reader, long offset, long? length = null)
         {
+            // ItemVariationStore
+            // +--------------------------+--------------------------------------------------+-------------------------------------------------------------------------+
+            // | Type                     | Name                                             | Description                                                             |
+            // +==========================+==================================================+=========================================================================+
+            // | uint16                   | format                                           | Format — set to 1                                                       |
+            // +--------------------------+--------------------------------------------------+-------------------------------------------------------------------------+
+            // | Offset32                 | variationRegionListOffset                        | Offset in bytes from the start of the item variation store              |
+            // |                          |                                                  | to the variation region list.                                           |
+            // +--------------------------+--------------------------------------------------+-------------------------------------------------------------------------+
+            // | uint16                   | itemVariationDataCount                           | The number of item variation data subtables.                            |
+            // +--------------------------+--------------------------------------------------+-------------------------------------------------------------------------+
+            // | Offset32                 | itemVariationDataOffsets[itemVariationDataCount] | Offsets in bytes from the start of the item variation store             |
+            // |                          |                                                  | to each item variation data subtable.                                   |
+            // +--------------------------+--------------------------------------------------+-------------------------------------------------------------------------+
             reader.Seek(offset, SeekOrigin.Begin);
-
-            // Length in bytes of the Item Variation Store structure that follows.
-            ushort length = reader.ReadUInt16();
-            if (length == 0)
-            {
-                return EmptyItemVariationStoreTable;
-            }
-
-            long variationDataStoreStart = offset + 2;
 
             ushort format = reader.ReadUInt16();
             if (format != 1)
@@ -43,31 +45,32 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                 throw new InvalidFontFileException($"Invalid value for variation Store Format {format}. Should be '1'.");
             }
 
-            uint variationRegionListOffset = reader.ReadUInt32();
+            uint variationRegionListOffset = reader.ReadOffset32();
             ushort itemVariationDataCount = reader.ReadUInt16();
 
-            if (variationRegionListOffset > length)
+            if (length.HasValue && variationRegionListOffset > length)
             {
                 throw new InvalidFontFileException("Invalid variation region list offset");
             }
 
             var itemVariations = new ItemVariationData[itemVariationDataCount];
+            long itemVariationsOffset = reader.BaseStream.Position;
             for (int i = 0; i < itemVariationDataCount; i++)
             {
                 uint variationDataOffset = reader.ReadOffset32();
-                if (offset >= length)
+                itemVariationsOffset += 4;
+                if (length.HasValue && offset + variationDataOffset >= length)
                 {
                     throw new InvalidFontFileException("Bad offset to variation data subtable");
                 }
 
-                var itemVariationData = ItemVariationData.Load(reader, variationDataStoreStart + variationDataOffset);
+                var itemVariationData = ItemVariationData.Load(reader, offset + variationDataOffset);
                 itemVariations[i] = itemVariationData;
+
+                reader.BaseStream.Position = itemVariationsOffset;
             }
 
-            var variationRegionList = VariationRegionList.Load(reader, variationDataStoreStart + variationRegionListOffset);
-
-            // Make sure we point to the stream to the end of the variation store data.
-            reader.Seek(offset + length, SeekOrigin.Begin);
+            var variationRegionList = VariationRegionList.Load(reader, offset + variationRegionListOffset);
 
             return new ItemVariationStore(variationRegionList, itemVariations);
         }

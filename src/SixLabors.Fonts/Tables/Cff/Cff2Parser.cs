@@ -14,6 +14,8 @@ namespace SixLabors.Fonts.Tables.Cff
     /// </summary>
     internal class Cff2Parser : CffParserBase
     {
+        private static readonly ItemVariationStore EmptyItemVariationStoreTable = new(VariationRegionList.EmptyVariationRegionList, Array.Empty<ItemVariationData>());
+
         private long offset;
 
         private int fontMatrixOffset;
@@ -43,7 +45,13 @@ namespace SixLabors.Fonts.Tables.Cff
 
             byte[][] globalSubrRawBuffers = this.ReadGlobalSubrIndex(reader);
 
-            this.itemVariationStore = ItemVariationStore.Load(reader, this.variationStoreOffset);
+            // Length in bytes of the Item Variation Store structure that follows.
+            reader.Seek(this.variationStoreOffset, SeekOrigin.Begin);
+            ushort variationStoreLength = reader.ReadUInt16();
+            this.itemVariationStore = variationStoreLength == 0 ? EmptyItemVariationStoreTable : ItemVariationStore.Load(reader, this.variationStoreOffset + 2);
+
+            // Make sure we point to the stream to the end of the variation store data.
+            reader.Seek(offset + variationStoreLength, SeekOrigin.Begin);
 
             if (this.fdSelectOffset.HasValue)
             {
