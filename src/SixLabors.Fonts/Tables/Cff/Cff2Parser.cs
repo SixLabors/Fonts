@@ -25,13 +25,10 @@ namespace SixLabors.Fonts.Tables.Cff
         private int? fdSelectOffset;
         private ItemVariationStore? itemVariationStore;
 
-        public Cff2Font Load(BigEndianBinaryReader reader, byte hdrSize, ushort topDictLength, long offset)
+        public Cff2Font Load(BigEndianBinaryReader reader, byte hdrSize, ushort topDictLength, string fontName, long offset)
         {
             this.offset = offset;
             reader.Seek(hdrSize, SeekOrigin.Begin);
-
-            // TODO: spec states: font name can be copied from the name ID 6 value in the 'name' table.
-            string fontName = "placeHolder";
 
             long startPos = reader.BaseStream.Position;
             this.ReadTopDictData(reader, topDictLength);

@@ -10,6 +10,6 @@ namespace SixLabors.Fonts.Tables.Cff
         public Cff2Font(string name, CffTopDictionary metrics, CffGlyphData[] glyphs, ItemVariationStore itemVariationStore)
             : base(name, metrics, glyphs) => this.ItemVariationStore = itemVariationStore;
 
-        public ItemVariationStore? ItemVariationStore { get; set; }
+        public ItemVariationStore ItemVariationStore { get; set; }
     }
 }
