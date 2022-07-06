@@ -7,15 +7,29 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 {
     /// <summary>
     /// Implements reading the font variations table `HVAR`.
+    /// The HVAR table is used in variable fonts to provide variations for horizontal glyph metrics values.
+    /// This can be used to provide variation data for advance widths in the 'hmtx' table.
     /// <see href="https://docs.microsoft.com/de-de/typography/opentype/spec/hvar"/>
     /// </summary>
     internal class HVarTable : Table
     {
         internal const string TableName = "HVAR";
 
-        public HVarTable(ItemVariationStore itemVariationStore) => this.ItemVariationStore = itemVariationStore;
+        public HVarTable(ItemVariationStore itemVariationStore, DeltaSetIndexMap[] advanceWidthMapping, DeltaSetIndexMap[] lsbMapping, DeltaSetIndexMap[] rsbMapping)
+        {
+            this.ItemVariationStore = itemVariationStore;
+            this.AdvanceWidthMapping = advanceWidthMapping;
+            this.LsbMapping = lsbMapping;
+            this.RsbMapping = rsbMapping;
+        }
 
         public ItemVariationStore ItemVariationStore { get; }
+
+        public DeltaSetIndexMap[] AdvanceWidthMapping { get; }
+
+        public DeltaSetIndexMap[] LsbMapping { get; }
+
+        public DeltaSetIndexMap[] RsbMapping { get; }
 
         public static HVarTable? Load(FontReader reader)
         {
@@ -66,11 +80,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
             var itemVariationStore = ItemVariationStore.Load(reader, itemVariationStoreOffset);
 
-            var advanceWidthMapping = DeltaSetIndexMap.Load(reader, advanceWidthMappingOffset);
-            var lsbMapping = DeltaSetIndexMap.Load(reader, lsbMappingOffset);
-            var rsbMapping = DeltaSetIndexMap.Load(reader, rsbMappingOffset);
+            DeltaSetIndexMap[] advanceWidthMapping = DeltaSetIndexMap.Load(reader, advanceWidthMappingOffset);
+            DeltaSetIndexMap[] lsbMapping = DeltaSetIndexMap.Load(reader, lsbMappingOffset);
+            DeltaSetIndexMap[] rsbMapping = DeltaSetIndexMap.Load(reader, rsbMappingOffset);
 
-            return new HVarTable(itemVariationStore);
+            return new HVarTable(itemVariationStore, advanceWidthMapping, lsbMapping, rsbMapping);
         }
     }
 }

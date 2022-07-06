@@ -12,22 +12,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
         private const int MapEntrySizeMask = 0x30;
 
-        public DeltaSetIndexMap(int entry, int outerIndex, int innerIndex)
+        public DeltaSetIndexMap(int outerIndex, int innerIndex)
         {
-            this.Entry = entry;
             this.OuterIndex = outerIndex;
             this.InnerIndex = innerIndex;
         }
-
-        public int Entry { get; }
 
         public int OuterIndex { get; }
 
         public int InnerIndex { get; }
 
-        public static DeltaSetIndexMap Load(BigEndianBinaryReader reader, long offset)
+        public static DeltaSetIndexMap[] Load(BigEndianBinaryReader reader, long offset)
         {
-            // DeltaSetIndexMap format 0.
+            // DeltaSetIndexMap.
             // +-----------------+----------------------------------------+-----------------------------------------------------------------------------------+
             // | Type            | Name                                   | Description                                                                       |
             // +=================+========================================+===================================================================================+
@@ -49,11 +46,36 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                 throw new NotSupportedException("Only format 0 or 1 of DeltaSetIndexMap is supported");
             }
 
-            int entry = (entryFormat & MapEntrySizeMask) >> (4 + 1);
-            int outerIndex = entry >> ((entryFormat & InnerIndexBitCountMask) + 1);
-            int innerIndex = entry & ((1 << ((entryFormat & InnerIndexBitCountMask) + 1)) - 1);
+            int entrySize = ((entryFormat & MapEntrySizeMask) >> 4) + 1;
+            int outerIndex = entrySize >> ((entryFormat & InnerIndexBitCountMask) + 1);
+            int innerIndex = entrySize & ((1 << ((entryFormat & InnerIndexBitCountMask) + 1)) - 1);
 
-            return new DeltaSetIndexMap(entry, outerIndex, innerIndex);
+            var deltaSetIndexMaps = new DeltaSetIndexMap[mapCount];
+            for (int i = 0; i < mapCount; i++)
+            {
+                int entry;
+                switch (entrySize)
+                {
+                    case 1:
+                        entry = reader.ReadByte();
+                        break;
+                    case 2:
+                        entry = (reader.ReadByte() << 8) | reader.ReadByte();
+                        break;
+                    case 3:
+                        entry = (reader.ReadByte() << 16) | (reader.ReadByte() << 8) | reader.ReadByte();
+                        break;
+                    case 4:
+                        entry = (reader.ReadByte() << 24) | (reader.ReadByte() << 16) | (reader.ReadByte() << 8) | reader.ReadByte();
+                        break;
+                    default:
+                        throw new NotSupportedException("unsupported delta set index map");
+                }
+
+                deltaSetIndexMaps[i] = new DeltaSetIndexMap((ushort)(entry & innerIndex), (ushort)(entry >> outerIndex));
+            }
+
+            return deltaSetIndexMaps;
         }
     }
 }
