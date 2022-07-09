@@ -34,7 +34,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             // +----------------------+-------------------------------------------+------------------------------------------------------------------------------+
             // | Offset16             | dataOffset                                | Offset from the start of the GlyphVariationData table to the serialized data.|
             // +----------------------+-------------------------------------------+------------------------------------------------------------------------------+
-            // | TupleVariation       |tupleVariationHeaders[tupleVariationCount] | Array of tuple variation headers.                                            |
+            // | TupleVariation       | tupleVariationHeaders[tupleVariationCount]| Array of tuple variation headers.                                            |
             // +----------------------+-------------------------------------------+------------------------------------------------------------------------------+
             reader.Seek(offset, SeekOrigin.Begin);
             ushort tupleVariationCount = reader.ReadUInt16();

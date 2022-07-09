@@ -10,11 +10,35 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     [DebuggerDisplay("ItemCount: {ItemCount}, WordDeltaCount: {WordDeltaCount}, RegionIndexCount: {RegionIndexes.Length}")]
     internal class ItemVariationData
     {
-        private ItemVariationData(ushort itemCount, ushort wordDeltaCount, ushort[] regionIndices)
+        /// <summary>
+        /// Count of “word” deltas.
+        /// </summary>
+        private const int WordDeltaCountMask = 0x7FFF;
+
+        /// <summary>
+        /// Flag indicating that “word” deltas are long (int32).
+        /// </summary>
+        private const int LongWordsMask = 0x8000;
+
+        private ItemVariationData(ushort itemCount, ushort wordDeltaCount, ushort[] regionIndices, uint[] longDeltas, ushort[] shortDeltas)
         {
             this.ItemCount = itemCount;
             this.WordDeltaCount = wordDeltaCount;
             this.RegionIndexes = regionIndices;
+            this.LongDeltas = longDeltas;
+            this.ShortDeltas = shortDeltas;
+
+            this.Deltas = new uint[longDeltas.Length + shortDeltas.Length];
+            int offset = 0;
+            for (int i = 0; i < longDeltas.Length; i++)
+            {
+                this.Deltas[offset++] = longDeltas[i];
+            }
+
+            for (int i = 0; i < shortDeltas.Length; i++)
+            {
+                this.Deltas[offset++] = shortDeltas[i];
+            }
         }
 
         public ushort ItemCount { get; }
@@ -22,6 +46,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
         public ushort WordDeltaCount { get; }
 
         public ushort[] RegionIndexes { get; }
+
+        public uint[] LongDeltas { get; }
+
+        public ushort[] ShortDeltas { get; }
+
+        public uint[] Deltas { get; }
 
         public static ItemVariationData Load(BigEndianBinaryReader reader, long offset)
         {
@@ -50,12 +80,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                 regionIndexes[i] = reader.ReadUInt16();
             }
 
-            // TODO: how to deal with delta sets?
-            for (int i = 0; i < itemCount; i++)
+            // Logically, each DeltaSet record has regionIndexCount number of elements. The elements are represented using long and short types.
+            // These are either int16 and int8, or int32 and int16, according to whether the LONG_WORDS flag is set.
+            // The delta array has a sequence of deltas using the long type followed by a sequence of deltas using the short type.
+            bool longWords = (wordDeltaCount & LongWordsMask) == LongWordsMask;
+            int wordDeltas = wordDeltaCount & WordDeltaCountMask;
+            uint[] longDeltas = new uint[wordDeltas];
+            for (int i = 0; i < wordDeltas; i++)
             {
+                longDeltas[i] = longWords ? reader.ReadUInt32() : reader.ReadUInt16();
             }
 
-            return new ItemVariationData(itemCount, wordDeltaCount, regionIndexes);
+            int remaining = regionIndexCount - wordDeltas;
+            ushort[] shortDeltas = new ushort[remaining];
+            for (int i = 0; i < remaining; i++)
+            {
+                shortDeltas[i] = longWords ? reader.ReadUInt16() : reader.ReadUInt8();
+            }
+
+            return new ItemVariationData(itemCount, wordDeltaCount, regionIndexes, longDeltas, shortDeltas);
         }
 
         /// <inheritdoc />
