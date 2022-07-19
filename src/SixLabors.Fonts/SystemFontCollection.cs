@@ -56,13 +56,6 @@ namespace SixLabors.Fonts
                     "/Network/Library/Fonts/",
                 };
             }
-            else if(RuntimeInformation.IsOSPlatform(OSPlatform.Create("Android")))
-            {
-                StandardFontLocations = new[]
-                {
-                    "/system/fonts/"
-                };
-            }
             else
             {
                 StandardFontLocations = Array.Empty<string>();
