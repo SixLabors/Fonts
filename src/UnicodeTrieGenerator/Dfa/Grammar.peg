@@ -1,0 +1,70 @@
+@using UnicodeTrieGenerator.Dfa
+@namespace SixLabors.Fonts
+@classname GrammarParser
+@accessibility internal
+
+rules
+  = statement+
+
+statement <INode>
+  = s:statement_type _ { s }
+
+statement_type <INode>
+  = assignment
+  / comment
+
+comment <Comment>
+  = '#' v:[^\r\n]* [\r\n] { new Comment(string.Join("", v)) }
+
+assignment <Assignment>
+  = v:variable _ '=' _ e:expr _ ';' { new Assignment(v, e) }
+
+variable <Variable>
+  = v:name  { new Variable(v) }
+
+expr <ILogicalNode>
+  = alternation
+
+alternation <ILogicalNode>
+  = a:concatenation _ '|' _ b:alternation     { new Alternation(a, b) }
+  / concatenation
+
+concatenation <ILogicalNode>
+  = a:repeat _ b:concatenation           { new Concatenation(a, b) }
+  / repeat
+
+repeat <ILogicalNode>
+  = t:name ':' e:repeat { new Concatenation(e, new Tag(t)) }
+  / t:term '*'  { new Repeat(t, "*") }
+  / t:term '?'  { new Repeat(t, "?") }
+  / t:term '+'  { new Repeat(t, "+") }
+  / t:term '{' m:number '}' { NodeUtilities.BuildRepetition(t, m, m) }
+  / t:term '{' min:number ',' '}' { NodeUtilities.BuildRepetition(t, min, double.PositiveInfinity) }
+  / t:term '{' ',' max:number '}' { NodeUtilities.BuildRepetition(t, 0, max) }
+  / t:term '{' min:number ',' max:number '}' { NodeUtilities.BuildRepetition(t, min, max) }
+  / term
+
+term <ILogicalNode>
+  = variable
+  / x:number { new Literal(x) }
+  / '(' e:expr ')' { e }
+
+repetition <Func<ILogicalNode, int, double, ILogicalNode>>
+  = '{' number '}' { (nn, ii, dd) => NodeUtilities.BuildRepetition(nn, ii, dd) }
+
+name
+  = a:name_start_char b:name_char* { a + b }
+
+name_start_char
+  = "_"
+  / [a-zA-Z]
+
+name_char
+  = name_start_char
+  / [0-9]
+
+number <int>
+  = num:[0-9]+  { int.Parse(string.Join("", num)) }
+
+_
+  = [ \t\r\n]*

@@ -463,7 +463,7 @@ namespace UnicodeTrieGenerator
         private static void ProcessUnicodeData()
         {
             using StreamReader sr = GetStreamReader("UnicodeData.txt");
-            string line;
+            string? line;
             while ((line = sr.ReadLine()) != null)
             {
                 string[] parts = line.Split(';');
@@ -473,7 +473,7 @@ namespace UnicodeTrieGenerator
                     // Get the directionality.
                     int codePoint = ParseHexInt(parts[0]);
 
-                    UnicodeTypeMaps.BidiCharacterTypeMap.TryGetValue(parts[4], out BidiCharacterType cls);
+                    _ = UnicodeTypeMaps.BidiCharacterTypeMap.TryGetValue(parts[4], out BidiCharacterType cls);
                     Bidi[codePoint] = (int)cls << 24;
                 }
             }
@@ -489,7 +489,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("GraphemeBreakProperty.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -500,12 +500,12 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
 
-                        GraphemeClusterClassMap.TryGetValue(point, out GraphemeClusterClass kind);
+                        _ = GraphemeClusterClassMap.TryGetValue(point, out GraphemeClusterClass kind);
                         builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)kind, true);
                     }
                 }
@@ -513,7 +513,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("emoji-data.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -524,7 +524,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string prop = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -551,7 +551,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("BidiBrackets.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -560,7 +560,7 @@ namespace UnicodeTrieGenerator
                         int point = ParseHexInt(match.Groups[1].Value);
                         int otherPoint = ParseHexInt(match.Groups[2].Value);
 
-                        BidiPairedBracketTypeMap.TryGetValue(match.Groups[3].Value, out BidiPairedBracketType kind);
+                        _ = BidiPairedBracketTypeMap.TryGetValue(match.Groups[3].Value, out BidiPairedBracketType kind);
 
                         Bidi[point] |= otherPoint | ((int)kind << 16);
                     }
@@ -589,7 +589,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("BidiMirroring.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -616,7 +616,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("LineBreak.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -627,7 +627,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -651,7 +651,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("DerivedGeneralCategory.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -662,7 +662,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -687,7 +687,7 @@ namespace UnicodeTrieGenerator
             // TODO: Figure out how to map to shared categories via ScripExtensions.txt
             using (StreamReader sr = GetStreamReader("Scripts.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -698,7 +698,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string script = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -723,7 +723,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("ArabicShaping.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -735,7 +735,7 @@ namespace UnicodeTrieGenerator
                         string type = match.Groups[3].Value;
                         string group = match.Groups[4].Value.Replace(" ", "_");
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -762,7 +762,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("IndicSyllabicCategory.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -773,7 +773,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -797,7 +797,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("IndicPositionalCategory.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -808,7 +808,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
