@@ -407,6 +407,6 @@ namespace UnicodeTrieGenerator.Dfa
         /// elements are equal according to the default equality comparer for their type;
         /// otherwise, <see langword="false"/>.
         /// </returns>
-        public static bool Equal(HashSet<INode> a, HashSet<INode> b) => a.SequenceEqual(b);
+        public static bool Equal(ICollection<INode> a, ICollection<INode> b) => a.SequenceEqual(b);
     }
 }
