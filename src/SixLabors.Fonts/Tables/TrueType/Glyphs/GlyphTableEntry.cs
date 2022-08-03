@@ -78,36 +78,16 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// </summary>
         /// <param name="src">The glyph vector to transform.</param>
         /// <param name="matrix">The transformation matrix.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphTableEntry Transform(GlyphTableEntry src, Matrix3x2 matrix)
+        public static void TransformInPlace(ref GlyphTableEntry src, Matrix3x2 matrix)
         {
             Vector2[] controlPoints = src.ControlPoints;
             for (int i = 0; i < controlPoints.Length; i++)
             {
-                controlPoints[i] = Vector2.Transform(src.ControlPoints[i], matrix);
+                controlPoints[i] = Vector2.Transform(controlPoints[i], matrix);
             }
 
-            return new GlyphTableEntry(controlPoints, src.OnCurves, src.EndPoints, Bounds.Transform(src.Bounds, matrix), src.Instructions);
+            src.Bounds = Bounds.Transform(src.Bounds, matrix);
         }
-
-        /// <summary>
-        /// Scales a glyph vector uniformly by a specified scale.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="scale">The uniform scale to use.</param>
-        /// <returns>The new <see cref="GlyphTableEntry"/>.</returns>
-        public static GlyphTableEntry Scale(GlyphTableEntry src, float scale)
-            => Transform(src, Matrix3x2.CreateScale(scale));
-
-        /// <summary>
-        /// Translates a glyph vector by a specified x and y coordinates.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="dx">The x-offset.</param>
-        /// <param name="dy">The y-offset.</param>
-        /// <returns>The new <see cref="GlyphTableEntry"/>.</returns>
-        public static GlyphTableEntry Translate(GlyphTableEntry src, float dx, float dy)
-            => Transform(src, Matrix3x2.CreateTranslation(dx, dy));
 
         /// <summary>
         /// Creates a new glyph table entry that is a deep copy of the specified instance.
@@ -165,7 +145,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 }
             }
 
-            return new Bounds(MathF.Round(xMin), MathF.Round(yMin), MathF.Round(xMax), MathF.Round(yMax));
+            return new Bounds(xMin, yMin, xMax, yMax);
         }
     }
 }

@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
     internal struct GlyphVector
     {
         private readonly List<GlyphTableEntry> entries;
-        private readonly Bounds compositeBounds;
+        private Bounds compositeBounds;
 
         internal GlyphVector(
             Vector2[] controlPoints,
@@ -52,50 +52,21 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// </summary>
         /// <param name="src">The glyph vector to transform.</param>
         /// <param name="matrix">The transformation matrix.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector Transform(GlyphVector src, Matrix3x2 matrix)
+        public static void TransformInPlace(ref GlyphVector src, Matrix3x2 matrix)
         {
-            List<GlyphTableEntry> entries = new(src.entries.Count);
-            for (int i = 0; i < src.entries.Count; i++)
+            List<GlyphTableEntry> entries = src.entries;
+            for (int i = 0; i < entries.Count; i++)
             {
-                entries.Add(GlyphTableEntry.Transform(src.entries[i], matrix));
+                GlyphTableEntry entry = entries[i];
+                GlyphTableEntry.TransformInPlace(ref entry, matrix);
+                entries[i] = entry;
             }
 
-            if (src.compositeBounds == default)
+            if (src.compositeBounds != default)
             {
-                return new(entries, src.compositeBounds);
+                src.compositeBounds = Bounds.Transform(src.compositeBounds, matrix);
             }
-
-            return new(entries, Bounds.Transform(src.compositeBounds, matrix));
         }
-
-        /// <summary>
-        /// Scales a glyph vector uniformly by a specified scale.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="scale">The uniform scale to use.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector Scale(GlyphVector src, float scale)
-            => Transform(src, Matrix3x2.CreateScale(scale));
-
-        /// <summary>
-        /// Scales a glyph vector uniformly by a specified scale.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="scales">The vector scale to use.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector Scale(GlyphVector src, Vector2 scales)
-            => Transform(src, Matrix3x2.CreateScale(scales));
-
-        /// <summary>
-        /// Translates a glyph vector by a specified x and y coordinates.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="dx">The x-offset.</param>
-        /// <param name="dy">The y-offset.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector Translate(GlyphVector src, float dx, float dy)
-            => Transform(src, Matrix3x2.CreateTranslation(dx, dy));
 
         /// <summary>
         /// Appends the second glyph vector's control points to the first.
@@ -131,11 +102,20 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <param name="hintingMode">The hinting mode.</param>
         /// <param name="glyph">The glyph vector to hint.</param>
         /// <param name="interpreter">The True Type interpreter.</param>
+        /// <param name="pixelSize">The rendering size in pixel units.</param>
         /// <param name="pp1">The first phantom point.</param>
         /// <param name="pp2">The second phantom point.</param>
         /// <param name="pp3">The third phantom point.</param>
         /// <param name="pp4">The fourth phantom point.</param>
-        public static void Hint(HintingMode hintingMode, ref GlyphVector glyph, TrueTypeInterpreter interpreter, Vector2 pp1, Vector2 pp2, Vector2 pp3, Vector2 pp4)
+        public static void Hint(
+            HintingMode hintingMode,
+            ref GlyphVector glyph,
+            TrueTypeInterpreter interpreter,
+            float pixelSize,
+            Vector2 pp1,
+            Vector2 pp2,
+            Vector2 pp3,
+            Vector2 pp4)
         {
             if (hintingMode == HintingMode.None)
             {
@@ -154,23 +134,24 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 controlPoints[controlPoints.Length - 1] = pp4;
                 entry.ControlPoints.AsSpan().CopyTo(controlPoints.AsSpan());
 
-                // To keep vertical hinting but discard horizontal we simply cheat the hinter.
-                // We stretch the symbols horizontally so that the hinter would have to work with high accuracy in the X direction.
-                if (hintingMode == HintingMode.HintY)
-                {
-                    ScaleX(controlPoints, 1000F);
-                }
+                // Certain older fonts (e.g.Tahoma) display oddities when hinting at low pixel sizes.
+                // Freetype handles these by ignoring certain operations across the x-axis but we take a different approach.
+                // To keep vertical hinting but soften horizontal hinting we simply cheat the hinter.
+                // We stretch the symbols horizontally so that the hinter would have to work with higher accuracy in the X direction.
+                // For HintingMode.HintY we use a much higher value to completely discard horizontal hinting.
+                float multiplier = hintingMode == HintingMode.HintXY
+                    ? pixelSize * 10F
+                    : pixelSize * 10000F;
 
-                var withPhantomPoints = new GlyphTableEntry(controlPoints, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
+                ScaleX(controlPoints, multiplier);
+
+                GlyphTableEntry withPhantomPoints = new(controlPoints, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
                 interpreter.HintGlyph(withPhantomPoints);
 
-                if (hintingMode == HintingMode.HintY)
-                {
-                    ScaleX(controlPoints, 1F / 1000F);
-                }
+                ScaleX(controlPoints, 1F / multiplier);
 
                 controlPoints.AsSpan(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.AsSpan());
-                glyph.entries[i] = entry;
+                glyph.entries[i] = new(entry.ControlPoints, entry.OnCurves, entry.EndPoints, default, entry.Instructions);
             }
         }
 

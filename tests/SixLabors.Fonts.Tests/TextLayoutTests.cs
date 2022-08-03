@@ -654,6 +654,248 @@ namespace SixLabors.Fonts.Tests
             }
         }
 
+        public static TheoryData<char, FontRectangle> OpenSans_Data
+            = new()
+            {
+                { '!', new(0, 0, 3, 14) },
+                { '"', new(0, 0, 4, 14) },
+                { '#', new(0, 0, 7, 14) },
+                { '$', new(0, 0, 6, 14) },
+                { '%', new(0, 0, 9, 14) },
+                { '&', new(0, 0, 8, 14) },
+                { '\'', new(0, 0, 3, 14) },
+                { '(', new(0, 0, 3, 14) },
+                { ')', new(0, 0, 3, 14) },
+                { '*', new(0, 0, 6, 14) },
+                { '+', new(0, 0, 6, 14) },
+                { ',', new(0, 0, 3, 14) },
+                { '-', new(0, 0, 4, 14) },
+                { '.', new(0, 0, 3, 14) },
+                { '/', new(0, 0, 4, 14) },
+                { '0', new(0, 0, 6, 14) },
+                { '1', new(0, 0, 6, 14) },
+                { '2', new(0, 0, 6, 14) },
+                { '3', new(0, 0, 6, 14) },
+                { '4', new(0, 0, 6, 14) },
+                { '5', new(0, 0, 6, 14) },
+                { '6', new(0, 0, 6, 14) },
+                { '7', new(0, 0, 6, 14) },
+                { '8', new(0, 0, 6, 14) },
+                { '9', new(0, 0, 6, 14) },
+                { ':', new(0, 0, 3, 14) },
+                { ';', new(0, 0, 3, 14) },
+                { '<', new(0, 0, 6, 14) },
+                { '=', new(0, 0, 6, 14) },
+                { '>', new(0, 0, 6, 14) },
+                { '?', new(0, 0, 5, 14) },
+                { '@', new(0, 0, 9, 14) },
+                { 'A', new(0, 0, 7, 14) },
+                { 'B', new(0, 0, 7, 14) },
+                { 'C', new(0, 0, 7, 14) },
+                { 'D', new(0, 0, 8, 14) },
+                { 'E', new(0, 0, 6, 14) },
+                { 'F', new(0, 0, 6, 14) },
+                { 'G', new(0, 0, 8, 14) },
+                { 'H', new(0, 0, 8, 14) },
+                { 'I', new(0, 0, 3, 14) },
+                { 'J', new(0, 0, 3, 14) },
+                { 'K', new(0, 0, 7, 14) },
+                { 'L', new(0, 0, 6, 14) },
+                { 'M', new(0, 0, 9, 14) },
+                { 'N', new(0, 0, 8, 14) },
+                { 'O', new(0, 0, 8, 14) },
+                { 'P', new(0, 0, 7, 14) },
+                { 'Q', new(0, 0, 8, 14) },
+                { 'R', new(0, 0, 7, 14) },
+                { 'S', new(0, 0, 6, 14) },
+                { 'T', new(0, 0, 6, 14) },
+                { 'U', new(0, 0, 8, 14) },
+                { 'V', new(0, 0, 6, 14) },
+                { 'W', new(0, 0, 10, 14) },
+                { 'X', new(0, 0, 6, 14) },
+                { 'Y', new(0, 0, 6, 14) },
+                { 'Z', new(0, 0, 6, 14) },
+                { '[', new(0, 0, 4, 14) },
+                { '\\', new(0, 0, 4, 14) },
+                { ']', new(0, 0, 4, 14) },
+                { '^', new(0, 0, 6, 14) },
+                { '_', new(0, 0, 5, 14) },
+                { '`', new(0, 0, 3, 14) },
+                { 'a', new(0, 0, 6, 14) },
+                { 'b', new(0, 0, 7, 14) },
+                { 'c', new(0, 0, 5, 14) },
+                { 'd', new(0, 0, 7, 14) },
+                { 'e', new(0, 0, 6, 14) },
+                { 'f', new(0, 0, 4, 14) },
+                { 'g', new(0, 0, 6, 14) },
+                { 'h', new(0, 0, 7, 14) },
+                { 'i', new(0, 0, 3, 14) },
+                { 'j', new(0, 0, 3, 14) },
+                { 'k', new(0, 0, 6, 14) },
+                { 'l', new(0, 0, 3, 14) },
+                { 'm', new(0, 0, 10, 14) },
+                { 'n', new(0, 0, 7, 14) },
+                { 'o', new(0, 0, 7, 14) },
+                { 'p', new(0, 0, 7, 14) },
+                { 'q', new(0, 0, 7, 14) },
+                { 'r', new(0, 0, 5, 14) },
+                { 's', new(0, 0, 5, 14) },
+                { 't', new(0, 0, 4, 14) },
+                { 'u', new(0, 0, 7, 14) },
+                { 'v', new(0, 0, 5, 14) },
+                { 'w', new(0, 0, 8, 14) },
+                { 'x', new(0, 0, 6, 14) },
+                { 'y', new(0, 0, 6, 14) },
+                { 'z', new(0, 0, 5, 14) },
+                { '{', new(0, 0, 4, 14) },
+                { '|', new(0, 0, 6, 14) },
+                { '}', new(0, 0, 4, 14) },
+                { '~', new(0, 0, 6, 14) },
+            };
+
+        [Theory]
+        [MemberData(nameof(OpenSans_Data))]
+        public void TrueTypeHinting_CanHintSmallOpenSans(char c, FontRectangle expected)
+        {
+            TextOptions options = new(OpenSansTTF)
+            {
+                KerningMode = KerningMode.Normal,
+                HintingMode = HintingMode.HintXY
+            };
+
+            FontRectangle actual = TextMeasurer.Measure(c.ToString(), options);
+            Assert.Equal(expected, actual);
+
+            options = new(OpenSansWoff)
+            {
+                KerningMode = KerningMode.Normal,
+                HintingMode = HintingMode.HintXY
+            };
+
+            actual = TextMeasurer.Measure(c.ToString(), options);
+            Assert.Equal(expected, actual);
+        }
+
+        private static readonly Font OpenSansTTF = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
+        private static readonly Font OpenSansWoff = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
+
+#if OS_WINDOWS
+        public static TheoryData<char, FontRectangle> SegoeUi_Data
+            = new()
+            {
+                { '!', new(0, 0, 3, 14) },
+                { '"', new(0, 0, 4, 14) },
+                { '#', new(0, 0, 6, 14) },
+                { '$', new(0, 0, 6, 14) },
+                { '%', new(0, 0, 9, 14) },
+                { '&', new(0, 0, 9, 14) },
+                { '\'', new(0, 0, 3, 14) },
+                { '(', new(0, 0, 4, 14) },
+                { ')', new(0, 0, 4, 14) },
+                { '*', new(0, 0, 5, 14) },
+                { '+', new(0, 0, 7, 14) },
+                { ',', new(0, 0, 3, 14) },
+                { '-', new(0, 0, 4, 14) },
+                { '.', new(0, 0, 3, 14) },
+                { '/', new(0, 0, 4, 14) },
+                { '0', new(0, 0, 6, 14) },
+                { '1', new(0, 0, 6, 14) },
+                { '2', new(0, 0, 6, 14) },
+                { '3', new(0, 0, 6, 14) },
+                { '4', new(0, 0, 6, 14) },
+                { '5', new(0, 0, 6, 14) },
+                { '6', new(0, 0, 6, 14) },
+                { '7', new(0, 0, 6, 14) },
+                { '8', new(0, 0, 6, 14) },
+                { '9', new(0, 0, 6, 14) },
+                { ':', new(0, 0, 3, 14) },
+                { ';', new(0, 0, 3, 14) },
+                { '<', new(0, 0, 7, 14) },
+                { '=', new(0, 0, 7, 14) },
+                { '>', new(0, 0, 7, 14) },
+                { '?', new(0, 0, 5, 14) },
+                { '@', new(0, 0, 10, 14) },
+                { 'A', new(0, 0, 7, 14) },
+                { 'B', new(0, 0, 6, 14) },
+                { 'C', new(0, 0, 7, 14) },
+                { 'D', new(0, 0, 8, 14) },
+                { 'E', new(0, 0, 6, 14) },
+                { 'F', new(0, 0, 5, 14) },
+                { 'G', new(0, 0, 7, 14) },
+                { 'H', new(0, 0, 8, 14) },
+                { 'I', new(0, 0, 3, 14) },
+                { 'J', new(0, 0, 4, 14) },
+                { 'K', new(0, 0, 6, 14) },
+                { 'L', new(0, 0, 5, 14) },
+                { 'M', new(0, 0, 9, 14) },
+                { 'N', new(0, 0, 8, 14) },
+                { 'O', new(0, 0, 8, 14) },
+                { 'P', new(0, 0, 6, 14) },
+                { 'Q', new(0, 0, 8, 14) },
+                { 'R', new(0, 0, 6, 14) },
+                { 'S', new(0, 0, 6, 14) },
+                { 'T', new(0, 0, 6, 14) },
+                { 'U', new(0, 0, 7, 14) },
+                { 'V', new(0, 0, 7, 14) },
+                { 'W', new(0, 0, 10, 14) },
+                { 'X', new(0, 0, 6, 14) },
+                { 'Y', new(0, 0, 6, 14) },
+                { 'Z', new(0, 0, 6, 14) },
+                { '[', new(0, 0, 4, 14) },
+                { '\\', new(0, 0, 4, 14) },
+                { ']', new(0, 0, 4, 14) },
+                { '^', new(0, 0, 7, 14) },
+                { '_', new(0, 0, 5, 14) },
+                { '`', new(0, 0, 3, 14) },
+                { 'a', new(0, 0, 6, 14) },
+                { 'b', new(0, 0, 6, 14) },
+                { 'c', new(0, 0, 5, 14) },
+                { 'd', new(0, 0, 6, 14) },
+                { 'e', new(0, 0, 6, 14) },
+                { 'f', new(0, 0, 4, 14) },
+                { 'g', new(0, 0, 6, 14) },
+                { 'h', new(0, 0, 6, 14) },
+                { 'i', new(0, 0, 3, 14) },
+                { 'j', new(0, 0, 3, 14) },
+                { 'k', new(0, 0, 5, 14) },
+                { 'l', new(0, 0, 3, 14) },
+                { 'm', new(0, 0, 9, 14) },
+                { 'n', new(0, 0, 6, 14) },
+                { 'o', new(0, 0, 6, 14) },
+                { 'p', new(0, 0, 6, 14) },
+                { 'q', new(0, 0, 6, 14) },
+                { 'r', new(0, 0, 4, 14) },
+                { 's', new(0, 0, 5, 14) },
+                { 't', new(0, 0, 4, 14) },
+                { 'u', new(0, 0, 6, 14) },
+                { 'v', new(0, 0, 5, 14) },
+                { 'w', new(0, 0, 8, 14) },
+                { 'x', new(0, 0, 5, 14) },
+                { 'y', new(0, 0, 5, 14) },
+                { 'z', new(0, 0, 5, 14) },
+                { '{', new(0, 0, 4, 14) },
+                { '|', new(0, 0, 3, 14) },
+                { '}', new(0, 0, 4, 14) },
+                { '~', new(0, 0, 7, 14) }
+            };
+
+        [Theory]
+        [MemberData(nameof(SegoeUi_Data))]
+        public void TrueTypeHinting_CanHintSmallSegoeUi(char c, FontRectangle expected)
+        {
+            TextOptions options = new(SegoeUi)
+            {
+                KerningMode = KerningMode.Normal,
+                HintingMode = HintingMode.HintXY
+            };
+
+            FontRectangle actual = TextMeasurer.Measure(c.ToString(), options);
+            Assert.Equal(expected, actual);
+        }
+
+        private static readonly Font SegoeUi = SystemFonts.CreateFont("Segoe Ui", 10);
+#endif
+
         private static IReadOnlyList<GlyphLayout> CollectFirstLine(IReadOnlyList<GlyphLayout> glyphs)
         {
             List<GlyphLayout> line = new()

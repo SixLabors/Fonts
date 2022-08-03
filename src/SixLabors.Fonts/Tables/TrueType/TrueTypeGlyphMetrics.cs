@@ -115,12 +115,18 @@ namespace SixLabors.Fonts.Tables.TrueType
 
                     if (!this.scaledVector.TryGetValue(scaledPPEM, out GlyphVector scaledVector))
                     {
-                        // Scale and translate the glyph
+                        // Create a scaled deep copy of the vector so that we do not alter
+                        // the globally cached instance.
+                        scaledVector = GlyphVector.DeepClone(this.vector);
+
                         Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-                        var transform = Matrix3x2.CreateScale(scale);
-                        transform.Translation = this.Offset * scale * MirrorScale;
-                        scaledVector = GlyphVector.Transform(this.vector, transform);
-                        this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref scaledVector, scale, scaledPPEM);
+                        var matrix = Matrix3x2.CreateScale(scale);
+                        matrix.Translation = this.Offset * scale * MirrorScale;
+                        GlyphVector.TransformInPlace(ref scaledVector, matrix);
+
+                        float pixelSize = scaledPPEM / 72F;
+                        this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref scaledVector, scale, pixelSize);
+
                         this.scaledVector[scaledPPEM] = scaledVector;
                     }
 

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
@@ -52,9 +53,9 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
         public void SetControlValueTable(short[]? cvt, float scale, float ppem, byte[]? cvProgram)
 #pragma warning restore CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
         {
-            if (cvt == null)
+            if (this.scale == scale || cvt == null)
             {
-                controlValueTable = Array.Empty<float>();
+                return;
             }
             else
             {
@@ -1398,7 +1399,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             state.Loop = 1;
         }
 
-        private void MovePoint(Zone zone, int index, float distance)
+        private void MovePoint(Zone zone, int index, float distance, [CallerMemberName] string member = null)
         {
             var point = zone.GetCurrent(index) + distance * state.Freedom / fdotp;
             var touch = GetTouchState();

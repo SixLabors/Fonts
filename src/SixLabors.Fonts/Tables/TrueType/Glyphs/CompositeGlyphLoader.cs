@@ -24,7 +24,9 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             for (int resultIndex = 0; resultIndex < this.result.Length; resultIndex++)
             {
                 ref Composite composite = ref this.result[resultIndex];
-                glyph = GlyphVector.Append(glyph, GlyphVector.Transform(GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex)), composite.Transformation), this.bounds);
+                var clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
+                GlyphVector.TransformInPlace(ref clone, composite.Transformation);
+                glyph = GlyphVector.Append(glyph, clone, this.bounds);
             }
 
             // We ignore any composite glyph instructions and
