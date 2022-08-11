@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <param name="bounds">The glyph bounds.</param>
         /// <param name="instructions">The glyph hinting instructions.</param>
         public GlyphTableEntry(
-            Vector2[] controlPoints,
+            ArraySlice<Vector2> controlPoints,
             bool[] onCurves,
             ushort[] endPoints,
             Bounds bounds,
@@ -51,7 +51,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <summary>
         /// Gets or sets the vectorial points defining the shape of this glyph.
         /// </summary>
-        public Vector2[] ControlPoints { get; set; }
+        public ArraySlice<Vector2> ControlPoints { get; set; }
 
         /// <summary>
         /// Gets or sets the point indices for the last point of each contour, in increasing numeric order.
@@ -80,7 +80,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <param name="matrix">The transformation matrix.</param>
         public static void TransformInPlace(ref GlyphTableEntry src, Matrix3x2 matrix)
         {
-            Vector2[] controlPoints = src.ControlPoints;
+            ArraySlice<Vector2> controlPoints = src.ControlPoints;
             for (int i = 0; i < controlPoints.Length; i++)
             {
                 controlPoints[i] = Vector2.Transform(controlPoints[i], matrix);
@@ -98,7 +98,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         {
             // Deep clone the arrays
             var controlPoints = new Vector2[src.ControlPoints.Length];
-            src.ControlPoints.CopyTo(controlPoints.AsSpan());
+            src.ControlPoints.CopyTo(controlPoints);
 
             bool[] onCurves = new bool[src.OnCurves.Length];
             src.OnCurves.CopyTo(onCurves.AsSpan());
@@ -114,7 +114,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             return new GlyphTableEntry(controlPoints, onCurves, endPoints, newBounds, src.Instructions);
         }
 
-        private static Bounds CalculateBounds(Vector2[] controlPoints)
+        private static Bounds CalculateBounds(ArraySlice<Vector2> controlPoints)
         {
             float xMin = float.MaxValue;
             float yMin = float.MaxValue;

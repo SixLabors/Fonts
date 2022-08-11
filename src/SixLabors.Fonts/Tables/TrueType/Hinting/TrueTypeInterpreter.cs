@@ -608,8 +608,8 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                             if (contours.Length == 0)
                                 break;
 
-                            fixed (Vector2* currentPtr = points.Current.ControlPoints)
-                            fixed (Vector2* originalPtr = points.Original.ControlPoints)
+                            fixed (Vector2* currentPtr = points.Current.ControlPoints.Span)
+                            fixed (Vector2* originalPtr = points.Original.ControlPoints.Span)
                             {
                                 // opcode controls whether we care about X or Y direction
                                 // do some pointer trickery so we can operate on the

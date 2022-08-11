@@ -4,7 +4,6 @@
 using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts
 {
@@ -17,6 +16,8 @@ namespace SixLabors.Fonts
     {
         private int length;
         private readonly byte[] buffer;
+        private readonly Memory<T> memory;
+        private readonly Span<T> span;
         private bool isDisposed;
 
         public Buffer(int length)
@@ -26,7 +27,27 @@ namespace SixLabors.Fonts
             int bufferSizeInBytes = length * itemSizeBytes;
             this.buffer = ArrayPool<byte>.Shared.Rent(bufferSizeInBytes);
             this.length = length;
+
+            ByteMemoryManager<T> manager = new(this.buffer);
+            this.memory = manager.Memory.Slice(0, this.length);
+            this.span = this.memory.Span;
+
             this.isDisposed = false;
+        }
+
+        /// <summary>
+        /// Gets an array slice over the buffer.
+        /// Do not allow this to escape the scope of the parent struct!!
+        /// </summary>
+        /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
+        public ArraySlice<T> DangerousGetSlice()
+        {
+            if (this.buffer is null)
+            {
+                ThrowObjectDisposedException();
+            }
+
+            return new ArraySlice<T>(Unsafe.As<T[]>(this.buffer), 0, this.length);
         }
 
         public Span<T> GetSpan()
@@ -35,12 +56,8 @@ namespace SixLabors.Fonts
             {
                 ThrowObjectDisposedException();
             }
-#if SUPPORTS_CREATESPAN
-            ref byte r0 = ref MemoryMarshal.GetReference<byte>(this.buffer);
-            return MemoryMarshal.CreateSpan(ref Unsafe.As<byte, T>(ref r0), this.length);
-#else
-            return MemoryMarshal.Cast<byte, T>(this.buffer).Slice(0, this.length);
-#endif
+
+            return this.span;
         }
 
         public void Dispose()

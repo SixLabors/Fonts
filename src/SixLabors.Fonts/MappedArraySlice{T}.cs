@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace SixLabors.Fonts.Unicode
+namespace SixLabors.Fonts
 {
     /// <summary>
     /// Provides a mapped view of an underlying slice, selecting arbitrary indices

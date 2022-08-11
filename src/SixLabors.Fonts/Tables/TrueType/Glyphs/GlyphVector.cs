@@ -102,7 +102,6 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <param name="hintingMode">The hinting mode.</param>
         /// <param name="glyph">The glyph vector to hint.</param>
         /// <param name="interpreter">The True Type interpreter.</param>
-        /// <param name="pixelSize">The rendering size in pixel units.</param>
         /// <param name="pp1">The first phantom point.</param>
         /// <param name="pp2">The second phantom point.</param>
         /// <param name="pp3">The third phantom point.</param>
@@ -111,7 +110,6 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             HintingMode hintingMode,
             ref GlyphVector glyph,
             TrueTypeInterpreter interpreter,
-            float pixelSize,
             Vector2 pp1,
             Vector2 pp2,
             Vector2 pp3,
@@ -126,31 +124,33 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             {
                 GlyphTableEntry entry = glyph.entries[i];
 
-                // TODO: Figure out a way to pool this.
-                var controlPoints = new Vector2[entry.ControlPoints.Length + 4];
+                using var buffer = new Buffer<Vector2>(entry.ControlPoints.Length + 4);
+                ArraySlice<Vector2> controlPoints = buffer.DangerousGetSlice();
+
                 controlPoints[controlPoints.Length - 4] = pp1;
                 controlPoints[controlPoints.Length - 3] = pp2;
                 controlPoints[controlPoints.Length - 2] = pp3;
                 controlPoints[controlPoints.Length - 1] = pp4;
-                entry.ControlPoints.AsSpan().CopyTo(controlPoints.AsSpan());
+                entry.ControlPoints.CopyTo(controlPoints);
 
-                // Certain older fonts (e.g.Tahoma) display oddities when hinting at low pixel sizes.
-                // Freetype handles these by ignoring certain operations across the x-axis but we take a different approach.
-                // To keep vertical hinting but soften horizontal hinting we simply cheat the hinter.
+                // To keep vertical hinting but discard horizontal hinting we simply cheat the hinter.
                 // We stretch the symbols horizontally so that the hinter would have to work with higher accuracy in the X direction.
-                // For HintingMode.HintY we use a much higher value to completely discard horizontal hinting.
-                float multiplier = hintingMode == HintingMode.HintXY
-                    ? pixelSize * 10F
-                    : pixelSize * 10000F;
+                const float multiplier = 10000F;
 
-                ScaleX(controlPoints, multiplier);
+                if (hintingMode == HintingMode.HintXY)
+                {
+                    ScaleX(controlPoints.Span, multiplier);
+                }
 
                 GlyphTableEntry withPhantomPoints = new(controlPoints, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
                 interpreter.HintGlyph(withPhantomPoints);
 
-                ScaleX(controlPoints, 1F / multiplier);
+                if (hintingMode == HintingMode.HintXY)
+                {
+                    ScaleX(controlPoints.Span, 1F / multiplier);
+                }
 
-                controlPoints.AsSpan(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.AsSpan());
+                controlPoints.Span.Slice(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.Span);
                 glyph.entries[i] = new(entry.ControlPoints, entry.OnCurves, entry.EndPoints, default, entry.Instructions);
             }
         }
