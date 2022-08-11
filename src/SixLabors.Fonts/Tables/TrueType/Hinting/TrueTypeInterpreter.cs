@@ -1399,7 +1399,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             state.Loop = 1;
         }
 
-        private void MovePoint(Zone zone, int index, float distance, [CallerMemberName] string member = null)
+        private void MovePoint(Zone zone, int index, float distance)
         {
             var point = zone.GetCurrent(index) + distance * state.Freedom / fdotp;
             var touch = GetTouchState();
