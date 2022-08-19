@@ -25,10 +25,16 @@ namespace SixLabors.Fonts.Tables.Woff
             stream.Seek(this.Offset, SeekOrigin.Begin);
             using var compressedStream = new IO.ZlibInflateStream(stream);
             byte[] uncompressedBytes = new byte[this.Length];
-            int bytesRead = compressedStream.Read(uncompressedBytes, 0, uncompressedBytes.Length);
-            if (bytesRead < this.Length)
+            int totalBytesRead = 0;
+            while (totalBytesRead < this.Length)
             {
-                throw new InvalidFontFileException($"Could not read compressed data! Expected bytes: {this.Length}, bytes read: {bytesRead}");
+                int bytesRead = compressedStream.Read(uncompressedBytes, 0, uncompressedBytes.Length);
+                if (bytesRead <= 0)
+                {
+                    throw new InvalidFontFileException($"Could not read compressed data! Expected bytes: {this.Length}, bytes read: {totalBytesRead}");
+                }
+
+                totalBytesRead += bytesRead;
             }
 
             var memoryStream = new MemoryStream(uncompressedBytes);
