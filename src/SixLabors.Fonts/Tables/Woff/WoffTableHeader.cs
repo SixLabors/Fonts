@@ -26,15 +26,17 @@ namespace SixLabors.Fonts.Tables.Woff
             using var compressedStream = new IO.ZlibInflateStream(stream);
             byte[] uncompressedBytes = new byte[this.Length];
             int totalBytesRead = 0;
+            int bytesLeftToRead = uncompressedBytes.Length;
             while (totalBytesRead < this.Length)
             {
-                int bytesRead = compressedStream.Read(uncompressedBytes, 0, uncompressedBytes.Length);
+                int bytesRead = compressedStream.Read(uncompressedBytes, totalBytesRead, bytesLeftToRead);
                 if (bytesRead <= 0)
                 {
                     throw new InvalidFontFileException($"Could not read compressed data! Expected bytes: {this.Length}, bytes read: {totalBytesRead}");
                 }
 
                 totalBytesRead += bytesRead;
+                bytesLeftToRead -= bytesRead;
             }
 
             var memoryStream = new MemoryStream(uncompressedBytes);
