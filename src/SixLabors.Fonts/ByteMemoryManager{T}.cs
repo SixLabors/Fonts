@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     /// </summary>
     /// <typeparam name="T">The value type to use when casting the wrapped <see cref="Memory{T}"/> instance.</typeparam>
     internal sealed class ByteMemoryManager<T> : MemoryManager<T>
-        where T : struct
+        where T : unmanaged
     {
         /// <summary>
         /// The wrapped <see cref="Memory{T}"/> of <see cref="byte"/> instance.
