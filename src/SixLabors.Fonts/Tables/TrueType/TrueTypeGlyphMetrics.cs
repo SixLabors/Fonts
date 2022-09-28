@@ -118,7 +118,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                         // Scale and translate the glyph
                         Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
                         var transform = Matrix3x2.CreateScale(scale);
-                        transform.Translation = this.Offset * scale * MirrorScale;
+                        transform.Translation = this.Offset * scale;
                         scaledVector = GlyphVector.Transform(this.vector, transform);
                         this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref scaledVector, scale, scaledPPEM);
                         this.scaledVector[scaledPPEM] = scaledVector;

@@ -317,8 +317,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             int offset = iterator.Increment(increment);
             IGlyphShapingCollection collection = iterator.Collection;
 
+            if (offset < 0)
+            {
+                return false;
+            }
+
             int i = 0;
-            while (i < sequence.Length && i < MaxContextLength && offset > -1 && offset < collection.Count)
+            while (i < sequence.Length && i < MaxContextLength && offset < collection.Count)
             {
                 if (!condition(sequence[i], collection.GetGlyphShapingData(offset)))
                 {
