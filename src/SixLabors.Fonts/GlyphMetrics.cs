@@ -141,7 +141,9 @@ namespace SixLabors.Fonts
         /// <param name="x">The x-offset.</param>
         /// <param name="y">The y-offset.</param>
         internal void ApplyOffset(short x, short y)
-            => this.Offset = Vector2.Transform(this.Offset, Matrix3x2.CreateTranslation(x, y));
+
+            // y-values grow downward but font-space grows upward, hence negation
+            => this.Offset = Vector2.Transform(this.Offset, Matrix3x2.CreateTranslation(x, -y));
 
         /// <summary>
         /// Applies an advance to the glyph.
