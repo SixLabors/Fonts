@@ -6,7 +6,7 @@ using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
 {
-    public class Issue_298
+    public class Issues_298
     {
         [Fact]
         public void DoesNotThrowOutOfBounds()
