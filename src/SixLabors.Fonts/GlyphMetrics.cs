@@ -210,14 +210,14 @@ namespace SixLabors.Fonts
 
             void DrawLine(float thickness, float position)
             {
-                renderer.BeginFigure();
-
                 (Vector2 start, Vector2 end, float finalThickness) = GetEnds(thickness, position);
 
                 if (finalThickness == 0)
                 {
                     return;
                 }
+
+                renderer.BeginFigure();
 
                 Vector2 halfHeight = new(0, finalThickness * .5F);
 
