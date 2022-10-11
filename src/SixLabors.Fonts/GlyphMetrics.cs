@@ -190,24 +190,22 @@ namespace SixLabors.Fonts
 
         internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, float scaledPPEM)
         {
-            (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float position)
+            (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float positionY)
             {
-                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
-                Vector2 offset = location + (this.Offset * scale * MirrorScale);
-
-                // Calculate the correct advance for the line.
                 float width = this.AdvanceWidth;
                 if (width == 0)
                 {
-                    // For zero advance glyphs we must calculate our advance width from bearing + width;
-                    width = this.LeftSideBearing + this.Width;
+                    return (Vector2.Zero, Vector2.Zero, 0);
                 }
 
-                Vector2 tl = (new Vector2(0, position) * scale) + offset;
-                Vector2 tr = (new Vector2(width, position) * scale) + offset;
-                Vector2 bl = (new Vector2(0, position + thickness) * scale) + offset;
+                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+                Vector2 offset = location + (this.Offset * scale * MirrorScale) + (new Vector2(0, positionY) * scale * MirrorScale);
 
-                return (tl, tr, tl.Y - bl.Y);
+                Vector2 tl = new(offset.X, offset.Y);
+                Vector2 tr = new(offset.X + (width * scale.X), offset.Y);
+                Vector2 bl = new(offset.X, offset.Y + (thickness * scale.Y));
+
+                return (tl, tr, bl.Y - tl.Y);
             }
 
             void DrawLine(float thickness, float position)
@@ -215,7 +213,13 @@ namespace SixLabors.Fonts
                 renderer.BeginFigure();
 
                 (Vector2 start, Vector2 end, float finalThickness) = GetEnds(thickness, position);
-                var halfHeight = new Vector2(0, -finalThickness * .5F);
+
+                if (finalThickness == 0)
+                {
+                    return;
+                }
+
+                Vector2 halfHeight = new(0, finalThickness * .5F);
 
                 Vector2 tl = start - halfHeight;
                 Vector2 tr = end - halfHeight;
@@ -229,10 +233,10 @@ namespace SixLabors.Fonts
                 bl.Y = MathF.Floor(bl.Y);
 
                 // Do the same for vertical components.
-                tl.X = MathF.Floor(tl.X);
-                tr.X = MathF.Floor(tr.X);
-                br.X = MathF.Floor(br.X);
-                bl.X = MathF.Floor(bl.X);
+                tl.X = MathF.Round(tl.X);
+                tr.X = MathF.Round(tr.X);
+                br.X = MathF.Round(br.X);
+                bl.X = MathF.Round(bl.X);
 
                 renderer.MoveTo(tl);
                 renderer.LineTo(bl);
@@ -245,7 +249,10 @@ namespace SixLabors.Fonts
             void SetDecoration(TextDecorations decorationType, float thickness, float position)
             {
                 (Vector2 start, Vector2 end, float calcThickness) = GetEnds(thickness, position);
-                ((IGlyphDecorationRenderer)renderer).SetDecoration(decorationType, start, end, calcThickness);
+                if (calcThickness != 0)
+                {
+                    ((IGlyphDecorationRenderer)renderer).SetDecoration(decorationType, start, end, calcThickness);
+                }
             }
 
             // There's no built in metrics for these values so we will need to infer them from the other metrics.

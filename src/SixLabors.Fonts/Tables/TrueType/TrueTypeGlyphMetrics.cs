@@ -121,7 +121,7 @@ namespace SixLabors.Fonts.Tables.TrueType
 
                         Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
                         var matrix = Matrix3x2.CreateScale(scale);
-                        matrix.Translation = this.Offset * scale * MirrorScale;
+                        matrix.Translation = this.Offset * scale;
                         GlyphVector.TransformInPlace(ref scaledVector, matrix);
 
                         float pixelSize = scaledPPEM / 72F;
