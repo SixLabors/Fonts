@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts
 {
@@ -64,7 +65,11 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets a <see cref="Span{T}"/> representing this slice.
         /// </summary>
-        public Span<T> Span => new(this.data, this.Start, this.Length);
+        public Span<T> Span
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new(this.data, this.Start, this.Length);
+        }
 
         /// <summary>
         /// Returns a reference to specified element of the slice.
@@ -80,8 +85,8 @@ namespace SixLabors.Fonts
             get
             {
                 DebugGuard.MustBeBetweenOrEqualTo(index, 0, this.Length, nameof(index));
-                int i = index + this.Start;
-                return ref this.data[i];
+                ref T b = ref MemoryMarshal.GetReference(this.Span);
+                return ref Unsafe.Add(ref b, index);
             }
         }
 
