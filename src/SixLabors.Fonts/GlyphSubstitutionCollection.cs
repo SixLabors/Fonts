@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
@@ -299,6 +300,7 @@ namespace SixLabors.Fonts
             }
         }
 
+        [DebuggerDisplay("{DebuggerDisplay,nq}")]
         private class OffsetGlyphDataPair
         {
             public OffsetGlyphDataPair(int offset, GlyphShapingData data)
@@ -310,6 +312,8 @@ namespace SixLabors.Fonts
             public int Offset { get; set; }
 
             public GlyphShapingData Data { get; set; }
+
+            private string DebuggerDisplay => FormattableString.Invariant($"Offset: {this.Offset}, Data: {this.Data.ToDebuggerDisplay()}");
         }
     }
 }
