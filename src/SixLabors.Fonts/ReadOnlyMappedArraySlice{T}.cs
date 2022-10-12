@@ -7,22 +7,22 @@ using System.Runtime.CompilerServices;
 namespace SixLabors.Fonts
 {
     /// <summary>
-    /// Provides a mapped view of an underlying slice, selecting arbitrary indices
+    /// Provides a readonly mapped view of an underlying slice, selecting arbitrary indices
     /// from the source array.
     /// </summary>
     /// <typeparam name="T">The type of item contained in the underlying array.</typeparam>
-    internal readonly struct MappedArraySlice<T>
+    internal readonly struct ReadonlyMappedArraySlice<T>
         where T : struct
     {
-        private readonly ArraySlice<T> data;
-        private readonly ArraySlice<int> map;
+        private readonly ReadOnlyArraySlice<T> data;
+        private readonly ReadOnlyArraySlice<int> map;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MappedArraySlice{T}"/> struct.
+        /// Initializes a new instance of the <see cref="ReadonlyMappedArraySlice{T}"/> struct.
         /// </summary>
         /// <param name="data">The data slice.</param>
         /// <param name="map">The map slice.</param>
-        public MappedArraySlice(in ArraySlice<T> data, in ArraySlice<int> map)
+        public ReadonlyMappedArraySlice(in ReadOnlyArraySlice<T> data, in ReadOnlyArraySlice<int> map)
         {
             Guard.MustBeGreaterThanOrEqualTo(data.Length, map.Length, nameof(map));
 
@@ -43,10 +43,10 @@ namespace SixLabors.Fonts
         /// <exception cref="IndexOutOfRangeException">
         /// Thrown when index less than 0 or index greater than or equal to <see cref="Length"/>.
         /// </exception>
-        public readonly ref T this[int index]
+        public readonly T this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => ref this.data[this.map[index]];
+            get => this.data[this.map[index]];
         }
     }
 }

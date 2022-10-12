@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts
 {
@@ -64,7 +65,11 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets a <see cref="Span{T}"/> representing this slice.
         /// </summary>
-        public ReadOnlySpan<T> Span => new(this.data, this.Start, this.Length);
+        public ReadOnlySpan<T> Span
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new(this.data, this.Start, this.Length);
+        }
 
         /// <summary>
         /// Returns a reference to specified element of the slice.
@@ -74,14 +79,14 @@ namespace SixLabors.Fonts
         /// <exception cref="IndexOutOfRangeException">
         /// Thrown when index less than 0 or index greater than or equal to <see cref="Length"/>.
         /// </exception>
-        public readonly ref T this[int index]
+        public readonly T this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 DebugGuard.MustBeBetweenOrEqualTo(index, 0, this.Length, nameof(index));
-                int i = index + this.Start;
-                return ref this.data[i];
+                ref T b = ref MemoryMarshal.GetReference(this.Span);
+                return Unsafe.Add(ref b, index);
             }
         }
 
