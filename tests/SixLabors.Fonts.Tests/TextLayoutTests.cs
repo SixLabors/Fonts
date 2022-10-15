@@ -251,10 +251,10 @@ namespace SixLabors.Fonts.Tests
 
 #if OS_WINDOWS
         [Theory]
-        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.Normal, 134, 871)]
+        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.Standard, 134, 871)]
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakAll, 160, 400)]
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.KeepAll, 80, 700)]
-        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.Normal, 134, 871)]
+        [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.Standard, 134, 871)]
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakAll, 160, 400)]
         [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.KeepAll, 80, 700)]
         public void MeasureTextWordBreak(string text, LayoutMode layoutMode, WordBreaking wordBreaking, float height, float width)
@@ -294,7 +294,7 @@ namespace SixLabors.Fonts.Tests
                 new TextOptions(new Font(font, 1))
                 {
                     Dpi = font.FontMetrics.ScaleFactor,
-                    KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                    KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
                 });
 
             Assert.Equal(height, size.Height, 4);
@@ -759,7 +759,7 @@ namespace SixLabors.Fonts.Tests
         {
             TextOptions options = new(OpenSansTTF)
             {
-                KerningMode = KerningMode.Normal,
+                KerningMode = KerningMode.Standard,
                 HintingMode = HintingMode.Standard
             };
 
@@ -768,7 +768,7 @@ namespace SixLabors.Fonts.Tests
 
             options = new(OpenSansWoff)
             {
-                KerningMode = KerningMode.Normal,
+                KerningMode = KerningMode.Standard,
                 HintingMode = HintingMode.Standard
             };
 
@@ -885,7 +885,7 @@ namespace SixLabors.Fonts.Tests
         {
             TextOptions options = new(SegoeUi)
             {
-                KerningMode = KerningMode.Normal,
+                KerningMode = KerningMode.Standard,
                 HintingMode = HintingMode.Standard
             };
 

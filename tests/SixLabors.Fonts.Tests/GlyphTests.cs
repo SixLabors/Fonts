@@ -176,14 +176,14 @@ namespace SixLabors.Fonts.Tests
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
             {
-                KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
                 HintingMode = applyHinting ? HintingMode.Standard : HintingMode.None,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererWoff, testStr, new TextOptions(fontWoff)
             {
-                KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
                 HintingMode = applyHinting ? HintingMode.Standard : HintingMode.None,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
@@ -235,14 +235,14 @@ namespace SixLabors.Fonts.Tests
             var rendererTtf = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererTtf, testStr, new TextOptions(fontTtf)
             {
-                KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
                 HintingMode = applyHinting ? HintingMode.Standard : HintingMode.None,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
             var rendererWoff2 = new ColorGlyphRenderer();
             TextRenderer.RenderTextTo(rendererWoff2, testStr, new TextOptions(fontWoff2)
             {
-                KerningMode = applyKerning ? KerningMode.Normal : KerningMode.None,
+                KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
                 HintingMode = applyHinting ? HintingMode.Standard : HintingMode.None,
                 ColorFontSupport = ColorFontSupport.MicrosoftColrFormat
             });
