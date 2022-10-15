@@ -143,7 +143,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 }
 
                 GlyphTableEntry withPhantomPoints = new(buffer.Memory, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
-                interpreter.HintGlyph(withPhantomPoints);
+                interpreter.HintGlyph(withPhantomPoints, glyph.IsComposite());
 
                 if (hintingMode == HintingMode.HintXY)
                 {
@@ -210,6 +210,12 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// </summary>
         /// <returns>The <see cref="bool"/> indicating the result.</returns>
         public bool HasValue() => this.entries?[0].ControlPoints.Length > 0;
+
+        /// <summary>
+        /// Returns a value indicating whether the glyph is a composite glyph.
+        /// </summary>
+        /// <returns>The <see cref="bool"/> indicating the result.</returns>
+        public bool IsComposite() => this.compositeBounds != default;
 
         /// <summary>
         /// Returns the bounds for the current instance.

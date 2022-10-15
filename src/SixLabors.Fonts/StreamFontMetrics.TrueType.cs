@@ -21,31 +21,11 @@ namespace SixLabors.Fonts
     /// </content>
     internal partial class StreamFontMetrics
     {
-        /// <summary>
-        /// <para>
-        /// TODO: See if something can be done about this. For potential workarounds <see href="http://rastertragedy.com/RTRCh4.htm#Sec1"/>
-        /// These common fonts can be hinted by the engine only in XY mode and only if we do not scale the x-dimension.
-        /// even then the output is worse than the non-hinted version due to thinning of certain strokes.
-        /// <see href="http://agg.sourceforge.net/antigrain.com/research/font_rasterization/"/>.
-        /// </para>
-        /// <para>
-        /// We'll sacrifice hinting for these fonts to allow the engine to work better for modern fonts and avoid potentially raised issues.
-        /// </para>
-        /// </summary>
-        private static readonly string[] BadHintList = { "Arial", "Times New Roman", "Tahoma", "Palatino Linotype", "Segoe UI" };
-        private bool? shouldHint;
-
         [ThreadStatic]
         private TrueTypeInterpreter? interpreter;
 
         internal void ApplyTrueTypeHinting(HintingMode hintingMode, GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float pixelSize)
         {
-            this.shouldHint ??= Array.IndexOf(BadHintList, this.Description.FontFamilyInvariantCulture) == -1;
-            if (this.shouldHint != true)
-            {
-                return;
-            }
-
             if (hintingMode == HintingMode.None || this.outlineType != OutlineType.TrueType)
             {
                 return;
