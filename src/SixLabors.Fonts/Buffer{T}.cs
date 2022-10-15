@@ -47,8 +47,7 @@ namespace SixLabors.Fonts
                 ThrowObjectDisposedException();
             }
 
-            // TODO: This cast is unsafe as the length of the returned array still matches the length of the buffer
-            // We constrain access via our custom type but this is still a potential issue.
+            // TODO: This cast seems super unsafe. Could it cause GC corruption?
             return new ArraySlice<T>(Unsafe.As<T[]>(this.buffer), 0, this.length);
         }
 
