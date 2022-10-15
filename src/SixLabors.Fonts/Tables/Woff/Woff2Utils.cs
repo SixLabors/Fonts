@@ -456,7 +456,9 @@ namespace SixLabors.Fonts.Tables.Woff
                 }
 
                 // Composite bounds are read later.
-                composite = GlyphVector.Append(composite, GlyphVector.Transform(GlyphVector.DeepClone(createdGlyphs[glyphIndex]), transform), default);
+                var clone = GlyphVector.DeepClone(createdGlyphs[glyphIndex]);
+                GlyphVector.TransformInPlace(ref clone, transform);
+                composite = GlyphVector.Append(composite, clone, default);
             }
             while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 

@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace SixLabors.Fonts.Unicode
+namespace SixLabors.Fonts
 {
     /// <summary>
     /// A helper type for avoiding allocations while building arrays.

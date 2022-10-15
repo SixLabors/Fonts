@@ -15,13 +15,8 @@ namespace SixLabors.Fonts
         None,
 
         /// <summary>
-        /// Hint the glyphs in a vertical direction only. <see href="http://agg.sourceforge.net/antigrain.com/research/font_rasterization/"/>.
+        /// Hint the glyph using standard configuration.
         /// </summary>
-        HintY,
-
-        /// <summary>
-        /// Hint the glyphs in both directions.
-        /// </summary>
-        HintXY
+        Standard
     }
 }

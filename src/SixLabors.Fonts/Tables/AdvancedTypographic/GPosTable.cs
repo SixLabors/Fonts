@@ -295,7 +295,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
                 if (data.CursiveAttachment != -1)
                 {
-                    int j = data.CursiveAttachment + i;
+                    int j = data.CursiveAttachment + currentIndex;
                     if (j > count)
                     {
                         return;
@@ -330,7 +330,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
                     if (data.Direction == TextDirection.LeftToRight)
                     {
-                        for (int k = j; k < i; k++)
+                        for (int k = j; k < currentIndex; k++)
                         {
                             markData = collection.GetGlyphShapingData(k);
                             data.Bounds.X -= markData.Bounds.Width;
@@ -339,7 +339,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     }
                     else
                     {
-                        for (int k = j + 1; k < i + 1; k++)
+                        for (int k = j + 1; k < currentIndex + 1; k++)
                         {
                             markData = collection.GetGlyphShapingData(k);
                             data.Bounds.X += markData.Bounds.Width;
