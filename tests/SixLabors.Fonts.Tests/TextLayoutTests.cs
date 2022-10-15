@@ -760,7 +760,7 @@ namespace SixLabors.Fonts.Tests
             TextOptions options = new(OpenSansTTF)
             {
                 KerningMode = KerningMode.Normal,
-                HintingMode = HintingMode.HintXY
+                HintingMode = HintingMode.Standard
             };
 
             FontRectangle actual = TextMeasurer.Measure(c.ToString(), options);
@@ -769,7 +769,7 @@ namespace SixLabors.Fonts.Tests
             options = new(OpenSansWoff)
             {
                 KerningMode = KerningMode.Normal,
-                HintingMode = HintingMode.HintXY
+                HintingMode = HintingMode.Standard
             };
 
             actual = TextMeasurer.Measure(c.ToString(), options);
@@ -886,7 +886,7 @@ namespace SixLabors.Fonts.Tests
             TextOptions options = new(SegoeUi)
             {
                 KerningMode = KerningMode.Normal,
-                HintingMode = HintingMode.HintXY
+                HintingMode = HintingMode.Standard
             };
 
             FontRectangle actual = TextMeasurer.Measure(c.ToString(), options);

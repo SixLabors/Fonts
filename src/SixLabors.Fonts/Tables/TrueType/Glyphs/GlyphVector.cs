@@ -133,59 +133,11 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 controlPoints[controlPoints.Length - 1] = pp4;
                 entry.ControlPoints.Span.CopyTo(controlPoints);
 
-                // To keep vertical hinting but discard horizontal hinting we simply cheat the hinter.
-                // We stretch the symbols horizontally so that the hinter would have to work with higher accuracy in the X direction.
-                const float multiplier = 10000F;
-
-                if (hintingMode == HintingMode.HintXY)
-                {
-                    ScaleX(controlPoints, multiplier);
-                }
-
                 GlyphTableEntry withPhantomPoints = new(buffer.Memory, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
                 interpreter.HintGlyph(withPhantomPoints, glyph.IsComposite());
 
-                if (hintingMode == HintingMode.HintXY)
-                {
-                    ScaleX(controlPoints, 1F / multiplier);
-                }
-
                 controlPoints.Slice(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.Span);
                 glyph.entries[i] = new(entry.ControlPoints, entry.OnCurves, entry.EndPoints, default, entry.Instructions);
-            }
-        }
-
-        private static void ScaleX(Span<Vector2> controlPoints, float scale)
-        {
-            int remainder = 0;
-#if SUPPORTS_RUNTIME_INTRINSICS
-            if (Avx.IsSupported)
-            {
-                int length = controlPoints.Length;
-                remainder = length - (ModuloP2(length * 2, Vector256<float>.Count) / 2);
-                Span<Vector256<float>> vectors = MemoryMarshal.Cast<Vector2, Vector256<float>>(controlPoints);
-                Vector256<float> mutiplier = Avx.UnpackLow(Vector256.Create(scale), Vector256.Create(1F));
-                for (int i = 0; i < vectors.Length; i++)
-                {
-                    vectors[i] = Avx.Multiply(vectors[i], mutiplier);
-                }
-            }
-            else if (Sse.IsSupported)
-            {
-                int length = controlPoints.Length;
-                remainder = length - (ModuloP2(length * 2, Vector128<float>.Count) / 2);
-                Span<Vector128<float>> vectors = MemoryMarshal.Cast<Vector2, Vector128<float>>(controlPoints);
-                Vector128<float> mutiplier = Sse.UnpackLow(Vector128.Create(scale), Vector128.Create(1F));
-                for (int i = 0; i < vectors.Length; i++)
-                {
-                    vectors[i] = Sse.Multiply(vectors[i], mutiplier);
-                }
-            }
-#endif
-            Vector2 v = new(scale, 1F);
-            for (int i = remainder; i < controlPoints.Length; i++)
-            {
-                controlPoints[i] *= v;
             }
         }
 
