@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <param name="bounds">The glyph bounds.</param>
         /// <param name="instructions">The glyph hinting instructions.</param>
         public GlyphTableEntry(
-            Vector2[] controlPoints,
+            Memory<Vector2> controlPoints,
             bool[] onCurves,
             ushort[] endPoints,
             Bounds bounds,
@@ -51,7 +51,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <summary>
         /// Gets or sets the vectorial points defining the shape of this glyph.
         /// </summary>
-        public Vector2[] ControlPoints { get; set; }
+        public Memory<Vector2> ControlPoints { get; set; }
 
         /// <summary>
         /// Gets or sets the point indices for the last point of each contour, in increasing numeric order.
@@ -78,36 +78,16 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// </summary>
         /// <param name="src">The glyph vector to transform.</param>
         /// <param name="matrix">The transformation matrix.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphTableEntry Transform(GlyphTableEntry src, Matrix3x2 matrix)
+        public static void TransformInPlace(ref GlyphTableEntry src, Matrix3x2 matrix)
         {
-            Vector2[] controlPoints = src.ControlPoints;
+            Span<Vector2> controlPoints = src.ControlPoints.Span;
             for (int i = 0; i < controlPoints.Length; i++)
             {
-                controlPoints[i] = Vector2.Transform(src.ControlPoints[i], matrix);
+                controlPoints[i] = Vector2.Transform(controlPoints[i], matrix);
             }
 
-            return new GlyphTableEntry(controlPoints, src.OnCurves, src.EndPoints, Bounds.Transform(src.Bounds, matrix), src.Instructions);
+            src.Bounds = Bounds.Transform(src.Bounds, matrix);
         }
-
-        /// <summary>
-        /// Scales a glyph vector uniformly by a specified scale.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="scale">The uniform scale to use.</param>
-        /// <returns>The new <see cref="GlyphTableEntry"/>.</returns>
-        public static GlyphTableEntry Scale(GlyphTableEntry src, float scale)
-            => Transform(src, Matrix3x2.CreateScale(scale));
-
-        /// <summary>
-        /// Translates a glyph vector by a specified x and y coordinates.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="dx">The x-offset.</param>
-        /// <param name="dy">The y-offset.</param>
-        /// <returns>The new <see cref="GlyphTableEntry"/>.</returns>
-        public static GlyphTableEntry Translate(GlyphTableEntry src, float dx, float dy)
-            => Transform(src, Matrix3x2.CreateTranslation(dx, dy));
 
         /// <summary>
         /// Creates a new glyph table entry that is a deep copy of the specified instance.
@@ -118,7 +98,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         {
             // Deep clone the arrays
             var controlPoints = new Vector2[src.ControlPoints.Length];
-            src.ControlPoints.CopyTo(controlPoints.AsSpan());
+            src.ControlPoints.CopyTo(controlPoints);
 
             bool[] onCurves = new bool[src.OnCurves.Length];
             src.OnCurves.CopyTo(onCurves.AsSpan());
@@ -134,16 +114,17 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             return new GlyphTableEntry(controlPoints, onCurves, endPoints, newBounds, src.Instructions);
         }
 
-        private static Bounds CalculateBounds(Vector2[] controlPoints)
+        private static Bounds CalculateBounds(Memory<Vector2> controlPoints)
         {
             float xMin = float.MaxValue;
             float yMin = float.MaxValue;
             float xMax = float.MinValue;
             float yMax = float.MinValue;
 
-            for (int i = 0; i < controlPoints.Length; ++i)
+            Span<Vector2> points = controlPoints.Span;
+            for (int i = 0; i < points.Length; ++i)
             {
-                Vector2 p = controlPoints[i];
+                Vector2 p = points[i];
                 if (p.X < xMin)
                 {
                     xMin = p.X;
@@ -165,7 +146,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 }
             }
 
-            return new Bounds(MathF.Round(xMin), MathF.Round(yMin), MathF.Round(xMax), MathF.Round(yMax));
+            return new Bounds(xMin, yMin, xMax, yMax);
         }
     }
 }

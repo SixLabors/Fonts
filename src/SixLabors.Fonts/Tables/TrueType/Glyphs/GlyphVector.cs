@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
     internal struct GlyphVector
     {
         private readonly List<GlyphTableEntry> entries;
-        private readonly Bounds compositeBounds;
+        private Bounds compositeBounds;
 
         internal GlyphVector(
             Vector2[] controlPoints,
@@ -52,50 +52,21 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// </summary>
         /// <param name="src">The glyph vector to transform.</param>
         /// <param name="matrix">The transformation matrix.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector Transform(GlyphVector src, Matrix3x2 matrix)
+        public static void TransformInPlace(ref GlyphVector src, Matrix3x2 matrix)
         {
-            List<GlyphTableEntry> entries = new(src.entries.Count);
-            for (int i = 0; i < src.entries.Count; i++)
+            List<GlyphTableEntry> entries = src.entries;
+            for (int i = 0; i < entries.Count; i++)
             {
-                entries.Add(GlyphTableEntry.Transform(src.entries[i], matrix));
+                GlyphTableEntry entry = entries[i];
+                GlyphTableEntry.TransformInPlace(ref entry, matrix);
+                entries[i] = entry;
             }
 
-            if (src.compositeBounds == default)
+            if (src.compositeBounds != default)
             {
-                return new(entries, src.compositeBounds);
+                src.compositeBounds = Bounds.Transform(src.compositeBounds, matrix);
             }
-
-            return new(entries, Bounds.Transform(src.compositeBounds, matrix));
         }
-
-        /// <summary>
-        /// Scales a glyph vector uniformly by a specified scale.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="scale">The uniform scale to use.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector Scale(GlyphVector src, float scale)
-            => Transform(src, Matrix3x2.CreateScale(scale));
-
-        /// <summary>
-        /// Scales a glyph vector uniformly by a specified scale.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="scales">The vector scale to use.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector Scale(GlyphVector src, Vector2 scales)
-            => Transform(src, Matrix3x2.CreateScale(scales));
-
-        /// <summary>
-        /// Translates a glyph vector by a specified x and y coordinates.
-        /// </summary>
-        /// <param name="src">The glyph vector to translate.</param>
-        /// <param name="dx">The x-offset.</param>
-        /// <param name="dy">The y-offset.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector Translate(GlyphVector src, float dx, float dy)
-            => Transform(src, Matrix3x2.CreateTranslation(dx, dy));
 
         /// <summary>
         /// Appends the second glyph vector's control points to the first.
@@ -135,7 +106,14 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <param name="pp2">The second phantom point.</param>
         /// <param name="pp3">The third phantom point.</param>
         /// <param name="pp4">The fourth phantom point.</param>
-        public static void Hint(HintingMode hintingMode, ref GlyphVector glyph, TrueTypeInterpreter interpreter, Vector2 pp1, Vector2 pp2, Vector2 pp3, Vector2 pp4)
+        public static void Hint(
+            HintingMode hintingMode,
+            ref GlyphVector glyph,
+            TrueTypeInterpreter interpreter,
+            Vector2 pp1,
+            Vector2 pp2,
+            Vector2 pp3,
+            Vector2 pp4)
         {
             if (hintingMode == HintingMode.None)
             {
@@ -146,65 +124,20 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             {
                 GlyphTableEntry entry = glyph.entries[i];
 
-                // TODO: Figure out a way to pool this.
-                var controlPoints = new Vector2[entry.ControlPoints.Length + 4];
+                using var buffer = new Buffer<Vector2>(entry.ControlPoints.Length + 4);
+                Span<Vector2> controlPoints = buffer.Memory.Span;
+
                 controlPoints[controlPoints.Length - 4] = pp1;
                 controlPoints[controlPoints.Length - 3] = pp2;
                 controlPoints[controlPoints.Length - 2] = pp3;
                 controlPoints[controlPoints.Length - 1] = pp4;
-                entry.ControlPoints.AsSpan().CopyTo(controlPoints.AsSpan());
+                entry.ControlPoints.Span.CopyTo(controlPoints);
 
-                // To keep vertical hinting but discard horizontal we simply cheat the hinter.
-                // We stretch the symbols horizontally so that the hinter would have to work with high accuracy in the X direction.
-                if (hintingMode == HintingMode.HintY)
-                {
-                    ScaleX(controlPoints, 1000F);
-                }
+                GlyphTableEntry withPhantomPoints = new(buffer.Memory, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
+                interpreter.HintGlyph(withPhantomPoints, glyph.IsComposite());
 
-                var withPhantomPoints = new GlyphTableEntry(controlPoints, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
-                interpreter.HintGlyph(withPhantomPoints);
-
-                if (hintingMode == HintingMode.HintY)
-                {
-                    ScaleX(controlPoints, 1F / 1000F);
-                }
-
-                controlPoints.AsSpan(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.AsSpan());
-                glyph.entries[i] = entry;
-            }
-        }
-
-        private static void ScaleX(Span<Vector2> controlPoints, float scale)
-        {
-            int remainder = 0;
-#if SUPPORTS_RUNTIME_INTRINSICS
-            if (Avx.IsSupported)
-            {
-                int length = controlPoints.Length;
-                remainder = length - (ModuloP2(length * 2, Vector256<float>.Count) / 2);
-                Span<Vector256<float>> vectors = MemoryMarshal.Cast<Vector2, Vector256<float>>(controlPoints);
-                Vector256<float> mutiplier = Avx.UnpackLow(Vector256.Create(scale), Vector256.Create(1F));
-                for (int i = 0; i < vectors.Length; i++)
-                {
-                    vectors[i] = Avx.Multiply(vectors[i], mutiplier);
-                }
-            }
-            else if (Sse.IsSupported)
-            {
-                int length = controlPoints.Length;
-                remainder = length - (ModuloP2(length * 2, Vector128<float>.Count) / 2);
-                Span<Vector128<float>> vectors = MemoryMarshal.Cast<Vector2, Vector128<float>>(controlPoints);
-                Vector128<float> mutiplier = Sse.UnpackLow(Vector128.Create(scale), Vector128.Create(1F));
-                for (int i = 0; i < vectors.Length; i++)
-                {
-                    vectors[i] = Sse.Multiply(vectors[i], mutiplier);
-                }
-            }
-#endif
-            Vector2 v = new(scale, 1F);
-            for (int i = remainder; i < controlPoints.Length; i++)
-            {
-                controlPoints[i] *= v;
+                controlPoints.Slice(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.Span);
+                glyph.entries[i] = new(entry.ControlPoints, entry.OnCurves, entry.EndPoints, default, entry.Instructions);
             }
         }
 
@@ -231,6 +164,12 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         public bool HasValue() => this.entries?[0].ControlPoints.Length > 0;
 
         /// <summary>
+        /// Returns a value indicating whether the glyph is a composite glyph.
+        /// </summary>
+        /// <returns>The <see cref="bool"/> indicating the result.</returns>
+        public bool IsComposite() => this.compositeBounds != default;
+
+        /// <summary>
         /// Returns the bounds for the current instance.
         /// </summary>
         /// <returns>The <see cref="GetBounds"/>.</returns>
@@ -245,15 +184,15 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             List<Vector2> controlPoints = new();
             List<bool> onCurves = new();
             List<ushort> endPoints = new();
-
             for (int resultIndex = 0; resultIndex < this.entries.Count; resultIndex++)
             {
                 GlyphTableEntry glyph = this.entries[resultIndex];
                 int pointCount = glyph.PointCount;
                 ushort endPointOffset = (ushort)controlPoints.Count;
+                Span<Vector2> glyphPoints = glyph.ControlPoints.Span;
                 for (int i = 0; i < pointCount; i++)
                 {
-                    controlPoints.Add(glyph.ControlPoints[i]);
+                    controlPoints.Add(glyphPoints[i]);
                     onCurves.Add(glyph.OnCurves[i]);
                 }
 

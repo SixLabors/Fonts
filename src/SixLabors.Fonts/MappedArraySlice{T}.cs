@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace SixLabors.Fonts.Unicode
+namespace SixLabors.Fonts
 {
     /// <summary>
     /// Provides a mapped view of an underlying slice, selecting arbitrary indices
@@ -14,15 +14,15 @@ namespace SixLabors.Fonts.Unicode
     internal readonly struct MappedArraySlice<T>
         where T : struct
     {
-        private readonly ReadOnlyArraySlice<T> data;
-        private readonly ReadOnlyArraySlice<int> map;
+        private readonly ArraySlice<T> data;
+        private readonly ArraySlice<int> map;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MappedArraySlice{T}"/> struct.
         /// </summary>
         /// <param name="data">The data slice.</param>
         /// <param name="map">The map slice.</param>
-        public MappedArraySlice(in ReadOnlyArraySlice<T> data, in ReadOnlyArraySlice<int> map)
+        public MappedArraySlice(in ArraySlice<T> data, in ArraySlice<int> map)
         {
             Guard.MustBeGreaterThanOrEqualTo(data.Length, map.Length, nameof(map));
 

@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tables.Cff
     /// </summary>
     /// <typeparam name="T">The type of elements in the stack.</typeparam>
     internal ref struct RefStack<T>
-        where T : struct
+        where T : unmanaged
     {
         private const int MaxLength = 0X7FFFFFC7;
         private Buffer<T> buffer;

@@ -138,7 +138,7 @@ namespace SixLabors.Fonts.Unicode
         /// A mapped slice of the original types for the isolating run currently
         /// being processed
         /// </summary>
-        private MappedArraySlice<BidiCharacterType> runOriginalTypes;
+        private ReadonlyMappedArraySlice<BidiCharacterType> runOriginalTypes;
 
         /// <summary>
         /// A mapped slice of the run levels for the isolating run currently
@@ -150,13 +150,13 @@ namespace SixLabors.Fonts.Unicode
         /// A mapped slice of the paired bracket types of the isolating
         /// run currently being processed
         /// </summary>
-        private MappedArraySlice<BidiPairedBracketType> runBidiPairedBracketTypes;
+        private ReadonlyMappedArraySlice<BidiPairedBracketType> runBidiPairedBracketTypes;
 
         /// <summary>
         /// A mapped slice of the paired bracket values of the isolating
         /// run currently being processed
         /// </summary>
-        private MappedArraySlice<int> runPairedBracketValues;
+        private ReadonlyMappedArraySlice<int> runPairedBracketValues;
 
         /// <summary>
         /// Maximum pairing depth for paired brackets
@@ -825,12 +825,12 @@ namespace SixLabors.Fonts.Unicode
         {
             // Create mappings onto the underlying data
             this.runResolvedTypes = new MappedArraySlice<BidiCharacterType>(this.workingTypes, this.isolatedRunMapping.AsSlice());
-            this.runOriginalTypes = new MappedArraySlice<BidiCharacterType>(this.originalTypes, this.isolatedRunMapping.AsSlice());
+            this.runOriginalTypes = new ReadonlyMappedArraySlice<BidiCharacterType>(this.originalTypes, this.isolatedRunMapping.AsSlice());
             this.runLevels = new MappedArraySlice<sbyte>(this.ResolvedLevels, this.isolatedRunMapping.AsSlice());
             if (this.hasBrackets)
             {
-                this.runBidiPairedBracketTypes = new MappedArraySlice<BidiPairedBracketType>(this.pairedBracketTypes, this.isolatedRunMapping.AsSlice());
-                this.runPairedBracketValues = new MappedArraySlice<int>(this.pairedBracketValues, this.isolatedRunMapping.AsSlice());
+                this.runBidiPairedBracketTypes = new ReadonlyMappedArraySlice<BidiPairedBracketType>(this.pairedBracketTypes, this.isolatedRunMapping.AsSlice());
+                this.runPairedBracketValues = new ReadonlyMappedArraySlice<int>(this.pairedBracketValues, this.isolatedRunMapping.AsSlice());
             }
 
             this.runLevel = runLevel;
@@ -1329,7 +1329,7 @@ namespace SixLabors.Fonts.Unicode
             {
                 if (this.runOriginalTypes[i] == BidiCharacterType.NonspacingMark)
                 {
-                    this.runOriginalTypes[i] = dir;
+                    this.runResolvedTypes[i] = dir;
                 }
                 else if (this.runOriginalTypes[i] != BidiCharacterType.BoundaryNeutral)
                 {

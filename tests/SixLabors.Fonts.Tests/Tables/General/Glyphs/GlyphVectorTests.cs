@@ -48,10 +48,10 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             // act
             Matrix3x2 matrix = Matrix3x2.Identity;
             matrix.Translation = new Vector2(10, 10);
-            var transformed = GlyphVector.Transform(glyphVector, matrix);
+            GlyphVector.TransformInPlace(ref glyphVector, matrix);
 
             // assert
-            Assert.Equal(expectedBounds, transformed.GetBounds());
+            Assert.Equal(expectedBounds, glyphVector.GetBounds());
         }
 
         [Fact]
@@ -109,10 +109,10 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             matrix.M12 = 0.8F;
             matrix.M21 = 2.0F;
             matrix.M22 = 3.0F;
-            var transformed = GlyphVector.Transform(glyphVector, matrix);
+            GlyphVector.TransformInPlace(ref glyphVector, matrix);
 
             // assert
-            Bounds transformedBounds = transformed.GetBounds();
+            Bounds transformedBounds = glyphVector.GetBounds();
             Assert.Equal(expectedBounds.Min.X, transformedBounds.Min.X, precision);
             Assert.Equal(expectedBounds.Min.Y, transformedBounds.Min.Y, precision);
             Assert.Equal(expectedBounds.Max.X, transformedBounds.Max.X, precision);

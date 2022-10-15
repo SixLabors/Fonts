@@ -109,5 +109,7 @@ namespace SixLabors.Fonts
         private string DebuggerDisplay
             => FormattableString
             .Invariant($" {this.GlyphId} : {this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : {this.IsDecomposed}");
+
+        internal string ToDebuggerDisplay() => this.DebuggerDisplay;
     }
 }

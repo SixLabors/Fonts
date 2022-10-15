@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Use the default line break rule.
         /// </summary>
-        Normal,
+        Standard,
 
         /// <summary>
         /// To prevent overflow, word breaks should be inserted between any two
@@ -22,7 +22,7 @@ namespace SixLabors.Fonts
 
         /// <summary>
         /// Word breaks should not be used for Chinese/Japanese/Korean (CJK) text.
-        /// Non-CJK text behavior is the same as for <see cref="Normal"/>
+        /// Non-CJK text behavior is the same as for <see cref="Standard"/>
         /// </summary>
         KeepAll
     }
