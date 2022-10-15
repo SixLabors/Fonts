@@ -16,7 +16,6 @@ namespace SixLabors.Fonts
     {
         private int length;
         private readonly byte[] buffer;
-        private readonly Memory<T> memory;
         private readonly Span<T> span;
         private bool isDisposed;
 
@@ -29,27 +28,13 @@ namespace SixLabors.Fonts
             this.length = length;
 
             ByteMemoryManager<T> manager = new(this.buffer);
-            this.memory = manager.Memory.Slice(0, this.length);
-            this.span = this.memory.Span;
+            this.Memory = manager.Memory.Slice(0, this.length);
+            this.span = this.Memory.Span;
 
             this.isDisposed = false;
         }
 
-        /// <summary>
-        /// Gets an array slice over the buffer.
-        /// Do not allow this to escape the scope of the parent struct!!
-        /// </summary>
-        /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
-        public ArraySlice<T> DangerousGetSlice()
-        {
-            if (this.buffer is null)
-            {
-                ThrowObjectDisposedException();
-            }
-
-            // TODO: This cast seems super unsafe. Could it cause GC corruption?
-            return new ArraySlice<T>(Unsafe.As<T[]>(this.buffer), 0, this.length);
-        }
+        public Memory<T> Memory { get; }
 
         public Span<T> GetSpan()
         {

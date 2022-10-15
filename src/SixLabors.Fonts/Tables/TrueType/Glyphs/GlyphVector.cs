@@ -125,13 +125,13 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 GlyphTableEntry entry = glyph.entries[i];
 
                 using var buffer = new Buffer<Vector2>(entry.ControlPoints.Length + 4);
-                ArraySlice<Vector2> controlPoints = buffer.DangerousGetSlice();
+                Span<Vector2> controlPoints = buffer.Memory.Span;
 
                 controlPoints[controlPoints.Length - 4] = pp1;
                 controlPoints[controlPoints.Length - 3] = pp2;
                 controlPoints[controlPoints.Length - 2] = pp3;
                 controlPoints[controlPoints.Length - 1] = pp4;
-                entry.ControlPoints.CopyTo(controlPoints);
+                entry.ControlPoints.Span.CopyTo(controlPoints);
 
                 // To keep vertical hinting but discard horizontal hinting we simply cheat the hinter.
                 // We stretch the symbols horizontally so that the hinter would have to work with higher accuracy in the X direction.
@@ -139,18 +139,18 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 
                 if (hintingMode == HintingMode.HintXY)
                 {
-                    ScaleX(controlPoints.Span, multiplier);
+                    ScaleX(controlPoints, multiplier);
                 }
 
-                GlyphTableEntry withPhantomPoints = new(controlPoints, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
+                GlyphTableEntry withPhantomPoints = new(buffer.Memory, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
                 interpreter.HintGlyph(withPhantomPoints);
 
                 if (hintingMode == HintingMode.HintXY)
                 {
-                    ScaleX(controlPoints.Span, 1F / multiplier);
+                    ScaleX(controlPoints, 1F / multiplier);
                 }
 
-                controlPoints.Span.Slice(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.Span);
+                controlPoints.Slice(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.Span);
                 glyph.entries[i] = new(entry.ControlPoints, entry.OnCurves, entry.EndPoints, default, entry.Instructions);
             }
         }
@@ -226,15 +226,15 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             List<Vector2> controlPoints = new();
             List<bool> onCurves = new();
             List<ushort> endPoints = new();
-
             for (int resultIndex = 0; resultIndex < this.entries.Count; resultIndex++)
             {
                 GlyphTableEntry glyph = this.entries[resultIndex];
                 int pointCount = glyph.PointCount;
                 ushort endPointOffset = (ushort)controlPoints.Count;
+                Span<Vector2> glyphPoints = glyph.ControlPoints.Span;
                 for (int i = 0; i < pointCount; i++)
                 {
-                    controlPoints.Add(glyph.ControlPoints[i]);
+                    controlPoints.Add(glyphPoints[i]);
                     onCurves.Add(glyph.OnCurves[i]);
                 }
 

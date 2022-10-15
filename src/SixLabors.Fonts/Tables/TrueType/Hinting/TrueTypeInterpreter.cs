@@ -507,7 +507,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         // moving twilight points moves their "original" value also
                         if (this.zp2.IsTwilight)
                         {
-                            this.zp2.Original.ControlPoints[index] = this.zp2.Current.ControlPoints[index];
+                            this.zp2.Original.ControlPoints.Span[index] = this.zp2.Current.ControlPoints.Span[index];
                         }
                     }
 
@@ -596,14 +596,16 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         int contour = this.stack.Pop();
                         int start = contour == 0 ? 0 : this.contours[contour - 1] + 1;
                         int count = this.zp2.IsTwilight ? this.zp2.Current.PointCount : this.contours[contour] + 1;
+                        Span<Vector2> points = this.zp2.Current.ControlPoints.Span;
+                        TouchState[] states = this.zp2.TouchState;
 
                         for (int i = start; i < count; i++)
                         {
                             // don't move the reference point
                             if (point != i)
                             {
-                                this.zp2.Current.ControlPoints[i] += displacement;
-                                this.zp2.TouchState[i] |= touch;
+                                points[i] += displacement;
+                                states[i] |= touch;
                             }
                         }
                     }
@@ -623,12 +625,13 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                             count = this.contours[this.contours.Length - 1] + 1;
                         }
 
+                        Span<Vector2> points = this.zp2.Current.ControlPoints.Span;
                         for (int i = 0; i < count; i++)
                         {
                             // don't move the reference point
                             if (point != i)
                             {
-                                this.zp2.Current.ControlPoints[i] += displacement;
+                                points[i] += displacement;
                             }
                         }
                     }
@@ -644,8 +647,8 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         if (this.zp0.IsTwilight)
                         {
                             Vector2 original = this.state.Freedom * distance;
-                            this.zp0.Original.ControlPoints[pointIndex] = original;
-                            this.zp0.Current.ControlPoints[pointIndex] = original;
+                            this.zp0.Original.ControlPoints.Span[pointIndex] = original;
+                            this.zp0.Current.ControlPoints.Span[pointIndex] = original;
                         }
 
                         // current position of the point along the projection vector
@@ -695,8 +698,11 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         // if we're operating on the twilight zone, initialize the points
                         if (this.zp1.IsTwilight)
                         {
-                            this.zp1.Original.ControlPoints[pointIndex] = this.zp0.Original.ControlPoints[this.state.Rp0] + (targetDistance * this.state.Freedom / this.fdotp);
-                            this.zp1.Current.ControlPoints[pointIndex] = this.zp1.Original.ControlPoints[pointIndex];
+                            Span<Vector2> zp0Original = this.zp0.Original.ControlPoints.Span;
+                            Span<Vector2> zp1Current = this.zp1.Current.ControlPoints.Span;
+                            Span<Vector2> zp1Original = this.zp1.Original.ControlPoints.Span;
+                            zp1Original[pointIndex] = zp0Original[this.state.Rp0] + (targetDistance * this.state.Freedom / this.fdotp);
+                            zp1Current[pointIndex] = zp1Original[pointIndex];
                         }
 
                         float currentDistance = this.Project(this.zp1.GetCurrent(pointIndex) - this.zp0.GetCurrent(this.state.Rp0));
@@ -896,7 +902,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         if (Math.Abs(den) <= Epsilon)
                         {
                             // parallel lines; spec says to put the ppoint "into the middle of the two lines"
-                            this.zp2.Current.ControlPoints[index] = (a0 + a1 + b0 + b1) / 4;
+                            this.zp2.Current.ControlPoints.Span[index] = (a0 + a1 + b0 + b1) / 4;
                         }
                         else
                         {
@@ -904,7 +910,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                             float u = (b0.X * b1.Y) - (b0.Y * b1.X);
                             Vector2 p = new((t * db.X) - (da.X * u), (t * db.Y) - (da.Y * u));
 
-                            this.zp2.Current.ControlPoints[index] = p / den;
+                            this.zp2.Current.ControlPoints.Span[index] = p / den;
                         }
 
                         this.zp2.TouchState[index] = TouchState.Both;
@@ -1602,8 +1608,8 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             if (this.zp1.IsTwilight)
             {
                 Vector2 initialValue = originalReference + (this.state.Freedom * cvt);
-                this.zp1.Original.ControlPoints[pointIndex] = initialValue;
-                this.zp1.Current.ControlPoints[pointIndex] = initialValue;
+                this.zp1.Original.ControlPoints.Span[pointIndex] = initialValue;
+                this.zp1.Current.ControlPoints.Span[pointIndex] = initialValue;
             }
 
             Vector2 point = this.zp1.GetCurrent(pointIndex);
@@ -1743,7 +1749,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             for (int i = 0; i < this.state.Loop; i++)
             {
                 int pointIndex = this.stack.Pop();
-                this.zp2.Current.ControlPoints[pointIndex] += displacement;
+                this.zp2.Current.ControlPoints.Span[pointIndex] += displacement;
                 this.zp2.TouchState[pointIndex] |= touch;
             }
 
@@ -1754,7 +1760,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
         {
             Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
             TouchState touch = this.GetTouchState();
-            zone.Current.ControlPoints[index] = point;
+            zone.Current.ControlPoints.Span[index] = point;
             zone.TouchState[index] |= touch;
         }
 
@@ -2236,9 +2242,9 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                 this.TouchState = new TouchState[glyphVector.ControlPoints.Length];
             }
 
-            public Vector2 GetCurrent(int index) => this.Current.ControlPoints[index];
+            public Vector2 GetCurrent(int index) => this.Current.ControlPoints.Span[index];
 
-            public Vector2 GetOriginal(int index) => this.Original.ControlPoints[index];
+            public Vector2 GetOriginal(int index) => this.Original.ControlPoints.Span[index];
         }
 
         private class ExecutionStack

@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <param name="bounds">The glyph bounds.</param>
         /// <param name="instructions">The glyph hinting instructions.</param>
         public GlyphTableEntry(
-            ArraySlice<Vector2> controlPoints,
+            Memory<Vector2> controlPoints,
             bool[] onCurves,
             ushort[] endPoints,
             Bounds bounds,
@@ -51,7 +51,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <summary>
         /// Gets or sets the vectorial points defining the shape of this glyph.
         /// </summary>
-        public ArraySlice<Vector2> ControlPoints { get; set; }
+        public Memory<Vector2> ControlPoints { get; set; }
 
         /// <summary>
         /// Gets or sets the point indices for the last point of each contour, in increasing numeric order.
@@ -80,7 +80,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <param name="matrix">The transformation matrix.</param>
         public static void TransformInPlace(ref GlyphTableEntry src, Matrix3x2 matrix)
         {
-            ArraySlice<Vector2> controlPoints = src.ControlPoints;
+            Span<Vector2> controlPoints = src.ControlPoints.Span;
             for (int i = 0; i < controlPoints.Length; i++)
             {
                 controlPoints[i] = Vector2.Transform(controlPoints[i], matrix);
@@ -114,16 +114,17 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             return new GlyphTableEntry(controlPoints, onCurves, endPoints, newBounds, src.Instructions);
         }
 
-        private static Bounds CalculateBounds(ArraySlice<Vector2> controlPoints)
+        private static Bounds CalculateBounds(Memory<Vector2> controlPoints)
         {
             float xMin = float.MaxValue;
             float yMin = float.MaxValue;
             float xMax = float.MinValue;
             float yMax = float.MinValue;
 
-            for (int i = 0; i < controlPoints.Length; ++i)
+            Span<Vector2> points = controlPoints.Span;
+            for (int i = 0; i < points.Length; ++i)
             {
-                Vector2 p = controlPoints[i];
+                Vector2 p = points[i];
                 if (p.X < xMin)
                 {
                     xMin = p.X;
