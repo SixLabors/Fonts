@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,7 +11,7 @@ namespace UnicodeTrieGenerator.Dfa
     /// <summary>
     /// Defines an AST node.
     /// </summary>
-    internal interface INode
+    internal interface INode : IEnumerable<INode>
     {
         /// <summary>
         /// Gets the following position.
@@ -21,6 +22,18 @@ namespace UnicodeTrieGenerator.Dfa
         /// Gets a value indicating whether this node is nullable.
         /// </summary>
         bool Nullable { get; }
+
+        /// <summary>
+        /// Gets the number of child nodes in this node.
+        /// </summary>
+        int Count { get; }
+
+        /// <summary>
+        /// Gets or sets the node at the given position.
+        /// </summary>
+        /// <param name="index">The index of the node.</param>
+        /// <returns>The node at the given position.</returns>
+        INode this[int index] { get; set; }
 
         /// <summary>
         /// Calculates the follow position for this instance.
@@ -55,17 +68,33 @@ namespace UnicodeTrieGenerator.Dfa
     /// </summary>
     internal abstract class Node : INode
     {
+        protected List<INode> Enumerator { get; } = new();
+
         /// <inheritdoc/>
         public HashSet<INode> FollowPos { get; } = new();
 
         /// <inheritdoc/>
         public virtual bool Nullable => false;
 
+        public int Count => this.Enumerator.Count;
+
+        public INode this[int index] { get => this.Enumerator[index]; set => this.Enumerator[index] = value; }
+
         /// <inheritdoc/>
-        public abstract void CalcFollowPos();
+        public virtual void CalcFollowPos()
+        {
+            foreach (INode node in this)
+            {
+                node.CalcFollowPos();
+            }
+        }
 
         /// <inheritdoc/>
         public abstract INode Copy();
+
+        public IEnumerator<INode> GetEnumerator() => this.Enumerator.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
     }
 
     /// <summary>
@@ -84,9 +113,6 @@ namespace UnicodeTrieGenerator.Dfa
         HashSet<INode> ILogicalNode.LastPos { get; } = new HashSet<INode>();
 
         /// <inheritdoc/>
-        public override void CalcFollowPos() => throw new NotImplementedException();
-
-        /// <inheritdoc/>
         public override INode Copy() => new Variable(this.Name);
     }
 
@@ -100,9 +126,6 @@ namespace UnicodeTrieGenerator.Dfa
         public string Value { get; }
 
         /// <inheritdoc/>
-        public override void CalcFollowPos() => throw new NotImplementedException();
-
-        /// <inheritdoc/>
         public override INode Copy() => new Comment(this.Value);
     }
 
@@ -111,22 +134,15 @@ namespace UnicodeTrieGenerator.Dfa
     /// </summary>
     internal class Assignment : Node
     {
-        public Assignment(Variable variable, INode expression)
+        public Assignment(Variable variable, ILogicalNode expression)
         {
-            this.Variable = variable;
-            this.Expression = expression;
+            this.Enumerator.Add(variable);
+            this.Enumerator.Add(expression);
         }
 
-        public Variable Variable { get; }
+        public Variable Variable => (Variable)this[0];
 
-        public INode Expression { get; }
-
-        /// <inheritdoc/>
-        public override void CalcFollowPos()
-        {
-            this.Variable.CalcFollowPos();
-            this.Expression.CalcFollowPos();
-        }
+        public ILogicalNode Expression => (ILogicalNode)this[1];
 
         /// <inheritdoc/>
         public override INode Copy() => new Assignment(this.Variable, this.Expression);
@@ -139,13 +155,13 @@ namespace UnicodeTrieGenerator.Dfa
     {
         public Alternation(ILogicalNode a, ILogicalNode b)
         {
-            this.A = a;
-            this.B = b;
+            this.Enumerator.Add(a);
+            this.Enumerator.Add(b);
         }
 
-        public ILogicalNode A { get; }
+        public ILogicalNode A => (ILogicalNode)this[0];
 
-        public ILogicalNode B { get; }
+        public ILogicalNode B => (ILogicalNode)this[1];
 
         /// <inheritdoc/>
         public override bool Nullable => this.A.Nullable || this.B.Nullable;
@@ -155,13 +171,6 @@ namespace UnicodeTrieGenerator.Dfa
 
         /// <inheritdoc/>
         public HashSet<INode> LastPos => NodeUtilities.Union(this.A.LastPos, this.B.LastPos);
-
-        /// <inheritdoc/>
-        public override void CalcFollowPos()
-        {
-            this.A.CalcFollowPos();
-            this.B.CalcFollowPos();
-        }
 
         /// <inheritdoc/>
         public override INode Copy()
@@ -175,13 +184,13 @@ namespace UnicodeTrieGenerator.Dfa
     {
         public Concatenation(ILogicalNode a, ILogicalNode b)
         {
-            this.A = a;
-            this.B = b;
+            this.Enumerator.Add(a);
+            this.Enumerator.Add(b);
         }
 
-        public ILogicalNode A { get; }
+        public ILogicalNode A => (ILogicalNode)this[0];
 
-        public ILogicalNode B { get; }
+        public ILogicalNode B => (ILogicalNode)this[1];
 
         /// <inheritdoc/>
         public override bool Nullable => this.A.Nullable && this.B.Nullable;
@@ -219,6 +228,7 @@ namespace UnicodeTrieGenerator.Dfa
         /// <inheritdoc/>
         public override void CalcFollowPos()
         {
+            base.CalcFollowPos();
             foreach (INode n in this.A.LastPos)
             {
                 NodeUtilities.AddAll(n.FollowPos, this.B.FirstPos);
@@ -237,11 +247,11 @@ namespace UnicodeTrieGenerator.Dfa
     {
         public Repeat(ILogicalNode expression, string op)
         {
-            this.Expression = expression;
+            this.Enumerator.Add(expression);
             this.Op = op;
         }
 
-        public ILogicalNode Expression { get; }
+        public ILogicalNode Expression => (ILogicalNode)this[0];
 
         public string Op { get; }
 
@@ -257,6 +267,7 @@ namespace UnicodeTrieGenerator.Dfa
         /// <inheritdoc/>
         public override void CalcFollowPos()
         {
+            base.CalcFollowPos();
             if (this.Op is "*" or "+")
             {
                 foreach (INode n in this.LastPos)
@@ -287,9 +298,6 @@ namespace UnicodeTrieGenerator.Dfa
 
         /// <inheritdoc/>
         public HashSet<INode> LastPos { get; }
-
-        /// <inheritdoc/>
-        public override void CalcFollowPos() => throw new NotImplementedException();
     }
 
     /// <summary>
