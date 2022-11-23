@@ -192,6 +192,12 @@ namespace SixLabors.Fonts
         public abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support);
 
         /// <summary>
+        /// Gets the unicode codepoints for which a glyph exists in the font.
+        /// </summary>
+        /// <returns>An enumerable containing all available codepoints.</returns>
+        internal abstract IEnumerable<CodePoint> GetAvailableCodePoints();
+
+        /// <summary>
         /// Gets the glyph metrics for a given code point and glyph id.
         /// </summary>
         /// <param name="codePoint">The Unicode codepoint.</param>

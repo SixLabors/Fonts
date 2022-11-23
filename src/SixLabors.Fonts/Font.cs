@@ -167,6 +167,13 @@ namespace SixLabors.Fonts
             }
         }
 
+        /// <summary>
+        /// Gets the unicode codepoints for which a glyph exists in the font.
+        /// </summary>
+        /// <returns>An enumerable containing all available codepoints.</returns>
+        public IEnumerable<CodePoint> GetAvailableCodePoints()
+            => this.FontMetrics.GetAvailableCodePoints();
+
         private string LoadFontName()
             => this.metrics.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;
 

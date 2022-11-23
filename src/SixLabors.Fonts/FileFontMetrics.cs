@@ -137,6 +137,10 @@ namespace SixLabors.Fonts
         internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
             => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
 
+        /// <inheritdoc />
+        internal override IEnumerable<CodePoint> GetAvailableCodePoints()
+            => this.metrics.Value.GetAvailableCodePoints();
+
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
             => this.metrics.Value.ApplySubstitution(collection);

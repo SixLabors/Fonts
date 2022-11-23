@@ -235,6 +235,16 @@ namespace SixLabors.Fonts
             return this.glyphCache[glyphId];
         }
 
+        /// <inheritdoc />
+        internal override IEnumerable<CodePoint> GetAvailableCodePoints()
+        {
+            CMapTable cmap = this.outlineType == OutlineType.TrueType
+                ? this.trueTypeFontTables!.Cmap
+                : this.compactFontTables!.Cmap;
+
+            return cmap.GetAvailableCodePoints();
+        }
+
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
         {

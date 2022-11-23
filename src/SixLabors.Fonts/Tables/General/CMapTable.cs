@@ -80,6 +80,22 @@ namespace SixLabors.Fonts.Tables.General
             return false;
         }
 
+        /// <summary>
+        /// Gets the unicode codepoints for which a glyph exists in the font.
+        /// </summary>
+        /// <returns>An enumerable containing all available codepoints.</returns>
+        public IEnumerable<CodePoint> GetAvailableCodePoints()
+        {
+            var values = new HashSet<int>();
+
+            foreach (int v in this.Tables.SelectMany(subtable => subtable.GetAvailableCodePoints()))
+            {
+                values.Add(v);
+            }
+
+            return values.OrderBy(v => v).Select(v => new CodePoint(v));
+        }
+
         public static CMapTable Load(FontReader reader)
         {
             using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);

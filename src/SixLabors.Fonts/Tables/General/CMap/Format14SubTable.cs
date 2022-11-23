@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using SixLabors.Fonts.Unicode;
@@ -137,6 +138,9 @@ namespace SixLabors.Fonts.Tables.General.CMap
             glyphId = 0;
             return false;
         }
+
+        public override IEnumerable<int> GetAvailableCodePoints()
+            => Array.Empty<int>();
 
         public ushort CharacterPairToGlyphId(CodePoint codePoint, ushort defaultGlyphIndex, CodePoint nextCodePoint)
         {
