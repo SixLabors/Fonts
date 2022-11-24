@@ -16,7 +16,7 @@ namespace SixLabors.Fonts.Native
         /// </summary>
         /// <param name="theArray">The array to examine.</param>
         /// <returns>The number of values in <paramref name="theArray"/>.</returns>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern long CFArrayGetCount(IntPtr theArray);
 
         /// <summary>
@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Native
         /// </summary>
         /// <returns>The type identifier for the CFArray opaque type.</returns>
         /// <remarks>CFMutableArray objects have the same type identifier as CFArray objects.</remarks>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern ulong CFArrayGetTypeID();
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace SixLabors.Fonts.Native
         /// <param name="theArray">The array to examine.</param>
         /// <param name="idx">The index of the value to retrieve. If the index is outside the index space of <paramref name="theArray"/> (<c>0</c> to <c>N-1</c> inclusive where <c>N</c> is the count of <paramref name="theArray"/>), the behavior is undefined.</param>
         /// <returns>The value at the <paramref name="idx"/> index in <paramref name="theArray"/>. If the return value is a Core Foundation Object, ownership follows The Get Rule.</returns>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr CFArrayGetValueAtIndex(IntPtr theArray, long idx);
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Native
         /// You can compare this value with the known <c>CFTypeID</c> identifier obtained with a “GetTypeID” function specific to a type, for example CFDateGetTypeID.
         /// These values might change from release to release or platform to platform.
         /// </remarks>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern ulong CFGetTypeID(IntPtr cf);
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace SixLabors.Fonts.Native
         /// </summary>
         /// <param name="theString">The string to examine.</param>
         /// <returns>The number (in terms of UTF-16 code pairs) of characters stored in <paramref name="theString"/>.</returns>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern long CFStringGetLength(IntPtr theString);
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Native
         /// <param name="encoding">The string encoding to which the character contents of <paramref name="theString"/> should be converted. The encoding must specify an 8-bit encoding.</param>
         /// <returns><see langword="true"/> upon success or <see langword="false"/> if the conversion fails or the provided buffer is too small.</returns>
         /// <remarks>This function is useful when you need your own copy of a string’s character data as a C string. You also typically call it as a “backup” when a prior call to the <see cref="CFStringGetCStringPtr"/> function fails.</remarks>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern bool CFStringGetCString(IntPtr theString, byte[] buffer, long bufferSize, CFStringEncoding encoding);
 
         /// <summary>
@@ -86,14 +86,14 @@ namespace SixLabors.Fonts.Native
         /// Whether or not this function returns a valid pointer or <c>NULL</c> depends on many factors, all of which depend on how the string was created and its properties. In addition, the function result might change between different releases and on different platforms. So do not count on receiving a non-<c>NULL</c> result from this function under any circumstances.
         /// </para>
         /// </remarks>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr CFStringGetCStringPtr(IntPtr theString, CFStringEncoding encoding);
 
         /// <summary>
         /// Releases a Core Foundation object.
         /// </summary>
         /// <param name="cf">A CFType object to release. This value must not be <c>NULL</c>.</param>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern void CFRelease(IntPtr cf);
 
         /// <summary>
@@ -103,14 +103,14 @@ namespace SixLabors.Fonts.Native
         /// <param name="pathStyle">The operating system path style to be used to create the path. See <see cref="CFURLPathStyle"/> for a list of possible values.</param>
         /// <returns>The URL's path in the format specified by <paramref name="pathStyle"/>. Ownership follows the create rule. See The Create Rule.</returns>
         /// <remarks>This function returns the URL's path as a file system path for a given path style.</remarks>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr CFURLCopyFileSystemPath(IntPtr anURL, CFURLPathStyle pathStyle);
 
         /// <summary>
         /// Returns the type identifier for the CFURL opaque type.
         /// </summary>
         /// <returns>The type identifier for the CFURL opaque type.</returns>
-        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern ulong CFURLGetTypeID();
     }
 }
