@@ -7,7 +7,7 @@ SixLabors.Fonts
 
 <div align="center">
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/SixLabors/Fonts/Build/build-and-test.yml?branch=main)](https://github.com/SixLabors/Fonts/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/SixLabors/Fonts/build-and-test.yml?branch=main)](https://github.com/SixLabors/Fonts/actions)
 [![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/main/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
