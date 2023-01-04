@@ -72,7 +72,6 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
         }
 
-#if NETCOREAPP3_0_OR_GREATER
         [Fact]
         public void LoadFontMetadata_WithWoff2Format()
         {
@@ -95,7 +94,6 @@ namespace SixLabors.Fonts.Tests
             Assert.Single(r.GlyphKeys);
             Assert.Single(r.GlyphRects);
         }
-#endif
 
         [Fact]
         public void LoadFont()

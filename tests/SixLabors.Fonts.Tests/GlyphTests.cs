@@ -220,7 +220,6 @@ namespace SixLabors.Fonts.Tests
             Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff.ControlPoints));
         }
 
-#if NETCOREAPP3_0_OR_GREATER
         [Theory]
         [InlineData(false, false, 1238)]
         [InlineData(false, true, 1238)]
@@ -278,7 +277,6 @@ namespace SixLabors.Fonts.Tests
             Assert.True(rendererTtf.ControlPoints.Count > 0);
             Assert.True(rendererTtf.ControlPoints.SequenceEqual(rendererWoff2.ControlPoints));
         }
-#endif
 
         private CodePoint AsCodePoint(string text) => CodePoint.DecodeFromUtf16At(text.AsSpan(), 0);
     }

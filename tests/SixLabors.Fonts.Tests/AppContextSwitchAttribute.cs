@@ -27,22 +27,8 @@ namespace SixLabors.Fonts.Tests
             this.IsEnabled = isEnabled;
         }
 
-        public override void Before(MethodInfo methodUnderTest)
-        {
-#if NETCOREAPP3_1_OR_GREATER
-            AppDomain.CurrentDomain.SetData(this.SwitchName, this.IsEnabled.ToString());
-#else
-            AppContext.SetSwitch(this.SwitchName, this.IsEnabled);
-#endif
-        }
+        public override void Before(MethodInfo methodUnderTest) => AppDomain.CurrentDomain.SetData(this.SwitchName, this.IsEnabled.ToString());
 
-        public override void After(MethodInfo methodUnderTest)
-        {
-#if NETCOREAPP3_1_OR_GREATER
-            AppDomain.CurrentDomain.SetData(this.SwitchName, null);
-#else
-            AppContext.SetSwitch(this.SwitchName, !this.IsEnabled);
-#endif
-        }
+        public override void After(MethodInfo methodUnderTest) => AppDomain.CurrentDomain.SetData(this.SwitchName, null);
     }
 }

@@ -89,7 +89,6 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(glyphsTtf.GlyphCount, glyphsWoff.GlyphCount);
         }
 
-#if NETCOREAPP3_0_OR_GREATER
         [Fact]
         public void ReadFont_WithWoff2Format_EqualsTtf()
         {
@@ -113,6 +112,5 @@ namespace SixLabors.Fonts.Tests
 
             Assert.Equal(glyphsTtf.GlyphCount, glyphsWoff.GlyphCount);
         }
-#endif
     }
 }

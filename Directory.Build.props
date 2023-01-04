@@ -18,22 +18,4 @@
   <!-- Import the shared global .props file -->
   <Import Project="$(MSBuildThisFileDirectory)shared-infrastructure\msbuild\props\SixLabors.Global.props" />
 
-  <!--
-    https://apisof.net/
-    +===================+=====================+
-    | SUPPORTS          | NULLABLE_ATTRIBUTES |
-    +===================+=====================+
-    | netcoreapp3.1     |         Y           |
-    | netstandard2.1    |         Y           |
-    | netstandard2.0    |         N           |
-    +===================+=====================+
-  -->
-
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <DefineConstants>$(DefineConstants);NULLABLE_ATTRIBUTES</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-    <DefineConstants>$(DefineConstants);NULLABLE_ATTRIBUTES</DefineConstants>
-  </PropertyGroup>
-
 </Project>

@@ -175,7 +175,6 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
         }
 
-#if NETCOREAPP3_0_OR_GREATER
         [Fact]
         public void GlyphMetricsMatchesReference_WithWoff2format()
         {
@@ -199,7 +198,6 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(721, glyphMetrics.TopSideBearing);
             Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
         }
-#endif
 
         [Fact]
         public void GlyphMetricsVerticalMatchesReference()
