@@ -93,7 +93,8 @@ namespace SixLabors.Fonts
                 paths = existingDirectories
                     .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
                     .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase)
-                                || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase));
+                                || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase)
+                                || Path.GetExtension(x).Equals(".otf", StringComparison.OrdinalIgnoreCase));
 
                 this.searchDirectories = existingDirectories;
             }
