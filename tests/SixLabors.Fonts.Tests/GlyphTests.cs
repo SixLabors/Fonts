@@ -302,7 +302,7 @@ namespace SixLabors.Fonts.Tests
             });
         }
 
+#endif
         private CodePoint AsCodePoint(string text) => CodePoint.DecodeFromUtf16At(text.AsSpan(), 0);
     }
-#endif
 }
