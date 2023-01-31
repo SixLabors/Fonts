@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
+using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.Cff;
@@ -196,14 +198,16 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
+        public override bool TryGetGlyphMetrics(CodePoint codePoint, ColorFontSupport support, [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
         {
+            // We return metrics for the special glyph representing a missing character, commonly known as .notdef.
             this.TryGetGlyphId(codePoint, out ushort glyphId);
-            return this.GetGlyphMetrics(codePoint, glyphId, support);
+            metrics = this.GetGlyphMetrics(codePoint, glyphId, support);
+            return metrics.Any();
         }
 
         /// <inheritdoc/>
-        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
+        internal override IReadOnlyList<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
         {
             GlyphType glyphType = GlyphType.Standard;
             if (glyphId == 0)
@@ -243,6 +247,23 @@ namespace SixLabors.Fonts
                 : this.compactFontTables!.GSub;
 
             gsub?.ApplySubstitution(this, collection);
+        }
+
+        /// <inheritdoc/>
+        internal override bool TryGetKerningOffset(Glyph previous, Glyph current, out Vector2 vector)
+        {
+            bool isTTF = this.outlineType == OutlineType.TrueType;
+            KerningTable? kern = isTTF
+                ? this.trueTypeFontTables!.Kern
+                : this.compactFontTables!.Kern;
+
+            if (kern is null)
+            {
+                vector = default;
+                return false;
+            }
+
+            return kern.TryGetKerningOffset(previous.GlyphMetrics.GlyphId, current.GlyphMetrics.GlyphId, out vector);
         }
 
         /// <inheritdoc/>

@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
 using System.Linq;
 using SixLabors.Fonts.Unicode;
 using Xunit;
@@ -18,8 +19,11 @@ namespace SixLabors.Fonts.Tests.Issues
 
             const ColorFontSupport support = ColorFontSupport.None;
 
-            Glyph[] a = font.GetGlyphs(new CodePoint('A'), support).ToArray();
-            Glyph[] x = font.GetGlyphs(new CodePoint('x'), support).ToArray();
+            Assert.True(font.TryGetGlyphs(new CodePoint('A'), support, out IEnumerable<Glyph> glyphsA));
+            Glyph[] a = glyphsA.ToArray();
+
+            Assert.True(font.TryGetGlyphs(new CodePoint('x'), support, out IEnumerable<Glyph> glyphsX));
+            Glyph[] x = glyphsX.ToArray();
 
             Glyph ga = Assert.Single(a);
             Glyph gx = Assert.Single(x);

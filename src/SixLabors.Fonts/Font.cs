@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -146,10 +147,30 @@ namespace SixLabors.Fonts
         /// Gets the glyphs for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The code point of the character.</param>
+        /// <param name="glyphs">
+        /// When this method returns, contains the glyphs for the given codepoint if the glyphs
+        /// are found; otherwise the default value. This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains glyphs for the specified codepoint; otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool TryGetGlyphs(CodePoint codePoint, [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
+            => this.TryGetGlyphs(codePoint, TextAttributes.None, ColorFontSupport.None, out glyphs);
+
+        /// <summary>
+        /// Gets the glyphs for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The code point of the character.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
-        /// <returns>Returns the glyph</returns>
-        public IEnumerable<Glyph> GetGlyphs(CodePoint codePoint, ColorFontSupport support)
-            => this.GetGlyphs(codePoint, TextAttributes.None, support);
+        /// <param name="glyphs">
+        /// When this method returns, contains the glyphs for the given codepoint and color support if the glyphs
+        /// are found; otherwise the default value. This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains glyphs for the specified codepoint; otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool TryGetGlyphs(CodePoint codePoint, ColorFontSupport support, [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
+            => this.TryGetGlyphs(codePoint, TextAttributes.None, support, out glyphs);
 
         /// <summary>
         /// Gets the glyphs for the given codepoint.
@@ -157,15 +178,48 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">The code point of the character.</param>
         /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
-        /// <returns>Returns the glyph</returns>
-        public IEnumerable<Glyph> GetGlyphs(CodePoint codePoint, TextAttributes textAttributes, ColorFontSupport support)
+        /// <param name="glyphs">
+        /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
+        /// are found; otherwise the default value. This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains glyphs for the specified codepoint; otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool TryGetGlyphs(CodePoint codePoint, TextAttributes textAttributes, ColorFontSupport support, [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
         {
             TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes };
-            foreach (GlyphMetrics metrics in this.FontMetrics.GetGlyphMetrics(codePoint, support))
+            if (this.FontMetrics.TryGetGlyphMetrics(codePoint, support, out IReadOnlyList<GlyphMetrics>? metrics))
             {
-                yield return new(metrics.CloneForRendering(textRun, codePoint), this.Size);
+                List<Glyph> g = new();
+                foreach (GlyphMetrics metric in metrics)
+                {
+                    g.Add(new(metric.CloneForRendering(textRun, codePoint), this.Size));
+                }
+
+                glyphs = g;
+                return true;
             }
+
+            glyphs = default;
+            return false;
         }
+
+        /// <summary>
+        /// Gets the amount, in font units, the <paramref name="current"/> glyph should be offset if it is proceeded by
+        /// the <paramref name="previous"/> glyph.
+        /// </summary>
+        /// <param name="previous">The previous glyph id.</param>
+        /// <param name="current">The current glyph id.</param>
+        /// <param name="vector">
+        /// When this method returns, contains the offset, in font units, that should be applied to the
+        /// <paramref name="current"/> glyph, if the offset is found; otherwise the default vector value.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains and offset for the glyph combination; otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool TryGetKerningOffset(Glyph previous, Glyph current, out Vector2 vector)
+            => this.FontMetrics.TryGetKerningOffset(previous, current, out vector);
 
         private string LoadFontName()
             => this.metrics.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;

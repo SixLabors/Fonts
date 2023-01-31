@@ -100,7 +100,8 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Add(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             // Get letter A
-            Glyph g = font.GetGlyphs(new CodePoint(41), ColorFontSupport.None).First();
+            Assert.True(font.TryGetGlyphs(new CodePoint(41), ColorFontSupport.None, out IEnumerable<Glyph> glyphs));
+            Glyph g = glyphs.First();
             GlyphOutline instance = ((TrueTypeGlyphMetrics)g.GlyphMetrics).GetOutline();
 
             Assert.Equal(20, instance.ControlPoints.Length);

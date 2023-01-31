@@ -18,7 +18,9 @@ namespace SixLabors.Fonts.Tests
         public void FakeFontGetGlyph()
         {
             Font font = CreateFont("hello world");
-            Glyph glyph = font.GetGlyphs(new CodePoint('h'), ColorFontSupport.None).First();
+
+            Assert.True(font.TryGetGlyphs(new CodePoint('h'), ColorFontSupport.None, out IEnumerable<Glyph> glyphs));
+            Glyph glyph = glyphs.First();
             Assert.NotEqual(default, glyph);
         }
 

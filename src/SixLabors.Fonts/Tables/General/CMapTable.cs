@@ -70,9 +70,12 @@ namespace SixLabors.Fonts.Tables.General
                 // Regardless of the encoding scheme, character codes that do
                 // not correspond to any glyph in the font should be mapped to glyph index 0.
                 // The glyph at this location must be a special glyph representing a missing character, commonly known as .notdef.
-                if (t.TryGetGlyphId(codePoint, out glyphId) && glyphId > 0)
+                if (t.TryGetGlyphId(codePoint, out glyphId))
                 {
-                    return true;
+                    if (glyphId > 0)
+                    {
+                        return true;
+                    }
                 }
             }
 
