@@ -236,19 +236,16 @@ namespace SixLabors.Fonts
 
             // We overwrite the cache entry for this type should the attributes change.
             return this.glyphCache.GetOrAdd(
-                glyphId,
-                id => new[]
-                {
+                  glyphId,
+                  id => new[]
+                  {
                     this.CreateGlyphMetrics(
                     codePoint,
-                    glyphId,
+                    id,
                     glyphType,
                     textAttributes,
                     textDecorations)
-                };
-            }
-
-            return this.glyphCache[glyphId];
+                  });
         }
 
         /// <inheritdoc/>
@@ -488,7 +485,7 @@ namespace SixLabors.Fonts
                 return false;
             }
 
-            // We overwrite the cache entry for this type should the attributes change
+            // We overwrite the cache entry for this type should the attributes change.
             metrics = this.colorGlyphCache.GetOrAdd(glyphId, id =>
             {
                 GlyphMetrics[] m = Array.Empty<GlyphMetrics>();
@@ -498,7 +495,7 @@ namespace SixLabors.Fonts
                     m = new GlyphMetrics[indexes.Length];
                     for (int i = 0; i < indexes.Length; i++)
                     {
-                        LayerRecord? layer = indexes[i];
+                        LayerRecord layer = indexes[i];
                         m[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, textDecorations, layer.PaletteIndex);
                     }
                 }
