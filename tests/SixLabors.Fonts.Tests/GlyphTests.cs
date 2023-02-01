@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using Moq;
 using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
@@ -288,6 +289,28 @@ namespace SixLabors.Fonts.Tests
         }
 #endif
 
+#if OS_WINDOWS
+        [Theory]
+        [InlineData("Arial")]
+        [InlineData("Segoe UI Emoji")]
+        public void RendererIsThreadsafe(string fontName)
+        {
+            const int threadCount = 10;
+            Parallel.For(0, threadCount, _ =>
+            {
+                ColorGlyphRenderer renderer1 = new();
+                TextRenderer.RenderTextTo(renderer1, "A 🙂 ", new TextOptions(SystemFonts.CreateFont(fontName, 15)));
+
+                ColorGlyphRenderer renderer2 = new();
+                TextRenderer.RenderTextTo(renderer2, "A 🙂 ", new TextOptions(SystemFonts.CreateFont(fontName, 15)));
+
+                Assert.True(renderer1.ControlPoints.Count > 0);
+                Assert.True(renderer2.ControlPoints.Count > 0);
+                Assert.True(renderer1.ControlPoints.SequenceEqual(renderer2.ControlPoints));
+            });
+        }
+
+#endif
         private CodePoint AsCodePoint(string text) => CodePoint.DecodeFromUtf16At(text.AsSpan(), 0);
     }
 }

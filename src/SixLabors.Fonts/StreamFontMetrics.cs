@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -32,8 +33,8 @@ namespace SixLabors.Fonts
         private readonly OutlineType outlineType;
 
         // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
-        private readonly GlyphMetrics[][] glyphCache;
-        private readonly GlyphMetrics[][]? colorGlyphCache;
+        private readonly ConcurrentDictionary<ushort, GlyphMetrics[]> glyphCache;
+        private readonly ConcurrentDictionary<ushort, GlyphMetrics[]>? colorGlyphCache;
         private readonly FontDescription description;
         private ushort unitsPerEm;
         private float scaleFactor;
@@ -66,10 +67,10 @@ namespace SixLabors.Fonts
             this.trueTypeFontTables = tables;
             this.outlineType = OutlineType.TrueType;
             this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
-            this.glyphCache = new GlyphMetrics[tables.Glyf.GlyphCount][];
+            this.glyphCache = new();
             if (tables.Colr is not null)
             {
-                this.colorGlyphCache = new GlyphMetrics[tables.Glyf.GlyphCount][];
+                this.colorGlyphCache = new();
             }
 
             this.Initialize(tables);
@@ -84,10 +85,10 @@ namespace SixLabors.Fonts
             this.compactFontTables = tables;
             this.outlineType = OutlineType.CFF;
             this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
-            this.glyphCache = new GlyphMetrics[tables.Cff.GlyphCount][];
+            this.glyphCache = new();
             if (tables.Colr is not null)
             {
-                this.colorGlyphCache = new GlyphMetrics[tables.Cff.GlyphCount][];
+                this.colorGlyphCache = new();
             }
 
             this.Initialize(tables);
@@ -234,10 +235,9 @@ namespace SixLabors.Fonts
             }
 
             // We overwrite the cache entry for this type should the attributes change.
-            GlyphMetrics[]? cached = this.glyphCache[glyphId];
-            if (cached is null)
-            {
-                this.glyphCache[glyphId] = new[]
+            return this.glyphCache.GetOrAdd(
+                glyphId,
+                id => new[]
                 {
                     this.CreateGlyphMetrics(
                     codePoint,
@@ -488,25 +488,23 @@ namespace SixLabors.Fonts
                 return false;
             }
 
-            // We overwrite the cache entry for this type should the attributes change.
-            metrics = this.colorGlyphCache[glyphId];
-            if (metrics is null)
+            // We overwrite the cache entry for this type should the attributes change
+            metrics = this.colorGlyphCache.GetOrAdd(glyphId, id =>
             {
-                Span<LayerRecord> indexes = colr.GetLayers(glyphId);
+                GlyphMetrics[] m = Array.Empty<GlyphMetrics>();
+                Span<LayerRecord> indexes = colr.GetLayers(id);
                 if (indexes.Length > 0)
                 {
-                    metrics = new GlyphMetrics[indexes.Length];
+                    m = new GlyphMetrics[indexes.Length];
                     for (int i = 0; i < indexes.Length; i++)
                     {
                         LayerRecord? layer = indexes[i];
-
-                        metrics[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, textDecorations, layer.PaletteIndex);
+                        m[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, textDecorations, layer.PaletteIndex);
                     }
                 }
 
-                metrics ??= Array.Empty<GlyphMetrics>();
-                this.colorGlyphCache[glyphId] = metrics;
-            }
+                return m;
+            });
 
             return metrics.Length > 0;
         }

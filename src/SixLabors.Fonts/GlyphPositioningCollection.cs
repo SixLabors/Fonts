@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -202,7 +203,15 @@ namespace SixLabors.Fonts
                             }
 
                             // Track the number of inserted glyphs at the offset so we can correctly increment our position.
-                            this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = new(0, 0, metrics[0].AdvanceWidth, metrics[0].AdvanceHeight) }, pointSize, metrics.ToArray()));
+                            ushort maxAdvancedWidth = 0;
+                            ushort maxAdvancedHeight = 0;
+                            for (int k = 0; k < metrics.Count; k++)
+                            {
+                                maxAdvancedWidth = Math.Max(maxAdvancedWidth, metrics[k].AdvanceWidth);
+                                maxAdvancedHeight = Math.Max(maxAdvancedHeight, metrics[k].AdvanceHeight);
+                            }
+
+                            this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = new(0, 0, maxAdvancedWidth, maxAdvancedHeight) }, pointSize, metrics.ToArray()));
                             replacementCount++;
                         }
                     }
