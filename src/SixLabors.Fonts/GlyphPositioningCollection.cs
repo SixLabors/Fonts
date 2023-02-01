@@ -160,7 +160,9 @@ namespace SixLabors.Fonts
                         // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                         // cache the original in the font metrics and only update our collection.
                         var metrics = new List<GlyphMetrics>(data.Count);
-                        foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
+                        TextAttributes textAttributes = shape.TextRun.TextAttributes;
+                        TextDecorations textDecorations = shape.TextRun.TextDecorations;
+                        foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, colorFontSupport))
                         {
                             if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                             {
@@ -173,7 +175,7 @@ namespace SixLabors.Fonts
                             // Clone and offset the glyph for rendering.
                             // If the glyph is the result of a decomposition substitution we need to offset it.
                             // We slip the text run in here while we clone so we have it available to the renderer.
-                            GlyphMetrics clone = gm.CloneForRendering(shape.TextRun, codePoint);
+                            GlyphMetrics clone = gm.CloneForRendering();
                             if (isDecomposed)
                             {
                                 if (!this.IsVerticalLayoutMode)
@@ -250,7 +252,9 @@ namespace SixLabors.Fonts
 
                 // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                 // cache the original in the font metrics and only update our collection.
-                foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, colorFontSupport))
+                TextAttributes textAttributes = data.TextRun.TextAttributes;
+                TextDecorations textDecorations = data.TextRun.TextDecorations;
+                foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, colorFontSupport))
                 {
                     if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                     {
@@ -259,8 +263,7 @@ namespace SixLabors.Fonts
 
                     // Clone and offset the glyph for rendering.
                     // If the glyph is the result of a decomposition substitution we need to offset it.
-                    // We slip the text run in here while we clone so we have it available to the renderer.
-                    GlyphMetrics clone = gm.CloneForRendering(data.TextRun, codePoint);
+                    GlyphMetrics clone = gm.CloneForRendering();
                     if (isDecomposed)
                     {
                         if (!this.IsVerticalLayoutMode)

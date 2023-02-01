@@ -131,20 +131,30 @@ namespace SixLabors.Fonts
             => this.fontMetrics.Value.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
 
         /// <inheritdoc />
-        public override bool TryGetGlyphMetrics(CodePoint codePoint, ColorFontSupport support, [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
-              => this.fontMetrics.Value.TryGetGlyphMetrics(codePoint, support, out metrics);
+        public override bool TryGetGlyphMetrics(
+            CodePoint codePoint,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support,
+            [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
+              => this.fontMetrics.Value.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, support, out metrics);
 
         /// <inheritdoc />
-        internal override IReadOnlyList<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
-            => this.fontMetrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
+        internal override IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
+            CodePoint codePoint,
+            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support)
+            => this.fontMetrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, support);
 
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
             => this.fontMetrics.Value.ApplySubstitution(collection);
 
         /// <inheritdoc/>
-        internal override bool TryGetKerningOffset(Glyph previous, Glyph current, out Vector2 vector)
-            => this.fontMetrics.Value.TryGetKerningOffset(previous, current, out vector);
+        internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
+            => this.fontMetrics.Value.TryGetKerningOffset(previousId, currentId, out vector);
 
         /// <inheritdoc/>
         internal override void UpdatePositions(GlyphPositioningCollection collection)

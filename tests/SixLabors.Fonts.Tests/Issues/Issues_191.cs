@@ -19,10 +19,10 @@ namespace SixLabors.Fonts.Tests.Issues
 
             const ColorFontSupport support = ColorFontSupport.None;
 
-            Assert.True(font.TryGetGlyphs(new CodePoint('A'), support, out IEnumerable<Glyph> glyphsA));
+            Assert.True(font.TryGetGlyphs(new CodePoint('A'), support, out IReadOnlyList<Glyph> glyphsA));
             Glyph[] a = glyphsA.ToArray();
 
-            Assert.True(font.TryGetGlyphs(new CodePoint('x'), support, out IEnumerable<Glyph> glyphsX));
+            Assert.True(font.TryGetGlyphs(new CodePoint('x'), support, out IReadOnlyList<Glyph> glyphsX));
             Glyph[] x = glyphsX.ToArray();
 
             Glyph ga = Assert.Single(a);

@@ -188,6 +188,8 @@ namespace SixLabors.Fonts
         /// Gets the glyph metrics for a given code point.
         /// </summary>
         /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
+        /// <param name="textAttributes">The text attributes applied to the glyph.</param>
+        /// <param name="textDecorations">The text decorations applied to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <param name="metrics">
         /// When this method returns, contains the metrics for the given codepoint and color support if the metrics
@@ -196,7 +198,12 @@ namespace SixLabors.Fonts
         /// <returns>
         /// <see langword="true"/> if the face contains glyph metrics for the specified codepoint; otherwise, <see langword="false"/>.
         /// </returns>
-        public abstract bool TryGetGlyphMetrics(CodePoint codePoint, ColorFontSupport support, [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics);
+        public abstract bool TryGetGlyphMetrics(
+            CodePoint codePoint,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support,
+            [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point and glyph id.
@@ -206,9 +213,16 @@ namespace SixLabors.Fonts
         /// The previously matched or substituted glyph id for the codepoint in the face.
         /// If this value equals <value>0</value> the default fallback metrics are returned.
         /// </param>
+        /// <param name="textAttributes">The text attributes applied to the glyph.</param>
+        /// <param name="textDecorations">The text decorations applied to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
-        internal abstract IReadOnlyList<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support);
+        internal abstract IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
+            CodePoint codePoint,
+            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support);
 
         /// <summary>
         /// Applies any available substitutions to the collection of glyphs.
@@ -217,20 +231,20 @@ namespace SixLabors.Fonts
         internal abstract void ApplySubstitution(GlyphSubstitutionCollection collection);
 
         /// <summary>
-        /// Gets the amount, in font units, the <paramref name="current"/> glyph should be offset if it is proceeded by
-        /// the <paramref name="previous"/> glyph.
+        /// Gets the amount, in font units, the <paramref name="currentId"/> glyph should be offset if it is proceeded by
+        /// the <paramref name="previousId"/> glyph.
         /// </summary>
-        /// <param name="previous">The previous glyph id.</param>
-        /// <param name="current">The current glyph id.</param>
+        /// <param name="previousId">The previous glyph id.</param>
+        /// <param name="currentId">The current glyph id.</param>
         /// <param name="vector">
         /// When this method returns, contains the offset, in font units, that should be applied to the
-        /// <paramref name="current"/> glyph, if the offset is found; otherwise the default vector value.
+        /// <paramref name="currentId"/> glyph, if the offset is found; otherwise the default vector value.
         /// This parameter is passed uninitialized.
         /// </param>
         /// <returns>
         /// <see langword="true"/> if the face contains and offset for the glyph combination; otherwise, <see langword="false"/>.
         /// </returns>
-        internal abstract bool TryGetKerningOffset(Glyph previous, Glyph current, out Vector2 vector);
+        internal abstract bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector);
 
         /// <summary>
         /// Applies any available positioning updates to the collection of glyphs.

@@ -120,6 +120,8 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             ushort glyphId,
             GlyphType glyphType,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
             ushort palleteIndex = 0)
         {
             TrueTypeFontTables tables = this.trueTypeFontTables!;
@@ -154,6 +156,7 @@ namespace SixLabors.Fonts
 
             return new TrueTypeGlyphMetrics(
                 this,
+                glyphId,
                 codePoint,
                 vector,
                 advanceWidth,
@@ -161,7 +164,8 @@ namespace SixLabors.Fonts
                 lsb,
                 tsb,
                 this.UnitsPerEm,
-                glyphId,
+                textAttributes,
+                textDecorations,
                 glyphType,
                 color);
         }

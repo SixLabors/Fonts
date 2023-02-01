@@ -355,7 +355,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             // Move tone mark to the beginning of the previous syllable, unless it is zero width
             // We don't have access to the glyphs metrics as an array when substituting so we have to loop.
             FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
-            if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
+            TextAttributes textAttributes = data.TextRun.TextAttributes;
+            TextDecorations textDecorations = data.TextRun.TextDecorations;
+            if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, collection.TextOptions.ColorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
             {
                 foreach (GlyphMetrics gm in metrics)
                 {
@@ -378,7 +380,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
             if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
             {
-                if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
+                TextAttributes textAttributes = data.TextRun.TextAttributes;
+                TextDecorations textDecorations = data.TextRun.TextDecorations;
+                if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, collection.TextOptions.ColorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
                 {
                     foreach (GlyphMetrics gm in metrics)
                     {

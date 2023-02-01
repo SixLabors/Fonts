@@ -17,6 +17,7 @@ namespace SixLabors.Fonts
 
         internal GlyphMetrics(
             StreamFontMetrics font,
+            ushort glyphId,
             CodePoint codePoint,
             Bounds bounds,
             ushort advanceWidth,
@@ -24,26 +25,84 @@ namespace SixLabors.Fonts
             short leftSideBearing,
             short topSideBearing,
             ushort unitsPerEM,
-            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
         {
             this.FontMetrics = font;
-            this.CodePoint = codePoint;
-            this.UnitsPerEm = unitsPerEM;
-            this.AdvanceWidth = advanceWidth;
-            this.AdvanceHeight = advanceHeight;
             this.GlyphId = glyphId;
+            this.CodePoint = codePoint;
             this.Bounds = bounds;
             this.Width = bounds.Max.X - bounds.Min.X;
             this.Height = bounds.Max.Y - bounds.Min.Y;
-            this.GlyphType = glyphType;
+            this.UnitsPerEm = unitsPerEM;
+            this.AdvanceWidth = advanceWidth;
+            this.AdvanceHeight = advanceHeight;
             this.LeftSideBearing = leftSideBearing;
             this.RightSideBearing = (short)(this.AdvanceWidth - this.LeftSideBearing - this.Width);
             this.TopSideBearing = topSideBearing;
             this.BottomSideBearing = (short)(this.AdvanceHeight - this.TopSideBearing - this.Height);
-            this.ScaleFactor = new(unitsPerEM * 72F);
+            this.TextAttributes = textAttributes;
+            this.TextDecorations = textDecorations;
+            this.GlyphType = glyphType;
             this.GlyphColor = glyphColor;
+
+            Vector2 offset = Vector2.Zero;
+            Vector2 scaleFactor = new(unitsPerEM * 72F);
+            if (textAttributes.HasFlag(TextAttributes.Subscript))
+            {
+                float units = this.UnitsPerEm;
+                scaleFactor /= new Vector2(font.SubscriptXSize / units, font.SubscriptYSize / units);
+                offset = new(font.SubscriptXOffset, font.SubscriptYOffset);
+            }
+            else if (textAttributes.HasFlag(TextAttributes.Superscript))
+            {
+                float units = this.UnitsPerEm;
+                scaleFactor /= new Vector2(font.SuperscriptXSize / units, font.SuperscriptYSize / units);
+                offset = new(font.SuperscriptXOffset, -font.SuperscriptYOffset);
+            }
+
+            this.ScaleFactor = scaleFactor;
+            this.Offset = offset;
+        }
+
+        internal GlyphMetrics(
+            StreamFontMetrics font,
+            ushort glyphId,
+            CodePoint codePoint,
+            Bounds bounds,
+            ushort advanceWidth,
+            ushort advanceHeight,
+            short leftSideBearing,
+            short topSideBearing,
+            ushort unitsPerEM,
+            Vector2 offset,
+            Vector2 scaleFactor,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            GlyphType glyphType = GlyphType.Standard,
+            GlyphColor? glyphColor = null)
+        {
+            this.FontMetrics = font;
+            this.GlyphId = glyphId;
+            this.CodePoint = codePoint;
+            this.Bounds = bounds;
+            this.Width = bounds.Max.X - bounds.Min.X;
+            this.Height = bounds.Max.Y - bounds.Min.Y;
+            this.UnitsPerEm = unitsPerEM;
+            this.AdvanceWidth = advanceWidth;
+            this.AdvanceHeight = advanceHeight;
+            this.LeftSideBearing = leftSideBearing;
+            this.RightSideBearing = (short)(this.AdvanceWidth - this.LeftSideBearing - this.Width);
+            this.TopSideBearing = topSideBearing;
+            this.BottomSideBearing = (short)(this.AdvanceHeight - this.TopSideBearing - this.Height);
+            this.TextAttributes = textAttributes;
+            this.TextDecorations = textDecorations;
+            this.GlyphType = glyphType;
+            this.GlyphColor = glyphColor;
+            this.ScaleFactor = scaleFactor;
+            this.Offset = offset;
         }
 
         /// <summary>
@@ -114,26 +173,36 @@ namespace SixLabors.Fonts
         /// <inheritdoc cref="FontMetrics.UnitsPerEm"/>
         public ushort UnitsPerEm { get; }
 
-        /// <inheritdoc cref="FontMetrics.ScaleFactor"/>
-        public Vector2 ScaleFactor { get; protected set; }
+        /// <summary>
+        /// Gets the id of the glyph within the font tables.
+        /// </summary>
+        public ushort GlyphId { get; }
+
+        /// <summary>
+        /// Gets the scale factor that is applied to all glyphs in this face.
+        /// Normally calculated as 72 * <see cref="UnitsPerEm"/> so that 1pt = 1px
+        /// unless the glyph has <see cref="TextAttributes"/> that apply scaling adjustment.
+        /// </summary>
+        public Vector2 ScaleFactor { get; }
 
         internal Vector2 Offset { get; set; }
 
-        internal TextRun? TextRun { get; set; }
+        /// <summary>
+        /// Gets the text attributes applied to the glyph.
+        /// </summary>
+        public TextAttributes TextAttributes { get; }
 
         /// <summary>
-        /// Gets the glyph Id.
+        /// Gets the text decorations applied to the glyph.
         /// </summary>
-        internal ushort GlyphId { get; }
+        public TextDecorations TextDecorations { get; }
 
         /// <summary>
         /// Performs a semi-deep clone (FontMetrics are not cloned) for rendering
         /// This allows caching the original in the font metrics.
         /// </summary>
-        /// <param name="textRun">The text run this glyph is a member of.</param>
-        /// <param name="codePoint">The codepoint for this glyph.</param>
         /// <returns>The new <see cref="GlyphMetrics"/>.</returns>
-        internal abstract GlyphMetrics CloneForRendering(TextRun textRun, CodePoint codePoint);
+        internal abstract GlyphMetrics CloneForRendering();
 
         /// <summary>
         /// Apply an offset to the glyph.
@@ -285,17 +354,17 @@ namespace SixLabors.Fonts
             {
                 // TextRun is never null here as rendering is only accessable via a Glyph which
                 // uses the cloned metrics instance.
-                if ((this.TextRun!.TextDecorations & TextDecorations.Underline) == TextDecorations.Underline)
+                if ((this.TextDecorations & TextDecorations.Underline) == TextDecorations.Underline)
                 {
                     DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
                 }
 
-                if ((this.TextRun!.TextDecorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
+                if ((this.TextDecorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
                 {
                     DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
                 }
 
-                if ((this.TextRun!.TextDecorations & TextDecorations.Overline) == TextDecorations.Overline)
+                if ((this.TextDecorations & TextDecorations.Overline) == TextDecorations.Overline)
                 {
                     DrawLine(overlineThickness, overlinePosition);
                 }

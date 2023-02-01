@@ -11,19 +11,25 @@ namespace SixLabors.Fonts
     /// The combined set of properties that uniquely identify the glyph that is to be rendered
     /// at a particular size and dpi.
     /// </summary>
-    [DebuggerDisplay("GlyphIndex = {GlyphIndex}, PointSize = {PointSize}, DpiX = {DpiX}, DpiY = {DpiY}")]
+    [DebuggerDisplay("GlyphId = {GlyphId}, PointSize = {PointSize}, Dpi = {Dpi}")]
     public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParameters>
     {
-        internal GlyphRendererParameters(GlyphMetrics metrics, TextRun textRun, float pointSize, float dpi)
+        internal GlyphRendererParameters(
+            GlyphMetrics metrics,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            float pointSize,
+            float dpi)
         {
             this.Font = metrics.FontMetrics.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
             this.FontStyle = metrics.FontMetrics.Description.Style;
-            this.GlyphIndex = metrics.GlyphId;
+            this.GlyphId = metrics.GlyphId;
             this.PointSize = pointSize;
             this.Dpi = dpi;
             this.GlyphType = metrics.GlyphType;
             this.GlyphColor = metrics.GlyphColor ?? default;
-            this.TextRun = textRun;
+            this.TextAttributes = textAttributes;
+            this.TextDecorations = textDecorations;
             this.CodePoint = metrics.CodePoint;
         }
 
@@ -48,9 +54,9 @@ namespace SixLabors.Fonts
         public FontStyle FontStyle { get; }
 
         /// <summary>
-        /// Gets the index of the glyph within the font tables.
+        /// Gets the id of the glyph within the font tables.
         /// </summary>
-        public ushort GlyphIndex { get; }
+        public ushort GlyphId { get; }
 
         /// <summary>
         /// Gets the codepoint represented by this glyph.
@@ -68,9 +74,14 @@ namespace SixLabors.Fonts
         public float Dpi { get; }
 
         /// <summary>
-        /// Gets the text run this glyph belongs to.
+        /// Gets the text attributes to apply to the glyph.
         /// </summary>
-        public TextRun TextRun { get; }
+        public TextAttributes TextAttributes { get; }
+
+        /// <summary>
+        /// Gets the text decorations to apply to the glyph.
+        /// </summary>
+        public TextDecorations TextDecorations { get; }
 
         /// <summary>
         /// Compares two <see cref="GlyphRendererParameters"/> objects for equality.
@@ -107,9 +118,10 @@ namespace SixLabors.Fonts
             => other.PointSize == this.PointSize
             && other.FontStyle == this.FontStyle
             && other.Dpi == this.Dpi
-            && other.GlyphIndex == this.GlyphIndex
+            && other.GlyphId == this.GlyphId
             && other.GlyphType == this.GlyphType
-            && other.TextRun == this.TextRun
+            && other.TextAttributes == this.TextAttributes
+            && other.TextDecorations == this.TextDecorations
             && other.GlyphColor.Equals(this.GlyphColor)
             && ((other.Font is null && this.Font is null)
             || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
@@ -119,14 +131,21 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         public override int GetHashCode()
-            => HashCode.Combine(
+        {
+            int a = HashCode.Combine(
                 this.Font,
                 this.PointSize,
-                this.GlyphIndex,
+                this.GlyphId,
                 this.GlyphType,
-                this.GlyphColor,
+                this.GlyphColor);
+
+            int b = HashCode.Combine(
                 this.FontStyle,
                 this.Dpi,
-                this.TextRun);
+                this.TextAttributes,
+                this.TextDecorations);
+
+            return HashCode.Combine(a, b);
+        }
     }
 }

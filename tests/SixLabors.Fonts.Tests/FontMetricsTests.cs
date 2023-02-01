@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 using Xunit;
@@ -139,7 +138,7 @@ namespace SixLabors.Fonts.Tests
 
             var codePoint = new CodePoint('A');
 
-            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, TextAttributes.None, TextDecorations.None, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
             GlyphMetrics glyphMetrics = metrics[0];
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
@@ -165,7 +164,7 @@ namespace SixLabors.Fonts.Tests
 
             var codePoint = new CodePoint('A');
 
-            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, TextAttributes.None, TextDecorations.None, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
             GlyphMetrics glyphMetrics = metrics[0];
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
@@ -192,7 +191,7 @@ namespace SixLabors.Fonts.Tests
 
             var codePoint = new CodePoint('A');
 
-            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, TextAttributes.None, TextDecorations.None, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
             GlyphMetrics glyphMetrics = metrics[0];
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
@@ -219,7 +218,7 @@ namespace SixLabors.Fonts.Tests
 
             var codePoint = new CodePoint('A');
 
-            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, TextAttributes.None, TextDecorations.None, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
             GlyphMetrics glyphMetrics = metrics[0];
 
             // Position 0.

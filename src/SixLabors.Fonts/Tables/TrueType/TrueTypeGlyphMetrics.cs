@@ -21,6 +21,7 @@ namespace SixLabors.Fonts.Tables.TrueType
 
         internal TrueTypeGlyphMetrics(
             StreamFontMetrics font,
+            ushort glyphId,
             CodePoint codePoint,
             GlyphVector vector,
             ushort advanceWidth,
@@ -28,49 +29,78 @@ namespace SixLabors.Fonts.Tables.TrueType
             short leftSideBearing,
             short topSideBearing,
             ushort unitsPerEM,
-            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
-            : base(font, codePoint, vector.GetBounds(), advanceWidth, advanceHeight, leftSideBearing, topSideBearing, unitsPerEM, glyphId, glyphType, glyphColor)
+            : base(
+                  font,
+                  glyphId,
+                  codePoint,
+                  vector.GetBounds(),
+                  advanceWidth,
+                  advanceHeight,
+                  leftSideBearing,
+                  topSideBearing,
+                  unitsPerEM,
+                  textAttributes,
+                  textDecorations,
+                  glyphType,
+                  glyphColor)
+            => this.vector = vector;
+
+        internal TrueTypeGlyphMetrics(
+            StreamFontMetrics font,
+            ushort glyphId,
+            CodePoint codePoint,
+            GlyphVector vector,
+            ushort advanceWidth,
+            ushort advanceHeight,
+            short leftSideBearing,
+            short topSideBearing,
+            ushort unitsPerEM,
+            Vector2 offset,
+            Vector2 scaleFactor,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            GlyphType glyphType = GlyphType.Standard,
+            GlyphColor? glyphColor = null)
+            : base(
+                  font,
+                  glyphId,
+                  codePoint,
+                  vector.GetBounds(),
+                  advanceWidth,
+                  advanceHeight,
+                  leftSideBearing,
+                  topSideBearing,
+                  unitsPerEM,
+                  offset,
+                  scaleFactor,
+                  textAttributes,
+                  textDecorations,
+                  glyphType,
+                  glyphColor)
             => this.vector = vector;
 
         /// <inheritdoc/>
-        internal override GlyphMetrics CloneForRendering(TextRun textRun, CodePoint codePoint)
-        {
-            StreamFontMetrics fontMetrics = this.FontMetrics;
-            Vector2 offset = this.Offset;
-            Vector2 scaleFactor = this.ScaleFactor;
-            if (textRun.TextAttributes.HasFlag(TextAttributes.Subscript))
-            {
-                float units = this.UnitsPerEm;
-                scaleFactor /= new Vector2(fontMetrics.SubscriptXSize / units, fontMetrics.SubscriptYSize / units);
-                offset = new(this.FontMetrics.SubscriptXOffset, this.FontMetrics.SubscriptYOffset);
-            }
-            else if (textRun.TextAttributes.HasFlag(TextAttributes.Superscript))
-            {
-                float units = this.UnitsPerEm;
-                scaleFactor /= new Vector2(fontMetrics.SuperscriptXSize / units, fontMetrics.SuperscriptYSize / units);
-                offset = new(fontMetrics.SuperscriptXOffset, -fontMetrics.SuperscriptYOffset);
-            }
-
-            return new TrueTypeGlyphMetrics(
-                fontMetrics,
-                codePoint,
+        internal override GlyphMetrics CloneForRendering()
+            => new TrueTypeGlyphMetrics(
+                this.FontMetrics,
+                this.GlyphId,
+                this.CodePoint,
                 GlyphVector.DeepClone(this.vector),
                 this.AdvanceWidth,
                 this.AdvanceHeight,
                 this.LeftSideBearing,
                 this.TopSideBearing,
                 this.UnitsPerEm,
-                this.GlyphId,
+                this.Offset,
+                this.ScaleFactor,
+                this.TextAttributes,
+                this.TextDecorations,
                 this.GlyphType,
-                this.GlyphColor)
-            {
-                Offset = offset,
-                ScaleFactor = scaleFactor,
-                TextRun = textRun
-            };
-        }
+                this.GlyphColor);
 
         /// <summary>
         /// Gets the outline for the current glyph.
@@ -99,10 +129,7 @@ namespace SixLabors.Fonts.Tables.TrueType
             }
 
             FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
-
-            // TextRun is never null here as rendering is only accessable via a Glyph which
-            // uses the cloned metrics instance.
-            var parameters = new GlyphRendererParameters(this, this.TextRun!, pointSize, dpi);
+            GlyphRendererParameters parameters = new(this, this.TextAttributes, this.TextDecorations, pointSize, dpi);
 
             if (renderer.BeginGlyph(box, parameters))
             {

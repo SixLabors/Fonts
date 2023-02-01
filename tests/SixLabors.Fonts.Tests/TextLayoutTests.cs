@@ -19,8 +19,8 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = CreateFont("hello world");
 
-            Assert.True(font.TryGetGlyphs(new CodePoint('h'), ColorFontSupport.None, out IEnumerable<Glyph> glyphs));
-            Glyph glyph = glyphs.First();
+            Assert.True(font.TryGetGlyphs(new CodePoint('h'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
+            Glyph glyph = glyphs[0];
             Assert.NotEqual(default, glyph);
         }
 
@@ -76,7 +76,7 @@ namespace SixLabors.Fonts.Tests
             float top,
             float left)
         {
-            string text = "hello world\nhello";
+            const string text = "hello world\nhello";
             Font font = CreateFont(text);
 
             var span = new TextOptions(font)
@@ -136,7 +136,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void TryMeasureCharacterBounds()
         {
-            string text = "a b\nc";
+            const string text = "a b\nc";
             GlyphBounds[] expectedGlyphMetrics =
             {
                 new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10)),

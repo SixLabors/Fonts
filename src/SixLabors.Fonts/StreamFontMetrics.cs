@@ -198,16 +198,26 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public override bool TryGetGlyphMetrics(CodePoint codePoint, ColorFontSupport support, [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
+        public override bool TryGetGlyphMetrics(
+            CodePoint codePoint,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support,
+            [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
         {
             // We return metrics for the special glyph representing a missing character, commonly known as .notdef.
             this.TryGetGlyphId(codePoint, out ushort glyphId);
-            metrics = this.GetGlyphMetrics(codePoint, glyphId, support);
+            metrics = this.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, support);
             return metrics.Any();
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
+        internal override IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
+            CodePoint codePoint,
+            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support)
         {
             GlyphType glyphType = GlyphType.Standard;
             if (glyphId == 0)
@@ -218,7 +228,7 @@ namespace SixLabors.Fonts
             }
 
             if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredMetrics(codePoint, glyphId, out GlyphMetrics[]? metrics))
+                && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, textDecorations, out GlyphMetrics[]? metrics))
             {
                 return metrics;
             }
@@ -232,7 +242,9 @@ namespace SixLabors.Fonts
                     this.CreateGlyphMetrics(
                     codePoint,
                     glyphId,
-                    glyphType)
+                    glyphType,
+                    textAttributes,
+                    textDecorations)
                 };
             }
 
@@ -250,7 +262,7 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        internal override bool TryGetKerningOffset(Glyph previous, Glyph current, out Vector2 vector)
+        internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
         {
             bool isTTF = this.outlineType == OutlineType.TrueType;
             KerningTable? kern = isTTF
@@ -263,7 +275,7 @@ namespace SixLabors.Fonts
                 return false;
             }
 
-            return kern.TryGetKerningOffset(previous.GlyphMetrics.GlyphId, current.GlyphMetrics.GlyphId, out vector);
+            return kern.TryGetKerningOffset(previousId, currentId, out vector);
         }
 
         /// <inheritdoc/>
@@ -459,7 +471,12 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
-        private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
+        private bool TryGetColoredMetrics(
+            CodePoint codePoint,
+            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
             ColrTable? colr = this.outlineType == OutlineType.TrueType
                 ? this.trueTypeFontTables!.Colr
@@ -483,7 +500,7 @@ namespace SixLabors.Fonts
                     {
                         LayerRecord? layer = indexes[i];
 
-                        metrics[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PaletteIndex);
+                        metrics[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, textDecorations, layer.PaletteIndex);
                     }
                 }
 
@@ -498,11 +515,13 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             ushort glyphId,
             GlyphType glyphType,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
             ushort palleteIndex = 0)
             => this.outlineType switch
             {
-                OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, palleteIndex),
-                OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, palleteIndex),
+                OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, palleteIndex),
+                OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, palleteIndex),
                 _ => throw new NotSupportedException(),
             };
     }
