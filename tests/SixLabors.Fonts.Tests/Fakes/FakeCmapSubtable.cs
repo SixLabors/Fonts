@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.Unicode;
 
@@ -28,5 +29,8 @@ namespace SixLabors.Fonts.Tests.Fakes
             glyphId = 0;
             return false;
         }
+
+        public override IEnumerable<int> GetAvailableCodePoints()
+            => this.glyphs.Select(x => x.CodePoint.Value);
     }
 }

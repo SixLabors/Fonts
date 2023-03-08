@@ -148,6 +148,10 @@ namespace SixLabors.Fonts
             ColorFontSupport support)
             => this.fontMetrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, support);
 
+        /// <inheritdoc />
+        internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
+            => this.metrics.Value.GetAvailableCodePoints();
+
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
             => this.fontMetrics.Value.ApplySubstitution(collection);
