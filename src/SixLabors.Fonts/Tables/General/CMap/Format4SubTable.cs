@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.WellKnownIds;
 
@@ -51,6 +52,9 @@ namespace SixLabors.Fonts.Tables.General.CMap
             glyphId = 0;
             return false;
         }
+
+        public override IEnumerable<int> GetAvailableCodePoints()
+            => this.Segments.SelectMany(segment => Enumerable.Range(segment.Start, segment.End - segment.Start + 1));
 
         public static IEnumerable<Format4SubTable> Load(IEnumerable<EncodingRecord> encodings, BigEndianBinaryReader reader)
         {

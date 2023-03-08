@@ -124,7 +124,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the glyph Id.
         /// </summary>
-        internal ushort GlyphId { get; }
+        public ushort GlyphId { get; }
 
         /// <summary>
         /// Performs a semi-deep clone (FontMetrics are not cloned) for rendering
