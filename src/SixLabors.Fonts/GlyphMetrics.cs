@@ -205,7 +205,8 @@ namespace SixLabors.Fonts
                 Vector2 tr = new(offset.X + (width * scale.X), offset.Y);
                 Vector2 bl = new(offset.X, offset.Y + (thickness * scale.Y));
 
-                return (tl, tr, bl.Y - tl.Y);
+                // Always ensure the line is at least 1px thick.
+                return (tl, tr, Math.Max(2, bl.Y - tl.Y));
             }
 
             void DrawLine(float thickness, float position)
