@@ -138,7 +138,7 @@ namespace SixLabors.Fonts
             => this.metrics.Value.GetGlyphMetrics(codePoint, glyphId, support);
 
         /// <inheritdoc />
-        internal override IEnumerable<CodePoint> GetAvailableCodePoints()
+        internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
             => this.metrics.Value.GetAvailableCodePoints();
 
         /// <inheritdoc/>

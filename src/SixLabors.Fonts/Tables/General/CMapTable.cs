@@ -16,6 +16,7 @@ namespace SixLabors.Fonts.Tables.General
         internal const string TableName = "cmap";
 
         private readonly Format14SubTable[] format14SubTables = Array.Empty<Format14SubTable>();
+        private CodePoint[]? codepoints;
 
         public CMapTable(IEnumerable<CMapSubTable> tables)
         {
@@ -83,17 +84,22 @@ namespace SixLabors.Fonts.Tables.General
         /// <summary>
         /// Gets the unicode codepoints for which a glyph exists in the font.
         /// </summary>
-        /// <returns>An enumerable containing all available codepoints.</returns>
-        public IEnumerable<CodePoint> GetAvailableCodePoints()
+        /// <returns>The <see cref="IReadOnlyList{CodePoint}"/>.</returns>
+        public IReadOnlyList<CodePoint> GetAvailableCodePoints()
         {
-            var values = new HashSet<int>();
+            if (this.codepoints is not null)
+            {
+                return this.codepoints;
+            }
+
+            HashSet<int> values = new();
 
             foreach (int v in this.Tables.SelectMany(subtable => subtable.GetAvailableCodePoints()))
             {
                 values.Add(v);
             }
 
-            return values.OrderBy(v => v).Select(v => new CodePoint(v));
+            return this.codepoints = values.OrderBy(v => v).Select(v => new CodePoint(v)).ToArray();
         }
 
         public static CMapTable Load(FontReader reader)

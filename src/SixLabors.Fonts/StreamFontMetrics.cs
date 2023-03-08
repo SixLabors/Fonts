@@ -233,7 +233,7 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc />
-        internal override IEnumerable<CodePoint> GetAvailableCodePoints()
+        internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
         {
             CMapTable cmap = this.outlineType == OutlineType.TrueType
                 ? this.trueTypeFontTables!.Cmap

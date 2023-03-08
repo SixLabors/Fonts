@@ -17,11 +17,11 @@ namespace SixLabors.Fonts.Tests
             FontFamily family = collection.Add(TestFonts.SimpleFontFile);
             Font font = family.CreateFont(12);
 
-            IEnumerable<CodePoint> codePoints = font.GetAvailableCodePoints();
+            IReadOnlyList<CodePoint> codePoints = font.FontMetrics.GetAvailableCodePoints();
             IEnumerable<int> codePointValues = codePoints.Select(x => x.Value);
 
             // Compare with https://everythingfonts.com/ttfdump
-            Assert.Equal(257, codePoints.Count());
+            Assert.Equal(257, codePoints.Count);
 
             // Compare with https://fontdrop.info/
             Assert.Contains(0x0000, codePointValues);
@@ -49,7 +49,7 @@ namespace SixLabors.Fonts.Tests
             FontFamily family = collection.Add(TestFonts.SimpleFontFileWoff);
             Font font = family.CreateFont(12);
 
-            IEnumerable<CodePoint> codePoints = font.GetAvailableCodePoints();
+            IReadOnlyList<CodePoint> codePoints = font.FontMetrics.GetAvailableCodePoints();
             IEnumerable<int> codePointValues = codePoints.Select(x => x.Value);
 
             // Compare with https://everythingfonts.com/ttfdump

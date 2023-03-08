@@ -194,8 +194,8 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the unicode codepoints for which a glyph exists in the font.
         /// </summary>
-        /// <returns>An enumerable containing all available codepoints.</returns>
-        internal abstract IEnumerable<CodePoint> GetAvailableCodePoints();
+        /// <returns>The <see cref="IReadOnlyList{CodePoint}"/>.</returns>
+        internal abstract IReadOnlyList<CodePoint> GetAvailableCodePoints();
 
         /// <summary>
         /// Gets the glyph metrics for a given code point and glyph id.
