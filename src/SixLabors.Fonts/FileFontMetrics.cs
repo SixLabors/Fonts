@@ -150,7 +150,7 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc />
         internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
-            => this.metrics.Value.GetAvailableCodePoints();
+            => this.fontMetrics.Value.GetAvailableCodePoints();
 
         /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)

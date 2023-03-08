@@ -33,10 +33,15 @@ namespace SixLabors.Fonts.Tests
             Assert.Contains(0x0062, codePointValues);
             Assert.Contains(0xFFFF, codePointValues);
 
-            var glyphIds = codePoints
-                .SelectMany(x => font.GetGlyphs(x, ColorFontSupport.None))
-                .Select(x => x.GlyphMetrics.GlyphId)
-                .ToHashSet();
+            HashSet<int> glyphIds = new();
+            foreach (CodePoint codePoint in codePoints)
+            {
+                Assert.True(font.TryGetGlyphs(codePoint, out IReadOnlyList<Glyph> glyphs));
+                foreach (Glyph glyph in glyphs)
+                {
+                    glyphIds.Add(glyph.GlyphMetrics.GlyphId);
+                }
+            }
 
             // Compare with https://fontdrop.info/
             Assert.Equal(8, glyphIds.Count);
@@ -53,7 +58,7 @@ namespace SixLabors.Fonts.Tests
             IEnumerable<int> codePointValues = codePoints.Select(x => x.Value);
 
             // Compare with https://everythingfonts.com/ttfdump
-            Assert.Equal(257, codePoints.Count());
+            Assert.Equal(257, codePoints.Count);
 
             // Compare with https://fontdrop.info/
             Assert.Contains(0x0000, codePointValues);
@@ -65,10 +70,15 @@ namespace SixLabors.Fonts.Tests
             Assert.Contains(0x0062, codePointValues);
             Assert.Contains(0xFFFF, codePointValues);
 
-            var glyphIds = codePoints
-                .SelectMany(x => font.GetGlyphs(x, ColorFontSupport.None))
-                .Select(x => x.GlyphMetrics.GlyphId)
-                .ToHashSet();
+            HashSet<int> glyphIds = new();
+            foreach (CodePoint codePoint in codePoints)
+            {
+                Assert.True(font.TryGetGlyphs(codePoint, out IReadOnlyList<Glyph> glyphs));
+                foreach (Glyph glyph in glyphs)
+                {
+                    glyphIds.Add(glyph.GlyphMetrics.GlyphId);
+                }
+            }
 
             // Compare with https://fontdrop.info/
             Assert.Equal(8, glyphIds.Count);
