@@ -61,8 +61,7 @@ namespace SixLabors.Fonts.Tables.TrueType
             ushort unitsPerEM,
             Vector2 offset,
             Vector2 scaleFactor,
-            TextAttributes textAttributes,
-            TextDecorations textDecorations,
+            TextRun textRun,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
             : base(
@@ -77,14 +76,13 @@ namespace SixLabors.Fonts.Tables.TrueType
                   unitsPerEM,
                   offset,
                   scaleFactor,
-                  textAttributes,
-                  textDecorations,
+                  textRun,
                   glyphType,
                   glyphColor)
             => this.vector = vector;
 
         /// <inheritdoc/>
-        internal override GlyphMetrics CloneForRendering()
+        internal override GlyphMetrics CloneForRendering(TextRun textRun)
             => new TrueTypeGlyphMetrics(
                 this.FontMetrics,
                 this.GlyphId,
@@ -97,8 +95,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                 this.UnitsPerEm,
                 this.Offset,
                 this.ScaleFactor,
-                this.TextAttributes,
-                this.TextDecorations,
+                textRun,
                 this.GlyphType,
                 this.GlyphColor);
 
@@ -129,7 +126,7 @@ namespace SixLabors.Fonts.Tables.TrueType
             }
 
             FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
-            GlyphRendererParameters parameters = new(this, this.TextAttributes, this.TextDecorations, pointSize, dpi);
+            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi);
 
             if (renderer.BeginGlyph(box, parameters))
             {

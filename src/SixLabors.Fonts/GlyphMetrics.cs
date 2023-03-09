@@ -79,8 +79,7 @@ namespace SixLabors.Fonts
             ushort unitsPerEM,
             Vector2 offset,
             Vector2 scaleFactor,
-            TextAttributes textAttributes,
-            TextDecorations textDecorations,
+            TextRun textRun,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
         {
@@ -97,12 +96,13 @@ namespace SixLabors.Fonts
             this.RightSideBearing = (short)(this.AdvanceWidth - this.LeftSideBearing - this.Width);
             this.TopSideBearing = topSideBearing;
             this.BottomSideBearing = (short)(this.AdvanceHeight - this.TopSideBearing - this.Height);
-            this.TextAttributes = textAttributes;
-            this.TextDecorations = textDecorations;
+            this.TextAttributes = textRun.TextAttributes;
+            this.TextDecorations = textRun.TextDecorations;
             this.GlyphType = glyphType;
             this.GlyphColor = glyphColor;
             this.ScaleFactor = scaleFactor;
             this.Offset = offset;
+            this.TextRun = textRun;
         }
 
         /// <summary>
@@ -185,7 +185,15 @@ namespace SixLabors.Fonts
         /// </summary>
         public Vector2 ScaleFactor { get; }
 
+        /// <summary>
+        /// Gets or sets the offset in font design units.
+        /// </summary>
         internal Vector2 Offset { get; set; }
+
+        /// <summary>
+        /// Gets the text run that the glyph belongs to.
+        /// </summary>
+        internal TextRun TextRun { get; } = null!;
 
         /// <summary>
         /// Gets the text attributes applied to the glyph.
@@ -201,8 +209,9 @@ namespace SixLabors.Fonts
         /// Performs a semi-deep clone (FontMetrics are not cloned) for rendering
         /// This allows caching the original in the font metrics.
         /// </summary>
+        /// <param name="textRun">The current text run this glyph belongs to.</param>
         /// <returns>The new <see cref="GlyphMetrics"/>.</returns>
-        internal abstract GlyphMetrics CloneForRendering();
+        internal abstract GlyphMetrics CloneForRendering(TextRun textRun);
 
         /// <summary>
         /// Apply an offset to the glyph.
@@ -270,12 +279,36 @@ namespace SixLabors.Fonts
                 Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
                 Vector2 offset = location + (this.Offset * scale * MirrorScale) + (new Vector2(0, positionY) * scale * MirrorScale);
 
-                Vector2 tl = new(offset.X, offset.Y);
-                Vector2 tr = new(offset.X + (width * scale.X), offset.Y);
-                Vector2 bl = new(offset.X, offset.Y + (thickness * scale.Y));
+                width *= scale.X;
+                thickness *= scale.Y;
 
-                // Always ensure the line is at least 1px thick.
-                return (tl, tr, Math.Max(2, bl.Y - tl.Y));
+                // Calculate outline bounds.
+                Vector2 tl = new(offset.X, offset.Y);
+                Vector2 tr = new(offset.X + width, offset.Y);
+                Vector2 bl = new(offset.X, offset.Y + thickness);
+                Vector2 br = new(offset.X + width, offset.Y + thickness);
+
+                // Now clamp the line to whole pixels.
+                Vector2 half = new(.5F);
+
+                tl += half;
+                tr += half;
+                bl += half;
+                br += half;
+
+                // Clamp the vertical components to a whole pixel.
+                tl.Y = MathF.Floor(tl.Y);
+                tr.Y = MathF.Floor(tr.Y);
+                br.Y = MathF.Floor(br.Y);
+                bl.Y = MathF.Floor(bl.Y);
+
+                // Do the same for horizontal components.
+                tl.X = MathF.Floor(tl.X);
+                tr.X = MathF.Floor(tr.X);
+                br.X = MathF.Floor(br.X);
+                bl.X = MathF.Floor(bl.X);
+
+                return (tl, tr, bl.Y - tl.Y);
             }
 
             void DrawLine(float thickness, float position)
@@ -289,24 +322,12 @@ namespace SixLabors.Fonts
 
                 renderer.BeginFigure();
 
-                Vector2 halfHeight = new(0, finalThickness * .5F);
+                Vector2 height = new(0, finalThickness);
 
-                Vector2 tl = start - halfHeight;
-                Vector2 tr = end - halfHeight;
-                Vector2 bl = start + halfHeight;
-                Vector2 br = end + halfHeight;
-
-                // Clamp the horizontal components to a whole pixel.
-                tl.Y = MathF.Ceiling(tl.Y);
-                tr.Y = MathF.Ceiling(tr.Y);
-                br.Y = MathF.Floor(br.Y);
-                bl.Y = MathF.Floor(bl.Y);
-
-                // Do the same for vertical components.
-                tl.X = MathF.Round(tl.X);
-                tr.X = MathF.Round(tr.X);
-                br.X = MathF.Round(br.X);
-                bl.X = MathF.Round(bl.X);
+                Vector2 tl = start;
+                Vector2 tr = end;
+                Vector2 bl = start + height;
+                Vector2 br = end + height;
 
                 renderer.MoveTo(tl);
                 renderer.LineTo(bl);
@@ -326,14 +347,13 @@ namespace SixLabors.Fonts
             }
 
             // There's no built in metrics for these values so we will need to infer them from the other metrics.
-            // Offset to avoid clipping.
             float overlineThickness = this.FontMetrics.UnderlineThickness;
 
             // TODO: Check this. Segoe UI glyphs live outside the metrics so the overline covers the glyph.
             float overlinePosition = this.FontMetrics.Ascender - (overlineThickness * .5F);
             if (renderer is IGlyphDecorationRenderer decorationRenderer)
             {
-                // Allow the rendered to override the decorations to attach
+                // Allow the renderer to override the decorations to attach
                 TextDecorations decorations = decorationRenderer.EnabledDecorations();
                 if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
                 {
@@ -352,8 +372,6 @@ namespace SixLabors.Fonts
             }
             else
             {
-                // TextRun is never null here as rendering is only accessable via a Glyph which
-                // uses the cloned metrics instance.
                 if ((this.TextDecorations & TextDecorations.Underline) == TextDecorations.Underline)
                 {
                     DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);

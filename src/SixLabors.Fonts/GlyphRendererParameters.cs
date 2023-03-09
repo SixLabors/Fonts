@@ -16,8 +16,7 @@ namespace SixLabors.Fonts
     {
         internal GlyphRendererParameters(
             GlyphMetrics metrics,
-            TextAttributes textAttributes,
-            TextDecorations textDecorations,
+            TextRun textRun,
             float pointSize,
             float dpi)
         {
@@ -28,8 +27,7 @@ namespace SixLabors.Fonts
             this.Dpi = dpi;
             this.GlyphType = metrics.GlyphType;
             this.GlyphColor = metrics.GlyphColor ?? default;
-            this.TextAttributes = textAttributes;
-            this.TextDecorations = textDecorations;
+            this.TextRun = textRun;
             this.CodePoint = metrics.CodePoint;
         }
 
@@ -74,14 +72,9 @@ namespace SixLabors.Fonts
         public float Dpi { get; }
 
         /// <summary>
-        /// Gets the text attributes to apply to the glyph.
+        /// Gets the text run that this glyph belongs to.
         /// </summary>
-        public TextAttributes TextAttributes { get; }
-
-        /// <summary>
-        /// Gets the text decorations to apply to the glyph.
-        /// </summary>
-        public TextDecorations TextDecorations { get; }
+        public TextRun TextRun { get; }
 
         /// <summary>
         /// Compares two <see cref="GlyphRendererParameters"/> objects for equality.
@@ -120,14 +113,15 @@ namespace SixLabors.Fonts
             && other.Dpi == this.Dpi
             && other.GlyphId == this.GlyphId
             && other.GlyphType == this.GlyphType
-            && other.TextAttributes == this.TextAttributes
-            && other.TextDecorations == this.TextDecorations
+            && other.TextRun.TextAttributes == this.TextRun.TextAttributes
+            && other.TextRun.TextDecorations == this.TextRun.TextDecorations
             && other.GlyphColor.Equals(this.GlyphColor)
             && ((other.Font is null && this.Font is null)
             || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj) => obj is GlyphRendererParameters p && this.Equals(p);
+        public override bool Equals(object? obj)
+            => obj is GlyphRendererParameters parameters && this.Equals(parameters);
 
         /// <inheritdoc/>
         public override int GetHashCode()
@@ -142,8 +136,8 @@ namespace SixLabors.Fonts
             int b = HashCode.Combine(
                 this.FontStyle,
                 this.Dpi,
-                this.TextAttributes,
-                this.TextDecorations);
+                this.TextRun.TextAttributes,
+                this.TextRun.TextDecorations);
 
             return HashCode.Combine(a, b);
         }

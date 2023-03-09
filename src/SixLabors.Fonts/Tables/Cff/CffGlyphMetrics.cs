@@ -60,8 +60,7 @@ namespace SixLabors.Fonts.Tables.Cff
             ushort unitsPerEM,
             Vector2 offset,
             Vector2 scaleFactor,
-            TextAttributes textAttributes,
-            TextDecorations textDecorations,
+            TextRun textRun,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
             : base(
@@ -76,14 +75,13 @@ namespace SixLabors.Fonts.Tables.Cff
                   unitsPerEM,
                   offset,
                   scaleFactor,
-                  textAttributes,
-                  textDecorations,
+                  textRun,
                   glyphType,
                   glyphColor)
             => this.glyphData = glyphData;
 
         /// <inheritdoc/>
-        internal override GlyphMetrics CloneForRendering()
+        internal override GlyphMetrics CloneForRendering(TextRun textRun)
             => new CffGlyphMetrics(
                 this.FontMetrics,
                 this.GlyphId,
@@ -97,8 +95,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 this.UnitsPerEm,
                 this.Offset,
                 this.ScaleFactor,
-                this.TextAttributes,
-                this.TextDecorations,
+                textRun,
                 this.GlyphType,
                 this.GlyphColor);
 
@@ -123,7 +120,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
             FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
 
-            GlyphRendererParameters parameters = new(this, this.TextAttributes, this.TextDecorations, pointSize, dpi);
+            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi);
             if (renderer.BeginGlyph(box, parameters))
             {
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))

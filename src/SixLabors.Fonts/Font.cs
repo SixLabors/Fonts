@@ -213,12 +213,13 @@ namespace SixLabors.Fonts
             ColorFontSupport support,
             [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
         {
+            TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes, TextDecorations = textDecorations };
             if (this.FontMetrics.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, support, out IReadOnlyList<GlyphMetrics>? metrics))
             {
                 List<Glyph> g = new();
                 foreach (GlyphMetrics metric in metrics)
                 {
-                    g.Add(new(metric.CloneForRendering(), this.Size));
+                    g.Add(new(metric.CloneForRendering(textRun), this.Size));
                 }
 
                 glyphs = g;
