@@ -58,10 +58,7 @@ namespace SixLabors.Fonts
                 }
 
                 // Add the current run, ensuring the font is not null.
-                if (textRun.Font is null)
-                {
-                    textRun.Font = options.Font;
-                }
+                textRun.Font ??= options.Font;
 
                 // Ensure that the previous run does not overlap the current.
                 if (textRuns.Count > 0)

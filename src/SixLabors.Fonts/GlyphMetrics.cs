@@ -1,8 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -260,10 +262,9 @@ namespace SixLabors.Fonts
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
         /// </summary>
         /// <param name="renderer">The surface renderer.</param>
-        /// <param name="pointSize">Size of the point.</param>
         /// <param name="location">The location.</param>
         /// <param name="options">The options used to influence the rendering of this glyph.</param>
-        internal abstract void RenderTo(IGlyphRenderer renderer, float pointSize, Vector2 location, TextOptions options);
+        internal abstract void RenderTo(IGlyphRenderer renderer, Vector2 location, TextOptions options);
 
         internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, float scaledPPEM)
         {
@@ -320,10 +321,20 @@ namespace SixLabors.Fonts
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the specified code point should be skipped when rendering.
+        /// </summary>
+        /// <param name="codePoint">The code point.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool ShouldSkipGlyphRendering(CodePoint codePoint)
+        protected static bool ShouldSkipGlyphRendering(CodePoint codePoint)
             => UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) && !ShouldRenderWhiteSpaceOnly(codePoint);
 
+        /// <summary>
+        /// Gets a value indicating whether the specified code point should be rendered as a white space only.
+        /// </summary>
+        /// <param name="codePoint">The code point.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool ShouldRenderWhiteSpaceOnly(CodePoint codePoint)
         {
@@ -349,6 +360,25 @@ namespace SixLabors.Fonts
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Returns the size to render/measure the glyph based on the given size and resolution in px units.
+        /// </summary>
+        /// <param name="pointSize">The font size in pt units.</param>
+        /// <param name="dpi">The DPI (Dots Per Inch) to render/measure the glyph at</param>
+        /// <returns>The <see cref="float"/>.</returns>
+        protected float GetScaledSize(float pointSize, float dpi)
+        {
+            float scaledPPEM = dpi * pointSize;
+            bool forcePPEMToInt = (this.FontMetrics.HeadFlags & HeadTable.HeadFlags.ForcePPEMToInt) != 0;
+
+            if (forcePPEMToInt)
+            {
+                scaledPPEM = MathF.Round(scaledPPEM);
+            }
+
+            return scaledPPEM;
         }
     }
 }

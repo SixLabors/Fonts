@@ -1,9 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.Cff
@@ -100,7 +98,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 this.GlyphColor);
 
         /// <inheritdoc/>
-        internal override void RenderTo(IGlyphRenderer renderer, float pointSize, Vector2 location, TextOptions options)
+        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -108,15 +106,10 @@ namespace SixLabors.Fonts.Tables.Cff
                 return;
             }
 
+            float pointSize = options.Font.Size;
             float dpi = options.Dpi;
             location *= dpi;
-            float scaledPPEM = dpi * pointSize;
-            bool forcePPEMToInt = (this.FontMetrics.HeadFlags & HeadTable.HeadFlags.ForcePPEMToInt) != 0;
-
-            if (forcePPEMToInt)
-            {
-                scaledPPEM = MathF.Round(scaledPPEM);
-            }
+            float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
             FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
 

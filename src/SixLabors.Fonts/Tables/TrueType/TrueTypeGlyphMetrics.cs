@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Unicode;
 
@@ -106,7 +105,7 @@ namespace SixLabors.Fonts.Tables.TrueType
         public GlyphOutline GetOutline() => this.vector.GetOutline();
 
         /// <inheritdoc/>
-        internal override void RenderTo(IGlyphRenderer renderer, float pointSize, Vector2 location, TextOptions options)
+        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -114,16 +113,10 @@ namespace SixLabors.Fonts.Tables.TrueType
                 return;
             }
 
-            // TODO: Move to base class
+            float pointSize = options.Font.Size;
             float dpi = options.Dpi;
             location *= dpi;
-            float scaledPPEM = dpi * pointSize;
-            bool forcePPEMToInt = (this.FontMetrics.HeadFlags & HeadTable.HeadFlags.ForcePPEMToInt) != 0;
-
-            if (forcePPEMToInt)
-            {
-                scaledPPEM = MathF.Round(scaledPPEM);
-            }
+            float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
             FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
             GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi);

@@ -25,7 +25,7 @@ namespace SixLabors.Fonts.Tests
         {
             const string text = "A";
             CodePoint codePoint = this.AsCodePoint(text);
-            Font font = CreateFont(text);
+            Font font = CreateFont(text, 10);
             TextRun textRun = new() { Start = 0, End = 1, Font = font };
 
             FontMetrics metrics = font.FontMetrics;
@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Tests
                 textRun.TextAttributes,
                 textRun.TextDecorations);
 
-            Glyph glyph = new(glyphMetrics.CloneForRendering(textRun), 10);
+            Glyph glyph = new(glyphMetrics.CloneForRendering(textRun), font.Size);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
             glyph.RenderTo(this.renderer, locationInFontSpace, new TextOptions(font));
@@ -91,11 +91,11 @@ namespace SixLabors.Fonts.Tests
             renderer.Verify(x => x.BeginFigure(), Times.Exactly(3));
         }
 
-        public static Font CreateFont(string text)
+        public static Font CreateFont(string text, float pointSize = 1)
         {
             var fc = (IFontMetricsCollection)new FontCollection();
             Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
-            return new Font(d, 1);
+            return new Font(d, pointSize);
         }
 
         [Fact]
