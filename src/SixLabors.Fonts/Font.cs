@@ -231,11 +231,12 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Gets the amount, in font units, the <paramref name="current"/> glyph should be offset if it is proceeded by
+        /// Gets the amount, in px units, the <paramref name="current"/> glyph should be offset if it is proceeded by
         /// the <paramref name="previous"/> glyph.
         /// </summary>
         /// <param name="previous">The previous glyph.</param>
         /// <param name="current">The current glyph.</param>
+        /// <param name="dpi">The DPI (Dots Per Inch) to render/measure the kerning offset at.</param>
         /// <param name="vector">
         /// When this method returns, contains the offset, in font units, that should be applied to the
         /// <paramref name="current"/> glyph, if the offset is found; otherwise the default vector value.
@@ -244,8 +245,18 @@ namespace SixLabors.Fonts
         /// <returns>
         /// <see langword="true"/> if the face contains and offset for the glyph combination; otherwise, <see langword="false"/>.
         /// </returns>
-        public bool TryGetKerningOffset(Glyph previous, Glyph current, out Vector2 vector)
-            => this.FontMetrics.TryGetKerningOffset(previous.GlyphMetrics.GlyphId, current.GlyphMetrics.GlyphId, out vector);
+        public bool TryGetKerningOffset(Glyph previous, Glyph current, float dpi, out Vector2 vector)
+        {
+            if (this.FontMetrics.TryGetKerningOffset(previous.GlyphMetrics.GlyphId, current.GlyphMetrics.GlyphId, out vector))
+            {
+                // Scale the result
+                Vector2 scale = new Vector2(this.Size * dpi) / current.GlyphMetrics.ScaleFactor;
+                vector *= scale;
+                return true;
+            }
+
+            return false;
+        }
 
         private string LoadFontName()
             => this.metrics.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;

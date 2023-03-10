@@ -92,7 +92,6 @@ namespace SixLabors.Fonts
 
         internal FontRectangle BoundingBox(float dpi)
         {
-            // TODO: GlyphMetrics can do this.
             FontRectangle box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
             if (this.IsWhiteSpace())
             {
