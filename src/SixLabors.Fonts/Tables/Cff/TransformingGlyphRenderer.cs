@@ -31,16 +31,16 @@ namespace SixLabors.Fonts.Tables.Cff
             this.renderer.BeginFigure();
         }
 
-        public bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters)
+        public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
         {
             this.IsOpen = false;
-            return this.renderer.BeginGlyph(bounds, parameters);
+            return this.renderer.BeginGlyph(in bounds, in parameters);
         }
 
-        public void BeginText(FontRectangle bounds)
+        public void BeginText(in FontRectangle bounds)
         {
             this.IsOpen = false;
-            this.renderer.BeginText(bounds);
+            this.renderer.BeginText(in bounds);
         }
 
         public void EndFigure()
@@ -88,6 +88,12 @@ namespace SixLabors.Fonts.Tables.Cff
             this.IsOpen = true;
             this.renderer.QuadraticBezierTo(this.Transform(secondControlPoint), this.Transform(point));
         }
+
+        public TextDecorations EnabledDecorations()
+            => this.renderer.EnabledDecorations();
+
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+            => this.renderer.SetDecoration(textDecorations, this.Transform(start), this.Transform(end), thickness);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector2 Transform(Vector2 point) => (point * this.scale) + this.offset;

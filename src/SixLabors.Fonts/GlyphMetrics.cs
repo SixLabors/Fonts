@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Unicode;
@@ -282,67 +281,18 @@ namespace SixLabors.Fonts
                 width *= scale.X;
                 thickness *= scale.Y;
 
-                // Calculate outline bounds.
                 Vector2 tl = new(offset.X, offset.Y);
                 Vector2 tr = new(offset.X + width, offset.Y);
                 Vector2 bl = new(offset.X, offset.Y + thickness);
-                Vector2 br = new(offset.X + width, offset.Y + thickness);
-
-                // Now clamp the line to whole pixels.
-                Vector2 half = new(.5F);
-
-                tl += half;
-                tr += half;
-                bl += half;
-                br += half;
-
-                // Clamp the vertical components to a whole pixel.
-                tl.Y = MathF.Floor(tl.Y);
-                tr.Y = MathF.Floor(tr.Y);
-                br.Y = MathF.Floor(br.Y);
-                bl.Y = MathF.Floor(bl.Y);
-
-                // Do the same for horizontal components.
-                tl.X = MathF.Floor(tl.X);
-                tr.X = MathF.Floor(tr.X);
-                br.X = MathF.Floor(br.X);
-                bl.X = MathF.Floor(bl.X);
-
                 return (tl, tr, bl.Y - tl.Y);
             }
 
-            void DrawLine(float thickness, float position)
-            {
-                (Vector2 start, Vector2 end, float finalThickness) = GetEnds(thickness, position);
-
-                if (finalThickness == 0)
-                {
-                    return;
-                }
-
-                renderer.BeginFigure();
-
-                Vector2 height = new(0, finalThickness);
-
-                Vector2 tl = start;
-                Vector2 tr = end;
-                Vector2 bl = start + height;
-                Vector2 br = end + height;
-
-                renderer.MoveTo(tl);
-                renderer.LineTo(bl);
-                renderer.LineTo(br);
-                renderer.LineTo(tr);
-
-                renderer.EndFigure();
-            }
-
-            void SetDecoration(TextDecorations decorationType, float thickness, float position)
+            void SetDecoration(TextDecorations decorations, float thickness, float position)
             {
                 (Vector2 start, Vector2 end, float calcThickness) = GetEnds(thickness, position);
                 if (calcThickness != 0)
                 {
-                    ((IGlyphDecorationRenderer)renderer).SetDecoration(decorationType, start, end, calcThickness);
+                    renderer.SetDecoration(decorations, start, end, calcThickness);
                 }
             }
 
@@ -351,41 +301,22 @@ namespace SixLabors.Fonts
 
             // TODO: Check this. Segoe UI glyphs live outside the metrics so the overline covers the glyph.
             float overlinePosition = this.FontMetrics.Ascender - (overlineThickness * .5F);
-            if (renderer is IGlyphDecorationRenderer decorationRenderer)
+
+            // Allow the renderer to override the decorations to attach
+            TextDecorations decorations = renderer.EnabledDecorations();
+            if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
             {
-                // Allow the renderer to override the decorations to attach
-                TextDecorations decorations = decorationRenderer.EnabledDecorations();
-                if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
-                {
-                    SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
-                }
-
-                if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
-                {
-                    SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
-                }
-
-                if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
-                {
-                    SetDecoration(TextDecorations.Overline, overlineThickness, overlinePosition);
-                }
+                SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
             }
-            else
+
+            if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
             {
-                if ((this.TextDecorations & TextDecorations.Underline) == TextDecorations.Underline)
-                {
-                    DrawLine(this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
-                }
+                SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
+            }
 
-                if ((this.TextDecorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
-                {
-                    DrawLine(this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
-                }
-
-                if ((this.TextDecorations & TextDecorations.Overline) == TextDecorations.Overline)
-                {
-                    DrawLine(overlineThickness, overlinePosition);
-                }
+            if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
+            {
+                SetDecoration(TextDecorations.Overline, overlineThickness, overlinePosition);
             }
         }
 

@@ -71,7 +71,7 @@ namespace SixLabors.Fonts.Tests
         public void BeginGlyph_ReturnsFalse_SkipRenderingFigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
-            renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(false);
+            renderer.Setup(x => x.BeginGlyph(It.Ref<FontRectangle>.IsAny, It.Ref<GlyphRendererParameters>.IsAny)).Returns(false);
             Font fakeFont = CreateFont("A");
             var textRenderer = new TextRenderer(renderer.Object);
 
@@ -83,7 +83,7 @@ namespace SixLabors.Fonts.Tests
         public void BeginGlyph_ReturnsTrue_RendersFigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
-            renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(true);
+            renderer.Setup(x => x.BeginGlyph(It.Ref<FontRectangle>.IsAny, It.Ref<GlyphRendererParameters>.IsAny)).Returns(true);
             Font fakeFont = CreateFont("A");
             var textRenderer = new TextRenderer(renderer.Object);
 

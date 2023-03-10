@@ -128,7 +128,7 @@ namespace SixLabors.Fonts.Tables.TrueType
             FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
             GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi);
 
-            if (renderer.BeginGlyph(box, parameters))
+            if (renderer.BeginGlyph(in box, in parameters))
             {
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
                 {
