@@ -25,10 +25,13 @@ namespace SixLabors.Fonts.Tests
         {
             const string text = "A";
             CodePoint codePoint = this.AsCodePoint(text);
-            Font font = CreateFont(text);
+            Font font = CreateFont(text, 10);
+            TextRun textRun = new() { Start = 0, End = 1, Font = font };
+
             FontMetrics metrics = font.FontMetrics;
             TrueTypeGlyphMetrics glyphMetrics = new(
                 (StreamFontMetrics)metrics,
+                0,
                 codePoint,
                 new GlyphVector(
                     Array.Empty<Vector2>(),
@@ -41,10 +44,10 @@ namespace SixLabors.Fonts.Tests
                 0,
                 0,
                 metrics.UnitsPerEm,
-                0);
+                textRun.TextAttributes,
+                textRun.TextDecorations);
 
-            TextRun textRun = new() { Start = 0, End = 1, Font = font };
-            Glyph glyph = new(glyphMetrics.CloneForRendering(textRun, codePoint), 10);
+            Glyph glyph = new(glyphMetrics.CloneForRendering(textRun), font.Size);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
             glyph.RenderTo(this.renderer, locationInFontSpace, new TextOptions(font));
@@ -68,7 +71,7 @@ namespace SixLabors.Fonts.Tests
         public void BeginGlyph_ReturnsFalse_SkipRenderingFigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
-            renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(false);
+            renderer.Setup(x => x.BeginGlyph(It.Ref<FontRectangle>.IsAny, It.Ref<GlyphRendererParameters>.IsAny)).Returns(false);
             Font fakeFont = CreateFont("A");
             var textRenderer = new TextRenderer(renderer.Object);
 
@@ -80,7 +83,7 @@ namespace SixLabors.Fonts.Tests
         public void BeginGlyph_ReturnsTrue_RendersFigures()
         {
             var renderer = new Mock<IGlyphRenderer>();
-            renderer.Setup(x => x.BeginGlyph(It.IsAny<FontRectangle>(), It.IsAny<GlyphRendererParameters>())).Returns(true);
+            renderer.Setup(x => x.BeginGlyph(It.Ref<FontRectangle>.IsAny, It.Ref<GlyphRendererParameters>.IsAny)).Returns(true);
             Font fakeFont = CreateFont("A");
             var textRenderer = new TextRenderer(renderer.Object);
 
@@ -88,11 +91,11 @@ namespace SixLabors.Fonts.Tests
             renderer.Verify(x => x.BeginFigure(), Times.Exactly(3));
         }
 
-        public static Font CreateFont(string text)
+        public static Font CreateFont(string text, float pointSize = 1)
         {
             var fc = (IFontMetricsCollection)new FontCollection();
             Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
-            return new Font(d, 1);
+            return new Font(d, pointSize);
         }
 
         [Fact]
@@ -101,7 +104,8 @@ namespace SixLabors.Fonts.Tests
             Font font = new FontCollection().Add(TestFonts.SimpleFontFileData()).CreateFont(12);
 
             // Get letter A
-            Glyph g = font.GetGlyphs(new CodePoint(41), ColorFontSupport.None).First();
+            Assert.True(font.TryGetGlyphs(new CodePoint(41), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
+            Glyph g = glyphs.First();
             GlyphOutline instance = ((TrueTypeGlyphMetrics)g.GlyphMetrics).GetOutline();
 
             Assert.Equal(20, instance.ControlPoints.Length);
@@ -117,7 +121,13 @@ namespace SixLabors.Fonts.Tests
             var instance = font.FontMetrics as StreamFontMetrics;
             CodePoint codePoint = this.AsCodePoint("😀");
             Assert.True(instance.TryGetGlyphId(codePoint, out ushort idx));
-            IEnumerable<GlyphMetrics> vectors = instance.GetGlyphMetrics(codePoint, idx, ColorFontSupport.MicrosoftColrFormat);
+            IEnumerable<GlyphMetrics> vectors = instance.GetGlyphMetrics(
+                codePoint,
+                idx,
+                TextAttributes.None,
+                TextDecorations.None,
+                ColorFontSupport.MicrosoftColrFormat);
+
             Assert.Equal(3, vectors.Count());
         }
 

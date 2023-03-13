@@ -88,13 +88,11 @@ namespace SixLabors.Fonts
         /// Gets a value indicating whether the glyph represents a whitespace character.
         /// </summary>
         /// <returns>The <see cref="bool"/>.</returns>
-        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.CodePoint);
+        public bool IsWhiteSpace() => GlyphMetrics.ShouldRenderWhiteSpaceOnly(this.CodePoint);
 
         internal FontRectangle BoundingBox(float dpi)
         {
             FontRectangle box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
-
-            // TODO: Should this be in GlyphMetrics? We likely need to check more than whitespace.
             if (this.IsWhiteSpace())
             {
                 box = new FontRectangle(box.X, box.Y, this.Width * dpi, box.Height);

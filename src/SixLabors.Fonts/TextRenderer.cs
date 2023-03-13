@@ -55,7 +55,7 @@ namespace SixLabors.Fonts
             IReadOnlyList<GlyphLayout> glyphsToRender = TextLayout.GenerateLayout(text, options);
             FontRectangle rect = TextMeasurer.GetBounds(glyphsToRender, options.Dpi);
 
-            this.renderer.BeginText(rect);
+            this.renderer.BeginText(in rect);
 
             foreach (GlyphLayout g in glyphsToRender)
             {

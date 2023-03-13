@@ -69,6 +69,8 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             ushort glyphId,
             GlyphType glyphType,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
             ushort palleteIndex = 0)
         {
             CompactFontTables tables = this.compactFontTables!;
@@ -103,6 +105,7 @@ namespace SixLabors.Fonts
 
             return new CffGlyphMetrics(
                 this,
+                glyphId,
                 codePoint,
                 vector,
                 bounds,
@@ -111,7 +114,8 @@ namespace SixLabors.Fonts
                 lsb,
                 tsb,
                 this.UnitsPerEm,
-                glyphId,
+                textAttributes,
+                textDecorations,
                 glyphType,
                 color);
         }

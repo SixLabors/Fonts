@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
@@ -187,9 +188,22 @@ namespace SixLabors.Fonts
         /// Gets the glyph metrics for a given code point.
         /// </summary>
         /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
+        /// <param name="textAttributes">The text attributes applied to the glyph.</param>
+        /// <param name="textDecorations">The text decorations applied to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
-        /// <returns>The glyph metrics to find.</returns>
-        public abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support);
+        /// <param name="metrics">
+        /// When this method returns, contains the metrics for the given codepoint and color support if the metrics
+        /// are found; otherwise the default value. This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains glyph metrics for the specified codepoint; otherwise, <see langword="false"/>.
+        /// </returns>
+        public abstract bool TryGetGlyphMetrics(
+            CodePoint codePoint,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support,
+            [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics);
 
         /// <summary>
         /// Gets the unicode codepoints for which a glyph exists in the font.
@@ -205,15 +219,38 @@ namespace SixLabors.Fonts
         /// The previously matched or substituted glyph id for the codepoint in the face.
         /// If this value equals <value>0</value> the default fallback metrics are returned.
         /// </param>
+        /// <param name="textAttributes">The text attributes applied to the glyph.</param>
+        /// <param name="textDecorations">The text decorations applied to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
-        internal abstract IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support);
+        internal abstract IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
+            CodePoint codePoint,
+            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support);
 
         /// <summary>
         /// Applies any available substitutions to the collection of glyphs.
         /// </summary>
         /// <param name="collection">The glyph substitution collection.</param>
         internal abstract void ApplySubstitution(GlyphSubstitutionCollection collection);
+
+        /// <summary>
+        /// Gets the amount, in font units, the <paramref name="currentId"/> glyph should be offset if it is proceeded by
+        /// the <paramref name="previousId"/> glyph.
+        /// </summary>
+        /// <param name="previousId">The previous glyph id.</param>
+        /// <param name="currentId">The current glyph id.</param>
+        /// <param name="vector">
+        /// When this method returns, contains the offset, in font units, that should be applied to the
+        /// <paramref name="currentId"/> glyph, if the offset is found; otherwise the default vector value.
+        /// This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains and offset for the glyph combination; otherwise, <see langword="false"/>.
+        /// </returns>
+        internal abstract bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector);
 
         /// <summary>
         /// Applies any available positioning updates to the collection of glyphs.

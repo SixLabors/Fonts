@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.General.Kern
@@ -59,29 +60,35 @@ namespace SixLabors.Fonts.Tables.General.Kern
 
         public void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, int left, int right)
         {
-            if (this.Count == 0)
+            if (this.Count == 0 || collection.Count == 0)
             {
                 return;
             }
 
             ushort previous = collection[left];
             ushort current = collection[right];
-            if (previous == 0 || current == 0)
+
+            if (this.TryGetKerningOffset(previous, current, out Vector2 result))
             {
-                return;
+                collection.Advance(fontMetrics, right, current, (short)result.X, (short)result.Y);
+            }
+        }
+
+        public bool TryGetKerningOffset(ushort previous, ushort current, out Vector2 result)
+        {
+            result = Vector2.Zero;
+            if (this.Count == 0 || previous == 0 || current == 0)
+            {
+                return false;
             }
 
-            Vector2 result = Vector2.Zero;
             bool kerned = false;
             foreach (KerningSubTable sub in this.kerningSubTable)
             {
                 kerned |= sub.TryApplyOffset(previous, current, ref result);
             }
 
-            if (kerned)
-            {
-                collection.Advance(fontMetrics, right, current, (short)result.X, (short)result.Y);
-            }
+            return kerned;
         }
     }
 }

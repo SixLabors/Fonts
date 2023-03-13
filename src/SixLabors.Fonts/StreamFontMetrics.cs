@@ -6,6 +6,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
+using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.Cff;
@@ -197,14 +199,26 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        public override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ColorFontSupport support)
+        public override bool TryGetGlyphMetrics(
+            CodePoint codePoint,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support,
+            [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
         {
+            // We return metrics for the special glyph representing a missing character, commonly known as .notdef.
             this.TryGetGlyphId(codePoint, out ushort glyphId);
-            return this.GetGlyphMetrics(codePoint, glyphId, support);
+            metrics = this.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, support);
+            return metrics.Any();
         }
 
         /// <inheritdoc/>
-        internal override IEnumerable<GlyphMetrics> GetGlyphMetrics(CodePoint codePoint, ushort glyphId, ColorFontSupport support)
+        internal override IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
+            CodePoint codePoint,
+            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            ColorFontSupport support)
         {
             GlyphType glyphType = GlyphType.Standard;
             if (glyphId == 0)
@@ -215,21 +229,23 @@ namespace SixLabors.Fonts
             }
 
             if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredMetrics(codePoint, glyphId, out GlyphMetrics[]? metrics))
+                && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, textDecorations, out GlyphMetrics[]? metrics))
             {
                 return metrics;
             }
 
             // We overwrite the cache entry for this type should the attributes change.
             return this.glyphCache.GetOrAdd(
-                glyphId,
-                id => new[]
-                {
+                  glyphId,
+                  id => new[]
+                  {
                     this.CreateGlyphMetrics(
                     codePoint,
                     id,
-                    glyphType)
-                });
+                    glyphType,
+                    textAttributes,
+                    textDecorations)
+                  });
         }
 
         /// <inheritdoc />
@@ -250,6 +266,23 @@ namespace SixLabors.Fonts
                 : this.compactFontTables!.GSub;
 
             gsub?.ApplySubstitution(this, collection);
+        }
+
+        /// <inheritdoc/>
+        internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
+        {
+            bool isTTF = this.outlineType == OutlineType.TrueType;
+            KerningTable? kern = isTTF
+                ? this.trueTypeFontTables!.Kern
+                : this.compactFontTables!.Kern;
+
+            if (kern is null)
+            {
+                vector = default;
+                return false;
+            }
+
+            return kern.TryGetKerningOffset(previousId, currentId, out vector);
         }
 
         /// <inheritdoc/>
@@ -445,7 +478,12 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
-        private bool TryGetColoredMetrics(CodePoint codePoint, ushort glyphId, [NotNullWhen(true)] out GlyphMetrics[]? metrics)
+        private bool TryGetColoredMetrics(
+            CodePoint codePoint,
+            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
             ColrTable? colr = this.outlineType == OutlineType.TrueType
                 ? this.trueTypeFontTables!.Colr
@@ -457,7 +495,7 @@ namespace SixLabors.Fonts
                 return false;
             }
 
-            // We overwrite the cache entry for this type should the attributes change
+            // We overwrite the cache entry for this type should the attributes change.
             metrics = this.colorGlyphCache.GetOrAdd(glyphId, id =>
             {
                 GlyphMetrics[] m = Array.Empty<GlyphMetrics>();
@@ -468,7 +506,7 @@ namespace SixLabors.Fonts
                     for (int i = 0; i < indexes.Length; i++)
                     {
                         LayerRecord layer = indexes[i];
-                        m[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, layer.PaletteIndex);
+                        m[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, textDecorations, layer.PaletteIndex);
                     }
                 }
 
@@ -482,11 +520,13 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             ushort glyphId,
             GlyphType glyphType,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
             ushort palleteIndex = 0)
             => this.outlineType switch
             {
-                OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, palleteIndex),
-                OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, palleteIndex),
+                OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, palleteIndex),
+                OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, palleteIndex),
                 _ => throw new NotSupportedException(),
             };
     }

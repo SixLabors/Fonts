@@ -15,7 +15,7 @@ namespace DrawWithImageSharp
     /// </summary>
     internal class CustomGlyphBuilder : GlyphBuilder
     {
-        private readonly List<FontRectangle> glyphBounds = new List<FontRectangle>();
+        private readonly List<FontRectangle> glyphBounds = new();
 
         public CustomGlyphBuilder()
         {
@@ -36,13 +36,13 @@ namespace DrawWithImageSharp
         /// </summary>
         public IPath TextBox { get; private set; }
 
-        protected override void BeginText(FontRectangle rect)
+        protected override void BeginText(in FontRectangle rect)
         {
             this.TextBox = new RectangularPolygon(rect.Location, rect.Size);
             base.BeginText(rect);
         }
 
-        protected override void BeginGlyph(FontRectangle rect)
+        protected override void BeginGlyph(in FontRectangle rect)
         {
             this.glyphBounds.Add(rect);
             base.BeginText(rect);
