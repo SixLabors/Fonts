@@ -297,13 +297,7 @@ namespace SixLabors.Fonts
                 }
             }
 
-            // There's no built in metrics for these values so we will need to infer them from the other metrics.
-            float overlineThickness = this.FontMetrics.UnderlineThickness;
-
-            // TODO: Check this. Segoe UI glyphs live outside the metrics so the overline covers the glyph.
-            float overlinePosition = this.FontMetrics.Ascender - (overlineThickness * .5F);
-
-            // Allow the renderer to override the decorations to attach
+            // Allow the renderer to override the decorations to attach.
             TextDecorations decorations = renderer.EnabledDecorations();
             if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
             {
@@ -317,7 +311,9 @@ namespace SixLabors.Fonts
 
             if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
             {
-                SetDecoration(TextDecorations.Overline, overlineThickness, overlinePosition);
+                // There's no built in metrics for overline thickness so use underline.
+                // CSS uses the ascender as the position.
+                SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, this.FontMetrics.Ascender);
             }
         }
 

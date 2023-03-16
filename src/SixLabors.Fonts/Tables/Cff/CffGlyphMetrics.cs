@@ -106,7 +106,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 return;
             }
 
-            float pointSize = options.Font.Size;
+            float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
             float dpi = options.Dpi;
             location *= dpi;
             float scaledPPEM = this.GetScaledSize(pointSize, dpi);
