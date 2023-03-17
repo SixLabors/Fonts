@@ -34,10 +34,10 @@ namespace SixLabors.Fonts.Tables.Cff
             // Do nothing.
         }
 
-        public bool BeginGlyph(FontRectangle bounds, GlyphRendererParameters parameters)
+        public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
             => true; // Do nothing.
 
-        public void BeginText(FontRectangle bounds)
+        public void BeginText(in FontRectangle bounds)
         {
             // Do nothing.
         }
@@ -118,6 +118,14 @@ namespace SixLabors.Fonts.Tables.Cff
             this.currentXY = point;
             this.UpdateMinMax(point.X, point.Y);
             this.open = true;
+        }
+
+        public TextDecorations EnabledDecorations()
+            => TextDecorations.None;
+
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+        {
+            // Do nothing.
         }
 
         private void UpdateMinMax(float x0, float y0)

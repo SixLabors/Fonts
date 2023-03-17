@@ -78,7 +78,7 @@ namespace SixLabors.Fonts
         public readonly Vector2 Location
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new Vector2(this.X, this.Y);
+            get => new(this.X, this.Y);
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace SixLabors.Fonts
         public readonly Vector2 Size
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new Vector2(this.Width, this.Height);
+            get => new(this.Width, this.Height);
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace SixLabors.Fonts
         /// True if the current left is equal to the <paramref name="right"/> parameter; otherwise, false.
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(FontRectangle left, FontRectangle right) => left.Equals(right);
+        public static bool operator ==(in FontRectangle left, in FontRectangle right) => left.Equals(right);
 
         /// <summary>
         /// Compares two <see cref="FontRectangle"/> objects for inequality.
@@ -145,7 +145,7 @@ namespace SixLabors.Fonts
         /// True if the current left is unequal to the <paramref name="right"/> parameter; otherwise, false.
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(FontRectangle left, FontRectangle right) => !left.Equals(right);
+        public static bool operator !=(in FontRectangle left, in FontRectangle right) => !left.Equals(right);
 
         /// <summary>
         /// Creates a new <see cref="FontRectangle"/> with the specified location and size. </summary>
@@ -157,7 +157,7 @@ namespace SixLabors.Fonts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         // ReSharper disable once InconsistentNaming
-        public static FontRectangle FromLTRB(float left, float top, float right, float bottom) => new FontRectangle(left, top, right - left, bottom - top);
+        public static FontRectangle FromLTRB(float left, float top, float right, float bottom) => new(left, top, right - left, bottom - top);
 
         /// <summary>
         /// Returns the center point of the given <see cref="FontRectangle"/>.
@@ -165,7 +165,7 @@ namespace SixLabors.Fonts
         /// <param name="rectangle">The rectangle.</param>
         /// <returns>The <see cref="Vector2"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector2 Center(FontRectangle rectangle) => new Vector2(rectangle.Left + (rectangle.Width / 2), rectangle.Top + (rectangle.Height / 2));
+        public static Vector2 Center(in FontRectangle rectangle) => new(rectangle.Left + (rectangle.Width / 2), rectangle.Top + (rectangle.Height / 2));
 
         /// <summary>
         /// Creates a rectangle that represents the intersection between <paramref name="a"/> and
@@ -175,7 +175,7 @@ namespace SixLabors.Fonts
         /// <param name="b">The second rectangle.</param>
         /// <returns>The <see cref="FontRectangle"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static FontRectangle Intersect(FontRectangle a, FontRectangle b)
+        public static FontRectangle Intersect(in FontRectangle a, in FontRectangle b)
         {
             float x1 = MathF.Max(a.X, b.X);
             float x2 = MathF.Min(a.Right, b.Right);
@@ -199,7 +199,7 @@ namespace SixLabors.Fonts
         /// <param name="y">The amount to inflate the height by.</param>
         /// <returns>A new <see cref="FontRectangle"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static FontRectangle Inflate(FontRectangle rectangle, float x, float y)
+        public static FontRectangle Inflate(in FontRectangle rectangle, float x, float y)
             => rectangle.Inflate(x, y);
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace SixLabors.Fonts
         /// <param name="rectangle">The source rectangle.</param>
         /// <param name="matrix">The transformation matrix.</param>
         /// <returns>A transformed <see cref="FontRectangle"/>.</returns>
-        public static FontRectangle Transform(FontRectangle rectangle, Matrix3x2 matrix)
+        public static FontRectangle Transform(in FontRectangle rectangle, Matrix3x2 matrix)
         {
             var bottomRight = Vector2.Transform(new Vector2(rectangle.Right, rectangle.Bottom), matrix);
             var topLeft = Vector2.Transform(rectangle.Location, matrix);
@@ -224,7 +224,7 @@ namespace SixLabors.Fonts
         /// <param name="b">The second rectangle.</param>
         /// <returns>The <see cref="FontRectangle"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static FontRectangle Union(FontRectangle a, FontRectangle b)
+        public static FontRectangle Union(in FontRectangle a, in FontRectangle b)
         {
             float x1 = MathF.Min(a.X, b.X);
             float x2 = MathF.Max(a.Right, b.Right);
@@ -255,7 +255,7 @@ namespace SixLabors.Fonts
         /// <param name="rectangle">The rectangle.</param>
         /// <returns>New <see cref="FontRectangle"/> representing the intersections between the two rectangles.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public FontRectangle Intersect(FontRectangle rectangle)
+        public FontRectangle Intersect(in FontRectangle rectangle)
             => Intersect(rectangle, this);
 
         /// <summary>
@@ -266,7 +266,7 @@ namespace SixLabors.Fonts
         /// <returns>New <see cref="FontRectangle"/> representing the inflated rectangle</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Inflate(float width, float height)
-            => new FontRectangle(
+            => new(
                 this.X - width,
                 this.Y - height,
                 this.Width + (2 * width),
@@ -305,7 +305,7 @@ namespace SixLabors.Fonts
         /// <param name="rectangle">The rectangle.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Contains(FontRectangle rectangle) =>
+        public bool Contains(in FontRectangle rectangle) =>
             (this.X <= rectangle.X) && (rectangle.Right <= this.Right) &&
             (this.Y <= rectangle.Y) && (rectangle.Bottom <= this.Bottom);
 
@@ -316,7 +316,7 @@ namespace SixLabors.Fonts
         /// <param name="rectangle">The other rectangle.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IntersectsWith(FontRectangle rectangle) =>
+        public bool IntersectsWith(in FontRectangle rectangle) =>
             (rectangle.X < this.Right) && (this.X < rectangle.Right) &&
             (rectangle.Y < this.Bottom) && (this.Y < rectangle.Bottom);
 
@@ -336,7 +336,7 @@ namespace SixLabors.Fonts
         /// <returns>New <see cref="FontRectangle"/> representing the inflated rectangle.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FontRectangle Offset(float dx, float dy)
-            => new FontRectangle(this.X + dx, this.Y + dy, this.Width, this.Height);
+            => new(this.X + dx, this.Y + dy, this.Width, this.Height);
 
         /// <inheritdoc/>
         public override int GetHashCode()

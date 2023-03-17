@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using System.Linq;
 using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.WellKnownIds;
 
@@ -32,6 +33,9 @@ namespace SixLabors.Fonts.Tables.General.CMap
             glyphId = this.GlyphIds[b];
             return true;
         }
+
+        public override IEnumerable<int> GetAvailableCodePoints()
+            => Enumerable.Range(0, this.GlyphIds.Length);
 
         public static IEnumerable<Format0SubTable> Load(IEnumerable<EncodingRecord> encodings, BigEndianBinaryReader reader)
         {

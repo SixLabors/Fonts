@@ -7,7 +7,7 @@ SixLabors.Fonts
 
 <div align="center">
 
-[![Build Status](https://img.shields.io/github/workflow/status/SixLabors/Fonts/Build/main)](https://github.com/SixLabors/Fonts/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/SixLabors/Fonts/build-and-test.yml?branch=main)](https://github.com/SixLabors/Fonts/actions)
 [![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/main/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -48,11 +48,11 @@ For more information, see the [.NET Foundation Code of Conduct](https://dotnetfo
 
 ## Installation
 
-Install stable releases via Nuget; development releases are available via MyGet.
+Install stable releases via Nuget; development releases are available via Feedz.io.
 
-| Package Name                   | Release (NuGet) | Nightly (MyGet) |
+| Package Name                   | Release (NuGet) | Nightly (Feedz.io) |
 |--------------------------------|-----------------|-----------------|
-| `SixLabors.Fonts`         | [![NuGet](https://img.shields.io/nuget/v/SixLabors.Fonts.svg)](https://www.nuget.org/packages/SixLabors.Fonts/) | [![MyGet](https://img.shields.io/myget/sixlabors/v/SixLabors.Fonts.svg)](https://www.myget.org/feed/sixlabors/package/nuget/SixLabors.Fonts) |
+| `SixLabors.Fonts`         | [![NuGet](https://img.shields.io/nuget/v/SixLabors.Fonts.svg)](https://www.nuget.org/packages/SixLabors.Fonts/) | [![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Fsixlabors%2Fsixlabors%2Fshield%2FSixLabors.Fonts%2Flatest)](https://f.feedz.io/sixlabors/sixlabors/nuget/index.json) |
 
 ## Manual build
 

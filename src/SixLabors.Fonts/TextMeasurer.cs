@@ -213,7 +213,7 @@ namespace SixLabors.Fonts
                 GlyphLayout glyph = glyphLayouts[i];
                 FontRectangle bounds = new(0, 0, glyph.Width * dpi, glyph.Height * dpi);
                 hasSize |= bounds.Width > 0 || bounds.Height > 0;
-                characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, bounds);
+                characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, in bounds);
             }
 
             characterBounds = characterBoundsList;
@@ -235,7 +235,7 @@ namespace SixLabors.Fonts
                 GlyphLayout g = glyphLayouts[i];
                 FontRectangle bounds = g.BoundingBox(dpi);
                 hasSize |= bounds.Width > 0 || bounds.Height > 0;
-                characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, bounds);
+                characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds);
             }
 
             characterBounds = characterBoundsList;

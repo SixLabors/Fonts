@@ -1,7 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Linq;
+using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 using Xunit;
@@ -137,7 +137,9 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
+
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, TextAttributes.None, TextDecorations.None, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
+            GlyphMetrics glyphMetrics = metrics[0];
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
@@ -161,7 +163,9 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
+
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, TextAttributes.None, TextDecorations.None, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
+            GlyphMetrics glyphMetrics = metrics[0];
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
@@ -186,7 +190,9 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
+
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, TextAttributes.None, TextDecorations.None, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
+            GlyphMetrics glyphMetrics = metrics[0];
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
@@ -211,7 +217,9 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
+
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(codePoint, TextAttributes.None, TextDecorations.None, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> metrics));
+            GlyphMetrics glyphMetrics = metrics[0];
 
             // Position 0.
             Assert.Equal(codePoint, glyphMetrics.CodePoint);

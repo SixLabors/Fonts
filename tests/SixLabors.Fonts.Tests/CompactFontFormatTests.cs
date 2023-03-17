@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Tests
 
             // assert
             GlyphRendererParameters glyphKey = Assert.Single(renderer.GlyphKeys);
-            Assert.Equal(expectedGlyphIndex, glyphKey.GlyphIndex);
+            Assert.Equal(expectedGlyphIndex, glyphKey.GlyphId);
         }
     }
 }
