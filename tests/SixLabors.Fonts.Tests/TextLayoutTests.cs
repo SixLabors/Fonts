@@ -14,6 +14,36 @@ namespace SixLabors.Fonts.Tests
 {
     public class TextLayoutTests
     {
+        [Theory]
+        [InlineData(LayoutMode.HorizontalTopBottom, true)]
+        [InlineData(LayoutMode.HorizontalBottomTop, true)]
+        [InlineData(LayoutMode.VerticalLeftRight, false)]
+        [InlineData(LayoutMode.VerticalRightLeft, false)]
+        [InlineData(LayoutMode.VerticalMixedLeftRight, false)]
+        [InlineData(LayoutMode.VerticalMixedRightLeft, false)]
+        public void CanDetectHorizontalLayoutMode(LayoutMode mode, bool vertical)
+            => Assert.Equal(vertical, mode.IsHorizontal());
+
+        [Theory]
+        [InlineData(LayoutMode.HorizontalTopBottom, false)]
+        [InlineData(LayoutMode.HorizontalBottomTop, false)]
+        [InlineData(LayoutMode.VerticalLeftRight, true)]
+        [InlineData(LayoutMode.VerticalRightLeft, true)]
+        [InlineData(LayoutMode.VerticalMixedLeftRight, true)]
+        [InlineData(LayoutMode.VerticalMixedRightLeft, true)]
+        public void CanDetectVerticalLayoutMode(LayoutMode mode, bool vertical)
+            => Assert.Equal(vertical, mode.IsVertical());
+
+        [Theory]
+        [InlineData(LayoutMode.HorizontalTopBottom, false)]
+        [InlineData(LayoutMode.HorizontalBottomTop, false)]
+        [InlineData(LayoutMode.VerticalLeftRight, false)]
+        [InlineData(LayoutMode.VerticalRightLeft, false)]
+        [InlineData(LayoutMode.VerticalMixedLeftRight, true)]
+        [InlineData(LayoutMode.VerticalMixedRightLeft, true)]
+        public void CanDetectVerticalMixedLayoutMode(LayoutMode mode, bool vertical)
+            => Assert.Equal(vertical, mode.IsVerticalMixed());
+
         [Fact]
         public void FakeFontGetGlyph()
         {

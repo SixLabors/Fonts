@@ -123,6 +123,7 @@ namespace SixLabors.Fonts.Tables.TrueType
 
             if (renderer.BeginGlyph(in box, in parameters))
             {
+                Matrix3x2 transform = this.GetRotationMatrix(options.LayoutMode);
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
                 {
                     if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)
@@ -135,14 +136,17 @@ namespace SixLabors.Fonts.Tables.TrueType
                         // Create a scaled deep copy of the vector so that we do not alter
                         // the globally cached instance.
                         scaledVector = GlyphVector.DeepClone(this.vector);
-
                         Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+
                         var matrix = Matrix3x2.CreateScale(scale);
                         matrix.Translation = this.Offset * scale;
                         GlyphVector.TransformInPlace(ref scaledVector, matrix);
 
                         float pixelSize = scaledPPEM / 72F;
                         this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref scaledVector, scale, pixelSize);
+
+                        // TODO: Can we transform the points instead?
+                        GlyphVector.TransformInPlace(ref scaledVector, transform);
 
                         this.scaledVector[scaledPPEM] = scaledVector;
                     }
@@ -221,7 +225,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                     }
                 }
 
-                this.RenderDecorationsTo(renderer, location, scaledPPEM);
+                this.RenderDecorationsTo(renderer, location, transform, scaledPPEM);
             }
 
             renderer.EndGlyph();

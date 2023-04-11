@@ -372,6 +372,15 @@ namespace UnicodeTrieGenerator
                 { "Zhain", JoiningGroup.Zhain }
             };
 
+        private static readonly Dictionary<string, VerticalOrientationType> VerticalOrientationTypeMap
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "U", VerticalOrientationType.Upright },
+                { "R", VerticalOrientationType.Rotate },
+                { "Tu", VerticalOrientationType.TransformUpright },
+                { "Tr", VerticalOrientationType.TransformRotate }
+            };
+
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
         private const string InputRulesRelativePath = @"src\UnicodeTrieGenerator\Rules";
         private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
@@ -394,6 +403,7 @@ namespace UnicodeTrieGenerator
             GenerateScriptTrie();
             GenerateGraphemeBreakTrie();
             GenerateArabicShapingTrie();
+            GenerateVerticalOrientationTrie();
         }
 
         private static void ProcessUnicodeData()
@@ -686,6 +696,38 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("ArabicShaping", trie);
+        }
+
+        private static void GenerateVerticalOrientationTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+            var builder = new UnicodeTrieBuilder((uint)VerticalOrientationType.Upright);
+
+            using (StreamReader sr = GetStreamReader("VerticalOrientation.txt"))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string script = match.Groups[3].Value;
+
+                        if (end?.Length == 0)
+                        {
+                            end = start;
+                        }
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)VerticalOrientationTypeMap[script], true);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+            GenerateTrieClass("VerticalOrientation", trie);
         }
 
         /// <summary>

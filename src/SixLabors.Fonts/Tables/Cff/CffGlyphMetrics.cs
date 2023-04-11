@@ -116,6 +116,7 @@ namespace SixLabors.Fonts.Tables.Cff
             GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi);
             if (renderer.BeginGlyph(in box, in parameters))
             {
+                Matrix3x2 transform = this.GetRotationMatrix(options.LayoutMode);
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
                 {
                     if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)
@@ -128,7 +129,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     this.glyphData.RenderTo(renderer, scale, offset);
                 }
 
-                this.RenderDecorationsTo(renderer, location, scaledPPEM);
+                this.RenderDecorationsTo(renderer, location, transform, scaledPPEM);
             }
 
             renderer.EndGlyph();

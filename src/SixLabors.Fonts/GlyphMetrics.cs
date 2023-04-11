@@ -55,13 +55,13 @@ namespace SixLabors.Fonts
             {
                 float units = this.UnitsPerEm;
                 scaleFactor /= new Vector2(font.SubscriptXSize / units, font.SubscriptYSize / units);
-                offset = new(font.SubscriptXOffset, font.SubscriptYOffset);
+                offset = new(font.SubscriptXOffset, font.SubscriptYOffset < 0 ? font.SubscriptYOffset : -font.SubscriptYOffset);
             }
             else if (textAttributes.HasFlag(TextAttributes.Superscript))
             {
                 float units = this.UnitsPerEm;
                 scaleFactor /= new Vector2(font.SuperscriptXSize / units, font.SuperscriptYSize / units);
-                offset = new(font.SuperscriptXOffset, -font.SuperscriptYOffset);
+                offset = new(font.SuperscriptXOffset, font.SuperscriptYOffset < 0 ? -font.SuperscriptYOffset : font.SuperscriptYOffset);
             }
 
             this.ScaleFactor = scaleFactor;
@@ -266,7 +266,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The options used to influence the rendering of this glyph.</param>
         internal abstract void RenderTo(IGlyphRenderer renderer, Vector2 location, TextOptions options);
 
-        internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, float scaledPPEM)
+        internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, Matrix3x2 transform, float scaledPPEM)
         {
             (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float positionY)
             {
@@ -277,7 +277,7 @@ namespace SixLabors.Fonts
                 }
 
                 Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-                Vector2 offset = location + (this.Offset * scale * MirrorScale) + (new Vector2(0, positionY) * scale * MirrorScale);
+                Vector2 offset = (this.Offset * scale) + (new Vector2(0, positionY) * scale);
 
                 width *= scale.X;
                 thickness *= scale.Y;
@@ -285,7 +285,8 @@ namespace SixLabors.Fonts
                 Vector2 tl = new(offset.X, offset.Y);
                 Vector2 tr = new(offset.X + width, offset.Y);
                 Vector2 bl = new(offset.X, offset.Y + thickness);
-                return (tl, tr, bl.Y - tl.Y);
+
+                return ((Vector2.Transform(tl, transform) * MirrorScale) + location, (Vector2.Transform(tr, transform) * MirrorScale) + location, bl.Y - tl.Y);
             }
 
             void SetDecoration(TextDecorations decorations, float thickness, float position)
@@ -376,5 +377,54 @@ namespace SixLabors.Fonts
 
             return scaledPPEM;
         }
+
+        /// <summary>
+        /// Gets the rotation matrix for the glyph based on the layout mode.
+        /// </summary>
+        /// <param name = "layoutMode" > The layout mode.</param>
+        /// <returns>The<see cref="Matrix3x2"/>.</returns>
+        internal Matrix3x2 GetRotationMatrix(LayoutMode layoutMode)
+        {
+            // TODO: What if this has been substituted? We likely do not want to rotate it.
+            if (layoutMode.IsVerticalMixed() && CodePoint.GetVerticalOrientationType(this.CodePoint) is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate)
+            {
+                // Rotate 90 degrees clockwise.
+                return Matrix3x2.CreateRotation(-MathF.PI / 2F);
+            }
+
+            return Matrix3x2.Identity;
+        }
+
+        ///// <summary>
+        ///// Gets the rotation matrix for the glyph based on the layout mode.
+        ///// </summary>
+        ///// <param name="layoutMode">The layout mode.</param>
+        ///// <returns>The <see cref="Matrix3x2"/>.</returns>
+        //internal Matrix3x2 GetRotationMatrix(GlyphVector glyph, LayoutMode layoutMode, Vector2 scale)
+        //{
+        //    if (layoutMode.IsVerticalMixed() && CodePoint.GetVerticalOrientationType(this.CodePoint) is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate)
+        //    {
+        //        // TODO: We need to somehow offset the glyph here with the correct amount.
+        //        Vector2 container = new Vector2(this.AdvanceWidth, this.AdvanceHeight) * scale;
+        //        Bounds bounds = glyph.GetBounds();
+        //        float width = bounds.Max.X - bounds.Min.X;
+        //        float height = bounds.Max.Y - bounds.Min.Y;
+
+        //        // Calculate the difference in y-position of the top-left corner when rotated
+        //        // then use that delta to translatethe glyph.
+        //        var tl = new Vector2(bounds.Min.X, bounds.Min.Y);
+        //        var rotation = Matrix3x2.CreateRotation(-MathF.PI / 2F);
+        //        var delta = Vector2.Zero; //Vector2.Transform(tl, rotation) - tl;
+
+        //        return rotation;
+        //        return Matrix3x2.CreateTranslation(new Vector2(-(container.Y - container.X), 0)) * rotation;//, (bounds.Max - bounds.Min) / 2F);
+
+
+        //        Vector2 corner = new Vector2(bounds.Max.X, bounds.Min.Y);
+        //        return Matrix3x2.CreateRotation(-MathF.PI / 2F, corner);
+        //    }
+
+        //    return Matrix3x2.Identity;
+        //}
     }
 }
