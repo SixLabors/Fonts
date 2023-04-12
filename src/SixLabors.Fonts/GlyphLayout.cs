@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
@@ -20,6 +21,7 @@ namespace SixLabors.Fonts
             float lineHeight,
             float width,
             float height,
+            bool isVerticalRotated,
             bool isStartOfLine)
         {
             this.Glyph = glyph;
@@ -31,6 +33,7 @@ namespace SixLabors.Fonts
             this.LineHeight = lineHeight;
             this.Width = width;
             this.Height = height;
+            this.IsVerticalRotated = isVerticalRotated;
             this.IsStartOfLine = isStartOfLine;
         }
 
@@ -79,6 +82,8 @@ namespace SixLabors.Fonts
         /// </summary>
         public float Height { get; }
 
+        public bool IsVerticalRotated { get; }
+
         /// <summary>
         /// Gets a value indicating whether this glyph is the first glyph on a new line.
         /// </summary>
@@ -92,12 +97,17 @@ namespace SixLabors.Fonts
 
         internal FontRectangle BoundingBox(float dpi)
         {
-            FontRectangle box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
+            Vector2 origin = this.Location * dpi;
+            FontRectangle box = this.Glyph.BoundingBox(Vector2.Zero, dpi);
             if (this.IsWhiteSpace())
             {
-                box = new FontRectangle(box.X, box.Y, this.Width * dpi, box.Height);
+                box = new FontRectangle(box.X + origin.X, box.Y + origin.Y, this.Width * dpi, box.Height);
             }
 
+            // Rotate 90 degrees clockwise.
+            Matrix3x2 matrix = this.IsVerticalRotated ? Matrix3x2.CreateRotation(-MathF.PI / 2F) : Matrix3x2.Identity;
+            box = FontRectangle.Transform(in box, matrix);
+            box = FontRectangle.Transform(in box, Matrix3x2.CreateTranslation(origin));
             return box;
         }
 

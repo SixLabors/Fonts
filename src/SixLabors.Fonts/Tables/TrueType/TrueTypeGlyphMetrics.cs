@@ -118,12 +118,15 @@ namespace SixLabors.Fonts.Tables.TrueType
             location *= dpi;
             float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
-            FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
+            Matrix3x2 transform = this.GetRotationMatrix(options.LayoutMode);
+            FontRectangle box = this.GetBoundingBox(Vector2.Zero, scaledPPEM);
+            box = FontRectangle.Transform(in box, transform);
+            box = FontRectangle.Transform(in box, Matrix3x2.CreateTranslation(location));
+
             GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi);
 
             if (renderer.BeginGlyph(in box, in parameters))
             {
-                Matrix3x2 transform = this.GetRotationMatrix(options.LayoutMode);
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
                 {
                     if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)

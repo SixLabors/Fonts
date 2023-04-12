@@ -253,7 +253,7 @@ namespace SixLabors.Fonts
             Bounds bounds = this.Bounds;
             Vector2 size = bounds.Size() * scale;
             Vector2 loc = (new Vector2(bounds.Min.X, bounds.Max.Y) + this.Offset) * scale * MirrorScale;
-            loc = origin + loc;
+            loc += origin;
 
             return new FontRectangle(loc.X, loc.Y, size.X, size.Y);
         }
@@ -385,7 +385,6 @@ namespace SixLabors.Fonts
         /// <returns>The<see cref="Matrix3x2"/>.</returns>
         internal Matrix3x2 GetRotationMatrix(LayoutMode layoutMode)
         {
-            // TODO: What if this has been substituted? We likely do not want to rotate it.
             if (layoutMode.IsVerticalMixed() && CodePoint.GetVerticalOrientationType(this.CodePoint) is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate)
             {
                 // Rotate 90 degrees clockwise.
@@ -394,37 +393,5 @@ namespace SixLabors.Fonts
 
             return Matrix3x2.Identity;
         }
-
-        ///// <summary>
-        ///// Gets the rotation matrix for the glyph based on the layout mode.
-        ///// </summary>
-        ///// <param name="layoutMode">The layout mode.</param>
-        ///// <returns>The <see cref="Matrix3x2"/>.</returns>
-        //internal Matrix3x2 GetRotationMatrix(GlyphVector glyph, LayoutMode layoutMode, Vector2 scale)
-        //{
-        //    if (layoutMode.IsVerticalMixed() && CodePoint.GetVerticalOrientationType(this.CodePoint) is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate)
-        //    {
-        //        // TODO: We need to somehow offset the glyph here with the correct amount.
-        //        Vector2 container = new Vector2(this.AdvanceWidth, this.AdvanceHeight) * scale;
-        //        Bounds bounds = glyph.GetBounds();
-        //        float width = bounds.Max.X - bounds.Min.X;
-        //        float height = bounds.Max.Y - bounds.Min.Y;
-
-        //        // Calculate the difference in y-position of the top-left corner when rotated
-        //        // then use that delta to translatethe glyph.
-        //        var tl = new Vector2(bounds.Min.X, bounds.Min.Y);
-        //        var rotation = Matrix3x2.CreateRotation(-MathF.PI / 2F);
-        //        var delta = Vector2.Zero; //Vector2.Transform(tl, rotation) - tl;
-
-        //        return rotation;
-        //        return Matrix3x2.CreateTranslation(new Vector2(-(container.Y - container.X), 0)) * rotation;//, (bounds.Max - bounds.Min) / 2F);
-
-
-        //        Vector2 corner = new Vector2(bounds.Max.X, bounds.Min.Y);
-        //        return Matrix3x2.CreateRotation(-MathF.PI / 2F, corner);
-        //    }
-
-        //    return Matrix3x2.Identity;
-        //}
     }
 }
