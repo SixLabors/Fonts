@@ -104,7 +104,7 @@ namespace SixLabors.Fonts
                 box = new FontRectangle(box.X + origin.X, box.Y + origin.Y, this.Width * dpi, box.Height);
             }
 
-            // Rotate 90 degrees clockwise.
+            // Rotate 90 degrees clockwise if required.
             Matrix3x2 matrix = this.IsVerticalRotated ? Matrix3x2.CreateRotation(-MathF.PI / 2F) : Matrix3x2.Identity;
             box = FontRectangle.Transform(in box, matrix);
             box = FontRectangle.Transform(in box, Matrix3x2.CreateTranslation(origin));

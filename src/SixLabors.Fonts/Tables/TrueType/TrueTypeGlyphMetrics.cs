@@ -148,7 +148,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                         float pixelSize = scaledPPEM / 72F;
                         this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref scaledVector, scale, pixelSize);
 
-                        // TODO: Can we transform the points instead?
+                        // Rotation must happen after hinting.
                         GlyphVector.TransformInPlace(ref scaledVector, transform);
 
                         this.scaledVector[scaledPPEM] = scaledVector;
