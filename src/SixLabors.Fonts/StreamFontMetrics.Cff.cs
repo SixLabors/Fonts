@@ -71,6 +71,7 @@ namespace SixLabors.Fonts
             GlyphType glyphType,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            bool isVerticalLayout,
             ushort palleteIndex = 0)
         {
             CompactFontTables tables = this.compactFontTables!;
@@ -83,9 +84,9 @@ namespace SixLabors.Fonts
             ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
             short lsb = htmx.GetLeftSideBearing(glyphId);
 
-            // Provide a default for the advance height. This is overwritten for vertical fonts.
-            ushort advancedHeight = (ushort)(this.Ascender - this.Descender);
-            short tsb = (short)(this.Ascender - bounds.Max.Y);
+            IMetricsHeader metrics = isVerticalLayout ? this.VerticalMetrics : this.HorizontalMetrics;
+            ushort advancedHeight = (ushort)(metrics.Ascender - metrics.Descender);
+            short tsb = (short)(metrics.Ascender - bounds.Max.Y);
             if (vtmx != null)
             {
                 advancedHeight = vtmx.GetAdvancedHeight(glyphId);

@@ -26,15 +26,13 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
             Bounds fallbackEmptyBounds = reader.GetTable<HeadTable>().Bounds;
 
-            using (BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
-            {
-                return Load(binaryReader, reader.TableFormat, locations, fallbackEmptyBounds);
-            }
+            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
+            return Load(binaryReader, reader.TableFormat, locations, in fallbackEmptyBounds);
         }
 
         public static GlyphTable Load(BigEndianBinaryReader reader, TableFormat format, uint[] locations, in Bounds fallbackEmptyBounds)
         {
-            var empty = new EmptyGlyphLoader(fallbackEmptyBounds);
+            EmptyGlyphLoader empty = new(fallbackEmptyBounds);
             int entryCount = locations.Length;
             int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
             var glyphs = new GlyphLoader[glyphCount];

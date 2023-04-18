@@ -14,7 +14,7 @@ namespace SixLabors.Fonts
     /// </summary>
     public abstract class GlyphMetrics
     {
-        private static readonly Vector2 MirrorScale = new(1, -1);
+        private static readonly Vector2 YInverter = new(1, -1);
 
         internal GlyphMetrics(
             StreamFontMetrics font,
@@ -84,10 +84,11 @@ namespace SixLabors.Fonts
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
         {
+            // This is used during cloning. Ensure anything that could be changed is copied.
             this.FontMetrics = font;
             this.GlyphId = glyphId;
             this.CodePoint = codePoint;
-            this.Bounds = bounds;
+            this.Bounds = new Bounds(bounds.Min, bounds.Max);
             this.Width = bounds.Max.X - bounds.Min.X;
             this.Height = bounds.Max.Y - bounds.Min.Y;
             this.UnitsPerEm = unitsPerEM;
@@ -101,8 +102,8 @@ namespace SixLabors.Fonts
             this.TextDecorations = textRun.TextDecorations;
             this.GlyphType = glyphType;
             this.GlyphColor = glyphColor;
-            this.ScaleFactor = scaleFactor;
-            this.Offset = offset;
+            this.ScaleFactor = new Vector2(scaleFactor.X, scaleFactor.Y);
+            this.Offset = new Vector2(offset.X, offset.Y);
             this.TextRun = textRun;
         }
 
@@ -252,7 +253,7 @@ namespace SixLabors.Fonts
             Vector2 scale = new Vector2(scaledPointSize) / this.ScaleFactor;
             Bounds bounds = this.Bounds;
             Vector2 size = bounds.Size() * scale;
-            Vector2 loc = (new Vector2(bounds.Min.X, bounds.Max.Y) + this.Offset) * scale * MirrorScale;
+            Vector2 loc = (new Vector2(bounds.Min.X, bounds.Max.Y) + this.Offset) * scale * YInverter;
             loc += origin;
 
             return new FontRectangle(loc.X, loc.Y, size.X, size.Y);
@@ -266,32 +267,80 @@ namespace SixLabors.Fonts
         /// <param name="options">The options used to influence the rendering of this glyph.</param>
         internal abstract void RenderTo(IGlyphRenderer renderer, Vector2 location, TextOptions options);
 
-        internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, Matrix3x2 transform, float scaledPPEM)
+        internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, LayoutMode layoutMode, Matrix3x2 transform, float scaledPPEM)
         {
-            (Vector2 Start, Vector2 End, float Thickness) GetEnds(float thickness, float positionY)
+            bool isVerticalLayout = layoutMode.IsVertical() || layoutMode.IsVerticalMixed();
+            bool isVerticalGlyph = isVerticalLayout && CodePoint.GetVerticalOrientationType(this.CodePoint) is VerticalOrientationType.Upright or VerticalOrientationType.TransformUpright;
+            (Vector2 Start, Vector2 End, float Thickness) GetEnds(TextDecorations decorations, float thickness, float decoratorPosition)
             {
-                float width = this.AdvanceWidth;
-                if (width == 0)
+                // For vertical layout we need to draw a vertical line.
+                if (isVerticalGlyph)
                 {
-                    return (Vector2.Zero, Vector2.Zero, 0);
+                    float length = this.AdvanceHeight;
+                    if (length == 0)
+                    {
+                        return (Vector2.Zero, Vector2.Zero, 0);
+                    }
+
+                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+
+                    // Undo the vertical offset applied when laying out the text.
+                    Vector2 offset = (this.Offset + new Vector2(decoratorPosition, -this.FontMetrics.VerticalMetrics.Ascender)) * scale;
+
+                    length *= scale.Y;
+                    thickness *= scale.X;
+
+                    Vector2 tl = new(offset.X, offset.Y);
+                    Vector2 tr = new(offset.X + thickness, offset.Y);
+                    Vector2 bl = new(offset.X, offset.Y + length);
+
+                    thickness = tr.X - tl.X;
+
+                    // Horizontally offset the line to the correct horizontal position
+                    // based upon which side drawing occurs of the line.
+                    float m = decorations switch
+                    {
+                        TextDecorations.Strikeout => .5F,
+                        TextDecorations.Overline => 3,
+                        _ => 1,
+                    };
+
+                    // Account for any future pixel clamping.
+                    offset = new Vector2(thickness * m, 0) + location;
+                    tl += offset;
+                    bl += offset;
+
+                    return (tl, bl, thickness);
                 }
+                else
+                {
+                    float length = this.AdvanceWidth;
+                    if (length == 0)
+                    {
+                        return (Vector2.Zero, Vector2.Zero, 0);
+                    }
 
-                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-                Vector2 offset = (this.Offset * scale) + (new Vector2(0, positionY) * scale);
+                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+                    Vector2 offset = (this.Offset + new Vector2(0, decoratorPosition)) * scale;
 
-                width *= scale.X;
-                thickness *= scale.Y;
+                    length *= scale.X;
+                    thickness *= scale.Y;
 
-                Vector2 tl = new(offset.X, offset.Y);
-                Vector2 tr = new(offset.X + width, offset.Y);
-                Vector2 bl = new(offset.X, offset.Y + thickness);
+                    Vector2 tl = new(offset.X, offset.Y);
+                    Vector2 tr = new(offset.X + length, offset.Y);
+                    Vector2 bl = new(offset.X, offset.Y + thickness);
 
-                return ((Vector2.Transform(tl, transform) * MirrorScale) + location, (Vector2.Transform(tr, transform) * MirrorScale) + location, bl.Y - tl.Y);
+                    thickness = bl.Y - tl.Y;
+                    tl = (Vector2.Transform(tl, transform) * YInverter) + location;
+                    tr = (Vector2.Transform(tr, transform) * YInverter) + location;
+
+                    return (tl, tr, thickness);
+                }
             }
 
             void SetDecoration(TextDecorations decorations, float thickness, float position)
             {
-                (Vector2 start, Vector2 end, float calcThickness) = GetEnds(thickness, position);
+                (Vector2 start, Vector2 end, float calcThickness) = GetEnds(decorations, thickness, position);
                 if (calcThickness != 0)
                 {
                     renderer.SetDecoration(decorations, start, end, calcThickness);
@@ -299,22 +348,22 @@ namespace SixLabors.Fonts
             }
 
             // Allow the renderer to override the decorations to attach.
+            // Use CSS values to match vertical text and missing metrics.
             TextDecorations decorations = renderer.EnabledDecorations();
             if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
             {
-                SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, this.FontMetrics.UnderlinePosition);
+                SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, isVerticalGlyph ? 0 : this.FontMetrics.UnderlinePosition);
             }
 
             if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
             {
-                SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, this.FontMetrics.StrikeoutPosition);
+                SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, isVerticalGlyph ? this.AdvanceWidth * .5F : this.FontMetrics.StrikeoutPosition);
             }
 
             if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
             {
                 // There's no built in metrics for overline thickness so use underline.
-                // CSS uses the ascender as the position.
-                SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, this.FontMetrics.Ascender);
+                SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, isVerticalGlyph ? this.AdvanceWidth : this.FontMetrics.HorizontalMetrics.Ascender);
             }
         }
 
@@ -381,17 +430,40 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the rotation matrix for the glyph based on the layout mode.
         /// </summary>
-        /// <param name = "layoutMode" > The layout mode.</param>
-        /// <returns>The<see cref="Matrix3x2"/>.</returns>
-        internal Matrix3x2 GetRotationMatrix(LayoutMode layoutMode)
+        /// <param name="layoutMode">The layout mode.</param>
+        /// <param name="matrix">The rotation matrix.</param>
+        /// <returns>The<see cref="bool"/>.</returns>
+        internal bool TryGetRotationMatrix(LayoutMode layoutMode, out Matrix3x2 matrix)
         {
             if (layoutMode.IsVerticalMixed() && CodePoint.GetVerticalOrientationType(this.CodePoint) is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate)
             {
                 // Rotate 90 degrees clockwise.
-                return Matrix3x2.CreateRotation(-MathF.PI / 2F);
+                matrix = Matrix3x2.CreateRotation(-MathF.PI / 2F);
+                return true;
             }
 
-            return Matrix3x2.Identity;
+            matrix = Matrix3x2.Identity;
+            return false;
+        }
+
+        /// <summary>
+        /// Gets the rotation matrix for the glyph based on the layout mode.
+        /// </summary>
+        /// <param name="layoutMode">The layout mode.</param>
+        /// <param name="matrix">The rotation matrix.</param>
+        /// <returns>The<see cref="bool"/>.</returns>
+        internal bool TryGetDecorationRotationMatrix(LayoutMode layoutMode, out Matrix3x2 matrix)
+        {
+            if (layoutMode.IsVerticalMixed() || layoutMode.IsVertical())
+            {
+                // Rotate 90 degrees clockwise.
+                // We use negative as the values are mirrored.
+                matrix = Matrix3x2.CreateRotation(-MathF.PI / 2F);
+                return true;
+            }
+
+            matrix = Matrix3x2.Identity;
+            return false;
         }
     }
 }

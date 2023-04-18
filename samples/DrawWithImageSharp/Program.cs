@@ -38,16 +38,16 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             FontFamily notoKR = fonts.Add(@"Fonts\NotoSansKR-Regular.otf");
 
-            //RenderText(notoKR, "\uD734", pointSize: 72);
-            //RenderText(notoKR, "Sphinx of black quartz, judge my vow!", pointSize: 72);
-            //RenderText(notoKR, "모든인간", pointSize: 72);
-            //RenderText(notoKR, "\uD734\uAC00\u0020\uAC00\u002D\u002D\u0020\u0028\uC624\u002D\u002D\u0029", pointSize: 72);
-            //RenderText(notoKR, "\u1112\u1172\u1100\u1161\u0020\u1100\u1161\u002D\u002D\u0020\u0028\u110B\u1169\u002D\u002D\u0029", pointSize: 72);
-            //RenderText(notoKR, "\ua960\ud7b0\ud7cb", pointSize: 72);
-            //RenderText(notoKR, "\u1100\u1161\ud7cb", pointSize: 72);
-            //RenderText(notoKR, "\ua960\ud7b0\u302f", pointSize: 72);
-            //RenderText(notoKR, "\u1100\u302f\u1161", pointSize: 72);
-            //RenderText(notoKR, "\u1100", pointSize: 72);
+            RenderText(notoKR, "\uD734", pointSize: 72);
+            RenderText(notoKR, "Sphinx of black quartz, judge my vow!", pointSize: 72);
+            RenderText(notoKR, "모든인간", pointSize: 72);
+            RenderText(notoKR, "\uD734\uAC00\u0020\uAC00\u002D\u002D\u0020\u0028\uC624\u002D\u002D\u0029", pointSize: 72);
+            RenderText(notoKR, "\u1112\u1172\u1100\u1161\u0020\u1100\u1161\u002D\u002D\u0020\u0028\u110B\u1169\u002D\u002D\u0029", pointSize: 72);
+            RenderText(notoKR, "\ua960\ud7b0\ud7cb", pointSize: 72);
+            RenderText(notoKR, "\u1100\u1161\ud7cb", pointSize: 72);
+            RenderText(notoKR, "\ua960\ud7b0\u302f", pointSize: 72);
+            RenderText(notoKR, "\u1100\u302f\u1161", pointSize: 72);
+            RenderText(notoKR, "\u1100", pointSize: 72);
 
 #if OS_WINDOWS
 
@@ -58,14 +58,11 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily tahoma = SystemFonts.Get("Tahoma");
             var textRuns = new List<RichTextRun>
             {
-                new RichTextRun { Start = 4, End = 9, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline }, // TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
-                new RichTextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttributes.Subscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline | TextDecorations.Overline}// | TextDecorations.Underline | TextDecorations.Overline }
+                new RichTextRun { Start = 4, End = 10, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
+                new RichTextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttributes.Subscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline | TextDecorations.Overline }
             };
 
-            // he quick👩🏽‍🚒 brown fox jumps over the lazy dog;
             RenderText(uiFont, "The quick👩🏽‍🚒 brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns, fallbackFonts: new[] { emojiFont });
-
-            return;
 
             string arabic = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ";
             textRuns = new List<RichTextRun>
@@ -230,10 +227,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             => RenderText(
                 new RichTextOptions(new Font(font, pointSize))
                 {
-                    WrappingLength = 400,
+                    // WrappingLength = 400,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
-                    TextRuns = textRuns?.ToArray(),
-                    LayoutMode = LayoutMode.VerticalMixedLeftRight
+                    TextRuns = textRuns?.ToArray()
                 },
                 text);
 
@@ -330,6 +326,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
             using var img = new Image<Rgba32>(width, height);
             img.Mutate(x => x.Fill(Color.Black));
+
             img.Mutate(x => x.DrawText(options, text, Color.White));
 
             // Ensure directory exists

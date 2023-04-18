@@ -23,8 +23,8 @@ namespace SixLabors.Fonts
         /// Renders the text to the <paramref name="renderer"/>.
         /// </summary>
         /// <param name="renderer">The target renderer.</param>
-        /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="text">The text to render.</param>
+        /// <param name="options">The text options.</param>
         public static void RenderTextTo(IGlyphRenderer renderer, ReadOnlySpan<char> text, TextOptions options)
             => new TextRenderer(renderer).RenderText(text, options);
 
@@ -32,23 +32,23 @@ namespace SixLabors.Fonts
         /// Renders the text to the <paramref name="renderer"/>.
         /// </summary>
         /// <param name="renderer">The target renderer.</param>
-        /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="text">The text to render.</param>
+        /// <param name="options">The text option.</param>
         public static void RenderTextTo(IGlyphRenderer renderer, string text, TextOptions options)
             => new TextRenderer(renderer).RenderText(text, options);
 
         /// <summary>
-        /// Renders the text.
+        /// Renders the text to the default renderer.
         /// </summary>
-        /// <param name="text">The text.</param>
-        /// <param name="options">The style.</param>
+        /// <param name="text">The text to render.</param>
+        /// <param name="options">The text options.</param>
         public void RenderText(string text, TextOptions options)
             => this.RenderText(text.AsSpan(), options);
 
         /// <summary>
-        /// Renders the text.
+        /// Renders the text to the default renderer.
         /// </summary>
-        /// <param name="text">The text.</param>
+        /// <param name="text">The text to render.</param>
         /// <param name="options">The style.</param>
         public void RenderText(ReadOnlySpan<char> text, TextOptions options)
         {

@@ -33,12 +33,11 @@ namespace SixLabors.Fonts
             => this.GlyphMetrics.GetBoundingBox(location, this.pointSize * dpi);
 
         /// <summary>
-        /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
+        /// Renders the glyph to the render surface relative to a top left origin.
         /// </summary>
         /// <param name="surface">The surface.</param>
         /// <param name="location">The location.</param>
         /// <param name="options">The options to render using.</param>
-        /// <exception cref="System.NotSupportedException">Too many control points.</exception>
         internal void RenderTo(IGlyphRenderer surface, Vector2 location, TextOptions options)
             => this.GlyphMetrics.RenderTo(surface, location, options);
     }

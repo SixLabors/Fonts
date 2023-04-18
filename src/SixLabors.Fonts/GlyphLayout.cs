@@ -21,7 +21,7 @@ namespace SixLabors.Fonts
             float lineHeight,
             float width,
             float height,
-            bool isVerticalRotated,
+            GlyphLayoutMode layoutMode,
             bool isStartOfLine)
         {
             this.Glyph = glyph;
@@ -33,7 +33,7 @@ namespace SixLabors.Fonts
             this.LineHeight = lineHeight;
             this.Width = width;
             this.Height = height;
-            this.IsVerticalRotated = isVerticalRotated;
+            this.LayoutMode = layoutMode;
             this.IsStartOfLine = isStartOfLine;
         }
 
@@ -82,7 +82,7 @@ namespace SixLabors.Fonts
         /// </summary>
         public float Height { get; }
 
-        public bool IsVerticalRotated { get; }
+        public GlyphLayoutMode LayoutMode { get; }
 
         /// <summary>
         /// Gets a value indicating whether this glyph is the first glyph on a new line.
@@ -101,13 +101,16 @@ namespace SixLabors.Fonts
             FontRectangle box = this.Glyph.BoundingBox(Vector2.Zero, dpi);
             if (this.IsWhiteSpace())
             {
-                box = new FontRectangle(box.X + origin.X, box.Y + origin.Y, this.Width * dpi, box.Height);
+                box = new FontRectangle(box.X, box.Y, this.Width * dpi, box.Height);
             }
 
             // Rotate 90 degrees clockwise if required.
-            Matrix3x2 matrix = this.IsVerticalRotated ? Matrix3x2.CreateRotation(-MathF.PI / 2F) : Matrix3x2.Identity;
-            box = FontRectangle.Transform(in box, matrix);
-            box = FontRectangle.Transform(in box, Matrix3x2.CreateTranslation(origin));
+            if (this.LayoutMode == GlyphLayoutMode.VerticalRotated)
+            {
+                box = FontRectangle.Transform(in box, Matrix3x2.CreateRotation(-MathF.PI / 2F));
+            }
+
+            box = new FontRectangle(box.X + origin.X, box.Y + origin.Y, box.Width, box.Height);
             return box;
         }
 
@@ -119,5 +122,14 @@ namespace SixLabors.Fonts
             Vector2 l = this.Location;
             return $"{s}{ws}{this.CodePoint.ToDebuggerDisplay()} {l.X},{l.Y} {this.Width}x{this.Height}";
         }
+    }
+
+#pragma warning disable SA1201 // Elements should appear in the correct order
+    internal enum GlyphLayoutMode
+#pragma warning restore SA1201 // Elements should appear in the correct order
+    {
+        Horizontal,
+        Vertical,
+        VerticalRotated
     }
 }

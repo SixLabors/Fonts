@@ -25,20 +25,13 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="GlyphSubstitutionCollection"/> class.
         /// </summary>
         /// <param name="textOptions">The text options.</param>
-        public GlyphSubstitutionCollection(TextOptions textOptions)
-        {
-            this.TextOptions = textOptions;
-            this.IsVerticalLayoutMode = textOptions.LayoutMode.IsVertical();
-        }
+        public GlyphSubstitutionCollection(TextOptions textOptions) => this.TextOptions = textOptions;
 
         /// <summary>
         /// Gets the number of glyphs ids contained in the collection.
         /// This may be more or less than original input codepoint count (due to substitution process).
         /// </summary>
         public int Count => this.glyphs.Count;
-
-        /// <inheritdoc />
-        public bool IsVerticalLayoutMode { get; }
 
         /// <inheritdoc />
         public TextOptions TextOptions { get; }

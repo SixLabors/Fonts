@@ -11,14 +11,15 @@ namespace SixLabors.Fonts
     /// The combined set of properties that uniquely identify the glyph that is to be rendered
     /// at a particular size and dpi.
     /// </summary>
-    [DebuggerDisplay("GlyphId = {GlyphId}, PointSize = {PointSize}, Dpi = {Dpi}")]
+    [DebuggerDisplay("GlyphId = {GlyphId}, CodePoint = {CodePoint}, PointSize = {PointSize}, Dpi = {Dpi}")]
     public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParameters>
     {
         internal GlyphRendererParameters(
             GlyphMetrics metrics,
             TextRun textRun,
             float pointSize,
-            float dpi)
+            float dpi,
+            LayoutMode layoutMode)
         {
             this.Font = metrics.FontMetrics.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
             this.FontStyle = metrics.FontMetrics.Description.Style;
@@ -29,6 +30,7 @@ namespace SixLabors.Fonts
             this.GlyphColor = metrics.GlyphColor ?? default;
             this.TextRun = textRun;
             this.CodePoint = metrics.CodePoint;
+            this.LayoutMode = layoutMode;
         }
 
         /// <summary>
@@ -70,6 +72,11 @@ namespace SixLabors.Fonts
         /// Gets the dots-per-inch the glyph is to be rendered at.
         /// </summary>
         public float Dpi { get; }
+
+        /// <summary>
+        /// Gets the layout mode applied to the glyph.
+        /// </summary>
+        public LayoutMode LayoutMode { get; }
 
         /// <summary>
         /// Gets the text run that this glyph belongs to.
@@ -115,6 +122,7 @@ namespace SixLabors.Fonts
             && other.GlyphType == this.GlyphType
             && other.TextRun.TextAttributes == this.TextRun.TextAttributes
             && other.TextRun.TextDecorations == this.TextRun.TextDecorations
+            && other.LayoutMode == this.LayoutMode
             && other.GlyphColor.Equals(this.GlyphColor)
             && ((other.Font is null && this.Font is null)
             || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
@@ -137,7 +145,8 @@ namespace SixLabors.Fonts
                 this.FontStyle,
                 this.Dpi,
                 this.TextRun.TextAttributes,
-                this.TextRun.TextDecorations);
+                this.TextRun.TextDecorations,
+                this.LayoutMode);
 
             return HashCode.Combine(a, b);
         }

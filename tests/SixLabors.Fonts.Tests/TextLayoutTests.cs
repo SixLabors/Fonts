@@ -29,8 +29,8 @@ namespace SixLabors.Fonts.Tests
         [InlineData(LayoutMode.HorizontalBottomTop, false)]
         [InlineData(LayoutMode.VerticalLeftRight, true)]
         [InlineData(LayoutMode.VerticalRightLeft, true)]
-        [InlineData(LayoutMode.VerticalMixedLeftRight, true)]
-        [InlineData(LayoutMode.VerticalMixedRightLeft, true)]
+        [InlineData(LayoutMode.VerticalMixedLeftRight, false)]
+        [InlineData(LayoutMode.VerticalMixedRightLeft, false)]
         public void CanDetectVerticalLayoutMode(LayoutMode mode, bool vertical)
             => Assert.Equal(vertical, mode.IsVertical());
 
@@ -275,6 +275,24 @@ namespace SixLabors.Fonts.Tests
                 Dpi = font.FontMetrics.ScaleFactor,
                 WrappingLength = 350,
                 LayoutMode = LayoutMode.VerticalRightLeft
+            });
+
+            Assert.Equal(width, size.Width, 4);
+            Assert.Equal(height, size.Height, 4);
+        }
+
+        [Theory]
+        [InlineData("hello world", 290, 10)] // 310 - 20 due to negative result of x-axis on rotation.
+        [InlineData("hello world hello world hello world", 290, 70)] // 310 - 20 due to negative result of x-axis on rotation.
+        [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+        public void MeasureTextWordWrappingVerticalMixedLeftRight(string text, float height, float width)
+        {
+            Font font = CreateFont(text);
+            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+            {
+                Dpi = font.FontMetrics.ScaleFactor,
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.VerticalMixedLeftRight
             });
 
             Assert.Equal(width, size.Width, 4);

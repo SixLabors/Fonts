@@ -132,7 +132,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 AnchorXY exitXY = exit.GetAnchor(fontMetrics, current, collection);
                 AnchorXY entryXY = entry.GetAnchor(fontMetrics, next, collection);
 
-                if (!collection.IsVerticalLayoutMode)
+                bool isVerticalLayout = AdvancedTypographicUtils.IsVerticalGlyph(current.CodePoint, collection.TextOptions.LayoutMode);
+                if (!isVerticalLayout)
                 {
                     // Horizontal
                     if (current.Direction == TextDirection.LeftToRight)
@@ -189,7 +190,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // chain and reverse the link direction, such that the whole tree of its
                 // previous connection now attaches to new parent.Watch out for case
                 // where new parent is on the path from old chain...
-                bool horizontal = !collection.IsVerticalLayoutMode;
+                bool horizontal = !isVerticalLayout;
                 ReverseCursiveMinorOffset(collection, index, child, horizontal, parent);
 
                 GlyphShapingData c = collection.GetGlyphShapingData(child);

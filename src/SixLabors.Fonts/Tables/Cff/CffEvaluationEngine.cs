@@ -65,7 +65,9 @@ namespace SixLabors.Fonts.Tables.Cff
 
             // TODO: It would be nice to avoid the allocation here.
             CffBoundsFinder finder = new();
-            this.transforming = new(Vector2.One, Vector2.Zero, finder);
+
+            // Note: scale is passed with negative Y to flip the Y axis.
+            this.transforming = new(finder, Vector2.Zero, new Vector2(1, -1), Vector2.Zero, Matrix3x2.Identity);
 
             // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
             this.Parse(this.charStrings);
@@ -79,11 +81,11 @@ namespace SixLabors.Fonts.Tables.Cff
             return finder.GetBounds();
         }
 
-        public void RenderTo(IGlyphRenderer renderer, Vector2 scale, Vector2 offset)
+        public void RenderTo(IGlyphRenderer renderer, Vector2 origin, Vector2 scale, Vector2 offset, Matrix3x2 transform)
         {
             this.Reset();
 
-            this.transforming = new(scale, offset, renderer);
+            this.transforming = new(renderer, origin, scale, offset, transform);
 
             // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
             this.Parse(this.charStrings);
@@ -723,12 +725,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CheckWidth()
-        {
-            if (this.width == null)
-            {
-                this.width = this.stack.Shift() + this.nominalWidthX;
-            }
-        }
+            => this.width ??= this.stack.Shift() + this.nominalWidthX;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Reset()
@@ -742,6 +739,7 @@ namespace SixLabors.Fonts.Tables.Cff
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowInvalidOperator(byte @operator) => throw new InvalidFontFileException($"Unknown operator:{@operator}");
+        private static void ThrowInvalidOperator(byte @operator)
+            => throw new InvalidFontFileException($"Unknown operator:{@operator}");
     }
 }

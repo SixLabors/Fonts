@@ -53,23 +53,11 @@ namespace SixLabors.Fonts
         /// <inheritdoc />
         public override float ScaleFactor => this.fontMetrics.Value.ScaleFactor;
 
-        /// <inheritdoc />
-        public override short Ascender => this.fontMetrics.Value.Ascender;
-
-        /// <inheritdoc />
-        public override short Descender => this.fontMetrics.Value.Descender;
-
-        /// <inheritdoc />
-        public override short LineGap => this.fontMetrics.Value.LineGap;
-
-        /// <inheritdoc />
-        public override short LineHeight => this.fontMetrics.Value.LineHeight;
+        /// <inheritdoc/>
+        public override HorizontalMetrics HorizontalMetrics => this.fontMetrics.Value.HorizontalMetrics;
 
         /// <inheritdoc/>
-        public override short AdvanceWidthMax => this.fontMetrics.Value.AdvanceWidthMax;
-
-        /// <inheritdoc/>
-        public override short AdvanceHeightMax => this.fontMetrics.Value.AdvanceHeightMax;
+        public override VerticalMetrics VerticalMetrics => this.fontMetrics.Value.VerticalMetrics;
 
         /// <inheritdoc/>
         public override short SubscriptXSize => this.fontMetrics.Value.SubscriptXSize;
@@ -135,9 +123,10 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            LayoutMode layoutMode,
             ColorFontSupport support,
             [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
-              => this.fontMetrics.Value.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, support, out metrics);
+              => this.fontMetrics.Value.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out metrics);
 
         /// <inheritdoc />
         internal override IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
@@ -145,8 +134,9 @@ namespace SixLabors.Fonts
             ushort glyphId,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            LayoutMode layoutMode,
             ColorFontSupport support)
-            => this.fontMetrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, support);
+            => this.fontMetrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support);
 
         /// <inheritdoc />
         internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
