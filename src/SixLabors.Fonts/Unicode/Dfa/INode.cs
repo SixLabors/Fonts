@@ -4,7 +4,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SixLabors.Fonts.Unicode.Dfa
 {
@@ -78,7 +77,11 @@ namespace SixLabors.Fonts.Unicode.Dfa
 
         public int Count => this.Enumerator.Count;
 
-        public INode this[int index] { get => this.Enumerator[index]; set => this.Enumerator[index] = value; }
+        public INode this[int index]
+        {
+            get => this.Enumerator[index];
+            set => this.Enumerator[index] = value;
+        }
 
         /// <inheritdoc/>
         public virtual void CalcFollowPos()
@@ -287,17 +290,11 @@ namespace SixLabors.Fonts.Unicode.Dfa
     /// </summary>
     internal abstract class Leaf : Node, ILogicalNode
     {
-        protected Leaf()
-        {
-            this.FirstPos = new HashSet<INode> { this };
-            this.LastPos = new HashSet<INode> { this };
-        }
+        /// <inheritdoc/>
+        public HashSet<INode> FirstPos => new() { this };
 
         /// <inheritdoc/>
-        public HashSet<INode> FirstPos { get; }
-
-        /// <inheritdoc/>
-        public HashSet<INode> LastPos { get; }
+        public HashSet<INode> LastPos => new() { this };
     }
 
     /// <summary>
@@ -331,6 +328,8 @@ namespace SixLabors.Fonts.Unicode.Dfa
 
         public string Name { get; }
 
+        public override bool Nullable => true;
+
         /// <inheritdoc/>
         public override INode Copy() => new Tag(this.Name);
     }
@@ -358,13 +357,23 @@ namespace SixLabors.Fonts.Unicode.Dfa
                 result = Concat(result, (ILogicalNode)expression.Copy());
             }
 
-            return max == double.PositiveInfinity
-                ? Concat(result, new Repeat((ILogicalNode)expression.Copy(), "*"))
-                : Concat(result, new Repeat((ILogicalNode)expression.Copy(), "?"));
+            if (max == double.PositiveInfinity)
+            {
+                result = Concat(result, new Repeat((ILogicalNode)expression.Copy(), "*"));
+            }
+            else
+            {
+                for (int i = min; i < max; i++)
+                {
+                    result = Concat(result, new Repeat((ILogicalNode)expression.Copy(), "?"));
+                }
+            }
+
+            return result!;
         }
 
         /// <summary>
-        /// COncatinates two nodes.
+        /// Concatinates two nodes.
         /// </summary>
         /// <param name="a">The first node.</param>
         /// <param name="b">The second node.</param>
@@ -410,11 +419,28 @@ namespace SixLabors.Fonts.Unicode.Dfa
         /// </summary>
         /// <param name="a">The first node sequence.</param>
         /// <param name="b">The second node sequence.</param>
-        /// <returns>
-        /// <see langword="true"/> if the two source sequences are of equal length and their corresponding
-        /// elements are equal according to the default equality comparer for their type;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        public static bool Equal(ICollection<INode> a, ICollection<INode> b) => a.SequenceEqual(b);
+        /// <returns>The <see cref="bool"/></returns>
+        public static bool Equal(ICollection<INode> a, ICollection<INode> b)
+        {
+            if (a == b)
+            {
+                return true;
+            }
+
+            if (a.Count != b.Count)
+            {
+                return false;
+            }
+
+            foreach (INode x in a)
+            {
+                if (!b.Contains(x))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }

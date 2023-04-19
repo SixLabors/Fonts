@@ -35,8 +35,9 @@ namespace SixLabors.Fonts.Unicode.Dfa
         {
             foreach (string key in externalSymbols.Keys)
             {
-                this.Variables[key] = new Literal(externalSymbols[key]);
-                this.Symbols[key] = externalSymbols[key];
+                int symbol = externalSymbols[key];
+                this.Variables[key] = new Literal(symbol);
+                this.Symbols[key] = symbol;
                 this.Size++;
             }
         }

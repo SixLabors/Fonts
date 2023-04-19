@@ -92,7 +92,7 @@ namespace SixLabors.Fonts.Unicode.Dfa
                 {
                     StartIndex = startRun.Value,
                     EndIndex = lastAccepting.Value,
-                    Tags = lastState != null ? this.tags[lastState.Value] : Array.Empty<string>()
+                    Tags = this.tags[state]
                 };
             }
         }

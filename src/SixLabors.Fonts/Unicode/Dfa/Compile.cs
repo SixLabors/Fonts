@@ -23,7 +23,8 @@ namespace SixLabors.Fonts.Unicode.Dfa
 
         private static StateMachine Build(SymbolTable symbolTable)
         {
-            IEnumerable<State> state = Dfa.BuildDfa(symbolTable.Main(), symbolTable.Size);
+            ILogicalNode main = symbolTable.Main();
+            IEnumerable<State> state = Dfa.BuildDfa(main, symbolTable.Size);
 
             int[][] stateTable = state.Select(x => x.Transitions).ToArray();
             bool[] accepting = state.Select(x => x.Accepting).ToArray();

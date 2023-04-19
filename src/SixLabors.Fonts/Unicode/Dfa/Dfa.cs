@@ -15,9 +15,11 @@ namespace SixLabors.Fonts.Unicode.Dfa
     /// </summary>
     internal static class Dfa
     {
+        internal static readonly EndMarker EndMarker = new();
+
         public static IEnumerable<State> BuildDfa(ILogicalNode root, int numSymbols)
         {
-            root = new Concatenation(root, new EndMarker());
+            root = new Concatenation(root, EndMarker);
             root.CalcFollowPos();
 
             State failState = new(new HashSet<INode>(), numSymbols);
@@ -30,7 +32,7 @@ namespace SixLabors.Fonts.Unicode.Dfa
             {
                 State? s = null;
 
-                for (int i = 0; i < dstates.Count; i++)
+                for (int i = 1; i < dstates.Count; i++)
                 {
                     if (!dstates[i].Marked)
                     {
@@ -98,9 +100,16 @@ namespace SixLabors.Fonts.Unicode.Dfa
         {
             this.Positions = positions;
             this.Transitions = new int[length];
-            this.Accepting = positions.Any(x => x is EndMarker);
+            this.Accepting = positions.Any(x => x == Dfa.EndMarker);
             this.Marked = false;
             this.Tags = new HashSet<string>();
+            foreach (INode pos in positions)
+            {
+                if (pos is Tag tag)
+                {
+                    this.Tags.Add(tag.Name);
+                }
+            }
         }
 
         public ICollection<INode> Positions { get; set; }
