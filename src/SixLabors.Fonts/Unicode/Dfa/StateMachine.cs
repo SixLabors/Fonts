@@ -112,7 +112,8 @@ namespace SixLabors.Fonts.Unicode.Dfa
                 {
                     if (actions.TryGetValue(tag, out Action<int, int, int[]>? action))
                     {
-                        action(match.StartIndex, match.EndIndex + 1 - match.StartIndex, input);
+                        // can be optimized... range could not be used because of the oooold targets.
+                        action(match.StartIndex, match.EndIndex, input.Skip(match.StartIndex).Take(match.EndIndex + 1 - match.StartIndex).ToArray());
                     }
                 }
             }

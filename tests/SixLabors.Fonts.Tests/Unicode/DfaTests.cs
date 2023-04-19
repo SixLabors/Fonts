@@ -1,7 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using FluentAssertions;
 using SixLabors.Fonts.Unicode.Dfa;
 using Xunit;
 
@@ -151,7 +154,8 @@ namespace SixLabors.Fonts.Tests.Unicode
         public void CanCompileWithTags()
         {
             StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = x:(b a) | y:(a b);");
-            StateMatch[] matches = stateMachine.Match(new[] { 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0 }).ToArray();
+            int[] input = { 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0 };
+            StateMatch[] matches = stateMachine.Match(input).ToArray();
 
             var expected = new StateMatch[]
             {
@@ -162,8 +166,26 @@ namespace SixLabors.Fonts.Tests.Unicode
             };
 
             Assert.True(expected.SequenceEqual(matches));
+            List<(string, int, int, int[])> applied = new();
+            Dictionary<string, Action<int, int, int[]>> actions = new()
+            {
+                { "x", (start, end, slice) => applied.Add(("x", start, end, slice)) },
+                { "y", (start, end, slice) => applied.Add(("y", start, end, slice)) }
+            };
 
-            // TODO: Test Apply.
+            stateMachine.Apply(input, actions);
+
+            Assert.True(applied.Count == 4);
+
+            var expectedApply = new List<(string, int, int, int[])>()
+            {
+                ("x", 2, 3, new int[] { 1, 0 }),
+                ("y", 4, 5, new int[] { 0, 1 }),
+                ("y", 6, 7, new int[] { 0, 1 }),
+                ("x", 9, 10, new int[] { 1, 0 }),
+            };
+
+            applied.Should().BeEquivalentTo(expectedApply);
         }
     }
 }
