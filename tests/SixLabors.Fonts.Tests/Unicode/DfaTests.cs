@@ -187,5 +187,22 @@ namespace SixLabors.Fonts.Tests.Unicode
 
             applied.Should().BeEquivalentTo(expectedApply);
         }
+
+        [Fact]
+        public void CanCompileWithExternalSymbols()
+        {
+            var externalSymbols = new Dictionary<string, int>() { { "a", 0 }, { "b", 1 } };
+            StateMachine stateMachine = Compile.Build("Main = a b;", externalSymbols);
+            int[] input = { 0, 0, 1, 1, 0, 1, 0 };
+            StateMatch[] matches = stateMachine.Match(input).ToArray();
+
+            var expected = new StateMatch[]
+            {
+                new StateMatch() { StartIndex = 1, EndIndex = 2, Tags = new string[] { } },
+                new StateMatch() { StartIndex = 4, EndIndex = 5, Tags = new string[] { } },
+            };
+
+            matches.Should().BeEquivalentTo(expected);
+        }
     }
 }
