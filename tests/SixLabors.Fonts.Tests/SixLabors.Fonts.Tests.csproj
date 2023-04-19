@@ -17,4 +17,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all"/>
+  </ItemGroup>
+
 </Project>
