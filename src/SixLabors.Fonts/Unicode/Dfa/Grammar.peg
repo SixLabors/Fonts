@@ -1,4 +1,4 @@
-@using UnicodeTrieGenerator.Dfa
+@using SixLabors.Fonts.Unicode.Dfa
 @namespace SixLabors.Fonts
 @classname GrammarParser
 @accessibility internal
@@ -53,7 +53,7 @@ repetition <Func<ILogicalNode, int, double, ILogicalNode>>
   = '{' number '}' { (nn, ii, dd) => NodeUtilities.BuildRepetition(nn, ii, dd) }
 
 name
-  = a:name_start_char b:name_char* { a + b }
+  = a:name_start_char b:name_char* { a + string.Join("", b) }
 
 name_start_char
   = "_"

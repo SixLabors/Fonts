@@ -6,7 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace UnicodeTrieGenerator.Dfa
+namespace SixLabors.Fonts.Unicode.Dfa
 {
     /// <summary>
     /// Defines an AST node.

@@ -31,5 +31,14 @@
     <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Unicode\Dfa\Grammar.peg" />
+    <PegGrammar Include="Unicode\Dfa\Grammar.peg" />
+  </ItemGroup>
+
   <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />
 </Project>

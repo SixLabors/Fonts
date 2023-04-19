@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,10 +7,6 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Dfa\Grammar.peg" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\..\tests\SixLabors.Fonts.Tests\Unicode\UnicodeTypeMaps.cs" Link="UnicodeTypeMaps.cs" />
@@ -25,14 +21,6 @@
     <Compile Include="..\SixLabors.Fonts\Unicode\ScriptClass.cs" Link="ScriptClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrie.cs" Link="UnicodeTrie.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrieBuilder.cs" Link="UnicodeTrieBuilder.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Pegasus" Version="4.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PegGrammar Include="Dfa\Grammar.peg" />
   </ItemGroup>
 
 </Project>

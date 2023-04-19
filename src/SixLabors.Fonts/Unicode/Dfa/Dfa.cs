@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace UnicodeTrieGenerator.Dfa
+namespace SixLabors.Fonts.Unicode.Dfa
 {
     /// <summary>
     /// This is an implementation of the direct regular expression to DFA algorithm described
