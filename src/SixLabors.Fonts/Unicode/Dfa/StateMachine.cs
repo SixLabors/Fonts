@@ -104,15 +104,15 @@ namespace SixLabors.Fonts.Unicode.Dfa
         /// </summary>
         /// <param name="input">The input sequence.</param>
         /// <param name="actions">The collection of actions.</param>
-        public void Apply(int[] input, Dictionary<string, Action<int, int, int[]>> actions)
+        public void Apply(int[] input, Dictionary<string, Action<int, int, ArraySlice<int>>> actions)
         {
             foreach (StateMatch match in this.Match(input))
             {
                 foreach (string tag in match.Tags)
                 {
-                    if (actions.TryGetValue(tag, out Action<int, int, int[]>? action))
+                    if (actions.TryGetValue(tag, out Action<int, int, ArraySlice<int>>? action))
                     {
-                        action(match.StartIndex, match.EndIndex + 1 - match.StartIndex, input);
+                        action(match.StartIndex, match.EndIndex, new ArraySlice<int>(input, match.StartIndex, match.EndIndex + 1 - match.StartIndex));
                     }
                 }
             }
