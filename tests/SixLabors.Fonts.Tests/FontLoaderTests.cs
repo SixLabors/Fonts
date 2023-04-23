@@ -16,7 +16,13 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = new FontCollection().Add(TestFonts.CarterOneFileData()).CreateFont(12);
 
-            Assert.True(font.FontMetrics.TryGetGlyphMetrics(new CodePoint('\0'), TextAttributes.None, TextDecorations.None, ColorFontSupport.None, out IReadOnlyList<GlyphMetrics> _));
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(
+                new CodePoint('\0'),
+                TextAttributes.None,
+                TextDecorations.None,
+                LayoutMode.HorizontalTopBottom,
+                ColorFontSupport.None,
+                out IReadOnlyList<GlyphMetrics> _));
         }
 
         [Fact]

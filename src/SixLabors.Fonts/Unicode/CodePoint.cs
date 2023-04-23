@@ -568,6 +568,14 @@ namespace SixLabors.Fonts.Unicode
             => UnicodeData.GetGraphemeClusterClass(codePoint.value);
 
         /// <summary>
+        /// Gets the <see cref="VerticalOrientationType"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="VerticalOrientationType"/>.</returns>
+        public static VerticalOrientationType GetVerticalOrientationType(CodePoint codePoint)
+            => UnicodeData.GetVerticalOrientation(codePoint.value);
+
+        /// <summary>
         /// Gets the <see cref="JoiningClass"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>

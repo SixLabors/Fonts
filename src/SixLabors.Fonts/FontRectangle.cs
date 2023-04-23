@@ -11,10 +11,6 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Stores a set of four single precision floating points that represent the location and size of a rectangle.
     /// </summary>
-    /// <remarks>
-    /// This struct is fully mutable. This is done (against the guidelines) for the sake of performance,
-    /// as it avoids the need to create new values for modification operations.
-    /// </remarks>
     public readonly struct FontRectangle : IEquatable<FontRectangle>
     {
         /// <summary>

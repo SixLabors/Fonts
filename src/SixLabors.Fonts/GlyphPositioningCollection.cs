@@ -24,17 +24,10 @@ namespace SixLabors.Fonts
         /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
         /// </summary>
         /// <param name="textOptions">The text options.</param>
-        public GlyphPositioningCollection(TextOptions textOptions)
-        {
-            this.TextOptions = textOptions;
-            this.IsVerticalLayoutMode = textOptions.LayoutMode.IsVertical();
-        }
+        public GlyphPositioningCollection(TextOptions textOptions) => this.TextOptions = textOptions;
 
         /// <inheritdoc />
         public int Count => this.glyphs.Count;
-
-        /// <inheritdoc />
-        public bool IsVerticalLayoutMode { get; }
 
         /// <inheritdoc />
         public TextOptions TextOptions { get; }
@@ -133,6 +126,7 @@ namespace SixLabors.Fonts
         public bool TryUpdate(Font font, GlyphSubstitutionCollection collection)
         {
             FontMetrics fontMetrics = font.FontMetrics;
+            LayoutMode layoutMode = this.TextOptions.LayoutMode;
             ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
             bool hasFallBacks = false;
             List<int> orphans = new();
@@ -163,7 +157,7 @@ namespace SixLabors.Fonts
                         var metrics = new List<GlyphMetrics>(data.Count);
                         TextAttributes textAttributes = shape.TextRun.TextAttributes;
                         TextDecorations textDecorations = shape.TextRun.TextDecorations;
-                        foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, colorFontSupport))
+                        foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport))
                         {
                             if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                             {
@@ -179,7 +173,7 @@ namespace SixLabors.Fonts
                             GlyphMetrics clone = gm.CloneForRendering(shape.TextRun);
                             if (isDecomposed)
                             {
-                                if (!this.IsVerticalLayoutMode)
+                                if (!AdvancedTypographicUtils.IsVerticalGlyph(clone.CodePoint, layoutMode))
                                 {
                                     clone.ApplyOffset((short)shiftXY, 0);
                                     shiftXY += clone.AdvanceWidth;
@@ -244,6 +238,7 @@ namespace SixLabors.Fonts
         {
             bool hasFallBacks = false;
             FontMetrics fontMetrics = font.FontMetrics;
+            LayoutMode layoutMode = this.TextOptions.LayoutMode;
             ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
             ushort shiftXY = 0;
             for (int i = 0; i < collection.Count; i++)
@@ -263,7 +258,9 @@ namespace SixLabors.Fonts
                 // cache the original in the font metrics and only update our collection.
                 TextAttributes textAttributes = data.TextRun.TextAttributes;
                 TextDecorations textDecorations = data.TextRun.TextDecorations;
-                foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, colorFontSupport))
+                bool isVerticalLayout = AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode);
+
+                foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport))
                 {
                     if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                     {
@@ -276,7 +273,7 @@ namespace SixLabors.Fonts
                     GlyphMetrics clone = gm.CloneForRendering(data.TextRun);
                     if (isDecomposed)
                     {
-                        if (!this.IsVerticalLayoutMode)
+                        if (!AdvancedTypographicUtils.IsVerticalGlyph(clone.CodePoint, layoutMode))
                         {
                             clone.ApplyOffset((short)shiftXY, 0);
                             shiftXY += clone.AdvanceWidth;
@@ -294,7 +291,7 @@ namespace SixLabors.Fonts
                 if (metrics.Count > 0)
                 {
                     GlyphMetrics[] gm = metrics.ToArray();
-                    if (this.IsVerticalLayoutMode)
+                    if (isVerticalLayout)
                     {
                         this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) }, font.Size, gm));
                     }
@@ -353,11 +350,12 @@ namespace SixLabors.Fonts
         /// <param name="dy">The delta y-advance.</param>
         public void Advance(FontMetrics fontMetrics, int index, ushort glyphId, short dx, short dy)
         {
+            LayoutMode layoutMode = this.TextOptions.LayoutMode;
             foreach (GlyphMetrics m in this.glyphs[index].Metrics)
             {
                 if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
                 {
-                    m.ApplyAdvance(dx, this.IsVerticalLayoutMode ? dy : (short)0);
+                    m.ApplyAdvance(dx, AdvancedTypographicUtils.IsVerticalGlyph(m.CodePoint, layoutMode) ? dy : (short)0);
                 }
             }
         }

@@ -18,6 +18,7 @@
     <Compile Include="..\SixLabors.Fonts\Unicode\ScriptClass.cs" Link="ScriptClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrie.cs" Link="UnicodeTrie.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrieBuilder.cs" Link="UnicodeTrieBuilder.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\VerticalOrientationType.cs" Link="VerticalOrientationType.cs" />
   </ItemGroup>
 
 </Project>

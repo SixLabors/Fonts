@@ -17,6 +17,7 @@ namespace SixLabors.Fonts.Unicode
         private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetScriptTrie());
         private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new(() => GetCategoryTrie());
         private static readonly Lazy<UnicodeTrie> LazyArabicShapingTrie = new(() => GetArabicShapingTrie());
+        private static readonly Lazy<UnicodeTrie> LazyVerticalOrientationTrie = new(() => GetVerticalOrientationTrie());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetBidiData(uint codePoint) => LazyBidiTrie.Value.Get(codePoint);
@@ -39,6 +40,9 @@ namespace SixLabors.Fonts.Unicode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UnicodeCategory GetUnicodeCategory(uint codePoint) => (UnicodeCategory)LazyCategoryTrie.Value.Get(codePoint);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static VerticalOrientationType GetVerticalOrientation(uint codePoint) => (VerticalOrientationType)LazyVerticalOrientationTrie.Value.Get(codePoint);
+
         private static UnicodeTrie GetBidiTrie() => new(BidiTrie.Data);
 
         private static UnicodeTrie GetBidiMirrorTrie() => new(BidiMirrorTrie.Data);
@@ -52,5 +56,7 @@ namespace SixLabors.Fonts.Unicode
         private static UnicodeTrie GetCategoryTrie() => new(UnicodeCategoryTrie.Data);
 
         private static UnicodeTrie GetArabicShapingTrie() => new(ArabicShapingTrie.Data);
+
+        private static UnicodeTrie GetVerticalOrientationTrie() => new(VerticalOrientationTrie.Data);
     }
 }

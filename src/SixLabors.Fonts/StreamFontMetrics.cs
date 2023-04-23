@@ -33,17 +33,13 @@ namespace SixLabors.Fonts
         private readonly OutlineType outlineType;
 
         // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
-        private readonly ConcurrentDictionary<ushort, GlyphMetrics[]> glyphCache;
-        private readonly ConcurrentDictionary<ushort, GlyphMetrics[]>? colorGlyphCache;
+        private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]> glyphCache;
+        private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]>? colorGlyphCache;
         private readonly FontDescription description;
+        private readonly HorizontalMetrics horizontalMetrics;
+        private readonly VerticalMetrics verticalMetrics;
         private ushort unitsPerEm;
         private float scaleFactor;
-        private short ascender;
-        private short descender;
-        private short lineGap;
-        private short lineHeight;
-        private short advanceWidthMax;
-        private short advanceHeightMax;
         private short subscriptXSize;
         private short subscriptYSize;
         private short subscriptXOffset;
@@ -73,7 +69,9 @@ namespace SixLabors.Fonts
                 this.colorGlyphCache = new();
             }
 
-            this.Initialize(tables);
+            (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
+            this.horizontalMetrics = metrics.HorizontalMetrics;
+            this.verticalMetrics = metrics.VerticalMetrics;
         }
 
         /// <summary>
@@ -91,7 +89,9 @@ namespace SixLabors.Fonts
                 this.colorGlyphCache = new();
             }
 
-            this.Initialize(tables);
+            (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
+            this.horizontalMetrics = metrics.HorizontalMetrics;
+            this.verticalMetrics = metrics.VerticalMetrics;
         }
 
         public HeadTable.HeadFlags HeadFlags { get; private set; }
@@ -106,22 +106,10 @@ namespace SixLabors.Fonts
         public override float ScaleFactor => this.scaleFactor;
 
         /// <inheritdoc/>
-        public override short Ascender => this.ascender;
+        public override HorizontalMetrics HorizontalMetrics => this.horizontalMetrics;
 
         /// <inheritdoc/>
-        public override short Descender => this.descender;
-
-        /// <inheritdoc/>
-        public override short LineGap => this.lineGap;
-
-        /// <inheritdoc/>
-        public override short LineHeight => this.lineHeight;
-
-        /// <inheritdoc/>
-        public override short AdvanceWidthMax => this.advanceWidthMax;
-
-        /// <inheritdoc/>
-        public override short AdvanceHeightMax => this.advanceHeightMax;
+        public override VerticalMetrics VerticalMetrics => this.verticalMetrics;
 
         /// <inheritdoc/>
         public override short SubscriptXSize => this.subscriptXSize;
@@ -203,12 +191,13 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            LayoutMode layoutMode,
             ColorFontSupport support,
             [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
         {
             // We return metrics for the special glyph representing a missing character, commonly known as .notdef.
             this.TryGetGlyphId(codePoint, out ushort glyphId);
-            metrics = this.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, support);
+            metrics = this.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support);
             return metrics.Any();
         }
 
@@ -218,6 +207,7 @@ namespace SixLabors.Fonts
             ushort glyphId,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            LayoutMode layoutMode,
             ColorFontSupport support)
         {
             GlyphType glyphType = GlyphType.Standard;
@@ -229,22 +219,23 @@ namespace SixLabors.Fonts
             }
 
             if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, textDecorations, out GlyphMetrics[]? metrics))
+                && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, out GlyphMetrics[]? metrics))
             {
                 return metrics;
             }
 
             // We overwrite the cache entry for this type should the attributes change.
             return this.glyphCache.GetOrAdd(
-                  glyphId,
-                  id => new[]
+                  CreateCacheKey(codePoint, glyphId, textAttributes, layoutMode),
+                  key => new[]
                   {
                     this.CreateGlyphMetrics(
                     codePoint,
-                    id,
+                    key.Id,
                     glyphType,
-                    textAttributes,
-                    textDecorations)
+                    key.Attributes,
+                    textDecorations,
+                    key.IsVerticalLayout)
                   });
         }
 
@@ -298,6 +289,7 @@ namespace SixLabors.Fonts
 
             gpos?.TryUpdatePositions(this, collection, out kerned);
 
+            // TODO: I don't think we should disable kerning here.
             if (!kerned && kerningMode != KerningMode.None)
             {
                 KerningTable? kern = isTTF
@@ -369,7 +361,7 @@ namespace SixLabors.Fonts
             }
         }
 
-        private void Initialize<T>(T tables)
+        private (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) Initialize<T>(T tables)
             where T : IFontTables
         {
             HeadTable head = tables.Head;
@@ -379,6 +371,35 @@ namespace SixLabors.Fonts
             PostTable post = tables.Post;
 
             this.HeadFlags = head.Flags;
+            this.unitsPerEm = head.UnitsPerEm;
+            this.scaleFactor = this.unitsPerEm * 72F; // 72 * UnitsPerEm means 1pt = 1px
+            this.subscriptXSize = os2.SubscriptXSize;
+            this.subscriptYSize = os2.SubscriptYSize;
+            this.subscriptXOffset = os2.SubscriptXOffset;
+            this.subscriptYOffset = os2.SubscriptYOffset;
+            this.superscriptXSize = os2.SuperscriptXSize;
+            this.superscriptYSize = os2.SuperscriptYSize;
+            this.superscriptXOffset = os2.SuperscriptXOffset;
+            this.superscriptYOffset = os2.SuperscriptYOffset;
+            this.strikeoutSize = os2.StrikeoutSize;
+            this.strikeoutPosition = os2.StrikeoutPosition;
+            this.underlinePosition = post.UnderlinePosition;
+            this.underlineThickness = post.UnderlineThickness;
+            this.italicAngle = post.ItalicAngle;
+
+            HorizontalMetrics horizontalMetrics = InitializeHorizontalMetrics(hhea, vhea, os2);
+            VerticalMetrics verticalMetrics = InitializeVerticalMetrics(horizontalMetrics, vhea, os2);
+            return (horizontalMetrics, verticalMetrics);
+        }
+
+        private static HorizontalMetrics InitializeHorizontalMetrics(HorizontalHeadTable hhea, VerticalHeadTable? vhea, OS2Table os2)
+        {
+            short ascender;
+            short descender;
+            short lineGap;
+            short lineHeight;
+            short advanceWidthMax;
+            short advanceHeightMax;
 
             // https://www.microsoft.com/typography/otspec/recom.htm#tad
             // We use the same approach as FreeType for calculating the the global  ascender, descender,  and
@@ -393,57 +414,127 @@ namespace SixLabors.Fonts
             bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
             if (useTypoMetrics)
             {
-                this.ascender = os2.TypoAscender;
-                this.descender = os2.TypoDescender;
-                this.lineGap = os2.TypoLineGap;
-                this.lineHeight = (short)(this.ascender - this.descender + this.lineGap);
+                ascender = os2.TypoAscender;
+                descender = os2.TypoDescender;
+                lineGap = os2.TypoLineGap;
+                lineHeight = (short)(ascender - descender + lineGap);
             }
             else
             {
-                this.ascender = hhea.Ascender;
-                this.descender = hhea.Descender;
-                this.lineGap = hhea.LineGap;
-                this.lineHeight = (short)(this.ascender - this.descender + this.lineGap);
+                ascender = hhea.Ascender;
+                descender = hhea.Descender;
+                lineGap = hhea.LineGap;
+                lineHeight = (short)(ascender - descender + lineGap);
             }
 
-            if (this.ascender == 0 || this.descender == 0)
+            if (ascender == 0 || descender == 0)
             {
                 if (os2.TypoAscender != 0 || os2.TypoDescender != 0)
                 {
-                    this.ascender = os2.TypoAscender;
-                    this.descender = os2.TypoDescender;
-                    this.lineGap = os2.TypoLineGap;
-                    this.lineHeight = (short)(this.ascender - this.descender + this.lineGap);
+                    ascender = os2.TypoAscender;
+                    descender = os2.TypoDescender;
+                    lineGap = os2.TypoLineGap;
+                    lineHeight = (short)(ascender - descender + lineGap);
                 }
                 else
                 {
-                    this.ascender = (short)os2.WinAscent;
-                    this.descender = (short)-os2.WinDescent;
-                    this.lineHeight = (short)(this.ascender - this.descender);
+                    ascender = (short)os2.WinAscent;
+                    descender = (short)-os2.WinDescent;
+                    lineHeight = (short)(ascender - descender);
                 }
             }
 
-            this.unitsPerEm = head.UnitsPerEm;
+            advanceWidthMax = (short)hhea.AdvanceWidthMax;
+            advanceHeightMax = vhea == null ? lineHeight : vhea.AdvanceHeightMax;
 
-            // 72 * UnitsPerEm means 1pt = 1px
-            this.scaleFactor = this.unitsPerEm * 72F;
-            this.advanceWidthMax = (short)hhea.AdvanceWidthMax;
-            this.advanceHeightMax = vhea == null ? this.LineHeight : vhea.AdvanceHeightMax;
+            return new()
+            {
+                Ascender = ascender,
+                Descender = descender,
+                LineGap = lineGap,
+                LineHeight = lineHeight,
+                AdvanceWidthMax = advanceWidthMax,
+                AdvanceHeightMax = advanceHeightMax
+            };
+        }
 
-            this.subscriptXSize = os2.SubscriptXSize;
-            this.subscriptYSize = os2.SubscriptYSize;
-            this.subscriptXOffset = os2.SubscriptXOffset;
-            this.subscriptYOffset = os2.SubscriptYOffset;
-            this.superscriptXSize = os2.SuperscriptXSize;
-            this.superscriptYSize = os2.SuperscriptYSize;
-            this.superscriptXOffset = os2.SuperscriptXOffset;
-            this.superscriptYOffset = os2.SuperscriptYOffset;
-            this.strikeoutSize = os2.StrikeoutSize;
-            this.strikeoutPosition = os2.StrikeoutPosition;
+        private static VerticalMetrics InitializeVerticalMetrics(HorizontalMetrics metrics, VerticalHeadTable? vhea, OS2Table os2)
+        {
+            if (vhea is null)
+            {
+                return new()
+                {
+                    Ascender = metrics.Ascender,
+                    Descender = metrics.Descender,
+                    LineGap = metrics.LineGap,
+                    LineHeight = metrics.LineHeight,
+                    AdvanceWidthMax = metrics.AdvanceWidthMax,
+                    AdvanceHeightMax = metrics.AdvanceHeightMax
+                };
+            }
 
-            this.underlinePosition = post.UnderlinePosition;
-            this.underlineThickness = post.UnderlineThickness;
-            this.italicAngle = post.ItalicAngle;
+            short ascender;
+            short descender;
+            short lineGap;
+            short lineHeight;
+            short advanceWidthMax;
+            short advanceHeightMax;
+
+            // https://www.microsoft.com/typography/otspec/recom.htm#tad
+            // We use the same approach as FreeType for calculating the the global  ascender, descender,  and
+            // height of  OpenType fonts for consistency.
+            //
+            // 1.If the OS/ 2 table exists and the fsSelection bit 7 is set (USE_TYPO_METRICS), trust the font
+            //   and use the Typo* metrics.
+            // 2.Otherwise, use the HorizontalHeadTable "hhea" table's metrics.
+            // 3.If they are zero and the OS/ 2 table exists,
+            //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
+            //    - Otherwise, use the OS / 2 table's usWin* metrics.
+            bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
+            if (useTypoMetrics)
+            {
+                ascender = os2.TypoAscender;
+                descender = os2.TypoDescender;
+                lineGap = os2.TypoLineGap;
+                lineHeight = (short)(ascender - descender + lineGap);
+            }
+            else
+            {
+                ascender = vhea.Ascender;
+                descender = vhea.Descender;
+                lineGap = vhea.LineGap;
+                lineHeight = (short)(ascender - descender + lineGap);
+            }
+
+            if (ascender == 0 || descender == 0)
+            {
+                if (os2.TypoAscender != 0 || os2.TypoDescender != 0)
+                {
+                    ascender = os2.TypoAscender;
+                    descender = os2.TypoDescender;
+                    lineGap = os2.TypoLineGap;
+                    lineHeight = (short)(ascender - descender + lineGap);
+                }
+                else
+                {
+                    ascender = (short)os2.WinAscent;
+                    descender = (short)-os2.WinDescent;
+                    lineHeight = (short)(ascender - descender);
+                }
+            }
+
+            advanceWidthMax = metrics.AdvanceWidthMax;
+            advanceHeightMax = vhea.AdvanceHeightMax;
+
+            return new()
+            {
+                Ascender = ascender,
+                Descender = descender,
+                LineGap = lineGap,
+                LineHeight = lineHeight,
+                AdvanceWidthMax = advanceWidthMax,
+                AdvanceHeightMax = advanceHeightMax
+            };
         }
 
         /// <summary>
@@ -478,11 +569,19 @@ namespace SixLabors.Fonts
             return fonts;
         }
 
+        private static (ushort Id, TextAttributes Attributes, bool IsVerticalLayout) CreateCacheKey(
+            CodePoint codePoint,
+            ushort glyphId,
+            TextAttributes textAttributes,
+            LayoutMode layoutMode)
+            => (glyphId, textAttributes, AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode));
+
         private bool TryGetColoredMetrics(
             CodePoint codePoint,
             ushort glyphId,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            LayoutMode layoutMode,
             [NotNullWhen(true)] out GlyphMetrics[]? metrics)
         {
             ColrTable? colr = this.outlineType == OutlineType.TrueType
@@ -496,17 +595,17 @@ namespace SixLabors.Fonts
             }
 
             // We overwrite the cache entry for this type should the attributes change.
-            metrics = this.colorGlyphCache.GetOrAdd(glyphId, id =>
+            metrics = this.colorGlyphCache.GetOrAdd(CreateCacheKey(codePoint, glyphId, textAttributes, layoutMode), key =>
             {
                 GlyphMetrics[] m = Array.Empty<GlyphMetrics>();
-                Span<LayerRecord> indexes = colr.GetLayers(id);
+                Span<LayerRecord> indexes = colr.GetLayers(key.Id);
                 if (indexes.Length > 0)
                 {
                     m = new GlyphMetrics[indexes.Length];
                     for (int i = 0; i < indexes.Length; i++)
                     {
                         LayerRecord layer = indexes[i];
-                        m[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, textAttributes, textDecorations, layer.PaletteIndex);
+                        m[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, key.Attributes, textDecorations, key.IsVerticalLayout, layer.PaletteIndex);
                     }
                 }
 
@@ -522,11 +621,12 @@ namespace SixLabors.Fonts
             GlyphType glyphType,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            bool isVerticalLayout,
             ushort palleteIndex = 0)
             => this.outlineType switch
             {
-                OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, palleteIndex),
-                OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, palleteIndex),
+                OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, palleteIndex),
+                OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, palleteIndex),
                 _ => throw new NotSupportedException(),
             };
     }

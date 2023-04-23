@@ -56,25 +56,25 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily arabicFont = SystemFonts.Get("Dubai");
 
             FontFamily tahoma = SystemFonts.Get("Tahoma");
-            var textRuns = new List<TextRun>
+            var textRuns = new List<RichTextRun>
             {
-                new TextRun { Start = 4, End = 10, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
-                new TextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttributes.Subscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline | TextDecorations.Overline }
+                new RichTextRun { Start = 4, End = 10, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
+                new RichTextRun { Start = 26, End = 30, Font = uiFont.CreateFont(72, FontStyle.Italic), TextAttributes = TextAttributes.Subscript, TextDecorations = TextDecorations.Strikeout | TextDecorations.Underline | TextDecorations.Overline }
             };
 
             RenderText(uiFont, "The quick👩🏽‍🚒 brown fox jumps over the lazy dog", pointSize: 72, textRuns: textRuns, fallbackFonts: new[] { emojiFont });
 
             string arabic = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٟنِ ٱلرَّحِيمِ";
-            textRuns = new List<TextRun>
+            textRuns = new List<RichTextRun>
             {
-                new TextRun { Start = 0, End = arabic.GetGraphemeCount(), TextDecorations = TextDecorations.Underline }
+                new RichTextRun { Start = 0, End = arabic.GetGraphemeCount(), TextDecorations = TextDecorations.Underline }
             };
 
             RenderText(uiFont, arabic, pointSize: 72, textRuns: textRuns);
 
-            textRuns = new List<TextRun>
+            textRuns = new List<RichTextRun>
             {
-                new TextRun { Start = 0, End = arabic.GetGraphemeCount(), TextDecorations = TextDecorations.Underline }
+                new RichTextRun { Start = 0, End = arabic.GetGraphemeCount(), TextDecorations = TextDecorations.Underline }
             };
             RenderText(bugzilla, arabic, pointSize: 72, textRuns: textRuns);
 
@@ -133,26 +133,26 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             RenderText(whitneyBook, "Hello\0World", 72);
             RenderText(sunflower, "í", 30);
 
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\tx");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\t\tx");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\tx");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\t\tx");
 
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
 
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
-            RenderText(new TextOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
+            RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
 
 #if OS_WINDOWS
             RenderText(new Font(SystemFonts.Get("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
             RenderText(new Font(SystemFonts.Get("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
-            RenderText(new TextOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
+            RenderText(new RichTextOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
             BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
             TextAlignmentSample.Generate(SystemFonts.CreateFont("arial", 50f));
             TextAlignmentWrapped.Generate(SystemFonts.CreateFont("arial", 50f));
@@ -198,7 +198,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             using var img = new Image<Rgba32>(width, height);
             img.Mutate(x => x.Fill(Color.White));
 
-            IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new TextOptions(font) { Origin = new Vector2(50f, 4f) });
+            IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new RichTextOptions(font) { Origin = new Vector2(50f, 4f) });
             img.Mutate(x => x.Fill(Color.Black, shapes));
 
             Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
@@ -207,7 +207,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             img.SaveAsPng(fs);
         }
 
-        public static void RenderText(TextOptions options, string text)
+        public static void RenderText(RichTextOptions options, string text)
         {
             FontRectangle size = TextMeasurer.Measure(text, options);
             if (size == FontRectangle.Empty)
@@ -223,9 +223,9 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             string text,
             float pointSize = 12,
             IEnumerable<FontFamily> fallbackFonts = null,
-            IEnumerable<TextRun> textRuns = null)
+            IEnumerable<RichTextRun> textRuns = null)
             => RenderText(
-                new TextOptions(new Font(font, pointSize))
+                new RichTextOptions(new Font(font, pointSize))
                 {
                     // WrappingLength = 400,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
@@ -240,7 +240,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             IEnumerable<FontFamily> fallbackFonts = null)
         {
             Font font = new(fontFamily, pointSize);
-            TextOptions textOptions = new(font)
+            RichTextOptions textOptions = new(font)
             {
                 Dpi = 96,
             };
@@ -272,7 +272,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 foreach (HorizontalAlignment ha in (HorizontalAlignment[])Enum.GetValues(typeof(HorizontalAlignment)))
                 {
                     Font font = new(fontFamily, pointSize);
-                    TextOptions textOptions = new(font)
+                    RichTextOptions textOptions = new(font)
                     {
                         Dpi = 96,
                         VerticalAlignment = va,
@@ -316,7 +316,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
         }
 
         private static void SaveImage(
-            TextOptions options,
+            RichTextOptions options,
             string text,
             int width,
             int height,

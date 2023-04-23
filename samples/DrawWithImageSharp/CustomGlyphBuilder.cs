@@ -42,10 +42,11 @@ namespace DrawWithImageSharp
             base.BeginText(rect);
         }
 
-        protected override void BeginGlyph(in FontRectangle rect)
+        protected override void BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
         {
-            this.glyphBounds.Add(rect);
-            base.BeginText(rect);
+            this.glyphBounds.Add(bounds);
+
+            base.BeginText(bounds);
         }
     }
 }

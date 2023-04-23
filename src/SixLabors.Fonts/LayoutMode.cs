@@ -29,6 +29,16 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Text is laid out vertically from right to left.
         /// </summary>
-        VerticalRightLeft = 1 << 2
+        VerticalRightLeft = 1 << 2,
+
+        /// <summary>
+        /// Text is laid out vertically from left to right. Horizontal glyphs are rotated 90 degrees clockwise.
+        /// </summary>
+        VerticalMixedLeftRight = 1 << 3,
+
+        /// <summary>
+        /// Text is laid out vertically from right to left. Horizontal glyphs are rotated 90 degrees clockwise.
+        /// </summary>
+        VerticalMixedRightLeft = 1 << 4,
     }
 }

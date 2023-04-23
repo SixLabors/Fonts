@@ -16,11 +16,6 @@ namespace SixLabors.Fonts
         int Count { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the text layout mode is vertical.
-        /// </summary>
-        bool IsVerticalLayoutMode { get; }
-
-        /// <summary>
         /// Gets the text options used by this collection.
         /// </summary>
         TextOptions TextOptions { get; }
