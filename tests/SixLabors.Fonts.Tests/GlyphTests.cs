@@ -126,6 +126,7 @@ namespace SixLabors.Fonts.Tests
                 idx,
                 TextAttributes.None,
                 TextDecorations.None,
+                LayoutMode.HorizontalTopBottom,
                 ColorFontSupport.MicrosoftColrFormat);
 
             Assert.Equal(3, vectors.Count());

@@ -383,5 +383,20 @@ namespace SixLabors.Fonts.Tests.Unicode
             bool result = CodePoint.IsVariationSelector(new CodePoint(codePoint));
             Assert.Equal(expectedResult, result);
         }
+
+        [Theory]
+        [InlineData(0x002E, 0x002F, VerticalOrientationType.Rotate)]
+        [InlineData(0x003F, 0x0040, VerticalOrientationType.Rotate)]
+        [InlineData(0x00A7, 0x00A7, VerticalOrientationType.Upright)]
+        [InlineData(0x3001, 0x3002, VerticalOrientationType.TransformUpright)]
+        [InlineData(0x300A, 0x300A, VerticalOrientationType.TransformRotate)]
+        public void CodePointIsVerticalOrientation(uint min, uint max, VerticalOrientationType type)
+        {
+            for (uint i = min; i <= max; i++)
+            {
+                VerticalOrientationType vertical = CodePoint.GetVerticalOrientationType(new CodePoint(min));
+                Assert.Equal(type, vertical);
+            }
+        }
     }
 }

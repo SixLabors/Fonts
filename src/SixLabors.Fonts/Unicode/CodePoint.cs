@@ -567,6 +567,13 @@ namespace SixLabors.Fonts.Unicode
         public static GraphemeClusterClass GetGraphemeClusterClass(CodePoint codePoint)
             => UnicodeData.GetGraphemeClusterClass(codePoint.value);
 
+        /// Gets the <see cref="VerticalOrientationType"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="VerticalOrientationType"/>.</returns>
+        public static VerticalOrientationType GetVerticalOrientationType(CodePoint codePoint)
+            => UnicodeData.GetVerticalOrientation(codePoint.value);
+
         /// <summary>
         /// Gets the <see cref="ArabicJoiningClass"/> for the given codepoint.
         /// </summary>

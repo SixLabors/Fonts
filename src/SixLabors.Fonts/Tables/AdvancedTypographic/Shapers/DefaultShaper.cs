@@ -84,9 +84,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.AddFeature(collection, index, count, RvnrTag);
 
             // Add directional features.
+            LayoutMode layoutMode = collection.TextOptions.LayoutMode;
+            bool isVerticalLayout = false;
             for (int i = index; i < count; i++)
             {
                 GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
+                isVerticalLayout |= AdvancedTypographicUtils.IsVerticalGlyph(shapingData.CodePoint, layoutMode);
+
                 if (shapingData.Direction == TextDirection.LeftToRight)
                 {
                     this.AddFeature(collection, i, 1, LtraTag);
@@ -106,7 +110,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.AddFeature(collection, index, count, MarkTag);
             this.AddFeature(collection, index, count, MkmkTag);
 
-            if (!collection.IsVerticalLayoutMode)
+            if (!isVerticalLayout)
             {
                 // Add horizontal features.
                 this.AddFeature(collection, index, count, CaltTag);

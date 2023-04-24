@@ -11,15 +11,20 @@ namespace SixLabors.Fonts.Tables.Cff
     /// </summary>
     internal struct TransformingGlyphRenderer : IGlyphRenderer
     {
+        private static readonly Vector2 YInverter = new(1, -1);
+        private readonly IGlyphRenderer renderer;
+        private Vector2 origin;
         private Vector2 scale;
         private Vector2 offset;
-        private readonly IGlyphRenderer renderer;
+        private Matrix3x2 transform;
 
-        public TransformingGlyphRenderer(Vector2 scale, Vector2 offset, IGlyphRenderer renderer)
+        public TransformingGlyphRenderer(IGlyphRenderer renderer, Vector2 origin, Vector2 scale, Vector2 offset, Matrix3x2 transform)
         {
+            this.renderer = renderer;
+            this.origin = origin;
             this.scale = scale;
             this.offset = offset;
-            this.renderer = renderer;
+            this.transform = transform;
             this.IsOpen = false;
         }
 
@@ -96,6 +101,7 @@ namespace SixLabors.Fonts.Tables.Cff
             => this.renderer.SetDecoration(textDecorations, this.Transform(start), this.Transform(end), thickness);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Vector2 Transform(Vector2 point) => (point * this.scale) + this.offset;
+        private Vector2 Transform(Vector2 point)
+            => (Vector2.Transform((point * this.scale) + this.offset, this.transform) * YInverter) + this.origin;
     }
 }

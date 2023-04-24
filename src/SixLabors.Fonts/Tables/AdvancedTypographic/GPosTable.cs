@@ -289,6 +289,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         private static void FixCursiveAttachment(GlyphPositioningCollection collection, int index, int count)
         {
+            LayoutMode layoutMode = collection.TextOptions.LayoutMode;
             for (int i = 0; i < count; i++)
             {
                 int currentIndex = i + index;
@@ -302,8 +303,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     }
 
                     GlyphShapingData cursiveData = collection.GetGlyphShapingData(j);
-
-                    if (!collection.IsVerticalLayoutMode)
+                    if (!AdvancedTypographicUtils.IsVerticalGlyph(data.CodePoint, layoutMode))
                     {
                         data.Bounds.Y += cursiveData.Bounds.Y;
                     }

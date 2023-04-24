@@ -16,16 +16,13 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         {
             if (this.loop)
             {
-                if (this.glyph is null)
-                {
-                    this.glyph = GlyphVector.Empty(this.fallbackEmptyBounds);
-                }
-
+                this.glyph ??= GlyphVector.Empty(this.fallbackEmptyBounds);
                 return this.glyph.Value;
             }
 
             this.loop = true;
-            return table.GetGlyph(0);
+            this.glyph ??= GlyphVector.Empty(table.GetGlyph(0).GetBounds());
+            return this.glyph.Value;
         }
     }
 }

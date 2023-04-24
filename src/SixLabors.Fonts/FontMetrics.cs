@@ -35,38 +35,14 @@ namespace SixLabors.Fonts
         public abstract float ScaleFactor { get; }
 
         /// <summary>
-        /// Gets the typographic ascender of the face, expressed in font units.
+        /// Gets the metrics specific to horizontal text.
         /// </summary>
-        public abstract short Ascender { get; }
+        public abstract HorizontalMetrics HorizontalMetrics { get; }
 
         /// <summary>
-        /// Gets the typographic descender of the face, expressed in font units.
+        /// Gets the metrics specific to vertical text.
         /// </summary>
-        public abstract short Descender { get; }
-
-        /// <summary>
-        /// Gets the typographic line gap of the face, expressed in font units.
-        /// This field should be combined with the <see cref="Ascender"/> and <see cref="Descender"/>
-        /// values to determine default line spacing.
-        /// </summary>
-        public abstract short LineGap { get; }
-
-        /// <summary>
-        /// Gets the typographic line spacing of the face, expressed in font units.
-        /// </summary>
-        public abstract short LineHeight { get; }
-
-        /// <summary>
-        /// Gets the maximum advance width, in font units, for all glyphs in this face.
-        /// </summary>
-        public abstract short AdvanceWidthMax { get; }
-
-        /// <summary>
-        /// Gets the maximum advance height, in font units, for all glyphs in this
-        /// face.This is only relevant for vertical layouts, and is set to <see cref="LineHeight"/> for
-        /// fonts that do not provide vertical metrics.
-        /// </summary>
-        public abstract short AdvanceHeightMax { get; }
+        public abstract VerticalMetrics VerticalMetrics { get; }
 
         /// <summary>
         /// Gets the recommended horizontal size in font design units for subscripts for this font.
@@ -190,6 +166,7 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
         /// <param name="textAttributes">The text attributes applied to the glyph.</param>
         /// <param name="textDecorations">The text decorations applied to the glyph.</param>
+        /// <param name="layoutMode">The layout mode applied to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <param name="metrics">
         /// When this method returns, contains the metrics for the given codepoint and color support if the metrics
@@ -202,6 +179,7 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            LayoutMode layoutMode,
             ColorFontSupport support,
             [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics);
 
@@ -221,6 +199,7 @@ namespace SixLabors.Fonts
         /// </param>
         /// <param name="textAttributes">The text attributes applied to the glyph.</param>
         /// <param name="textDecorations">The text decorations applied to the glyph.</param>
+        /// <param name="layoutMode">The layout mode applied to the glyph.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
         internal abstract IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
@@ -228,6 +207,7 @@ namespace SixLabors.Fonts
             ushort glyphId,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            LayoutMode layoutMode,
             ColorFontSupport support);
 
         /// <summary>

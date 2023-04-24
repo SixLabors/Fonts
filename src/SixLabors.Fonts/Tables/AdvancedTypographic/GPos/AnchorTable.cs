@@ -115,7 +115,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 {
                     TextAttributes textAttributes = data.TextRun.TextAttributes;
                     TextDecorations textDecorations = data.TextRun.TextDecorations;
-                    if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, collection.TextOptions.ColorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
+                    LayoutMode layoutMode = collection.TextOptions.LayoutMode;
+                    ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
+                    if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
                     {
                         foreach (GlyphMetrics metric in metrics)
                         {

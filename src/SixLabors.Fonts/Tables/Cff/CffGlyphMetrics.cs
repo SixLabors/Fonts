@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tables.Cff
     /// </summary>
     internal class CffGlyphMetrics : GlyphMetrics
     {
-        private static readonly Vector2 MirrorScale = new(1, -1);
+        private static readonly Vector2 YInverter = new(1, -1);
         private CffGlyphData glyphData;
 
         internal CffGlyphMetrics(
@@ -111,9 +111,12 @@ namespace SixLabors.Fonts.Tables.Cff
             location *= dpi;
             float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
-            FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
+            this.TryGetRotationMatrix(options.LayoutMode, out Matrix3x2 rotation);
+            FontRectangle box = this.GetBoundingBox(Vector2.Zero, scaledPPEM);
+            box = FontRectangle.Transform(in box, rotation);
+            box = new FontRectangle(box.X + location.X, box.Y + location.Y, box.Width, box.Height);
 
-            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi);
+            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, options.LayoutMode);
             if (renderer.BeginGlyph(in box, in parameters))
             {
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
@@ -123,12 +126,12 @@ namespace SixLabors.Fonts.Tables.Cff
                         colorSurface.SetColor(this.GlyphColor.Value);
                     }
 
-                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
-                    Vector2 offset = location + (this.Offset * scale * MirrorScale);
-                    this.glyphData.RenderTo(renderer, scale, offset);
+                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+                    Vector2 offset = this.Offset * scale;
+                    this.glyphData.RenderTo(renderer, location, scale, offset, rotation);
                 }
 
-                this.RenderDecorationsTo(renderer, location, scaledPPEM);
+                this.RenderDecorationsTo(renderer, location, options.LayoutMode, rotation, scaledPPEM);
             }
 
             renderer.EndGlyph();

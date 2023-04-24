@@ -190,7 +190,29 @@ namespace SixLabors.Fonts
             TextAttributes textAttributes,
             ColorFontSupport support,
             [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
-            => this.TryGetGlyphs(codePoint, textAttributes, TextDecorations.None, support, out glyphs);
+            => this.TryGetGlyphs(codePoint, textAttributes, TextDecorations.None, LayoutMode.HorizontalTopBottom, support, out glyphs);
+
+        /// <summary>
+        /// Gets the glyphs for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The code point of the character.</param>
+        /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
+        /// <param name="layoutMode">The layout mode to apply to thte glyphs.</param>
+        /// <param name="support">Options for enabling color font support during layout and rendering.</param>
+        /// <param name="glyphs">
+        /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
+        /// are found; otherwise the default value. This parameter is passed uninitialized.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the face contains glyphs for the specified codepoint; otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool TryGetGlyphs(
+            CodePoint codePoint,
+            TextAttributes textAttributes,
+            LayoutMode layoutMode,
+            ColorFontSupport support,
+            [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
+            => this.TryGetGlyphs(codePoint, textAttributes, TextDecorations.None, layoutMode, support, out glyphs);
 
         /// <summary>
         /// Gets the glyphs for the given codepoint.
@@ -198,6 +220,7 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">The code point of the character.</param>
         /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
         /// <param name="textDecorations">The text decorations to apply to the glyphs.</param>
+        /// <param name="layoutMode">The layout mode to apply to thte glyphs.</param>
         /// <param name="support">Options for enabling color font support during layout and rendering.</param>
         /// <param name="glyphs">
         /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
@@ -210,11 +233,12 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             TextAttributes textAttributes,
             TextDecorations textDecorations,
+            LayoutMode layoutMode,
             ColorFontSupport support,
             [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
         {
             TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes, TextDecorations = textDecorations };
-            if (this.FontMetrics.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, support, out IReadOnlyList<GlyphMetrics>? metrics))
+            if (this.FontMetrics.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out IReadOnlyList<GlyphMetrics>? metrics))
             {
                 List<Glyph> g = new();
                 foreach (GlyphMetrics metric in metrics)
