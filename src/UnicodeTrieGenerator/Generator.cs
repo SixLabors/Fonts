@@ -769,7 +769,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("VerticalOrientation.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -780,7 +780,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string script = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }

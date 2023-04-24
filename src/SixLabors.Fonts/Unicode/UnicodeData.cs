@@ -47,7 +47,7 @@ namespace SixLabors.Fonts.Unicode
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IndicPositionalCategory GetIndicPositionalCategory(uint codePoint) => (IndicPositionalCategory)LazyIndicPositionalCategoryTrie.Value.Get(codePoint);
-      
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static VerticalOrientationType GetVerticalOrientation(uint codePoint) => (VerticalOrientationType)LazyVerticalOrientationTrie.Value.Get(codePoint);
 
