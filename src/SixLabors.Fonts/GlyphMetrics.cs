@@ -271,7 +271,7 @@ namespace SixLabors.Fonts
         internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, LayoutMode layoutMode, bool rotated, Matrix3x2 transform, float scaledPPEM)
         {
             bool isVerticalLayout = layoutMode.IsVertical() || layoutMode.IsVerticalMixed();
-            bool ishorizontalGlyph = layoutMode.IsHorizontal() || rotated;
+            bool isHorizontalGlyph = layoutMode.IsHorizontal() || rotated;
             (Vector2 Start, Vector2 End, float Thickness) GetEnds(TextDecorations decorations, float thickness, float decoratorPosition)
             {
                 // For vertical layout we need to draw a vertical line.
@@ -353,18 +353,18 @@ namespace SixLabors.Fonts
             TextDecorations decorations = renderer.EnabledDecorations();
             if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
             {
-                SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, ishorizontalGlyph ? this.FontMetrics.UnderlinePosition : 0);
+                SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, isHorizontalGlyph ? this.FontMetrics.UnderlinePosition : 0);
             }
 
             if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
             {
-                SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, ishorizontalGlyph ? this.FontMetrics.StrikeoutPosition : this.FontMetrics.UnitsPerEm * .5F);
+                SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, isHorizontalGlyph ? this.FontMetrics.StrikeoutPosition : this.FontMetrics.UnitsPerEm * .5F);
             }
 
             if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
             {
                 // There's no built in metrics for overline thickness so use underline.
-                SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, ishorizontalGlyph ? this.FontMetrics.HorizontalMetrics.Ascender : this.FontMetrics.UnitsPerEm);
+                SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, isHorizontalGlyph ? this.FontMetrics.HorizontalMetrics.Ascender : this.FontMetrics.UnitsPerEm);
             }
         }
 
