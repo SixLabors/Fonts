@@ -105,7 +105,7 @@ namespace SixLabors.Fonts.Tables.TrueType
         public GlyphOutline GetOutline() => this.vector.GetOutline();
 
         /// <inheritdoc/>
-        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, TextOptions options)
+        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -115,13 +115,20 @@ namespace SixLabors.Fonts.Tables.TrueType
 
             float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
             float dpi = options.Dpi;
+
+            // The glyph vector is rendered offset to the location.
+            // For horizontal text, the offset is always zero but vertical or rotated text
+            // will be offset against the location.
             location *= dpi;
+            offset *= dpi;
+            Vector2 renderLocation = location + offset;
+
             float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
-            this.TryGetRotationMatrix(options.LayoutMode, out Matrix3x2 rotation);
+            bool rotated = this.TryGetRotationMatrix(options.LayoutMode, out Matrix3x2 rotation);
             FontRectangle box = this.GetBoundingBox(Vector2.Zero, scaledPPEM);
             box = FontRectangle.Transform(in box, rotation);
-            box = new FontRectangle(box.X + location.X, box.Y + location.Y, box.Width, box.Height);
+            box = new FontRectangle(box.X + renderLocation.X, box.Y + renderLocation.Y, box.Width, box.Height);
 
             GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, options.LayoutMode);
 
@@ -166,8 +173,8 @@ namespace SixLabors.Fonts.Tables.TrueType
                         endOfContour = endPoints[i];
 
                         Vector2 prev;
-                        Vector2 curr = (YInverter * controlPoints[endOfContour]) + location;
-                        Vector2 next = (YInverter * controlPoints[startOfContour]) + location;
+                        Vector2 curr = (YInverter * controlPoints[endOfContour]) + renderLocation;
+                        Vector2 next = (YInverter * controlPoints[startOfContour]) + renderLocation;
 
                         if (onCurves[endOfContour])
                         {
@@ -195,7 +202,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                             int currentIndex = startOfContour + p;
                             int nextIndex = startOfContour + ((p + 1) % length);
                             int prevIndex = startOfContour + ((length + p - 1) % length);
-                            next = (YInverter * controlPoints[nextIndex]) + location;
+                            next = (YInverter * controlPoints[nextIndex]) + renderLocation;
 
                             if (onCurves[currentIndex])
                             {
@@ -227,7 +234,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                     }
                 }
 
-                this.RenderDecorationsTo(renderer, location, options.LayoutMode, rotation, scaledPPEM);
+                this.RenderDecorationsTo(renderer, location, options.LayoutMode, rotated, rotation, scaledPPEM);
             }
 
             renderer.EndGlyph();

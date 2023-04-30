@@ -402,6 +402,7 @@ namespace SixLabors.Fonts
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
                         location,
+                        Vector2.Zero,
                         scaledMaxAscender,
                         scaledMaxDescender,
                         scaledMaxLineGap,
@@ -438,9 +439,6 @@ namespace SixLabors.Fonts
             float offsetX = 0;
 
             // Set the Y-Origin for the line.
-            float scaledMaxLineGap = textBox.ScaledMaxLineGap(textLine.MaxPointSize);
-            float scaledMaxAscender = textBox.ScaledMaxAscender(textLine.MaxPointSize);
-            float scaledMaxDescender = textBox.ScaledMaxDescender(textLine.MaxPointSize);
             float scaledMaxLineHeight = textBox.ScaledMaxLineHeight(textLine.MaxPointSize);
 
             switch (options.VerticalAlignment)
@@ -546,14 +544,15 @@ namespace SixLabors.Fonts
                         advanceY = (metric.TopSideBearing + metric.Height + metric.BottomSideBearing) * scale.Y;
                     }
 
-                    // Center the glyph horizontally.
-                    // The last glyph of the text line needs to trim the line height.
+                    // Align the glyph horizontally and vertically.
+                    Vector2 offset = new((xWidth - (metric.AdvanceWidth * scale.X)) * .5F, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
-                        location + new Vector2((xWidth - (metric.AdvanceWidth * scale.X)) * .5F, data.ScaledAscender),
-                        scaledMaxAscender,
-                        scaledMaxDescender,
-                        scaledMaxLineGap,
+                        location,
+                        offset,
+                        data.ScaledAscender,
+                        data.ScaledDescender,
+                        data.ScaledLineGap,
                         scaledMaxLineHeight,
                         advanceX,
                         advanceY,
@@ -561,7 +560,7 @@ namespace SixLabors.Fonts
                         i == 0));
                 }
 
-                location.Y += data.ScaledAdvance - offsetY;
+                location.Y += data.ScaledAdvance;
             }
 
             location.Y = originY;
@@ -587,9 +586,6 @@ namespace SixLabors.Fonts
             float offsetX = 0;
 
             // Set the Y-Origin for the line.
-            float scaledMaxLineGap = textBox.ScaledMaxLineGap(textLine.MaxPointSize);
-            float scaledMaxAscender = textBox.ScaledMaxAscender(textLine.MaxPointSize);
-            float scaledMaxDescender = textBox.ScaledMaxDescender(textLine.MaxPointSize);
             float scaledMaxLineHeight = textBox.ScaledMaxLineHeight(textLine.MaxPointSize);
 
             switch (options.VerticalAlignment)
@@ -698,12 +694,14 @@ namespace SixLabors.Fonts
                         }
 
                         // Shift the rotated text horizontally to counter rotation
+                        Vector2 offset = new(data.ScaledDescender, 0);
                         glyphs.Add(new GlyphLayout(
                             new Glyph(metric, data.PointSize),
-                            location + new Vector2(data.ScaledDescender, 0),
+                            location,
+                            offset,
                             metric.LeftSideBearing * scale.X, // TODO: Check this calculation.
                             metric.RightSideBearing * scale.X,
-                            scaledMaxLineGap,
+                            data.ScaledLineGap,
                             data.ScaledAdvance,
                             advanceX,
                             advanceY,
@@ -730,14 +728,15 @@ namespace SixLabors.Fonts
                             advanceY = (metric.TopSideBearing + metric.Height + metric.BottomSideBearing) * scale.Y;
                         }
 
-                        // Center the glyph horizontally.
-                        // The last glyph of the text line needs to trim the line height.
+                        // Align the glyph horizontally and vertically.
+                        Vector2 offset = new((xWidth - (metric.AdvanceWidth * scale.X)) * .5F, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
                         glyphs.Add(new GlyphLayout(
                             new Glyph(metric, data.PointSize),
-                            location + new Vector2((xWidth - (metric.AdvanceWidth * scale.X)) * .5F, data.ScaledAscender),
-                            scaledMaxAscender,
-                            scaledMaxDescender,
-                            scaledMaxLineGap,
+                            location,
+                            offset,
+                            data.ScaledAscender,
+                            data.ScaledDescender,
+                            data.ScaledLineGap,
                             data.ScaledLineHeight,
                             advanceX,
                             advanceY,
@@ -1127,6 +1126,7 @@ namespace SixLabors.Fonts
                     float ascender = metricsHeader.Ascender * scaleY;
 
                     // Adjust ascender for glyphs with a negative tsb. e.g. emoji to prevent cutoff.
+                    // TODO: Remove this hack.
                     if (!CodePoint.IsWhiteSpace(codePoint))
                     {
                         short tsbOffset = 0;

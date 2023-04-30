@@ -52,7 +52,7 @@ namespace SixLabors.Fonts.Tests
 
             Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, new TextOptions(font));
 
             Assert.Equal(37, r.ControlPoints.Count);
             Assert.Single(r.GlyphKeys);
@@ -67,7 +67,7 @@ namespace SixLabors.Fonts.Tests
             Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
             Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, new TextOptions(font));
 
             Assert.Equal(37, r.ControlPoints.Count);
             Assert.Single(r.GlyphKeys);
@@ -101,7 +101,7 @@ namespace SixLabors.Fonts.Tests
             Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
             Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, new TextOptions(font));
 
             Assert.Equal(37, r.ControlPoints.Count);
             Assert.Single(r.GlyphKeys);
@@ -120,7 +120,7 @@ namespace SixLabors.Fonts.Tests
             Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
             Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, new TextOptions(font));
 
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());
@@ -137,7 +137,7 @@ namespace SixLabors.Fonts.Tests
             Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
             Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, new TextOptions(font));
 
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());

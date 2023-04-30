@@ -388,7 +388,7 @@ namespace SixLabors.Fonts
             this.italicAngle = post.ItalicAngle;
 
             HorizontalMetrics horizontalMetrics = InitializeHorizontalMetrics(hhea, vhea, os2);
-            VerticalMetrics verticalMetrics = InitializeVerticalMetrics(horizontalMetrics, vhea, os2);
+            VerticalMetrics verticalMetrics = InitializeVerticalMetrics(horizontalMetrics, vhea);
             return (horizontalMetrics, verticalMetrics);
         }
 
@@ -458,83 +458,36 @@ namespace SixLabors.Fonts
             };
         }
 
-        private static VerticalMetrics InitializeVerticalMetrics(HorizontalMetrics metrics, VerticalHeadTable? vhea, OS2Table os2)
+        private static VerticalMetrics InitializeVerticalMetrics(HorizontalMetrics metrics, VerticalHeadTable? vhea)
         {
+            VerticalMetrics verticalMetrics = new()
+            {
+                Ascender = metrics.Ascender,
+                Descender = metrics.Descender,
+                LineGap = metrics.LineGap,
+                LineHeight = metrics.LineHeight,
+                AdvanceWidthMax = metrics.AdvanceWidthMax,
+                AdvanceHeightMax = metrics.AdvanceHeightMax
+            };
+
             if (vhea is null)
             {
-                return new()
-                {
-                    Ascender = metrics.Ascender,
-                    Descender = metrics.Descender,
-                    LineGap = metrics.LineGap,
-                    LineHeight = metrics.LineHeight,
-                    AdvanceWidthMax = metrics.AdvanceWidthMax,
-                    AdvanceHeightMax = metrics.AdvanceHeightMax
-                };
+                return verticalMetrics;
             }
 
-            short ascender;
-            short descender;
-            short lineGap;
-            short lineHeight;
-            short advanceWidthMax;
-            short advanceHeightMax;
+            short ascender = vhea.Ascender;
 
-            // https://www.microsoft.com/typography/otspec/recom.htm#tad
-            // We use the same approach as FreeType for calculating the the global  ascender, descender,  and
-            // height of  OpenType fonts for consistency.
-            //
-            // 1.If the OS/ 2 table exists and the fsSelection bit 7 is set (USE_TYPO_METRICS), trust the font
-            //   and use the Typo* metrics.
-            // 2.Otherwise, use the HorizontalHeadTable "hhea" table's metrics.
-            // 3.If they are zero and the OS/ 2 table exists,
-            //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
-            //    - Otherwise, use the OS / 2 table's usWin* metrics.
-            bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
-            if (useTypoMetrics)
-            {
-                ascender = os2.TypoAscender;
-                descender = os2.TypoDescender;
-                lineGap = os2.TypoLineGap;
-                lineHeight = (short)(ascender - descender + lineGap);
-            }
-            else
-            {
-                ascender = vhea.Ascender;
-                descender = vhea.Descender;
-                lineGap = vhea.LineGap;
-                lineHeight = (short)(ascender - descender + lineGap);
-            }
+            // Always negative due to the grid orientation.
+            short descender = (short)(vhea.Descender > 0 ? -vhea.Descender : vhea.Descender);
+            short lineGap = vhea.LineGap;
+            short lineHeight = (short)(ascender - descender + lineGap);
 
-            if (ascender == 0 || descender == 0)
-            {
-                if (os2.TypoAscender != 0 || os2.TypoDescender != 0)
-                {
-                    ascender = os2.TypoAscender;
-                    descender = os2.TypoDescender;
-                    lineGap = os2.TypoLineGap;
-                    lineHeight = (short)(ascender - descender + lineGap);
-                }
-                else
-                {
-                    ascender = (short)os2.WinAscent;
-                    descender = (short)-os2.WinDescent;
-                    lineHeight = (short)(ascender - descender);
-                }
-            }
+            verticalMetrics.Ascender = ascender;
+            verticalMetrics.Descender = descender;
+            verticalMetrics.LineGap = lineGap;
+            verticalMetrics.LineHeight = lineHeight;
 
-            advanceWidthMax = metrics.AdvanceWidthMax;
-            advanceHeightMax = vhea.AdvanceHeightMax;
-
-            return new()
-            {
-                Ascender = ascender,
-                Descender = descender,
-                LineGap = lineGap,
-                LineHeight = lineHeight,
-                AdvanceWidthMax = advanceWidthMax,
-                AdvanceHeightMax = advanceHeightMax
-            };
+            return verticalMetrics;
         }
 
         /// <summary>

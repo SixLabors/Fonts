@@ -263,18 +263,19 @@ namespace SixLabors.Fonts
         /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
         /// </summary>
         /// <param name="renderer">The surface renderer.</param>
-        /// <param name="location">The location.</param>
+        /// <param name="location">The location representing offset of the glyph outer bounds relative to the origin.</param>
+        /// <param name="offset">The offset of the glyph vector relative to the top-left position of the glyph advance.</param>
         /// <param name="options">The options used to influence the rendering of this glyph.</param>
-        internal abstract void RenderTo(IGlyphRenderer renderer, Vector2 location, TextOptions options);
+        internal abstract void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, TextOptions options);
 
-        internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, LayoutMode layoutMode, Matrix3x2 transform, float scaledPPEM)
+        internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, LayoutMode layoutMode, bool rotated, Matrix3x2 transform, float scaledPPEM)
         {
             bool isVerticalLayout = layoutMode.IsVertical() || layoutMode.IsVerticalMixed();
-            bool isVerticalGlyph = isVerticalLayout && CodePoint.GetVerticalOrientationType(this.CodePoint) is VerticalOrientationType.Upright or VerticalOrientationType.TransformUpright;
+            bool ishorizontalGlyph = layoutMode.IsHorizontal() || rotated;
             (Vector2 Start, Vector2 End, float Thickness) GetEnds(TextDecorations decorations, float thickness, float decoratorPosition)
             {
                 // For vertical layout we need to draw a vertical line.
-                if (isVerticalGlyph)
+                if (isVerticalLayout)
                 {
                     float length = this.AdvanceHeight;
                     if (length == 0)
@@ -285,14 +286,14 @@ namespace SixLabors.Fonts
                     Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
 
                     // Undo the vertical offset applied when laying out the text.
-                    Vector2 offset = (this.Offset + new Vector2(decoratorPosition, -this.FontMetrics.VerticalMetrics.Ascender)) * scale;
+                    Vector2 scaledOffset = (this.Offset + new Vector2(decoratorPosition, 0)) * scale;
 
                     length *= scale.Y;
                     thickness *= scale.X;
 
-                    Vector2 tl = new(offset.X, offset.Y);
-                    Vector2 tr = new(offset.X + thickness, offset.Y);
-                    Vector2 bl = new(offset.X, offset.Y + length);
+                    Vector2 tl = new(scaledOffset.X, scaledOffset.Y);
+                    Vector2 tr = new(scaledOffset.X + thickness, scaledOffset.Y);
+                    Vector2 bl = new(scaledOffset.X, scaledOffset.Y + length);
 
                     thickness = tr.X - tl.X;
 
@@ -306,9 +307,9 @@ namespace SixLabors.Fonts
                     };
 
                     // Account for any future pixel clamping.
-                    offset = new Vector2(thickness * m, 0) + location;
-                    tl += offset;
-                    bl += offset;
+                    scaledOffset = new Vector2(thickness * m, 0) + location;
+                    tl += scaledOffset;
+                    bl += scaledOffset;
 
                     return (tl, bl, thickness);
                 }
@@ -321,14 +322,14 @@ namespace SixLabors.Fonts
                     }
 
                     Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-                    Vector2 offset = (this.Offset + new Vector2(0, decoratorPosition)) * scale;
+                    Vector2 scaledOffset = (this.Offset + new Vector2(0, decoratorPosition)) * scale;
 
                     length *= scale.X;
                     thickness *= scale.Y;
 
-                    Vector2 tl = new(offset.X, offset.Y);
-                    Vector2 tr = new(offset.X + length, offset.Y);
-                    Vector2 bl = new(offset.X, offset.Y + thickness);
+                    Vector2 tl = new(scaledOffset.X, scaledOffset.Y);
+                    Vector2 tr = new(scaledOffset.X + length, scaledOffset.Y);
+                    Vector2 bl = new(scaledOffset.X, scaledOffset.Y + thickness);
 
                     thickness = bl.Y - tl.Y;
                     tl = (Vector2.Transform(tl, transform) * YInverter) + location;
@@ -352,18 +353,18 @@ namespace SixLabors.Fonts
             TextDecorations decorations = renderer.EnabledDecorations();
             if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
             {
-                SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, isVerticalGlyph ? 0 : this.FontMetrics.UnderlinePosition);
+                SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, ishorizontalGlyph ? this.FontMetrics.UnderlinePosition : 0);
             }
 
             if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
             {
-                SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, isVerticalGlyph ? this.AdvanceWidth * .5F : this.FontMetrics.StrikeoutPosition);
+                SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, ishorizontalGlyph ? this.FontMetrics.StrikeoutPosition : this.FontMetrics.UnitsPerEm * .5F);
             }
 
             if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
             {
                 // There's no built in metrics for overline thickness so use underline.
-                SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, isVerticalGlyph ? this.AdvanceWidth : this.FontMetrics.HorizontalMetrics.Ascender);
+                SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, ishorizontalGlyph ? this.FontMetrics.HorizontalMetrics.Ascender : this.FontMetrics.UnitsPerEm);
             }
         }
 
