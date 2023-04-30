@@ -98,7 +98,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 this.GlyphColor);
 
         /// <inheritdoc/>
-        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, TextOptions options)
+        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -108,13 +108,19 @@ namespace SixLabors.Fonts.Tables.Cff
 
             float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
             float dpi = options.Dpi;
+
+            // The glyph vector is rendered offset to the location.
+            // For horizontal text, the offset is always zero but vertical or rotated text
+            // will be offset against the location.
             location *= dpi;
+            offset *= dpi;
+            Vector2 renderLocation = location + offset;
             float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
-            this.TryGetRotationMatrix(options.LayoutMode, out Matrix3x2 rotation);
+            bool rotated = this.TryGetRotationMatrix(options.LayoutMode, out Matrix3x2 rotation);
             FontRectangle box = this.GetBoundingBox(Vector2.Zero, scaledPPEM);
             box = FontRectangle.Transform(in box, rotation);
-            box = new FontRectangle(box.X + location.X, box.Y + location.Y, box.Width, box.Height);
+            box = new FontRectangle(box.X + renderLocation.X, box.Y + renderLocation.Y, box.Width, box.Height);
 
             GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, options.LayoutMode);
             if (renderer.BeginGlyph(in box, in parameters))
@@ -127,11 +133,11 @@ namespace SixLabors.Fonts.Tables.Cff
                     }
 
                     Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-                    Vector2 offset = this.Offset * scale;
-                    this.glyphData.RenderTo(renderer, location, scale, offset, rotation);
+                    Vector2 scaledOffset = this.Offset * scale;
+                    this.glyphData.RenderTo(renderer, renderLocation, scale, scaledOffset, rotation);
                 }
 
-                this.RenderDecorationsTo(renderer, location, options.LayoutMode, rotation, scaledPPEM);
+                this.RenderDecorationsTo(renderer, location, options.LayoutMode, rotated, rotation, scaledPPEM);
             }
 
             renderer.EndGlyph();

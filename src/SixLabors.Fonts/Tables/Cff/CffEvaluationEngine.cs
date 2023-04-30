@@ -70,6 +70,8 @@ namespace SixLabors.Fonts.Tables.Cff
             this.transforming = new(finder, Vector2.Zero, new Vector2(1, -1), Vector2.Zero, Matrix3x2.Identity);
 
             // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
+            this.transforming.BeginFigure();
+
             this.Parse(this.charStrings);
 
             // Some CFF end without closing the latest contour.
@@ -88,6 +90,8 @@ namespace SixLabors.Fonts.Tables.Cff
             this.transforming = new(renderer, origin, scale, offset, transform);
 
             // Boolean IGlyphRenderer.BeginGlyph(..) is handled by the caller.
+            this.transforming.BeginFigure();
+
             this.Parse(this.charStrings);
 
             // Some CFF end without closing the latest contour.
@@ -207,6 +211,11 @@ namespace SixLabors.Fonts.Tables.Cff
                             if (this.stack.Length > 0)
                             {
                                 this.CheckWidth();
+                            }
+
+                            if (this.transforming.IsOpen)
+                            {
+                                this.transforming.EndFigure();
                             }
 
                             endCharEncountered = true;

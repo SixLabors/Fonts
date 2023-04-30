@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tests
             Glyph glyph = new(glyphMetrics.CloneForRendering(textRun), font.Size);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
-            glyph.RenderTo(this.renderer, locationInFontSpace, new TextOptions(font));
+            glyph.RenderTo(this.renderer, locationInFontSpace, Vector2.Zero, new TextOptions(font));
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
