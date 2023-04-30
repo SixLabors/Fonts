@@ -27,7 +27,7 @@ namespace SixLabors.Fonts
 
         public static bool operator !=(Bounds left, Bounds right) => !(left == right);
 
-        public Vector2 Size() => new(this.Max.X - this.Min.X, this.Max.Y - this.Min.Y);
+        public Vector2 Size() => this.Max - this.Min;
 
         public static Bounds Load(BigEndianBinaryReader reader)
         {

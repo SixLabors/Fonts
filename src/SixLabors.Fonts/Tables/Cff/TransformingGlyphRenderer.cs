@@ -80,6 +80,7 @@ namespace SixLabors.Fonts.Tables.Cff
             }
 
             this.renderer.MoveTo(this.Transform(point));
+            this.IsOpen = true;
         }
 
         public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)

@@ -28,7 +28,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         /// <returns>The <see cref="bool"/>.</returns>
         public static bool IsVerticalGlyph(CodePoint codePoint, LayoutMode layoutMode)
         {
-            bool isVerticalLayout = layoutMode.IsVertical() || layoutMode.IsVerticalMixed();
+            if (layoutMode.IsVertical())
+            {
+                return true;
+            }
+
+            bool isVerticalLayout = layoutMode.IsVerticalMixed();
             return isVerticalLayout && CodePoint.GetVerticalOrientationType(codePoint) is VerticalOrientationType.Upright or VerticalOrientationType.TransformUpright;
         }
 

@@ -15,6 +15,7 @@ namespace SixLabors.Fonts
         internal GlyphLayout(
             Glyph glyph,
             Vector2 location,
+            Vector2 offset,
             float ascender,
             float descender,
             float linegap,
@@ -27,6 +28,7 @@ namespace SixLabors.Fonts
             this.Glyph = glyph;
             this.CodePoint = glyph.GlyphMetrics.CodePoint;
             this.Location = location;
+            this.Offset = offset;
             this.Ascender = ascender;
             this.Descender = descender;
             this.LineGap = linegap;
@@ -48,9 +50,15 @@ namespace SixLabors.Fonts
         public CodePoint CodePoint { get; }
 
         /// <summary>
-        /// Gets the location.
+        /// Gets the location to render the glyph at.
         /// </summary>
         public Vector2 Location { get; }
+
+        /// <summary>
+        /// Gets the offset of the glyph vector relative to the top-left position of the glyph advance.
+        /// For horizontal layout this will always be <see cref="Vector2.Zero"/>.
+        /// </summary>
+        public Vector2 Offset { get; }
 
         /// <summary>
         /// Gets the ascender

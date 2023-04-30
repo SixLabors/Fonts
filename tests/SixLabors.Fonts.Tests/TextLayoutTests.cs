@@ -246,9 +246,9 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Theory]
-        [InlineData("hello world", 310, 30)]
-        [InlineData("hello world hello world hello world", 310, 90)]
-        [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+        [InlineData("hello world", 310, 10)]
+        [InlineData("hello world hello world hello world", 310, 16)]
+        [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 25)]
         public void MeasureTextWordWrappingVerticalLeftRight(string text, float height, float width)
         {
             Font font = CreateFont(text);
@@ -264,9 +264,9 @@ namespace SixLabors.Fonts.Tests
         }
 
         [Theory]
-        [InlineData("hello world", 310, 30)]
-        [InlineData("hello world hello world hello world", 310, 90)]
-        [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+        [InlineData("hello world", 310, 10)]
+        [InlineData("hello world hello world hello world", 310, 16)]
+        [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 25)]
         public void MeasureTextWordWrappingVerticalRightLeft(string text, float height, float width)
         {
             Font font = CreateFont(text);
@@ -284,7 +284,7 @@ namespace SixLabors.Fonts.Tests
         [Theory]
         [InlineData("hello world", 290, 10)] // 310 - 20 due to negative result of x-axis on rotation.
         [InlineData("hello world hello world hello world", 290, 70)] // 310 - 20 due to negative result of x-axis on rotation.
-        [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+        [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 25)]
         public void MeasureTextWordWrappingVerticalMixedLeftRight(string text, float height, float width)
         {
             Font font = CreateFont(text);

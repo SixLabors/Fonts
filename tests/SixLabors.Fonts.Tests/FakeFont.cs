@@ -20,11 +20,11 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal(12, metrics.HorizontalMetrics.LineGap);
             Assert.Equal(35 - 8 + 12, metrics.HorizontalMetrics.LineHeight);
 
-            // Vertical metrics should be the same as the horizontal.
-            Assert.Equal(35, metrics.VerticalMetrics.Ascender);
-            Assert.Equal(8, metrics.VerticalMetrics.Descender);
-            Assert.Equal(12, metrics.VerticalMetrics.LineGap);
-            Assert.Equal(35 - 8 + 12, metrics.VerticalMetrics.LineHeight);
+            // Vertical metrics are all ones. Descender is always negative due to the grid orientation.
+            Assert.Equal(1, metrics.VerticalMetrics.Ascender);
+            Assert.Equal(-1, metrics.VerticalMetrics.Descender);
+            Assert.Equal(1, metrics.VerticalMetrics.LineGap);
+            Assert.Equal(1 - (-1) + 1, metrics.VerticalMetrics.LineHeight);
         }
 
         public static Font CreateFont(string text, string name = "name")
