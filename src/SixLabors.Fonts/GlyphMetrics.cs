@@ -277,7 +277,7 @@ namespace SixLabors.Fonts
                 // For vertical layout we need to draw a vertical line.
                 if (isVerticalLayout)
                 {
-                    float length = this.AdvanceHeight;
+                    float length = rotated ? this.AdvanceWidth : this.AdvanceHeight;
                     if (length == 0)
                     {
                         return (Vector2.Zero, Vector2.Zero, 0);

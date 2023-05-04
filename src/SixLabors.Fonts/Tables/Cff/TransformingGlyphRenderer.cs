@@ -32,7 +32,7 @@ namespace SixLabors.Fonts.Tables.Cff
 
         public void BeginFigure()
         {
-            this.IsOpen = false;
+            this.IsOpen = true;
             this.renderer.BeginFigure();
         }
 
@@ -79,6 +79,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 this.EndFigure();
             }
 
+            this.BeginFigure();
             this.renderer.MoveTo(this.Transform(point));
             this.IsOpen = true;
         }
