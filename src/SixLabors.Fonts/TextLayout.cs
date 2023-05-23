@@ -205,14 +205,28 @@ namespace SixLabors.Fonts
             LayoutMode layoutMode = options.LayoutMode;
             List<GlyphLayout> glyphs = new();
             Vector2 location = options.Origin / options.Dpi;
+
+            // If a wrapping length is specified that should be used to determine the box size to orient against.
             float maxScaledAdvance = textBox.ScaledMaxAdvance();
+            if (options.WrappingLength > 0)
+            {
+                maxScaledAdvance = Math.Max(options.WrappingLength / options.Dpi, maxScaledAdvance);
+            }
+
             TextDirection direction = textBox.TextDirection();
 
             if (layoutMode == LayoutMode.HorizontalTopBottom)
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, i, ref location));
+                    glyphs.AddRange(LayoutLineHorizontal(
+                        textBox,
+                        textBox.TextLines[i],
+                        direction,
+                        maxScaledAdvance,
+                        options,
+                        i,
+                        ref location));
                 }
             }
             else if (layoutMode == LayoutMode.HorizontalBottomTop)
@@ -220,14 +234,28 @@ namespace SixLabors.Fonts
                 int index = 0;
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineHorizontal(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, index++, ref location));
+                    glyphs.AddRange(LayoutLineHorizontal(
+                        textBox,
+                        textBox.TextLines[i],
+                        direction,
+                        maxScaledAdvance,
+                        options,
+                        index++,
+                        ref location));
                 }
             }
             else if (layoutMode is LayoutMode.VerticalLeftRight)
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, i, ref location));
+                    glyphs.AddRange(LayoutLineVertical(
+                        textBox,
+                        textBox.TextLines[i],
+                        direction,
+                        maxScaledAdvance,
+                        options,
+                        i,
+                        ref location));
                 }
             }
             else if (layoutMode is LayoutMode.VerticalRightLeft)
@@ -235,14 +263,28 @@ namespace SixLabors.Fonts
                 int index = 0;
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineVertical(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, index++, ref location));
+                    glyphs.AddRange(LayoutLineVertical(
+                        textBox,
+                        textBox.TextLines[i],
+                        direction,
+                        maxScaledAdvance,
+                        options,
+                        index++,
+                        ref location));
                 }
             }
             else if (layoutMode is LayoutMode.VerticalMixedLeftRight)
             {
                 for (int i = 0; i < textBox.TextLines.Count; i++)
                 {
-                    glyphs.AddRange(LayoutLineVerticalMixed(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, i, ref location));
+                    glyphs.AddRange(LayoutLineVerticalMixed(
+                        textBox,
+                        textBox.TextLines[i],
+                        direction,
+                        maxScaledAdvance,
+                        options,
+                        i,
+                        ref location));
                 }
             }
             else
@@ -250,7 +292,14 @@ namespace SixLabors.Fonts
                 int index = 0;
                 for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
                 {
-                    glyphs.AddRange(LayoutLineVerticalMixed(textBox, textBox.TextLines[i], direction, maxScaledAdvance, options, index++, ref location));
+                    glyphs.AddRange(LayoutLineVerticalMixed(
+                        textBox,
+                        textBox.TextLines[i],
+                        direction,
+                        maxScaledAdvance,
+                        options,
+                        index++,
+                        ref location));
                 }
             }
 
@@ -455,6 +504,12 @@ namespace SixLabors.Fonts
             }
 
             // Set the alignment of lines within the text.
+            // Use the wrapping length to determine the bounds to align to.
+            if (options.WrappingLength > 0)
+            {
+                maxScaledAdvance = Math.Max(options.WrappingLength / options.Dpi, maxScaledAdvance);
+            }
+
             if (direction == TextDirection.LeftToRight)
             {
                 switch (options.TextAlignment)
@@ -602,6 +657,12 @@ namespace SixLabors.Fonts
             }
 
             // Set the alignment of lines within the text.
+            // Use the wrapping length to determine the bounds to align to.
+            if (options.WrappingLength > 0)
+            {
+                maxScaledAdvance = Math.Max(options.WrappingLength / options.Dpi, maxScaledAdvance);
+            }
+
             if (direction == TextDirection.LeftToRight)
             {
                 switch (options.TextAlignment)
@@ -1075,8 +1136,8 @@ namespace SixLabors.Fonts
                             else if (lastLineBreak.PositionWrap < codePointIndex && !CodePoint.IsWhiteSpace(codePoint))
                             {
                                 // Split the current textline into two at the last wrapping point if the current glyph
-                                // does not represent whitespace. Whitespace characters will be correctly trimmed at the next
-                                // iteration.
+                                // does not represent whitespace. Whitespace characters will be correctly trimmed at the
+                                // next iteration.
                                 TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
                                 if (split != textLine)
                                 {
