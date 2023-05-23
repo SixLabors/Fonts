@@ -504,12 +504,6 @@ namespace SixLabors.Fonts
             }
 
             // Set the alignment of lines within the text.
-            // Use the wrapping length to determine the bounds to align to.
-            if (options.WrappingLength > 0)
-            {
-                maxScaledAdvance = Math.Max(options.WrappingLength / options.Dpi, maxScaledAdvance);
-            }
-
             if (direction == TextDirection.LeftToRight)
             {
                 switch (options.TextAlignment)
@@ -657,12 +651,6 @@ namespace SixLabors.Fonts
             }
 
             // Set the alignment of lines within the text.
-            // Use the wrapping length to determine the bounds to align to.
-            if (options.WrappingLength > 0)
-            {
-                maxScaledAdvance = Math.Max(options.WrappingLength / options.Dpi, maxScaledAdvance);
-            }
-
             if (direction == TextDirection.LeftToRight)
             {
                 switch (options.TextAlignment)
