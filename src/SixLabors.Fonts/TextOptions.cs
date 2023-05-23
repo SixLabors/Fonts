@@ -131,7 +131,9 @@ namespace SixLabors.Fonts
         public Vector2 Origin { get; set; } = Vector2.Zero;
 
         /// <summary>
-        /// Gets or sets the length relative to the current DPI at which text will automatically wrap onto a newline.
+        /// Gets or sets the length in pixel units (px) at which text will automatically wrap onto a new line.
+        /// This property also affects the width or height (depending on the <see cref="LayoutMode"/>) of the text box
+        /// for alignment of text.
         /// </summary>
         /// <remarks>
         /// If value is -1 then wrapping is disabled.
