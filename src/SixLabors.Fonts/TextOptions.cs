@@ -13,7 +13,6 @@ namespace SixLabors.Fonts
     /// </summary>
     public class TextOptions
     {
-        private float tabWidth = 4F;
         private float dpi = 72F;
         private float lineSpacing = 1F;
         private Font? font;
@@ -88,20 +87,12 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Gets or sets the width of the tab. Measured as the distance in spaces.
-        /// <para/>
-        /// Defaults to 4.
+        /// Gets or sets the width of the tab. Measured as the distance in spaces (U+0020).
         /// </summary>
-        public float TabWidth
-        {
-            get => this.tabWidth;
-
-            set
-            {
-                Guard.MustBeGreaterThanOrEqualTo(value, 0, nameof(this.TabWidth));
-                this.tabWidth = value;
-            }
-        }
+        /// <remarks>
+        /// If value is -1 then the font default tab width is used.
+        /// </remarks>
+        public float TabWidth { get; set; } = -1F;
 
         /// <summary>
         /// Gets or sets a value indicating whether to apply hinting - The use of mathematical instructions

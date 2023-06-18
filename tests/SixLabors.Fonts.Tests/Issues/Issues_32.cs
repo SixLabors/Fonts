@@ -14,7 +14,7 @@ namespace SixLabors.Fonts.Tests.Issues
         {
             string text = "Hello\tworld";
             Font font = CreateFont(text);
-            FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+            FontRectangle size = TextMeasurer.MeasureSize(text, new TextOptions(font)
             {
                 Dpi = font.FontMetrics.ScaleFactor,
                 TabWidth = 0
@@ -22,7 +22,7 @@ namespace SixLabors.Fonts.Tests.Issues
 
             // tab width of 0 should make tabs not render at all
             Assert.Equal(10, size.Height, 4);
-            Assert.Equal(280, size.Width, 4);
+            Assert.Equal(320, size.Width, 4);
         }
 
         public static Font CreateFont(string text)

@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tests
             Glyph glyph = new(glyphMetrics.CloneForRendering(textRun), font.Size);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
-            glyph.RenderTo(this.renderer, locationInFontSpace, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(this.renderer, locationInFontSpace, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
@@ -167,11 +167,11 @@ namespace SixLabors.Fonts.Tests
             string text = "\U0001F469\U0001F3FB\u200D\U0001F91D\u200D\U0001F469\U0001F3FC"; // women holding hands: light skin tone, medium-light skin tone
             string text2 = "\U0001F46D\U0001F3FB"; // women holding hands: light skin tone
 
-            FontRectangle size = TextMeasurer.Measure(text, new TextOptions(font));
-            FontRectangle size2 = TextMeasurer.Measure(text2, new TextOptions(font));
+            FontRectangle size = TextMeasurer.MeasureSize(text, new TextOptions(font));
+            FontRectangle size2 = TextMeasurer.MeasureSize(text2, new TextOptions(font));
 
-            Assert.True(size.Width > 103);
-            Assert.True(size2.Width > 98);
+            Assert.Equal(75F, size.Width);
+            Assert.Equal(75F, size2.Width);
         }
 
         [Theory]

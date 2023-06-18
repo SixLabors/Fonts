@@ -105,7 +105,7 @@ namespace SixLabors.Fonts.Tables.TrueType
         public GlyphOutline GetOutline() => this.vector.GetOutline();
 
         /// <inheritdoc/>
-        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, TextOptions options)
+        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -122,15 +122,11 @@ namespace SixLabors.Fonts.Tables.TrueType
             location *= dpi;
             offset *= dpi;
             Vector2 renderLocation = location + offset;
-
             float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
-            bool rotated = this.TryGetRotationMatrix(options.LayoutMode, out Matrix3x2 rotation);
-            FontRectangle box = this.GetBoundingBox(Vector2.Zero, scaledPPEM);
-            box = FontRectangle.Transform(in box, rotation);
-            box = new FontRectangle(box.X + renderLocation.X, box.Y + renderLocation.Y, box.Width, box.Height);
-
-            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, options.LayoutMode);
+            Matrix3x2 rotation = GetRotationMatrix(mode);
+            FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
+            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode);
 
             if (renderer.BeginGlyph(in box, in parameters))
             {
@@ -234,7 +230,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                     }
                 }
 
-                this.RenderDecorationsTo(renderer, location, options.LayoutMode, rotated, rotation, scaledPPEM);
+                this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM);
             }
 
             renderer.EndGlyph();

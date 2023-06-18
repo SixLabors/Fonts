@@ -21,8 +21,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 20, 22 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(275, 1811, 825, 719),
-                new(1622, 1810, 978, 704),
+                new(275, 1085.9999F, 825, 719),
+                new(1622, 1084.9999F, 978, 704),
             };
 
             // act
@@ -56,8 +56,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 23, 22 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(322, 1811, 978, 708),
-                new(1522, 1810, 978, 704),
+                new(322, 1085.9999F, 978, 708),
+                new(1522, 1084.9999F, 978, 704),
             };
 
             // act
@@ -91,9 +91,9 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 25, 20, 22 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(322, 1830, 978, 671),
-                new(1675, 1811, 825, 719),
-                new(3322, 2210, 978, 704),
+                new(322, 1104.9999F, 978, 671),
+                new(1675, 1085.9999F, 825, 719),
+                new(3322, 1484.9999F, 978, 704),
             };
 
             // act
@@ -127,8 +127,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 20, 20 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(475, 1911, 825, 719),
-                new(575, 1811, 825, 719),
+                new(475, 1185.9999F, 825, 719),
+                new(575, 1085.9999F, 825, 719),
             };
 
             // act
@@ -162,8 +162,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 20, 21 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(475, 1811, 825, 719),
-                new(375, 1890, 825, 709),
+                new(475, 1085.9999F, 825, 719),
+                new(375, 1164.9999F, 825, 709),
             };
 
             // act
@@ -197,8 +197,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 20, 21 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(475, 1811, 825, 719),
-                new(375, 1890, 825, 709),
+                new(475, 1085.9999F, 825, 719),
+                new(375, 1164.9999F, 825, 709),
             };
 
             // act
@@ -232,8 +232,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 20, 21 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(475, 1811, 825, 719),
-                new(375, 1890, 825, 709),
+                new(475, 1085.9999F, 825, 719),
+                new(375, 1164.9999F, 825, 709),
             };
 
             // act
@@ -267,9 +267,9 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 22, 23, 24 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(342, 1810, 978, 704),
-                new(1842, 1811, 978, 708),
-                new(3342, 1834, 978, 667),
+                new(342, 1084.9999F, 978, 704),
+                new(1842, 1085.9999F, 978, 708),
+                new(3342, 1108.9999F, 978, 667),
             };
 
             // act
@@ -303,9 +303,9 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 22, 23, 24 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(342, 1810, 978, 704),
-                new(1842, 1811, 978, 708),
-                new(3342, 1834, 978, 667),
+                new(342, 1084.9999F, 978, 704),
+                new(1842, 1085.9999F, 978, 708),
+                new(3342, 1108.9999F, 978, 667),
             };
 
             // act
@@ -340,9 +340,9 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
 
             FontRectangle[] expectedFontRectangles =
             {
-                new(342, 1810, 978, 704),
-                new(1842, 1811, 978, 708),
-                new(3342, 1834, 978, 667),
+                new(342, 1084.9999F, 978, 704),
+                new(1842, 1085.9999F, 978, 708),
+                new(3342, 1108.9999F, 978, 667),
             };
 
             // act
@@ -378,10 +378,10 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 22, 23, 24, 25 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(322, 1810, 978, 704),
-                new(2022, 1811, 978, 708),
-                new(3522, 1834, 978, 667),
-                new(4822, 1830, 978, 671),
+                new(322, 1084.9999F, 978, 704),
+                new(2022, 1085.9999F, 978, 708),
+                new(3522, 1108.9999F, 978, 667),
+                new(4822, 1104.9999F, 978, 671),
             };
 
             // act
@@ -417,10 +417,10 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 22, 23, 24, 25 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(322, 1810, 978, 704),
-                new(2022, 1811, 978, 708),
-                new(3522, 1834, 978, 667),
-                new(4822, 1830, 978, 671),
+                new(322, 1084.9999F, 978, 704),
+                new(2022, 1085.9999F, 978, 708),
+                new(3522, 1108.9999F, 978, 667),
+                new(4822, 1104.9999F, 978, 671),
             };
 
             // act
@@ -456,10 +456,10 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 22, 23, 24, 25 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(322, 1810, 978, 704),
-                new(2022, 1811, 978, 708),
-                new(3522, 1834, 978, 667),
-                new(4822, 1830, 978, 671),
+                new(322, 1084.9999F, 978, 704),
+                new(2022, 1085.9999F, 978, 708),
+                new(3522, 1108.9999F, 978, 667),
+                new(4822, 1104.9999F, 978, 671),
             };
 
             // act
@@ -492,8 +492,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 759, 989 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(246, 177, 363, 322),
-                new(71, 238, 966, 1573),
+                new(246, 23.5F, 363, 322),
+                new(71, 84.5F, 966, 1573),
             };
 
             // act
@@ -527,9 +527,9 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GPos
             int[] expectedGlyphIndices = { 47, 50, 23 };
             FontRectangle[] expectedFontRectangles =
             {
-                new(345, 1398, 561, 461),
-                new(420, 1837, 447, 414),
-                new(40, 2514, 1002, 986),
+                new(345, 182, 561, 461),
+                new(420, 621, 447, 414),
+                new(40, 1298, 1002, 986),
             };
 
             // act

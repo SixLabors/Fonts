@@ -209,7 +209,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
 
         public static void RenderText(RichTextOptions options, string text)
         {
-            FontRectangle size = TextMeasurer.Measure(text, options);
+            FontRectangle size = TextMeasurer.MeasureSize(text, options);
             if (size == FontRectangle.Empty)
             {
                 return;
@@ -250,7 +250,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                 textOptions.FallbackFontFamilies = fallbackFonts.ToArray();
             }
 
-            FontRectangle textSize = TextMeasurer.Measure(text, textOptions);
+            FontRectangle textSize = TextMeasurer.MeasureSize(text, textOptions);
             textOptions.Origin = new PointF(5, 5);
 
             using var img = new Image<Rgba32>((int)Math.Ceiling(textSize.Width) + 20, (int)Math.Ceiling(textSize.Height) + 20);
@@ -284,7 +284,7 @@ namespace SixLabors.Fonts.DrawWithImageSharp
                         textOptions.FallbackFontFamilies = fallbackFonts.ToArray();
                     }
 
-                    FontRectangle textSize = TextMeasurer.Measure(text, textOptions);
+                    FontRectangle textSize = TextMeasurer.MeasureSize(text, textOptions);
                     using var img = new Image<Rgba32>(((int)textSize.Width * 2) + 20, ((int)textSize.Height * 2) + 20);
                     Size size = img.Size();
                     textOptions.Origin = new PointF(size.Width / 2F, size.Height / 2F);

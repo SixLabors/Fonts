@@ -272,7 +272,7 @@ namespace SixLabors.Fonts.Tests
         [Fact]
         public void DefaultTextOptionsTabWidth()
         {
-            const float expected = 4F;
+            const float expected = -1F;
             Assert.Equal(expected, this.newTextOptions.TabWidth);
             Assert.Equal(expected, this.clonedTextOptions.TabWidth);
         }
@@ -356,7 +356,7 @@ namespace SixLabors.Fonts.Tests
 
         private static void VerifyPropertyDefault(TextOptions options)
         {
-            Assert.Equal(4, options.TabWidth);
+            Assert.Equal(-1, options.TabWidth);
             Assert.Equal(KerningMode.Standard, options.KerningMode);
             Assert.Equal(-1, options.WrappingLength);
             Assert.Equal(HorizontalAlignment.Left, options.HorizontalAlignment);

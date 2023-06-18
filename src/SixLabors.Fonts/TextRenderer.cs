@@ -59,7 +59,7 @@ namespace SixLabors.Fonts
 
             foreach (GlyphLayout g in glyphsToRender)
             {
-                g.Glyph.RenderTo(this.renderer, g.Location, g.Offset, options);
+                g.Glyph.RenderTo(this.renderer, g.Location, g.Offset, g.LayoutMode, options);
             }
 
             this.renderer.EndText();

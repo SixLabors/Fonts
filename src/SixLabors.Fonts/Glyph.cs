@@ -26,11 +26,12 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Calculates the bounding box.
         /// </summary>
+        /// <param name="mode">The glyph layout mode to measure using.</param>
         /// <param name="location">The location to calculate from.</param>
-        /// <param name="dpi">The DPI (Dots Per Inch) to render/measure the glyph at.</param>
+        /// <param name="dpi">The DPI (Dots Per Inch) to measure the glyph at.</param>
         /// <returns>The bounding box</returns>
-        public FontRectangle BoundingBox(Vector2 location, float dpi)
-            => this.GlyphMetrics.GetBoundingBox(location, this.pointSize * dpi);
+        public FontRectangle BoundingBox(GlyphLayoutMode mode, Vector2 location, float dpi)
+            => this.GlyphMetrics.GetBoundingBox(mode, location, this.pointSize * dpi);
 
         /// <summary>
         /// Renders the glyph to the render surface relative to a top left origin.
@@ -38,8 +39,9 @@ namespace SixLabors.Fonts
         /// <param name="surface">The surface.</param>
         /// <param name="location">The location to render the glyph at.</param>
         /// <param name="offset">The offset of the glyph vector relative to the top-left position of the glyph advance.</param>
+        /// <param name="mode">The glyph layout mode to render using.</param>
         /// <param name="options">The options to render using.</param>
-        internal void RenderTo(IGlyphRenderer surface, Vector2 location, Vector2 offset, TextOptions options)
-            => this.GlyphMetrics.RenderTo(surface, location, offset, options);
+        internal void RenderTo(IGlyphRenderer surface, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
+            => this.GlyphMetrics.RenderTo(surface, location, offset, mode, options);
     }
 }
