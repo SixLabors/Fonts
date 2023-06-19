@@ -136,8 +136,6 @@ namespace SixLabors.Fonts
             short lsb = htmx.GetLeftSideBearing(glyphId);
 
             IMetricsHeader metrics = isVerticalLayout ? this.VerticalMetrics : this.HorizontalMetrics;
-
-            metrics = this.VerticalMetrics;
             ushort advancedHeight = (ushort)(metrics.Ascender - metrics.Descender);
             short tsb = (short)(metrics.Ascender - bounds.Max.Y);
             if (vtmx != null)
