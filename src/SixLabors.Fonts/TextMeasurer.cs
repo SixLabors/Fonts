@@ -216,8 +216,9 @@ namespace SixLabors.Fonts
                 return FontRectangle.Empty;
             }
 
+            Vector2 topLeft = glyphLayouts[0].BoxLocation * dpi;
             FontRectangle bounds = GetBounds(glyphLayouts, dpi);
-            return new FontRectangle(0, 0, MathF.Ceiling(bounds.Right), MathF.Ceiling(bounds.Bottom));
+            return new FontRectangle(0, 0, MathF.Ceiling(bounds.Right - topLeft.X), MathF.Ceiling(bounds.Bottom - topLeft.Y));
         }
 
         internal static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
