@@ -13,7 +13,8 @@ namespace SixLabors.Fonts
     {
         internal GlyphLayout(
             Glyph glyph,
-            Vector2 location,
+            Vector2 boxLocation,
+            Vector2 penLocation,
             Vector2 offset,
             float advanceWidth,
             float advanceHeight,
@@ -22,7 +23,8 @@ namespace SixLabors.Fonts
         {
             this.Glyph = glyph;
             this.CodePoint = glyph.GlyphMetrics.CodePoint;
-            this.Location = location;
+            this.BoxLocation = boxLocation;
+            this.PenLocation = penLocation;
             this.Offset = offset;
             this.AdvanceX = advanceWidth;
             this.AdvanceY = advanceHeight;
@@ -41,9 +43,14 @@ namespace SixLabors.Fonts
         public CodePoint CodePoint { get; }
 
         /// <summary>
+        /// Gets the location of the glyph box.
+        /// </summary>
+        public Vector2 BoxLocation { get; }
+
+        /// <summary>
         /// Gets the location to render the glyph at.
         /// </summary>
-        public Vector2 Location { get; }
+        public Vector2 PenLocation { get; }
 
         /// <summary>
         /// Gets the offset of the glyph vector relative to the top-left position of the glyph advance.
@@ -79,7 +86,7 @@ namespace SixLabors.Fonts
 
         internal FontRectangle BoundingBox(float dpi)
         {
-            Vector2 origin = (this.Location + this.Offset) * dpi;
+            Vector2 origin = (this.PenLocation + this.Offset) * dpi;
             FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, Vector2.Zero, dpi);
 
             if (this.IsWhiteSpace())
@@ -123,7 +130,7 @@ namespace SixLabors.Fonts
         {
             string s = this.IsStartOfLine ? "@ " : string.Empty;
             string ws = this.IsWhiteSpace() ? "!" : string.Empty;
-            Vector2 l = this.Location;
+            Vector2 l = this.PenLocation;
             return $"{s}{ws}{this.CodePoint.ToDebuggerDisplay()} {l.X},{l.Y} {this.AdvanceX}x{this.AdvanceY}";
         }
     }

@@ -4,7 +4,6 @@
 #if NET472
 using System;
 #endif
-
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues

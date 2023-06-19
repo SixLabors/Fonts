@@ -74,7 +74,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The text shaping options.</param>
         /// <param name="advances">The list of character advances of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty advances.</returns>
-        public static bool TryMeasureCharacterAdvances(string text, TextOptions options, out GlyphBounds[] advances)
+        public static bool TryMeasureCharacterAdvances(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> advances)
             => TryMeasureCharacterAdvances(text.AsSpan(), options, out advances);
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The text shaping options.</param>
         /// <param name="advances">The list of character advances of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty advances.</returns>
-        public static bool TryMeasureCharacterAdvances(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] advances)
+        public static bool TryMeasureCharacterAdvances(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> advances)
             => TryGetCharacterAdvances(TextLayout.GenerateLayout(text, options), options.Dpi, out advances);
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The text shaping options.</param>
         /// <param name="sizes">The list of character dimensions of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty dimensions.</returns>
-        public static bool TryMeasureCharacterSizes(string text, TextOptions options, out GlyphBounds[] sizes)
+        public static bool TryMeasureCharacterSizes(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> sizes)
             => TryMeasureCharacterSizes(text.AsSpan(), options, out sizes);
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The text shaping options.</param>
         /// <param name="sizes">The list of character dimensions of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty dimensions.</returns>
-        public static bool TryMeasureCharacterSizes(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] sizes)
+        public static bool TryMeasureCharacterSizes(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> sizes)
             => TryGetCharacterSizes(TextLayout.GenerateLayout(text, options), options.Dpi, out sizes);
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The text shaping options.</param>
         /// <param name="bounds">The list of character bounds of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty bounds.</returns>
-        public static bool TryMeasureCharacterBounds(string text, TextOptions options, out GlyphBounds[] bounds)
+        public static bool TryMeasureCharacterBounds(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
             => TryMeasureCharacterBounds(text.AsSpan(), options, out bounds);
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace SixLabors.Fonts
         /// <param name="options">The text shaping options.</param>
         /// <param name="bounds">The list of character bounds of the text if it was to be rendered.</param>
         /// <returns>Whether any of the characters had non-empty bounds.</returns>
-        public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out GlyphBounds[] bounds)
+        public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
             => TryGetCharacterBounds(TextLayout.GenerateLayout(text, options), options.Dpi, out bounds);
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace SixLabors.Fonts
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
                 GlyphLayout glyph = glyphLayouts[i];
-                Vector2 location = glyph.Location;
+                Vector2 location = glyph.PenLocation;
                 float x = location.X;
                 float y = location.Y;
 
@@ -258,7 +258,7 @@ namespace SixLabors.Fonts
             return FontRectangle.FromLTRB(left, top, right, bottom);
         }
 
-        internal static bool TryGetCharacterAdvances(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out GlyphBounds[] characterBounds)
+        internal static bool TryGetCharacterAdvances(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out ReadOnlySpan<GlyphBounds> characterBounds)
         {
             bool hasSize = false;
             if (glyphLayouts.Count == 0)
@@ -280,7 +280,7 @@ namespace SixLabors.Fonts
             return hasSize;
         }
 
-        internal static bool TryGetCharacterSizes(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out GlyphBounds[] characterBounds)
+        internal static bool TryGetCharacterSizes(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out ReadOnlySpan<GlyphBounds> characterBounds)
         {
             bool hasSize = false;
             if (glyphLayouts.Count == 0)
@@ -291,59 +291,12 @@ namespace SixLabors.Fonts
 
             var characterBoundsList = new GlyphBounds[glyphLayouts.Count];
 
-            float left = float.MinValue;
-            float top = float.MinValue;
-            float bottom = float.MinValue;
-            float right = float.MinValue;
             for (int i = 0; i < glyphLayouts.Count; i++)
             {
                 GlyphLayout g = glyphLayouts[i];
                 FontRectangle bounds = g.BoundingBox(dpi);
-
-                // We need to track the position of the glyph relative to the top left to include leading advances.
-                Vector2 location = g.Location;
-                float x = location.X;
-                float y = location.Y;
-
-                if (g.IsStartOfLine)
-                {
-                    // When the text contains a mix of glyphs of different sizes there can be line position overlap.
-                    // To accurately measure we offset to ensure that we always start where the last line ended.
-                    // Glyphs are always laid out from top-left to bottom-right so we can simply use the max.
-                    if (g.LayoutMode == GlyphLayoutMode.Horizontal)
-                    {
-                        y = MathF.Max(y, bottom);
-                    }
-                    else
-                    {
-                        x = MathF.Max(x, right);
-                    }
-                }
-
-                float advanceX = x + g.AdvanceX;
-                float advanceY = y + g.AdvanceY;
-
-                if (left < x)
-                {
-                    left = x;
-                }
-
-                if (top < y)
-                {
-                    top = y;
-                }
-
-                if (right < advanceX)
-                {
-                    right = advanceX;
-                }
-
-                if (bottom < advanceY)
-                {
-                    bottom = advanceY;
-                }
-
-                bounds = new(0, 0, bounds.Right - (left * dpi), bounds.Bottom - (top * dpi));
+                Vector2 location = g.BoxLocation * dpi;
+                bounds = new(0, 0, bounds.Right - location.X, bounds.Bottom - location.Y);
 
                 hasSize |= bounds.Width > 0 || bounds.Height > 0;
                 characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds);
@@ -353,7 +306,7 @@ namespace SixLabors.Fonts
             return hasSize;
         }
 
-        internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out GlyphBounds[] characterBounds)
+        internal static bool TryGetCharacterBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out ReadOnlySpan<GlyphBounds> characterBounds)
         {
             bool hasSize = false;
             if (glyphLayouts.Count == 0)

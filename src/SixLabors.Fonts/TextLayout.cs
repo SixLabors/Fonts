@@ -204,7 +204,9 @@ namespace SixLabors.Fonts
         {
             LayoutMode layoutMode = options.LayoutMode;
             List<GlyphLayout> glyphs = new();
-            Vector2 location = options.Origin / options.Dpi;
+
+            Vector2 boxLocation = options.Origin / options.Dpi;
+            Vector2 penLocation = boxLocation;
 
             // If a wrapping length is specified that should be used to determine the
             // box size to align text within.
@@ -227,7 +229,8 @@ namespace SixLabors.Fonts
                         maxScaledAdvance,
                         options,
                         i,
-                        ref location));
+                        ref boxLocation,
+                        ref penLocation));
                 }
             }
             else if (layoutMode == LayoutMode.HorizontalBottomTop)
@@ -242,7 +245,8 @@ namespace SixLabors.Fonts
                         maxScaledAdvance,
                         options,
                         index++,
-                        ref location));
+                        ref boxLocation,
+                        ref penLocation));
                 }
             }
             else if (layoutMode is LayoutMode.VerticalLeftRight)
@@ -256,7 +260,8 @@ namespace SixLabors.Fonts
                         maxScaledAdvance,
                         options,
                         i,
-                        ref location));
+                        ref boxLocation,
+                        ref penLocation));
                 }
             }
             else if (layoutMode is LayoutMode.VerticalRightLeft)
@@ -271,7 +276,8 @@ namespace SixLabors.Fonts
                         maxScaledAdvance,
                         options,
                         index++,
-                        ref location));
+                        ref boxLocation,
+                        ref penLocation));
                 }
             }
             else if (layoutMode is LayoutMode.VerticalMixedLeftRight)
@@ -285,7 +291,8 @@ namespace SixLabors.Fonts
                         maxScaledAdvance,
                         options,
                         i,
-                        ref location));
+                        ref boxLocation,
+                        ref penLocation));
                 }
             }
             else
@@ -300,7 +307,8 @@ namespace SixLabors.Fonts
                         maxScaledAdvance,
                         options,
                         index++,
-                        ref location));
+                        ref boxLocation,
+                        ref penLocation));
                 }
             }
 
@@ -314,7 +322,8 @@ namespace SixLabors.Fonts
             float maxScaledAdvance,
             TextOptions options,
             int index,
-            ref Vector2 location)
+            ref Vector2 boxLocation,
+            ref Vector2 penLocation)
         {
             // Offset the location to center the line vertically.
             bool isFirstLine = index == 0;
@@ -323,7 +332,7 @@ namespace SixLabors.Fonts
             float offsetY = (advanceY - lineHeight) * .5F;
             float yLineAdvance = advanceY - offsetY;
 
-            float originX = location.X;
+            float originX = penLocation.X;
             float offsetX = 0;
 
             // Set the Y-Origin for the line.
@@ -348,7 +357,7 @@ namespace SixLabors.Fonts
                 }
             }
 
-            location.Y += offsetY;
+            penLocation.Y += offsetY;
 
             // Set the X-Origin for horizontal alignment.
             switch (options.HorizontalAlignment)
@@ -387,7 +396,7 @@ namespace SixLabors.Fonts
                 }
             }
 
-            location.X += offsetX;
+            penLocation.X += offsetX;
 
             List<GlyphLayout> glyphs = new();
             for (int i = 0; i < textLine.Count; i++)
@@ -395,7 +404,11 @@ namespace SixLabors.Fonts
                 TextLine.GlyphLayoutData data = textLine[i];
                 if (data.IsNewLine)
                 {
-                    location.Y += yLineAdvance;
+                    penLocation.X = originX;
+                    penLocation.Y += yLineAdvance;
+
+                    boxLocation.X = originX;
+                    boxLocation.Y += advanceY;
                     continue;
                 }
 
@@ -403,7 +416,8 @@ namespace SixLabors.Fonts
                 {
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
-                        location + new Vector2(0, textLine.ScaledMaxAscender),
+                        boxLocation,
+                        penLocation + new Vector2(0, textLine.ScaledMaxAscender),
                         Vector2.Zero,
                         data.ScaledAdvance,
                         advanceY,
@@ -411,13 +425,16 @@ namespace SixLabors.Fonts
                         i == 0));
                 }
 
-                location.X += data.ScaledAdvance;
+                boxLocation.X += data.ScaledAdvance;
+                penLocation.X += data.ScaledAdvance;
             }
 
-            location.X = originX;
+            boxLocation.X = originX;
+            penLocation.X = originX;
             if (glyphs.Count > 0)
             {
-                location.Y += yLineAdvance;
+                penLocation.Y += yLineAdvance;
+                boxLocation.Y += advanceY;
             }
 
             return glyphs;
@@ -430,9 +447,10 @@ namespace SixLabors.Fonts
             float maxScaledAdvance,
             TextOptions options,
             int index,
-            ref Vector2 location)
+            ref Vector2 boxLocation,
+            ref Vector2 penLocation)
         {
-            float originY = location.Y;
+            float originY = penLocation.Y;
             float offsetY = 0;
 
             // Offset the location to center the line horizontally.
@@ -481,7 +499,7 @@ namespace SixLabors.Fonts
                 }
             }
 
-            location.Y += offsetY;
+            penLocation.Y += offsetY;
 
             bool isFirstLine = index == 0;
             if (isFirstLine)
@@ -506,7 +524,7 @@ namespace SixLabors.Fonts
                 }
             }
 
-            location.X += offsetX;
+            penLocation.X += offsetX;
 
             List<GlyphLayout> glyphs = new();
             for (int i = 0; i < textLine.Count; i++)
@@ -514,8 +532,11 @@ namespace SixLabors.Fonts
                 TextLine.GlyphLayoutData data = textLine[i];
                 if (data.IsNewLine)
                 {
-                    location.X += xLineAdvance;
-                    location.Y = originY;
+                    boxLocation.X += advanceX;
+                    boxLocation.Y = originY;
+
+                    penLocation.X += xLineAdvance;
+                    penLocation.Y = originY;
                     continue;
                 }
 
@@ -528,7 +549,8 @@ namespace SixLabors.Fonts
 
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
-                        location + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
+                        boxLocation,
+                        penLocation + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
                         offset,
                         advanceX,
                         data.ScaledAdvance,
@@ -536,13 +558,15 @@ namespace SixLabors.Fonts
                         i == 0));
                 }
 
-                location.Y += data.ScaledAdvance;
+                penLocation.Y += data.ScaledAdvance;
             }
 
-            location.Y = originY;
+            boxLocation.Y = originY;
+            penLocation.Y = originY;
             if (glyphs.Count > 0)
             {
-                location.X += xLineAdvance;
+                boxLocation.X += advanceX;
+                penLocation.X += xLineAdvance;
             }
 
             return glyphs;
@@ -555,9 +579,10 @@ namespace SixLabors.Fonts
             float maxScaledAdvance,
             TextOptions options,
             int index,
-            ref Vector2 location)
+            ref Vector2 boxLocation,
+            ref Vector2 penLocation)
         {
-            float originY = location.Y;
+            float originY = penLocation.Y;
             float offsetY = 0;
 
             // Offset the location to center the line horizontally.
@@ -606,7 +631,7 @@ namespace SixLabors.Fonts
                 }
             }
 
-            location.Y += offsetY;
+            penLocation.Y += offsetY;
 
             bool isFirstLine = index == 0;
             if (isFirstLine)
@@ -631,7 +656,7 @@ namespace SixLabors.Fonts
                 }
             }
 
-            location.X += offsetX;
+            penLocation.X += offsetX;
 
             List<GlyphLayout> glyphs = new();
             for (int i = 0; i < textLine.Count; i++)
@@ -639,8 +664,11 @@ namespace SixLabors.Fonts
                 TextLine.GlyphLayoutData data = textLine[i];
                 if (data.IsNewLine)
                 {
-                    location.X += xLineAdvance;
-                    location.Y = originY;
+                    boxLocation.X += advanceX;
+                    boxLocation.Y = originY;
+
+                    penLocation.X += xLineAdvance;
+                    penLocation.Y = originY;
                     continue;
                 }
 
@@ -651,7 +679,8 @@ namespace SixLabors.Fonts
                         Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
                         glyphs.Add(new GlyphLayout(
                             new Glyph(metric, data.PointSize),
-                            location + new Vector2(((scaledMaxLineHeight - data.ScaledLineHeight) * .5F) + data.ScaledDescender, 0),
+                            boxLocation,
+                            penLocation + new Vector2(((scaledMaxLineHeight - data.ScaledLineHeight) * .5F) + data.ScaledDescender, 0),
                             Vector2.Zero,
                             advanceX,
                             data.ScaledAdvance,
@@ -670,7 +699,8 @@ namespace SixLabors.Fonts
 
                         glyphs.Add(new GlyphLayout(
                             new Glyph(metric, data.PointSize),
-                            location + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
+                            boxLocation,
+                            penLocation + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
                             offset,
                             advanceX,
                             data.ScaledAdvance,
@@ -679,13 +709,15 @@ namespace SixLabors.Fonts
                     }
                 }
 
-                location.Y += data.ScaledAdvance;
+                penLocation.Y += data.ScaledAdvance;
             }
 
-            location.Y = originY;
+            boxLocation.Y = originY;
+            penLocation.Y = originY;
             if (glyphs.Count > 0)
             {
-                location.X += xLineAdvance;
+                boxLocation.X += advanceX;
+                penLocation.X += xLineAdvance;
             }
 
             return glyphs;
