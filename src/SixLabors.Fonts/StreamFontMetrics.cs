@@ -467,7 +467,8 @@ namespace SixLabors.Fonts
                 LineGap = metrics.LineGap,
                 LineHeight = metrics.LineHeight,
                 AdvanceWidthMax = metrics.AdvanceWidthMax,
-                AdvanceHeightMax = metrics.AdvanceHeightMax
+                AdvanceHeightMax = metrics.AdvanceHeightMax,
+                Synthesized = true
             };
 
             if (vhea is null)
@@ -486,6 +487,7 @@ namespace SixLabors.Fonts
             verticalMetrics.Descender = descender;
             verticalMetrics.LineGap = lineGap;
             verticalMetrics.LineHeight = lineHeight;
+            verticalMetrics.Synthesized = false;
 
             return verticalMetrics;
         }

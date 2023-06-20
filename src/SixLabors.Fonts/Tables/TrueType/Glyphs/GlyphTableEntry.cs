@@ -31,7 +31,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             this.OnCurves = onCurves;
             this.EndPoints = endPoints;
 
-            if (bounds != default)
+            if (bounds != default || this.ControlPoints.Length == 0)
             {
                 this.Bounds = bounds;
             }

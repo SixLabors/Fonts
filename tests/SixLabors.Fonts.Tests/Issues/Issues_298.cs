@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tests.Issues
                 KerningMode = KerningMode.Auto
             };
 
-            FontRectangle bounds = TextMeasurer.Measure(content.AsSpan(), renderOptions);
+            FontRectangle bounds = TextMeasurer.MeasureSize(content.AsSpan(), renderOptions);
             Assert.NotEqual(default, bounds);
         }
     }

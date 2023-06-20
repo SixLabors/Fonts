@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.IO;
-using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs
@@ -24,7 +23,10 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         public static GlyphTable Load(FontReader reader)
         {
             uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
-            Bounds fallbackEmptyBounds = reader.GetTable<HeadTable>().Bounds;
+
+            // Use an empty bounds instance as the fallback.
+            // We will substitute this with the advance width/height to determine bounds instead when rendering/measuring.
+            Bounds fallbackEmptyBounds = Bounds.Empty;
 
             using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
             return Load(binaryReader, reader.TableFormat, locations, in fallbackEmptyBounds);

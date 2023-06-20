@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tests
             FontFamily sans = new FontCollection().Add(TestFonts.OpenSansFile);
             var font = new Font(sans, 1f, FontStyle.Regular);
 
-            FontRectangle size = TextMeasurer.Measure(c.ToString(), new TextOptions(font));
+            FontRectangle size = TextMeasurer.MeasureSize(c.ToString(), new TextOptions(font));
         }
 
         [Theory]
@@ -38,7 +38,7 @@ namespace SixLabors.Fonts.Tests
             FontFamily sans = new FontCollection().Add(TestFonts.OpenSansFile);
             var font = new Font(sans, 1f, FontStyle.Regular);
 
-            FontRectangle size = TextMeasurer.Measure($"abc{c}def", new TextOptions(font));
+            FontRectangle size = TextMeasurer.MeasureSize($"abc{c}def", new TextOptions(font));
         }
     }
 }
