@@ -1,6 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+#if NET472
+using System;
+#endif
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
@@ -13,10 +16,9 @@ namespace SixLabors.Fonts.Tests.Issues
             // AliceFrancesHMK has invalid subtables.
             Font font = new FontCollection().Add(TestFonts.AliceFrancesHMKRegularFile).CreateFont(25);
 
-            FontRectangle size = TextMeasurer.Measure("H", new TextOptions(font));
-
+            FontRectangle size = TextMeasurer.MeasureSize("H", new TextOptions(font));
             Assert.Equal(32, size.Width, 1);
-            Assert.Equal(31, size.Height, 1);
+            Assert.Equal(27, size.Height, 1);
         }
     }
 }

@@ -19,7 +19,7 @@ namespace SixLabors.Fonts
             TextRun textRun,
             float pointSize,
             float dpi,
-            LayoutMode layoutMode)
+            GlyphLayoutMode layoutMode)
         {
             this.Font = metrics.FontMetrics.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
             this.FontStyle = metrics.FontMetrics.Description.Style;
@@ -76,7 +76,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the layout mode applied to the glyph.
         /// </summary>
-        public LayoutMode LayoutMode { get; }
+        public GlyphLayoutMode LayoutMode { get; }
 
         /// <summary>
         /// Gets the text run that this glyph belongs to.

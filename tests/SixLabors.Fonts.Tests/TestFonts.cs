@@ -280,7 +280,7 @@ namespace SixLabors.Fonts.Tests
             };
 
             IEnumerable<string> fullPaths = paths.Select(x => Path.GetFullPath(Path.Combine(root, x)));
-            string rootPath = fullPaths.FirstOrDefault(x => Directory.Exists(x));
+            string rootPath = fullPaths.FirstOrDefault(Directory.Exists);
 
             Assert.True(rootPath != null, $"could not find the font folder in any of these location, \n{string.Join("\n", fullPaths)}");
 

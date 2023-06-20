@@ -376,7 +376,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             Font font = new FontCollection().Add(TestFonts.GSubLookupType2BillionLaughs).CreateFont(12);
 
             // Act
-            TextMeasurer.Measure("lol", new TextOptions(font));
+            TextMeasurer.MeasureSize("lol", new TextOptions(font));
         }
     }
 }

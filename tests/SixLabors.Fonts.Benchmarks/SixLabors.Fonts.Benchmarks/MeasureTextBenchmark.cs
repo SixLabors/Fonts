@@ -46,7 +46,7 @@ namespace SixLabors.Fonts.Benchmarks
         public string Text { get; set; } = string.Empty;
 
         [Benchmark]
-        public void SixLaborsFonts() => TextMeasurer.Measure(this.Text, this.textOptions);
+        public void SixLaborsFonts() => TextMeasurer.MeasureSize(this.Text, this.textOptions);
 
         [Benchmark]
         public void SkiaSharp() => this.paint.MeasureText(this.Text);
