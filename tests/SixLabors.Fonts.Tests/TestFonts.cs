@@ -218,6 +218,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string AliceFrancesHMKRegularFile => GetFullPath("AliceFrancesHMK-Regular.ttf");
 
+        public static string SumanaRegularFile => GetFullPath("Sumana-Regular.ttf");
+
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
         public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);

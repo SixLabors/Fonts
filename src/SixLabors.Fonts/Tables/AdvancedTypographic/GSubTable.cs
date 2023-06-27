@@ -177,7 +177,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                             // Account for substitutions changing the length of the collection.
                             if (collection.Count != currentCount)
                             {
-                                count = count - (currentCount - collection.Count);
+                                count -= currentCount - collection.Count;
                                 currentCount = collection.Count;
                             }
                         }
