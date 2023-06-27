@@ -35,14 +35,18 @@ namespace SixLabors.Fonts.Tables.General
             return this.topSideBearings[glyphIndex];
         }
 
-        public static VerticalMetricsTable Load(FontReader reader)
+        public static VerticalMetricsTable? Load(FontReader reader)
         {
             // You should load all dependent tables prior to manipulating the reader
             VerticalHeadTable headTable = reader.GetTable<VerticalHeadTable>();
             MaximumProfileTable profileTable = reader.GetTable<MaximumProfileTable>();
 
             // Move to start of table
-            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
+            if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
+            {
+                return null;
+            }
+
             return Load(binaryReader, headTable.NumberOfVMetrics, profileTable.GlyphCount);
         }
 
