@@ -40,6 +40,7 @@ namespace SixLabors.Fonts
                 StandardFontLocations = new[]
                 {
                     "%HOME%/.fonts/",
+                    "%HOME%/.local/share/fonts/",
                     "/usr/local/share/fonts/",
                     "/usr/share/fonts/",
                 };
