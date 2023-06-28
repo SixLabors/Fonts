@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs
@@ -30,16 +29,16 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <summary>
         /// Gets the vectorial points defining the shape of this glyph.
         /// </summary>
-        public ReadOnlyMemory<Vector2> ControlPoints { get; }
+        public Vector2[] ControlPoints { get; }
 
         /// <summary>
         /// Gets the point indices for the last point of each contour, in increasing numeric order.
         /// </summary>
-        public ReadOnlyMemory<ushort> EndPoints { get; }
+        public ushort[] EndPoints { get; }
 
         /// <summary>
         /// Gets at value indicating whether the corresponding <see cref="ControlPoints"/> item is on a curve.
         /// </summary>
-        public ReadOnlyMemory<bool> OnCurves { get; }
+        public bool[] OnCurves { get; }
     }
 }

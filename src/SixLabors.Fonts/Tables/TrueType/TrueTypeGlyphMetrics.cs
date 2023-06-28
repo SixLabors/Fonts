@@ -139,6 +139,7 @@ namespace SixLabors.Fonts.Tables.TrueType
 
                     GlyphVector scaledVector = this.scaledVectorCache.GetOrAdd(scaledPPEM, _ =>
                     {
+                        // TODO: We should compose the vector here under all cases.
                         // Create a scaled deep copy of the vector so that we do not alter
                         // the globally cached instance.
                         var clone = GlyphVector.DeepClone(this.vector);
@@ -157,9 +158,9 @@ namespace SixLabors.Fonts.Tables.TrueType
                     });
 
                     GlyphOutline outline = scaledVector.GetOutline();
-                    ReadOnlySpan<Vector2> controlPoints = outline.ControlPoints.Span;
-                    ReadOnlySpan<ushort> endPoints = outline.EndPoints.Span;
-                    ReadOnlySpan<bool> onCurves = outline.OnCurves.Span;
+                    ReadOnlySpan<Vector2> controlPoints = outline.ControlPoints;
+                    ReadOnlySpan<ushort> endPoints = outline.EndPoints;
+                    ReadOnlySpan<bool> onCurves = outline.OnCurves;
 
                     int endOfContour = -1;
                     for (int i = 0; i < outline.EndPoints.Length; i++)

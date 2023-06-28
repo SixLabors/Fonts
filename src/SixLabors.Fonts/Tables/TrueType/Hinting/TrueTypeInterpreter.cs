@@ -638,6 +638,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
 
                         for (int i = start; i < count; i++)
                         {
+                            // TODO: Need to check zone.Current != zp2.Current
                             // don't move the reference point
                             if (point != i)
                             {
@@ -665,6 +666,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         Span<Vector2> points = this.zp2.Current.ControlPoints.Span;
                         for (int i = 0; i < count; i++)
                         {
+                            // TODO: Need to check zone.Current != zp2.Current
                             // don't move the reference point
                             if (point != i)
                             {
@@ -1378,13 +1380,6 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                             int pointIndex = this.stack.Pop();
                             int arg = this.stack.Pop();
 
-                            // SHPIX and DELTAP don't execute unless moving a composite on the
-                            // y axis or moving a previously y touched point.
-                            if (!postIUP || composite)
-                            {
-                                continue;
-                            }
-
                             // upper 4 bits of the 8-bit arg is the relative ppem
                             // the opcode specifies the base to add to the ppem
                             int triggerPpem = (arg >> 4) & 0xF;
@@ -1407,7 +1402,13 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
 
                                 amount *= 1 << (6 - this.state.DeltaShift);
 
-                                this.MovePoint(this.zp0, pointIndex, F26Dot6ToFloat(amount));
+                                // SHPIX and DELTAP don't execute unless moving a composite on the
+                                // y axis or moving a previously y touched point.
+                                TouchState state = this.zp0.TouchState[pointIndex];
+                                if (!postIUP && ((composite && this.state.Freedom.Y != 0) || ((state & TouchState.Y) == TouchState.Y)))
+                                {
+                                    this.MovePoint(this.zp0, pointIndex, F26Dot6ToFloat(amount));
+                                }
                             }
                         }
                     }
@@ -1716,7 +1717,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             Vector2 p2 = this.zp1.GetOriginal(pointIndex);
             float originalDistance = this.DualProject(p2 - p1);
 
-            // single width cutin test
+            // single width cut-in test
             if (Math.Abs(originalDistance - this.state.SingleWidthValue) < this.state.SingleWidthCutIn)
             {
                 if (originalDistance >= 0)
@@ -1802,35 +1803,25 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             bool postIUP = this.iupXCalled && this.iupYCalled;
             bool composite = this.isComposite;
 
+            TouchState touch = this.GetTouchState();
             Span<Vector2> points = this.zp2.Current.ControlPoints.Span;
             bool inTwilight = this.zp0.IsTwilight && this.zp1.IsTwilight && this.zp2.IsTwilight;
-            if (inTwilight)
+            for (int i = 0; i < this.state.Loop; i++)
             {
-                for (int i = 0; i < this.state.Loop; i++)
-                {
-                    // Special case: allow SHPIX to move points in the twilight zone.
-                    // Otherwise, treat SHPIX the same as DELTAP.  Unbreaks various
-                    // fonts such as older versions of Rokkitt and DTL Argo T Light
-                    // that would glitch severely after calling ALIGNRP after a
-                    // blocked SHPIX.
-                    int pointIndex = this.stack.Pop();
-                    ref TouchState state = ref this.zp2.TouchState[pointIndex];
-                    if (!postIUP && composite && ((state & TouchState.Y) == TouchState.Y))
-                    {
-                        points[pointIndex] += displacement;
-                    }
-                }
-            }
-            else
-            {
-                for (int i = 0; i < this.state.Loop; i++)
+                // Special case: allow SHPIX to move points in the twilight zone.
+                // Otherwise, treat SHPIX the same as DELTAP.  Unbreaks various
+                // fonts such as older versions of Rokkitt and DTL Argo T Light
+                // that would glitch severely after calling ALIGNRP after a
+                // blocked SHPIX.
+                int pointIndex = this.stack.Pop();
+                ref TouchState state = ref this.zp2.TouchState[pointIndex];
+                if (inTwilight || (!postIUP && ((composite && this.state.Freedom.Y != 0) || ((state & TouchState.Y) == TouchState.Y))))
                 {
                     // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
                     // This prevents outline distortion on legacy fonts.
                     // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-                    int pointIndex = this.stack.Pop();
                     points[pointIndex].Y += displacement.Y;
-                    this.zp2.TouchState[pointIndex] |= TouchState.Y;
+                    state |= TouchState.Y;
                 }
             }
 
@@ -1839,12 +1830,22 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
 
         private void MovePoint(Zone zone, int index, float distance)
         {
-            // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
-            // This increases resolution on the x-axis and prevents glyph explosions on legacy fonts.
-            // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-            Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
-            zone.Current.ControlPoints.Span[index].Y = point.Y;
-            zone.TouchState[index] |= TouchState.Y;
+            if (this.isComposite)
+            {
+                Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
+                TouchState touch = this.GetTouchState();
+                zone.Current.ControlPoints.Span[index] = point;
+                zone.TouchState[index] |= touch;
+            }
+            else
+            {
+                // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
+                // This increases resolution on the x-axis and prevents glyph explosions on legacy fonts.
+                // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
+                Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
+                zone.Current.ControlPoints.Span[index].Y = point.Y;
+                zone.TouchState[index] |= TouchState.Y;
+            }
         }
 
         private float Round(float value)
@@ -2195,7 +2196,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             MIRP = 0xE0 // range of 32 values, 0xE0 - 0xFF
         }
 
-        private struct InstructionStream
+        private readonly struct InstructionStream
         {
             private readonly ReadOnlyMemory<byte> instructions;
             private readonly int ip;

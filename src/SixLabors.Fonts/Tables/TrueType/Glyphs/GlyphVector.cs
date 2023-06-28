@@ -120,25 +120,66 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 return;
             }
 
-            for (int i = 0; i < glyph.entries.Count; i++)
+            GlyphOutline outline = glyph.GetOutline();
+            using var buffer = new Buffer<Vector2>(outline.ControlPoints.Length + 4);
+            Span<Vector2> controlPoints = buffer.Memory.Span;
+
+            controlPoints[controlPoints.Length - 4] = pp1;
+            controlPoints[controlPoints.Length - 3] = pp2;
+            controlPoints[controlPoints.Length - 2] = pp3;
+            controlPoints[controlPoints.Length - 1] = pp4;
+            outline.ControlPoints.AsSpan().CopyTo(controlPoints);
+
+            // TODO: Check bounds. It should be correct for both composite and non-composite glyphs.
+            GlyphTableEntry hinted = new(buffer.Memory, outline.OnCurves, outline.EndPoints, glyph.GetBounds(), glyph.entries[0].Instructions);
+
+            interpreter.HintGlyph(hinted, glyph.IsComposite());
+
+            hinted.ControlPoints.Span.Slice(0, outline.ControlPoints.Length).CopyTo(outline.ControlPoints);
+            glyph = new(outline.ControlPoints, hinted.OnCurves, hinted.EndPoints, glyph.GetBounds(), glyph.entries[0].Instructions);
+
+            //for (int i = 0; i < glyph.entries.Count; i++)
+            //{
+            //    GlyphTableEntry entry = glyph.entries[i];
+
+            //    using var buffer = new Buffer<Vector2>(entry.ControlPoints.Length + 4);
+            //    Span<Vector2> controlPoints = buffer.Memory.Span;
+
+            //    controlPoints[controlPoints.Length - 4] = pp1;
+            //    controlPoints[controlPoints.Length - 3] = pp2;
+            //    controlPoints[controlPoints.Length - 2] = pp3;
+            //    controlPoints[controlPoints.Length - 1] = pp4;
+            //    entry.ControlPoints.Span.CopyTo(controlPoints);
+
+            //    GlyphTableEntry withPhantomPoints = new(buffer.Memory, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
+            //    interpreter.HintGlyph(withPhantomPoints, glyph.IsComposite());
+
+            //    controlPoints.Slice(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.Span);
+            //    glyph.entries[i] = new(entry.ControlPoints, entry.OnCurves, entry.EndPoints, default, entry.Instructions);
+            //}
+        }
+
+        /// <summary>
+        /// Creates a new glyph vector that is a deep copy of the specified instance.
+        /// </summary>
+        /// <param name="src">The source glyph vector to copy.</param>
+        /// <param name="instructions">The hinting instructions.</param>
+        /// <returns>The cloned <see cref="GlyphVector"/>.</returns>
+        public static GlyphVector DeepClone(GlyphVector src, ReadOnlyMemory<byte> instructions)
+        {
+            List<GlyphTableEntry> entries = new(src.entries.Count);
+            for (int i = 0; i < src.entries.Count; i++)
             {
-                GlyphTableEntry entry = glyph.entries[i];
+                var entry = GlyphTableEntry.DeepClone(src.entries[i]);
+                if (instructions.Length > 0)
+                {
+                    entry.Instructions = instructions;
+                }
 
-                using var buffer = new Buffer<Vector2>(entry.ControlPoints.Length + 4);
-                Span<Vector2> controlPoints = buffer.Memory.Span;
-
-                controlPoints[controlPoints.Length - 4] = pp1;
-                controlPoints[controlPoints.Length - 3] = pp2;
-                controlPoints[controlPoints.Length - 2] = pp3;
-                controlPoints[controlPoints.Length - 1] = pp4;
-                entry.ControlPoints.Span.CopyTo(controlPoints);
-
-                GlyphTableEntry withPhantomPoints = new(buffer.Memory, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
-                interpreter.HintGlyph(withPhantomPoints, glyph.IsComposite());
-
-                controlPoints.Slice(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.Span);
-                glyph.entries[i] = new(entry.ControlPoints, entry.OnCurves, entry.EndPoints, default, entry.Instructions);
+                entries.Add(entry);
             }
+
+            return new(entries, src.compositeBounds);
         }
 
         /// <summary>

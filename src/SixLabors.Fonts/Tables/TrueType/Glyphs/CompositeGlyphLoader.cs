@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -11,11 +12,13 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
     {
         private readonly Bounds bounds;
         private readonly Composite[] result;
+        private readonly ReadOnlyMemory<byte> instructions;
 
-        public CompositeGlyphLoader(IEnumerable<Composite> result, Bounds bounds)
+        public CompositeGlyphLoader(IEnumerable<Composite> result, Bounds bounds, ReadOnlyMemory<byte> instructions)
         {
             this.result = result.ToArray();
             this.bounds = bounds;
+            this.instructions = instructions;
         }
 
         public override GlyphVector CreateGlyph(GlyphTable table)
@@ -24,13 +27,11 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             for (int resultIndex = 0; resultIndex < this.result.Length; resultIndex++)
             {
                 ref Composite composite = ref this.result[resultIndex];
-                var clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
+                var clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex), this.instructions);
                 GlyphVector.TransformInPlace(ref clone, composite.Transformation);
                 glyph = GlyphVector.Append(glyph, clone, this.bounds);
             }
 
-            // We ignore any composite glyph instructions and
-            // instead rely on the individual glyph instructions.
             return glyph;
         }
 
@@ -67,19 +68,20 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                     transform.M22 = reader.ReadF2dot14();
                 }
 
-                result.Add(new Composite(glyphIndex, transform));
+                result.Add(new Composite(glyphIndex, flags, transform));
             }
             while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
+            byte[] instructions = Array.Empty<byte>();
             if ((flags & CompositeGlyphFlags.WeHaveInstructions) != 0)
             {
                 // Read the instructions if they exist.
                 // We don't actually use them though and rely on individual glyph instructions.
                 ushort instructionSize = reader.ReadUInt16();
-                reader.ReadUInt8Array(instructionSize);
+                instructions = reader.ReadUInt8Array(instructionSize);
             }
 
-            return new CompositeGlyphLoader(result, bounds);
+            return new CompositeGlyphLoader(result, bounds, instructions);
         }
 
         public static void LoadArguments(BigEndianBinaryReader reader, CompositeGlyphFlags flags, out int dx, out int dy)
@@ -123,13 +125,16 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 
         public readonly struct Composite
         {
-            public Composite(ushort glyphIndex, Matrix3x2 transformation)
+            public Composite(ushort glyphIndex, CompositeGlyphFlags flags, Matrix3x2 transformation)
             {
                 this.GlyphIndex = glyphIndex;
+                this.Flags = flags;
                 this.Transformation = transformation;
             }
 
             public ushort GlyphIndex { get; }
+
+            CompositeGlyphFlags Flags { get; }
 
             public Matrix3x2 Transformation { get; }
         }
