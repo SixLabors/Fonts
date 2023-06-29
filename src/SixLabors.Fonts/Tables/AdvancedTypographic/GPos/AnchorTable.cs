@@ -1,12 +1,12 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables.TrueType;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -127,10 +127,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                                 break;
                             }
 
-                            ReadOnlyMemory<Vector2> points = ttmetric.GetOutline().ControlPoints;
-                            if (this.anchorPointIndex < points.Length)
+                            IList<ControlPoint> points = ttmetric.GetOutline().ControlPoints;
+                            if (this.anchorPointIndex < points.Count)
                             {
-                                Vector2 point = points.Span[this.anchorPointIndex];
+                                Vector2 point = points[this.anchorPointIndex].Point;
                                 return new((short)point.X, (short)point.Y);
                             }
                         }

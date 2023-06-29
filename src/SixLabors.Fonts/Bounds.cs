@@ -2,7 +2,9 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
 namespace SixLabors.Fonts
 {
@@ -39,6 +41,45 @@ namespace SixLabors.Fonts
             short maxY = reader.ReadInt16();
 
             return new Bounds(minX, minY, maxX, maxY);
+        }
+
+        public static Bounds Load(IList<ControlPoint> controlPoints)
+        {
+            if (controlPoints is null || controlPoints.Count == 0)
+            {
+                return Empty;
+            }
+
+            float xMin = float.MaxValue;
+            float yMin = float.MaxValue;
+            float xMax = float.MinValue;
+            float yMax = float.MinValue;
+
+            for (int i = 0; i < controlPoints.Count; i++)
+            {
+                Vector2 p = controlPoints[i].Point;
+                if (p.X < xMin)
+                {
+                    xMin = p.X;
+                }
+
+                if (p.X > xMax)
+                {
+                    xMax = p.X;
+                }
+
+                if (p.Y < yMin)
+                {
+                    yMin = p.Y;
+                }
+
+                if (p.Y > yMax)
+                {
+                    yMax = p.Y;
+                }
+            }
+
+            return new Bounds(xMin, yMin, xMax, yMax);
         }
 
         public static Bounds Transform(in Bounds bounds, Matrix3x2 matrix)
