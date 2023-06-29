@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
@@ -33,8 +34,26 @@ namespace SixLabors.Fonts.Tests.Issues
 
             for (int i = 0; i < expected.Length; i++)
             {
-                CompareRectangleExact(expected[i], renderer.GlyphRects[i]);
+#if NET472
+                if (!Environment.Is64BitProcess)
+                {
+                    // 32 bit process has different rounding
+                    CompareRectangle(expected[i], renderer.GlyphRects[i], 1);
+                }
+                else
+#endif
+                {
+                    CompareRectangleExact(expected[i], renderer.GlyphRects[i]);
+                }
             }
+        }
+
+        private static void CompareRectangle(FontRectangle expected, FontRectangle actual, int precision = 4)
+        {
+            Assert.Equal(expected.X, actual.X, precision);
+            Assert.Equal(expected.Y, actual.Y, precision);
+            Assert.Equal(expected.Width, actual.Width, precision);
+            Assert.Equal(expected.Height, actual.Height, precision);
         }
 
         private static void CompareRectangleExact(FontRectangle expected, FontRectangle actual)
