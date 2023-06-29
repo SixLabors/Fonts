@@ -1,8 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Unicode;
@@ -36,7 +36,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                   font,
                   glyphId,
                   codePoint,
-                  vector.GetBounds(),
+                  vector.Bounds,
                   advanceWidth,
                   advanceHeight,
                   leftSideBearing,
@@ -67,7 +67,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                   font,
                   glyphId,
                   codePoint,
-                  vector.GetBounds(),
+                  vector.Bounds,
                   advanceWidth,
                   advanceHeight,
                   leftSideBearing,
@@ -101,8 +101,8 @@ namespace SixLabors.Fonts.Tables.TrueType
         /// <summary>
         /// Gets the outline for the current glyph.
         /// </summary>
-        /// <returns>The <see cref="GlyphOutline"/>.</returns>
-        public GlyphOutline GetOutline() => this.vector.GetOutline();
+        /// <returns>The <see cref="GlyphVector"/>.</returns>
+        internal GlyphVector GetOutline() => this.vector;
 
         /// <inheritdoc/>
         internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
@@ -139,7 +139,6 @@ namespace SixLabors.Fonts.Tables.TrueType
 
                     GlyphVector scaledVector = this.scaledVectorCache.GetOrAdd(scaledPPEM, _ =>
                     {
-                        // TODO: We should compose the vector here under all cases.
                         // Create a scaled deep copy of the vector so that we do not alter
                         // the globally cached instance.
                         var clone = GlyphVector.DeepClone(this.vector);
@@ -157,29 +156,27 @@ namespace SixLabors.Fonts.Tables.TrueType
                         return clone;
                     });
 
-                    GlyphOutline outline = scaledVector.GetOutline();
-                    ReadOnlySpan<Vector2> controlPoints = outline.ControlPoints;
-                    ReadOnlySpan<ushort> endPoints = outline.EndPoints;
-                    ReadOnlySpan<bool> onCurves = outline.OnCurves;
+                    IList<ControlPoint> controlPoints = scaledVector.ControlPoints;
+                    IReadOnlyList<ushort> endPoints = scaledVector.EndPoints;
 
                     int endOfContour = -1;
-                    for (int i = 0; i < outline.EndPoints.Length; i++)
+                    for (int i = 0; i < scaledVector.EndPoints.Count; i++)
                     {
                         renderer.BeginFigure();
                         int startOfContour = endOfContour + 1;
                         endOfContour = endPoints[i];
 
                         Vector2 prev;
-                        Vector2 curr = (YInverter * controlPoints[endOfContour]) + renderLocation;
-                        Vector2 next = (YInverter * controlPoints[startOfContour]) + renderLocation;
+                        Vector2 curr = (YInverter * controlPoints[endOfContour].Point) + renderLocation;
+                        Vector2 next = (YInverter * controlPoints[startOfContour].Point) + renderLocation;
 
-                        if (onCurves[endOfContour])
+                        if (controlPoints[endOfContour].OnCurve)
                         {
                             renderer.MoveTo(curr);
                         }
                         else
                         {
-                            if (onCurves[startOfContour])
+                            if (controlPoints[startOfContour].OnCurve)
                             {
                                 renderer.MoveTo(next);
                             }
@@ -199,9 +196,9 @@ namespace SixLabors.Fonts.Tables.TrueType
                             int currentIndex = startOfContour + p;
                             int nextIndex = startOfContour + ((p + 1) % length);
                             int prevIndex = startOfContour + ((length + p - 1) % length);
-                            next = (YInverter * controlPoints[nextIndex]) + renderLocation;
+                            next = (YInverter * controlPoints[nextIndex].Point) + renderLocation;
 
-                            if (onCurves[currentIndex])
+                            if (controlPoints[currentIndex].OnCurve)
                             {
                                 // This is a straight line.
                                 renderer.LineTo(curr);
@@ -211,13 +208,13 @@ namespace SixLabors.Fonts.Tables.TrueType
                                 Vector2 prev2 = prev;
                                 Vector2 next2 = next;
 
-                                if (!onCurves[prevIndex])
+                                if (!controlPoints[prevIndex].OnCurve)
                                 {
                                     prev2 = (curr + prev) * .5F;
                                     renderer.LineTo(prev2);
                                 }
 
-                                if (!onCurves[nextIndex])
+                                if (!controlPoints[nextIndex].OnCurve)
                                 {
                                     next2 = (curr + next) * .5F;
                                 }

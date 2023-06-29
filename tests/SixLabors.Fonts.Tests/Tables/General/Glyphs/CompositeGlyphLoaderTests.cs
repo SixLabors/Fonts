@@ -27,13 +27,13 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var tbl = new GlyphTable(new[]
             {
                 new SimpleGlyphLoader(bounds), // padding
-                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
+                new SimpleGlyphLoader(new ControlPoint[] { new(new Vector2(20, 21), true) }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
             });
 
             GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
-            Vector2 point = Assert.Single(finalGlyph.GetOutline().ControlPoints.ToArray());
-            Assert.Equal(new Vector2(short.MaxValue + 1 + 20, short.MaxValue + 2 + 21), point);
+            ControlPoint point = Assert.Single(finalGlyph.ControlPoints);
+            Assert.Equal(new Vector2(short.MaxValue + 1 + 20, short.MaxValue + 2 + 21), point.Point);
         }
 
         [Fact]
@@ -53,13 +53,13 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var tbl = new GlyphTable(new[]
             {
                 new SimpleGlyphLoader(bounds), // padding
-                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
+                new SimpleGlyphLoader(new ControlPoint[] { new(new Vector2(20, 21), true) }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
             });
 
             GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
-            Vector2 point = Assert.Single(finalGlyph.GetOutline().ControlPoints.ToArray());
-            Assert.Equal(new Vector2(short.MinValue + 1 + 20, short.MinValue + 2 + 21), point);
+            ControlPoint point = Assert.Single(finalGlyph.ControlPoints);
+            Assert.Equal(new Vector2(short.MinValue + 1 + 20, short.MinValue + 2 + 21), point.Point);
         }
 
         [Fact]
@@ -79,13 +79,13 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var tbl = new GlyphTable(new[]
             {
                 new SimpleGlyphLoader(bounds), // padding
-                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
+                new SimpleGlyphLoader(new ControlPoint[] { new(new Vector2(20, 21), true) }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
             });
 
             GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
-            Vector2 point = Assert.Single(finalGlyph.GetOutline().ControlPoints.ToArray());
-            Assert.Equal(new Vector2(sbyte.MaxValue + 1 + 20, sbyte.MaxValue + 2 + 21), point);
+            ControlPoint point = Assert.Single(finalGlyph.ControlPoints);
+            Assert.Equal(new Vector2(sbyte.MaxValue + 1 + 20, sbyte.MaxValue + 2 + 21), point.Point);
         }
 
         [Fact]
@@ -105,13 +105,13 @@ namespace SixLabors.Fonts.Tests.Tables.General.Glyphs
             var tbl = new GlyphTable(new[]
             {
                 new SimpleGlyphLoader(bounds), // padding
-                new SimpleGlyphLoader(new short[] { 20 }, new short[] { 21 }, new[] { true }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
+                new SimpleGlyphLoader(new ControlPoint[] { new(new Vector2(20, 21), true) }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
             });
 
             GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
-            Vector2 point = Assert.Single(finalGlyph.GetOutline().ControlPoints.ToArray());
-            Assert.Equal(new Vector2(sbyte.MinValue + 1 + 20, sbyte.MinValue + 2 + 21), point);
+            ControlPoint point = Assert.Single(finalGlyph.ControlPoints);
+            Assert.Equal(new Vector2(sbyte.MinValue + 1 + 20, sbyte.MinValue + 2 + 21), point.Point);
         }
     }
 }

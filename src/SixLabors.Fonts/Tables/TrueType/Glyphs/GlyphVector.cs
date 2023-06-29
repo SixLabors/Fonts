@@ -4,12 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-#if SUPPORTS_RUNTIME_INTRINSICS
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
-#endif
 using SixLabors.Fonts.Tables.TrueType.Hinting;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs
@@ -20,32 +14,32 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
     /// </summary>
     internal struct GlyphVector
     {
-        private readonly List<GlyphTableEntry> entries;
-        private Bounds compositeBounds;
-
         internal GlyphVector(
-            Vector2[] controlPoints,
-            bool[] onCurves,
-            ushort[] endPoints,
+            IList<ControlPoint> controlPoints,
+            IReadOnlyList<ushort> endPoints,
             Bounds bounds,
-            ReadOnlyMemory<byte> instructions)
+            ReadOnlyMemory<byte> instructions,
+            bool isComposite)
         {
-            this.entries = new List<GlyphTableEntry>
-            {
-                new GlyphTableEntry(controlPoints, onCurves, endPoints, bounds, instructions)
-            };
-
-            this.compositeBounds = default;
+            this.ControlPoints = controlPoints;
+            this.EndPoints = endPoints;
+            this.Bounds = bounds;
+            this.Instructions = instructions;
+            this.IsComposite = isComposite;
         }
 
-        private GlyphVector(List<GlyphTableEntry> entries, Bounds compositeBounds = default)
-        {
-            this.entries = entries;
-            this.compositeBounds = compositeBounds;
-        }
+        public IList<ControlPoint> ControlPoints { get; set; }
+
+        public IReadOnlyList<ushort> EndPoints { get; set; }
+
+        public ReadOnlyMemory<byte> Instructions { get; set; }
+
+        public bool IsComposite { get; set; }
+
+        public Bounds Bounds { get; set; }
 
         public static GlyphVector Empty(Bounds bounds = default)
-            => new(Array.Empty<Vector2>(), Array.Empty<bool>(), Array.Empty<ushort>(), bounds, Array.Empty<byte>());
+            => new(Array.Empty<ControlPoint>(), Array.Empty<ushort>(), bounds, Array.Empty<byte>(), false);
 
         /// <summary>
         /// Transforms a glyph vector by a specified 3x2 matrix.
@@ -54,46 +48,15 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <param name="matrix">The transformation matrix.</param>
         public static void TransformInPlace(ref GlyphVector src, Matrix3x2 matrix)
         {
-            List<GlyphTableEntry> entries = src.entries;
-            for (int i = 0; i < entries.Count; i++)
+            IList<ControlPoint> controlPoints = src.ControlPoints;
+            for (int i = 0; i < controlPoints.Count; i++)
             {
-                GlyphTableEntry entry = entries[i];
-                GlyphTableEntry.TransformInPlace(ref entry, matrix);
-                entries[i] = entry;
+                ControlPoint point = controlPoints[i];
+                point.Point = Vector2.Transform(point.Point, matrix);
+                controlPoints[i] = point;
             }
 
-            if (src.compositeBounds != default)
-            {
-                src.compositeBounds = Bounds.Transform(src.compositeBounds, matrix);
-            }
-        }
-
-        /// <summary>
-        /// Appends the second glyph vector's control points to the first.
-        /// </summary>
-        /// <param name="first">The first glyph vector.</param>
-        /// <param name="second">The second glyph vector.</param>
-        /// <param name="compositeBounds">The bounds for the composite glyph.</param>
-        /// <returns>The new <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector Append(GlyphVector first, GlyphVector second, Bounds compositeBounds)
-        {
-            if (!first.HasValue())
-            {
-                return second;
-            }
-
-            List<GlyphTableEntry> entries = new(first.entries.Count + second.entries.Count);
-            for (int i = 0; i < first.entries.Count; i++)
-            {
-                entries.Add(first.entries[i]);
-            }
-
-            for (int i = 0; i < second.entries.Count; i++)
-            {
-                entries.Add(second.entries[i]);
-            }
-
-            return new(entries, compositeBounds);
+            src.Bounds = Bounds.Transform(src.Bounds, matrix);
         }
 
         /// <summary>
@@ -120,66 +83,23 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 return;
             }
 
-            GlyphOutline outline = glyph.GetOutline();
-            using var buffer = new Buffer<Vector2>(outline.ControlPoints.Length + 4);
-            Span<Vector2> controlPoints = buffer.Memory.Span;
+            var controlPoints = new ControlPoint[glyph.ControlPoints.Count + 4];
+            controlPoints[controlPoints.Length - 4].Point = pp1;
+            controlPoints[controlPoints.Length - 3].Point = pp2;
+            controlPoints[controlPoints.Length - 2].Point = pp3;
+            controlPoints[controlPoints.Length - 1].Point = pp4;
 
-            controlPoints[controlPoints.Length - 4] = pp1;
-            controlPoints[controlPoints.Length - 3] = pp2;
-            controlPoints[controlPoints.Length - 2] = pp3;
-            controlPoints[controlPoints.Length - 1] = pp4;
-            outline.ControlPoints.AsSpan().CopyTo(controlPoints);
-
-            // TODO: Check bounds. It should be correct for both composite and non-composite glyphs.
-            GlyphTableEntry hinted = new(buffer.Memory, outline.OnCurves, outline.EndPoints, glyph.GetBounds(), glyph.entries[0].Instructions);
-
-            interpreter.HintGlyph(hinted, glyph.IsComposite());
-
-            hinted.ControlPoints.Span.Slice(0, outline.ControlPoints.Length).CopyTo(outline.ControlPoints);
-            glyph = new(outline.ControlPoints, hinted.OnCurves, hinted.EndPoints, glyph.GetBounds(), glyph.entries[0].Instructions);
-
-            //for (int i = 0; i < glyph.entries.Count; i++)
-            //{
-            //    GlyphTableEntry entry = glyph.entries[i];
-
-            //    using var buffer = new Buffer<Vector2>(entry.ControlPoints.Length + 4);
-            //    Span<Vector2> controlPoints = buffer.Memory.Span;
-
-            //    controlPoints[controlPoints.Length - 4] = pp1;
-            //    controlPoints[controlPoints.Length - 3] = pp2;
-            //    controlPoints[controlPoints.Length - 2] = pp3;
-            //    controlPoints[controlPoints.Length - 1] = pp4;
-            //    entry.ControlPoints.Span.CopyTo(controlPoints);
-
-            //    GlyphTableEntry withPhantomPoints = new(buffer.Memory, entry.OnCurves, entry.EndPoints, entry.Bounds, entry.Instructions);
-            //    interpreter.HintGlyph(withPhantomPoints, glyph.IsComposite());
-
-            //    controlPoints.Slice(0, entry.ControlPoints.Length).CopyTo(entry.ControlPoints.Span);
-            //    glyph.entries[i] = new(entry.ControlPoints, entry.OnCurves, entry.EndPoints, default, entry.Instructions);
-            //}
-        }
-
-        /// <summary>
-        /// Creates a new glyph vector that is a deep copy of the specified instance.
-        /// </summary>
-        /// <param name="src">The source glyph vector to copy.</param>
-        /// <param name="instructions">The hinting instructions.</param>
-        /// <returns>The cloned <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector DeepClone(GlyphVector src, ReadOnlyMemory<byte> instructions)
-        {
-            List<GlyphTableEntry> entries = new(src.entries.Count);
-            for (int i = 0; i < src.entries.Count; i++)
+            for (int i = 0; i < glyph.ControlPoints.Count; i++)
             {
-                var entry = GlyphTableEntry.DeepClone(src.entries[i]);
-                if (instructions.Length > 0)
-                {
-                    entry.Instructions = instructions;
-                }
-
-                entries.Add(entry);
+                controlPoints[i] = glyph.ControlPoints[i];
             }
 
-            return new(entries, src.compositeBounds);
+            interpreter.HintGlyph(controlPoints, glyph.EndPoints, glyph.Instructions, glyph.IsComposite);
+
+            for (int i = 0; i < glyph.ControlPoints.Count; i++)
+            {
+                glyph.ControlPoints[i] = controlPoints[i];
+            }
         }
 
         /// <summary>
@@ -189,78 +109,16 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         /// <returns>The cloned <see cref="GlyphVector"/>.</returns>
         public static GlyphVector DeepClone(GlyphVector src)
         {
-            List<GlyphTableEntry> entries = new(src.entries.Count);
-            for (int i = 0; i < src.entries.Count; i++)
-            {
-                entries.Add(GlyphTableEntry.DeepClone(src.entries[i]));
-            }
+            List<ControlPoint> controlPoints = new(src.ControlPoints);
+            List<ushort> endPoints = new(src.EndPoints);
 
-            return new(entries, src.compositeBounds);
+            return new(controlPoints, endPoints, src.Bounds, src.Instructions, src.IsComposite);
         }
 
         /// <summary>
         /// Returns a value indicating whether the current instance is empty.
         /// </summary>
         /// <returns>The <see cref="bool"/> indicating the result.</returns>
-        public bool HasValue() => this.entries?[0].ControlPoints.Length > 0;
-
-        /// <summary>
-        /// Returns a value indicating whether the glyph is a composite glyph.
-        /// </summary>
-        /// <returns>The <see cref="bool"/> indicating the result.</returns>
-        public bool IsComposite() => this.compositeBounds != default;
-
-        /// <summary>
-        /// Returns the bounds for the current instance.
-        /// </summary>
-        /// <returns>The <see cref="GetBounds"/>.</returns>
-        public Bounds GetBounds() => this.compositeBounds != default ? this.compositeBounds : this.entries[0].Bounds;
-
-        /// <summary>
-        /// Returns the result of combining each glyph within this instance as a single outline.
-        /// </summary>
-        /// <returns>The <see cref="GlyphOutline"/>.</returns>
-        public GlyphOutline GetOutline()
-        {
-            List<Vector2> controlPoints = new();
-            List<bool> onCurves = new();
-            List<ushort> endPoints = new();
-            for (int resultIndex = 0; resultIndex < this.entries.Count; resultIndex++)
-            {
-                GlyphTableEntry glyph = this.entries[resultIndex];
-                int pointCount = glyph.PointCount;
-                ushort endPointOffset = (ushort)controlPoints.Count;
-                Span<Vector2> glyphPoints = glyph.ControlPoints.Span;
-                for (int i = 0; i < pointCount; i++)
-                {
-                    controlPoints.Add(glyphPoints[i]);
-                    onCurves.Add(glyph.OnCurves[i]);
-                }
-
-                foreach (ushort p in glyph.EndPoints)
-                {
-                    endPoints.Add((ushort)(p + endPointOffset));
-                }
-            }
-
-            return new GlyphOutline(controlPoints.ToArray(), endPoints.ToArray(), onCurves.ToArray());
-        }
-
-        /// <summary>
-        /// Returns a new instance with the composite bounds set to the specified value
-        /// </summary>
-        /// <param name="src">The src glyph vector.</param>
-        /// <param name="bounds">The composite bounds.</param>
-        /// <returns>The <see cref="GlyphVector"/>.</returns>
-        public static GlyphVector WithCompositeBounds(GlyphVector src, Bounds bounds)
-            => new(src.entries, bounds);
-#if SUPPORTS_RUNTIME_INTRINSICS
-        /// <summary>
-        /// Fast (x mod m) calculator, with the restriction that
-        /// <paramref name="m"/> should be power of 2.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int ModuloP2(int x, int m) => x & (m - 1);
-#endif
+        public bool HasValue() => this.ControlPoints?.Count > 0;
     }
 }

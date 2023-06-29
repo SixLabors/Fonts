@@ -54,7 +54,7 @@ namespace SixLabors.Fonts
             float scaleFactor = pixelSize / this.UnitsPerEm;
             this.interpreter.SetControlValueTable(cvt?.ControlValues, scaleFactor, pixelSize, prep?.Instructions);
 
-            Bounds bounds = glyphVector.GetBounds();
+            Bounds bounds = glyphVector.Bounds;
 
             Vector2 pp1 = new(MathF.Round(bounds.Min.X - (metrics.LeftSideBearing * scaleXY.X)), 0);
             Vector2 pp2 = new(MathF.Round(pp1.X + (metrics.AdvanceWidth * scaleXY.X)), 0);
@@ -131,7 +131,7 @@ namespace SixLabors.Fonts
             VerticalMetricsTable? vtmx = tables.Vmtx;
 
             GlyphVector vector = glyf.GetGlyph(glyphId);
-            Bounds bounds = vector.GetBounds();
+            Bounds bounds = vector.Bounds;
             ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
             short lsb = htmx.GetLeftSideBearing(glyphId);
 

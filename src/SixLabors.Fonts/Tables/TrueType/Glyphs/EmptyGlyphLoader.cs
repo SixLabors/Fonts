@@ -21,7 +21,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             }
 
             this.loop = true;
-            this.glyph ??= GlyphVector.Empty(table.GetGlyph(0).GetBounds());
+            this.glyph ??= GlyphVector.Empty(table.GetGlyph(0).Bounds);
             return this.glyph.Value;
         }
     }

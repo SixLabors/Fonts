@@ -11,33 +11,40 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
     internal sealed class CompositeGlyphLoader : GlyphLoader
     {
         private readonly Bounds bounds;
-        private readonly Composite[] result;
+        private readonly Composite[] composites;
         private readonly ReadOnlyMemory<byte> instructions;
 
-        public CompositeGlyphLoader(IEnumerable<Composite> result, Bounds bounds, ReadOnlyMemory<byte> instructions)
+        public CompositeGlyphLoader(IEnumerable<Composite> composites, Bounds bounds, ReadOnlyMemory<byte> instructions)
         {
-            this.result = result.ToArray();
+            this.composites = composites.ToArray();
             this.bounds = bounds;
             this.instructions = instructions;
         }
 
         public override GlyphVector CreateGlyph(GlyphTable table)
         {
-            GlyphVector glyph = default;
-            for (int resultIndex = 0; resultIndex < this.result.Length; resultIndex++)
+            List<ControlPoint> controlPoints = new();
+            List<ushort> endPoints = new();
+            for (int i = 0; i < this.composites.Length; i++)
             {
-                ref Composite composite = ref this.result[resultIndex];
-                var clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex), this.instructions);
+                Composite composite = this.composites[i];
+                var clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
                 GlyphVector.TransformInPlace(ref clone, composite.Transformation);
-                glyph = GlyphVector.Append(glyph, clone, this.bounds);
+                ushort endPointOffset = (ushort)controlPoints.Count;
+
+                controlPoints.AddRange(clone.ControlPoints);
+                foreach (ushort p in clone.EndPoints)
+                {
+                    endPoints.Add((ushort)(p + endPointOffset));
+                }
             }
 
-            return glyph;
+            return new(controlPoints, endPoints, this.bounds, this.instructions, true);
         }
 
         public static CompositeGlyphLoader LoadCompositeGlyph(BigEndianBinaryReader reader, in Bounds bounds)
         {
-            var result = new List<Composite>();
+            List<Composite> composites = new();
             CompositeGlyphFlags flags;
             do
             {
@@ -68,7 +75,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                     transform.M22 = reader.ReadF2dot14();
                 }
 
-                result.Add(new Composite(glyphIndex, flags, transform));
+                composites.Add(new Composite(glyphIndex, flags, transform));
             }
             while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
@@ -76,12 +83,11 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             if ((flags & CompositeGlyphFlags.WeHaveInstructions) != 0)
             {
                 // Read the instructions if they exist.
-                // We don't actually use them though and rely on individual glyph instructions.
                 ushort instructionSize = reader.ReadUInt16();
                 instructions = reader.ReadUInt8Array(instructionSize);
             }
 
-            return new CompositeGlyphLoader(result, bounds, instructions);
+            return new CompositeGlyphLoader(composites, bounds, instructions);
         }
 
         public static void LoadArguments(BigEndianBinaryReader reader, CompositeGlyphFlags flags, out int dx, out int dy)
@@ -134,7 +140,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 
             public ushort GlyphIndex { get; }
 
-            CompositeGlyphFlags Flags { get; }
+            public CompositeGlyphFlags Flags { get; }
 
             public Matrix3x2 Transformation { get; }
         }
