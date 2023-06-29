@@ -52,7 +52,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 {
                     float scale = reader.ReadF2dot14(); // Format 2.14
                     transform.M11 = scale;
-                    transform.M21 = scale;
+                    transform.M22 = scale;
                 }
                 else if ((flags & CompositeGlyphFlags.WeHaveXAndYScale) != 0)
                 {
