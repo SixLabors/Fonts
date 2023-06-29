@@ -5,13 +5,12 @@ using Xunit;
 
 namespace SixLabors.Fonts.Tests.Issues
 {
-#if OS_WINDOWS
     public class Issues_337
     {
         [Fact]
         public void CanShapeCompositeGlyphs()
         {
-            Font font = SystemFonts.CreateFont("DFKai-SB", 1024);
+            Font font = new FontCollection().Add(TestFonts.DFKaiSBFile).CreateFont(1024);
             ColorGlyphRenderer renderer = new();
             TextOptions options = new(font)
             {
@@ -46,5 +45,4 @@ namespace SixLabors.Fonts.Tests.Issues
             Assert.Equal(expected.Height, actual.Height);
         }
     }
-#endif
 }
