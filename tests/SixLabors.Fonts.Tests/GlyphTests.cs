@@ -34,11 +34,11 @@ namespace SixLabors.Fonts.Tests
                 0,
                 codePoint,
                 new GlyphVector(
-                    Array.Empty<Vector2>(),
-                    Array.Empty<bool>(),
+                    Array.Empty<ControlPoint>(),
                     Array.Empty<ushort>(),
                     new Bounds(0, metrics.UnitsPerEm, 0, metrics.UnitsPerEm),
-                    Array.Empty<byte>()),
+                    Array.Empty<byte>(),
+                    false),
                 0,
                 0,
                 0,
@@ -105,11 +105,10 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter A
             Assert.True(font.TryGetGlyphs(new CodePoint(41), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
-            Glyph g = glyphs.First();
-            GlyphOutline instance = ((TrueTypeGlyphMetrics)g.GlyphMetrics).GetOutline();
+            Glyph g = glyphs[0];
+            GlyphVector instance = ((TrueTypeGlyphMetrics)g.GlyphMetrics).GetOutline();
 
-            Assert.Equal(20, instance.ControlPoints.Length);
-            Assert.Equal(20, instance.OnCurves.Length);
+            Assert.Equal(20, instance.ControlPoints.Count);
         }
 
         [Fact]
