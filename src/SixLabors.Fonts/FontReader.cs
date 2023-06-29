@@ -184,7 +184,7 @@ namespace SixLabors.Fonts
         {
             if (!this.TryGetReaderAtTablePosition(tableName, out BigEndianBinaryReader? reader))
             {
-                throw new InvalidFontTableException("Unable to find table", tableName);
+                throw new InvalidFontTableException($"Unable to find table {tableName}", tableName);
             }
 
             return reader!;
