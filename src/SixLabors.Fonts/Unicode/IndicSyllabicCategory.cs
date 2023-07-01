@@ -27,7 +27,7 @@ namespace SixLabors.Fonts.Unicode
         /// <summary>
         /// Cantillation_Mark.
         /// </summary>
-        Cantillation_Mark,
+        CantillationMark,
 
         /// <summary>
         /// Consonant

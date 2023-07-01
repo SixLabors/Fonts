@@ -16,7 +16,7 @@ namespace UnicodeTrieGenerator
     /// Provides methods to generate Unicode Tries.
     /// Ported from <see href="https://github.com/toptensoftware/RichTextKit/blob/master/BuildUnicodeData/generate.js"/>.
     /// </summary>
-    public static class Generator
+    public static partial class Generator
     {
         // Aliases and enum derived from
         // https://www.unicode.org/Public/14.0.0/ucd/PropertyValueAliases.txt
@@ -378,7 +378,7 @@ namespace UnicodeTrieGenerator
                 { "Avagraha", IndicSyllabicCategory.Avagraha },
                 { "Bindu", IndicSyllabicCategory.Bindu },
                 { "Brahmi_Joining_Number", IndicSyllabicCategory.BrahmiJoiningNumber },
-                { "Cantillation_Mark", IndicSyllabicCategory.Cantillation_Mark },
+                { "Cantillation_Mark", IndicSyllabicCategory.CantillationMark },
                 { "Consonant", IndicSyllabicCategory.Consonant },
                 { "Consonant_Dead", IndicSyllabicCategory.ConsonantDead },
                 { "Consonant_Final", IndicSyllabicCategory.ConsonantFinal },
@@ -461,13 +461,15 @@ namespace UnicodeTrieGenerator
             GenerateBidiBracketsTrie();
             GenerateBidiMirrorTrie();
             GenerateLineBreakTrie();
-            GenerateUnicodeCategoryTrie();
+            UnicodeTrie ugc = GenerateUnicodeCategoryTrie();
             GenerateScriptTrie();
             GenerateGraphemeBreakTrie();
-            GenerateArabicShapingTrie();
-            GenerateIndicSyllabicCategoryTrie();
-            GenerateIndicPositionalCategoryTrie();
+            UnicodeTrie uajt = GenerateArabicShapingTrie();
+            UnicodeTrie uisc = GenerateIndicSyllabicCategoryTrie();
+            UnicodeTrie uipc = GenerateIndicPositionalCategoryTrie();
             GenerateVerticalOrientationTrie();
+
+            GenerateUniversalShapingDataTrie(ugc, uisc, uipc, uajt);
         }
 
         private static void ProcessUnicodeData()
@@ -654,7 +656,7 @@ namespace UnicodeTrieGenerator
         /// <summary>
         /// Generates the UnicodeTrie for the general category code point ranges.
         /// </summary>
-        private static void GenerateUnicodeCategoryTrie()
+        private static UnicodeTrie GenerateUnicodeCategoryTrie()
         {
             var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
             var builder = new UnicodeTrieBuilder((uint)UnicodeCategory.OtherNotAssigned);
@@ -684,6 +686,7 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("UnicodeCategory", trie);
+            return trie;
         }
 
         /// <summary>
@@ -725,7 +728,7 @@ namespace UnicodeTrieGenerator
         /// <summary>
         /// Generates the UnicodeTrie for the script code point ranges.
         /// </summary>
-        private static void GenerateArabicShapingTrie()
+        private static UnicodeTrie GenerateArabicShapingTrie()
         {
             var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;[\w\s]+;\s*([A-Z]+);\s*([\w\s]+)");
             const uint initial = ((int)ArabicJoiningType.NonJoining) | (((int)ArabicJoiningGroup.NoJoiningGroup) << 16);
@@ -760,6 +763,7 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("ArabicShaping", trie);
+            return trie;
         }
 
         private static void GenerateVerticalOrientationTrie()
@@ -797,7 +801,7 @@ namespace UnicodeTrieGenerator
         /// <summary>
         /// Generates the UnicodeTrie for the indic syllabic category code point ranges.
         /// </summary>
-        private static void GenerateIndicSyllabicCategoryTrie()
+        private static UnicodeTrie GenerateIndicSyllabicCategoryTrie()
         {
             var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
             var builder = new UnicodeTrieBuilder((uint)IndicSyllabicCategory.Other);
@@ -827,12 +831,13 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("IndicSyllabicCategory", trie);
+            return trie;
         }
 
         /// <summary>
         /// Generates the UnicodeTrie for the indic syllabic category code point ranges.
         /// </summary>
-        private static void GenerateIndicPositionalCategoryTrie()
+        private static UnicodeTrie GenerateIndicPositionalCategoryTrie()
         {
             var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
             var builder = new UnicodeTrieBuilder((uint)IndicPositionalCategory.NA);
@@ -862,6 +867,7 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("IndicPositionalCategory", trie);
+            return trie;
         }
 
         /// <summary>

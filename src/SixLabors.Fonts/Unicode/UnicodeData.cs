@@ -13,7 +13,7 @@ namespace SixLabors.Fonts.Unicode
         private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new(() => GetBidiTrie());
         private static readonly Lazy<UnicodeTrie> LazyBidiMirrorTrie = new(() => GetBidiMirrorTrie());
         private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new(() => GetGraphemeTrie());
-        private static readonly Lazy<UnicodeTrie> LazyLinebreakTrie = new(() => GetLineBreakTrie());
+        private static readonly Lazy<UnicodeTrie> LazyLineBreakTrie = new(() => GetLineBreakTrie());
         private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetScriptTrie());
         private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new(() => GetCategoryTrie());
         private static readonly Lazy<UnicodeTrie> LazyArabicShapingTrie = new(() => GetArabicShapingTrie());
@@ -31,7 +31,7 @@ namespace SixLabors.Fonts.Unicode
         public static GraphemeClusterClass GetGraphemeClusterClass(uint codePoint) => (GraphemeClusterClass)LazyGraphemeTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static LineBreakClass GetLineBreakClass(uint codePoint) => (LineBreakClass)LazyLinebreakTrie.Value.Get(codePoint);
+        public static LineBreakClass GetLineBreakClass(uint codePoint) => (LineBreakClass)LazyLineBreakTrie.Value.Get(codePoint);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ScriptClass GetScriptClass(uint codePoint) => (ScriptClass)LazyScriptTrie.Value.Get(codePoint);
