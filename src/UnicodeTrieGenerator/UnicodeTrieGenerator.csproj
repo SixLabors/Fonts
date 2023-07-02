@@ -6,10 +6,15 @@
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
+
+    <!--TODO: Figure out why this is not being properly assigned via global props-->
+    <DefineConstants>$(DefineConstants);SUPPORTS_HASHCODE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\..\tests\SixLabors.Fonts.Tests\Unicode\UnicodeTypeMaps.cs" Link="UnicodeTypeMaps.cs" />
+    <Compile Include="..\SixLabors.Fonts\ArraySlice{T}.cs" Link="ArraySlice{T}.cs" />
+    <Compile Include="..\SixLabors.Fonts\ReadOnlyArraySlice{T}.cs" Link="ReadOnlyArraySlice{T}.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiCharacterType.cs" Link="BidiCharacterType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiPairedBracketType.cs" Link="BidiPairedBracketType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\GraphemeClusterClass.cs" Link="GraphemeClusterClass.cs" />
@@ -19,9 +24,26 @@
     <Compile Include="..\SixLabors.Fonts\Unicode\IndicSyllabicCategory.cs" Link="IndicSyllabicCategory.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\LineBreakClass.cs" Link="LineBreakClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\ScriptClass.cs" Link="ScriptClass.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\StateAutomation\Compile.cs" Link="StateAutomation\Compile.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\StateAutomation\Dfa.cs" Link="StateAutomation\Dfa.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\StateAutomation\INode.cs" Link="StateAutomation\INode.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\StateAutomation\StateMachine.cs" Link="StateAutomation\StateMachine.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\StateAutomation\SymbolTable.cs" Link="StateAutomation\SymbolTable.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrie.cs" Link="UnicodeTrie.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrieBuilder.cs" Link="UnicodeTrieBuilder.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\VerticalOrientationType.cs" Link="VerticalOrientationType.cs" />
   </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="..\SixLabors.Fonts\Unicode\StateAutomation\Grammar.peg" />
+    <PegGrammar Include="..\SixLabors.Fonts\Unicode\StateAutomation\Grammar.peg" />
+  </ItemGroup>
+
+  <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />
 
 </Project>

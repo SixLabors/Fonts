@@ -101,7 +101,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
                     GlyphShapingData data = substitutionCollection.GetGlyphShapingData(i + index);
                     CodePoint codePoint = data.CodePoint;
-                    bool useVerticalMetrics = AdvancedTypographicUtils.IsVerticalGlyph(codePoint, substitutionCollection.TextOptions.LayoutMode);
                     int type = GetSyllableType(codePoint);
                     byte[] actionsWithState = StateTable[state, type];
                     byte action = actionsWithState[0];

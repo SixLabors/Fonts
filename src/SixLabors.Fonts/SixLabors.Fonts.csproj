@@ -32,12 +32,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all"/>
+    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Unicode\Dfa\Grammar.peg" />
-    <PegGrammar Include="Unicode\Dfa\Grammar.peg" />
+    <None Remove="Unicode\StateAutomation\Grammar.peg" />
+    <PegGrammar Include="Unicode\StateAutomation\Grammar.peg" />
   </ItemGroup>
 
   <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />

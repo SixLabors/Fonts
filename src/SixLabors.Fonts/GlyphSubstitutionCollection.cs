@@ -195,7 +195,15 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the element to replace.</param>
         /// <param name="glyphId">The replacement glyph id.</param>
         public void Replace(int index, ushort glyphId)
-            => this.glyphs[index].Data.GlyphId = glyphId;
+        {
+            GlyphShapingData current = this.glyphs[index].Data;
+            current.GlyphId = glyphId;
+            current.LigatureId = 0;
+            current.LigatureComponent = -1;
+            current.MarkAttachment = -1;
+            current.CursiveAttachment = -1;
+            current.IsSubstituted = true;
+        }
 
         /// <summary>
         /// Performs a 1:1 replacement of a glyph id at the given position while removing a series of glyph ids at the given positions within the sequence.
@@ -223,6 +231,7 @@ namespace SixLabors.Fonts
             current.LigatureComponent = -1;
             current.MarkAttachment = -1;
             current.CursiveAttachment = -1;
+            current.IsSubstituted = true;
         }
 
         /// <summary>
@@ -250,6 +259,7 @@ namespace SixLabors.Fonts
             current.LigatureComponent = -1;
             current.MarkAttachment = -1;
             current.CursiveAttachment = -1;
+            current.IsSubstituted = true;
         }
 
         /// <summary>
@@ -267,6 +277,7 @@ namespace SixLabors.Fonts
                 current.LigatureComponent = 0;
                 current.MarkAttachment = -1;
                 current.CursiveAttachment = -1;
+                current.IsSubstituted = true;
                 current.IsDecomposed = true;
 
                 // Add additional glyphs from the rest of the sequence.

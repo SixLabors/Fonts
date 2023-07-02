@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SixLabors.Fonts.Unicode.Dfa
+namespace SixLabors.Fonts.Unicode.StateAutomation
 {
     internal class SymbolTable
     {

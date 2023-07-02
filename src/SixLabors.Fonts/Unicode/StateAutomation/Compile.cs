@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SixLabors.Fonts.Unicode.Dfa
+namespace SixLabors.Fonts.Unicode.StateAutomation
 {
     internal static class Compile
     {
@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Unicode.Dfa
 
             int[][] stateTable = state.Select(x => x.Transitions).ToArray();
             bool[] accepting = state.Select(x => x.Accepting).ToArray();
-            ICollection<string>[] tags = state.Select(x => x.Tags).ToArray();
+            string[][] tags = state.Select(x => x.Tags.ToArray()).ToArray();
             return new StateMachine(stateTable, accepting, tags);
         }
     }

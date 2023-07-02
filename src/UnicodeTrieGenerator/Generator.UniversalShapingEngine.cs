@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Unicode;
+using SixLabors.Fonts.Unicode.StateAutomation;
 using GC = System.Globalization.UnicodeCategory;
 using IPC = SixLabors.Fonts.Unicode.IndicPositionalCategory;
 using ISC = SixLabors.Fonts.Unicode.IndicSyllabicCategory;
@@ -158,7 +159,7 @@ namespace UnicodeTrieGenerator
             { "O", new List<object> { ISC.Other } }
         };
 
-        private static Dictionary<string, Dictionary<string, List<IPC>>> USEPOSITIONS = new()
+        private static readonly Dictionary<string, Dictionary<string, List<IPC>>> Positions = new()
         {
             {
                 "F",
@@ -276,7 +277,7 @@ namespace UnicodeTrieGenerator
             }
         };
 
-        private static Dictionary<int, ISC> UISC_OVERRIDE { get; } = new()
+        private static readonly Dictionary<int, ISC> SyllabicOverrides = new()
         {
             { 0x17dd, ISC.VowelDependent },
             { 0x1ce2, ISC.CantillationMark },
@@ -289,7 +290,7 @@ namespace UnicodeTrieGenerator
             { 0x1ced, ISC.ToneMark }
         };
 
-        public static Dictionary<int, IPC> UIPC_OVERRIDE { get; } = new()
+        private static readonly Dictionary<int, IPC> PositionalOverrides = new()
         {
             { 0x1b6c, IPC.Bottom },
             { 0x953, IPC.NA },
@@ -312,7 +313,7 @@ namespace UnicodeTrieGenerator
 
         private static bool Check(dynamic pattern, dynamic value)
         {
-            // TODO: proper type inference
+            // TODO:This is nasty. Port to use the harfbuzz approach using Function<CodePoint, bool>
             if (pattern is Dictionary<string, object> dictionary && dictionary.ContainsKey("not"))
             {
                 object not = dictionary["not"];
@@ -335,10 +336,6 @@ namespace UnicodeTrieGenerator
                                 return false;
                             }
                         }
-                        else
-                        {
-                            var ass = 0;
-                        }
                     }
 
                     return true;
@@ -357,11 +354,6 @@ namespace UnicodeTrieGenerator
                 }
             }
 
-            if (value == pattern)
-            {
-                var t = 1;
-            }
-
             return value == pattern;
         }
 
@@ -376,7 +368,7 @@ namespace UnicodeTrieGenerator
                 pattern = new Dictionary<string, dynamic> { { "UISC", isc } };
             }
 
-            foreach (string key in pattern.Keys)
+            foreach (string? key in pattern.Keys)
             {
                 if (!Check(pattern[key], GetCodeValue(code, key)))
                 {
@@ -388,17 +380,17 @@ namespace UnicodeTrieGenerator
         }
 
         private static ISC GetUISC(Codepoint code)
-            => UISC_OVERRIDE.ContainsKey(code.Code) ? UISC_OVERRIDE[code.Code] : code.IndicSyllabicCategory;
+            => SyllabicOverrides.ContainsKey(code.Code) ? SyllabicOverrides[code.Code] : code.IndicSyllabicCategory;
 
         private static IPC GetUIPC(Codepoint code)
-            => UIPC_OVERRIDE.ContainsKey(code.Code) ? UIPC_OVERRIDE[code.Code] : code.IndicPositionalCategory;
+            => PositionalOverrides.ContainsKey(code.Code) ? PositionalOverrides[code.Code] : code.IndicPositionalCategory;
 
         private static string GetPositionalCategory(Codepoint code, string uSE)
         {
             IPC uIPC = GetUIPC(code);
-            if (USEPOSITIONS.ContainsKey(uSE))
+            if (Positions.ContainsKey(uSE))
             {
-                Dictionary<string, List<IPC>> pos = USEPOSITIONS[uSE];
+                Dictionary<string, List<IPC>> pos = Positions[uSE];
                 foreach (string key in pos.Keys)
                 {
                     if (pos[key].Contains(uIPC))
@@ -411,7 +403,7 @@ namespace UnicodeTrieGenerator
             return uSE;
         }
 
-        private static object? GetCodeValue(Codepoint code, string key)
+        private static object? GetCodeValue(Codepoint code, string? key)
             => key switch
             {
                 "UISC" => GetUISC(code),
@@ -545,6 +537,10 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("UniversalShaping", trie);
+
+            StateMachine machine = GetStateMachine("use", symbols);
+
+            GenerateDataClass("UniversalShaping", symbols, decompositions, machine);
         }
 
         private static List<int> Decompose(int code, List<Codepoint> codepoints)
@@ -591,6 +587,156 @@ namespace UnicodeTrieGenerator
                        ISC.VowelDependent
                    }
                    .Contains(codepoint.IndicSyllabicCategory));
+
+        /// <summary>
+        /// Generates the supplementary data for the shaper.
+        /// </summary>
+        /// <param name="name">The name of the class.</param>
+        /// <param name="symbols">The symbols data.</param>
+        /// <param name="decompositions">The decompositions data.</param>
+        private static void GenerateDataClass(
+            string name,
+            Dictionary<string, int> symbols,
+            Dictionary<int, List<int>> decompositions,
+            StateMachine machine)
+        {
+            using FileStream fileStream = GetStreamWriter($"{name}Data.Generated.cs");
+            using StreamWriter writer = new(fileStream);
+
+            writer.WriteLine("// Copyright (c) Six Labors.");
+            writer.WriteLine("// Licensed under the Apache License, Version 2.0.");
+            writer.WriteLine();
+            writer.WriteLine("// <auto-generated />");
+            writer.WriteLine("using System;");
+            writer.WriteLine("using System.Collections.Generic;");
+            writer.WriteLine();
+            writer.WriteLine("namespace SixLabors.Fonts.Unicode.Resources");
+            writer.WriteLine("{");
+            writer.WriteLine($"    internal static class {name}Data");
+            writer.WriteLine("    {");
+
+            // Write the categories.
+            writer.WriteLine("        public static string[] Categories => new string[]");
+            writer.WriteLine("        {");
+
+            int counter = 0;
+            int max = symbols.Count - 1;
+            foreach (KeyValuePair<string, int> item in symbols)
+            {
+                writer.Write($"            \"{item.Key}\"");
+                if (counter != max)
+                {
+                    writer.Write(",");
+                }
+
+                counter++;
+                writer.Write(Environment.NewLine);
+            }
+
+            writer.WriteLine("        };");
+
+            // Write the decompositions
+            writer.Write(Environment.NewLine);
+            writer.WriteLine("        public static Dictionary<int, int[]> Decompositions => new()");
+            writer.WriteLine("        {");
+
+            counter = 0;
+            max = decompositions.Count - 1;
+            foreach (KeyValuePair<int, List<int>> item in decompositions)
+            {
+                writer.Write($"            {{ {item.Key}, new int[] {{ {string.Join(',', item.Value.Select(x => x))} }} }}");
+                if (counter != max)
+                {
+                    writer.Write(",");
+                }
+
+                counter++;
+                writer.Write(Environment.NewLine);
+            }
+
+            writer.WriteLine("        };");
+
+            // Writes the state machine state table.
+            writer.Write(Environment.NewLine);
+            writer.WriteLine($"        public static int[][] StateTable => new int[{machine.StateTable.Length}][]");
+            writer.WriteLine("        {");
+
+            counter = 0;
+            max = machine.StateTable.Length - 1;
+            foreach (int[] item in machine.StateTable)
+            {
+                writer.Write($"            new int[] {{ {string.Join(',', item.Select(x => x))} }}");
+                if (counter != max)
+                {
+                    writer.Write(",");
+                }
+
+                counter++;
+                writer.Write(Environment.NewLine);
+            }
+
+            writer.WriteLine("        };");
+
+            // Writes the state machine accepting states.
+            writer.Write(Environment.NewLine);
+            writer.WriteLine("        public static bool[] AcceptingStates => new bool[]");
+            writer.WriteLine("        {");
+
+            counter = 0;
+            max = machine.Accepting.Length - 1;
+            foreach (bool item in machine.Accepting)
+            {
+                writer.Write($"            {item}".ToLowerInvariant());
+                if (counter != max)
+                {
+                    writer.Write(",");
+                }
+
+                counter++;
+                writer.Write(Environment.NewLine);
+            }
+
+            writer.WriteLine("        };");
+
+            // Writes the state machine tags.
+            writer.Write(Environment.NewLine);
+            writer.WriteLine($"        public static string[][] Tags => new string[{machine.Tags.Length}][]");
+            writer.WriteLine("        {");
+
+            counter = 0;
+            max = machine.Tags.Length - 1;
+            foreach (ICollection<string> item in machine.Tags)
+            {
+                if (item.Count == 0)
+                {
+                    writer.Write($"            Array.Empty<string>()");
+                }
+                else
+                {
+                    writer.Write($"            new string[] {{ {string.Join(',', item.Select(x => $"\"{x}\""))} }}");
+                }
+
+                if (counter != max)
+                {
+                    writer.Write(",");
+                }
+
+                counter++;
+                writer.Write(Environment.NewLine);
+            }
+
+            writer.WriteLine("        };");
+
+            writer.WriteLine("    }");
+            writer.WriteLine("}");
+        }
+
+        private static StateMachine GetStateMachine(string name, Dictionary<string, int> symbols)
+        {
+            using StreamReader sr = GetStreamReader($"{name}.machine");
+            string machine = sr.ReadToEnd();
+            return Compile.Build(machine, symbols);
+        }
 
         private class Codepoint
         {

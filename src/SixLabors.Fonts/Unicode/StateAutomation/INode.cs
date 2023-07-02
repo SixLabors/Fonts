@@ -5,7 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace SixLabors.Fonts.Unicode.Dfa
+namespace SixLabors.Fonts.Unicode.StateAutomation
 {
     /// <summary>
     /// Defines an AST node.

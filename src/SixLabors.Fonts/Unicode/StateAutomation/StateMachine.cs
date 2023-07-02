@@ -5,16 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SixLabors.Fonts.Unicode.Dfa
+namespace SixLabors.Fonts.Unicode.StateAutomation
 {
     internal class StateMachine
     {
         private const int InitialState = 1;
         private const int FailState = 0;
-
-        private readonly int[][] stateTable;
-        private readonly bool[] accepting;
-        private readonly ICollection<string>[] tags;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StateMachine"/> class.
@@ -22,12 +18,27 @@ namespace SixLabors.Fonts.Unicode.Dfa
         /// <param name="stateTable">The state table.</param>
         /// <param name="accepting">The accepting states.</param>
         /// <param name="tags">The tags.</param>
-        public StateMachine(int[][] stateTable, bool[] accepting, ICollection<string>[] tags)
+        public StateMachine(int[][] stateTable, bool[] accepting, string[][] tags)
         {
-            this.stateTable = stateTable;
-            this.accepting = accepting;
-            this.tags = tags;
+            this.StateTable = stateTable;
+            this.Accepting = accepting;
+            this.Tags = tags;
         }
+
+        /// <summary>
+        /// Gets the state table.
+        /// </summary>
+        public int[][] StateTable { get; }
+
+        /// <summary>
+        /// Gets the accepting states.
+        /// </summary>
+        public bool[] Accepting { get; }
+
+        /// <summary>
+        /// Gets the tags.
+        /// </summary>
+        public string[][] Tags { get; }
 
         /// <summary>
         /// Returns an iterable object that yields pattern matches over the input sequence.
@@ -46,7 +57,7 @@ namespace SixLabors.Fonts.Unicode.Dfa
                 int c = input[i];
 
                 lastState = state;
-                state = this.stateTable[state][c];
+                state = this.StateTable[state][c];
 
                 if (state == FailState)
                 {
@@ -57,12 +68,12 @@ namespace SixLabors.Fonts.Unicode.Dfa
                         {
                             StartIndex = startRun.Value,
                             EndIndex = lastAccepting.Value,
-                            Tags = this.tags[lastState.Value]
+                            Tags = this.Tags[lastState.Value]
                         };
                     }
 
                     // reset the state as if we started over from the initial state
-                    state = this.stateTable[InitialState][c];
+                    state = this.StateTable[InitialState][c];
                     startRun = null;
                 }
 
@@ -73,7 +84,7 @@ namespace SixLabors.Fonts.Unicode.Dfa
                 }
 
                 // if accepting, mark the potential match end
-                if (this.accepting[state])
+                if (this.Accepting[state])
                 {
                     lastAccepting = i;
                 }
@@ -92,7 +103,7 @@ namespace SixLabors.Fonts.Unicode.Dfa
                 {
                     StartIndex = startRun.Value,
                     EndIndex = lastAccepting.Value,
-                    Tags = this.tags[state]
+                    Tags = this.Tags[state]
                 };
             }
         }
@@ -125,7 +136,7 @@ namespace SixLabors.Fonts.Unicode.Dfa
 
         public int EndIndex { get; set; }
 
-        public ICollection<string> Tags { get; set; } = Array.Empty<string>();
+        public IList<string> Tags { get; set; } = Array.Empty<string>();
 
         public override bool Equals(object? obj) => this.Equals(obj as StateMatch);
 

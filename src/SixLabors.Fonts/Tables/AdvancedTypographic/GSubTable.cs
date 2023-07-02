@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
@@ -135,17 +134,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 }
 
                 // Assign Substitution features to each glyph.
+                // Shapers can adjust the count during initialization and feature processing so we must capture
+                // the current count to allow resetting indexes and processing counts.
+                int collectionCount = collection.Count;
                 shaper.AssignFeatures(collection, index, count);
-
-                // Shapers can adjust the count.
-                count = Math.Min(count, collection.Count - index);
+                int delta = collection.Count - collectionCount;
+                i += delta;
+                count += delta;
 
                 IEnumerable<ShapingStage> stages = shaper.GetShapingStages();
-
-                int currentCount = collection.Count;
                 SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
                 foreach (ShapingStage stage in stages)
                 {
+                    int currentCount = collection.Count;
+
                     stage.PreProcessFeature(collection, index, count);
 
                     Tag featureTag = stage.FeatureTag;
@@ -171,15 +173,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                                     continue;
                                 }
 
+                                collectionCount = collection.Count;
                                 featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
                                 iterator.Next();
 
                                 // Account for substitutions changing the length of the collection.
-                                if (collection.Count != currentCount)
-                                {
-                                    count -= currentCount - collection.Count;
-                                    currentCount = collection.Count;
-                                }
+                                delta = collection.Count - collectionCount;
+                                count += delta;
+                                i += delta;
+                                currentCount = collection.Count;
                             }
                         }
                     }

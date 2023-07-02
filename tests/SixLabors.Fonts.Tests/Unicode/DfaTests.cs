@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SixLabors.Fonts.Unicode.Dfa;
+using SixLabors.Fonts.Unicode.StateAutomation;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Unicode
@@ -28,7 +28,7 @@ namespace SixLabors.Fonts.Tests.Unicode
         }
 
         [Fact]
-        public void CanCompileWithConcatination()
+        public void CanCompileWithConcatenation()
         {
             StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = a b;");
             StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 1, 0, 1, 0 }).ToArray();

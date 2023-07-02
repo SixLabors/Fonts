@@ -1,4 +1,4 @@
-@using SixLabors.Fonts.Unicode.Dfa
+@using SixLabors.Fonts.Unicode.StateAutomation
 @namespace SixLabors.Fonts
 @classname GrammarParser
 @accessibility internal
