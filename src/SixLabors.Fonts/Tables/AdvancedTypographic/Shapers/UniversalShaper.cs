@@ -274,7 +274,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         }
                     }
                     else if ((info?.Category == "VPre" || info?.Category == "VMPre")
-                        && current.LigatureComponent == 0 // Only move the first component of a MultipleSubst
+                        && current.LigatureComponent <= 0 // Only move the first component of a MultipleSubst
                         && j < i)
                     {
                         substitutionCollection.MoveGlyph(i, j);

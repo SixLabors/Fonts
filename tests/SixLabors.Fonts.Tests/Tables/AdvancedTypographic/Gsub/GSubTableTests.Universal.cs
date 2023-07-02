@@ -27,6 +27,15 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         [InlineData("\u1b15\u1b44\u1b16\u1b02", new int[] { 25, 132, 6 })]
         [InlineData("\u1b18\u1b3b", new int[] { 28, 62, 57 })]
         [InlineData("\u1b19\u1b40", new int[] { 66, 29, 57 })]
+        [InlineData("\u1b1a\u1b3f", new int[] { 67, 30 })]
+        [InlineData("\u1b14\u1b36", new int[] { 24, 58 })]
+        [InlineData("\u1b13\u1b44\u1b13\u1b01", new int[] { 23, 129, 5 })]
+        [InlineData("\u1b13\u1b44\u1b1b\u1b01", new int[] { 23, 137, 5 })]
+        [InlineData("\u1b13\u1b44\u1b26\u1b03", new int[] { 23, 148, 7 })]
+        [InlineData("\u1b13\u1b44\u1b13\u1b38", new int[] { 23, 129, 60 })]
+        [InlineData("\u1b13\u1b44\u1b13\u1b3c", new int[] { 23, 129, 70, 170 })]
+        [InlineData("\u1b13\u1b44\u1b13\u1b3d", new int[] { 23, 129, 70, 170, 57 })]
+        [InlineData("\u1b13\u1b3e", new int[] { 66, 23 })]
         public void CanShapeBalineseText(string input, int[] expectedGlyphIndices)
         {
             ColorGlyphRenderer renderer = new();
