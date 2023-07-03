@@ -200,7 +200,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             }
 
             int max = index + count;
-            for (int start = index, end = NextSyllable(substitutionCollection, index, max); start < max; start = end, end = NextSyllable(substitutionCollection, start, max))
+            int start = index;
+            int end = NextSyllable(substitutionCollection, index, max);
+            while (start < max)
             {
                 GlyphShapingData data = substitutionCollection.GetGlyphShapingData(start);
                 USEInfo? info = data.USEInfo;
@@ -209,7 +211,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Only a few syllable types need reordering.
                 if (type is not "virama_terminated_cluster" and not "standard_cluster" and not "broken_cluster")
                 {
-                    continue;
+                    goto Increment;
                 }
 
                 FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
@@ -286,6 +288,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         substitutionCollection.MoveGlyph(i, j);
                     }
                 }
+
+                Increment:
+                start = end;
+                end = NextSyllable(substitutionCollection, start, max);
             }
         }
 
