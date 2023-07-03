@@ -398,5 +398,18 @@ namespace SixLabors.Fonts.Tests.Unicode
                 Assert.Equal(type, vertical);
             }
         }
+
+        [Theory]
+        [InlineData(0x10A0E, IndicSyllabicCategory.Bindu, IndicPositionalCategory.Bottom)]
+        [InlineData(0xA983, IndicSyllabicCategory.Visarga, IndicPositionalCategory.Right)]
+        [InlineData(0x111C1, IndicSyllabicCategory.Avagraha, IndicPositionalCategory.NA)]
+        [InlineData(0x1C37, IndicSyllabicCategory.Nukta, IndicPositionalCategory.Bottom)]
+        [InlineData(0x0C48, IndicSyllabicCategory.VowelDependent, IndicPositionalCategory.TopAndBottom)]
+        public static void CodePointIsIndicCategory(uint value, IndicSyllabicCategory syllable, IndicPositionalCategory position)
+        {
+            CodePoint codePoint = new(value);
+            Assert.Equal(syllable, CodePoint.GetIndicSyllabicCategory(codePoint));
+            Assert.Equal(position, CodePoint.GetIndicPositionalCategory(codePoint));
+        }
     }
 }

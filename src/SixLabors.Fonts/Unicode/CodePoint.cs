@@ -592,6 +592,22 @@ namespace SixLabors.Fonts.Unicode
             => UnicodeData.GetScriptClass(codePoint.value);
 
         /// <summary>
+        /// Gets the <see cref="IndicSyllabicCategory"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="IndicSyllabicCategory"/>.</returns>
+        internal static IndicSyllabicCategory GetIndicSyllabicCategory(CodePoint codePoint)
+            => UnicodeData.GetIndicSyllabicCategory(codePoint.value);
+
+        /// <summary>
+        /// Gets the <see cref="IndicPositionalCategory"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="IndicPositionalCategory"/>.</returns>
+        internal static IndicPositionalCategory GetIndicPositionalCategory(CodePoint codePoint)
+            => UnicodeData.GetIndicPositionalCategory(codePoint.value);
+
+        /// <summary>
         /// Gets the <see cref="UnicodeCategory"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
