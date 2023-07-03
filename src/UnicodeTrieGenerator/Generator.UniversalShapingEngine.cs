@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using SixLabors.Fonts.Unicode;
 using UnicodeTrieGenerator.StateAutomation;
 using GC = System.Globalization.UnicodeCategory;
@@ -499,7 +500,6 @@ namespace UnicodeTrieGenerator
 
                 codepoint.Category = (GC)unicodeGeneralCategory.Get((uint)codepoint.Code);
 
-                // TODO: Override these properties using MS shaping.
                 codepoint.IndicSyllabicCategory = (ISC)indicSyllabicCategoryTrie.Get((uint)codepoint.Code);
                 codepoint.IndicPositionalCategory = (IPC)indicPositionalCategoryTrie.Get((uint)codepoint.Code);
 
@@ -510,6 +510,10 @@ namespace UnicodeTrieGenerator
                 codePoints.Add(codepoint);
             }
 
+            // TODO: Override these properties using MS shaping. It's likely we just need to implement the harfbuzz
+            // category matching using Func<string, bool>
+            // OverrideIndicSyllabicCategory(codePoints);
+            // OverrideIndicPositionalCategory(codePoints);
             UnicodeTrieBuilder builder = new();
             Dictionary<string, int> symbols = new();
             int numSymbols = 0;
@@ -541,6 +545,82 @@ namespace UnicodeTrieGenerator
             StateMachine machine = GetStateMachine("use", symbols);
 
             GenerateDataClass("UniversalShaping", symbols, decompositions, machine);
+        }
+
+        private static void OverrideIndicSyllabicCategory(List<Codepoint> codePoints)
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+
+            using StreamReader sr = GetStreamReader("IndicSyllabicCategory-Additional.txt");
+            string? line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                Match match = regex.Match(line);
+
+                if (match.Success)
+                {
+                    string start = match.Groups[1].Value;
+                    string end = match.Groups[2].Value;
+                    string point = match.Groups[3].Value;
+
+                    if (string.IsNullOrEmpty(end))
+                    {
+                        end = start;
+                    }
+
+                    if (!IndicSyllabicCategoryMap.TryGetValue(point, out ISC category))
+                    {
+                        continue;
+                    }
+
+                    int min = ParseHexInt(start);
+                    int max = ParseHexInt(end);
+
+                    for (int i = min; i <= max; i++)
+                    {
+                        Codepoint codePoint = codePoints.First(x => x.Code == i);
+                        codePoint.IndicSyllabicCategory = category;
+                    }
+                }
+            }
+        }
+
+        private static void OverrideIndicPositionalCategory(List<Codepoint> codePoints)
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+
+            using StreamReader sr = GetStreamReader("IndicPositionalCategory-Additional.txt");
+            string? line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                Match match = regex.Match(line);
+
+                if (match.Success)
+                {
+                    string start = match.Groups[1].Value;
+                    string end = match.Groups[2].Value;
+                    string point = match.Groups[3].Value;
+
+                    if (string.IsNullOrEmpty(end))
+                    {
+                        end = start;
+                    }
+
+                    if (!IndicPositionalCategoryMap.TryGetValue(point, out IPC category))
+                    {
+                        continue;
+                    }
+
+                    int min = ParseHexInt(start);
+                    int max = ParseHexInt(end);
+
+                    for (int i = min; i <= max; i++)
+                    {
+                        Codepoint codePoint = codePoints.First(x => x.Code == i);
+                        codePoint.IndicPositionalCategory = category;
+                    }
+                }
+            }
         }
 
         private static List<int> Decompose(int code, List<Codepoint> codepoints)
