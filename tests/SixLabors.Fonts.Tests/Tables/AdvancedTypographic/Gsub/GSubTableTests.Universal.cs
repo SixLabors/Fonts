@@ -7,9 +7,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
 {
     /// <content>
     /// Tests adapted from <see href="https://github.com/foliojs/fontkit/blob/417af0c79c5664271a07a783574ec7fac7ebad0c/test/shaping.js"/>.
-    /// Text hase been converted to codepoint representation via https://www.corvelsoftware.co.uk/crowbar/
-    /// as Visual Studio would not display the glyphs.
-    /// All output has been visually checked.
+    /// Text has been converted to codepoint representation via https://www.corvelsoftware.co.uk/crowbar/ as Visual Studio won't
+    /// display the glyphs without additional language packs. All output has been visually checked.
     /// </content>
     public partial class GSubTableTests
     {
@@ -36,6 +35,23 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         [InlineData("\u1b13\u1b44\u1b13\u1b3c", new int[] { 23, 129, 70, 170 })]
         [InlineData("\u1b13\u1b44\u1b13\u1b3d", new int[] { 23, 129, 70, 170, 57 })]
         [InlineData("\u1b13\u1b3e", new int[] { 66, 23 })]
+        [InlineData("\u1b13\u1b36\u1b3e", new int[] { 23, 58, 66, 128 })]
+        [InlineData("\u1b13\u1b38\u1b3e", new int[] { 23, 60, 66, 128 })]
+        [InlineData("\u1b13\u1b44\u1b15\u1b3e", new int[] { 66, 23, 131 })]
+        [InlineData("\u1b13\u1b40", new int[] { 66, 23, 57 })]
+        [InlineData("\u1b13\u1b3e\u1b36", new int[] { 66, 23, 58 })]
+        [InlineData("\u1b13\u1b3e\u1b38", new int[] { 66, 23, 60 })]
+        [InlineData("\u1b13\u1b44\u1b27\u1b3e", new int[] { 66, 23, 149 })]
+        [InlineData("\u1b13\u1b44\u1b28\u1b3f", new int[] { 67, 23, 150 })]
+        [InlineData("\u1b13\u1b44\u1b31\u1b3e", new int[] { 66, 23, 159 })]
+        [InlineData("\u1b13\u1b44\u1b32\u1b3e", new int[] { 66, 23, 60, 149 })]
+        [InlineData("\u1b13\u1b44\u1b4a\u1b3e", new int[] { 66, 23, 60, 165 })]
+        [InlineData("\u1b1b\u1b44\u1b13", new[] { 181, 129 })]
+        [InlineData("\u1b1b\u1b44\u1b13\u1b3e", new int[] { 66, 181, 129 })]
+        [InlineData("\u1b1b\u1b44\u1b13\u1b38\u1b00", new int[] { 181, 129, 60, 4 })]
+        [InlineData("\u1b13\u1b44\u1b1b\u1b39", new int[] { 23, 137, 61 })]
+        [InlineData("\u1b13\u1b44\u1b31\u1b3a", new int[] { 23, 159, 62 })]
+        [InlineData("\u1b13\u1b44\u1b45\u1b38", new int[] { 23, 162, 60 })]
         public void CanShapeBalineseText(string input, int[] expectedGlyphIndices)
         {
             ColorGlyphRenderer renderer = new();

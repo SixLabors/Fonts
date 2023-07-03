@@ -37,6 +37,10 @@ namespace SixLabors.Fonts
             this.MarkAttachment = data.MarkAttachment;
             this.CursiveAttachment = data.CursiveAttachment;
             this.IsDecomposed = data.IsDecomposed;
+            if (data.USEInfo != null)
+            {
+                this.USEInfo = new(data.USEInfo.Category, data.USEInfo.SyllableType, data.USEInfo.Syllable);
+            }
 
             if (!clearFeatures)
             {

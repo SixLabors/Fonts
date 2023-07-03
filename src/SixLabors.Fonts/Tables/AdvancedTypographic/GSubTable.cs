@@ -146,9 +146,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
                 foreach (ShapingStage stage in stages)
                 {
-                    int currentCount = collection.Count;
-
+                    collectionCount = collection.Count;
                     stage.PreProcessFeature(collection, index, count);
+
+                    // Account for substitutions changing the length of the collection.
+                    delta = collection.Count - collectionCount;
+                    count += delta;
+                    i += delta;
 
                     Tag featureTag = stage.FeatureTag;
                     if (this.TryGetFeatureLookups(in featureTag, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
@@ -181,12 +185,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                                 delta = collection.Count - collectionCount;
                                 count += delta;
                                 i += delta;
-                                currentCount = collection.Count;
                             }
                         }
                     }
 
+                    collectionCount = collection.Count;
                     stage.PostProcessFeature(collection, index, count);
+
+                    // Account for substitutions changing the length of the collection.
+                    delta = collection.Count - collectionCount;
+                    count += delta;
+                    i += delta;
                 }
             }
         }

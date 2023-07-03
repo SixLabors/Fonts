@@ -45,18 +45,19 @@ namespace SixLabors.Fonts.Unicode.StateAutomation
         /// </summary>
         /// <param name="input">The input sequence.</param>
         /// <returns>The <see cref="IEnumerable{StateMatch}"/>.</returns>
-        public IEnumerable<StateMatch> Match(int[] input)
+        public IEnumerable<StateMatch> Match(ReadOnlySpan<int> input)
         {
             int state = InitialState;
             int? startRun = null;
             int? lastAccepting = null;
-            int? lastState = null;
+
+            List<StateMatch> matches = new(input.Length);
 
             for (int i = 0; i < input.Length; i++)
             {
                 int c = input[i];
 
-                lastState = state;
+                int lastState = state;
                 state = this.StateTable[state][c];
 
                 if (state == FailState)
@@ -64,12 +65,12 @@ namespace SixLabors.Fonts.Unicode.StateAutomation
                     // yield the last match if any.
                     if (startRun != null && lastAccepting != null && lastAccepting >= startRun)
                     {
-                        yield return new StateMatch()
+                        matches.Add(new StateMatch()
                         {
                             StartIndex = startRun.Value,
                             EndIndex = lastAccepting.Value,
-                            Tags = this.Tags[lastState.Value]
-                        };
+                            Tags = this.Tags[lastState]
+                        });
                     }
 
                     // reset the state as if we started over from the initial state
@@ -99,13 +100,15 @@ namespace SixLabors.Fonts.Unicode.StateAutomation
             // yield the last match if any.
             if (startRun != null && lastAccepting != null && lastAccepting >= startRun)
             {
-                yield return new StateMatch()
+                matches.Add(new StateMatch()
                 {
                     StartIndex = startRun.Value,
                     EndIndex = lastAccepting.Value,
                     Tags = this.Tags[state]
-                };
+                });
             }
+
+            return matches;
         }
 
         /// <summary>

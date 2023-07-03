@@ -114,7 +114,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
         {
-            int[] values = new int[count];
+            Span<int> values = count <= 64 ? stackalloc int[count] : new int[count];
             for (int i = index; i < index + count; i++)
             {
                 CodePoint codePoint = collection.GetGlyphShapingData(i).CodePoint;
@@ -199,9 +199,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return;
             }
 
-            int start = index;
-            int end = index + count;
-            while (start < end)
+            int max = index + count;
+            for (int start = index, end = NextSyllable(substitutionCollection, index, max); start < max; start = end, end = NextSyllable(substitutionCollection, start, max))
             {
                 GlyphShapingData data = substitutionCollection.GetGlyphShapingData(start);
                 USEInfo? info = data.USEInfo;
@@ -210,28 +209,32 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Only a few syllable types need reordering.
                 if (type is not "virama_terminated_cluster" and not "standard_cluster" and not "broken_cluster")
                 {
-                    goto Increment;
+                    continue;
                 }
 
                 FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
                 if (type == "broken_cluster" && fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
                 {
                     // Insert after possible Repha.
-                    for (int i = start; i < end; i++)
+                    int i = start;
+                    GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
+                    for (i = start; i < end; i++)
                     {
-                        GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
                         if (current.USEInfo?.Category != "R")
                         {
                             break;
                         }
 
-                        Span<ushort> glyphs = stackalloc ushort[2];
-                        glyphs[0] = current.GlyphId;
-                        glyphs[1] = id;
-
-                        substitutionCollection.Replace(i, glyphs);
-                        end++;
+                        current = substitutionCollection.GetGlyphShapingData(i);
                     }
+
+                    Span<ushort> glyphs = stackalloc ushort[2];
+                    glyphs[0] = current.GlyphId;
+                    glyphs[1] = id;
+
+                    substitutionCollection.Replace(i, glyphs);
+                    end++;
+                    max++;
                 }
 
                 // Move things forward
@@ -258,8 +261,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 }
 
                 // Move things back
-                int j = start;
-                for (int i = start; i < end; i++)
+                for (int i = start, j = end; i < end; i++)
                 {
                     GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
                     info = current.USEInfo;
@@ -272,6 +274,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         {
                             j = i + 1;
                         }
+                        else
+                        {
+                            j = i;
+                        }
                     }
                     else if ((info?.Category == "VPre" || info?.Category == "VMPre")
                         && current.LigatureComponent <= 0 // Only move the first component of a MultipleSubst
@@ -280,10 +286,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         substitutionCollection.MoveGlyph(i, j);
                     }
                 }
-
-                Increment:
-                start = end;
-                end = NextSyllable(substitutionCollection, start, end - (start - index));
             }
         }
 
@@ -307,7 +309,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         }
 
         private static bool IsHalant(GlyphShapingData data)
-            => data.USEInfo?.Category == "H" && data.LigatureId == 0;
+            => (data.USEInfo?.Category is "H" or "HVM" or "IS") && data.LigatureId == 0;
 
         private static bool IsBase(USEInfo? info)
             => info?.Category is "B" or "GB";
