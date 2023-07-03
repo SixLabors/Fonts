@@ -4,8 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SixLabors.Fonts;
 
-namespace SixLabors.Fonts.Unicode.StateAutomation
+namespace UnicodeTrieGenerator.StateAutomation
 {
     internal class StateMachine
     {

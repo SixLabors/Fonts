@@ -1,23 +1,24 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Collections.Generic;
-using System.Linq;
+#nullable enable
 
-namespace SixLabors.Fonts.Unicode.StateAutomation
+using System.Collections.Generic;
+
+namespace UnicodeTrieGenerator.StateAutomation
 {
     /// <summary>
     /// This is an implementation of the direct regular expression to DFA algorithm described
     /// in section 3.9.5 of "Compilers: Principles, Techniques, and Tools" by Aho,
-    /// Lam, Sethi, and Ullman.http://dragonbook.stanford.edu
+    /// Lam, Sethi, and Ullman. <see href="http://dragonbook.stanford.edu"/>
     /// There is a PDF of the book here:
     /// <see href="http://web.archive.org/web/20131126083344/http://www.informatik.uni-bremen.de/agbkb/lehre/ccfl/Material/ALSUdragonbook.pdf"/>
     /// </summary>
-    internal static class Dfa
+    internal static class DeterministicFiniteAutomata
     {
         internal static readonly EndMarker EndMarker = new();
 
-        public static IEnumerable<State> BuildDfa(ILogicalNode root, int numSymbols)
+        public static IEnumerable<State> Build(ILogicalNode root, int numSymbols)
         {
             root = new Concatenation(root, EndMarker);
             root.CalcFollowPos();
@@ -92,34 +93,5 @@ namespace SixLabors.Fonts.Unicode.StateAutomation
 
             return dstates;
         }
-    }
-
-    internal class State
-    {
-        public State(ICollection<INode> positions, int length)
-        {
-            this.Positions = positions;
-            this.Transitions = new int[length];
-            this.Accepting = positions.Any(x => x == Dfa.EndMarker);
-            this.Marked = false;
-            this.Tags = new HashSet<string>();
-            foreach (INode pos in positions)
-            {
-                if (pos is Tag tag)
-                {
-                    this.Tags.Add(tag.Name);
-                }
-            }
-        }
-
-        public ICollection<INode> Positions { get; set; }
-
-        public int[] Transitions { get; }
-
-        public bool Marked { get; set; }
-
-        public bool Accepting { get; }
-
-        public ICollection<string> Tags { get; set; }
     }
 }

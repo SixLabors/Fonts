@@ -18,7 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all"/>
+    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all" />    
+    <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\DeterministicFiniteAutomata.cs" Link="Unicode\StateAutomation\DeterministicFiniteAutomata.cs" />
+    <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\Compile.cs" Link="Unicode\StateAutomation\Compile.cs" />
+    <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\State.cs" Link="Unicode\StateAutomation\State.cs" />
+    <PegGrammar Include="..\..\src\UnicodeTrieGenerator\StateAutomation\Grammar.peg" Link="Unicode\StateAutomation\Grammar.peg" />
   </ItemGroup>
 
 </Project>

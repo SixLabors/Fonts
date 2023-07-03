@@ -1,5 +1,5 @@
-@using SixLabors.Fonts.Unicode.StateAutomation
-@namespace SixLabors.Fonts
+@using UnicodeTrieGenerator.StateAutomation
+@namespace UnicodeTrieGenerator.StateAutomation
 @classname GrammarParser
 @accessibility internal
 

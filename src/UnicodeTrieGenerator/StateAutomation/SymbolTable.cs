@@ -1,10 +1,12 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 
-namespace SixLabors.Fonts.Unicode.StateAutomation
+namespace UnicodeTrieGenerator.StateAutomation
 {
     internal class SymbolTable
     {

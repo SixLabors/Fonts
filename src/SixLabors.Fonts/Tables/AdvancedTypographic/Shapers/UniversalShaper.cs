@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.Unicode.Resources;
-using SixLabors.Fonts.Unicode.StateAutomation;
+using UnicodeTrieGenerator.StateAutomation;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 {

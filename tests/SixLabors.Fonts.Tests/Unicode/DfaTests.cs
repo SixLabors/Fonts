@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SixLabors.Fonts.Unicode.StateAutomation;
+using UnicodeTrieGenerator.StateAutomation;
 using Xunit;
 
 namespace SixLabors.Fonts.Tests.Unicode

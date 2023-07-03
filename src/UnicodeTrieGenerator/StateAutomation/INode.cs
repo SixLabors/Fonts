@@ -1,11 +1,13 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace SixLabors.Fonts.Unicode.StateAutomation
+namespace UnicodeTrieGenerator.StateAutomation
 {
     /// <summary>
     /// Defines an AST node.
@@ -373,7 +375,7 @@ namespace SixLabors.Fonts.Unicode.StateAutomation
         }
 
         /// <summary>
-        /// Concatinates two nodes.
+        /// Concatenates two nodes.
         /// </summary>
         /// <param name="a">The first node.</param>
         /// <param name="b">The second node.</param>

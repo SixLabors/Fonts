@@ -1,14 +1,15 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+#nullable enable
+
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SixLabors.Fonts.Unicode.StateAutomation
+namespace UnicodeTrieGenerator.StateAutomation
 {
     internal static class Compile
     {
-        // TODO: Should external symbols be params?
         public static StateMachine Build(string value, IDictionary<string, int>? externalSymbols = null)
         {
             SymbolTable symbolTable = Parse(value, externalSymbols);
@@ -24,7 +25,7 @@ namespace SixLabors.Fonts.Unicode.StateAutomation
         private static StateMachine Build(SymbolTable symbolTable)
         {
             ILogicalNode main = symbolTable.Main();
-            IEnumerable<State> state = Dfa.BuildDfa(main, symbolTable.Size);
+            IEnumerable<State> state = DeterministicFiniteAutomata.Build(main, symbolTable.Size);
 
             int[][] stateTable = state.Select(x => x.Transitions).ToArray();
             bool[] accepting = state.Select(x => x.Accepting).ToArray();

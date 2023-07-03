@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using SixLabors.Fonts.Unicode;
-using SixLabors.Fonts.Unicode.StateAutomation;
+using UnicodeTrieGenerator.StateAutomation;
 using GC = System.Globalization.UnicodeCategory;
 using IPC = SixLabors.Fonts.Unicode.IndicPositionalCategory;
 using ISC = SixLabors.Fonts.Unicode.IndicSyllabicCategory;
