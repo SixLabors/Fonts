@@ -71,14 +71,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         {
         }
 
-        public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
+        /// <inheritdoc/>
+        protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
         {
             this.AddFeature(collection, index, count, LjmoTag, false);
             this.AddFeature(collection, index, count, VjmoTag, false);
             this.AddFeature(collection, index, count, TjmoTag, false);
+        }
 
-            base.AssignFeatures(collection, index, count);
-
+        /// <inheritdoc/>
+        protected override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
+        {
             for (int i = index; i < count; i++)
             {
                 // Uniscribe does not apply 'calt' for Hangul, and certain fonts

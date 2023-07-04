@@ -133,11 +133,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     }
                 }
 
-                // Assign Substitution features to each glyph.
+                // Plan substitution features for each glyph.
                 // Shapers can adjust the count during initialization and feature processing so we must capture
                 // the current count to allow resetting indexes and processing counts.
                 int collectionCount = collection.Count;
-                shaper.AssignFeatures(collection, index, count);
+                shaper.Plan(collection, index, count);
                 int delta = collection.Count - collectionCount;
                 i += delta;
                 count += delta;

@@ -148,8 +148,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     ZeroMarkAdvances(fontMetrics, collection, index, count);
                 }
 
-                // Assign Substitution features to each glyph.
-                shaper.AssignFeatures(collection, index, count);
+                // Plan positioning features for each glyph.
+                shaper.Plan(collection, index, count);
                 IEnumerable<ShapingStage> shapingStages = shaper.GetShapingStages();
                 SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
                 foreach (ShapingStage stage in shapingStages)

@@ -77,8 +77,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.featureTags = textOptions.FeatureTags;
         }
 
-        /// <inheritdoc />
-        public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
+        protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
+        {
+        }
+
+        protected override void PlanPreprocessingFeatures(IGlyphShapingCollection collection, int index, int count)
         {
             // Add variation Features.
             this.AddFeature(collection, index, count, RvnrTag);
@@ -103,6 +106,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 }
             }
 
+            // TODO: Fractional feature should be assigned here but disabled.
+            // They should then be enabled in AssignFeatures.
+        }
+
+        protected override void PlanPostprocessingFeatures(IGlyphShapingCollection collection, int index, int count)
+        {
             // Add common features.
             this.AddFeature(collection, index, count, CcmpTag);
             this.AddFeature(collection, index, count, LoclTag);
@@ -110,6 +119,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.AddFeature(collection, index, count, MarkTag);
             this.AddFeature(collection, index, count, MkmkTag);
 
+            LayoutMode layoutMode = collection.TextOptions.LayoutMode;
+            bool isVerticalLayout = false;
+            for (int i = index; i < count; i++)
+            {
+                GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
+                isVerticalLayout |= AdvancedTypographicUtils.IsVerticalGlyph(shapingData.CodePoint, layoutMode);
+            }
+
+            // Add horizontal or vertical features.
             if (!isVerticalLayout)
             {
                 // Add horizontal features.
@@ -133,13 +151,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 this.AddFeature(collection, index, count, VertTag);
             }
 
-            // User defined fractional features require special treatment.
-            // https://docs.microsoft.com/en-us/typography/opentype/spec/features_fj#tag-frac
-            if (this.HasFractions())
-            {
-                this.AssignFractionalFeatures(collection, index, count);
-            }
-
             // Add user defined features.
             foreach (Tag feature in this.featureTags)
             {
@@ -148,6 +159,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 {
                     this.AddFeature(collection, index, count, feature);
                 }
+            }
+        }
+
+        /// <inheritdoc />
+        protected override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
+        {
+            // TODO: We shouldn't be relying on the feature list
+            // User defined fractional features require special treatment.
+            // https://docs.microsoft.com/en-us/typography/opentype/spec/features_fj#tag-frac
+            if (this.HasFractions())
+            {
+                this.AssignFractionalFeatures(collection, index, count);
             }
         }
 

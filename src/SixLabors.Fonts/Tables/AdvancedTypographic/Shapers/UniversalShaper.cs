@@ -47,14 +47,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         {
         }
 
-        public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
+        /// <inheritdoc/>
+        protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
         {
-            // Decompose split vowels.
-            DecomposeSplitVowels(collection, index, count);
-
-            // Count can be greater than the input count.
-            count = collection.Count - index;
-
             // Default glyph pre-processing group
             this.AddFeature(collection, index, count, LoclTag, preAction: SetupSyllables);
             this.AddFeature(collection, index, count, CcmpTag);
@@ -83,6 +78,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.AddFeature(collection, index, count, AbvmTag);
             this.AddFeature(collection, index, count, BlwmTag);
         }
+
+        /// <inheritdoc/>
+        protected override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
+            => DecomposeSplitVowels(collection, index, count);
 
         private static void DecomposeSplitVowels(IGlyphShapingCollection collection, int index, int count)
         {
