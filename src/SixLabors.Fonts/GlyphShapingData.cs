@@ -37,9 +37,9 @@ namespace SixLabors.Fonts
             this.MarkAttachment = data.MarkAttachment;
             this.CursiveAttachment = data.CursiveAttachment;
             this.IsDecomposed = data.IsDecomposed;
-            if (data.USEInfo != null)
+            if (data.UniversalShapingEngineInfo != null)
             {
-                this.USEInfo = new(data.USEInfo.Category, data.USEInfo.SyllableType, data.USEInfo.Syllable);
+                this.UniversalShapingEngineInfo = new(data.UniversalShapingEngineInfo.Category, data.UniversalShapingEngineInfo.SyllableType, data.UniversalShapingEngineInfo.Syllable);
             }
 
             if (!clearFeatures)
@@ -118,7 +118,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets or sets the universal shaping information.
         /// </summary>
-        public USEInfo? USEInfo { get; set; }
+        public UniversalShapingEngineInfo? UniversalShapingEngineInfo { get; set; }
 
         private string DebuggerDisplay
             => FormattableString
@@ -130,9 +130,9 @@ namespace SixLabors.Fonts
     /// <summary>
     /// Represents information required for universal shaping.
     /// </summary>
-    internal class USEInfo
+    internal class UniversalShapingEngineInfo
     {
-        public USEInfo(string category, string syllableType, int syllable)
+        public UniversalShapingEngineInfo(string category, string syllableType, int syllable)
         {
             this.Category = category;
             this.SyllableType = syllableType;

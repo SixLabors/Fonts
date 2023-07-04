@@ -132,11 +132,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     CodePoint codePoint = data.CodePoint;
                     string category = UniversalShapingData.Categories[UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value)];
 
-                    data.USEInfo = new(category, match.Tags[0], syllable);
+                    data.UniversalShapingEngineInfo = new(category, match.Tags[0], syllable);
                 }
 
                 // Assign rphf feature
-                int limit = collection.GetGlyphShapingData(match.StartIndex).USEInfo!.Category == "R"
+                int limit = collection.GetGlyphShapingData(match.StartIndex).UniversalShapingEngineInfo!.Category == "R"
                     ? 1
                     : Math.Min(3, match.EndIndex - match.StartIndex);
 
@@ -166,9 +166,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 if (data.IsSubstituted && data.Features.Any(x => x.Tag == RphfTag))
                 {
                     // Mark a substituted repha.
-                    if (data.USEInfo != null)
+                    if (data.UniversalShapingEngineInfo != null)
                     {
-                        data.USEInfo.Category = "R";
+                        data.UniversalShapingEngineInfo.Category = "R";
                     }
                 }
             }
@@ -183,9 +183,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 if (data.IsSubstituted)
                 {
                     // Mark a substituted pref as VPre, as they behave the same way.
-                    if (data.USEInfo != null)
+                    if (data.UniversalShapingEngineInfo != null)
                     {
-                        data.USEInfo.Category = "VPre";
+                        data.UniversalShapingEngineInfo.Category = "VPre";
                     }
                 }
             }
@@ -204,7 +204,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             while (start < max)
             {
                 GlyphShapingData data = substitutionCollection.GetGlyphShapingData(start);
-                USEInfo? info = data.USEInfo;
+                UniversalShapingEngineInfo? info = data.UniversalShapingEngineInfo;
                 string? type = info?.SyllableType;
 
                 // Only a few syllable types need reordering.
@@ -221,7 +221,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
                     for (i = start; i < end; i++)
                     {
-                        if (current.USEInfo?.Category != "R")
+                        if (current.UniversalShapingEngineInfo?.Category != "R")
                         {
                             break;
                         }
@@ -245,7 +245,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     for (int i = start + 1; i < end; i++)
                     {
                         GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
-                        info = current.USEInfo;
+                        info = current.UniversalShapingEngineInfo;
                         if (IsBase(info) || IsHalant(current))
                         {
                             // If we hit a halant, move before it; otherwise it's a base: move to it's
@@ -265,7 +265,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 for (int i = start, j = end; i < end; i++)
                 {
                     GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
-                    info = current.USEInfo;
+                    info = current.UniversalShapingEngineInfo;
 
                     if (IsBase(info) || IsHalant(current))
                     {
@@ -301,10 +301,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return index;
             }
 
-            int? syllable = collection.GetGlyphShapingData(index).USEInfo?.Syllable;
+            int? syllable = collection.GetGlyphShapingData(index).UniversalShapingEngineInfo?.Syllable;
             while (++index < count)
             {
-                if (collection.GetGlyphShapingData(index).USEInfo?.Syllable != syllable)
+                if (collection.GetGlyphShapingData(index).UniversalShapingEngineInfo?.Syllable != syllable)
                 {
                     break;
                 }
@@ -314,9 +314,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         }
 
         private static bool IsHalant(GlyphShapingData data)
-            => (data.USEInfo?.Category is "H" or "HVM" or "IS") && data.LigatureId == 0;
+            => (data.UniversalShapingEngineInfo?.Category is "H" or "HVM" or "IS") && data.LigatureId == 0;
 
-        private static bool IsBase(USEInfo? info)
+        private static bool IsBase(UniversalShapingEngineInfo? info)
             => info?.Category is "B" or "GB";
     }
 }
