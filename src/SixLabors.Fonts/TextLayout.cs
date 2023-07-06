@@ -862,7 +862,6 @@ namespace SixLabors.Fonts
             bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
             bool isHorizontalLayout = layoutMode.IsHorizontal();
             bool isVerticalMixedLayout = layoutMode.IsVerticalMixed();
-            bool isVerticalLayout = layoutMode.IsVertical();
 
             // Calculate the position of potential line breaks.
             var lineBreakEnumerator = new LineBreakEnumerator(text);
@@ -881,6 +880,10 @@ namespace SixLabors.Fonts
             List<TextLine> textLines = new();
             TextLine textLine = new();
             int glyphCount = 0;
+
+            // No glyph should contain more than 64 metrics.
+            // We do a sanity check below just in case.
+            Span<float> decomposedAdvancesBuffer = stackalloc float[64];
 
             // Enumerate through each grapheme in the text.
             var graphemeEnumerator = new SpanGraphemeEnumerator(text);
@@ -916,6 +919,13 @@ namespace SixLabors.Fonts
                     GlyphMetrics glyph = metrics[0];
 
                     float glyphAdvance;
+
+                    // This should never happen, but we need to ensure that the buffer is large enough
+                    // if, for some crazy reason, a glyph does contain more than 64 metrics.
+                    Span<float> decomposedAdvances = metrics.Count > decomposedAdvancesBuffer.Length
+                        ? new float[metrics.Count]
+                        : decomposedAdvancesBuffer.Slice(0, isDecomposed ? metrics.Count : 1);
+
                     if (isHorizontalLayout || isRotated)
                     {
                         glyphAdvance = glyph.AdvanceWidth;
@@ -924,6 +934,8 @@ namespace SixLabors.Fonts
                     {
                         glyphAdvance = glyph.AdvanceHeight;
                     }
+
+                    decomposedAdvances[0] = glyphAdvance;
 
                     if (CodePoint.IsTabulation(codePoint))
                     {
@@ -962,6 +974,7 @@ namespace SixLabors.Fonts
                         // unless multiple metrics are associated with code point. In this case they are most likely the result
                         // of a substitution and shouldn't be ignored.
                         glyphAdvance = 0;
+                        decomposedAdvances[0] = 0;
                     }
                     else if (!CodePoint.IsNewLine(codePoint))
                     {
@@ -975,6 +988,7 @@ namespace SixLabors.Fonts
                                 if (isDecomposed)
                                 {
                                     glyphAdvance += a;
+                                    decomposedAdvances[i] = a;
                                 }
                                 else if (a > glyphAdvance)
                                 {
@@ -990,6 +1004,7 @@ namespace SixLabors.Fonts
                                 if (isDecomposed)
                                 {
                                     glyphAdvance += a;
+                                    decomposedAdvances[i] = a;
                                 }
                                 else if (a > glyphAdvance)
                                 {
@@ -1002,11 +1017,22 @@ namespace SixLabors.Fonts
                     // Now scale the advance.
                     if (isHorizontalLayout || isRotated)
                     {
-                        glyphAdvance *= pointSize / glyph.ScaleFactor.X;
+                        float scaleAX = pointSize / glyph.ScaleFactor.X;
+                        glyphAdvance *= scaleAX;
+
+                        for (int i = 0; i < decomposedAdvances.Length; i++)
+                        {
+                            decomposedAdvances[i] *= scaleAX;
+                        }
                     }
                     else
                     {
-                        glyphAdvance *= pointSize / glyph.ScaleFactor.Y;
+                        float scaleAY = pointSize / glyph.ScaleFactor.Y;
+                        glyphAdvance *= scaleAY;
+                        for (int i = 0; i < decomposedAdvances.Length; i++)
+                        {
+                            decomposedAdvances[i] *= scaleAY;
+                        }
                     }
 
                     // Should we start a new line?
@@ -1110,50 +1136,71 @@ namespace SixLabors.Fonts
                         continue;
                     }
 
-                    // Work out the scaled metrics for the glyph.
-                    GlyphMetrics metric = metrics[0];
-                    float scaleY = pointSize / metric.ScaleFactor.Y;
-                    IMetricsHeader metricsHeader = isHorizontalLayout || isRotated
-                        ? metric.FontMetrics.HorizontalMetrics
-                        : metric.FontMetrics.VerticalMetrics;
-                    float ascender = metricsHeader.Ascender * scaleY;
-
-                    // Adjust ascender for glyphs with a negative tsb. e.g. emoji to prevent cutoff.
-                    if (!CodePoint.IsWhiteSpace(codePoint))
+                    // For non-decomposed glyphs the length is always 1.
+                    for (int i = 0; i < decomposedAdvances.Length; i++)
                     {
-                        short tsbOffset = 0;
-                        for (int i = 0; i < metrics.Count; i++)
+                        float decomposedAdvance = decomposedAdvances[i];
+
+                        // Work out the scaled metrics for the glyph.
+                        GlyphMetrics metric = metrics[i];
+                        float scaleY = pointSize / metric.ScaleFactor.Y;
+                        IMetricsHeader metricsHeader = isHorizontalLayout || isRotated
+                            ? metric.FontMetrics.HorizontalMetrics
+                            : metric.FontMetrics.VerticalMetrics;
+                        float ascender = metricsHeader.Ascender * scaleY;
+
+                        // Adjust ascender for glyphs with a negative tsb. e.g. emoji to prevent cutoff.
+                        if (!CodePoint.IsWhiteSpace(codePoint))
                         {
-                            tsbOffset = Math.Min(tsbOffset, metrics[i].TopSideBearing);
+                            if (!isDecomposed)
+                            {
+                                short tsbOffset = 0;
+
+                                // We need to check all the metrics.
+                                for (int mi = 0; mi < metrics.Count; mi++)
+                                {
+                                    tsbOffset = Math.Min(tsbOffset, metrics[mi].TopSideBearing);
+                                }
+
+                                if (tsbOffset < 0)
+                                {
+                                    ascender -= tsbOffset * scaleY;
+                                }
+                            }
+                            else
+                            {
+                                // Decomposed glyphs contain a single metric.
+                                short tsbOffset = metric.TopSideBearing;
+                                if (tsbOffset < 0)
+                                {
+                                    ascender -= tsbOffset * scaleY;
+                                }
+                            }
                         }
 
-                        if (tsbOffset < 0)
-                        {
-                            ascender -= tsbOffset * scaleY;
-                        }
+                        // Match how line height is calculated for browsers.
+                        // https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
+                        float descender = Math.Abs(metricsHeader.Descender * scaleY);
+                        float lineHeight = metric.UnitsPerEm * scaleY;
+                        float delta = ((metricsHeader.LineHeight * scaleY) - lineHeight) * .5F;
+                        ascender -= delta;
+                        descender -= delta;
+
+                        // Add our metrics to the line.
+                        lineAdvance += decomposedAdvance;
+                        textLine.Add(
+                            isDecomposed ? new GlyphMetrics[] { metric } : metrics,
+                            pointSize,
+                            decomposedAdvance,
+                            lineHeight,
+                            ascender,
+                            descender,
+                            bidiRuns[bidiMap[codePointIndex]],
+                            graphemeIndex,
+                            codePointIndex,
+                            isRotated,
+                            isDecomposed);
                     }
-
-                    // Match how line height is calculated for browsers.
-                    // https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
-                    float descender = Math.Abs(metricsHeader.Descender * scaleY);
-                    float lineHeight = metric.UnitsPerEm * scaleY;
-                    float delta = ((metricsHeader.LineHeight * scaleY) - lineHeight) * .5F;
-                    ascender -= delta;
-                    descender -= delta;
-
-                    // Add our metrics to the line.
-                    lineAdvance += glyphAdvance;
-                    textLine.Add(
-                        metrics,
-                        pointSize,
-                        glyphAdvance,
-                        lineHeight,
-                        ascender,
-                        descender,
-                        bidiRuns[bidiMap[codePointIndex]],
-                        graphemeIndex,
-                        codePointIndex,
-                        isRotated);
 
                     codePointIndex++;
                     graphemeCodePointIndex++;
@@ -1214,7 +1261,8 @@ namespace SixLabors.Fonts
                 BidiRun bidiRun,
                 int graphemeIndex,
                 int offset,
-                bool isRotated)
+                bool isRotated,
+                bool isDecomposed)
             {
                 // Reset metrics.
                 // We track the maximum metrics for each line to ensure glyphs can be aligned.
@@ -1233,7 +1281,8 @@ namespace SixLabors.Fonts
                     bidiRun,
                     graphemeIndex,
                     offset,
-                    isRotated));
+                    isRotated,
+                    isDecomposed));
             }
 
             public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
@@ -1544,7 +1593,8 @@ namespace SixLabors.Fonts
                     BidiRun bidiRun,
                     int graphemeIndex,
                     int offset,
-                    bool isRotated)
+                    bool isRotated,
+                    bool isDecomposed)
                 {
                     this.Metrics = metrics;
                     this.PointSize = pointSize;
@@ -1556,6 +1606,7 @@ namespace SixLabors.Fonts
                     this.GraphemeIndex = graphemeIndex;
                     this.Offset = offset;
                     this.IsRotated = isRotated;
+                    this.IsDecomposed = isDecomposed;
                 }
 
                 public CodePoint CodePoint => this.Metrics[0].CodePoint;
@@ -1581,6 +1632,8 @@ namespace SixLabors.Fonts
                 public int Offset { get; }
 
                 public bool IsRotated { get; }
+
+                public bool IsDecomposed { get; }
 
                 public bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);
 

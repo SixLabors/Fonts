@@ -5,6 +5,10 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+
+    <!--TODO: Figure out why this is not being properly assigned via global props-->
+    <DefineConstants>$(DefineConstants);SUPPORTS_HASHCODE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,13 +16,32 @@
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiCharacterType.cs" Link="BidiCharacterType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiPairedBracketType.cs" Link="BidiPairedBracketType.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\GraphemeClusterClass.cs" Link="GraphemeClusterClass.cs" />
-    <Compile Include="..\SixLabors.Fonts\Unicode\JoiningGroup.cs" Link="JoiningGroup.cs" />
-    <Compile Include="..\SixLabors.Fonts\Unicode\JoiningType.cs" Link="JoiningType.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\ArabicJoiningGroup.cs" Link="ArabicJoiningGroup.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\ArabicJoiningType.cs" Link="ArabicJoiningType.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\IndicPositionalCategory.cs" Link="IndicPositionalCategory.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\IndicSyllabicCategory.cs" Link="IndicSyllabicCategory.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\LineBreakClass.cs" Link="LineBreakClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\ScriptClass.cs" Link="ScriptClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrie.cs" Link="UnicodeTrie.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrieBuilder.cs" Link="UnicodeTrieBuilder.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\VerticalOrientationType.cs" Link="VerticalOrientationType.cs" />
+
+
+    <Compile Include="..\SixLabors.Fonts\ArraySlice{T}.cs" Link="StateAutomation\ArraySlice{T}.cs" />
+    <Compile Include="..\SixLabors.Fonts\ReadOnlyArraySlice{T}.cs" Link="StateAutomation\ReadOnlyArraySlice{T}.cs" />
   </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="StateAutomation\Grammar.peg" />
+    <PegGrammar Include="StateAutomation\Grammar.peg" />
+    <InternalsVisibleTo Include="SixLabors.Fonts.Tests" Key="$(SixLaborsPublicKey)"/>
+  </ItemGroup>
+
+  <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />
 
 </Project>

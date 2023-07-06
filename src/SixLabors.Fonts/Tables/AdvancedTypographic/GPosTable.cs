@@ -148,44 +148,47 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     ZeroMarkAdvances(fontMetrics, collection, index, count);
                 }
 
-                // Assign Substitution features to each glyph.
-                shaper.AssignFeatures(collection, index, count);
-                IEnumerable<Tag> stageFeatures = shaper.GetShapingStageFeatures();
+                // Plan positioning features for each glyph.
+                shaper.Plan(collection, index, count);
+                IEnumerable<ShapingStage> shapingStages = shaper.GetShapingStages();
                 SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
-                foreach (Tag stageFeature in stageFeatures)
+                foreach (ShapingStage stage in shapingStages)
                 {
-                    if (!this.TryGetFeatureLookups(in stageFeature, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
-                    {
-                        continue;
-                    }
+                    stage.PreProcessFeature(collection, index, count);
 
-                    // Apply features in order.
-                    foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
+                    Tag featureTag = stage.FeatureTag;
+                    if (this.TryGetFeatureLookups(in featureTag, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
                     {
-                        Tag feature = featureLookup.Feature;
-                        iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
-
-                        while (iterator.Index < index + count)
+                        // Apply features in order.
+                        foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
                         {
-                            if (currentOperations++ >= maxOperationsCount)
-                            {
-                                maxOperationsReached = true;
-                                goto EndLookups;
-                            }
+                            Tag feature = featureLookup.Feature;
+                            iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
 
-                            List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
-                            if (!HasFeature(glyphFeatures, in feature))
+                            while (iterator.Index < index + count)
                             {
+                                if (currentOperations++ >= maxOperationsCount)
+                                {
+                                    maxOperationsReached = true;
+                                    goto EndLookups;
+                                }
+
+                                List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
+                                if (!HasFeature(glyphFeatures, in feature))
+                                {
+                                    iterator.Next();
+                                    continue;
+                                }
+
+                                bool success = featureLookup.LookupTable.TryUpdatePosition(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
+                                kerned |= success && (feature == KernTag || feature == VKernTag);
+                                updated |= success;
                                 iterator.Next();
-                                continue;
                             }
-
-                            bool success = featureLookup.LookupTable.TryUpdatePosition(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
-                            kerned |= success && (feature == KernTag || feature == VKernTag);
-                            updated |= success;
-                            iterator.Next();
                         }
                     }
+
+                    stage.PostProcessFeature(collection, index, count);
                 }
 
                 EndLookups:

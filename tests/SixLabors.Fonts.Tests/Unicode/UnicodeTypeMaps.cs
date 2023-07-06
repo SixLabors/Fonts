@@ -10,7 +10,7 @@ namespace SixLabors.Fonts.Tests.Unicode
     internal static class UnicodeTypeMaps
     {
         public static readonly Dictionary<string, BidiCharacterType> BidiCharacterTypeMap
-            = new Dictionary<string, BidiCharacterType>(StringComparer.OrdinalIgnoreCase)
+            = new(StringComparer.OrdinalIgnoreCase)
         {
                 { "L", BidiCharacterType.LeftToRight },
                 { "R", BidiCharacterType.RightToLeft },

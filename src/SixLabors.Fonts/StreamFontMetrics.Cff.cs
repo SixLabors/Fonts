@@ -72,7 +72,7 @@ namespace SixLabors.Fonts
             TextAttributes textAttributes,
             TextDecorations textDecorations,
             bool isVerticalLayout,
-            ushort palleteIndex = 0)
+            ushort paletteIndex = 0)
         {
             CompactFontTables tables = this.compactFontTables!;
             ICffTable cff = tables.Cff;
@@ -97,10 +97,10 @@ namespace SixLabors.Fonts
             if (glyphType == GlyphType.ColrLayer)
             {
                 // 0xFFFF is special index meaning use foreground color and thus leave unset
-                if (palleteIndex != 0xFFFF)
+                if (paletteIndex != 0xFFFF)
                 {
                     CpalTable? cpal = tables.Cpal;
-                    color = cpal?.GetGlyphColor(0, palleteIndex);
+                    color = cpal?.GetGlyphColor(0, paletteIndex);
                 }
             }
 

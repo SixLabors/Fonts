@@ -7,40 +7,40 @@ using System.Runtime.CompilerServices;
 namespace SixLabors.Fonts.Unicode
 {
     /// <summary>
-    /// Represents the Unicode Joining value of a given <see cref="CodePoint"/>.
-    /// <see href="https://www.unicode.org/versions/Unicode13.0.0/ch09.pdf"/>
+    /// Represents the Unicode Arabic Joining value of a given <see cref="CodePoint"/>.
+    /// <see href="https://www.unicode.org/versions/Unicode14.0.0/ch09.pdf"/>
     /// </summary>
-    public readonly struct JoiningClass
+    public readonly struct ArabicJoiningClass
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="JoiningClass"/> struct.
+        /// Initializes a new instance of the <see cref="ArabicJoiningClass"/> struct.
         /// </summary>
         /// <param name="codePoint">The codepoint.</param>
-        public JoiningClass(CodePoint codePoint)
+        public ArabicJoiningClass(CodePoint codePoint)
         {
             UnicodeCategory category = CodePoint.GetGeneralCategory(codePoint);
             uint value = UnicodeData.GetJoiningClass((uint)codePoint.Value);
             this.JoiningType = GetJoiningType(codePoint, value, category);
-            this.JoiningGroup = (JoiningGroup)((value >> 16) & 0xFF);
+            this.JoiningGroup = (ArabicJoiningGroup)((value >> 16) & 0xFF);
         }
 
         /// <summary>
         /// Gets the Unicode joining type.
         /// </summary>
-        public JoiningType JoiningType { get; }
+        public ArabicJoiningType JoiningType { get; }
 
         /// <summary>
         /// Gets the Unicode joining group.
         /// </summary>
-        public JoiningGroup JoiningGroup { get; }
+        public ArabicJoiningGroup JoiningGroup { get; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static JoiningType GetJoiningType(CodePoint codePoint, uint value, UnicodeCategory category)
+        private static ArabicJoiningType GetJoiningType(CodePoint codePoint, uint value, UnicodeCategory category)
         {
-            var type = (JoiningType)(value & 0xFF);
+            var type = (ArabicJoiningType)(value & 0xFF);
 
             // All others not explicitly listed have joining type U
-            if (type == JoiningType.NonJoining)
+            if (type == ArabicJoiningType.NonJoining)
             {
                 // 200C; ZERO WIDTH NON-JOINER; U; No_Joining_Group
                 // 200D; ZERO WIDTH JOINER; C; No_Joining_Group
@@ -63,7 +63,7 @@ namespace SixLabors.Fonts.Unicode
                 // Those that are not explicitly listed and that are of General Category Mn, Me, or Cf have joining type T.
                 if (category is UnicodeCategory.NonSpacingMark or UnicodeCategory.EnclosingMark or UnicodeCategory.Format)
                 {
-                    type = JoiningType.Transparent;
+                    type = ArabicJoiningType.Transparent;
                 }
             }
 

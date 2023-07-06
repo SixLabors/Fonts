@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
@@ -134,54 +133,69 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     }
                 }
 
-                // Assign Substitution features to each glyph.
-                shaper.AssignFeatures(collection, index, count);
+                // Plan substitution features for each glyph.
+                // Shapers can adjust the count during initialization and feature processing so we must capture
+                // the current count to allow resetting indexes and processing counts.
+                int collectionCount = collection.Count;
+                shaper.Plan(collection, index, count);
+                int delta = collection.Count - collectionCount;
+                i += delta;
+                count += delta;
 
-                // Shapers can adjust the count.
-                count = Math.Min(count, collection.Count - index);
-
-                IEnumerable<Tag> stageFeatures = shaper.GetShapingStageFeatures();
-
-                int currentCount = collection.Count;
+                IEnumerable<ShapingStage> stages = shaper.GetShapingStages();
                 SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
-                foreach (Tag stageFeature in stageFeatures)
+                foreach (ShapingStage stage in stages)
                 {
-                    if (!this.TryGetFeatureLookups(in stageFeature, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
-                    {
-                        continue;
-                    }
+                    collectionCount = collection.Count;
+                    stage.PreProcessFeature(collection, index, count);
 
-                    // Apply features in order.
-                    foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
-                    {
-                        Tag feature = featureLookup.Feature;
-                        iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
+                    // Account for substitutions changing the length of the collection.
+                    delta = collection.Count - collectionCount;
+                    count += delta;
+                    i += delta;
 
-                        while (iterator.Index < index + count)
+                    Tag featureTag = stage.FeatureTag;
+                    if (this.TryGetFeatureLookups(in featureTag, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
+                    {
+                        // Apply features in order.
+                        foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
                         {
-                            if (collection.Count >= maxCount || currentOperations++ >= maxOperationsCount)
-                            {
-                                return;
-                            }
+                            Tag feature = featureLookup.Feature;
+                            iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
 
-                            List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
-                            if (!HasFeature(glyphFeatures, in feature))
+                            while (iterator.Index < index + count)
                             {
+                                if (collection.Count >= maxCount || currentOperations++ >= maxOperationsCount)
+                                {
+                                    return;
+                                }
+
+                                List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
+                                if (!HasFeature(glyphFeatures, in feature))
+                                {
+                                    iterator.Next();
+                                    continue;
+                                }
+
+                                collectionCount = collection.Count;
+                                featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
                                 iterator.Next();
-                                continue;
-                            }
 
-                            featureLookup.LookupTable.TrySubstitution(fontMetrics, this, collection, featureLookup.Feature, iterator.Index, count - (iterator.Index - index));
-                            iterator.Next();
-
-                            // Account for substitutions changing the length of the collection.
-                            if (collection.Count != currentCount)
-                            {
-                                count -= currentCount - collection.Count;
-                                currentCount = collection.Count;
+                                // Account for substitutions changing the length of the collection.
+                                delta = collection.Count - collectionCount;
+                                count += delta;
+                                i += delta;
                             }
                         }
                     }
+
+                    collectionCount = collection.Count;
+                    stage.PostProcessFeature(collection, index, count);
+
+                    // Account for substitutions changing the length of the collection.
+                    delta = collection.Count - collectionCount;
+                    count += delta;
+                    i += delta;
                 }
             }
         }
