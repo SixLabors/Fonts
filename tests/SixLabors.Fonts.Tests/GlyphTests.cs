@@ -34,11 +34,11 @@ namespace SixLabors.Fonts.Tests
                 0,
                 codePoint,
                 new GlyphVector(
-                    Array.Empty<Vector2>(),
-                    Array.Empty<bool>(),
+                    Array.Empty<ControlPoint>(),
                     Array.Empty<ushort>(),
                     new Bounds(0, metrics.UnitsPerEm, 0, metrics.UnitsPerEm),
-                    Array.Empty<byte>()),
+                    Array.Empty<byte>(),
+                    false),
                 0,
                 0,
                 0,
@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tests
             Glyph glyph = new(glyphMetrics.CloneForRendering(textRun), font.Size);
 
             Vector2 locationInFontSpace = new Vector2(99, 99) / 72; // glyph ends up 10px over due to offset in fake glyph
-            glyph.RenderTo(this.renderer, locationInFontSpace, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(this.renderer, locationInFontSpace, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
             Assert.Equal(new FontRectangle(99, 89, 0, 0), this.renderer.GlyphRects.Single());
         }
@@ -105,11 +105,10 @@ namespace SixLabors.Fonts.Tests
 
             // Get letter A
             Assert.True(font.TryGetGlyphs(new CodePoint(41), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
-            Glyph g = glyphs.First();
-            GlyphOutline instance = ((TrueTypeGlyphMetrics)g.GlyphMetrics).GetOutline();
+            Glyph g = glyphs[0];
+            GlyphVector instance = ((TrueTypeGlyphMetrics)g.GlyphMetrics).GetOutline();
 
-            Assert.Equal(20, instance.ControlPoints.Length);
-            Assert.Equal(20, instance.OnCurves.Length);
+            Assert.Equal(20, instance.ControlPoints.Count);
         }
 
         [Fact]
@@ -167,11 +166,11 @@ namespace SixLabors.Fonts.Tests
             string text = "\U0001F469\U0001F3FB\u200D\U0001F91D\u200D\U0001F469\U0001F3FC"; // women holding hands: light skin tone, medium-light skin tone
             string text2 = "\U0001F46D\U0001F3FB"; // women holding hands: light skin tone
 
-            FontRectangle size = TextMeasurer.Measure(text, new TextOptions(font));
-            FontRectangle size2 = TextMeasurer.Measure(text2, new TextOptions(font));
+            FontRectangle size = TextMeasurer.MeasureSize(text, new TextOptions(font));
+            FontRectangle size2 = TextMeasurer.MeasureSize(text2, new TextOptions(font));
 
-            Assert.True(size.Width > 103);
-            Assert.True(size2.Width > 98);
+            Assert.Equal(75F, size.Width);
+            Assert.Equal(75F, size2.Width);
         }
 
         [Theory]

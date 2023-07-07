@@ -248,15 +248,37 @@ namespace SixLabors.Fonts
         /// <param name="y">The y-advance.</param>
         internal void SetAdvanceHeight(ushort y) => this.AdvanceHeight = y;
 
-        internal FontRectangle GetBoundingBox(Vector2 origin, float scaledPointSize)
+        internal FontRectangle GetBoundingBox(GlyphLayoutMode mode, Vector2 origin, float scaledPointSize)
         {
             Vector2 scale = new Vector2(scaledPointSize) / this.ScaleFactor;
             Bounds bounds = this.Bounds;
-            Vector2 size = bounds.Size() * scale;
-            Vector2 loc = (new Vector2(bounds.Min.X, bounds.Max.Y) + this.Offset) * scale * YInverter;
-            loc += origin;
 
-            return new FontRectangle(loc.X, loc.Y, size.X, size.Y);
+            if (bounds.Equals(Bounds.Empty))
+            {
+                // For non-vertical layout, the advance width only is used to compute the bounding box
+                // as the advance height represents the maximum possible advance.
+                if (mode != GlyphLayoutMode.Vertical)
+                {
+                    bounds = new Bounds(0, 0, this.AdvanceWidth, 0);
+                }
+                else
+                {
+                    bounds = new Bounds(0, 0, 0, this.AdvanceHeight);
+                }
+            }
+
+            // Rotate if required.
+            if (mode == GlyphLayoutMode.VerticalRotated)
+            {
+                bounds = Bounds.Transform(in bounds, Matrix3x2.CreateRotation(-MathF.PI / 2F));
+            }
+
+            Vector2 size = bounds.Size() * scale;
+            Vector2 location = (new Vector2(bounds.Min.X, bounds.Min.Y) + this.Offset) * scale * YInverter;
+
+            location -= new Vector2(0, size.Y);
+            location += origin;
+            return new FontRectangle(location.X, location.Y, size.X, size.Y);
         }
 
         /// <summary>
@@ -265,19 +287,19 @@ namespace SixLabors.Fonts
         /// <param name="renderer">The surface renderer.</param>
         /// <param name="location">The location representing offset of the glyph outer bounds relative to the origin.</param>
         /// <param name="offset">The offset of the glyph vector relative to the top-left position of the glyph advance.</param>
+        /// <param name="mode">The glyph layout mode to render using.</param>
         /// <param name="options">The options used to influence the rendering of this glyph.</param>
-        internal abstract void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, TextOptions options);
+        internal abstract void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options);
 
-        internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, LayoutMode layoutMode, bool rotated, Matrix3x2 transform, float scaledPPEM)
+        internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, GlyphLayoutMode mode, Matrix3x2 transform, float scaledPPEM)
         {
-            bool isVerticalLayout = layoutMode.IsVertical() || layoutMode.IsVerticalMixed();
-            bool isHorizontalGlyph = layoutMode.IsHorizontal() || rotated;
+            bool isVerticalLayout = mode is GlyphLayoutMode.Vertical or GlyphLayoutMode.VerticalRotated;
             (Vector2 Start, Vector2 End, float Thickness) GetEnds(TextDecorations decorations, float thickness, float decoratorPosition)
             {
                 // For vertical layout we need to draw a vertical line.
                 if (isVerticalLayout)
                 {
-                    float length = rotated ? this.AdvanceWidth : this.AdvanceHeight;
+                    float length = mode == GlyphLayoutMode.VerticalRotated ? this.AdvanceWidth : this.AdvanceHeight;
                     if (length == 0)
                     {
                         return (Vector2.Zero, Vector2.Zero, 0);
@@ -349,22 +371,27 @@ namespace SixLabors.Fonts
             }
 
             // Allow the renderer to override the decorations to attach.
-            // Use CSS values to match vertical text and missing metrics.
+            // When rendering glyphs vertically we use synthesized positions based upon comparisons with Pango/browsers.
+            // We deviate from browsers in a few ways:
+            // - When rendering rotated glyphs and use the default values because it fits the glyphs better.
+            // - We include the adjusted scale for subscript and superscript glyphs.
+            // - We make no attempt to adjust the underline position along a text line to render at the same position.
             TextDecorations decorations = renderer.EnabledDecorations();
+            bool synthesized = mode == GlyphLayoutMode.Vertical;
             if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
             {
-                SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, isHorizontalGlyph ? this.FontMetrics.UnderlinePosition : 0);
+                SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, synthesized ? Math.Abs(this.FontMetrics.UnderlinePosition) : this.FontMetrics.UnderlinePosition);
             }
 
             if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
             {
-                SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, isHorizontalGlyph ? this.FontMetrics.StrikeoutPosition : this.FontMetrics.UnitsPerEm * .5F);
+                SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, synthesized ? this.FontMetrics.UnitsPerEm * .5F : this.FontMetrics.StrikeoutPosition);
             }
 
             if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
             {
                 // There's no built in metrics for overline thickness so use underline.
-                SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, isHorizontalGlyph ? this.FontMetrics.HorizontalMetrics.Ascender : this.FontMetrics.UnitsPerEm);
+                SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, this.UnitsPerEm - this.FontMetrics.UnderlinePosition);
             }
         }
 
@@ -374,7 +401,7 @@ namespace SixLabors.Fonts
         /// <param name="codePoint">The code point.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static bool ShouldSkipGlyphRendering(CodePoint codePoint)
+        protected internal static bool ShouldSkipGlyphRendering(CodePoint codePoint)
             => UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) && !ShouldRenderWhiteSpaceOnly(codePoint);
 
         /// <summary>
@@ -415,7 +442,7 @@ namespace SixLabors.Fonts
         /// <param name="pointSize">The font size in pt units.</param>
         /// <param name="dpi">The DPI (Dots Per Inch) to render/measure the glyph at</param>
         /// <returns>The <see cref="float"/>.</returns>
-        protected float GetScaledSize(float pointSize, float dpi)
+        internal float GetScaledSize(float pointSize, float dpi)
         {
             float scaledPPEM = dpi * pointSize;
             bool forcePPEMToInt = (this.FontMetrics.HeadFlags & HeadTable.HeadFlags.ForcePPEMToInt) != 0;
@@ -431,40 +458,17 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Gets the rotation matrix for the glyph based on the layout mode.
         /// </summary>
-        /// <param name="layoutMode">The layout mode.</param>
-        /// <param name="matrix">The rotation matrix.</param>
+        /// <param name="mode">The glyph layout mode.</param>
         /// <returns>The<see cref="bool"/>.</returns>
-        internal bool TryGetRotationMatrix(LayoutMode layoutMode, out Matrix3x2 matrix)
+        internal static Matrix3x2 GetRotationMatrix(GlyphLayoutMode mode)
         {
-            if (layoutMode.IsVerticalMixed() && CodePoint.GetVerticalOrientationType(this.CodePoint) is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate)
+            if (mode == GlyphLayoutMode.VerticalRotated)
             {
                 // Rotate 90 degrees clockwise.
-                matrix = Matrix3x2.CreateRotation(-MathF.PI / 2F);
-                return true;
+                return Matrix3x2.CreateRotation(-MathF.PI / 2F);
             }
 
-            matrix = Matrix3x2.Identity;
-            return false;
-        }
-
-        /// <summary>
-        /// Gets the rotation matrix for the glyph based on the layout mode.
-        /// </summary>
-        /// <param name="layoutMode">The layout mode.</param>
-        /// <param name="matrix">The rotation matrix.</param>
-        /// <returns>The<see cref="bool"/>.</returns>
-        internal bool TryGetDecorationRotationMatrix(LayoutMode layoutMode, out Matrix3x2 matrix)
-        {
-            if (layoutMode.IsVerticalMixed() || layoutMode.IsVertical())
-            {
-                // Rotate 90 degrees clockwise.
-                // We use negative as the values are mirrored.
-                matrix = Matrix3x2.CreateRotation(-MathF.PI / 2F);
-                return true;
-            }
-
-            matrix = Matrix3x2.Identity;
-            return false;
+            return Matrix3x2.Identity;
         }
     }
 }

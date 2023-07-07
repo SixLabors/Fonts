@@ -358,14 +358,14 @@ namespace SixLabors.Fonts.Tests.Unicode
         }
 
         [Theory]
-        [InlineData(0x10ACD, JoiningType.LeftJoining, JoiningGroup.ManichaeanHeth)]
-        [InlineData(0x0715, JoiningType.RightJoining, JoiningGroup.DalathRish)]
-        [InlineData(0x1886, JoiningType.Transparent, JoiningGroup.NoJoiningGroup)]
-        [InlineData(0x18A6, JoiningType.DualJoining, JoiningGroup.NoJoiningGroup)]
-        [InlineData(0x200C, JoiningType.NonJoining, JoiningGroup.NoJoiningGroup)]
-        public static void CodePointIsJoiningClass(uint codePoint, JoiningType type, JoiningGroup group)
+        [InlineData(0x10ACD, ArabicJoiningType.LeftJoining, ArabicJoiningGroup.ManichaeanHeth)]
+        [InlineData(0x0715, ArabicJoiningType.RightJoining, ArabicJoiningGroup.DalathRish)]
+        [InlineData(0x1886, ArabicJoiningType.Transparent, ArabicJoiningGroup.NoJoiningGroup)]
+        [InlineData(0x18A6, ArabicJoiningType.DualJoining, ArabicJoiningGroup.NoJoiningGroup)]
+        [InlineData(0x200C, ArabicJoiningType.NonJoining, ArabicJoiningGroup.NoJoiningGroup)]
+        public static void CodePointIsJoiningClass(uint codePoint, ArabicJoiningType type, ArabicJoiningGroup group)
         {
-            JoiningClass join = CodePoint.GetJoiningClass(new CodePoint(codePoint));
+            ArabicJoiningClass join = CodePoint.GetArabicJoiningClass(new CodePoint(codePoint));
 
             Assert.Equal(type, join.JoiningType);
             Assert.Equal(group, join.JoiningGroup);
@@ -397,6 +397,19 @@ namespace SixLabors.Fonts.Tests.Unicode
                 VerticalOrientationType vertical = CodePoint.GetVerticalOrientationType(new CodePoint(min));
                 Assert.Equal(type, vertical);
             }
+        }
+
+        [Theory]
+        [InlineData(0x10A0E, IndicSyllabicCategory.Bindu, IndicPositionalCategory.Bottom)]
+        [InlineData(0xA983, IndicSyllabicCategory.Visarga, IndicPositionalCategory.Right)]
+        [InlineData(0x111C1, IndicSyllabicCategory.Avagraha, IndicPositionalCategory.NA)]
+        [InlineData(0x1C37, IndicSyllabicCategory.Nukta, IndicPositionalCategory.Bottom)]
+        [InlineData(0x0C48, IndicSyllabicCategory.VowelDependent, IndicPositionalCategory.TopAndBottom)]
+        public static void CodePointIsIndicCategory(uint value, IndicSyllabicCategory syllable, IndicPositionalCategory position)
+        {
+            CodePoint codePoint = new(value);
+            Assert.Equal(syllable, CodePoint.GetIndicSyllabicCategory(codePoint));
+            Assert.Equal(position, CodePoint.GetIndicPositionalCategory(codePoint));
         }
     }
 }

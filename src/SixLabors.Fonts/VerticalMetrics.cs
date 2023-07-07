@@ -25,5 +25,10 @@ namespace SixLabors.Fonts
 
         /// <inheritdoc/>
         public short AdvanceHeightMax { get; internal set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the metrics have been synthesized.
+        /// </summary>
+        internal bool Synthesized { get; set; }
     }
 }

@@ -212,11 +212,19 @@ namespace SixLabors.Fonts.Tests
 
         public static string NotoSansKRRegular => GetFullPath("NotoSansKR-Regular.otf");
 
+        public static string NotoSansBalineseRegular => GetFullPath("NotoSansBalinese-Regular.ttf");
+
         public static string HelveticaTTCFile => GetFullPath("Helvetica.ttc");
 
         public static string MeQuranFile => GetFullPath("me_quran_volt_newmet.ttf");
 
+        public static string PMINGLIUFile => GetFullPath("PMINGLIU.ttf");
+
         public static string AliceFrancesHMKRegularFile => GetFullPath("AliceFrancesHMK-Regular.ttf");
+
+        public static string SumanaRegularFile => GetFullPath("Sumana-Regular.ttf");
+
+        public static string DFKaiSBFile => GetFullPath("kaiu.ttf");
 
         public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
@@ -280,7 +288,7 @@ namespace SixLabors.Fonts.Tests
             };
 
             IEnumerable<string> fullPaths = paths.Select(x => Path.GetFullPath(Path.Combine(root, x)));
-            string rootPath = fullPaths.FirstOrDefault(x => Directory.Exists(x));
+            string rootPath = fullPaths.FirstOrDefault(Directory.Exists);
 
             Assert.True(rootPath != null, $"could not find the font folder in any of these location, \n{string.Join("\n", fullPaths)}");
 

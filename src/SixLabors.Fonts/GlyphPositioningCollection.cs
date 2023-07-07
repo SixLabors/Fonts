@@ -143,14 +143,12 @@ namespace SixLabors.Fonts
                 float pointSize = current.PointSize;
                 if (collection.TryGetGlyphShapingDataAtOffset(offset, out IReadOnlyList<GlyphShapingData>? data))
                 {
-                    ushort shiftXY = 0;
                     int replacementCount = 0;
                     for (int j = 0; j < data.Count; j++)
                     {
                         GlyphShapingData shape = data[j];
                         ushort id = shape.GlyphId;
                         CodePoint codePoint = shape.CodePoint;
-                        bool isDecomposed = shape.IsDecomposed;
 
                         // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                         // cache the original in the font metrics and only update our collection.
@@ -167,25 +165,7 @@ namespace SixLabors.Fonts
                                 break;
                             }
 
-                            // Clone and offset the glyph for rendering.
-                            // If the glyph is the result of a decomposition substitution we need to offset it.
-                            // We slip the text run in here while we clone so we have it available to the renderer.
-                            GlyphMetrics clone = gm.CloneForRendering(shape.TextRun);
-                            if (isDecomposed)
-                            {
-                                if (!AdvancedTypographicUtils.IsVerticalGlyph(clone.CodePoint, layoutMode))
-                                {
-                                    clone.ApplyOffset((short)shiftXY, 0);
-                                    shiftXY += clone.AdvanceWidth;
-                                }
-                                else
-                                {
-                                    clone.ApplyOffset(0, (short)shiftXY);
-                                    shiftXY += clone.AdvanceHeight;
-                                }
-                            }
-
-                            metrics.Add(clone);
+                            metrics.Add(gm.CloneForRendering(shape.TextRun));
                         }
 
                         if (metrics.Count > 0)
@@ -240,19 +220,13 @@ namespace SixLabors.Fonts
             FontMetrics fontMetrics = font.FontMetrics;
             LayoutMode layoutMode = this.TextOptions.LayoutMode;
             ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
-            ushort shiftXY = 0;
+
             for (int i = 0; i < collection.Count; i++)
             {
                 GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
                 CodePoint codePoint = data.CodePoint;
                 ushort id = data.GlyphId;
                 List<GlyphMetrics> metrics = new();
-
-                bool isDecomposed = data.IsDecomposed;
-                if (!isDecomposed)
-                {
-                    shiftXY = 0;
-                }
 
                 // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                 // cache the original in the font metrics and only update our collection.
@@ -267,25 +241,7 @@ namespace SixLabors.Fonts
                         hasFallBacks = true;
                     }
 
-                    // Clone and offset the glyph for rendering.
-                    // If the glyph is the result of a decomposition substitution we need to offset it.
-                    // We slip the text run in here while we clone so we have it available to the renderer.
-                    GlyphMetrics clone = gm.CloneForRendering(data.TextRun);
-                    if (isDecomposed)
-                    {
-                        if (!AdvancedTypographicUtils.IsVerticalGlyph(clone.CodePoint, layoutMode))
-                        {
-                            clone.ApplyOffset((short)shiftXY, 0);
-                            shiftXY += clone.AdvanceWidth;
-                        }
-                        else
-                        {
-                            clone.ApplyOffset(0, (short)shiftXY);
-                            shiftXY += clone.AdvanceHeight;
-                        }
-                    }
-
-                    metrics.Add(clone);
+                    metrics.Add(gm.CloneForRendering(data.TextRun));
                 }
 
                 if (metrics.Count > 0)

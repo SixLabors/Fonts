@@ -467,7 +467,8 @@ namespace SixLabors.Fonts
                 LineGap = metrics.LineGap,
                 LineHeight = metrics.LineHeight,
                 AdvanceWidthMax = metrics.AdvanceWidthMax,
-                AdvanceHeightMax = metrics.AdvanceHeightMax
+                AdvanceHeightMax = metrics.AdvanceHeightMax,
+                Synthesized = true
             };
 
             if (vhea is null)
@@ -486,6 +487,7 @@ namespace SixLabors.Fonts
             verticalMetrics.Descender = descender;
             verticalMetrics.LineGap = lineGap;
             verticalMetrics.LineHeight = lineHeight;
+            verticalMetrics.Synthesized = false;
 
             return verticalMetrics;
         }
@@ -575,11 +577,11 @@ namespace SixLabors.Fonts
             TextAttributes textAttributes,
             TextDecorations textDecorations,
             bool isVerticalLayout,
-            ushort palleteIndex = 0)
+            ushort paletteIndex = 0)
             => this.outlineType switch
             {
-                OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, palleteIndex),
-                OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, palleteIndex),
+                OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
+                OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
                 _ => throw new NotSupportedException(),
             };
     }

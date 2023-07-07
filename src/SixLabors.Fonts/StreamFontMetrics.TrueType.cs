@@ -54,7 +54,7 @@ namespace SixLabors.Fonts
             float scaleFactor = pixelSize / this.UnitsPerEm;
             this.interpreter.SetControlValueTable(cvt?.ControlValues, scaleFactor, pixelSize, prep?.Instructions);
 
-            Bounds bounds = glyphVector.GetBounds();
+            Bounds bounds = glyphVector.Bounds;
 
             Vector2 pp1 = new(MathF.Round(bounds.Min.X - (metrics.LeftSideBearing * scaleXY.X)), 0);
             Vector2 pp2 = new(MathF.Round(pp1.X + (metrics.AdvanceWidth * scaleXY.X)), 0);
@@ -123,7 +123,7 @@ namespace SixLabors.Fonts
             TextAttributes textAttributes,
             TextDecorations textDecorations,
             bool isVerticalLayout,
-            ushort palleteIndex = 0)
+            ushort paletteIndex = 0)
         {
             TrueTypeFontTables tables = this.trueTypeFontTables!;
             GlyphTable glyf = tables.Glyf;
@@ -131,7 +131,7 @@ namespace SixLabors.Fonts
             VerticalMetricsTable? vtmx = tables.Vmtx;
 
             GlyphVector vector = glyf.GetGlyph(glyphId);
-            Bounds bounds = vector.GetBounds();
+            Bounds bounds = vector.Bounds;
             ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
             short lsb = htmx.GetLeftSideBearing(glyphId);
 
@@ -148,10 +148,10 @@ namespace SixLabors.Fonts
             if (glyphType == GlyphType.ColrLayer)
             {
                 // 0xFFFF is special index meaning use foreground color and thus leave unset
-                if (palleteIndex != 0xFFFF)
+                if (paletteIndex != 0xFFFF)
                 {
                     CpalTable? cpal = tables.Cpal;
-                    color = cpal?.GetGlyphColor(0, palleteIndex);
+                    color = cpal?.GetGlyphColor(0, paletteIndex);
                 }
             }
 

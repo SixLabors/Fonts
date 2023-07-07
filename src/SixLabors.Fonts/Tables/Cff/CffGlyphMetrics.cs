@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 
@@ -98,7 +99,7 @@ namespace SixLabors.Fonts.Tables.Cff
                 this.GlyphColor);
 
         /// <inheritdoc/>
-        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, TextOptions options)
+        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -117,12 +118,10 @@ namespace SixLabors.Fonts.Tables.Cff
             Vector2 renderLocation = location + offset;
             float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
-            bool rotated = this.TryGetRotationMatrix(options.LayoutMode, out Matrix3x2 rotation);
-            FontRectangle box = this.GetBoundingBox(Vector2.Zero, scaledPPEM);
-            box = FontRectangle.Transform(in box, rotation);
-            box = new FontRectangle(box.X + renderLocation.X, box.Y + renderLocation.Y, box.Width, box.Height);
+            Matrix3x2 rotation = GetRotationMatrix(mode);
+            FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
+            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode);
 
-            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, options.LayoutMode);
             if (renderer.BeginGlyph(in box, in parameters))
             {
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
@@ -137,7 +136,7 @@ namespace SixLabors.Fonts.Tables.Cff
                     this.glyphData.RenderTo(renderer, renderLocation, scale, scaledOffset, rotation);
                 }
 
-                this.RenderDecorationsTo(renderer, location, options.LayoutMode, rotated, rotation, scaledPPEM);
+                this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM);
             }
 
             renderer.EndGlyph();

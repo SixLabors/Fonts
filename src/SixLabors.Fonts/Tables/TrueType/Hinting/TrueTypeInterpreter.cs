@@ -24,7 +24,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
         private readonly InstructionStream[] instructionDefs;
         private float[] controlValueTable;
         private readonly int[] storage;
-        private ushort[] contours;
+        private IReadOnlyList<ushort> contours;
         private float scale;
         private int ppem;
         private int callStackSize;
@@ -62,7 +62,8 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             this.contours = Array.Empty<ushort>();
         }
 
-        public void InitializeFunctionDefs(byte[] instructions) => this.Execute(new StackInstructionStream(instructions, 0), false, true);
+        public void InitializeFunctionDefs(byte[] instructions)
+            => this.Execute(new StackInstructionStream(instructions, 0), false, true);
 
         public void SetControlValueTable(short[]? cvt, float scale, float ppem, byte[]? cvProgram)
         {
@@ -111,9 +112,12 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             }
         }
 
-        public void HintGlyph(GlyphTableEntry glyphVector, bool isComposite)
+        public void HintGlyph(
+            ControlPoint[] controlPoints,
+            IReadOnlyList<ushort> endPoints,
+            ReadOnlyMemory<byte> instructions,
+            bool isComposite)
         {
-            ReadOnlyMemory<byte> instructions = glyphVector.Instructions;
             if (instructions.Length == 0)
             {
                 return;
@@ -126,8 +130,8 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             }
 
             // save contours and points
-            this.contours = glyphVector.EndPoints;
-            this.zp0 = this.zp1 = this.zp2 = this.points = new Zone(glyphVector, isTwilight: false);
+            this.contours = endPoints;
+            this.zp0 = this.zp1 = this.zp2 = this.points = new Zone(controlPoints, isTwilight: false);
 
             // reset all of our shared state
             this.state = this.cvtState;
@@ -511,10 +515,10 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         Vector2 point = this.zp2.GetCurrent(index);
                         this.MovePoint(this.zp2, index, value - this.Project(point));
 
-                        // moving twilight points moves their "original" value also
+                        // Moving twilight points moves their "original" value also
                         if (this.zp2.IsTwilight)
                         {
-                            this.zp2.Original.ControlPoints.Span[index] = this.zp2.Current.ControlPoints.Span[index];
+                            this.zp2.Original[index].Point = this.zp2.Current[index].Point;
                         }
                     }
 
@@ -564,7 +568,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                                 continue;
                             }
 
-                            this.points.Current.OnCurves[index] ^= true;
+                            this.points.Current[i].OnCurve ^= true;
                         }
 
                         this.state.Loop = 1;
@@ -586,7 +590,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                                 continue;
                             }
 
-                            this.points.Current.OnCurves[i] = true;
+                            this.points.Current[i].OnCurve = true;
                         }
                     }
 
@@ -606,7 +610,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                                 continue;
                             }
 
-                            this.points.Current.OnCurves[i] = false;
+                            this.points.Current[i].OnCurve = false;
                         }
                     }
 
@@ -632,16 +636,16 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         TouchState touch = this.GetTouchState();
                         int contour = this.stack.Pop();
                         int start = contour == 0 ? 0 : this.contours[contour - 1] + 1;
-                        int count = this.zp2.IsTwilight ? this.zp2.Current.PointCount : this.contours[contour] + 1;
-                        Span<Vector2> points = this.zp2.Current.ControlPoints.Span;
+                        int count = this.zp2.IsTwilight ? this.zp2.Current.Length : this.contours[contour] + 1;
+                        ControlPoint[] current = this.zp2.Current;
                         TouchState[] states = this.zp2.TouchState;
 
                         for (int i = start; i < count; i++)
                         {
-                            // don't move the reference point
-                            if (point != i)
+                            // Don't move the reference point
+                            if (zone.Current != current || point != i)
                             {
-                                points[i] += displacement;
+                                current[i].Point += displacement;
                                 states[i] |= touch;
                             }
                         }
@@ -655,20 +659,20 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         int count = 0;
                         if (this.zp2.IsTwilight)
                         {
-                            count = this.zp2.Current.PointCount;
+                            count = this.zp2.Current.Length;
                         }
-                        else if (this.contours.Length > 0)
+                        else if (this.contours.Count > 0)
                         {
-                            count = this.contours[this.contours.Length - 1] + 1;
+                            count = this.contours[this.contours.Count - 1] + 1;
                         }
 
-                        Span<Vector2> points = this.zp2.Current.ControlPoints.Span;
+                        ControlPoint[] current = this.zp2.Current;
                         for (int i = 0; i < count; i++)
                         {
-                            // don't move the reference point
-                            if (point != i)
+                            // Don't move the reference point
+                            if (zone.Current != current || point != i)
                             {
-                                points[i] += displacement;
+                                current[i].Point += displacement;
                             }
                         }
                     }
@@ -684,8 +688,8 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         if (this.zp0.IsTwilight)
                         {
                             Vector2 original = this.state.Freedom * distance;
-                            this.zp0.Original.ControlPoints.Span[pointIndex] = original;
-                            this.zp0.Current.ControlPoints.Span[pointIndex] = original;
+                            this.zp0.Original[pointIndex].Point = original;
+                            this.zp0.Current[pointIndex].Point = original;
                         }
 
                         // current position of the point along the projection vector
@@ -735,11 +739,11 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         // if we're operating on the twilight zone, initialize the points
                         if (this.zp1.IsTwilight)
                         {
-                            Span<Vector2> zp0Original = this.zp0.Original.ControlPoints.Span;
-                            Span<Vector2> zp1Current = this.zp1.Current.ControlPoints.Span;
-                            Span<Vector2> zp1Original = this.zp1.Original.ControlPoints.Span;
-                            zp1Original[pointIndex] = zp0Original[this.state.Rp0] + (targetDistance * this.state.Freedom / this.fdotp);
-                            zp1Current[pointIndex] = zp1Original[pointIndex];
+                            ControlPoint[] zp0Original = this.zp0.Original;
+                            ControlPoint[] zp1Current = this.zp1.Current;
+                            ControlPoint[] zp1Original = this.zp1.Original;
+                            zp1Original[pointIndex].Point = zp0Original[this.state.Rp0].Point + (targetDistance * this.state.Freedom / this.fdotp);
+                            zp1Current[pointIndex].Point = zp1Original[pointIndex].Point;
                         }
 
                         float currentDistance = this.Project(this.zp1.GetCurrent(pointIndex) - this.zp0.GetCurrent(this.state.Rp0));
@@ -825,14 +829,14 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         unsafe
                         {
                             // bail if no contours (empty outline)
-                            if (this.contours.Length == 0)
+                            if (this.contours.Count == 0)
                             {
                                 break;
                             }
 
-                            fixed (Vector2* currentPtr = this.points.Current.ControlPoints.Span)
+                            fixed (ControlPoint* currentPtr = this.points.Current)
                             {
-                                fixed (Vector2* originalPtr = this.points.Original.ControlPoints.Span)
+                                fixed (ControlPoint* originalPtr = this.points.Original)
                                 {
                                     // opcode controls whether we care about X or Y direction
                                     // do some pointer trickery so we can operate on the
@@ -844,19 +848,19 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                                     {
                                         this.iupYCalled = true;
                                         touchMask = TouchState.Y;
-                                        current = (byte*)&currentPtr->Y;
-                                        original = (byte*)&originalPtr->Y;
+                                        current = (byte*)&currentPtr->Point.Y;
+                                        original = (byte*)&originalPtr->Point.Y;
                                     }
                                     else
                                     {
                                         this.iupYCalled = true;
                                         touchMask = TouchState.X;
-                                        current = (byte*)&currentPtr->X;
-                                        original = (byte*)&originalPtr->X;
+                                        current = (byte*)&currentPtr->Point.X;
+                                        original = (byte*)&originalPtr->Point.X;
                                     }
 
                                     int point = 0;
-                                    for (int i = 0; i < this.contours.Length; i++)
+                                    for (int i = 0; i < this.contours.Count; i++)
                                     {
                                         ushort endPoint = this.contours[i];
                                         int firstPoint = point;
@@ -940,16 +944,15 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                         float den = (da.X * db.Y) - (da.Y * db.X);
                         if (Math.Abs(den) <= Epsilon)
                         {
-                            // parallel lines; spec says to put the ppoint "into the middle of the two lines"
-                            this.zp2.Current.ControlPoints.Span[index] = (a0 + a1 + b0 + b1) / 4;
+                            // parallel lines; spec says to put the point "into the middle of the two lines"
+                            this.zp2.Current[index].Point = (a0 + a1 + b0 + b1) / 4;
                         }
                         else
                         {
                             float t = (a0.X * a1.Y) - (a0.Y * a1.X);
                             float u = (b0.X * b1.Y) - (b0.Y * b1.X);
                             Vector2 p = new((t * db.X) - (da.X * u), (t * db.Y) - (da.Y * u));
-
-                            this.zp2.Current.ControlPoints.Span[index] = p / den;
+                            this.zp2.Current[index].Point = p / den;
                         }
 
                         this.zp2.TouchState[index] = TouchState.Both;
@@ -1378,13 +1381,6 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
                             int pointIndex = this.stack.Pop();
                             int arg = this.stack.Pop();
 
-                            // SHPIX and DELTAP don't execute unless moving a composite on the
-                            // y axis or moving a previously y touched point.
-                            if (!postIUP || composite)
-                            {
-                                continue;
-                            }
-
                             // upper 4 bits of the 8-bit arg is the relative ppem
                             // the opcode specifies the base to add to the ppem
                             int triggerPpem = (arg >> 4) & 0xF;
@@ -1407,7 +1403,13 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
 
                                 amount *= 1 << (6 - this.state.DeltaShift);
 
-                                this.MovePoint(this.zp0, pointIndex, F26Dot6ToFloat(amount));
+                                // SHPIX and DELTAP don't execute unless moving a composite on the
+                                // y axis or moving a previously y touched point.
+                                TouchState state = this.zp0.TouchState[pointIndex];
+                                if (!postIUP && ((composite && this.state.Freedom.Y != 0) || ((state & TouchState.Y) == TouchState.Y)))
+                                {
+                                    this.MovePoint(this.zp0, pointIndex, F26Dot6ToFloat(amount));
+                                }
                             }
                         }
                     }
@@ -1659,8 +1661,8 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             if (this.zp1.IsTwilight)
             {
                 Vector2 initialValue = originalReference + (this.state.Freedom * cvt);
-                this.zp1.Original.ControlPoints.Span[pointIndex] = initialValue;
-                this.zp1.Current.ControlPoints.Span[pointIndex] = initialValue;
+                this.zp1.Original[pointIndex].Point = initialValue;
+                this.zp1.Current[pointIndex].Point = initialValue;
             }
 
             Vector2 point = this.zp1.GetCurrent(pointIndex);
@@ -1716,7 +1718,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             Vector2 p2 = this.zp1.GetOriginal(pointIndex);
             float originalDistance = this.DualProject(p2 - p1);
 
-            // single width cutin test
+            // single width cut-in test
             if (Math.Abs(originalDistance - this.state.SingleWidthValue) < this.state.SingleWidthCutIn)
             {
                 if (originalDistance >= 0)
@@ -1801,36 +1803,25 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
             bool postIUP = this.iupXCalled && this.iupYCalled;
             bool composite = this.isComposite;
-
-            Span<Vector2> points = this.zp2.Current.ControlPoints.Span;
+            ControlPoint[] current = this.zp2.Current;
             bool inTwilight = this.zp0.IsTwilight && this.zp1.IsTwilight && this.zp2.IsTwilight;
-            if (inTwilight)
+
+            for (int i = 0; i < this.state.Loop; i++)
             {
-                for (int i = 0; i < this.state.Loop; i++)
-                {
-                    // Special case: allow SHPIX to move points in the twilight zone.
-                    // Otherwise, treat SHPIX the same as DELTAP.  Unbreaks various
-                    // fonts such as older versions of Rokkitt and DTL Argo T Light
-                    // that would glitch severely after calling ALIGNRP after a
-                    // blocked SHPIX.
-                    int pointIndex = this.stack.Pop();
-                    ref TouchState state = ref this.zp2.TouchState[pointIndex];
-                    if (!postIUP && composite && ((state & TouchState.Y) == TouchState.Y))
-                    {
-                        points[pointIndex] += displacement;
-                    }
-                }
-            }
-            else
-            {
-                for (int i = 0; i < this.state.Loop; i++)
+                // Special case: allow SHPIX to move points in the twilight zone.
+                // Otherwise, treat SHPIX the same as DELTAP.  Unbreaks various
+                // fonts such as older versions of Rokkitt and DTL Argo T Light
+                // that would glitch severely after calling ALIGNRP after a
+                // blocked SHPIX.
+                int pointIndex = this.stack.Pop();
+                ref TouchState state = ref this.zp2.TouchState[pointIndex];
+                if (inTwilight || (!postIUP && ((composite && this.state.Freedom.Y != 0) || ((state & TouchState.Y) == TouchState.Y))))
                 {
                     // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
                     // This prevents outline distortion on legacy fonts.
                     // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-                    int pointIndex = this.stack.Pop();
-                    points[pointIndex].Y += displacement.Y;
-                    this.zp2.TouchState[pointIndex] |= TouchState.Y;
+                    current[pointIndex].Point.Y += displacement.Y;
+                    state |= TouchState.Y;
                 }
             }
 
@@ -1839,12 +1830,22 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
 
         private void MovePoint(Zone zone, int index, float distance)
         {
-            // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
-            // This increases resolution on the x-axis and prevents glyph explosions on legacy fonts.
-            // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-            Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
-            zone.Current.ControlPoints.Span[index].Y = point.Y;
-            zone.TouchState[index] |= TouchState.Y;
+            if (this.isComposite)
+            {
+                Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
+                TouchState touch = this.GetTouchState();
+                zone.Current[index].Point = point;
+                zone.TouchState[index] |= touch;
+            }
+            else
+            {
+                // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
+                // This increases resolution on the x-axis and prevents glyph explosions on legacy fonts.
+                // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
+                Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
+                zone.Current[index].Point.Y = point.Y;
+                zone.TouchState[index] |= TouchState.Y;
+            }
         }
 
         private float Round(float value)
@@ -1997,7 +1998,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
 
         private static int FloatToF26Dot6(float value) => (int)Math.Round(value * 64.0f);
 
-        private static unsafe float* GetPoint(byte* data, int index) => (float*)(data + (sizeof(Vector2) * index));
+        private static unsafe float* GetPoint(byte* data, int index) => (float*)(data + (sizeof(ControlPoint) * index));
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
         private enum RoundMode
@@ -2195,7 +2196,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
             MIRP = 0xE0 // range of 32 values, 0xE0 - 0xFF
         }
 
-        private struct InstructionStream
+        private readonly struct InstructionStream
         {
             private readonly ReadOnlyMemory<byte> instructions;
             private readonly int ip;
@@ -2304,30 +2305,33 @@ namespace SixLabors.Fonts.Tables.TrueType.Hinting
 
         private struct Zone
         {
-            public GlyphTableEntry Current;
-            public GlyphTableEntry Original;
+            public ControlPoint[] Current;
+            public ControlPoint[] Original;
             public TouchState[] TouchState;
             public bool IsTwilight;
 
             public Zone(int maxTwilightPoints, bool isTwilight)
             {
                 this.IsTwilight = isTwilight;
-                this.Current = new GlyphTableEntry(new Vector2[maxTwilightPoints], new bool[maxTwilightPoints], new ushort[maxTwilightPoints], default, default);
-                this.Original = GlyphTableEntry.DeepClone(this.Current);
+                this.Current = new ControlPoint[maxTwilightPoints];
+                this.Original = new ControlPoint[maxTwilightPoints];
                 this.TouchState = new TouchState[maxTwilightPoints];
             }
 
-            public Zone(GlyphTableEntry glyphVector, bool isTwilight)
+            public Zone(ControlPoint[] controlPoints, bool isTwilight)
             {
                 this.IsTwilight = isTwilight;
-                this.Current = glyphVector;
-                this.Original = GlyphTableEntry.DeepClone(this.Current);
-                this.TouchState = new TouchState[glyphVector.ControlPoints.Length];
+                this.Current = controlPoints;
+
+                var original = new ControlPoint[controlPoints.Length];
+                controlPoints.AsSpan().CopyTo(original);
+                this.Original = original;
+                this.TouchState = new TouchState[controlPoints.Length];
             }
 
-            public Vector2 GetCurrent(int index) => this.Current.ControlPoints.Span[index];
+            public Vector2 GetCurrent(int index) => this.Current[index].Point;
 
-            public Vector2 GetOriginal(int index) => this.Original.ControlPoints.Span[index];
+            public Vector2 GetOriginal(int index) => this.Original[index].Point;
         }
 
         private class ExecutionStack
