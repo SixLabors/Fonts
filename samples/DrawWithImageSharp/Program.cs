@@ -56,6 +56,12 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             FontFamily arabicFont = SystemFonts.Get("Dubai");
 
             FontFamily tahoma = SystemFonts.Get("Tahoma");
+
+            RenderText(SystemFonts.Get("Arial"), "abcdefghijklmnopqrstuvwxyz", pointSize: 30);
+            RenderText(SystemFonts.Get("Arial"), "abcdefghijklmnopqrstuvwxyz\r\nabcdefghijklmnopqrstuvwxyz", pointSize: 30);
+            RenderText(SystemFonts.Get("Arial"), "abcdef ghijk lmnopq rstuvwxyz", pointSize: 30);
+            return;
+
             var textRuns = new List<RichTextRun>
             {
                 new RichTextRun { Start = 4, End = 10, Font = uiFont.CreateFont(72, FontStyle.Bold), TextAttributes = TextAttributes.Superscript, TextDecorations = TextDecorations.Underline | TextDecorations.Strikeout | TextDecorations.Overline },
@@ -227,9 +233,10 @@ namespace SixLabors.Fonts.DrawWithImageSharp
             => RenderText(
                 new RichTextOptions(new Font(font, pointSize))
                 {
-                    // WrappingLength = 400,
+                    WrappingLength = 180,
                     FallbackFontFamilies = fallbackFonts?.ToArray(),
-                    TextRuns = textRuns?.ToArray()
+                    TextRuns = textRuns?.ToArray(),
+                    WordBreaking = WordBreaking.BreakWord
                 },
                 text);
 

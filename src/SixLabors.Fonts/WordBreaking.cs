@@ -24,6 +24,11 @@ namespace SixLabors.Fonts
         /// Word breaks should not be used for Chinese/Japanese/Korean (CJK) text.
         /// Non-CJK text behavior is the same as for <see cref="Standard"/>
         /// </summary>
-        KeepAll
+        KeepAll,
+
+        /// <summary>
+        /// Uses a combination of <see cref="Standard"/> and <see cref="BreakAll"/> rules in that order.
+        /// </summary>
+        BreakWord
     }
 }
