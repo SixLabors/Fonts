@@ -860,6 +860,7 @@ namespace SixLabors.Fonts
             float wrappingLength = shouldWrap ? options.WrappingLength / options.Dpi : float.MaxValue;
             bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
             bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
+            bool breakWord = options.WordBreaking == WordBreaking.BreakWord;
             bool isHorizontalLayout = layoutMode.IsHorizontal();
             bool isVerticalMixedLayout = layoutMode.IsVerticalMixed();
 
@@ -1102,6 +1103,20 @@ namespace SixLabors.Fonts
                                     textLine = split;
                                     lineAdvance = split.ScaledLineAdvance;
                                 }
+                                else if (breakWord)
+                                {
+                                    textLines.Add(textLine.Finalize());
+                                    glyphCount += textLine.Count;
+                                    textLine = new();
+                                    lineAdvance = 0;
+                                }
+                            }
+                            else if (breakWord)
+                            {
+                                textLines.Add(textLine.Finalize());
+                                glyphCount += textLine.Count;
+                                textLine = new();
+                                lineAdvance = 0;
                             }
                         }
                     }
