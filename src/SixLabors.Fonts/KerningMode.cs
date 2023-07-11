@@ -12,7 +12,7 @@ namespace SixLabors.Fonts
         /// <summary>
         /// Specifies that kerning is applied.
         /// </summary>
-        Normal,
+        Standard,
 
         /// <summary>
         /// Specifies that kerning is not applied.

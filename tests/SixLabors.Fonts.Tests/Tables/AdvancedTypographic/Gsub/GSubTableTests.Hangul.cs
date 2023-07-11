@@ -3,7 +3,7 @@
 
 using Xunit;
 
-namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
+namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
 {
     /// <content>
     /// Tests adapted from <see href="https://github.com/foliojs/fontkit/blob/417af0c79c5664271a07a783574ec7fac7ebad0c/test/shaping.js"/>.
@@ -11,9 +11,9 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
     /// </content>
     public partial class GSubTableTests
     {
-        private readonly Font hangulFontCFF = CreateFont();
+        private readonly Font hangulFontCFF = CreateHangulFont();
 
-        private static Font CreateFont()
+        private static Font CreateHangulFont()
         {
             var collection = new FontCollection();
             FontFamily family = collection.Add(TestFonts.NotoSansKRRegular);
@@ -35,7 +35,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -54,7 +54,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -73,7 +73,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -95,7 +95,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -114,7 +114,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -136,7 +136,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -155,7 +155,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -174,7 +174,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -196,7 +196,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -215,7 +215,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -234,7 +234,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -253,7 +253,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -272,7 +272,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 
@@ -291,7 +291,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.Gsub
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
             {
-                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphIndex);
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
 #endif

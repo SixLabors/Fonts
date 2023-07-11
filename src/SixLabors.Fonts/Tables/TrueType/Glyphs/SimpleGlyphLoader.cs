@@ -12,18 +12,14 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
     /// <see href="https://docs.microsoft.com/en-us/typography/opentype/otspec160/glyf#simple-glyph-description"/>
     internal class SimpleGlyphLoader : GlyphLoader
     {
-        private readonly short[] xs;
-        private readonly short[] ys;
-        private readonly bool[] onCurves;
+        private readonly ControlPoint[] controlPoints;
         private readonly ushort[] endPoints;
         private readonly Bounds bounds;
         private readonly byte[] instructions;
 
-        public SimpleGlyphLoader(short[] xs, short[] ys, bool[] onCurves, ushort[] endPoints, Bounds bounds, byte[] instructions)
+        public SimpleGlyphLoader(ControlPoint[] controlPoints, ushort[] endPoints, Bounds bounds, byte[] instructions)
         {
-            this.xs = xs;
-            this.ys = ys;
-            this.onCurves = onCurves;
+            this.controlPoints = controlPoints;
             this.endPoints = endPoints;
             this.bounds = bounds;
             this.instructions = instructions;
@@ -31,8 +27,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
 
         public SimpleGlyphLoader(Bounds bounds)
         {
-            this.ys = this.xs = Array.Empty<short>();
-            this.onCurves = Array.Empty<bool>();
+            this.controlPoints = Array.Empty<ControlPoint>();
             this.endPoints = Array.Empty<ushort>();
             this.instructions = Array.Empty<byte>();
             this.bounds = bounds;
@@ -85,18 +80,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         }
 
         public override GlyphVector CreateGlyph(GlyphTable table)
-            => new(Convert(this.xs, this.ys), this.onCurves, this.endPoints, this.bounds, this.instructions);
-
-        private static Vector2[] Convert(short[] xs, short[] ys)
-        {
-            var vectors = new Vector2[xs.Length];
-            for (int i = 0; i < xs.Length; i++)
-            {
-                vectors[i] = new Vector2(xs[i], ys[i]);
-            }
-
-            return vectors;
-        }
+            => new(this.controlPoints, this.endPoints, this.bounds, this.instructions, false);
 
         public static GlyphLoader LoadSimpleGlyph(BigEndianBinaryReader reader, short count, in Bounds bounds)
         {
@@ -140,13 +124,13 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             short[] xs = ReadCoordinates(reader, pointCount, flags, Flags.XByte, Flags.XSignOrSame);
             short[] ys = ReadCoordinates(reader, pointCount, flags, Flags.YByte, Flags.YSignOrSame);
 
-            bool[] onCurves = new bool[flags.Length];
-            for (int i = flags.Length - 1; i >= 0; --i)
+            var controlPoints = new ControlPoint[xs.Length];
+            for (int i = 0; i < flags.Length; i++)
             {
-                onCurves[i] = flags[i].HasFlag(Flags.OnCurve);
+                controlPoints[i] = new(new Vector2(xs[i], ys[i]), flags[i].HasFlag(Flags.OnCurve));
             }
 
-            return new SimpleGlyphLoader(xs, ys, onCurves, endPoints, bounds, instructions);
+            return new SimpleGlyphLoader(controlPoints, endPoints, bounds, instructions);
         }
 
         private static Flags[] ReadFlags(BigEndianBinaryReader reader, int flagCount)
@@ -179,14 +163,14 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         private static short[] ReadCoordinates(BigEndianBinaryReader reader, int pointCount, Flags[] flags, Flags isByte, Flags signOrSame)
         {
             short[] xs = new short[pointCount];
-            int x = 0;
+            short x = 0;
             for (int i = 0; i < pointCount; i++)
             {
-                int dx;
+                short dx;
                 if (flags[i].HasFlag(isByte))
                 {
                     byte b = reader.ReadByte();
-                    dx = flags[i].HasFlag(signOrSame) ? b : -b;
+                    dx = (short)(flags[i].HasFlag(signOrSame) ? b : -b);
                 }
                 else
                 {
@@ -201,7 +185,7 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
                 }
 
                 x += dx;
-                xs[i] = (short)x; // TODO: overflow?
+                xs[i] = x;
             }
 
             return xs;

@@ -201,13 +201,13 @@ namespace SixLabors.Fonts.Tables.Woff
             byte[] flagStream = reader.ReadBytes((int)flagStreamSize);
 
             // Some composite glyphs have instructions so we must check all composite glyphs before read the glyph stream.
-            using (var compositeMemoryStream = new MemoryStream())
+            using (MemoryStream compositeMemoryStream = new())
             {
                 reader.BaseStream.Position = compositeStreamOffset;
                 compositeMemoryStream.Write(reader.ReadBytes((int)compositeStreamSize), 0, (int)compositeStreamSize);
                 compositeMemoryStream.Position = 0;
 
-                using (var compositeReader = new BigEndianBinaryReader(compositeMemoryStream, false))
+                using (BigEndianBinaryReader compositeReader = new(compositeMemoryStream, false))
                 {
                     for (ushort i = 0; i < compositeGlyphs.Count; i++)
                     {
@@ -221,7 +221,6 @@ namespace SixLabors.Fonts.Tables.Woff
 
             int curFlagsIndex = 0;
             int pntContourIndex = 0;
-            long instructionsIndex = instructionStreamOffset;
             for (int i = 0; i < allGlyphs.Length; i++)
             {
                 glyphs[i] = ReadSimpleGlyphData(
@@ -230,8 +229,7 @@ namespace SixLabors.Fonts.Tables.Woff
                     pntPerContours,
                     ref pntContourIndex,
                     flagStream,
-                    ref curFlagsIndex,
-                    ref instructionsIndex);
+                    ref curFlagsIndex);
             }
 
             // Now we read the composite stream again and create composite glyphs.
@@ -241,23 +239,39 @@ namespace SixLabors.Fonts.Tables.Woff
                 glyphs[compositeGlyphIndex] = ReadCompositeGlyphData(glyphs, reader);
             }
 
+            // Read the bounding box stream.
             int bitmapCount = (numGlyphs + 7) / 8;
-            byte[] bboxBitmap = ExpandBitmap(reader.ReadBytes(bitmapCount));
+            byte[] boundsBitmap = ExpandBitmap(reader.ReadBytes(bitmapCount));
             for (ushort i = 0; i < numGlyphs; i++)
             {
-                GlyphData tempGlyph = allGlyphs[i];
-                byte hasBbox = bboxBitmap[i];
-                if (hasBbox == 1)
+                GlyphData data = allGlyphs[i];
+                if (boundsBitmap[i] == 1)
                 {
-                    // Read bbox from the bboxstream.
-                    glyphs[i] = GlyphVector.WithCompositeBounds(glyphs[i], Bounds.Load(reader));
+                    // Read explicit bounds from the stream.
+                    // If the bounds are not explicit, the glyph loader will calculate them on demand.
+                    glyphs[i].Bounds = Bounds.Load(reader);
                 }
-                else if (tempGlyph.NumContour < 0)
+                else if (data.NumContour < 0)
                 {
                     throw new NotSupportedException("Composite glyph must have a bounding box.");
                 }
             }
 
+            // Read the instructions stream.
+            reader.BaseStream.Position = instructionStreamOffset;
+            for (int i = 0; i < allGlyphs.Length; i++)
+            {
+                ref GlyphVector vector = ref glyphs[i];
+                GlyphData data = allGlyphs[i];
+                if (data.InstructionsLength > 0)
+                {
+                    vector.Instructions = reader.ReadBytes(data.InstructionsLength);
+                }
+
+                glyphLoaders[i] = new Woff2GlyphLoader(vector);
+            }
+
+            // Finally compile the complete glyphs.
             for (ushort i = 0; i < numGlyphs; i++)
             {
                 if (!glyphs[i].HasValue())
@@ -266,7 +280,7 @@ namespace SixLabors.Fonts.Tables.Woff
                     continue;
                 }
 
-                glyphLoaders[i] = new TransformedGlyphLoader(glyphs[i]);
+                glyphLoaders[i] = new Woff2GlyphLoader(glyphs[i]);
             }
 
             return glyphLoaders;
@@ -278,8 +292,7 @@ namespace SixLabors.Fonts.Tables.Woff
             ushort[] pntPerContours,
             ref int pntContourIndex,
             byte[] flagStream,
-            ref int flagStreamIndex,
-            ref long instructionStreamOffset)
+            ref int flagStreamIndex)
         {
             if (glyphData.NumContour == 0)
             {
@@ -312,8 +325,7 @@ namespace SixLabors.Fonts.Tables.Woff
                 endPoints[i] = (ushort)(pointCount - 1);
             }
 
-            var controlPoints = new Vector2[pointCount];
-            bool[] onCurves = new bool[pointCount];
+            var controlPoints = new ControlPoint[pointCount];
             int n = 0;
             for (int i = 0; i < numContour; i++)
             {
@@ -360,22 +372,15 @@ namespace SixLabors.Fonts.Tables.Woff
                     }
 
                     // Most significant 1 bit -> on/off curve.
-                    onCurves[n] = f >> 7 == 0;
-                    controlPoints[n] = new Vector2(curX += x, curY += y);
+                    controlPoints[n] = new(new Vector2(curX += x, curY += y), f >> 7 == 0);
                 }
             }
 
-            // Read the instructions
-            ushort instructionSize = Read255UInt16(reader);
-            long position = reader.BaseStream.Position;
-            reader.BaseStream.Position = instructionStreamOffset;
-            byte[] instructions = reader.ReadBytes(instructionSize);
-            instructionStreamOffset += instructionSize;
-            reader.BaseStream.Position = position;
+            // Read the instructions length for later parsing.
+            glyphData.InstructionsLength = Read255UInt16(reader);
 
-            // Passing default here will cause the bounds to be calculated from the vector controls points.
-            // They can be overwritten later on for composite glyphs.
-            return new GlyphVector(controlPoints, onCurves, endPoints, default, instructions);
+            // Bounds and instructions are read later.
+            return new GlyphVector(controlPoints, endPoints, default, Array.Empty<byte>(), false);
         }
 
         private static bool CompositeHasInstructions(BigEndianBinaryReader reader)
@@ -417,7 +422,8 @@ namespace SixLabors.Fonts.Tables.Woff
 
         private static GlyphVector ReadCompositeGlyphData(GlyphVector[] createdGlyphs, BigEndianBinaryReader reader)
         {
-            GlyphVector composite = default;
+            List<ControlPoint> controlPoints = new();
+            List<ushort> endPoints = new();
             CompositeGlyphFlags flags;
             do
             {
@@ -440,7 +446,7 @@ namespace SixLabors.Fonts.Tables.Woff
                 {
                     float scale = reader.ReadF2dot14();
                     transform.M11 = scale;
-                    transform.M21 = scale;
+                    transform.M22 = scale;
                 }
                 else if ((flags & CompositeGlyphFlags.WeHaveXAndYScale) != 0)
                 {
@@ -455,12 +461,20 @@ namespace SixLabors.Fonts.Tables.Woff
                     transform.M22 = reader.ReadF2dot14();
                 }
 
-                // Composite bounds are read later.
-                composite = GlyphVector.Append(composite, GlyphVector.Transform(GlyphVector.DeepClone(createdGlyphs[glyphIndex]), transform), default);
+                var clone = GlyphVector.DeepClone(createdGlyphs[glyphIndex]);
+                GlyphVector.TransformInPlace(ref clone, transform);
+                ushort endPointOffset = (ushort)controlPoints.Count;
+
+                controlPoints.AddRange(clone.ControlPoints);
+                foreach (ushort p in clone.EndPoints)
+                {
+                    endPoints.Add((ushort)(p + endPointOffset));
+                }
             }
             while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
-            return composite;
+            // Bounds and instructions are read later.
+            return new GlyphVector(controlPoints, endPoints, default, Array.Empty<byte>(), true);
         }
 
         private static byte[] ExpandBitmap(byte[] orgBBoxBitmap)
@@ -586,12 +600,14 @@ namespace SixLabors.Fonts.Tables.Woff
         {
             public readonly ushort GlyphIndex;
             public readonly short NumContour;
+            public int InstructionsLength;
             public bool CompositeHasInstructions;
 
             public GlyphData(ushort glyphIndex, short contourCount)
             {
                 this.GlyphIndex = glyphIndex;
                 this.NumContour = contourCount;
+                this.InstructionsLength = 0;
                 this.CompositeHasInstructions = false;
             }
         }

@@ -20,6 +20,23 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         private const int MaxOperationsMinimum = 16384;
         private const int MaxShapingCharsLength = 0x3FFFFFFF; // Half int max.
 
+        /// <summary>
+        /// Gets a value indicating whether the glyph represented by the codepoint should be interpreted vertically.
+        /// </summary>
+        /// <param name="codePoint">The codepoint represented by the glyph.</param>
+        /// <param name="layoutMode">The layout mode.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public static bool IsVerticalGlyph(CodePoint codePoint, LayoutMode layoutMode)
+        {
+            if (layoutMode.IsVertical())
+            {
+                return true;
+            }
+
+            bool isVerticalLayout = layoutMode.IsVerticalMixed();
+            return isVerticalLayout && CodePoint.GetVerticalOrientationType(codePoint) is VerticalOrientationType.Upright or VerticalOrientationType.TransformUpright;
+        }
+
         public static int GetMaxAllowableShapingCollectionCount(int length)
             => (int)Math.Min(Math.Max((long)length * MaxLengthFactor, MaxLengthMinimum), MaxShapingCharsLength);
 
@@ -316,6 +333,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             int position = iterator.Index;
             int offset = iterator.Increment(increment);
             IGlyphShapingCollection collection = iterator.Collection;
+
+            if (offset < 0)
+            {
+                return false;
+            }
 
             int i = 0;
             while (i < sequence.Length && i < MaxContextLength && offset < collection.Count)

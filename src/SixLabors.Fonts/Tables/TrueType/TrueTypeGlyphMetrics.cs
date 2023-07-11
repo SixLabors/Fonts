@@ -1,10 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Unicode;
 
@@ -15,12 +14,13 @@ namespace SixLabors.Fonts.Tables.TrueType
     /// </summary>
     public class TrueTypeGlyphMetrics : GlyphMetrics
     {
-        private static readonly Vector2 MirrorScale = new(1, -1);
+        private static readonly Vector2 YInverter = new(1, -1);
         private readonly GlyphVector vector;
-        private readonly Dictionary<float, GlyphVector> scaledVector = new();
+        private readonly ConcurrentDictionary<float, GlyphVector> scaledVectorCache = new();
 
         internal TrueTypeGlyphMetrics(
             StreamFontMetrics font,
+            ushort glyphId,
             CodePoint codePoint,
             GlyphVector vector,
             ushort advanceWidth,
@@ -28,58 +28,84 @@ namespace SixLabors.Fonts.Tables.TrueType
             short leftSideBearing,
             short topSideBearing,
             ushort unitsPerEM,
-            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
-            : base(font, codePoint, vector.GetBounds(), advanceWidth, advanceHeight, leftSideBearing, topSideBearing, unitsPerEM, glyphId, glyphType, glyphColor)
+            : base(
+                  font,
+                  glyphId,
+                  codePoint,
+                  vector.Bounds,
+                  advanceWidth,
+                  advanceHeight,
+                  leftSideBearing,
+                  topSideBearing,
+                  unitsPerEM,
+                  textAttributes,
+                  textDecorations,
+                  glyphType,
+                  glyphColor)
+            => this.vector = vector;
+
+        internal TrueTypeGlyphMetrics(
+            StreamFontMetrics font,
+            ushort glyphId,
+            CodePoint codePoint,
+            GlyphVector vector,
+            ushort advanceWidth,
+            ushort advanceHeight,
+            short leftSideBearing,
+            short topSideBearing,
+            ushort unitsPerEM,
+            Vector2 offset,
+            Vector2 scaleFactor,
+            TextRun textRun,
+            GlyphType glyphType = GlyphType.Standard,
+            GlyphColor? glyphColor = null)
+            : base(
+                  font,
+                  glyphId,
+                  codePoint,
+                  vector.Bounds,
+                  advanceWidth,
+                  advanceHeight,
+                  leftSideBearing,
+                  topSideBearing,
+                  unitsPerEM,
+                  offset,
+                  scaleFactor,
+                  textRun,
+                  glyphType,
+                  glyphColor)
             => this.vector = vector;
 
         /// <inheritdoc/>
-        internal override GlyphMetrics CloneForRendering(TextRun textRun, CodePoint codePoint)
-        {
-            StreamFontMetrics fontMetrics = this.FontMetrics;
-            Vector2 offset = this.Offset;
-            Vector2 scaleFactor = this.ScaleFactor;
-            if (textRun.TextAttributes.HasFlag(TextAttributes.Subscript))
-            {
-                float units = this.UnitsPerEm;
-                scaleFactor /= new Vector2(fontMetrics.SubscriptXSize / units, fontMetrics.SubscriptYSize / units);
-                offset = new(this.FontMetrics.SubscriptXOffset, this.FontMetrics.SubscriptYOffset);
-            }
-            else if (textRun.TextAttributes.HasFlag(TextAttributes.Superscript))
-            {
-                float units = this.UnitsPerEm;
-                scaleFactor /= new Vector2(fontMetrics.SuperscriptXSize / units, fontMetrics.SuperscriptYSize / units);
-                offset = new(fontMetrics.SuperscriptXOffset, -fontMetrics.SuperscriptYOffset);
-            }
-
-            return new TrueTypeGlyphMetrics(
-                fontMetrics,
-                codePoint,
+        internal override GlyphMetrics CloneForRendering(TextRun textRun)
+            => new TrueTypeGlyphMetrics(
+                this.FontMetrics,
+                this.GlyphId,
+                this.CodePoint,
                 GlyphVector.DeepClone(this.vector),
                 this.AdvanceWidth,
                 this.AdvanceHeight,
                 this.LeftSideBearing,
                 this.TopSideBearing,
                 this.UnitsPerEm,
-                this.GlyphId,
+                this.Offset,
+                this.ScaleFactor,
+                textRun,
                 this.GlyphType,
-                this.GlyphColor)
-            {
-                Offset = offset,
-                ScaleFactor = scaleFactor,
-                TextRun = textRun
-            };
-        }
+                this.GlyphColor);
 
         /// <summary>
         /// Gets the outline for the current glyph.
         /// </summary>
-        /// <returns>The <see cref="GlyphOutline"/>.</returns>
-        public GlyphOutline GetOutline() => this.vector.GetOutline();
+        /// <returns>The <see cref="GlyphVector"/>.</returns>
+        internal GlyphVector GetOutline() => this.vector;
 
         /// <inheritdoc/>
-        internal override void RenderTo(IGlyphRenderer renderer, float pointSize, Vector2 location, TextOptions options)
+        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -87,24 +113,22 @@ namespace SixLabors.Fonts.Tables.TrueType
                 return;
             }
 
-            // TODO: Move to base class
+            float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
             float dpi = options.Dpi;
+
+            // The glyph vector is rendered offset to the location.
+            // For horizontal text, the offset is always zero but vertical or rotated text
+            // will be offset against the location.
             location *= dpi;
-            float scaledPPEM = dpi * pointSize;
-            bool forcePPEMToInt = (this.FontMetrics.HeadFlags & HeadTable.HeadFlags.ForcePPEMToInt) != 0;
+            offset *= dpi;
+            Vector2 renderLocation = location + offset;
+            float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
-            if (forcePPEMToInt)
-            {
-                scaledPPEM = MathF.Round(scaledPPEM);
-            }
+            Matrix3x2 rotation = GetRotationMatrix(mode);
+            FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
+            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode);
 
-            FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
-
-            // TextRun is never null here as rendering is only accessable via a Glyph which
-            // uses the cloned metrics instance.
-            var parameters = new GlyphRendererParameters(this, this.TextRun!, pointSize, dpi);
-
-            if (renderer.BeginGlyph(box, parameters))
+            if (renderer.BeginGlyph(in box, in parameters))
             {
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
                 {
@@ -113,40 +137,46 @@ namespace SixLabors.Fonts.Tables.TrueType
                         colorSurface.SetColor(this.GlyphColor.Value);
                     }
 
-                    if (!this.scaledVector.TryGetValue(scaledPPEM, out GlyphVector scaledVector))
+                    GlyphVector scaledVector = this.scaledVectorCache.GetOrAdd(scaledPPEM, _ =>
                     {
-                        // Scale and translate the glyph
+                        // Create a scaled deep copy of the vector so that we do not alter
+                        // the globally cached instance.
+                        var clone = GlyphVector.DeepClone(this.vector);
                         Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-                        var transform = Matrix3x2.CreateScale(scale);
-                        transform.Translation = this.Offset * scale * MirrorScale;
-                        scaledVector = GlyphVector.Transform(this.vector, transform);
-                        this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref scaledVector, scale, scaledPPEM);
-                        this.scaledVector[scaledPPEM] = scaledVector;
-                    }
 
-                    GlyphOutline outline = scaledVector.GetOutline();
-                    ReadOnlySpan<Vector2> controlPoints = outline.ControlPoints.Span;
-                    ReadOnlySpan<ushort> endPoints = outline.EndPoints.Span;
-                    ReadOnlySpan<bool> onCurves = outline.OnCurves.Span;
+                        var matrix = Matrix3x2.CreateScale(scale);
+                        matrix.Translation = this.Offset * scale;
+                        GlyphVector.TransformInPlace(ref clone, matrix);
+
+                        float pixelSize = scaledPPEM / 72F;
+                        this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref clone, scale, pixelSize);
+
+                        // Rotation must happen after hinting.
+                        GlyphVector.TransformInPlace(ref clone, rotation);
+                        return clone;
+                    });
+
+                    IList<ControlPoint> controlPoints = scaledVector.ControlPoints;
+                    IReadOnlyList<ushort> endPoints = scaledVector.EndPoints;
 
                     int endOfContour = -1;
-                    for (int i = 0; i < outline.EndPoints.Length; i++)
+                    for (int i = 0; i < scaledVector.EndPoints.Count; i++)
                     {
                         renderer.BeginFigure();
                         int startOfContour = endOfContour + 1;
                         endOfContour = endPoints[i];
 
                         Vector2 prev;
-                        Vector2 curr = (MirrorScale * controlPoints[endOfContour]) + location;
-                        Vector2 next = (MirrorScale * controlPoints[startOfContour]) + location;
+                        Vector2 curr = (YInverter * controlPoints[endOfContour].Point) + renderLocation;
+                        Vector2 next = (YInverter * controlPoints[startOfContour].Point) + renderLocation;
 
-                        if (onCurves[endOfContour])
+                        if (controlPoints[endOfContour].OnCurve)
                         {
                             renderer.MoveTo(curr);
                         }
                         else
                         {
-                            if (onCurves[startOfContour])
+                            if (controlPoints[startOfContour].OnCurve)
                             {
                                 renderer.MoveTo(next);
                             }
@@ -166,9 +196,9 @@ namespace SixLabors.Fonts.Tables.TrueType
                             int currentIndex = startOfContour + p;
                             int nextIndex = startOfContour + ((p + 1) % length);
                             int prevIndex = startOfContour + ((length + p - 1) % length);
-                            next = (MirrorScale * controlPoints[nextIndex]) + location;
+                            next = (YInverter * controlPoints[nextIndex].Point) + renderLocation;
 
-                            if (onCurves[currentIndex])
+                            if (controlPoints[currentIndex].OnCurve)
                             {
                                 // This is a straight line.
                                 renderer.LineTo(curr);
@@ -178,13 +208,13 @@ namespace SixLabors.Fonts.Tables.TrueType
                                 Vector2 prev2 = prev;
                                 Vector2 next2 = next;
 
-                                if (!onCurves[prevIndex])
+                                if (!controlPoints[prevIndex].OnCurve)
                                 {
                                     prev2 = (curr + prev) * .5F;
                                     renderer.LineTo(prev2);
                                 }
 
-                                if (!onCurves[nextIndex])
+                                if (!controlPoints[nextIndex].OnCurve)
                                 {
                                     next2 = (curr + next) * .5F;
                                 }
@@ -198,7 +228,7 @@ namespace SixLabors.Fonts.Tables.TrueType
                     }
                 }
 
-                this.RenderDecorationsTo(renderer, location, scaledPPEM);
+                this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM);
             }
 
             renderer.EndGlyph();

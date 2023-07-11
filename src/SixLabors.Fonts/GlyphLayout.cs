@@ -13,24 +13,22 @@ namespace SixLabors.Fonts
     {
         internal GlyphLayout(
             Glyph glyph,
-            Vector2 location,
-            float ascender,
-            float descender,
-            float linegap,
-            float lineHeight,
-            float width,
-            float height,
+            Vector2 boxLocation,
+            Vector2 penLocation,
+            Vector2 offset,
+            float advanceWidth,
+            float advanceHeight,
+            GlyphLayoutMode layoutMode,
             bool isStartOfLine)
         {
             this.Glyph = glyph;
             this.CodePoint = glyph.GlyphMetrics.CodePoint;
-            this.Location = location;
-            this.Ascender = ascender;
-            this.Descender = descender;
-            this.LineGap = linegap;
-            this.LineHeight = lineHeight;
-            this.Width = width;
-            this.Height = height;
+            this.BoxLocation = boxLocation;
+            this.PenLocation = penLocation;
+            this.Offset = offset;
+            this.AdvanceX = advanceWidth;
+            this.AdvanceY = advanceHeight;
+            this.LayoutMode = layoutMode;
             this.IsStartOfLine = isStartOfLine;
         }
 
@@ -45,39 +43,35 @@ namespace SixLabors.Fonts
         public CodePoint CodePoint { get; }
 
         /// <summary>
-        /// Gets the location.
+        /// Gets the location of the glyph box.
         /// </summary>
-        public Vector2 Location { get; }
+        public Vector2 BoxLocation { get; }
 
         /// <summary>
-        /// Gets the ascender
+        /// Gets the location to render the glyph at.
         /// </summary>
-        public float Ascender { get; }
+        public Vector2 PenLocation { get; }
 
         /// <summary>
-        /// Gets the ascender
+        /// Gets the offset of the glyph vector relative to the top-left position of the glyph advance.
+        /// For horizontal layout this will always be <see cref="Vector2.Zero"/>.
         /// </summary>
-        public float Descender { get; }
-
-        /// <summary>
-        /// Gets the lie gap
-        /// </summary>
-        public float LineGap { get; }
-
-        /// <summary>
-        /// Gets the line height of the glyph.
-        /// </summary>
-        public float LineHeight { get; }
+        public Vector2 Offset { get; }
 
         /// <summary>
         /// Gets the width.
         /// </summary>
-        public float Width { get; }
+        public float AdvanceX { get; }
 
         /// <summary>
         /// Gets the height.
         /// </summary>
-        public float Height { get; }
+        public float AdvanceY { get; }
+
+        /// <summary>
+        /// Gets the glyph layout mode.
+        /// </summary>
+        public GlyphLayoutMode LayoutMode { get; }
 
         /// <summary>
         /// Gets a value indicating whether this glyph is the first glyph on a new line.
@@ -88,19 +82,47 @@ namespace SixLabors.Fonts
         /// Gets a value indicating whether the glyph represents a whitespace character.
         /// </summary>
         /// <returns>The <see cref="bool"/>.</returns>
-        public bool IsWhiteSpace() => CodePoint.IsWhiteSpace(this.CodePoint);
+        public bool IsWhiteSpace() => GlyphMetrics.ShouldRenderWhiteSpaceOnly(this.CodePoint);
 
         internal FontRectangle BoundingBox(float dpi)
         {
-            FontRectangle box = this.Glyph.BoundingBox(this.Location * dpi, dpi);
+            Vector2 origin = (this.PenLocation + this.Offset) * dpi;
+            FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, Vector2.Zero, dpi);
 
-            // TODO: Should this be in GlyphMetrics? We likely need to check more than whitespace.
             if (this.IsWhiteSpace())
             {
-                box = new FontRectangle(box.X, box.Y, this.Width * dpi, box.Height);
+                // Take the layout advance width/height to account for advance multipliers that can cause
+                // the glyph to extend beyond the box. For example '\t'.
+                if (this.LayoutMode == GlyphLayoutMode.Vertical)
+                {
+                    return new FontRectangle(
+                        box.X + origin.X,
+                        box.Y + origin.Y,
+                        box.Width,
+                        this.AdvanceY * dpi);
+                }
+
+                if (this.LayoutMode == GlyphLayoutMode.VerticalRotated)
+                {
+                    return new FontRectangle(
+                        box.X + origin.X,
+                        box.Y + origin.Y,
+                        0,
+                        this.AdvanceY * dpi);
+                }
+
+                return new FontRectangle(
+                    box.X + origin.X,
+                    box.Y + origin.Y,
+                    this.AdvanceX * dpi,
+                    box.Height);
             }
 
-            return box;
+            return new FontRectangle(
+                box.X + origin.X,
+                box.Y + origin.Y,
+                box.Width,
+                box.Height);
         }
 
         /// <inheritdoc/>
@@ -108,8 +130,8 @@ namespace SixLabors.Fonts
         {
             string s = this.IsStartOfLine ? "@ " : string.Empty;
             string ws = this.IsWhiteSpace() ? "!" : string.Empty;
-            Vector2 l = this.Location;
-            return $"{s}{ws}{this.CodePoint.ToDebuggerDisplay()} {l.X},{l.Y} {this.Width}x{this.Height}";
+            Vector2 l = this.PenLocation;
+            return $"{s}{ws}{this.CodePoint.ToDebuggerDisplay()} {l.X},{l.Y} {this.AdvanceX}x{this.AdvanceY}";
         }
     }
 }

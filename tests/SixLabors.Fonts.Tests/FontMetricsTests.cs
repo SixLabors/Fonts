@@ -1,7 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System.Linq;
+using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
 using Xunit;
@@ -20,12 +20,12 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             Assert.Equal(2048, font.FontMetrics.UnitsPerEm);
-            Assert.Equal(2189, font.FontMetrics.Ascender);
-            Assert.Equal(-600, font.FontMetrics.Descender);
-            Assert.Equal(0, font.FontMetrics.LineGap);
-            Assert.Equal(2789, font.FontMetrics.LineHeight);
-            Assert.Equal(2470, font.FontMetrics.AdvanceWidthMax);
-            Assert.Equal(font.FontMetrics.LineHeight, font.FontMetrics.AdvanceHeightMax);
+            Assert.Equal(2189, font.FontMetrics.HorizontalMetrics.Ascender);
+            Assert.Equal(-600, font.FontMetrics.HorizontalMetrics.Descender);
+            Assert.Equal(0, font.FontMetrics.HorizontalMetrics.LineGap);
+            Assert.Equal(2789, font.FontMetrics.HorizontalMetrics.LineHeight);
+            Assert.Equal(2470, font.FontMetrics.HorizontalMetrics.AdvanceWidthMax);
+            Assert.Equal(font.FontMetrics.HorizontalMetrics.LineHeight, font.FontMetrics.HorizontalMetrics.AdvanceHeightMax);
 
             Assert.Equal(1331, font.FontMetrics.SubscriptXSize);
             Assert.Equal(1229, font.FontMetrics.SubscriptYSize);
@@ -59,12 +59,20 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             Assert.Equal(1000, font.FontMetrics.UnitsPerEm);
-            Assert.Equal(806, font.FontMetrics.Ascender);
-            Assert.Equal(-256, font.FontMetrics.Descender);
-            Assert.Equal(90, font.FontMetrics.LineGap);
-            Assert.Equal(1152, font.FontMetrics.LineHeight);
-            Assert.Equal(1000, font.FontMetrics.AdvanceWidthMax);
-            Assert.Equal(1000, font.FontMetrics.AdvanceHeightMax);
+
+            Assert.Equal(806, font.FontMetrics.HorizontalMetrics.Ascender);
+            Assert.Equal(-256, font.FontMetrics.HorizontalMetrics.Descender);
+            Assert.Equal(90, font.FontMetrics.HorizontalMetrics.LineGap);
+            Assert.Equal(1152, font.FontMetrics.HorizontalMetrics.LineHeight);
+            Assert.Equal(1000, font.FontMetrics.HorizontalMetrics.AdvanceWidthMax);
+            Assert.Equal(1000, font.FontMetrics.HorizontalMetrics.AdvanceHeightMax);
+
+            Assert.Equal(451, font.FontMetrics.VerticalMetrics.Ascender);
+            Assert.Equal(-453, font.FontMetrics.VerticalMetrics.Descender);
+            Assert.Equal(90, font.FontMetrics.VerticalMetrics.LineGap);
+            Assert.Equal(994, font.FontMetrics.VerticalMetrics.LineHeight);
+            Assert.Equal(1000, font.FontMetrics.VerticalMetrics.AdvanceWidthMax);
+            Assert.Equal(1000, font.FontMetrics.VerticalMetrics.AdvanceHeightMax);
 
             Assert.Equal(650, font.FontMetrics.SubscriptXSize);
             Assert.Equal(700, font.FontMetrics.SubscriptYSize);
@@ -98,12 +106,20 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             Assert.Equal(1000, font.FontMetrics.UnitsPerEm);
-            Assert.Equal(1160, font.FontMetrics.Ascender);
-            Assert.Equal(-288, font.FontMetrics.Descender);
-            Assert.Equal(0, font.FontMetrics.LineGap);
-            Assert.Equal(1448, font.FontMetrics.LineHeight);
-            Assert.Equal(3000, font.FontMetrics.AdvanceWidthMax);
-            Assert.Equal(3000, font.FontMetrics.AdvanceHeightMax);
+
+            Assert.Equal(1160, font.FontMetrics.HorizontalMetrics.Ascender);
+            Assert.Equal(-288, font.FontMetrics.HorizontalMetrics.Descender);
+            Assert.Equal(0, font.FontMetrics.HorizontalMetrics.LineGap);
+            Assert.Equal(1448, font.FontMetrics.HorizontalMetrics.LineHeight);
+            Assert.Equal(3000, font.FontMetrics.HorizontalMetrics.AdvanceWidthMax);
+            Assert.Equal(3000, font.FontMetrics.HorizontalMetrics.AdvanceHeightMax);
+
+            Assert.Equal(500, font.FontMetrics.VerticalMetrics.Ascender);
+            Assert.Equal(-500, font.FontMetrics.VerticalMetrics.Descender);
+            Assert.Equal(0, font.FontMetrics.VerticalMetrics.LineGap);
+            Assert.Equal(1000, font.FontMetrics.VerticalMetrics.LineHeight);
+            Assert.Equal(3000, font.FontMetrics.VerticalMetrics.AdvanceWidthMax);
+            Assert.Equal(3000, font.FontMetrics.VerticalMetrics.AdvanceHeightMax);
 
             Assert.Equal(650, font.FontMetrics.SubscriptXSize);
             Assert.Equal(600, font.FontMetrics.SubscriptYSize);
@@ -137,7 +153,15 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
+
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(
+                codePoint,
+                TextAttributes.None,
+                TextDecorations.None,
+                LayoutMode.HorizontalTopBottom,
+                ColorFontSupport.None,
+                out IReadOnlyList<GlyphMetrics> metrics));
+            GlyphMetrics glyphMetrics = metrics[0];
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
@@ -161,7 +185,15 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
+
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(
+                codePoint,
+                TextAttributes.None,
+                TextDecorations.None,
+                LayoutMode.HorizontalTopBottom,
+                ColorFontSupport.None,
+                out IReadOnlyList<GlyphMetrics> metrics));
+            GlyphMetrics glyphMetrics = metrics[0];
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
@@ -186,7 +218,15 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
+
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(
+                codePoint,
+                TextAttributes.None,
+                TextDecorations.None,
+                LayoutMode.HorizontalTopBottom,
+                ColorFontSupport.None,
+                out IReadOnlyList<GlyphMetrics> metrics));
+            GlyphMetrics glyphMetrics = metrics[0];
 
             Assert.Equal(codePoint, glyphMetrics.CodePoint);
             Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
@@ -211,7 +251,15 @@ namespace SixLabors.Fonts.Tests
             Font font = family.CreateFont(12);
 
             var codePoint = new CodePoint('A');
-            GlyphMetrics glyphMetrics = font.FontMetrics.GetGlyphMetrics(codePoint, ColorFontSupport.None).First();
+
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(
+                codePoint,
+                TextAttributes.None,
+                TextDecorations.None,
+                LayoutMode.HorizontalTopBottom,
+                ColorFontSupport.None,
+                out IReadOnlyList<GlyphMetrics> metrics));
+            GlyphMetrics glyphMetrics = metrics[0];
 
             // Position 0.
             Assert.Equal(codePoint, glyphMetrics.CodePoint);

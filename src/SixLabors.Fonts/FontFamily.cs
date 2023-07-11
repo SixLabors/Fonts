@@ -155,7 +155,7 @@ namespace SixLabors.Fonts
         /// <see langword="true"/> if the <see cref="FontFamily"/> contains font metrics
         /// with the specified name; otherwise, <see langword="false"/>.
         /// </returns>
-        internal bool TryGetMetrics(FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)
+        public bool TryGetMetrics(FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)
         {
             if (this == default)
             {

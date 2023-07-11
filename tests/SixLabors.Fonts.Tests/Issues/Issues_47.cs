@@ -25,13 +25,13 @@ namespace SixLabors.Fonts.Tests.Issues
                 HorizontalAlignment = HorizontalAlignment.Left
             });
 
-            float lineYPos = layout[0].Location.Y;
+            float lineYPos = layout[0].PenLocation.Y;
             foreach (GlyphLayout glyph in layout)
             {
-                if (lineYPos != glyph.Location.Y)
+                if (lineYPos != glyph.PenLocation.Y)
                 {
                     Assert.False(glyph.IsWhiteSpace());
-                    lineYPos = glyph.Location.Y;
+                    lineYPos = glyph.PenLocation.Y;
                 }
             }
         }
@@ -53,15 +53,15 @@ namespace SixLabors.Fonts.Tests.Issues
                 HorizontalAlignment = horizontalAlignment
             });
 
-            float lineYPos = layout[0].Location.Y;
+            float lineYPos = layout[0].PenLocation.Y;
             for (int i = 0; i < layout.Count; i++)
             {
                 GlyphLayout glyph = layout[i];
-                if (lineYPos != glyph.Location.Y)
+                if (lineYPos != glyph.PenLocation.Y)
                 {
                     Assert.False(glyph.IsWhiteSpace());
                     Assert.False(layout[i - 1].IsWhiteSpace());
-                    lineYPos = glyph.Location.Y;
+                    lineYPos = glyph.PenLocation.Y;
                 }
             }
         }

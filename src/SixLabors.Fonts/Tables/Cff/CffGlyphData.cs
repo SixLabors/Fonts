@@ -65,7 +65,7 @@ namespace SixLabors.Fonts.Tables.Cff
             return engine.GetBounds();
         }
 
-        public void RenderTo(IGlyphRenderer renderer, Vector2 scale, Vector2 offset)
+        public void RenderTo(IGlyphRenderer renderer, Vector2 origin, Vector2 scale, Vector2 offset, Matrix3x2 transform)
         {
             using var engine = new CffEvaluationEngine(
                  this.charStrings,
@@ -77,7 +77,7 @@ namespace SixLabors.Fonts.Tables.Cff
                  this.FVar,
                  this.AVar);
 
-            engine.RenderTo(renderer, scale, offset);
+            engine.RenderTo(renderer, origin, scale, offset, transform);
         }
     }
 }

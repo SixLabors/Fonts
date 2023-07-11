@@ -87,7 +87,10 @@ namespace SixLabors.Fonts
             CodePoint codePoint,
             ushort glyphId,
             GlyphType glyphType,
-            ushort palleteIndex = 0)
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
+            bool isVerticalLayout,
+            ushort paletteIndex = 0)
         {
             CompactFontTables tables = this.compactFontTables!;
             ICffTable cff = tables.Cff;
@@ -105,9 +108,9 @@ namespace SixLabors.Fonts
             ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
             short lsb = htmx.GetLeftSideBearing(glyphId);
 
-            // Provide a default for the advance height. This is overwritten for vertical fonts.
-            ushort advancedHeight = (ushort)(this.Ascender - this.Descender);
-            short tsb = (short)(this.Ascender - bounds.Max.Y);
+            IMetricsHeader metrics = isVerticalLayout ? this.VerticalMetrics : this.HorizontalMetrics;
+            ushort advancedHeight = (ushort)(metrics.Ascender - metrics.Descender);
+            short tsb = (short)(metrics.Ascender - bounds.Max.Y);
             if (vtmx != null)
             {
                 advancedHeight = vtmx.GetAdvancedHeight(glyphId);
@@ -117,16 +120,17 @@ namespace SixLabors.Fonts
             GlyphColor? color = null;
             if (glyphType == GlyphType.ColrLayer)
             {
-                // 0xFFFF is special index meaning use foreground color and thus leave unset.
-                if (palleteIndex != 0xFFFF)
+                // 0xFFFF is special index meaning use foreground color and thus leave unset
+                if (paletteIndex != 0xFFFF)
                 {
                     CpalTable? cpal = tables.Cpal;
-                    color = cpal?.GetGlyphColor(0, palleteIndex);
+                    color = cpal?.GetGlyphColor(0, paletteIndex);
                 }
             }
 
             return new CffGlyphMetrics(
                 this,
+                glyphId,
                 codePoint,
                 vector,
                 bounds,
@@ -135,7 +139,8 @@ namespace SixLabors.Fonts
                 lsb,
                 tsb,
                 this.UnitsPerEm,
-                glyphId,
+                textAttributes,
+                textDecorations,
                 glyphType,
                 color);
         }

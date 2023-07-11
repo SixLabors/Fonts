@@ -37,6 +37,10 @@ namespace SixLabors.Fonts
             this.MarkAttachment = data.MarkAttachment;
             this.CursiveAttachment = data.CursiveAttachment;
             this.IsDecomposed = data.IsDecomposed;
+            if (data.UniversalShapingEngineInfo != null)
+            {
+                this.UniversalShapingEngineInfo = new(data.UniversalShapingEngineInfo.Category, data.UniversalShapingEngineInfo.SyllableType, data.UniversalShapingEngineInfo.Syllable);
+            }
 
             if (!clearFeatures)
             {
@@ -102,12 +106,43 @@ namespace SixLabors.Fonts
         public GlyphShapingBounds Bounds { get; set; } = new(0, 0, 0, 0);
 
         /// <summary>
+        /// Gets or sets a value indicating whether this glyph is the result of a substitution.
+        /// </summary>
+        public bool IsSubstituted { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether this glyph is the result of a decomposition substitution
         /// </summary>
         public bool IsDecomposed { get; set; }
 
+        /// <summary>
+        /// Gets or sets the universal shaping information.
+        /// </summary>
+        public UniversalShapingEngineInfo? UniversalShapingEngineInfo { get; set; }
+
         private string DebuggerDisplay
             => FormattableString
             .Invariant($" {this.GlyphId} : {this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : {this.IsDecomposed}");
+
+        internal string ToDebuggerDisplay() => this.DebuggerDisplay;
+    }
+
+    /// <summary>
+    /// Represents information required for universal shaping.
+    /// </summary>
+    internal class UniversalShapingEngineInfo
+    {
+        public UniversalShapingEngineInfo(string category, string syllableType, int syllable)
+        {
+            this.Category = category;
+            this.SyllableType = syllableType;
+            this.Syllable = syllable;
+        }
+
+        public string Category { get; set; }
+
+        public string SyllableType { get; }
+
+        public int Syllable { get; }
     }
 }

@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;

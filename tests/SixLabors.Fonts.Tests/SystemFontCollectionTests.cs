@@ -156,6 +156,11 @@ namespace SixLabors.Fonts.Tests
                 Assert.Contains(@"/Library/Fonts/", exception.Message, StringComparison.OrdinalIgnoreCase);
                 Assert.Contains(exception.SearchDirectories, e => e.IndexOf("Library/Fonts", StringComparison.OrdinalIgnoreCase) != -1);
             }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("Android")))
+            {
+                Assert.Contains(@"/system/fonts/", exception.Message, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains(exception.SearchDirectories, e => e.IndexOf("/system/fonts/", StringComparison.OrdinalIgnoreCase) != -1);
+            }
         }
 
         [Fact]

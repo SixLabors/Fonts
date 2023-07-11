@@ -25,22 +25,23 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
         public static GlyphTable Load(FontReader reader)
         {
             uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
-            Bounds fallbackEmptyBounds = reader.GetTable<HeadTable>().Bounds;
 
             FVarTable? fvar = reader.TryGetTable<FVarTable>();
             AVarTable? avar = reader.TryGetTable<AVarTable>();
             GVarTable? gvar = reader.TryGetTable<GVarTable>();
-
             // GlyphVariationProcessor? glyphVariationProcessor = fvar is null ? null : new GlyphVariationProcessor(itemStore, fvar, avar, gvar);
-            using (BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName))
-            {
-                return Load(binaryReader, reader.TableFormat, locations, fallbackEmptyBounds);
-            }
+            
+            // Use an empty bounds instance as the fallback.
+            // We will substitute this with the advance width/height to determine bounds instead when rendering/measuring.
+            Bounds fallbackEmptyBounds = Bounds.Empty;
+
+            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
+            return Load(binaryReader, reader.TableFormat, locations, in fallbackEmptyBounds);
         }
 
         public static GlyphTable Load(BigEndianBinaryReader reader, TableFormat format, uint[] locations, in Bounds fallbackEmptyBounds)
         {
-            var empty = new EmptyGlyphLoader(fallbackEmptyBounds);
+            EmptyGlyphLoader empty = new(fallbackEmptyBounds);
             int entryCount = locations.Length;
             int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
             var glyphs = new GlyphLoader[glyphCount];

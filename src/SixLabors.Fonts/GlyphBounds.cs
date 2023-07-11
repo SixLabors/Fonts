@@ -15,7 +15,7 @@ namespace SixLabors.Fonts
         /// </summary>
         /// <param name="codePoint">The Unicode codepoint for the glyph.</param>
         /// <param name="bounds">The glyph bounds.</param>
-        public GlyphBounds(CodePoint codePoint, FontRectangle bounds)
+        public GlyphBounds(CodePoint codePoint, in FontRectangle bounds)
         {
             this.Codepoint = codePoint;
             this.Bounds = bounds;

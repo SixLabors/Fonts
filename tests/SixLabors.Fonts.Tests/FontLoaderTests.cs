@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts.Unicode;
@@ -14,7 +15,14 @@ namespace SixLabors.Fonts.Tests
         public void Issue21_LoopDetectedLoadingGlyphs()
         {
             Font font = new FontCollection().Add(TestFonts.CarterOneFileData()).CreateFont(12);
-            font.FontMetrics.GetGlyphMetrics(new CodePoint('\0'), ColorFontSupport.None).First();
+
+            Assert.True(font.FontMetrics.TryGetGlyphMetrics(
+                new CodePoint('\0'),
+                TextAttributes.None,
+                TextDecorations.None,
+                LayoutMode.HorizontalTopBottom,
+                ColorFontSupport.None,
+                out IReadOnlyList<GlyphMetrics> _));
         }
 
         [Fact]
@@ -40,9 +48,11 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
 
-            Glyph glyph = font.GetGlyphs(new CodePoint('A'), ColorFontSupport.None).First();
+            Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
+
+            Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
             Assert.Equal(37, r.ControlPoints.Count);
             Assert.Single(r.GlyphKeys);
@@ -54,9 +64,10 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = new FontCollection().Add(TestFonts.OpenSansFileWoff1).CreateFont(12);
 
-            Glyph glyph = font.GetGlyphs(new CodePoint('A'), ColorFontSupport.None).First();
+            Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
+            Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
             Assert.Equal(37, r.ControlPoints.Count);
             Assert.Single(r.GlyphKeys);
@@ -87,9 +98,10 @@ namespace SixLabors.Fonts.Tests
         {
             Font font = new FontCollection().Add(TestFonts.OpensSansWoff2Data()).CreateFont(12);
 
-            Glyph glyph = font.GetGlyphs(new CodePoint('A'), ColorFontSupport.None).First();
+            Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
+            Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
             Assert.Equal(37, r.ControlPoints.Count);
             Assert.Single(r.GlyphKeys);
@@ -105,9 +117,10 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("SixLaborsSampleAB regular", font.FontMetrics.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.FontMetrics.Description.FontSubFamilyNameInvariantCulture);
 
-            Glyph glyph = font.GetGlyphs(new CodePoint('a'), ColorFontSupport.None).First();
+            Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
+            Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());
@@ -121,9 +134,10 @@ namespace SixLabors.Fonts.Tests
             Assert.Equal("SixLaborsSampleAB regular", font.FontMetrics.Description.FontNameInvariantCulture);
             Assert.Equal("Regular", font.FontMetrics.Description.FontSubFamilyNameInvariantCulture);
 
-            Glyph glyph = font.GetGlyphs(new CodePoint('a'), ColorFontSupport.None).First();
+            Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
+            Glyph glyph = glyphs[0];
             GlyphRenderer r = new();
-            glyph.RenderTo(r, Vector2.Zero, new TextOptions(font));
+            glyph.RenderTo(r, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
             // the test font only has characters .notdef, 'a' & 'b' defined
             Assert.Equal(6, r.ControlPoints.Distinct().Count());

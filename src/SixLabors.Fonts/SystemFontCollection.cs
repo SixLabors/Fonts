@@ -40,6 +40,7 @@ namespace SixLabors.Fonts
                 StandardFontLocations = new[]
                 {
                     "%HOME%/.fonts/",
+                    "%HOME%/.local/share/fonts/",
                     "/usr/local/share/fonts/",
                     "/usr/share/fonts/",
                 };
@@ -54,6 +55,13 @@ namespace SixLabors.Fonts
                     "/Library/Fonts/",
                     "/System/Library/Fonts/",
                     "/Network/Library/Fonts/",
+                };
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("Android")))
+            {
+                StandardFontLocations = new[]
+                {
+                    "/system/fonts/"
                 };
             }
             else
@@ -86,7 +94,8 @@ namespace SixLabors.Fonts
                 paths = existingDirectories
                     .SelectMany(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories))
                     .Where(x => Path.GetExtension(x).Equals(".ttf", StringComparison.OrdinalIgnoreCase)
-                                || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase));
+                                || Path.GetExtension(x).Equals(".ttc", StringComparison.OrdinalIgnoreCase)
+                                || Path.GetExtension(x).Equals(".otf", StringComparison.OrdinalIgnoreCase));
 
                 this.searchDirectories = existingDirectories;
             }

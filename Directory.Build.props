@@ -18,6 +18,14 @@
   <!-- Import the shared global .props file -->
   <Import Project="$(MSBuildThisFileDirectory)shared-infrastructure\msbuild\props\SixLabors.Global.props" />
 
+  <!--Add Feedz.io restore sources while we wait for the ability to update shared infrastructure-->
+  <PropertyGroup>
+    <RestoreSources>
+      $(RestoreSources);
+      https://f.feedz.io/sixlabors/sixlabors/nuget/index.json;
+    </RestoreSources>
+  </PropertyGroup>
+  
   <!--
     https://apisof.net/
     +===================+=====================+

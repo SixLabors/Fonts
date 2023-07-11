@@ -16,8 +16,10 @@ namespace UnicodeTrieGenerator
     /// Provides methods to generate Unicode Tries.
     /// Ported from <see href="https://github.com/toptensoftware/RichTextKit/blob/master/BuildUnicodeData/generate.js"/>.
     /// </summary>
-    public static class Generator
+    public static partial class Generator
     {
+        // Aliases and enum derived from
+        // https://www.unicode.org/Public/14.0.0/ucd/PropertyValueAliases.txt
         private static readonly Dictionary<string, UnicodeCategory> UnicodeCategoryMap
             = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -61,8 +63,6 @@ namespace UnicodeTrieGenerator
                 { "C", BidiPairedBracketType.Close }
             };
 
-        // Aliases and enum derived from
-        // https://www.unicode.org/Public/13.0.0/ucd/PropertyValueAliases.txt
         private static readonly Dictionary<string, GraphemeClusterClass> GraphemeClusterClassMap
             = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -251,125 +251,196 @@ namespace UnicodeTrieGenerator
                 { "Zanabazar_Square", ScriptClass.ZanabazarSquare }
             };
 
-        private static readonly Dictionary<string, JoiningType> JoiningTypeMap
+        private static readonly Dictionary<string, ArabicJoiningType> JoiningTypeMap
             = new(StringComparer.OrdinalIgnoreCase)
             {
-                { "R", JoiningType.RightJoining },
-                { "L", JoiningType.LeftJoining },
-                { "D", JoiningType.DualJoining },
-                { "C", JoiningType.JoinCausing },
-                { "U", JoiningType.NonJoining },
-                { "T", JoiningType.Transparent }
+                { "R", ArabicJoiningType.RightJoining },
+                { "L", ArabicJoiningType.LeftJoining },
+                { "D", ArabicJoiningType.DualJoining },
+                { "C", ArabicJoiningType.JoinCausing },
+                { "U", ArabicJoiningType.NonJoining },
+                { "T", ArabicJoiningType.Transparent }
             };
 
-        private static readonly Dictionary<string, JoiningGroup> JoiningGroupMap
+        private static readonly Dictionary<string, ArabicJoiningGroup> JoiningGroupMap
             = new(StringComparer.OrdinalIgnoreCase)
             {
-                { "African_Feh", JoiningGroup.AfricanFeh },
-                { "African_Noon", JoiningGroup.AfricanNoon },
-                { "African_Qaf", JoiningGroup.AfricanQaf },
-                { "Ain", JoiningGroup.Ain },
-                { "Alaph", JoiningGroup.Alaph },
-                { "Alef", JoiningGroup.Alef },
-                { "Beh", JoiningGroup.Beh },
-                { "Beth", JoiningGroup.Beth },
-                { "Burushaski_Yeh_Barree", JoiningGroup.BurushaskiYehBarree },
-                { "Dal", JoiningGroup.Dal },
-                { "Dalath_Rish", JoiningGroup.DalathRish },
-                { "E", JoiningGroup.E },
-                { "Farsi_Yeh", JoiningGroup.FarsiYeh },
-                { "Fe", JoiningGroup.Fe },
-                { "Feh", JoiningGroup.Feh },
-                { "Final_Semkath", JoiningGroup.FinalSemkath },
-                { "Gaf", JoiningGroup.Gaf },
-                { "Gamal", JoiningGroup.Gamal },
-                { "Hah", JoiningGroup.Hah },
-                { "Hanifi_Rohingya_Kinna_Ya", JoiningGroup.HanifiRohingyaKinnaYa },
-                { "Hanifi_Rohingya_Pa", JoiningGroup.HanifiRohingyaPa },
-                { "He", JoiningGroup.He },
-                { "Heh", JoiningGroup.Heh },
-                { "Heh_Goal", JoiningGroup.HehGoal },
-                { "Heth", JoiningGroup.Heth },
-                { "Kaf", JoiningGroup.Kaf },
-                { "Kaph", JoiningGroup.Kaph },
-                { "Khaph", JoiningGroup.Khaph },
-                { "Knotted_Heh", JoiningGroup.KnottedHeh },
-                { "Lam", JoiningGroup.Lam },
-                { "Lamadh", JoiningGroup.Lamadh },
-                { "Malayalam_Bha", JoiningGroup.MalayalamBha },
-                { "Malayalam_Ja", JoiningGroup.MalayalamJa },
-                { "Malayalam_Lla", JoiningGroup.MalayalamLla },
-                { "Malayalam_Llla", JoiningGroup.MalayalamLlla },
-                { "Malayalam_Nga", JoiningGroup.MalayalamNga },
-                { "Malayalam_Nna", JoiningGroup.MalayalamNna },
-                { "Malayalam_Nnna", JoiningGroup.MalayalamNnna },
-                { "Malayalam_Nya", JoiningGroup.MalayalamNya },
-                { "Malayalam_Ra", JoiningGroup.MalayalamRa },
-                { "Malayalam_Ssa", JoiningGroup.MalayalamSsa },
-                { "Malayalam_Tta", JoiningGroup.MalayalamTta },
-                { "Manichaean_Aleph", JoiningGroup.ManichaeanAleph },
-                { "Manichaean_Ayin", JoiningGroup.ManichaeanAyin },
-                { "Manichaean_Beth", JoiningGroup.ManichaeanBeth },
-                { "Manichaean_Daleth", JoiningGroup.ManichaeanDaleth },
-                { "Manichaean_Dhamedh", JoiningGroup.ManichaeanDhamedh },
-                { "Manichaean_Five", JoiningGroup.ManichaeanFive },
-                { "Manichaean_Gimel", JoiningGroup.ManichaeanGimel },
-                { "Manichaean_Heth", JoiningGroup.ManichaeanHeth },
-                { "Manichaean_Hundred", JoiningGroup.ManichaeanHundred },
-                { "Manichaean_Kaph", JoiningGroup.ManichaeanKaph },
-                { "Manichaean_Lamedh", JoiningGroup.ManichaeanLamedh },
-                { "Manichaean_Mem", JoiningGroup.ManichaeanMem },
-                { "Manichaean_Nun", JoiningGroup.ManichaeanNun },
-                { "Manichaean_One", JoiningGroup.ManichaeanOne },
-                { "Manichaean_Pe", JoiningGroup.ManichaeanPe },
-                { "Manichaean_Qoph", JoiningGroup.ManichaeanQoph },
-                { "Manichaean_Resh", JoiningGroup.ManichaeanResh },
-                { "Manichaean_Sadhe", JoiningGroup.ManichaeanSadhe },
-                { "Manichaean_Samekh", JoiningGroup.ManichaeanSamekh },
-                { "Manichaean_Taw", JoiningGroup.ManichaeanTaw },
-                { "Manichaean_Ten", JoiningGroup.ManichaeanTen },
-                { "Manichaean_Teth", JoiningGroup.ManichaeanTeth },
-                { "Manichaean_Thamedh", JoiningGroup.ManichaeanThamedh },
-                { "Manichaean_Twenty", JoiningGroup.ManichaeanTwenty },
-                { "Manichaean_Waw", JoiningGroup.ManichaeanWaw },
-                { "Manichaean_Yodh", JoiningGroup.ManichaeanYodh },
-                { "Manichaean_Zayin", JoiningGroup.ManichaeanZayin },
-                { "Meem", JoiningGroup.Meem },
-                { "Mim", JoiningGroup.Mim },
-                { "No_Joining_Group", JoiningGroup.NoJoiningGroup },
-                { "Noon", JoiningGroup.Noon },
-                { "Nun", JoiningGroup.Nun },
-                { "Nya", JoiningGroup.Nya },
-                { "Pe", JoiningGroup.Pe },
-                { "Qaf", JoiningGroup.Qaf },
-                { "Qaph", JoiningGroup.Qaph },
-                { "Reh", JoiningGroup.Reh },
-                { "Reversed_Pe", JoiningGroup.ReversedPe },
-                { "Rohingya_Yeh", JoiningGroup.RohingyaYeh },
-                { "Sad", JoiningGroup.Sad },
-                { "Sadhe", JoiningGroup.Sadhe },
-                { "Seen", JoiningGroup.Seen },
-                { "Semkath", JoiningGroup.Semkath },
-                { "Shin", JoiningGroup.Shin },
-                { "Straight_Waw", JoiningGroup.StraightWaw },
-                { "Swash_Kaf", JoiningGroup.SwashKaf },
-                { "Syriac_Waw", JoiningGroup.SyriacWaw },
-                { "Tah", JoiningGroup.Tah },
-                { "Taw", JoiningGroup.Taw },
-                { "Teh_Marbuta", JoiningGroup.TehMarbuta },
-                { "Teh_Marbuta_Goal", JoiningGroup.TehMarbutaGoal },
-                { "Hamza_On_Heh_Goal", JoiningGroup.TehMarbutaGoal },
-                { "Teth", JoiningGroup.Teth },
-                { "Thin_Yeh", JoiningGroup.ThinYeh },
-                { "Vertical_Tail", JoiningGroup.VerticalTail },
-                { "Waw", JoiningGroup.Waw },
-                { "Yeh", JoiningGroup.Yeh },
-                { "Yeh_Barree", JoiningGroup.YehBarree },
-                { "Yeh_With_Tail", JoiningGroup.YehWithTail },
-                { "Yudh", JoiningGroup.Yudh },
-                { "Yudh_He", JoiningGroup.YudhHe },
-                { "Zain", JoiningGroup.Zain },
-                { "Zhain", JoiningGroup.Zhain }
+                { "African_Feh", ArabicJoiningGroup.AfricanFeh },
+                { "African_Noon", ArabicJoiningGroup.AfricanNoon },
+                { "African_Qaf", ArabicJoiningGroup.AfricanQaf },
+                { "Ain", ArabicJoiningGroup.Ain },
+                { "Alaph", ArabicJoiningGroup.Alaph },
+                { "Alef", ArabicJoiningGroup.Alef },
+                { "Beh", ArabicJoiningGroup.Beh },
+                { "Beth", ArabicJoiningGroup.Beth },
+                { "Burushaski_Yeh_Barree", ArabicJoiningGroup.BurushaskiYehBarree },
+                { "Dal", ArabicJoiningGroup.Dal },
+                { "Dalath_Rish", ArabicJoiningGroup.DalathRish },
+                { "E", ArabicJoiningGroup.E },
+                { "Farsi_Yeh", ArabicJoiningGroup.FarsiYeh },
+                { "Fe", ArabicJoiningGroup.Fe },
+                { "Feh", ArabicJoiningGroup.Feh },
+                { "Final_Semkath", ArabicJoiningGroup.FinalSemkath },
+                { "Gaf", ArabicJoiningGroup.Gaf },
+                { "Gamal", ArabicJoiningGroup.Gamal },
+                { "Hah", ArabicJoiningGroup.Hah },
+                { "Hanifi_Rohingya_Kinna_Ya", ArabicJoiningGroup.HanifiRohingyaKinnaYa },
+                { "Hanifi_Rohingya_Pa", ArabicJoiningGroup.HanifiRohingyaPa },
+                { "He", ArabicJoiningGroup.He },
+                { "Heh", ArabicJoiningGroup.Heh },
+                { "Heh_Goal", ArabicJoiningGroup.HehGoal },
+                { "Heth", ArabicJoiningGroup.Heth },
+                { "Kaf", ArabicJoiningGroup.Kaf },
+                { "Kaph", ArabicJoiningGroup.Kaph },
+                { "Khaph", ArabicJoiningGroup.Khaph },
+                { "Knotted_Heh", ArabicJoiningGroup.KnottedHeh },
+                { "Lam", ArabicJoiningGroup.Lam },
+                { "Lamadh", ArabicJoiningGroup.Lamadh },
+                { "Malayalam_Bha", ArabicJoiningGroup.MalayalamBha },
+                { "Malayalam_Ja", ArabicJoiningGroup.MalayalamJa },
+                { "Malayalam_Lla", ArabicJoiningGroup.MalayalamLla },
+                { "Malayalam_Llla", ArabicJoiningGroup.MalayalamLlla },
+                { "Malayalam_Nga", ArabicJoiningGroup.MalayalamNga },
+                { "Malayalam_Nna", ArabicJoiningGroup.MalayalamNna },
+                { "Malayalam_Nnna", ArabicJoiningGroup.MalayalamNnna },
+                { "Malayalam_Nya", ArabicJoiningGroup.MalayalamNya },
+                { "Malayalam_Ra", ArabicJoiningGroup.MalayalamRa },
+                { "Malayalam_Ssa", ArabicJoiningGroup.MalayalamSsa },
+                { "Malayalam_Tta", ArabicJoiningGroup.MalayalamTta },
+                { "Manichaean_Aleph", ArabicJoiningGroup.ManichaeanAleph },
+                { "Manichaean_Ayin", ArabicJoiningGroup.ManichaeanAyin },
+                { "Manichaean_Beth", ArabicJoiningGroup.ManichaeanBeth },
+                { "Manichaean_Daleth", ArabicJoiningGroup.ManichaeanDaleth },
+                { "Manichaean_Dhamedh", ArabicJoiningGroup.ManichaeanDhamedh },
+                { "Manichaean_Five", ArabicJoiningGroup.ManichaeanFive },
+                { "Manichaean_Gimel", ArabicJoiningGroup.ManichaeanGimel },
+                { "Manichaean_Heth", ArabicJoiningGroup.ManichaeanHeth },
+                { "Manichaean_Hundred", ArabicJoiningGroup.ManichaeanHundred },
+                { "Manichaean_Kaph", ArabicJoiningGroup.ManichaeanKaph },
+                { "Manichaean_Lamedh", ArabicJoiningGroup.ManichaeanLamedh },
+                { "Manichaean_Mem", ArabicJoiningGroup.ManichaeanMem },
+                { "Manichaean_Nun", ArabicJoiningGroup.ManichaeanNun },
+                { "Manichaean_One", ArabicJoiningGroup.ManichaeanOne },
+                { "Manichaean_Pe", ArabicJoiningGroup.ManichaeanPe },
+                { "Manichaean_Qoph", ArabicJoiningGroup.ManichaeanQoph },
+                { "Manichaean_Resh", ArabicJoiningGroup.ManichaeanResh },
+                { "Manichaean_Sadhe", ArabicJoiningGroup.ManichaeanSadhe },
+                { "Manichaean_Samekh", ArabicJoiningGroup.ManichaeanSamekh },
+                { "Manichaean_Taw", ArabicJoiningGroup.ManichaeanTaw },
+                { "Manichaean_Ten", ArabicJoiningGroup.ManichaeanTen },
+                { "Manichaean_Teth", ArabicJoiningGroup.ManichaeanTeth },
+                { "Manichaean_Thamedh", ArabicJoiningGroup.ManichaeanThamedh },
+                { "Manichaean_Twenty", ArabicJoiningGroup.ManichaeanTwenty },
+                { "Manichaean_Waw", ArabicJoiningGroup.ManichaeanWaw },
+                { "Manichaean_Yodh", ArabicJoiningGroup.ManichaeanYodh },
+                { "Manichaean_Zayin", ArabicJoiningGroup.ManichaeanZayin },
+                { "Meem", ArabicJoiningGroup.Meem },
+                { "Mim", ArabicJoiningGroup.Mim },
+                { "No_Joining_Group", ArabicJoiningGroup.NoJoiningGroup },
+                { "Noon", ArabicJoiningGroup.Noon },
+                { "Nun", ArabicJoiningGroup.Nun },
+                { "Nya", ArabicJoiningGroup.Nya },
+                { "Pe", ArabicJoiningGroup.Pe },
+                { "Qaf", ArabicJoiningGroup.Qaf },
+                { "Qaph", ArabicJoiningGroup.Qaph },
+                { "Reh", ArabicJoiningGroup.Reh },
+                { "Reversed_Pe", ArabicJoiningGroup.ReversedPe },
+                { "Rohingya_Yeh", ArabicJoiningGroup.RohingyaYeh },
+                { "Sad", ArabicJoiningGroup.Sad },
+                { "Sadhe", ArabicJoiningGroup.Sadhe },
+                { "Seen", ArabicJoiningGroup.Seen },
+                { "Semkath", ArabicJoiningGroup.Semkath },
+                { "Shin", ArabicJoiningGroup.Shin },
+                { "Straight_Waw", ArabicJoiningGroup.StraightWaw },
+                { "Swash_Kaf", ArabicJoiningGroup.SwashKaf },
+                { "Syriac_Waw", ArabicJoiningGroup.SyriacWaw },
+                { "Tah", ArabicJoiningGroup.Tah },
+                { "Taw", ArabicJoiningGroup.Taw },
+                { "Teh_Marbuta", ArabicJoiningGroup.TehMarbuta },
+                { "Teh_Marbuta_Goal", ArabicJoiningGroup.TehMarbutaGoal },
+                { "Hamza_On_Heh_Goal", ArabicJoiningGroup.TehMarbutaGoal },
+                { "Teth", ArabicJoiningGroup.Teth },
+                { "Thin_Yeh", ArabicJoiningGroup.ThinYeh },
+                { "Vertical_Tail", ArabicJoiningGroup.VerticalTail },
+                { "Waw", ArabicJoiningGroup.Waw },
+                { "Yeh", ArabicJoiningGroup.Yeh },
+                { "Yeh_Barree", ArabicJoiningGroup.YehBarree },
+                { "Yeh_With_Tail", ArabicJoiningGroup.YehWithTail },
+                { "Yudh", ArabicJoiningGroup.Yudh },
+                { "Yudh_He", ArabicJoiningGroup.YudhHe },
+                { "Zain", ArabicJoiningGroup.Zain },
+                { "Zhain", ArabicJoiningGroup.Zhain }
+            };
+
+        private static readonly Dictionary<string, IndicSyllabicCategory> IndicSyllabicCategoryMap
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Avagraha", IndicSyllabicCategory.Avagraha },
+                { "Bindu", IndicSyllabicCategory.Bindu },
+                { "Brahmi_Joining_Number", IndicSyllabicCategory.BrahmiJoiningNumber },
+                { "Cantillation_Mark", IndicSyllabicCategory.CantillationMark },
+                { "Consonant", IndicSyllabicCategory.Consonant },
+                { "Consonant_Dead", IndicSyllabicCategory.ConsonantDead },
+                { "Consonant_Final", IndicSyllabicCategory.ConsonantFinal },
+                { "Consonant_Head_Letter", IndicSyllabicCategory.ConsonantHeadLetter },
+                { "Consonant_Initial_Postfixed", IndicSyllabicCategory.ConsonantInitialPostfixed },
+                { "Consonant_Killer", IndicSyllabicCategory.ConsonantKiller },
+                { "Consonant_Medial", IndicSyllabicCategory.ConsonantMedial },
+                { "Consonant_Placeholder", IndicSyllabicCategory.ConsonantPlaceholder },
+                { "Consonant_Preceding_Repha", IndicSyllabicCategory.ConsonantPrecedingRepha },
+                { "Consonant_Prefixed", IndicSyllabicCategory.ConsonantPrefixed },
+                { "Consonant_Subjoined", IndicSyllabicCategory.ConsonantSubjoined },
+                { "Consonant_Succeeding_Repha", IndicSyllabicCategory.ConsonantSucceedingRepha },
+                { "Consonant_With_Stacker", IndicSyllabicCategory.ConsonantWithStacker },
+                { "Gemination_Mark", IndicSyllabicCategory.GeminationMark },
+                { "Invisible_Stacker", IndicSyllabicCategory.InvisibleStacker },
+                { "Joiner", IndicSyllabicCategory.Joiner },
+                { "Modifying_Letter", IndicSyllabicCategory.ModifyingLetter },
+                { "Non_Joiner", IndicSyllabicCategory.NonJoiner },
+                { "Nukta", IndicSyllabicCategory.Nukta },
+                { "Number", IndicSyllabicCategory.Number },
+                { "Number_Joiner", IndicSyllabicCategory.NumberJoiner },
+                { "Other", IndicSyllabicCategory.Other },
+                { "Pure_Killer", IndicSyllabicCategory.PureKiller },
+                { "Register_Shifter", IndicSyllabicCategory.RegisterShifter },
+                { "Syllable_Modifier", IndicSyllabicCategory.SyllableModifier },
+                { "Tone_Letter", IndicSyllabicCategory.ToneLetter },
+                { "Tone_Mark", IndicSyllabicCategory.ToneMark },
+                { "Virama", IndicSyllabicCategory.Virama },
+                { "Visarga", IndicSyllabicCategory.Visarga },
+                { "Vowel", IndicSyllabicCategory.Vowel },
+                { "Vowel_Dependent", IndicSyllabicCategory.VowelDependent },
+                { "Vowel_Independent", IndicSyllabicCategory.VowelIndependent },
+            };
+
+        private static readonly Dictionary<string, IndicPositionalCategory> IndicPositionalCategoryMap
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Bottom", IndicPositionalCategory.Bottom },
+                { "Bottom_And_Left", IndicPositionalCategory.BottomAndLeft },
+                { "Bottom_And_Right", IndicPositionalCategory.BottomAndRight },
+                { "Left", IndicPositionalCategory.Left },
+                { "Left_And_Right", IndicPositionalCategory.LeftAndRight },
+                { "NA", IndicPositionalCategory.NA },
+                { "Overstruck", IndicPositionalCategory.Overstruck },
+                { "Right", IndicPositionalCategory.Right },
+                { "Top", IndicPositionalCategory.Top },
+                { "Top_And_Bottom", IndicPositionalCategory.TopAndBottom },
+                { "Top_And_Bottom_And_Left", IndicPositionalCategory.TopAndBottomAndLeft },
+                { "Top_And_Bottom_And_Right", IndicPositionalCategory.TopAndBottomAndRight },
+                { "Top_And_Left", IndicPositionalCategory.TopAndLeft },
+                { "Top_And_Left_And_Right", IndicPositionalCategory.TopAndLeftAndRight },
+                { "Top_And_Right", IndicPositionalCategory.TopAndRight },
+                { "Visual_Order_Left", IndicPositionalCategory.VisualOrderLeft },
+            };
+
+        private static readonly Dictionary<string, VerticalOrientationType> VerticalOrientationTypeMap
+            = new(StringComparer.OrdinalIgnoreCase)
+            {
+                { "U", VerticalOrientationType.Upright },
+                { "R", VerticalOrientationType.Rotate },
+                { "Tu", VerticalOrientationType.TransformUpright },
+                { "Tr", VerticalOrientationType.TransformRotate }
             };
 
         private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
@@ -390,16 +461,21 @@ namespace UnicodeTrieGenerator
             GenerateBidiBracketsTrie();
             GenerateBidiMirrorTrie();
             GenerateLineBreakTrie();
-            GenerateUnicodeCategoryTrie();
+            UnicodeTrie ugc = GenerateUnicodeCategoryTrie();
             GenerateScriptTrie();
             GenerateGraphemeBreakTrie();
-            GenerateArabicShapingTrie();
+            UnicodeTrie uajt = GenerateArabicShapingTrie();
+            UnicodeTrie uisc = GenerateIndicSyllabicCategoryTrie();
+            UnicodeTrie uipc = GenerateIndicPositionalCategoryTrie();
+            GenerateVerticalOrientationTrie();
+
+            GenerateUniversalShapingDataTrie(ugc, uisc, uipc, uajt);
         }
 
         private static void ProcessUnicodeData()
         {
             using StreamReader sr = GetStreamReader("UnicodeData.txt");
-            string line;
+            string? line;
             while ((line = sr.ReadLine()) != null)
             {
                 string[] parts = line.Split(';');
@@ -409,7 +485,7 @@ namespace UnicodeTrieGenerator
                     // Get the directionality.
                     int codePoint = ParseHexInt(parts[0]);
 
-                    UnicodeTypeMaps.BidiCharacterTypeMap.TryGetValue(parts[4], out BidiCharacterType cls);
+                    _ = UnicodeTypeMaps.BidiCharacterTypeMap.TryGetValue(parts[4], out BidiCharacterType cls);
                     Bidi[codePoint] = (int)cls << 24;
                 }
             }
@@ -425,7 +501,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("GraphemeBreakProperty.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -436,12 +512,12 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
 
-                        GraphemeClusterClassMap.TryGetValue(point, out GraphemeClusterClass kind);
+                        _ = GraphemeClusterClassMap.TryGetValue(point, out GraphemeClusterClass kind);
                         builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)kind, true);
                     }
                 }
@@ -449,7 +525,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("emoji-data.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -460,7 +536,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string prop = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -487,7 +563,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("BidiBrackets.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -496,7 +572,7 @@ namespace UnicodeTrieGenerator
                         int point = ParseHexInt(match.Groups[1].Value);
                         int otherPoint = ParseHexInt(match.Groups[2].Value);
 
-                        BidiPairedBracketTypeMap.TryGetValue(match.Groups[3].Value, out BidiPairedBracketType kind);
+                        _ = BidiPairedBracketTypeMap.TryGetValue(match.Groups[3].Value, out BidiPairedBracketType kind);
 
                         Bidi[point] |= otherPoint | ((int)kind << 16);
                     }
@@ -525,7 +601,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("BidiMirroring.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -552,7 +628,7 @@ namespace UnicodeTrieGenerator
 
             using (StreamReader sr = GetStreamReader("LineBreak.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -563,7 +639,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -580,14 +656,14 @@ namespace UnicodeTrieGenerator
         /// <summary>
         /// Generates the UnicodeTrie for the general category code point ranges.
         /// </summary>
-        private static void GenerateUnicodeCategoryTrie()
+        private static UnicodeTrie GenerateUnicodeCategoryTrie()
         {
             var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
             var builder = new UnicodeTrieBuilder((uint)UnicodeCategory.OtherNotAssigned);
 
             using (StreamReader sr = GetStreamReader("DerivedGeneralCategory.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -598,7 +674,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string point = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -610,6 +686,7 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("UnicodeCategory", trie);
+            return trie;
         }
 
         /// <summary>
@@ -623,7 +700,7 @@ namespace UnicodeTrieGenerator
             // TODO: Figure out how to map to shared categories via ScripExtensions.txt
             using (StreamReader sr = GetStreamReader("Scripts.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -634,7 +711,7 @@ namespace UnicodeTrieGenerator
                         string end = match.Groups[2].Value;
                         string script = match.Groups[3].Value;
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
@@ -651,15 +728,15 @@ namespace UnicodeTrieGenerator
         /// <summary>
         /// Generates the UnicodeTrie for the script code point ranges.
         /// </summary>
-        private static void GenerateArabicShapingTrie()
+        private static UnicodeTrie GenerateArabicShapingTrie()
         {
             var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;[\w\s]+;\s*([A-Z]+);\s*([\w\s]+)");
-            const uint initial = ((int)JoiningType.NonJoining) | (((int)JoiningGroup.NoJoiningGroup) << 16);
+            const uint initial = ((int)ArabicJoiningType.NonJoining) | (((int)ArabicJoiningGroup.NoJoiningGroup) << 16);
             var builder = new UnicodeTrieBuilder(initial);
 
             using (StreamReader sr = GetStreamReader("ArabicShaping.txt"))
             {
-                string line;
+                string? line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     Match match = regex.Match(line);
@@ -671,13 +748,13 @@ namespace UnicodeTrieGenerator
                         string type = match.Groups[3].Value;
                         string group = match.Groups[4].Value.Replace(" ", "_");
 
-                        if (end?.Length == 0)
+                        if (string.IsNullOrEmpty(end))
                         {
                             end = start;
                         }
 
-                        JoiningType jt = JoiningTypeMap[type];
-                        JoiningGroup jg = JoiningGroupMap[group];
+                        ArabicJoiningType jt = JoiningTypeMap[type];
+                        ArabicJoiningGroup jg = JoiningGroupMap[group];
 
                         builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)((int)jt | ((int)jg << 16)), true);
                     }
@@ -686,6 +763,111 @@ namespace UnicodeTrieGenerator
 
             UnicodeTrie trie = builder.Freeze();
             GenerateTrieClass("ArabicShaping", trie);
+            return trie;
+        }
+
+        private static void GenerateVerticalOrientationTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+            var builder = new UnicodeTrieBuilder((uint)VerticalOrientationType.Upright);
+
+            using (StreamReader sr = GetStreamReader("VerticalOrientation.txt"))
+            {
+                string? line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string script = match.Groups[3].Value;
+
+                        if (string.IsNullOrEmpty(end))
+                        {
+                            end = start;
+                        }
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)VerticalOrientationTypeMap[script], true);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+            GenerateTrieClass("VerticalOrientation", trie);
+        }
+
+        /// <summary>
+        /// Generates the UnicodeTrie for the indic syllabic category code point ranges.
+        /// </summary>
+        private static UnicodeTrie GenerateIndicSyllabicCategoryTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+            var builder = new UnicodeTrieBuilder((uint)IndicSyllabicCategory.Other);
+
+            using (StreamReader sr = GetStreamReader("IndicSyllabicCategory.txt"))
+            {
+                string? line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string point = match.Groups[3].Value;
+
+                        if (string.IsNullOrEmpty(end))
+                        {
+                            end = start;
+                        }
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)IndicSyllabicCategoryMap[point], true);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+            GenerateTrieClass("IndicSyllabicCategory", trie);
+            return trie;
+        }
+
+        /// <summary>
+        /// Generates the UnicodeTrie for the indic syllabic category code point ranges.
+        /// </summary>
+        private static UnicodeTrie GenerateIndicPositionalCategoryTrie()
+        {
+            var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+            var builder = new UnicodeTrieBuilder((uint)IndicPositionalCategory.NA);
+
+            using (StreamReader sr = GetStreamReader("IndicPositionalCategory.txt"))
+            {
+                string? line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Match match = regex.Match(line);
+
+                    if (match.Success)
+                    {
+                        string start = match.Groups[1].Value;
+                        string end = match.Groups[2].Value;
+                        string point = match.Groups[3].Value;
+
+                        if (string.IsNullOrEmpty(end))
+                        {
+                            end = start;
+                        }
+
+                        builder.SetRange(ParseHexInt(start), ParseHexInt(end), (uint)IndicPositionalCategoryMap[point], true);
+                    }
+                }
+            }
+
+            UnicodeTrie trie = builder.Freeze();
+            GenerateTrieClass("IndicPositionalCategory", trie);
+            return trie;
         }
 
         /// <summary>

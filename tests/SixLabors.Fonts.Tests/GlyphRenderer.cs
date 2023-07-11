@@ -8,20 +8,21 @@ namespace SixLabors.Fonts.Tests
 {
     public class GlyphRenderer : IGlyphRenderer
     {
-        private int figuresCount = 0;
+        private int figuresCount;
+        private GlyphRendererParameters parameters;
 
-        public List<Vector2> ControlPoints { get; } = new List<Vector2>();
+        public List<Vector2> ControlPoints { get; } = new();
 
-        public List<Vector2> ControlPointsOnCurve { get; } = new List<Vector2>();
+        public List<Vector2> ControlPointsOnCurve { get; } = new();
 
-        public List<FontRectangle> GlyphRects { get; } = new List<FontRectangle>();
+        public List<FontRectangle> GlyphRects { get; } = new();
 
-        public List<GlyphRendererParameters> GlyphKeys { get; } = new List<GlyphRendererParameters>();
+        public List<GlyphRendererParameters> GlyphKeys { get; } = new();
 
-        public bool BeginGlyph(FontRectangle rect, GlyphRendererParameters cacheKey)
+        public bool BeginGlyph(in FontRectangle rect, in GlyphRendererParameters parameters)
         {
             this.GlyphRects.Add(rect);
-            this.GlyphKeys.Add(cacheKey);
+            this.GlyphKeys.Add(this.parameters = parameters);
             return true;
         }
 
@@ -66,7 +67,14 @@ namespace SixLabors.Fonts.Tests
         {
         }
 
-        public void BeginText(FontRectangle rect)
+        public void BeginText(in FontRectangle rect)
+        {
+        }
+
+        public TextDecorations EnabledDecorations()
+            => this.parameters.TextRun.TextDecorations;
+
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
         {
         }
     }

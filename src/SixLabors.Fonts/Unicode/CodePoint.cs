@@ -568,11 +568,19 @@ namespace SixLabors.Fonts.Unicode
             => UnicodeData.GetGraphemeClusterClass(codePoint.value);
 
         /// <summary>
-        /// Gets the <see cref="JoiningClass"/> for the given codepoint.
+        /// Gets the <see cref="VerticalOrientationType"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="VerticalOrientationType"/>.</returns>
+        public static VerticalOrientationType GetVerticalOrientationType(CodePoint codePoint)
+            => UnicodeData.GetVerticalOrientation(codePoint.value);
+
+        /// <summary>
+        /// Gets the <see cref="ArabicJoiningClass"/> for the given codepoint.
         /// </summary>
         /// <param name="codePoint">The codepoint to evaluate.</param>
         /// <returns>The <see cref="BidiClass"/>.</returns>
-        internal static JoiningClass GetJoiningClass(CodePoint codePoint)
+        internal static ArabicJoiningClass GetArabicJoiningClass(CodePoint codePoint)
             => new(codePoint);
 
         /// <summary>
@@ -582,6 +590,22 @@ namespace SixLabors.Fonts.Unicode
         /// <returns>The <see cref="ScriptClass"/>.</returns>
         internal static ScriptClass GetScriptClass(CodePoint codePoint)
             => UnicodeData.GetScriptClass(codePoint.value);
+
+        /// <summary>
+        /// Gets the <see cref="IndicSyllabicCategory"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="IndicSyllabicCategory"/>.</returns>
+        internal static IndicSyllabicCategory GetIndicSyllabicCategory(CodePoint codePoint)
+            => UnicodeData.GetIndicSyllabicCategory(codePoint.value);
+
+        /// <summary>
+        /// Gets the <see cref="IndicPositionalCategory"/> for the given codepoint.
+        /// </summary>
+        /// <param name="codePoint">The codepoint to evaluate.</param>
+        /// <returns>The <see cref="IndicPositionalCategory"/>.</returns>
+        internal static IndicPositionalCategory GetIndicPositionalCategory(CodePoint codePoint)
+            => UnicodeData.GetIndicPositionalCategory(codePoint.value);
 
         /// <summary>
         /// Gets the <see cref="UnicodeCategory"/> for the given codepoint.

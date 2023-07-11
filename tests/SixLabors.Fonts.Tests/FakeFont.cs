@@ -15,10 +15,16 @@ namespace SixLabors.Fonts.Tests
             Font fakeFont = CreateFont("A");
             FontMetrics metrics = fakeFont.FontMetrics;
             Assert.Equal(30, metrics.UnitsPerEm);
-            Assert.Equal(35, metrics.Ascender);
-            Assert.Equal(8, metrics.Descender);
-            Assert.Equal(12, metrics.LineGap);
-            Assert.Equal(35 - 8 + 12, metrics.LineHeight);
+            Assert.Equal(35, metrics.HorizontalMetrics.Ascender);
+            Assert.Equal(8, metrics.HorizontalMetrics.Descender);
+            Assert.Equal(12, metrics.HorizontalMetrics.LineGap);
+            Assert.Equal(35 - 8 + 12, metrics.HorizontalMetrics.LineHeight);
+
+            // Vertical metrics are all ones. Descender is always negative due to the grid orientation.
+            Assert.Equal(1, metrics.VerticalMetrics.Ascender);
+            Assert.Equal(-1, metrics.VerticalMetrics.Descender);
+            Assert.Equal(1, metrics.VerticalMetrics.LineGap);
+            Assert.Equal(1 - (-1) + 1, metrics.VerticalMetrics.LineHeight);
         }
 
         public static Font CreateFont(string text, string name = "name")

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
@@ -70,14 +71,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         {
         }
 
-        public override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
+        /// <inheritdoc/>
+        protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
         {
             this.AddFeature(collection, index, count, LjmoTag, false);
             this.AddFeature(collection, index, count, VjmoTag, false);
             this.AddFeature(collection, index, count, TjmoTag, false);
+        }
 
-            base.AssignFeatures(collection, index, count);
-
+        /// <inheritdoc/>
+        protected override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
+        {
             for (int i = index; i < count; i++)
             {
                 // Uniscribe does not apply 'calt' for Hangul, and certain fonts
@@ -353,12 +357,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
             // Move tone mark to the beginning of the previous syllable, unless it is zero width
             // We don't have access to the glyphs metrics as an array when substituting so we have to loop.
-            FontMetrics metrics = data.TextRun.Font!.FontMetrics;
-            foreach (GlyphMetrics gm in metrics.GetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport))
+            FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
+            TextAttributes textAttributes = data.TextRun.TextAttributes;
+            TextDecorations textDecorations = data.TextRun.TextDecorations;
+            LayoutMode layoutMode = collection.TextOptions.LayoutMode;
+            ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
+            if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
             {
-                if (gm.AdvanceWidth == 0)
+                foreach (GlyphMetrics gm in metrics)
                 {
-                    return;
+                    if (gm.AdvanceWidth == 0)
+                    {
+                        return;
+                    }
                 }
             }
 
@@ -370,16 +381,23 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         private int InsertDottedCircle(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
         {
             bool after = false;
-            FontMetrics metrics = data.TextRun.Font!.FontMetrics;
+            FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
 
-            if (metrics.TryGetGlyphId(new(DottedCircle), out ushort id))
+            if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
             {
-                foreach (GlyphMetrics gm in metrics.GetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport))
+                TextAttributes textAttributes = data.TextRun.TextAttributes;
+                TextDecorations textDecorations = data.TextRun.TextDecorations;
+                LayoutMode layoutMode = collection.TextOptions.LayoutMode;
+                ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
+                if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
                 {
-                    if (gm.AdvanceWidth != 0)
+                    foreach (GlyphMetrics gm in metrics)
                     {
-                        after = true;
-                        break;
+                        if (gm.AdvanceWidth != 0)
+                        {
+                            after = true;
+                            break;
+                        }
                     }
                 }
 

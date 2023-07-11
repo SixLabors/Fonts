@@ -102,8 +102,8 @@ namespace SixLabors.Fonts.Tests.Fakes
             => new(
                 new[]
                 {
-                    new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.KnownNameIds.FullFontName, name),
-                    new Fonts.Tables.General.Name.NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.KnownNameIds.FontFamilyName, name)
+                    new NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.KnownNameIds.FullFontName, name),
+                    new NameRecord(WellKnownIds.PlatformIDs.Windows, 0, WellKnownIds.KnownNameIds.FontFamilyName, name)
                 },
                 Array.Empty<string>());
 

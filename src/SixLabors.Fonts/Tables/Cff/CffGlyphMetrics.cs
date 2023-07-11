@@ -3,7 +3,6 @@
 
 using System;
 using System.Numerics;
-using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.Cff
@@ -13,11 +12,12 @@ namespace SixLabors.Fonts.Tables.Cff
     /// </summary>
     internal class CffGlyphMetrics : GlyphMetrics
     {
-        private static readonly Vector2 MirrorScale = new(1, -1);
+        private static readonly Vector2 YInverter = new(1, -1);
         private CffGlyphData glyphData;
 
-        public CffGlyphMetrics(
-            StreamFontMetrics font,
+        internal CffGlyphMetrics(
+            StreamFontMetrics fontMetrics,
+            ushort glyphId,
             CodePoint codePoint,
             CffGlyphData glyphData,
             Bounds bounds,
@@ -26,34 +26,65 @@ namespace SixLabors.Fonts.Tables.Cff
             short leftSideBearing,
             short topSideBearing,
             ushort unitsPerEM,
-            ushort glyphId,
+            TextAttributes textAttributes,
+            TextDecorations textDecorations,
             GlyphType glyphType = GlyphType.Standard,
             GlyphColor? glyphColor = null)
-            : base(font, codePoint, bounds, advanceWidth, advanceHeight, leftSideBearing, topSideBearing, unitsPerEM, glyphId, glyphType, glyphColor)
+            : base(
+                  fontMetrics,
+                  glyphId,
+                  codePoint,
+                  bounds,
+                  advanceWidth,
+                  advanceHeight,
+                  leftSideBearing,
+                  topSideBearing,
+                  unitsPerEM,
+                  textAttributes,
+                  textDecorations,
+                  glyphType,
+                  glyphColor)
+            => this.glyphData = glyphData;
+
+        internal CffGlyphMetrics(
+            StreamFontMetrics fontMetrics,
+            ushort glyphId,
+            CodePoint codePoint,
+            CffGlyphData glyphData,
+            Bounds bounds,
+            ushort advanceWidth,
+            ushort advanceHeight,
+            short leftSideBearing,
+            short topSideBearing,
+            ushort unitsPerEM,
+            Vector2 offset,
+            Vector2 scaleFactor,
+            TextRun textRun,
+            GlyphType glyphType = GlyphType.Standard,
+            GlyphColor? glyphColor = null)
+            : base(
+                  fontMetrics,
+                  glyphId,
+                  codePoint,
+                  bounds,
+                  advanceWidth,
+                  advanceHeight,
+                  leftSideBearing,
+                  topSideBearing,
+                  unitsPerEM,
+                  offset,
+                  scaleFactor,
+                  textRun,
+                  glyphType,
+                  glyphColor)
             => this.glyphData = glyphData;
 
         /// <inheritdoc/>
-        internal override GlyphMetrics CloneForRendering(TextRun textRun, CodePoint codePoint)
-        {
-            StreamFontMetrics fontMetrics = this.FontMetrics;
-            Vector2 offset = this.Offset;
-            Vector2 scaleFactor = this.ScaleFactor;
-            if (textRun.TextAttributes.HasFlag(TextAttributes.Subscript))
-            {
-                float units = this.UnitsPerEm;
-                scaleFactor /= new Vector2(fontMetrics.SubscriptXSize / units, fontMetrics.SubscriptYSize / units);
-                offset = new(this.FontMetrics.SubscriptXOffset, this.FontMetrics.SubscriptYOffset);
-            }
-            else if (textRun.TextAttributes.HasFlag(TextAttributes.Superscript))
-            {
-                float units = this.UnitsPerEm;
-                scaleFactor /= new Vector2(fontMetrics.SuperscriptXSize / units, fontMetrics.SuperscriptYSize / units);
-                offset = new(fontMetrics.SuperscriptXOffset, -fontMetrics.SuperscriptYOffset);
-            }
-
-            return new CffGlyphMetrics(
-                fontMetrics,
-                codePoint,
+        internal override GlyphMetrics CloneForRendering(TextRun textRun)
+            => new CffGlyphMetrics(
+                this.FontMetrics,
+                this.GlyphId,
+                this.CodePoint,
                 this.glyphData,
                 this.Bounds,
                 this.AdvanceWidth,
@@ -61,18 +92,14 @@ namespace SixLabors.Fonts.Tables.Cff
                 this.LeftSideBearing,
                 this.TopSideBearing,
                 this.UnitsPerEm,
-                this.GlyphId,
+                this.Offset,
+                this.ScaleFactor,
+                textRun,
                 this.GlyphType,
-                this.GlyphColor)
-            {
-                Offset = offset,
-                ScaleFactor = scaleFactor,
-                TextRun = textRun
-            };
-        }
+                this.GlyphColor);
 
         /// <inheritdoc/>
-        internal override void RenderTo(IGlyphRenderer renderer, float pointSize, Vector2 location, TextOptions options)
+        internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
         {
             // https://www.unicode.org/faq/unsup_char.html
             if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -80,22 +107,22 @@ namespace SixLabors.Fonts.Tables.Cff
                 return;
             }
 
+            float pointSize = this.TextRun.Font?.Size ?? options.Font.Size;
             float dpi = options.Dpi;
+
+            // The glyph vector is rendered offset to the location.
+            // For horizontal text, the offset is always zero but vertical or rotated text
+            // will be offset against the location.
             location *= dpi;
-            float scaledPPEM = dpi * pointSize;
-            bool forcePPEMToInt = (this.FontMetrics.HeadFlags & HeadTable.HeadFlags.ForcePPEMToInt) != 0;
+            offset *= dpi;
+            Vector2 renderLocation = location + offset;
+            float scaledPPEM = this.GetScaledSize(pointSize, dpi);
 
-            if (forcePPEMToInt)
-            {
-                scaledPPEM = MathF.Round(scaledPPEM);
-            }
+            Matrix3x2 rotation = GetRotationMatrix(mode);
+            FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
+            GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode);
 
-            FontRectangle box = this.GetBoundingBox(location, scaledPPEM);
-
-            // TextRun is never null here as rendering is only accessable via a Glyph which
-            // uses the cloned metrics instance.
-            var parameters = new GlyphRendererParameters(this, this.TextRun!, pointSize, dpi);
-            if (renderer.BeginGlyph(box, parameters))
+            if (renderer.BeginGlyph(in box, in parameters))
             {
                 if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
                 {
@@ -104,12 +131,12 @@ namespace SixLabors.Fonts.Tables.Cff
                         colorSurface.SetColor(this.GlyphColor.Value);
                     }
 
-                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor * MirrorScale;
-                    Vector2 offset = location + (this.Offset * scale * MirrorScale);
-                    this.glyphData.RenderTo(renderer, scale, offset);
+                    Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+                    Vector2 scaledOffset = this.Offset * scale;
+                    this.glyphData.RenderTo(renderer, renderLocation, scale, scaledOffset, rotation);
                 }
 
-                this.RenderDecorationsTo(renderer, location, scaledPPEM);
+                this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM);
             }
 
             renderer.EndGlyph();

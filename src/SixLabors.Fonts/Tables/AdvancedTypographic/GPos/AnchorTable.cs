@@ -1,11 +1,12 @@
 // Copyright (c) Six Labors.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables.TrueType;
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 {
@@ -112,19 +113,26 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 if (collection.TextOptions.HintingMode != HintingMode.None)
                 {
-                    foreach (GlyphMetrics metric in fontMetrics.GetGlyphMetrics(data.CodePoint, collection.TextOptions.ColorFontSupport))
+                    TextAttributes textAttributes = data.TextRun.TextAttributes;
+                    TextDecorations textDecorations = data.TextRun.TextDecorations;
+                    LayoutMode layoutMode = collection.TextOptions.LayoutMode;
+                    ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
+                    if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
                     {
-                        // TODO: What does HarfBuzz do here?
-                        if (metric is not TrueTypeGlyphMetrics ttmetric)
+                        foreach (GlyphMetrics metric in metrics)
                         {
-                            break;
-                        }
+                            // TODO: What does HarfBuzz do here?
+                            if (metric is not TrueTypeGlyphMetrics ttmetric)
+                            {
+                                break;
+                            }
 
-                        ReadOnlyMemory<Vector2> points = ttmetric.GetOutline().ControlPoints;
-                        if (this.anchorPointIndex < points.Length)
-                        {
-                            Vector2 point = points.Span[this.anchorPointIndex];
-                            return new((short)point.X, (short)point.Y);
+                            IList<ControlPoint> points = ttmetric.GetOutline().ControlPoints;
+                            if (this.anchorPointIndex < points.Count)
+                            {
+                                Vector2 point = points[this.anchorPointIndex].Point;
+                                return new((short)point.X, (short)point.Y);
+                            }
                         }
                     }
                 }
