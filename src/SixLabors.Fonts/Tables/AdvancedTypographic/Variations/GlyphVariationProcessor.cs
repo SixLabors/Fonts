@@ -23,6 +23,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
         private readonly GVarTable? gVar;
 
+        private readonly HVarTable? hVar;
+
         private readonly float[] normalizedCoords;
 
         private readonly Dictionary<ItemVariationData, float[]> blendVectors;
@@ -32,7 +34,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
         /// </summary>
         private const float Epsilon = 2.2204460492503130808472633361816E-16F;
 
-        public GlyphVariationProcessor(ItemVariationStore itemStore, FVarTable fVar, AVarTable? aVar = null, GVarTable? gVar = null)
+        public GlyphVariationProcessor(ItemVariationStore itemStore, FVarTable fVar, AVarTable? aVar = null, GVarTable? gVar = null, HVarTable? hVar = null)
         {
             DebugGuard.NotNull(itemStore, nameof(itemStore));
             DebugGuard.NotNull(fVar, nameof(fVar));
@@ -41,6 +43,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             this.fvar = fVar;
             this.avar = aVar;
             this.gVar = gVar;
+            this.hVar = hVar;
             this.normalizedCoords = this.NormalizeDefaultCoords();
             this.blendVectors = new Dictionary<ItemVariationData, float[]>();
         }
@@ -91,6 +94,36 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             }
 
             return normalized;
+        }
+
+        public int AdvanceAdjustment(int glyphId)
+        {
+            if (this.hVar is null)
+            {
+                throw new InvalidFontFileException("Missing HVAR table");
+            }
+
+            int outerIndex;
+            int innerIndex;
+            if (this.hVar?.AdvanceWidthMapping.Length > 0)
+            {
+                DeltaSetIndexMap[] advanceWidthMapping = this.hVar?.AdvanceWidthMapping;
+                int idx = glyphId;
+                if (idx >= advanceWidthMapping?.Length)
+                {
+                    idx = advanceWidthMapping.Length - 1;
+                }
+
+                outerIndex = advanceWidthMapping[idx].OuterIndex;
+                innerIndex = advanceWidthMapping[idx].InnerIndex;
+            }
+            else
+            {
+                outerIndex = 0;
+                innerIndex = glyphId;
+            }
+
+            return this.Delta(outerIndex, innerIndex);
         }
 
         public float[] BlendVector(int outerIndex)
@@ -164,6 +197,31 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             this.blendVectors[variationData] = blendVector;
 
             return blendVector;
+        }
+
+        private int Delta(int outerIndex, int innerIndex)
+        {
+            if (outerIndex >= this.itemStore.ItemVariations.Length)
+            {
+                return 0;
+            }
+
+            ItemVariationData variationData = this.itemStore.ItemVariations[outerIndex];
+            if (innerIndex >= variationData.Deltas.Length)
+            {
+                return 0;
+            }
+
+            uint deltaSet = variationData.Deltas[innerIndex];
+            float[] blendVector = this.BlendVector(outerIndex);
+            int netAdjustment = 0;
+            for (int master = 0; master < variationData.RegionIndexes.Length; master++)
+            {
+                // TODO: disabled, no deltaSet does not have Deltas field.
+                // netAdjustment += deltaSet.Deltas[master] * blendVector[master];
+            }
+
+            return netAdjustment;
         }
     }
 }

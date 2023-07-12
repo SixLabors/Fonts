@@ -80,6 +80,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                 regionIndexes[i] = reader.ReadUInt16();
             }
 
+            // The deltaSets array represents a logical two-dimensional table of delta values with itemCount rows and regionIndexCount columns.
             // Logically, each DeltaSet record has regionIndexCount number of elements. The elements are represented using long and short types.
             // These are either int16 and int8, or int32 and int16, according to whether the LONG_WORDS flag is set.
             // The delta array has a sequence of deltas using the long type followed by a sequence of deltas using the short type.
