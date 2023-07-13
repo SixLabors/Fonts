@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
@@ -95,5 +96,13 @@ namespace SixLabors.Fonts.Tables.TrueType
         public IndexLocationTable Loca { get; set; }
 
         public PrepTable? Prep { get; set; }
+
+        public FVarTable? Fvar { get; set; }
+
+        public AVarTable? Avar { get; set; }
+
+        public GVarTable? Gvar { get; set; }
+
+        public HVarTable? Hvar { get; set; }
     }
 }

@@ -118,6 +118,10 @@ namespace SixLabors.Fonts
                 GPos = gPos,
                 Colr = colr,
                 Cpal = cpal,
+                Fvar = fvar,
+                Gvar = gvar,
+                Hvar = hvar,
+                Avar = avar
             };
 
             return new StreamFontMetrics(tables);
