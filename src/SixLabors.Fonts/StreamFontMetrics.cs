@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -189,6 +190,35 @@ namespace SixLabors.Fonts
 
             markAttachmentClass = null;
             return gdef is not null && gdef.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
+        }
+
+        /// <inheritdoc/>
+        public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
+        {
+            if (this.trueTypeFontTables?.Fvar == null)
+            {
+                variationAxes = Array.Empty<VariationAxis>();
+                return false;
+            }
+
+            var fvar = this.trueTypeFontTables?.Fvar;
+            var names = this.trueTypeFontTables?.Name;
+            variationAxes = new VariationAxis[fvar.Axes.Length];
+            for (int i = 0; i < fvar.Axes.Length; i++)
+            {
+                var axis = fvar.Axes[i];
+                var name = names != null ? names.GetNameById(CultureInfo.InvariantCulture, axis.AxisNameId) : string.Empty;
+                variationAxes[i] = new VariationAxis()
+                {
+                   Tag = axis.Tag,
+                   Min = axis.MinValue,
+                   Max = axis.MaxValue,
+                   Default = axis.DefaultValue,
+                   Name = name
+                };
+            }
+
+            return true;
         }
 
         /// <inheritdoc/>

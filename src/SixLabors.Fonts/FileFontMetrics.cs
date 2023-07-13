@@ -8,6 +8,7 @@ using System.IO;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -117,6 +118,9 @@ namespace SixLabors.Fonts
         /// <inheritdoc/>
         internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
             => this.fontMetrics.Value.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
+
+        /// <inheritdoc/>
+        public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes) => this.fontMetrics.Value.TryGetVariationAxes(out variationAxes);
 
         /// <inheritdoc />
         public override bool TryGetGlyphMetrics(

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts
@@ -159,6 +160,14 @@ namespace SixLabors.Fonts
         /// <param name="markAttachmentClass">The mark attachment class.</param>
         /// <returns>true, if the mark attachment class could be retrieved.</returns>
         internal abstract bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass);
+
+        /// <summary>
+        /// Tries to get the variation axes that this font supports.
+        /// The font needs to have a fvar table.
+        /// </summary>
+        /// <param name="variationAxes">An array with Variation axes.</param>
+        /// <returns>True, if fvar table is present.</returns>
+        public abstract bool TryGetVariationAxes(out VariationAxis[]? variationAxes);
 
         /// <summary>
         /// Gets the glyph metrics for a given code point.
