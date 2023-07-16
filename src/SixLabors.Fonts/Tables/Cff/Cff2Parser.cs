@@ -30,7 +30,6 @@ namespace SixLabors.Fonts.Tables.Cff
             this.offset = offset;
             reader.Seek(hdrSize, SeekOrigin.Begin);
 
-            long startPos = reader.BaseStream.Position;
             this.ReadTopDictData(reader, topDictLength);
             reader.Seek(hdrSize + topDictLength, SeekOrigin.Begin);
 

@@ -105,16 +105,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
             int outerIndex;
             int innerIndex;
-            if (this.hVar?.AdvanceWidthMapping.Length > 0)
+            if (this.hVar?.AdvanceWidthMapping != null && this.hVar?.AdvanceWidthMapping.Length > 0)
             {
-                DeltaSetIndexMap[] advanceWidthMapping = this.hVar?.AdvanceWidthMapping;
+                DeltaSetIndexMap[]? advanceWidthMapping = this.hVar?.AdvanceWidthMapping;
                 int idx = glyphId;
                 if (idx >= advanceWidthMapping?.Length)
                 {
                     idx = advanceWidthMapping.Length - 1;
                 }
 
-                outerIndex = advanceWidthMapping[idx].OuterIndex;
+                outerIndex = advanceWidthMapping![idx].OuterIndex;
                 innerIndex = advanceWidthMapping[idx].InnerIndex;
             }
             else

@@ -3,7 +3,6 @@
 
 using System.IO;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
-using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs
@@ -29,8 +28,9 @@ namespace SixLabors.Fonts.Tables.TrueType.Glyphs
             FVarTable? fvar = reader.TryGetTable<FVarTable>();
             AVarTable? avar = reader.TryGetTable<AVarTable>();
             GVarTable? gvar = reader.TryGetTable<GVarTable>();
-            // GlyphVariationProcessor? glyphVariationProcessor = fvar is null ? null : new GlyphVariationProcessor(itemStore, fvar, avar, gvar);
-            
+            HVarTable? hvar = reader.TryGetTable<HVarTable>();
+            GlyphVariationProcessor? glyphVariationProcessor = fvar is null || hvar is null ? null : new GlyphVariationProcessor(hvar!.ItemVariationStore, fvar, avar, gvar);
+
             // Use an empty bounds instance as the fallback.
             // We will substitute this with the advance width/height to determine bounds instead when rendering/measuring.
             Bounds fallbackEmptyBounds = Bounds.Empty;

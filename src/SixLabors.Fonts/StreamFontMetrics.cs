@@ -201,20 +201,20 @@ namespace SixLabors.Fonts
                 return false;
             }
 
-            var fvar = this.trueTypeFontTables?.Fvar;
-            var names = this.trueTypeFontTables?.Name;
-            variationAxes = new VariationAxis[fvar.Axes.Length];
+            FVarTable? fvar = this.trueTypeFontTables?.Fvar;
+            Tables.General.Name.NameTable? names = this.trueTypeFontTables?.Name;
+            variationAxes = new VariationAxis[fvar!.Axes.Length];
             for (int i = 0; i < fvar.Axes.Length; i++)
             {
-                var axis = fvar.Axes[i];
-                var name = names != null ? names.GetNameById(CultureInfo.InvariantCulture, axis.AxisNameId) : string.Empty;
+                VariationAxisRecord axis = fvar.Axes[i];
+                string name = names != null ? names.GetNameById(CultureInfo.InvariantCulture, axis.AxisNameId) : string.Empty;
                 variationAxes[i] = new VariationAxis()
                 {
-                   Tag = axis.Tag,
-                   Min = axis.MinValue,
-                   Max = axis.MaxValue,
-                   Default = axis.DefaultValue,
-                   Name = name
+                    Tag = axis.Tag,
+                    Min = axis.MinValue,
+                    Max = axis.MaxValue,
+                    Default = axis.DefaultValue,
+                    Name = name
                 };
             }
 
