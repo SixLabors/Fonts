@@ -21,6 +21,7 @@
     <Compile Include="..\SixLabors.Fonts\Unicode\IndicPositionalCategory.cs" Link="IndicPositionalCategory.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\IndicSyllabicCategory.cs" Link="IndicSyllabicCategory.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\LineBreakClass.cs" Link="LineBreakClass.cs" />
+    <Compile Include="..\SixLabors.Fonts\Unicode\Resources\IndicShapingData.cs" Link="IndicShapingData.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\ScriptClass.cs" Link="ScriptClass.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrie.cs" Link="UnicodeTrie.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\UnicodeTrieBuilder.cs" Link="UnicodeTrieBuilder.cs" />
@@ -39,7 +40,7 @@
   <ItemGroup>
     <None Remove="StateAutomation\Grammar.peg" />
     <PegGrammar Include="StateAutomation\Grammar.peg" />
-    <InternalsVisibleTo Include="SixLabors.Fonts.Tests" Key="$(SixLaborsPublicKey)"/>
+    <InternalsVisibleTo Include="SixLabors.Fonts.Tests" Key="$(SixLaborsPublicKey)" />
   </ItemGroup>
 
   <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />

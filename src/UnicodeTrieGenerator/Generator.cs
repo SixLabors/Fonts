@@ -469,7 +469,8 @@ namespace UnicodeTrieGenerator
             UnicodeTrie uipc = GenerateIndicPositionalCategoryTrie();
             GenerateVerticalOrientationTrie();
 
-            GenerateUniversalShapingDataTrie(ugc, uisc, uipc, uajt);
+            List<Codepoint> codePoints = GenerateUniversalShapingDataTrie(ugc, uisc, uipc, uajt);
+            GenerateIndicShapingDataTrie(codePoints.ToArray());
         }
 
         private static void ProcessUnicodeData()
