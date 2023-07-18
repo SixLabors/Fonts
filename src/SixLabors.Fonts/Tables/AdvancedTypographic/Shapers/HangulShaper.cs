@@ -66,8 +66,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             { new byte[] { None, 0 }, new byte[] { None, 1 }, new byte[] { None, 0 }, new byte[] { None, 0 }, new byte[] { Decompose, 2 }, new byte[] { Decompose, 3 }, new byte[] { ToneMark, 0 } },
         };
 
-        public HangulShaper(TextOptions textOptions)
-            : base(MarkZeroingMode.None, textOptions)
+        public HangulShaper(ScriptClass script, TextOptions textOptions)
+            : base(script, MarkZeroingMode.None, textOptions)
         {
         }
 

@@ -24,10 +24,22 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 or ScriptClass.PhagsPa
                 or ScriptClass.Mandaic
                 or ScriptClass.Manichaean
-                or ScriptClass.PsalterPahlavi => new ArabicShaper(textOptions),
+                or ScriptClass.PsalterPahlavi => new ArabicShaper(script, textOptions),
 
                 // Hangul
-                ScriptClass.Hangul => new HangulShaper(textOptions),
+                ScriptClass.Hangul => new HangulShaper(script, textOptions),
+
+                // Indic
+                ScriptClass.Bengali
+                or ScriptClass.Devanagari
+                or ScriptClass.Gujarati
+                or ScriptClass.Gurmukhi
+                or ScriptClass.Kannada
+                or ScriptClass.Malayalam
+                or ScriptClass.Oriya
+                or ScriptClass.Tamil
+                or ScriptClass.Telugu
+                or ScriptClass.Khmer => new IndicShaper(script, textOptions),
 
                 // Universal
                 ScriptClass.Balinese
@@ -69,8 +81,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 or ScriptClass.Tibetan
                 or ScriptClass.Tifinagh
                 or ScriptClass.Tirhuta
-                => new UniversalShaper(textOptions),
-                _ => new DefaultShaper(textOptions),
+                => new UniversalShaper(script, textOptions),
+                _ => new DefaultShaper(script, textOptions),
             };
     }
 }

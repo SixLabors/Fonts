@@ -65,13 +65,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private readonly IReadOnlyList<Tag> featureTags;
 
-        internal DefaultShaper(TextOptions textOptions)
-            : this(MarkZeroingMode.PostGpos, textOptions)
+        internal DefaultShaper(ScriptClass script, TextOptions textOptions)
+            : this(script, MarkZeroingMode.PostGpos, textOptions)
         {
         }
 
-        protected DefaultShaper(MarkZeroingMode markZeroingMode, TextOptions textOptions)
+        protected DefaultShaper(ScriptClass script, MarkZeroingMode markZeroingMode, TextOptions textOptions)
         {
+            this.ScriptClass = script;
             this.MarkZeroingMode = markZeroingMode;
             this.kerningMode = textOptions.KerningMode;
             this.featureTags = textOptions.FeatureTags;

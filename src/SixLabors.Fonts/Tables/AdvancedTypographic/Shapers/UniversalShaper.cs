@@ -42,8 +42,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private const int DottedCircle = 0x25cc;
 
-        public UniversalShaper(TextOptions textOptions)
-           : base(MarkZeroingMode.PreGPos, textOptions)
+        public UniversalShaper(ScriptClass script, TextOptions textOptions)
+           : base(script, MarkZeroingMode.PreGPos, textOptions)
         {
         }
 
