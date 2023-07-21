@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Collections.Generic;
 
 namespace SixLabors.Fonts.Unicode.Resources
 {
@@ -58,6 +59,193 @@ namespace SixLabors.Fonts.Unicode.Resources
             Final_C = 1 << 13,
             SMVD = 1 << 14,
             End = 1 << 15
+        }
+
+        public enum BasePosition
+        {
+            First,
+
+            Last
+        }
+
+        public enum RephMode
+        {
+            /// <summary>
+            /// Reph formed out of initial Ra,H sequence.
+            /// </summary>
+            Implicit,
+
+            /// <summary>
+            /// Reph formed out of initial Ra,H,ZWJ sequence.
+            /// </summary>
+            Explicit,
+
+            /// <summary>
+            /// Encoded Repha character, no reordering needed.
+            /// </summary>
+            Vis_Repha,
+
+            /// <summary>
+            /// Encoded Repha character, needs reordering.
+            /// </summary>
+            Log_Repha
+        }
+
+        public enum BlwfMode
+        {
+            /// <summary>
+            /// Below-forms feature applied to pre-base and post-base.
+            /// </summary>
+            Pre_And_Post,
+
+            /// <summary>
+            /// Below-forms feature applied to post-base only.
+            /// </summary>
+            Post_Only
+        }
+
+        public static Dictionary<ScriptClass, ShapingConfiguration> IndicConfigurations { get; } = new()
+        {
+            {
+                ScriptClass.Devanagari,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x094D,
+                    BasePosition = BasePosition.Last,
+                    RephPosition = Positions.Before_Post,
+                    RephMode = RephMode.Implicit,
+                    BlwfMode = BlwfMode.Pre_And_Post
+                }
+            },
+            {
+                ScriptClass.Bengali,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x09CD,
+                    BasePosition = BasePosition.Last,
+                    RephPosition = Positions.After_Sub,
+                    RephMode = RephMode.Implicit,
+                    BlwfMode = BlwfMode.Pre_And_Post
+                }
+            },
+            {
+                ScriptClass.Gurmukhi,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x0A4D,
+                    BasePosition = BasePosition.Last,
+                    RephPosition = Positions.Before_Sub,
+                    RephMode = RephMode.Implicit,
+                    BlwfMode = BlwfMode.Pre_And_Post
+                }
+            },
+            {
+                ScriptClass.Gujarati,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x0ACD,
+                    BasePosition = BasePosition.Last,
+                    RephPosition = Positions.Before_Post,
+                    RephMode = RephMode.Implicit,
+                    BlwfMode = BlwfMode.Pre_And_Post
+                }
+            },
+            {
+                ScriptClass.Oriya,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x0B4D,
+                    BasePosition = BasePosition.Last,
+                    RephPosition = Positions.After_Main,
+                    RephMode = RephMode.Implicit,
+                    BlwfMode = BlwfMode.Pre_And_Post
+                }
+            },
+            {
+                ScriptClass.Tamil,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x0BCD,
+                    BasePosition = BasePosition.Last,
+                    RephPosition = Positions.After_Post,
+                    RephMode = RephMode.Implicit,
+                    BlwfMode = BlwfMode.Pre_And_Post
+                }
+            },
+            {
+                ScriptClass.Telugu,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x0C4D,
+                    BasePosition = BasePosition.Last,
+                    RephPosition = Positions.After_Post,
+                    RephMode = RephMode.Explicit,
+                    BlwfMode = BlwfMode.Post_Only
+                }
+            },
+            {
+                ScriptClass.Kannada,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x0CCD,
+                    BasePosition = BasePosition.Last,
+                    RephPosition = Positions.After_Post,
+                    RephMode = RephMode.Implicit,
+                    BlwfMode = BlwfMode.Post_Only
+                }
+            },
+            {
+                ScriptClass.Malayalam,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x0D4D,
+                    BasePosition = BasePosition.Last,
+                    RephPosition = Positions.After_Main,
+                    RephMode = RephMode.Log_Repha,
+                    BlwfMode = BlwfMode.Pre_And_Post
+                }
+            },
+            {
+                ScriptClass.Khmer,
+                new()
+                {
+                    HasOldSpec = true,
+                    Virama = 0x17D2,
+                    BasePosition = BasePosition.First,
+                    RephPosition = Positions.Ra_To_Become_Reph,
+                    RephMode = RephMode.Vis_Repha,
+                    BlwfMode = BlwfMode.Pre_And_Post
+                }
+            }
+        };
+
+        internal struct ShapingConfiguration
+        {
+            public static ShapingConfiguration Default = new()
+            {
+                HasOldSpec = false,
+                Virama = 0,
+                BasePosition = BasePosition.Last,
+                RephPosition = Positions.Before_Post,
+                RephMode = RephMode.Implicit,
+                BlwfMode = BlwfMode.Pre_And_Post
+            };
+
+            public bool HasOldSpec;
+            public int Virama;
+            public BasePosition BasePosition;
+            public Positions RephPosition;
+            public RephMode RephMode;
+            public BlwfMode BlwfMode;
         }
     }
 }

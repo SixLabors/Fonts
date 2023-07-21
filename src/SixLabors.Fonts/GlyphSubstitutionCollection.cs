@@ -102,6 +102,14 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Adds the glyph shaping data to the collection.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        public void AddGlyph(GlyphShapingData data, int offset)
+            => this.glyphs.Add(new(offset, data));
+
+        /// <summary>
         /// Adds the glyph id and the codepoint it represents to the collection.
         /// </summary>
         /// <param name="glyphId">The id of the glyph to add.</param>

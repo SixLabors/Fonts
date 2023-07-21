@@ -736,7 +736,7 @@ namespace UnicodeTrieGenerator
                 max = decompositions.Count - 1;
                 foreach (KeyValuePair<int, List<int>> item in decompositions)
                 {
-                    writer.Write($"            {{ {item.Key}, new int[] {{ {string.Join(',', item.Value.Select(x => x))} }} }}");
+                    writer.Write($"            {{ 0x{item.Key:X}, new int[] {{ {string.Join(',', item.Value.Select(x => "0x" + x.ToString("X")))} }} }}");
                     if (counter != max)
                     {
                         writer.Write(",");
