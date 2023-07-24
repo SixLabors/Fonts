@@ -1624,7 +1624,7 @@ namespace SixLabors.Fonts
                     this.IsDecomposed = isDecomposed;
                 }
 
-                public CodePoint CodePoint => this.Metrics[0].CodePoint;
+                public readonly CodePoint CodePoint => this.Metrics[0].CodePoint;
 
                 public IReadOnlyList<GlyphMetrics> Metrics { get; }
 
@@ -1640,7 +1640,7 @@ namespace SixLabors.Fonts
 
                 public BidiRun BidiRun { get; }
 
-                public TextDirection TextDirection => (TextDirection)this.BidiRun.Direction;
+                public readonly TextDirection TextDirection => (TextDirection)this.BidiRun.Direction;
 
                 public int GraphemeIndex { get; }
 
@@ -1650,9 +1650,9 @@ namespace SixLabors.Fonts
 
                 public bool IsDecomposed { get; }
 
-                public bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);
+                public readonly bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);
 
-                private string DebuggerDisplay => FormattableString
+                private readonly string DebuggerDisplay => FormattableString
                     .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.Offset}, level: {this.BidiRun.Level}");
             }
 

@@ -69,7 +69,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
         }
 
-        private bool ShouldIgnore(int index)
+        private readonly bool ShouldIgnore(int index)
         {
             GlyphShapingData data = this.Collection[index];
             GlyphShapingClass shapingClass = AdvancedTypographicUtils.GetGlyphShapingClass(this.fontMetrics, data.GlyphId, data);

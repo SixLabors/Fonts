@@ -152,6 +152,32 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Sorts the glyphs by the comparison delegate starting at the specified index.
+        /// </summary>
+        /// <param name="index">The start index.</param>
+        /// <param name="length">The number of items.</param>
+        /// <param name="comparer">The comparison delegate.</param>
+        public void Sort(int index, int length, Comparison<GlyphShapingData> comparer)
+        {
+            for (int i = index + 1; i < length; i++)
+            {
+                int j = i;
+                while (j > index && comparer(this[j - 1], this[i]) > 0)
+                {
+                    j--;
+                }
+
+                if (i == j)
+                {
+                    continue;
+                }
+
+                // Move item i to occupy place for item j, shift what's in between.
+                this.MoveGlyph(i, j);
+            }
+        }
+
+        /// <summary>
         /// Removes all elements from the collection.
         /// </summary>
         public void Clear()
