@@ -54,7 +54,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             int index,
             int count)
         {
-            ushort glyphId = collection[index];
+            ushort glyphId = collection[index].GlyphId;
             if (glyphId == 0)
             {
                 return false;
@@ -133,7 +133,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             int index,
             int count)
         {
-            ushort glyphId = collection[index];
+            ushort glyphId = collection[index].GlyphId;
             if (glyphId == 0)
             {
                 return false;
@@ -211,7 +211,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             int index,
             int count)
         {
-            ushort glyphId = collection[index];
+            ushort glyphId = collection[index].GlyphId;
             if (glyphId == 0)
             {
                 return false;

@@ -93,7 +93,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             int end = index + count;
             for (int i = end - 1; i >= 0; i--)
             {
-                GlyphShapingData data = substitutionCollection.GetGlyphShapingData(i);
+                GlyphShapingData data = substitutionCollection[i];
                 FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
                 if (UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) && decompositions != null)
                 {
@@ -116,7 +116,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             Span<int> values = count <= 64 ? stackalloc int[count] : new int[count];
             for (int i = index; i < index + count; i++)
             {
-                CodePoint codePoint = collection.GetGlyphShapingData(i).CodePoint;
+                CodePoint codePoint = collection[i].CodePoint;
                 values[i - index] = UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value);
             }
 
@@ -128,7 +128,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Create shaper info
                 for (int i = match.StartIndex; i <= match.EndIndex; i++)
                 {
-                    GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                    GlyphShapingData data = collection[i + index];
                     CodePoint codePoint = data.CodePoint;
                     string category = UniversalShapingData.Categories[UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value)];
 
@@ -136,7 +136,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 }
 
                 // Assign rphf feature
-                int limit = collection.GetGlyphShapingData(match.StartIndex).UniversalShapingEngineInfo!.Category == "R"
+                int limit = collection[match.StartIndex].UniversalShapingEngineInfo!.Category == "R"
                     ? 1
                     : Math.Min(3, match.EndIndex - match.StartIndex);
 
@@ -152,7 +152,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
+                GlyphShapingData data = collection[i];
                 data.IsSubstituted = false;
             }
         }
@@ -162,7 +162,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
+                GlyphShapingData data = collection[i];
                 if (data.IsSubstituted && data.Features.Any(x => x.Tag == RphfTag))
                 {
                     // Mark a substituted repha.
@@ -179,7 +179,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
+                GlyphShapingData data = collection[i];
                 if (data.IsSubstituted)
                 {
                     // Mark a substituted pref as VPre, as they behave the same way.
@@ -203,7 +203,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             int end = NextSyllable(substitutionCollection, index, max);
             while (start < max)
             {
-                GlyphShapingData data = substitutionCollection.GetGlyphShapingData(start);
+                GlyphShapingData data = substitutionCollection[start];
                 UniversalShapingEngineInfo? info = data.UniversalShapingEngineInfo;
                 string? type = info?.SyllableType;
 
@@ -218,7 +218,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 {
                     // Insert after possible Repha.
                     int i = start;
-                    GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
+                    GlyphShapingData current = substitutionCollection[i];
                     for (i = start; i < end; i++)
                     {
                         if (current.UniversalShapingEngineInfo?.Category != "R")
@@ -226,7 +226,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                             break;
                         }
 
-                        current = substitutionCollection.GetGlyphShapingData(i);
+                        current = substitutionCollection[i];
                     }
 
                     Span<ushort> glyphs = stackalloc ushort[2];
@@ -244,7 +244,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     // Got a repha. Reorder it to after first base, before first halant.
                     for (int i = start + 1; i < end; i++)
                     {
-                        GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
+                        GlyphShapingData current = substitutionCollection[i];
                         info = current.UniversalShapingEngineInfo;
                         if (IsBase(info) || IsHalant(current))
                         {
@@ -264,7 +264,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Move things back
                 for (int i = start, j = end; i < end; i++)
                 {
-                    GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
+                    GlyphShapingData current = substitutionCollection[i];
                     info = current.UniversalShapingEngineInfo;
 
                     if (IsBase(info) || IsHalant(current))
@@ -301,10 +301,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return index;
             }
 
-            int? syllable = collection.GetGlyphShapingData(index).UniversalShapingEngineInfo?.Syllable;
+            int? syllable = collection[index].UniversalShapingEngineInfo?.Syllable;
             while (++index < count)
             {
-                if (collection.GetGlyphShapingData(index).UniversalShapingEngineInfo?.Syllable != syllable)
+                if (collection[index].UniversalShapingEngineInfo?.Syllable != syllable)
                 {
                     break;
                 }

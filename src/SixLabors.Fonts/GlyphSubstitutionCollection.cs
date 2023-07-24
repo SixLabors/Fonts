@@ -42,15 +42,11 @@ namespace SixLabors.Fonts
         public int LigatureId { get; set; } = 1;
 
         /// <inheritdoc />
-        public ushort this[int index]
+        public GlyphShapingData this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this.glyphs[index].Data.GlyphId;
+            get => this.glyphs[index].Data;
         }
-
-        /// <inheritdoc />
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index].Data;
 
         /// <summary>
         /// Gets the shaping data at the specified position.
@@ -132,7 +128,7 @@ namespace SixLabors.Fonts
         /// <param name="toIndex">The index to move to.</param>
         public void MoveGlyph(int fromIndex, int toIndex)
         {
-            GlyphShapingData data = this.GetGlyphShapingData(fromIndex);
+            GlyphShapingData data = this[fromIndex];
             if (fromIndex > toIndex)
             {
                 int idx = fromIndex;

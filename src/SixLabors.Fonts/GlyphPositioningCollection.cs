@@ -33,15 +33,11 @@ namespace SixLabors.Fonts
         public TextOptions TextOptions { get; }
 
         /// <inheritdoc />
-        public ushort this[int index]
+        public GlyphShapingData this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this.glyphs[index].Data.GlyphId;
+            get => this.glyphs[index].Data;
         }
-
-        /// <inheritdoc />
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index].Data;
 
         /// <inheritdoc />
         public void AddShapingFeature(int index, TagEntry feature)
@@ -268,7 +264,7 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the element.</param>
         public void UpdatePosition(FontMetrics fontMetrics, int index)
         {
-            GlyphShapingData data = this.GetGlyphShapingData(index);
+            GlyphShapingData data = this[index];
             bool isDirtyXY = data.Bounds.IsDirtyXY;
             bool isDirtyWH = data.Bounds.IsDirtyWH;
             if (!isDirtyXY && !isDirtyWH)

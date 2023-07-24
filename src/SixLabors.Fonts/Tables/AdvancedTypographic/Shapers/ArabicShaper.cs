@@ -103,7 +103,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             // Apply the state machine to map glyphs to features.
             for (int i = 0; i < count; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                GlyphShapingData data = collection[i + index];
                 ArabicJoiningClass joiningClass = CodePoint.GetArabicJoiningClass(data.CodePoint);
                 ArabicJoiningType joiningType = joiningClass.JoiningType;
                 if (joiningType == ArabicJoiningType.Transparent)

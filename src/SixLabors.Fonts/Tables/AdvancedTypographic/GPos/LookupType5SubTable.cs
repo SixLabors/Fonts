@@ -95,7 +95,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // Mark-to-Ligature Attachment Positioning.
                 // Implements: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-5-mark-to-ligature-attachment-positioning-subtable
-                ushort glyphId = collection[index];
+                ushort glyphId = collection[index].GlyphId;
                 if (glyphId == 0)
                 {
                     return false;
@@ -111,7 +111,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 int baseGlyphIndex = index;
                 while (--baseGlyphIndex >= 0)
                 {
-                    GlyphShapingData data = collection.GetGlyphShapingData(baseGlyphIndex);
+                    GlyphShapingData data = collection[baseGlyphIndex];
                     if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphId, data))
                     {
                         break;
@@ -123,7 +123,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                ushort baseGlyphId = collection[baseGlyphIndex];
+                ushort baseGlyphId = collection[baseGlyphIndex].GlyphId;
                 int ligatureIndex = this.ligatureCoverage.CoverageIndexOf(baseGlyphId);
                 if (ligatureIndex < 0)
                 {
@@ -135,8 +135,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // If yes, we can directly use the component index. If not, we attach the mark
                 // glyph to the last component of the ligature.
                 LigatureAttachTable ligatureAttach = this.ligatureArrayTable.LigatureAttachTables[ligatureIndex];
-                GlyphShapingData markGlyph = collection.GetGlyphShapingData(index);
-                GlyphShapingData ligGlyph = collection.GetGlyphShapingData(baseGlyphIndex);
+                GlyphShapingData markGlyph = collection[index];
+                GlyphShapingData ligGlyph = collection[baseGlyphIndex];
                 int compIndex = ligGlyph.LigatureId > 0 && ligGlyph.LigatureId == markGlyph.LigatureId && markGlyph.LigatureComponent > 0
                     ? Math.Min(markGlyph.LigatureComponent, ligGlyph.CodePointCount) - 1
                     : ligGlyph.CodePointCount - 1;

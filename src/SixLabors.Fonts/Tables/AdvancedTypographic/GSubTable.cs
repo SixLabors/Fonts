@@ -107,7 +107,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             {
                 // Choose a shaper based on the script.
                 // This determines which features to apply to which glyphs.
-                ScriptClass current = CodePoint.GetScriptClass(collection.GetGlyphShapingData(i).CodePoint);
+                ScriptClass current = CodePoint.GetScriptClass(collection[i].CodePoint);
                 BaseShaper shaper = ShaperFactory.Create(current, collection.TextOptions);
 
                 int index = i;
@@ -117,7 +117,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     // We want to assign the same feature lookups to individual sections of the text rather
                     // than the text as a whole to ensure that different language shapers do not interfere
                     // with each other when the text contains multiple languages.
-                    GlyphShapingData nextData = collection.GetGlyphShapingData(i + 1);
+                    GlyphShapingData nextData = collection[i + 1];
                     ScriptClass next = CodePoint.GetScriptClass(nextData.CodePoint);
                     if (next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited && next != current)
                     {
@@ -210,7 +210,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                             return;
                         }
 
-                        List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
+                        List<TagEntry> glyphFeatures = collection[iterator.Index].Features;
                         if (!HasFeature(glyphFeatures, in feature))
                         {
                             iterator.Next();

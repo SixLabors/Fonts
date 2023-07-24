@@ -808,7 +808,7 @@ namespace SixLabors.Fonts
         {
             for (int i = 0; i < collection.Count; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
+                GlyphShapingData data = collection[i];
 
                 if (data.Direction != TextDirection.RightToLeft)
                 {
@@ -830,7 +830,7 @@ namespace SixLabors.Fonts
             // https://www.unicode.org/reports/tr50/#vertical_alternates
             for (int i = 0; i < collection.Count; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
+                GlyphShapingData data = collection[i];
                 if (CodePoint.GetVerticalOrientationType(data.CodePoint) is VerticalOrientationType.Upright or VerticalOrientationType.TransformUpright)
                 {
                     continue;

@@ -93,7 +93,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
             {
                 // Mark to mark positioning.
                 // Implements: https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-6-mark-to-mark-attachment-positioning-subtable
-                ushort glyphId = collection[index];
+                ushort glyphId = collection[index].GlyphId;
                 if (glyphId == 0)
                 {
                     return false;
@@ -112,8 +112,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 int prevIdx = index - 1;
-                ushort prevGlyphId = collection[prevIdx];
-                GlyphShapingData prevGlyph = collection.GetGlyphShapingData(prevIdx);
+                ushort prevGlyphId = collection[prevIdx].GlyphId;
+                GlyphShapingData prevGlyph = collection[prevIdx];
                 if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, prevGlyphId, prevGlyph))
                 {
                     return false;
@@ -122,7 +122,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 // The following logic was borrowed from Harfbuzz,
                 // see: https://github.com/harfbuzz/harfbuzz/blob/3e635cf5e26e33d6210d3092256a49291752deec/src/hb-ot-layout-gpos-table.hh#L2525
                 bool good = false;
-                GlyphShapingData curGlyph = collection.GetGlyphShapingData(index);
+                GlyphShapingData curGlyph = collection[index];
                 if (curGlyph.LigatureId == prevGlyph.LigatureId)
                 {
                     if (curGlyph.LigatureId > 0)

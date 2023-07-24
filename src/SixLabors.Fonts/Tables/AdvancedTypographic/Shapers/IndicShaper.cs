@@ -97,7 +97,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
             for (int i = index; i < index + count; i++)
             {
-                CodePoint codePoint = collection.GetGlyphShapingData(i).CodePoint;
+                CodePoint codePoint = collection[i].CodePoint;
                 values[i - index] = IndicShapingCategory(codePoint);
             }
 
@@ -110,7 +110,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     ++syllable;
                     for (int i = last; i < match.StartIndex; i++)
                     {
-                        GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                        GlyphShapingData data = collection[i + index];
                         data.IndicShapingEngineInfo = new(Categories.X, Positions.End, "non_indic_cluster", syllable);
                     }
                 }
@@ -120,7 +120,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Create shaper info.
                 for (int i = match.StartIndex; i <= match.EndIndex; i++)
                 {
-                    GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                    GlyphShapingData data = collection[i + index];
                     CodePoint codePoint = data.CodePoint;
 
                     data.IndicShapingEngineInfo = new(
@@ -142,7 +142,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 ++syllable;
                 for (int i = last; i < count; i++)
                 {
-                    GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                    GlyphShapingData data = collection[i + index];
                     data.IndicShapingEngineInfo = new(Categories.X, Positions.End, "non_indic_cluster", syllable);
                 }
             }
@@ -169,7 +169,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             ShapingConfiguration indicConfiguration = this.indicConfiguration;
             for (int i = 0; i < count; i++)
             {
-                GlyphShapingData data = substitutionCollection.GetGlyphShapingData(i + index);
+                GlyphShapingData data = substitutionCollection[i + index];
                 FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
                 IndicShapingEngineInfo? info = data.IndicShapingEngineInfo;
                 if (info?.Position == Positions.Base_C)
@@ -197,7 +197,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             int end = NextSyllable(substitutionCollection, index, max);
             while (start < max)
             {
-                GlyphShapingData data = substitutionCollection.GetGlyphShapingData(start);
+                GlyphShapingData data = substitutionCollection[start];
                 IndicShapingEngineInfo? info = data.IndicShapingEngineInfo;
                 string? type = info?.SyllableType;
 
@@ -211,7 +211,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 {
                     // Insert after possible Repha.
                     int i = start;
-                    GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
+                    GlyphShapingData current = substitutionCollection[i];
                     for (i = start; i < end; i++)
                     {
                         if (current.IndicShapingEngineInfo?.Category != Categories.Repha)
@@ -219,7 +219,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                             break;
                         }
 
-                        current = substitutionCollection.GetGlyphShapingData(i);
+                        current = substitutionCollection[i];
                     }
 
                     Span<ushort> glyphs = stackalloc ushort[2];
@@ -229,7 +229,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     substitutionCollection.Replace(i, glyphs);
 
                     // Update shaping info for newly inserted data.
-                    GlyphShapingData dotted = substitutionCollection.GetGlyphShapingData(i + 1);
+                    GlyphShapingData dotted = substitutionCollection[i + 1];
                     var dottedCategory = (Categories)(1 << IndicShapingCategory(dotted.CodePoint));
                     var dottedPosition = (Positions)IndicShapingPosition(dotted.CodePoint);
                     dotted.IndicShapingEngineInfo = new(dottedCategory, dottedPosition, info.SyllableType, info.Syllable);
@@ -258,20 +258,20 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     indicConfiguration.RephPosition != Positions.Ra_To_Become_Reph &&
                     gSubTable.TryGetFeatureLookups(in RphfTag, this.ScriptClass, out _))
                 {
-                    GlyphShapingData next = substitutionCollection.GetGlyphShapingData(start + 2);
+                    GlyphShapingData next = substitutionCollection[start + 2];
                     if ((indicConfiguration.RephMode == RephMode.Implicit && !IsJoiner(next)) ||
                         (indicConfiguration.RephMode == RephMode.Explicit && next.IndicShapingEngineInfo?.Category == Categories.ZWJ))
                     {
                         // See if it matches the 'rphf' feature.
-                        tempBuffer[2] = substitutionCollection.GetGlyphShapingData(start + 2);
-                        tempBuffer[1] = substitutionCollection.GetGlyphShapingData(start + 1);
-                        tempBuffer[0] = substitutionCollection.GetGlyphShapingData(start);
+                        tempBuffer[2] = substitutionCollection[start + 2];
+                        tempBuffer[1] = substitutionCollection[start + 1];
+                        tempBuffer[0] = substitutionCollection[start];
 
                         if ((indicConfiguration.RephMode == RephMode.Explicit && this.WouldSubstitute(tempCollection, in RphfTag, tempBuffer)) ||
                             this.WouldSubstitute(tempCollection, in RphfTag, tempBuffer.Slice(0, 2)))
                         {
                             limit += 2;
-                            while (limit < end && IsJoiner(substitutionCollection.GetGlyphShapingData(limit)))
+                            while (limit < end && IsJoiner(substitutionCollection[limit]))
                             {
                                 limit++;
                             }
@@ -282,10 +282,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     }
                 }
                 else if (indicConfiguration.RephMode == RephMode.Log_Repha &&
-                    substitutionCollection.GetGlyphShapingData(start).IndicShapingEngineInfo?.Category == Categories.Repha)
+                    substitutionCollection[start].IndicShapingEngineInfo?.Category == Categories.Repha)
                 {
                     limit++;
-                    while (limit < end && IsJoiner(substitutionCollection.GetGlyphShapingData(limit)))
+                    while (limit < end && IsJoiner(substitutionCollection[limit]))
                     {
                         limit++;
                     }
@@ -304,10 +304,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
                         do
                         {
-                            IndicShapingEngineInfo? prevInfo = substitutionCollection.GetGlyphShapingData(--i).IndicShapingEngineInfo;
+                            IndicShapingEngineInfo? prevInfo = substitutionCollection[--i].IndicShapingEngineInfo;
 
                             // Until a consonant is found
-                            if (IsConsonant(substitutionCollection.GetGlyphShapingData(i)))
+                            if (IsConsonant(substitutionCollection[i]))
                             {
                                 // that does not have a below-base or post-base form
                                 // (post-base forms have to follow below-base forms),
@@ -335,7 +335,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                                 baseConsonant = i;
                             }
                             else if (start < i && prevInfo?.Category == Categories.ZWJ &&
-                                substitutionCollection.GetGlyphShapingData(i - 1).IndicShapingEngineInfo?.Category == Categories.H)
+                                substitutionCollection[i - 1].IndicShapingEngineInfo?.Category == Categories.H)
                             {
                                 // A ZWJ after a Halant stops the base search, and requests an explicit
                                 // half form.
@@ -444,10 +444,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return index;
             }
 
-            int? syllable = collection.GetGlyphShapingData(index).IndicShapingEngineInfo?.Syllable;
+            int? syllable = collection[index].IndicShapingEngineInfo?.Syllable;
             while (++index < count)
             {
-                if (collection.GetGlyphShapingData(index).IndicShapingEngineInfo?.Syllable != syllable)
+                if (collection[index].IndicShapingEngineInfo?.Syllable != syllable)
                 {
                     break;
                 }

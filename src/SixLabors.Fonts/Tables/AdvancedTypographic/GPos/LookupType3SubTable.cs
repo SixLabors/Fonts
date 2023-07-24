@@ -87,14 +87,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 // Implements Cursive Attachment Positioning Subtable:
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookup-type-3-cursive-attachment-positioning-subtable
-                ushort glyphId = collection[index];
+                ushort glyphId = collection[index].GlyphId;
                 if (glyphId == 0)
                 {
                     return false;
                 }
 
                 int nextIndex = index + 1;
-                ushort nextGlyphId = collection[nextIndex];
+                ushort nextGlyphId = collection[nextIndex].GlyphId;
                 if (nextGlyphId == 0)
                 {
                     return false;
@@ -126,8 +126,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                GlyphShapingData current = collection.GetGlyphShapingData(index);
-                GlyphShapingData next = collection.GetGlyphShapingData(nextIndex);
+                GlyphShapingData current = collection[index];
+                GlyphShapingData next = collection[nextIndex];
 
                 AnchorXY exitXY = exit.GetAnchor(fontMetrics, current, collection);
                 AnchorXY entryXY = entry.GetAnchor(fontMetrics, next, collection);
@@ -193,7 +193,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 bool horizontal = !isVerticalLayout;
                 ReverseCursiveMinorOffset(collection, index, child, horizontal, parent);
 
-                GlyphShapingData c = collection.GetGlyphShapingData(child);
+                GlyphShapingData c = collection[child];
                 c.CursiveAttachment = parent - child;
                 if (horizontal)
                 {
@@ -205,7 +205,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 }
 
                 // If parent was attached to child, separate them.
-                GlyphShapingData p = collection.GetGlyphShapingData(parent);
+                GlyphShapingData p = collection[parent];
                 if (p.CursiveAttachment == -c.CursiveAttachment)
                 {
                     p.CursiveAttachment = 0;
@@ -221,7 +221,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 bool horizontal,
                 int parent)
             {
-                GlyphShapingData c = collection.GetGlyphShapingData(i);
+                GlyphShapingData c = collection[i];
                 int chain = c.CursiveAttachment;
                 if (chain <= 0)
                 {
@@ -240,7 +240,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
 
                 ReverseCursiveMinorOffset(collection, position, j, horizontal, parent);
 
-                GlyphShapingData p = collection.GetGlyphShapingData(j);
+                GlyphShapingData p = collection[j];
                 if (horizontal)
                 {
                     p.Bounds.Y = -c.Bounds.Y;

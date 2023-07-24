@@ -71,7 +71,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
         private bool ShouldIgnore(int index)
         {
-            GlyphShapingData data = this.Collection.GetGlyphShapingData(index);
+            GlyphShapingData data = this.Collection[index];
             GlyphShapingClass shapingClass = AdvancedTypographicUtils.GetGlyphShapingClass(this.fontMetrics, data.GlyphId, data);
             return (this.ignoreMarks && shapingClass.IsMark) ||
                 (this.ignoreBaseGlypghs && shapingClass.IsBase) ||
