@@ -90,6 +90,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return;
             }
 
+            Span<ushort> buffer = stackalloc ushort[16];
             int end = index + count;
             for (int i = end - 1; i >= 0; i--)
             {
@@ -97,7 +98,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
                 if (UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) && decompositions != null)
                 {
-                    Span<ushort> ids = stackalloc ushort[decompositions.Length];
+                    Span<ushort> ids = buffer.Slice(0, decompositions.Length);
                     for (int j = 0; j < decompositions.Length; j++)
                     {
                         // Font should always contain the decomposed glyph.

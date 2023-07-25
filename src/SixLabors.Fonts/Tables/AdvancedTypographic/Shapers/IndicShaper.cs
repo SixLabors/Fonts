@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System;
+using System.Globalization;
 using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.Unicode.Resources;
 using UnicodeTrieGenerator.StateAutomation;
@@ -45,8 +46,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private readonly TextOptions textOptions;
         private ShapingConfiguration indicConfiguration;
+        private readonly bool isOldSpec;
 
-        public IndicShaper(ScriptClass script, TextOptions textOptions)
+        public IndicShaper(ScriptClass script, Tag unicodeScriptTag, TextOptions textOptions)
             : base(script, MarkZeroingMode.None, textOptions)
         {
             this.textOptions = textOptions;
@@ -59,6 +61,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             {
                 this.indicConfiguration = ShapingConfiguration.Default;
             }
+
+            this.isOldSpec = this.indicConfiguration.HasOldSpec && !unicodeScriptTag.ToString().EndsWith("2");
         }
 
         protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
@@ -78,9 +82,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.AddFeature(collection, index, count, PstfTag, false);
             this.AddFeature(collection, index, count, VatuTag);
             this.AddFeature(collection, index, count, CjctTag);
-            this.AddFeature(collection, index, count, CfarTag, false, postAction: FinalReorder);
+            this.AddFeature(collection, index, count, CfarTag, false, postAction: this.FinalReorder);
 
-            this.AddFeature(collection, index, count, InitTag);
+            this.AddFeature(collection, index, count, InitTag, false);
             this.AddFeature(collection, index, count, PresTag);
             this.AddFeature(collection, index, count, AbvsTag);
             this.AddFeature(collection, index, count, BlwsTag);
@@ -89,6 +93,39 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             this.AddFeature(collection, index, count, DistTag);
             this.AddFeature(collection, index, count, AbvmTag);
             this.AddFeature(collection, index, count, BlwmTag);
+        }
+
+        protected override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
+        {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
+            // Decompose split matras
+            Span<ushort> buffer = stackalloc ushort[16];
+            int end = index + count;
+            for (int i = end - 1; i >= 0; i--)
+            {
+                GlyphShapingData data = substitutionCollection[i];
+                FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
+
+                if ((Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) ||
+                    UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out decompositions)) &&
+                    decompositions != null)
+                {
+                    Span<ushort> ids = buffer.Slice(0, decompositions.Length);
+                    for (int j = 0; j < decompositions.Length; j++)
+                    {
+                        // Font should always contain the decomposed glyph.
+                        fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
+
+                        ids[j] = id;
+                    }
+
+                    substitutionCollection.Replace(i, ids);
+                }
+            }
         }
 
         private static void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
@@ -260,33 +297,30 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // base consonants.
                 if (start + 3 <= end &&
                     indicConfiguration.RephPosition != Positions.Ra_To_Become_Reph &&
-                    gSubTable.TryGetFeatureLookups(in RphfTag, this.ScriptClass, out _))
+                    gSubTable.TryGetFeatureLookups(in RphfTag, this.ScriptClass, out _) &&
+                    ((indicConfiguration.RephMode == RephMode.Implicit && !IsJoiner(substitutionCollection[start + 2])) ||
+                     (indicConfiguration.RephMode == RephMode.Explicit && substitutionCollection[start + 2].IndicShapingEngineInfo?.Category == Categories.ZWJ)))
                 {
-                    GlyphShapingData next = substitutionCollection[start + 2];
-                    if ((indicConfiguration.RephMode == RephMode.Implicit && !IsJoiner(next)) ||
-                        (indicConfiguration.RephMode == RephMode.Explicit && next.IndicShapingEngineInfo?.Category == Categories.ZWJ))
+                    // See if it matches the 'rphf' feature.
+                    tempBuffer[2] = substitutionCollection[start + 2];
+                    tempBuffer[1] = substitutionCollection[start + 1];
+                    tempBuffer[0] = substitutionCollection[start];
+
+                    if ((indicConfiguration.RephMode == RephMode.Explicit && this.WouldSubstitute(tempCollection, in RphfTag, tempBuffer)) ||
+                        this.WouldSubstitute(tempCollection, in RphfTag, tempBuffer.Slice(0, 2)))
                     {
-                        // See if it matches the 'rphf' feature.
-                        tempBuffer[2] = substitutionCollection[start + 2];
-                        tempBuffer[1] = substitutionCollection[start + 1];
-                        tempBuffer[0] = substitutionCollection[start];
-
-                        if ((indicConfiguration.RephMode == RephMode.Explicit && this.WouldSubstitute(tempCollection, in RphfTag, tempBuffer)) ||
-                            this.WouldSubstitute(tempCollection, in RphfTag, tempBuffer.Slice(0, 2)))
+                        limit += 2;
+                        while (limit < end && IsJoiner(substitutionCollection[limit]))
                         {
-                            limit += 2;
-                            while (limit < end && IsJoiner(substitutionCollection[limit]))
-                            {
-                                limit++;
-                            }
-
-                            basePosition = start;
-                            hasReph = true;
+                            limit++;
                         }
+
+                        basePosition = start;
+                        hasReph = true;
                     }
                 }
                 else if (indicConfiguration.RephMode == RephMode.Log_Repha &&
-                    substitutionCollection[start].IndicShapingEngineInfo?.Category == Categories.Repha)
+                         substitutionCollection[start].IndicShapingEngineInfo?.Category == Categories.Repha)
                 {
                     limit++;
                     while (limit < end && IsJoiner(substitutionCollection[limit]))
@@ -339,7 +373,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                                 basePosition = i;
                             }
                             else if (start < i && prevInfo?.Category == Categories.ZWJ &&
-                                substitutionCollection[i - 1].IndicShapingEngineInfo?.Category == Categories.H)
+                                     substitutionCollection[i - 1].IndicShapingEngineInfo?.Category == Categories.H)
                             {
                                 // A ZWJ after a Halant stops the base search, and requests an explicit
                                 // half form.
@@ -475,7 +509,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Malayalam test case:
                 // U+0D38,U+0D4D,U+0D31,U+0D4D,U+0D31,U+0D4D
                 // With lohit-ttf-20121122/Lohit-Malayalam.ttf
-                if (indicConfiguration.HasOldSpec)
+                if (this.isOldSpec)
                 {
                     bool disallowDoubleHalants = this.ScriptClass != ScriptClass.Malayalam;
                     for (int i = basePosition + 1; i < end; i++)
@@ -546,23 +580,23 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 for (int i = basePosition + 1; i < end; i++)
                 {
                     GlyphShapingData current = substitutionCollection[i];
-                    IndicShapingEngineInfo? iPos = current.IndicShapingEngineInfo;
-                    if (iPos != null)
+                    IndicShapingEngineInfo? info = current.IndicShapingEngineInfo;
+                    if (info != null)
                     {
                         if (IsConsonant(current))
                         {
                             for (int j = last + 1; j < i; j++)
                             {
-                                IndicShapingEngineInfo? jPos = substitutionCollection[j].IndicShapingEngineInfo;
-                                if (jPos?.Position < Positions.SMVD)
+                                IndicShapingEngineInfo? jInfo = substitutionCollection[j].IndicShapingEngineInfo;
+                                if (jInfo?.Position < Positions.SMVD)
                                 {
-                                    jPos.Position = iPos.Position;
+                                    jInfo.Position = info.Position;
                                 }
                             }
 
                             last = i;
                         }
-                        else if (iPos.Category == Categories.M)
+                        else if (info.Category == Categories.M)
                         {
                             last = i;
                         }
@@ -601,7 +635,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 }
 
                 // Pre-base
-                bool blwf = !indicConfiguration.HasOldSpec && indicConfiguration.BlwfMode == BlwfMode.Pre_And_Post;
+                bool blwf = !this.isOldSpec && indicConfiguration.BlwfMode == BlwfMode.Pre_And_Post;
                 for (int i = start; i < basePosition; i++)
                 {
                     substitutionCollection.EnableShapingFeature(i, HalfTag);
@@ -619,7 +653,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     substitutionCollection.EnableShapingFeature(i, BlwfTag);
                 }
 
-                if (indicConfiguration.HasOldSpec && this.ScriptClass == ScriptClass.Devanagari)
+                if (this.isOldSpec && this.ScriptClass == ScriptClass.Devanagari)
                 {
                     // Old-spec eye-lash Ra needs special handling.
                     // From the spec:
@@ -747,6 +781,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             for (int i = 0; i < buffer.Length; i++)
             {
                 collection.AddGlyph(buffer[i], i);
+                collection.EnableShapingFeature(i, featureTag);
             }
 
             GlyphShapingData data = buffer[0];
@@ -780,7 +815,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     maxOperationsCount,
                     ref currentOperations);
 
-                return collectionCount != initialCount;
+                return collection.Count != initialCount;
             }
 
             return false;
@@ -814,8 +849,432 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             return index;
         }
 
-        private static void FinalReorder(IGlyphShapingCollection collection, int index, int count)
+        private void FinalReorder(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
+            // Create a reusable temporary substitution collection and buffer to allow checking whether
+            // certain combinations will be substituted.
+            GlyphSubstitutionCollection tempCollection = new(this.textOptions);
+            Span<GlyphShapingData> tempBuffer = new GlyphShapingData[3];
+
+            int max = index + count;
+            int start = index;
+            int end = NextSyllable(substitutionCollection, index, max);
+            while (start < max)
+            {
+                // 4. Final reordering:
+                //
+                // After the localized forms and basic shaping forms GSUB features have been
+                // applied (see below), the shaping engine performs some final glyph
+                // reordering before applying all the remaining font features to the entire
+                // cluster.
+                GlyphShapingData data = substitutionCollection[start];
+                FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
+                if (!fontMetrics.TryGetGSubTable(out GSubTable? gSubTable))
+                {
+                    break;
+                }
+
+                bool tryPref = gSubTable.TryGetFeatureLookups(in PrefTag, this.ScriptClass, out _);
+
+                // Find base consonant again.
+                int basePosition = start;
+                for (; basePosition < end; basePosition++)
+                {
+                    if (substitutionCollection[basePosition].IndicShapingEngineInfo?.Position >= Positions.Base_C)
+                    {
+                        if (tryPref && basePosition + 1 < end)
+                        {
+                            for (int i = basePosition + 1; i < end; i++)
+                            {
+                                GlyphShapingData current = substitutionCollection[i];
+                                if (current.Features.FindIndex(x => x.Tag == PrefTag && x.Enabled) >= 0)
+                                {
+                                    if (!current.IsSubstituted && current.LigatureId != 0 && !current.IsDecomposed)
+                                    {
+                                        // Ok, this was a 'pref' candidate but didn't form any.
+                                        // Base is around here...
+                                        basePosition = i;
+                                        while (basePosition < end && IsHalantOrCoeng(substitutionCollection[basePosition]))
+                                        {
+                                            basePosition++;
+                                        }
+
+                                        IndicShapingEngineInfo? info = substitutionCollection[basePosition].IndicShapingEngineInfo;
+                                        if (info != null)
+                                        {
+                                            info.Position = Positions.Base_C;
+                                            tryPref = false;
+                                        }
+                                    }
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        // For Malayalam, skip over unformed below- (but NOT post-) forms.
+                        if (this.ScriptClass == ScriptClass.Malayalam)
+                        {
+                            for (int i = basePosition + 1; i < end; i++)
+                            {
+                                while (i < end && IsJoiner(substitutionCollection[i]))
+                                {
+                                    i++;
+                                }
+
+                                if (i == end || !IsHalantOrCoeng(substitutionCollection[i]))
+                                {
+                                    break;
+                                }
+
+                                i++; // Skip halant.
+                                while (i < end && IsJoiner(substitutionCollection[i]))
+                                {
+                                    i++;
+                                }
+
+                                GlyphShapingData current = substitutionCollection[i];
+                                if (i < end && IsConsonant(current) && current.IndicShapingEngineInfo?.Position == Positions.Below_C)
+                                {
+                                    basePosition = i;
+                                    IndicShapingEngineInfo? info = substitutionCollection[basePosition].IndicShapingEngineInfo;
+                                    if (info != null)
+                                    {
+                                        info.Position = Positions.Base_C;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (start < basePosition && substitutionCollection[basePosition].IndicShapingEngineInfo?.Position > Positions.Base_C)
+                        {
+                            basePosition--;
+                        }
+
+                        break;
+                    }
+                }
+
+                if (basePosition == end && start < basePosition && substitutionCollection[basePosition - 1].IndicShapingEngineInfo?.Category == Categories.ZWJ)
+                {
+                    basePosition--;
+                }
+
+                if (basePosition < end)
+                {
+                    while (start < basePosition && (substitutionCollection[basePosition].IndicShapingEngineInfo?.Category & (Categories.N | HalantOrCoengFlags)) != 0)
+                    {
+                        basePosition--;
+                    }
+                }
+
+                // o Reorder matras:
+                //
+                // If a pre-base matra character had been reordered before applying basic
+                // features, the glyph can be moved closer to the main consonant based on
+                // whether half-forms had been formed. Actual position for the matra is
+                // defined as “after last standalone halant glyph, after initial matra
+                // position and before the main consonant”. If ZWJ or ZWNJ follow this
+                // halant, position is moved after it.
+                //
+                // Otherwise there can't be any pre-base matra characters.
+                if (start + 1 < end && start < basePosition)
+                {
+                    // If we lost track of base, alas, position before last thingy.
+                    int newPos = basePosition == end ? basePosition - 2 : basePosition - 1;
+
+                    // Malayalam / Tamil do not have "half" forms or explicit virama forms.
+                    // The glyphs formed by 'half' are Chillus or ligated explicit viramas.
+                    // We want to position matra after them.
+                    if (this.ScriptClass is not ScriptClass.Malayalam and not ScriptClass.Tamil)
+                    {
+                        while (newPos > start && (substitutionCollection[newPos].IndicShapingEngineInfo?.Category & (Categories.M | HalantOrCoengFlags)) == 0)
+                        {
+                            newPos--;
+                        }
+
+                        // If we found no Halant we are done.
+                        // Otherwise only proceed if the Halant does
+                        // not belong to the Matra itself!
+                        GlyphShapingData current = substitutionCollection[newPos];
+                        if (IsHalantOrCoeng(current) && current.IndicShapingEngineInfo?.Position != Positions.Pre_M)
+                        {
+                            // If ZWJ or ZWNJ follow this halant, position is moved after it.
+                            if (newPos + 1 < end && IsJoiner(substitutionCollection[newPos + 1]))
+                            {
+                                newPos++;
+                            }
+                        }
+                        else
+                        {
+                            newPos = start; // No move.
+                        }
+                    }
+
+                    if (start < newPos && substitutionCollection[newPos].IndicShapingEngineInfo?.Position != Positions.Pre_M)
+                    {
+                        // Now go see if there's actually any matras...
+                        for (int i = newPos; i > start; i--)
+                        {
+                            if (substitutionCollection[i - 1].IndicShapingEngineInfo?.Position == Positions.Pre_M)
+                            {
+                                int oldPos = i - 1;
+                                if (oldPos < basePosition && basePosition <= newPos)
+                                {
+                                    // Shouldn't actually happen.
+                                    basePosition--;
+                                }
+
+                                substitutionCollection.MoveGlyph(oldPos, newPos);
+                                newPos--;
+                            }
+                        }
+                    }
+                }
+
+                // o Reorder reph:
+                //
+                // Reph’s original position is always at the beginning of the syllable,
+                // (i.e. it is not reordered at the character reordering stage). However,
+                // it will be reordered according to the basic-forms shaping results.
+                // Possible positions for reph, depending on the script, are; after main,
+                // before post-base consonant forms, and after post-base consonant forms.
+
+                // Two cases:
+                //
+                // - If repha is encoded as a sequence of characters (Ra,H or Ra,H,ZWJ), then
+                //   we should only move it if the sequence ligated to the repha form.
+                //
+                // - If repha is encoded separately and in the logical position, we should only
+                //   move it if it did NOT ligate.  If it ligated, it's probably the font trying
+                //   to make it work without the reordering.
+                GlyphShapingData original = substitutionCollection[start];
+                if (start + 1 < end &&
+                    original.IndicShapingEngineInfo?.Position == Positions.Ra_To_Become_Reph &&
+                    (original.IndicShapingEngineInfo?.Category == Categories.Repha != (original.LigatureId != 0 && !original.IsDecomposed)))
+                {
+                    int newRephPos = start;
+                    Positions rephPos = this.indicConfiguration.RephPosition;
+                    bool found = false;
+
+                    // 1. If reph should be positioned after post-base consonant forms,
+                    //    proceed to step 5.
+                    if (rephPos != Positions.After_Post)
+                    {
+                        // 2. If the reph repositioning class is not after post-base: target
+                        //    position is after the first explicit halant glyph between the
+                        //    first post-reph consonant and last main consonant. If ZWJ or ZWNJ
+                        //    are following this halant, position is moved after it. If such
+                        //    position is found, this is the target position. Otherwise,
+                        //    proceed to the next step.
+                        //
+                        //    Note: in old-implementation fonts, where classifications were
+                        //    fixed in shaping engine, there was no case where reph position
+                        //    will be found on this step.
+                        newRephPos = start + 1;
+                        while (newRephPos < basePosition && !IsHalantOrCoeng(substitutionCollection[newRephPos]))
+                        {
+                            newRephPos++;
+                        }
+
+                        if (newRephPos < basePosition && IsHalantOrCoeng(substitutionCollection[newRephPos]))
+                        {
+                            // ->If ZWJ or ZWNJ are following this halant, position is moved after it.
+                            if (newRephPos + 1 < basePosition && IsJoiner(substitutionCollection[newRephPos + 1]))
+                            {
+                                newRephPos++;
+                            }
+
+                            found = true;
+                        }
+
+                        // 3. If reph should be repositioned after the main consonant: find the
+                        //    first consonant not ligated with main, or find the first
+                        //    consonant that is not a potential pre-base reordering Ra.
+                        if (!found && rephPos == Positions.After_Main)
+                        {
+                            newRephPos = basePosition;
+                            while (newRephPos + 1 < end && substitutionCollection[newRephPos + 1].IndicShapingEngineInfo?.Position <= Positions.After_Main)
+                            {
+                                newRephPos++;
+                            }
+
+                            found = newRephPos < end;
+                        }
+
+                        // 4. If reph should be positioned before post-base consonant, find
+                        //    first post-base classified consonant not ligated with main. If no
+                        //    consonant is found, the target position should be before the
+                        //    first matra, syllable modifier sign or vedic sign.
+                        //
+                        // This is our take on what step 4 is trying to say (and failing, BADLY).
+                        if (!found && rephPos == Positions.After_Sub)
+                        {
+                            newRephPos = basePosition;
+                            while (newRephPos + 1 < end && (substitutionCollection[newRephPos + 1].IndicShapingEngineInfo?.Position & (Positions.Post_C | Positions.After_Post | Positions.SMVD)) == 0)
+                            {
+                                newRephPos++;
+                            }
+
+                            found = newRephPos < end;
+                        }
+                    }
+
+                    // 5. If no consonant is found in steps 3 or 4, move reph to a position
+                    //    immediately before the first post-base matra, syllable modifier
+                    //    sign or vedic sign that has a reordering class after the intended
+                    //    reph position. For example, if the reordering position for reph
+                    //    is post-main, it will skip above-base matras that also have a
+                    //    post-main position.
+                    if (!found)
+                    {
+                        // Copied from step 2.
+                        newRephPos = start + 1;
+                        while (newRephPos < basePosition && !IsHalantOrCoeng(substitutionCollection[newRephPos]))
+                        {
+                            newRephPos++;
+                        }
+
+                        if (newRephPos < basePosition && IsHalantOrCoeng(substitutionCollection[newRephPos]))
+                        {
+                            // ->If ZWJ or ZWNJ are following this halant, position is moved after it.
+                            if (newRephPos + 1 < basePosition && IsJoiner(substitutionCollection[newRephPos + 1]))
+                            {
+                                newRephPos++;
+                            }
+
+                            found = true;
+                        }
+                    }
+
+                    // 6. Otherwise, reorder reph to the end of the syllable.
+                    if (!found)
+                    {
+                        newRephPos = end - 1;
+                        while (newRephPos > start && substitutionCollection[newRephPos].IndicShapingEngineInfo?.Position == Positions.SMVD)
+                        {
+                            newRephPos--;
+                        }
+
+                        // If the Reph is to be ending up after a Matra,Halant sequence,
+                        // position it before that Halant so it can interact with the Matra.
+                        // However, if it's a plain Consonant,Halant we shouldn't do that.
+                        // Uniscribe doesn't do this.
+                        // TEST: U+0930,U+094D,U+0915,U+094B,U+094D
+                        if (IsHalantOrCoeng(substitutionCollection[newRephPos]))
+                        {
+                            for (int i = basePosition + 1; i < newRephPos; i++)
+                            {
+                                if (substitutionCollection[i].IndicShapingEngineInfo?.Category == Categories.H)
+                                {
+                                    newRephPos--;
+                                }
+                            }
+                        }
+                    }
+
+                    if (newRephPos != start)
+                    {
+                        substitutionCollection.MoveGlyph(start, newRephPos);
+                    }
+
+                    if (start < basePosition && basePosition <= newRephPos)
+                    {
+                        basePosition--;
+                    }
+                }
+
+                // o Reorder pre-base reordering consonants:
+                //
+                // If a pre-base reordering consonant is found, reorder it according to
+                // the following rules:
+                if (tryPref && basePosition + 1 < end)
+                {
+                    for (int i = basePosition + 1; i < end; i++)
+                    {
+                        GlyphShapingData current = substitutionCollection[i];
+                        if (current.Features.FindIndex(x => x.Tag == PrefTag && x.Enabled) >= 0)
+                        {
+                            // 1. Only reorder a glyph produced by substitution during application
+                            //    of the <pref> feature. (Note that a font may shape a Ra consonant with
+                            //    the feature generally but block it in certain contexts.)
+
+                            // Note: We just check that something got substituted.  We don't check that
+                            // the <pref> feature actually did it...
+                            //
+                            // Reorder pref only if it ligated.
+                            if (current.LigatureId != 0 && !current.IsDecomposed)
+                            {
+                                // 2. Try to find a target position the same way as for pre-base matra.
+                                //    If it is found, reorder pre-base consonant glyph.
+                                //
+                                // 3. If position is not found, reorder immediately before main
+                                //    consonant.
+                                int newPos = basePosition;
+
+                                // Malayalam / Tamil do not have "half" forms or explicit virama forms.
+                                // The glyphs formed by 'half' are Chillus or ligated explicit viramas.
+                                // We want to position matra after them.
+                                if (this.ScriptClass is not ScriptClass.Malayalam and not ScriptClass.Tamil)
+                                {
+                                    while (newPos > start && (substitutionCollection[newPos + 1].IndicShapingEngineInfo?.Category & (Categories.M | HalantOrCoengFlags)) == 0)
+                                    {
+                                        newPos--;
+                                    }
+
+                                    // In Khmer coeng model, a H,Ra can go *after* matras.  If it goes after a
+                                    // split matra, it should be reordered to *before* the left part of such matra.
+                                    if (newPos > start && substitutionCollection[newPos + 1].IndicShapingEngineInfo?.Category == Categories.M)
+                                    {
+                                        int oldPos = i;
+                                        for (int j = basePosition + 1; j < oldPos; j++)
+                                        {
+                                            if (substitutionCollection[j].IndicShapingEngineInfo?.Category == Categories.M)
+                                            {
+                                                newPos--;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if (newPos > start && IsHalantOrCoeng(substitutionCollection[newPos - 1]))
+                                    {
+                                        // -> If ZWJ or ZWNJ follow this halant, position is moved after it.
+                                        if (newPos < end && IsJoiner(substitutionCollection[newPos]))
+                                        {
+                                            newPos++;
+                                        }
+                                    }
+
+                                    substitutionCollection.MoveGlyph(i, newPos);
+
+                                    if (newPos <= basePosition && basePosition < i)
+                                    {
+                                        basePosition++;
+                                    }
+                                }
+                            }
+
+                            break;
+                        }
+
+                        // Apply 'init' to the Left Matra if it's a word start.
+                        if (substitutionCollection[start].IndicShapingEngineInfo?.Position == Positions.Pre_M &&
+                            (start == 0 || CodePoint.GetGeneralCategory(substitutionCollection[start - 1].CodePoint) is not UnicodeCategory.NonSpacingMark and not UnicodeCategory.Format))
+                        {
+                            substitutionCollection.EnableShapingFeature(start, InitTag);
+                        }
+                    }
+                }
+
+                start = end;
+                end = NextSyllable(substitutionCollection, start, max);
+            }
         }
     }
 }

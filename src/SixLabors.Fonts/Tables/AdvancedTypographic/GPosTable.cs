@@ -118,7 +118,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 }
 
                 ScriptClass current = CodePoint.GetScriptClass(collection[i].CodePoint);
-                BaseShaper shaper = ShaperFactory.Create(current, collection.TextOptions);
+                Tag unicodeScriptTag = this.GetUnicodeScriptTag(current);
+                BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, collection.TextOptions);
 
                 int index = i;
                 int count = 1;
@@ -241,6 +242,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
 
             value = this.GetFeatureLookups(stageFeature, scriptListTable.LangSysTables);
             return value.Count > 0;
+        }
+
+        private Tag GetUnicodeScriptTag(ScriptClass script)
+        {
+            if (this.ScriptList is null)
+            {
+                return default;
+            }
+
+            Tag[] tags = UnicodeScriptTagMap.Instance[script];
+            for (int i = 0; i < tags.Length; i++)
+            {
+                if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? _))
+                {
+                    return tags[i];
+                }
+            }
+
+            return default;
         }
 
         private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, params LangSysTable[] langSysTables)

@@ -228,6 +228,16 @@ namespace SixLabors.Fonts.Unicode.Resources
             }
         };
 
+        public static Dictionary<int, int[]> Decompositions { get; } = new()
+        {
+            // Khmer
+            { 0x17BE, new int[] { 0x17C1, 0x17BE } },
+            { 0x17BF, new int[] { 0x17C1, 0x17BF } },
+            { 0x17C0, new int[] { 0x17C1, 0x17C0 } },
+            { 0x17C4, new int[] { 0x17C1, 0x17C4 } },
+            { 0x17C5, new int[] { 0x17C1, 0x17C5 } }
+        };
+
         internal struct ShapingConfiguration
         {
             public static ShapingConfiguration Default = new()
