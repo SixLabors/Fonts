@@ -603,7 +603,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     }
                 }
 
-                substitutionCollection.Sort(start, end - start, (a, b) =>
+                substitutionCollection.Sort(start, end, (a, b) =>
                 {
                     int pa = a.IndicShapingEngineInfo?.Position != null ? (int)a.IndicShapingEngineInfo.Position : 0;
                     int pb = b.IndicShapingEngineInfo?.Position != null ? (int)b.IndicShapingEngineInfo.Position : 0;

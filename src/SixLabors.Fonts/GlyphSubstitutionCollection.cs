@@ -128,23 +128,26 @@ namespace SixLabors.Fonts
         /// <param name="toIndex">The index to move to.</param>
         public void MoveGlyph(int fromIndex, int toIndex)
         {
+            if (fromIndex == toIndex)
+            {
+                return;
+            }
+
             GlyphShapingData data = this[fromIndex];
             if (fromIndex > toIndex)
             {
-                int idx = fromIndex;
-                while (idx > toIndex)
+                // Move item to the left
+                for (int i = fromIndex; i > toIndex; i--)
                 {
-                    this.glyphs[idx].Data = this.glyphs[idx - 1].Data;
-                    idx--;
+                    this.glyphs[i].Data = this.glyphs[i - 1].Data;
                 }
             }
             else
             {
-                int idx = toIndex;
-                while (idx > fromIndex)
+                // Move item to the right
+                for (int i = fromIndex; i < toIndex; i++)
                 {
-                    this.glyphs[idx - 1].Data = this.glyphs[idx].Data;
-                    idx--;
+                    this.glyphs[i].Data = this.glyphs[i + 1].Data;
                 }
             }
 
@@ -152,17 +155,17 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
-        /// Sorts the glyphs by the comparison delegate starting at the specified index.
+        /// Performs a stable sort of the glyphs by the comparison delegate starting at the specified index.
         /// </summary>
-        /// <param name="index">The start index.</param>
-        /// <param name="length">The number of items.</param>
+        /// <param name="startIndex">The start index.</param>
+        /// <param name="endIndex">The end index.</param>
         /// <param name="comparer">The comparison delegate.</param>
-        public void Sort(int index, int length, Comparison<GlyphShapingData> comparer)
+        public void Sort(int startIndex, int endIndex, Comparison<GlyphShapingData> comparer)
         {
-            for (int i = index + 1; i < length; i++)
+            for (int i = startIndex + 1; i < endIndex; i++)
             {
                 int j = i;
-                while (j > index && comparer(this[j - 1], this[i]) > 0)
+                while (j > startIndex && comparer(this[j - 1], this[i]) > 0)
                 {
                     j--;
                 }
