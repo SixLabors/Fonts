@@ -21,6 +21,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
 
         private static readonly Font KannadaNotoSerifTTF = CreateFont(TestFonts.NotoSerifKannadaRegular);
         private static readonly Font KannadaNotoSansTTF = CreateFont(TestFonts.NotoSansKannadaRegular);
+        private static readonly Font TeluguNotoSansTTF = CreateFont(TestFonts.NotoSansTeluguRegular);
 
         private static Font CreateFont(string testFont)
         {
@@ -116,6 +117,31 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         {
             ColorGlyphRenderer renderer = new();
             TextRenderer.RenderTextTo(renderer, input, new TextOptions(font == KannadaFont.Serif ? KannadaNotoSerifTTF : KannadaNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
+
+        [Theory]
+        [InlineData("\u0c15\u0c46\u0c56", new int[] { 326 })]
+        [InlineData("\u0c15\u0c4d", new int[] { 102 })]
+        [InlineData("\u0c15\u0c4d\u0c15\u0c48", new int[] { 326, 511 })]
+        [InlineData("\u0c15\u0c4d\u0c30", new int[] { 21, 549 })]
+        [InlineData("\u0c15\u0c4d\u0c30\u0c3f", new int[] { 174, 549 })]
+        [InlineData("\u0c15\u0c4d\u0c30\u0c48", new int[] { 326, 496 })]
+        [InlineData("\u0c15\u0c4d\u0c30\u0c4d", new int[] { 102, 549 })]
+        [InlineData("\u0c15\u0c4d\u0c30\u0c4d\u0c15", new int[] { 21, 549, 511 })]
+        [InlineData("\u0c15\u0c4d\u0c37", new int[] { 101 })]
+        [InlineData("\u0c15\u0c4d\u0c37\u0c4d", new int[] { 137 })]
+        [InlineData("\u0c15\u0c4d\u0c37\u0c4d\u0c23", new int[] { 21, 605 })]
+        [InlineData("\u0c3d\u0c02", new int[] { 56, 5 })]
+        public void CanShapeTeluguText(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(TeluguNotoSansTTF));
 
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
