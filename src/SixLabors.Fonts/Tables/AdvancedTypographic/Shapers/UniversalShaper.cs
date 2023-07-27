@@ -114,10 +114,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
             Span<int> values = count <= 64 ? stackalloc int[count] : new int[count];
             for (int i = index; i < index + count; i++)
             {
-                CodePoint codePoint = collection[i].CodePoint;
+                CodePoint codePoint = substitutionCollection[i].CodePoint;
                 values[i - index] = UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value);
             }
 
@@ -129,7 +134,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Create shaper info
                 for (int i = match.StartIndex; i <= match.EndIndex; i++)
                 {
-                    GlyphShapingData data = collection[i + index];
+                    GlyphShapingData data = substitutionCollection[i + index];
                     CodePoint codePoint = data.CodePoint;
                     string category = UniversalShapingData.Categories[UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value)];
 
@@ -137,33 +142,43 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 }
 
                 // Assign rphf feature
-                int limit = collection[match.StartIndex].UniversalShapingEngineInfo!.Category == "R"
+                int limit = substitutionCollection[match.StartIndex].UniversalShapingEngineInfo!.Category == "R"
                     ? 1
                     : Math.Min(3, match.EndIndex - match.StartIndex);
 
                 for (int i = match.StartIndex; i < match.StartIndex + limit; i++)
                 {
-                    collection.AddShapingFeature(i + index, new TagEntry(RcltTag, true));
+                    substitutionCollection.AddShapingFeature(i + index, new TagEntry(RcltTag, true));
                 }
             }
         }
 
         private static void ClearSubstitutionFlags(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                GlyphShapingData data = collection[i];
+                GlyphShapingData data = substitutionCollection[i];
                 data.IsSubstituted = false;
             }
         }
 
         private static void RecordRhpf(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                GlyphShapingData data = collection[i];
+                GlyphShapingData data = substitutionCollection[i];
                 if (data.IsSubstituted && data.Features.Any(x => x.Tag == RphfTag))
                 {
                     // Mark a substituted repha.
@@ -177,10 +192,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static void RecordPref(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                GlyphShapingData data = collection[i];
+                GlyphShapingData data = substitutionCollection[i];
                 if (data.IsSubstituted)
                 {
                     // Mark a substituted pref as VPre, as they behave the same way.

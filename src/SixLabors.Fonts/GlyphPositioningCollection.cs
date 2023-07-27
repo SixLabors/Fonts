@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
@@ -321,6 +322,7 @@ namespace SixLabors.Fonts
         public bool ShouldProcess(FontMetrics fontMetrics, int index)
             => this.glyphs[index].Metrics[0].FontMetrics == fontMetrics;
 
+        [DebuggerDisplay("{DebuggerDisplay,nq}")]
         private class GlyphPositioningData
         {
             public GlyphPositioningData(int offset, GlyphShapingData data, float pointSize, GlyphMetrics[] metrics)
@@ -338,6 +340,8 @@ namespace SixLabors.Fonts
             public float PointSize { get; set; }
 
             public GlyphMetrics[] Metrics { get; set; }
+
+            private string DebuggerDisplay => FormattableString.Invariant($"Offset: {this.Offset}, Data: {this.Data.ToDebuggerDisplay()}");
         }
     }
 }

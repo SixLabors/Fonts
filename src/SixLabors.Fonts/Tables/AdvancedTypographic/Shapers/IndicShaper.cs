@@ -130,11 +130,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
             Span<int> values = count <= 64 ? stackalloc int[count] : new int[count];
 
             for (int i = index; i < index + count; i++)
             {
-                CodePoint codePoint = collection[i].CodePoint;
+                CodePoint codePoint = substitutionCollection[i].CodePoint;
                 values[i - index] = IndicShapingCategory(codePoint);
             }
 
@@ -147,7 +152,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     ++syllable;
                     for (int i = last; i < match.StartIndex; i++)
                     {
-                        GlyphShapingData data = collection[i + index];
+                        GlyphShapingData data = substitutionCollection[i + index];
                         data.IndicShapingEngineInfo = new(Categories.X, Positions.End, "non_indic_cluster", syllable);
                     }
                 }
@@ -157,7 +162,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Create shaper info.
                 for (int i = match.StartIndex; i <= match.EndIndex; i++)
                 {
-                    GlyphShapingData data = collection[i + index];
+                    GlyphShapingData data = substitutionCollection[i + index];
                     CodePoint codePoint = data.CodePoint;
 
                     data.IndicShapingEngineInfo = new(
@@ -165,10 +170,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         (Positions)IndicShapingPosition(codePoint),
                         match.Tags[0],
                         syllable);
-
-                    string category = UniversalShapingData.Categories[UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value)];
-
-                    data.UniversalShapingEngineInfo = new(category, match.Tags[0], syllable);
                 }
 
                 last = match.EndIndex + 1;
@@ -179,7 +180,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 ++syllable;
                 for (int i = last; i < count; i++)
                 {
-                    GlyphShapingData data = collection[i + index];
+                    GlyphShapingData data = substitutionCollection[i + index];
                     data.IndicShapingEngineInfo = new(Categories.X, Positions.End, "non_indic_cluster", syllable);
                 }
             }
@@ -208,6 +209,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             {
                 GlyphShapingData data = substitutionCollection[i + index];
                 FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
+
+                fontMetrics.TryGetGlyphId(new(0x0020), out ushort spc);
+
                 IndicShapingEngineInfo? info = data.IndicShapingEngineInfo;
                 if (info?.Position == Positions.Base_C)
                 {

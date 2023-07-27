@@ -6,22 +6,18 @@ using Xunit;
 namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
 {
     /// <content>
-    /// Tests adapted from <see href="https://github.com/foliojs/fontkit/blob/417af0c79c5664271a07a783574ec7fac7ebad0c/test/shaping.js"/>.
+    /// Tests adapted from <see href="https://github.com/foliojs/fontkit/blob/417af0c79c5664271a07a783574ec7fac7ebad0c/test/shaping.js"/>
+    /// which implement <see href="https://github.com/unicode-org/text-rendering-tests"/>.
     /// Text has been converted to codepoint representation via https://www.corvelsoftware.co.uk/crowbar/ as Visual Studio won't
     /// display the glyphs without additional language packs. All output has been visually checked.
     /// </content>
     public partial class GSubTableTests
     {
-        private readonly Font balineseFontTTF = CreateBalineseFont();
-
-        private static Font CreateBalineseFont()
-        {
-            var collection = new FontCollection();
-            FontFamily family = collection.Add(TestFonts.NotoSansBalineseRegular);
-            return family.CreateFont(12);
-        }
+        private static readonly Font BalineseFontTTF = CreateFont(TestFonts.NotoSansBalineseRegular);
 
         [Theory]
+
+        // SHBALI-1
         [InlineData("\u1b13\u1b38\u1b00", new int[] { 23, 60, 4 })]
         [InlineData("\u1b15\u1b44\u1b16\u1b02", new int[] { 25, 132, 6 })]
         [InlineData("\u1b18\u1b3b", new int[] { 28, 62, 57 })]
@@ -41,6 +37,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         [InlineData("\u1b13\u1b40", new int[] { 66, 23, 57 })]
         [InlineData("\u1b13\u1b3e\u1b36", new int[] { 66, 23, 58 })]
         [InlineData("\u1b13\u1b3e\u1b38", new int[] { 66, 23, 60 })]
+
+        // SHBALI-2
         [InlineData("\u1b13\u1b44\u1b27\u1b3e", new int[] { 66, 23, 149 })]
         [InlineData("\u1b13\u1b44\u1b28\u1b3f", new int[] { 67, 23, 150 })]
         [InlineData("\u1b13\u1b44\u1b31\u1b3e", new int[] { 66, 23, 159 })]
@@ -55,7 +53,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         public void CanShapeBalineseText(string input, int[] expectedGlyphIndices)
         {
             ColorGlyphRenderer renderer = new();
-            TextRenderer.RenderTextTo(renderer, input, new TextOptions(this.balineseFontTTF));
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(BalineseFontTTF));
 
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)

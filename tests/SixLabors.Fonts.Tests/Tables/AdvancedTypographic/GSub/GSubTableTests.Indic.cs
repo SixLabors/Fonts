@@ -6,7 +6,8 @@ using Xunit;
 namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
 {
     /// <content>
-    /// Tests adapted from <see href="https://github.com/foliojs/fontkit/blob/417af0c79c5664271a07a783574ec7fac7ebad0c/test/shaping.js"/>.
+    /// Tests adapted from <see href="https://github.com/foliojs/fontkit/blob/417af0c79c5664271a07a783574ec7fac7ebad0c/test/shaping.js"/>
+    /// which implement <see href="https://github.com/unicode-org/text-rendering-tests"/>.
     /// Text has been converted to codepoint representation via https://www.corvelsoftware.co.uk/crowbar/ as Visual Studio won't
     /// display the glyphs without additional language packs. All output has been visually checked.
     /// </content>
@@ -29,6 +30,8 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         }
 
         [Theory]
+
+        // SHKNDA-1
         [InlineData(KannadaFont.Serif, "\u0cb2\u0ccd\u0cb2\u0cbf", new int[] { 250, 126 })]
         [InlineData(KannadaFont.Serif, "\u0c9f\u0ccd\u0cb8\u0ccd", new int[] { 194, 130 })]
         [InlineData(KannadaFont.Serif, "\u0cb3\u0cbf", new int[] { 257 })]
@@ -58,6 +61,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         [InlineData(KannadaFont.Serif, "\u0cb5\u0cbf\u0c82", new int[] { 251, 73 })]
         [InlineData(KannadaFont.Serif, "\u0c9f\u0cbf", new int[] { 233 })]
 
+        // SHKNDA-2
         [InlineData(KannadaFont.Sans, "\u0ca8\u0ccd\u0ca8\u0cbe", new int[] { 150, 57, 116 })]
         [InlineData(KannadaFont.Sans, "\u0ca4\u0ccd\u0ca4\u0cbe", new int[] { 146, 57, 112 })]
         [InlineData(KannadaFont.Sans, "\u0c9f\u0ccd\u0c9f\u0cbe", new int[] { 141, 57, 107 })]
@@ -73,6 +77,41 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         [InlineData(KannadaFont.Sans, "\u0cac\u0cc1\u0c95\u0ccd\u0cb8\u0ccd", new int[] { 42, 60, 167, 130 })]
         [InlineData(KannadaFont.Sans, "\u0cb8\u0cbe\u0cab\u0ccd\u0c9f\u0ccd", new int[] { 163, 57, 188, 107 })]
         [InlineData(KannadaFont.Sans, "\u0c9c\u0cb8\u0ccd\u0c9f\u0ccd", new int[] { 27, 200, 107 })]
+
+        // SHKNDA-3
+        [InlineData(KannadaFont.Sans, "\u0c95\u0ccb\u0c82", new int[] { 239, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c96\u0ccb\u0c82", new int[] { 240, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c97\u0ccb\u0c82", new int[] { 241, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c98\u0ccb\u0c82", new int[] { 242, 279, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c99\u0ccb\u0c82", new int[] { 24, 67, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c9a\u0ccb\u0c82", new int[] { 243, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c9b\u0ccb\u0c82", new int[] { 244, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c9c\u0ccb\u0c82", new int[] { 245, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c9d\u0ccb\u0c82", new int[] { 246, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c9e\u0ccb\u0c82", new int[] { 29, 67, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0c9f\u0ccb\u0c82", new int[] { 247, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0ca0\u0ccb\u0c82", new int[] { 248, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0ca1\u0ccb\u0c82", new int[] { 249, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0ca2\u0ccb\u0c82", new int[] { 250, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0ca3\u0ccb\u0c82", new int[] { 251, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0ca4\u0ccb\u0c82", new int[] { 252, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0ca5\u0ccb\u0c82", new int[] { 253, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0ca6\u0ccb\u0c82", new int[] { 254, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0ca7\u0ccb\u0c82", new int[] { 255, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0ca8\u0ccb\u0c82", new int[] { 256, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0caa\u0ccb\u0c82", new int[] { 257, 275, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0cab\u0ccb\u0c82", new int[] { 258, 277, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0cac\u0ccb\u0c82", new int[] { 259, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0cad\u0ccb\u0c82", new int[] { 260, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0cae\u0ccb\u0c82", new int[] { 280, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0caf\u0ccb\u0c82", new int[] { 281, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0cb0\u0ccb\u0c82", new int[] { 263, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0cb1\u0ccb\u0c82", new int[] { 47, 67, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0cb2\u0ccb\u0c82", new int[] { 264, 61, 71, 4 })]
+        [InlineData(KannadaFont.Sans, "\u0cb5\u0ccb\u0c82", new int[] { 266, 275, 71, 4 })]
+
+        // Harfbuzz replaces the default ignorable with id 91 with a space and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData(KannadaFont.Sans, "\u0c86\u0ccd\u0caf\u0c95\u0ccd\u0cb7\u0cbf\u0cb8\u0ccd\u200c", new int[] { 7, 122, 285, 200 })]
         public void CanShapeKannadaText(KannadaFont font, string input, int[] expectedGlyphIndices)
         {
             ColorGlyphRenderer renderer = new();
