@@ -19,14 +19,15 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
             Sans
         }
 
+        private static readonly FontCollection TestFontCollection = new();
         private static readonly Font KannadaNotoSerifTTF = CreateFont(TestFonts.NotoSerifKannadaRegular);
         private static readonly Font KannadaNotoSansTTF = CreateFont(TestFonts.NotoSansKannadaRegular);
         private static readonly Font TeluguNotoSansTTF = CreateFont(TestFonts.NotoSansTeluguRegular);
+        private static readonly Font TamilNotoSansTTF = CreateFont(TestFonts.NotoSansTamilRegular);
 
         private static Font CreateFont(string testFont)
         {
-            var collection = new FontCollection();
-            FontFamily family = collection.Add(testFont);
+            FontFamily family = TestFontCollection.Add(testFont);
             return family.CreateFont(12);
         }
 
@@ -142,6 +143,55 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         {
             ColorGlyphRenderer renderer = new();
             TextRenderer.RenderTextTo(renderer, input, new TextOptions(TeluguNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
+
+        [Theory]
+        [InlineData("\u0ba4\u0bae\u0bbf\u0bb4\u0bcd\u0ba8\u0bbe\u0b9f\u0bc1", new int[] { 25, 29, 42, 94, 26, 41, 112 })]
+        [InlineData("\u0b93\u0bb0\u0bcd", new int[] { 16, 90 })]
+        [InlineData("\u0b87\u0ba8\u0bcd\u0ba4\u0bbf\u0baf", new int[] { 8, 85, 25, 149, 30 })]
+        [InlineData("\u0bae\u0bbe\u0ba8\u0bbf\u0bb2\u0bae\u0bbe\u0b95\u0bc1\u0bae\u0bcd\u002e", new int[] { 29, 41, 26, 149, 33, 29, 41, 101, 88, 164 })]
+        [InlineData("\u0ba4\u0bae\u0bbf\u0bb4\u0bcd\u0ba8\u0bbe\u0b9f\u0bc1\u002c", new int[] { 25, 29, 42, 94, 26, 41, 112, 162 })]
+        [InlineData("\u0ba4\u0bae\u0bbf\u0bb4\u0b95\u0bae\u0bcd", new int[] { 25, 29, 42, 35, 18, 88 })]
+        [InlineData("\u0b8e\u0ba9\u0bcd\u0bb1\u0bc1\u0bae\u0bcd", new int[] { 12, 86, 132, 88 })]
+        [InlineData("\u0baa\u0bb0\u0bb5\u0bb2\u0bbe\u0b95", new int[] { 28, 31, 36, 33, 41, 18 })]
+        [InlineData("\u0b85\u0bb4\u0bc8\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0b95\u0bbf\u0bb1\u0ba4\u0bc1\u002e", new int[] { 6, 48, 35, 77, 18, 87, 28, 112, 18, 149, 32, 116, 164 })]
+        [InlineData("\u0b86\u0b99\u0bcd\u0b95\u0bbf\u0bb2\u0ba4\u0bcd\u0ba4\u0bbf\u0bb2\u0bcd", new int[] { 7, 78, 18, 149, 33, 84, 25, 149, 92 })]
+        [InlineData("\u0bae\u0bc6\u0b9f\u0bcd\u0bb0\u0bbe\u0bb8\u0bcd", new int[] { 46, 29, 82, 31, 41, 98 })]
+        [InlineData("\u0bb8\u0bcd\u0b9f\u0bc7\u0b9f\u0bcd", new int[] { 98, 47, 23, 82 })]
+        [InlineData("\u0ba4\u0bae\u0bbf\u0bb4\u0bbf\u0bb2\u0bcd", new int[] { 25, 29, 42, 35, 42, 92 })]
+        [InlineData("\u0b9a\u0bc6\u0ba9\u0bcd\u0ba9\u0bc8", new int[] { 46, 20, 86, 48, 27 })]
+        [InlineData("\u0bb0\u0bbe\u0b9c\u0bcd\u0b9c\u0bbf\u0baf\u0bae\u0bcd", new int[] { 31, 41, 80, 21, 42, 30, 88 })]
+        [InlineData("\u0b85\u0bb4\u0bc8\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0bc6\u0bb1\u0bcd\u0bb1\u0ba4\u0bc1\u002e", new int[] { 6, 48, 35, 77, 18, 87, 46, 28, 91, 32, 116, 164 })]
+        [InlineData("\u0b87\u0ba4\u0ba9\u0bc8", new int[] { 8, 25, 48, 27 })]
+        [InlineData("\u0b8e\u0ba9\u0bcd\u0bb1\u0bc1", new int[] { 12, 86, 132 })]
+        [InlineData("\u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0b95\u0bcd\u0b95\u0bcb\u0bb0\u0bbf", new int[] { 29, 41, 91, 32, 77, 47, 18, 41, 31, 42 })]
+        [InlineData("\u0baa\u0bcb\u0bb0\u0bbe\u0b9f\u0bcd\u0b9f\u0b99\u0bcd\u0b95\u0bb3\u0bcd", new int[] { 47, 28, 41, 31, 41, 82, 23, 78, 18, 93 })]
+        [InlineData("\u0ba8\u0b9f\u0bc8\u0baa\u0bc6\u0bb1\u0bcd\u0bb1\u0ba9\u002e", new int[] { 26, 48, 23, 46, 28, 91, 32, 27, 164 })]
+        [InlineData("\u0b9a\u0b99\u0bcd\u0b95\u0bb0\u0bb2\u0bbf\u0b99\u0bcd\u0b95\u0ba9\u0bbe\u0bb0\u0bcd", new int[] { 20, 78, 18, 31, 134, 78, 18, 27, 41, 90 })]
+        [InlineData("\u0b8e\u0ba9\u0bcd\u0baa\u0bb5\u0bb0\u0bcd", new int[] { 12, 86, 28, 36, 90 })]
+        [InlineData("\u0ba8\u0bbe\u0b9f\u0bcd\u0b95\u0bb3\u0bcd", new int[] { 26, 41, 82, 18, 93 })]
+        [InlineData("\u0b89\u0ba3\u0bcd\u0ba3\u0bbe\u0bb5\u0bbf\u0bb0\u0ba4\u0bae\u0bcd", new int[] { 10, 83, 24, 41, 36, 148, 31, 25, 88 })]
+        [InlineData("\u0b87\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bc1", new int[] { 8, 130, 85, 116 })]
+        [InlineData("\u0b89\u0baf\u0bbf\u0bb0\u0bcd\u0ba4\u0bc1\u0bb1\u0ba8\u0bcd\u0ba4\u0bbe\u0bb0\u0bcd\u002e", new int[] { 10, 30, 148, 90, 116, 32, 85, 25, 41, 90, 164 })]
+        [InlineData("\u0baa\u0bbf\u0ba9\u0bcd\u0ba9\u0bb0\u0bcd", new int[] { 28, 148, 86, 27, 90 })]
+        [InlineData("\u0bae\u0ba4\u0bb0\u0bbe\u0b9a\u0bc1", new int[] { 29, 25, 31, 41, 106 })]
+        [InlineData("\u0b87\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4", new int[] { 8, 130, 85, 25 })]
+        [InlineData("\u0baa\u0bc6\u0baf\u0bb0\u0bcd", new int[] { 46, 28, 30, 90 })]
+        [InlineData("\u0b86\u0bae\u0bcd\u0bb7", new int[] { 7, 88, 38 })]
+        [InlineData("\u0b86\u0ba3\u0bcd\u0b9f\u0bc1", new int[] { 7, 83, 112 })]
+        [InlineData("\u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1\u002e", new int[] { 29, 41, 91, 32, 87, 28, 82, 23, 116, 164 })]
+        [InlineData("\u0bb8\u0bcd\u0bb0\u0bc0", new int[] { 147 })]
+        [InlineData("\u0b95\u0bcd\u0bb7", new int[] { 76 })]
+        public void CanShapeTamilText(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(TamilNotoSansTTF));
 
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)

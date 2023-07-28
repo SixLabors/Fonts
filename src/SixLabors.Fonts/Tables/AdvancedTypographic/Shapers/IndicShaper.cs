@@ -119,11 +119,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     {
                         // Font should always contain the decomposed glyph.
                         fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
-
                         ids[j] = id;
                     }
 
                     substitutionCollection.Replace(i, ids);
+                    for (int j = 0; j < decompositions.Length; j++)
+                    {
+                        substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    }
                 }
             }
         }

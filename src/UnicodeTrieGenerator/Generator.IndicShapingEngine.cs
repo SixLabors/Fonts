@@ -148,7 +148,7 @@ namespace UnicodeTrieGenerator
                 Positions.Above_C => c.Block switch
                 {
                     "Devanagari" => Positions.After_Sub,
-                    "Gurmukhi" => Positions.After_Post,
+                    "Gurmukhi" => Positions.After_Post, // Deviate from spec
                     "Gujarati" => Positions.After_Sub,
                     "Oriya" => Positions.After_Main,
                     "Tamil" => Positions.After_Sub,
@@ -252,6 +252,7 @@ namespace UnicodeTrieGenerator
 
                     for (int i = min; i <= max; i++)
                     {
+                        // TODO: Make an enum of block values and create a trie. This is painfully slow.
                         Codepoint? codePoint = Array.Find(codePoints, x => x.Code == i);
                         if (codePoint is null)
                         {

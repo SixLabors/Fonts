@@ -218,6 +218,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string NotoSansTeluguRegular => GetFullPath("NotoSansTelugu-Regular.ttf");
 
+        public static string NotoSansTamilRegular => GetFullPath("NotoSansTamil-Regular.ttf");
+
         public static string NotoSansKannadaRegular => GetFullPath("NotoSansKannada-Regular.ttf");
 
         public static string HelveticaTTCFile => GetFullPath("Helvetica.ttc");
