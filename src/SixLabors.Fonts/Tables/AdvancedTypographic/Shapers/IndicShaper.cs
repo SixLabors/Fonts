@@ -732,7 +732,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     GlyphShapingData current = substitutionCollection[i];
                     if (IsJoiner(current))
                     {
-                        bool nonJoiner = current.IndicShapingEngineInfo?.Category == Categories.ZWJ;
+                        bool nonJoiner = current.IndicShapingEngineInfo?.Category == Categories.ZWNJ;
                         int j = i;
 
                         do
