@@ -108,8 +108,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 // Choose a shaper based on the script.
                 // This determines which features to apply to which glyphs.
                 ScriptClass current = CodePoint.GetScriptClass(collection[i].CodePoint);
-                Tag unicodeScriptTag = this.GetUnicodeScriptTag(current);
-                BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, collection.TextOptions);
 
                 int index = i;
                 int count = 1;
@@ -118,11 +116,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     // We want to assign the same feature lookups to individual sections of the text rather
                     // than the text as a whole to ensure that different language shapers do not interfere
                     // with each other when the text contains multiple languages.
-                    GlyphShapingData nextData = collection[i + 1];
-                    ScriptClass next = CodePoint.GetScriptClass(nextData.CodePoint);
-                    if (next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited && next != current)
+                    ScriptClass next = CodePoint.GetScriptClass(collection[i + 1].CodePoint);
+                    if (next != current &&
+                        current is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited &&
+                        next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited)
                     {
                         break;
+                    }
+
+                    if (current is ScriptClass.Common or ScriptClass.Unknown or ScriptClass.Inherited)
+                    {
+                        current = next;
                     }
 
                     i++;
@@ -133,6 +137,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         break;
                     }
                 }
+
+                Tag unicodeScriptTag = this.GetUnicodeScriptTag(current);
+                BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, collection.TextOptions);
 
                 // Plan substitution features for each glyph.
                 // Shapers can adjust the count during initialization and feature processing so we must capture

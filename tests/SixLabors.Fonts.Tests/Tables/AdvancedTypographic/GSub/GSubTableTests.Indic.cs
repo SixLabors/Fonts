@@ -244,6 +244,63 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         // Harfbuzz replaces the default ignorable with id 133 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
         [InlineData("\u0926\u094d\u200c\u0938\u093f", new int[] { 42, 81, 563, 60 })]
         [InlineData("\u0926\u094d\u200d\u0938\u093f", new int[] { 558, 200, 60 })]
+        public void CanShapeDevanagariTextWithJoiners(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
+
+        [Theory]
+        [InlineData("\u0915", new int[] { 25 })]
+        [InlineData("\u0915\u093c", new int[] { 92 })]
+        [InlineData("\u0915\u093f", new int[] { 561, 25 })]
+        [InlineData("\u0915\u094d", new int[] { 25, 81 })]
+        [InlineData("\u0915\u094d\u0915", new int[] { 183, 25 })]
+        [InlineData("\u0915\u094d\u0930", new int[] { 254 })]
+        [InlineData("\u0915\u094d\u0930\u094d\u0915", new int[] { 327, 25 })]
+
+        // Harfbuzz replaces the default ignorable with id 134 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0915\u094d\u0930\u094d\u200d", new int[] { 327 })]
+        [InlineData("\u0915\u094d\u0937", new int[] { 179 })]
+        [InlineData("\u0915\u094d\u0937\u094d", new int[] { 179, 81 })]
+
+        // Harfbuzz replaces the default ignorable with id 133 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0915\u094d\u200c\u0937", new int[] { 25, 81, 59 })]
+
+        // Harfbuzz replaces the default ignorable with id 134 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0915\u094d\u200d", new int[] { 183 })]
+        [InlineData("\u0915\u094d\u200d\u0937", new int[] { 183, 59 })]
+        [InlineData("\u091b\u094d\u0930\u094d\u0915", new int[] { 334, 25 })]
+        [InlineData("\u091c\u094d\u091e\u094d", new int[] { 180, 81 })]
+        [InlineData("\u091f\u094d\u0930\u0941", new int[] { 35, 657 })]
+        [InlineData("\u0930\u094d\u0915", new int[] { 25, 181 })]
+        [InlineData("\u0930\u094d\u0915\u093f", new int[] { 585, 25, 606 })]
+        [InlineData("\u0930\u094d\u200d", new int[] { 209 })]
+        [InlineData("\u093f", new int[] { 67, 135 })]
+        [InlineData("\u092b\u093c\u094d\u0930", new int[] { 314 })]
+        [InlineData("\u092b\u094d\u0930", new int[] { 275 })]
+        [InlineData("\u0926\u094d\u0926\u093f", new int[] { 560, 511 })]
+        [InlineData("\u0930\u094d\u0905\u094d", new int[] { 9, 81, 181 })]
+
+        // Harfbuzz replaces the default ignorable with id 133 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0930\u094d\u0905\u094d\u200c", new int[] { 9, 81, 181 })]
+
+        // Harfbuzz replaces the default ignorable with id 134 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0930\u094d\u0905\u094d\u200d", new int[] { 52, 81, 9, 81 })]
+        [InlineData("\u0930\u094d\u0906\u094d\u0930\u094d", new int[] { 10, 81, 181, 52, 81 })]
+
+        // Harfbuzz replaces the default ignorable with id 133 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0915\u200c\u093f", new int[] { 561, 25 })]
+        [InlineData("\u093d\u0902", new int[] { 65, 6 })]
+        [InlineData("\u0930\u0941\u0901\u0903", new int[] { 413, 5, 7 })]
+        [InlineData("\u0031\u093f", new int[] { 558, 748 })]
+        [InlineData("\u0967\u0951", new int[] { 107, 85 })]
         public void CanShapeDevanagariText(string input, int[] expectedGlyphIndices)
         {
             ColorGlyphRenderer renderer = new();

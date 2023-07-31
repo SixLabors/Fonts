@@ -118,8 +118,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                 }
 
                 ScriptClass current = CodePoint.GetScriptClass(collection[i].CodePoint);
-                Tag unicodeScriptTag = this.GetUnicodeScriptTag(current);
-                BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, collection.TextOptions);
 
                 int index = i;
                 int count = 1;
@@ -130,9 +128,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     // with each other when the text contains multiple languages.
                     GlyphShapingData nextData = collection[i + 1];
                     ScriptClass next = CodePoint.GetScriptClass(nextData.CodePoint);
-                    if (next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited && next != current)
+                    if (next != current &&
+                        current is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited &&
+                        next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited)
                     {
                         break;
+                    }
+
+                    if (current is ScriptClass.Common or ScriptClass.Unknown or ScriptClass.Inherited)
+                    {
+                        current = next;
                     }
 
                     i++;
@@ -143,6 +148,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         break;
                     }
                 }
+
+                Tag unicodeScriptTag = this.GetUnicodeScriptTag(current);
+                BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, collection.TextOptions);
 
                 if (shaper.MarkZeroingMode == MarkZeroingMode.PreGPos)
                 {
