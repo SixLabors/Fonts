@@ -312,5 +312,57 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
                 Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
             }
         }
+
+        [Theory]
+        [InlineData("\u0930\u094d\u25cc", new int[] { 135, 181 })]
+        [InlineData("\u0930\u094d\u25cc\u094d\u091a", new int[] { 135, 81, 181, 30 })]
+        [InlineData("\u0930\u094d\u25cc\u094d\u091a\u094d\u091b\u0947", new int[] { 135, 81, 181, 188, 31, 75 })]
+        [InlineData("\u0930\u094d\u25cc\u093f", new int[] { 67, 135, 181 })]
+        [InlineData("\u0930\u094d\u25cc\u094d", new int[] { 135, 81, 181 })]
+        [InlineData("\u0930\u094d\u25cc\u093c", new int[] { 135, 64, 181 })]
+        [InlineData("\u25cc\u094d\u091a\u094d\u091b\u0947", new int[] { 135, 81, 188, 31, 75 })]
+        [InlineData("\u0930\u094d\u00a0", new int[] { 52, 81, 3 })]
+        // [InlineData("", new int[] { 107 })]
+        // [InlineData("", new int[] { 107 })]
+        // [InlineData("", new int[] { 107 })]
+        // [InlineData("", new int[] { 107 })]
+        // [InlineData("", new int[] { 107 })]
+        // [InlineData("", new int[] { 107 })]
+        // [InlineData("", new int[] { 107 })]
+        public void CanShapeDevanagariTextWithDottedCircle(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
+
+        [Theory]
+        [InlineData("\u0924\u094d\u0930\u094d\u0915", new int[] { 347, 25 })]
+
+        // Harfbuzz replaces the default ignorable with id 134 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0924\u094d\u0930\u094d\u200d\u0915", new int[] { 347, 25 })]
+
+        // Harfbuzz replaces the default ignorable with id 133 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0924\u094d\u0930\u094d\u200c\u0915", new int[] { 269, 81, 25 })]
+        // [InlineData("", new int[] { 107 })]
+        // [InlineData("", new int[] { 107 })]
+        // [InlineData("", new int[] { 107 })]
+        // [InlineData("", new int[] { 107 })]
+        public void CanShapeDevanagariTextWithEyelash(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
     }
 }
