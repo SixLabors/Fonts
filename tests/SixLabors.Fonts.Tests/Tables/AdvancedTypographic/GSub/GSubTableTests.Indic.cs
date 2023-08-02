@@ -26,6 +26,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         private static readonly Font TamilNotoSansTTF = CreateFont(TestFonts.NotoSansTamilRegular);
         private static readonly Font DevanagariNotoSansTTF = CreateFont(TestFonts.NotoSansDevanagariRegular);
         private static readonly Font BengaliNotoSansTTF = CreateFont(TestFonts.NotoSansBengaliRegular);
+        private static readonly Font GurmukhiNotoSansTTF = CreateFont(TestFonts.NotoSansGurmukhiRegular);
 
         private static Font CreateFont(string testFont)
         {
@@ -417,6 +418,21 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         {
             ColorGlyphRenderer renderer = new();
             TextRenderer.RenderTextTo(renderer, input, new TextOptions(BengaliNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
+
+        [Theory]
+        [InlineData("\u0a15\u0a4d\u0a39", new int[] { 17, 111 })]
+        [InlineData("\u0a24\u0a4d\u0a2f\u0a4b", new int[] { 32, 175, 58 })]
+        public void CanShapeGurmukhiText(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(GurmukhiNotoSansTTF));
 
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
