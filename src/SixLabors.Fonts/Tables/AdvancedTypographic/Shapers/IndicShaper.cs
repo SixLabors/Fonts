@@ -1269,14 +1269,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
                             break;
                         }
-
-                        // Apply 'init' to the Left Matra if it's a word start.
-                        if (substitutionCollection[start].IndicShapingEngineInfo?.Position == Positions.Pre_M &&
-                            (start == 0 || CodePoint.GetGeneralCategory(substitutionCollection[start - 1].CodePoint) is not UnicodeCategory.NonSpacingMark and not UnicodeCategory.Format))
-                        {
-                            substitutionCollection.EnableShapingFeature(start, InitTag);
-                        }
                     }
+                }
+
+                // Apply 'init' to the Left Matra if it's a word start.
+                if (substitutionCollection[start].IndicShapingEngineInfo?.Position == Positions.Pre_M &&
+                    (start == 0 || CodePoint.GetGeneralCategory(substitutionCollection[start - 1].CodePoint) is not UnicodeCategory.NonSpacingMark and not UnicodeCategory.Format))
+                {
+                    substitutionCollection.EnableShapingFeature(start, InitTag);
                 }
 
                 start = end;

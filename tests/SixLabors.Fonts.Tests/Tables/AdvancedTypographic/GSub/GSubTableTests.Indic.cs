@@ -25,6 +25,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         private static readonly Font TeluguNotoSansTTF = CreateFont(TestFonts.NotoSansTeluguRegular);
         private static readonly Font TamilNotoSansTTF = CreateFont(TestFonts.NotoSansTamilRegular);
         private static readonly Font DevanagariNotoSansTTF = CreateFont(TestFonts.NotoSansDevanagariRegular);
+        private static readonly Font BengaliNotoSansTTF = CreateFont(TestFonts.NotoSansBengaliRegular);
 
         private static Font CreateFont(string testFont)
         {
@@ -322,13 +323,6 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         [InlineData("\u0930\u094d\u25cc\u093c", new int[] { 135, 64, 181 })]
         [InlineData("\u25cc\u094d\u091a\u094d\u091b\u0947", new int[] { 135, 81, 188, 31, 75 })]
         [InlineData("\u0930\u094d\u00a0", new int[] { 52, 81, 3 })]
-        // [InlineData("", new int[] { 107 })]
-        // [InlineData("", new int[] { 107 })]
-        // [InlineData("", new int[] { 107 })]
-        // [InlineData("", new int[] { 107 })]
-        // [InlineData("", new int[] { 107 })]
-        // [InlineData("", new int[] { 107 })]
-        // [InlineData("", new int[] { 107 })]
         public void CanShapeDevanagariTextWithDottedCircle(string input, int[] expectedGlyphIndices)
         {
             ColorGlyphRenderer renderer = new();
@@ -349,14 +343,80 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
 
         // Harfbuzz replaces the default ignorable with id 133 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
         [InlineData("\u0924\u094d\u0930\u094d\u200c\u0915", new int[] { 269, 81, 25 })]
-        // [InlineData("", new int[] { 107 })]
-        // [InlineData("", new int[] { 107 })]
-        // [InlineData("", new int[] { 107 })]
-        // [InlineData("", new int[] { 107 })]
         public void CanShapeDevanagariTextWithEyelash(string input, int[] expectedGlyphIndices)
         {
             ColorGlyphRenderer renderer = new();
             TextRenderer.RenderTextTo(renderer, input, new TextOptions(DevanagariNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
+
+        [Theory]
+        [InlineData("\u0985\u09cd\u09af", new int[] { 7, 198 })]
+        [InlineData("\u0995", new int[] { 19 })]
+        [InlineData("\u0995\u09bc", new int[] { 96 })]
+        [InlineData("\u0995\u09bf", new int[] { 54, 19 })]
+        [InlineData("\u0995\u09cd", new int[] { 19, 64 })]
+        [InlineData("\u0995\u09cd\u0995", new int[] { 280 })]
+        [InlineData("\u0995\u09cd\u09b0", new int[] { 199 })]
+        [InlineData("\u0995\u09cd\u09b0\u09cd\u0995", new int[] { 199, 64, 19 })]
+
+        // Harfbuzz replaces the default ignorable with id 573 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0995\u09cd\u200c\u0995", new int[] { 19, 64, 19 })]
+
+        // Harfbuzz replaces the default ignorable with id 574 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0995\u09cd\u200d\u0995", new int[] { 130, 19 })]
+        [InlineData("\u09a6\u09cd\u09af", new int[] { 36, 198 })]
+        [InlineData("\u09a8\u09cd\u0995", new int[] { 149, 19 })]
+        [InlineData("\u09a8\u09cd\u09a7", new int[] { 360 })]
+        [InlineData("\u09a8\u09cd\u09af", new int[] { 38, 198 })]
+        [InlineData("\u09a8\u09cd\u09b0", new int[] { 219 })]
+
+        // Harfbuzz replaces the default ignorable with id 573 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u09a8\u09cd\u200c\u0995", new int[] { 38, 64, 19 })]
+        [InlineData("\u09a8\u09cd\u200c\u09a7", new int[] { 38, 64, 37 })]
+        [InlineData("\u09a8\u09cd\u200c\u09ac", new int[] { 38, 64, 41 })]
+        [InlineData("\u09a8\u09cd\u200c\u09b0", new int[] { 38, 64, 45 })]
+
+        // Harfbuzz replaces the default ignorable with id 574 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u09a8\u09cd\u200d\u0995", new int[] { 149, 19 })]
+        [InlineData("\u09a8\u09cd\u200d\u09a7", new int[] { 149, 37 })]
+        [InlineData("\u09a8\u09cd\u200d\u09ac", new int[] { 149, 41 })]
+        [InlineData("\u09a8\u09cd\u200d\u09b0", new int[] { 149, 45 })]
+        [InlineData("\u09af\u09cd", new int[] { 44, 64 })]
+        [InlineData("\u09b0\u09cd\u0995", new int[] { 19, 127 })]
+        [InlineData("\u09b0\u09cd\u0995\u09bf", new int[] { 54, 19, 127 })]
+        [InlineData("\u09b0\u09cd\u0995\u09cc", new int[] { 446, 19, 127, 66 })]
+
+        // Harfbuzz replaces the default ignorable with id 574 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u09b0\u09cd\u09a8\u09cd\u200d", new int[] { 45, 64, 38, 64 })]
+        [InlineData("\u09b0\u09cd\u09ac\u09cd\u09ac", new int[] { 263, 127 })]
+        [InlineData("\u09b6\u09cd\u09af", new int[] { 47, 198 })]
+        [InlineData("\u09b7\u09cd\u09af", new int[] { 48, 198 })]
+        [InlineData("\u09b8\u09cd\u09af", new int[] { 49, 198 })]
+        [InlineData("\u09bf", new int[] { 54, 575 })]
+        [InlineData("\u0995\u09c7\u09be", new int[] { 446, 19, 53 })]
+        [InlineData("\u0995\u09c7\u09d7", new int[] { 446, 19, 66 })]
+        [InlineData("\u09b0\u09cd\u0995\u09be\u0982", new int[] { 19, 127, 53, 5 })]
+        [InlineData("\u09b0\u09cd\u0995\u09be\u0983", new int[] { 19, 127, 53, 6 })]
+        [InlineData("\u09b0\u09cd\u09ad", new int[] { 42, 127 })]
+        [InlineData("\u09f0\u09cd\u09ad", new int[] { 42, 127 })]
+        [InlineData("\u09f1\u09cd\u09ad", new int[] { 85, 64, 42 })]
+        [InlineData("\u0985\u09d7", new int[] { 7, 66 })]
+        [InlineData("\u09a8\u09cd\u09a4\u09cd\u09b0", new int[] { 365 })]
+        [InlineData("\u09a4\u09cd\u09af\u09c1", new int[] { 34, 518, 198 })]
+        [InlineData("\u099a\u09cd\u09af\u09cd\u09b0", new int[] { 135, 225 })]
+
+        // Harfbuzz replaces the default ignorable with id 574 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u0995\u09cd\u200d\u09b7", new int[] { 130, 48 })]
+        public void CanShapeBengaliText(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(BengaliNotoSansTTF));
 
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
