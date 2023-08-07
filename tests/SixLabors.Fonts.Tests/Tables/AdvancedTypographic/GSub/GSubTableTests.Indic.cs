@@ -27,6 +27,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         private static readonly Font DevanagariNotoSansTTF = CreateFont(TestFonts.NotoSansDevanagariRegular);
         private static readonly Font BengaliNotoSansTTF = CreateFont(TestFonts.NotoSansBengaliRegular);
         private static readonly Font GurmukhiNotoSansTTF = CreateFont(TestFonts.NotoSansGurmukhiRegular);
+        private static readonly Font GujaratiNotoSansTTF = CreateFont(TestFonts.NotoSansGujaratiRegular);
 
         private static Font CreateFont(string testFont)
         {
@@ -433,6 +434,40 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         {
             ColorGlyphRenderer renderer = new();
             TextRenderer.RenderTextTo(renderer, input, new TextOptions(GurmukhiNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
+
+        [Theory]
+        [InlineData("\u0a97\u0acd\u0ab7", new int[] { 132, 52 })]
+        [InlineData("\u0a97\u0acd\u0ab8", new int[] { 132, 53 })]
+        [InlineData("\u0a97\u0acd\u0ab9", new int[] { 132, 54 })]
+        [InlineData("\u0a98\u0acd\u0a95", new int[] { 133, 21 })]
+        [InlineData("\u0a98\u0acd\u0a96", new int[] { 133, 22 })]
+        [InlineData("\u0a98\u0acd\u0a97", new int[] { 133, 23 })]
+        [InlineData("\u0a98\u0acd\u0a98", new int[] { 133, 24 })]
+        [InlineData("\u0a98\u0acd\u0a99", new int[] { 133, 25 })]
+        [InlineData("\u0a98\u0acd\u0a9a", new int[] { 133, 26 })]
+        [InlineData("\u0a98\u0acd\u0a9b", new int[] { 133, 27 })]
+        [InlineData("\u0a98\u0acd\u0a9c", new int[] { 133, 28 })]
+        [InlineData("\u0a98\u0acd\u0a9d", new int[] { 133, 29 })]
+        [InlineData("\u0a98\u0acd\u0a9e", new int[] { 133, 30 })]
+        [InlineData("\u0a98\u0acd\u0a9f", new int[] { 133, 31 })]
+        [InlineData("\u0a98\u0acd\u0aa0", new int[] { 133, 32 })]
+        [InlineData("\u0a98\u0acd\u0aa1", new int[] { 133, 33 })]
+        [InlineData("\u0a98\u0acd\u0aa2", new int[] { 133, 34 })]
+        [InlineData("\u0a98\u0acd\u0aa3", new int[] { 133, 35 })]
+        [InlineData("\u0a98\u0acd\u0aa4", new int[] { 133, 36 })]
+        [InlineData("\u0a98\u0acd\u0aa5", new int[] { 133, 37 })]
+        [InlineData("\u0a98\u0acd\u0aa6", new int[] { 133, 38 })]
+        public void CanShapeGujaratiText(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(GujaratiNotoSansTTF));
 
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
