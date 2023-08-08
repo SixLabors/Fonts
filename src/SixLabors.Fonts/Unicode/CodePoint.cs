@@ -136,9 +136,7 @@ namespace SixLabors.Fonts.Unicode
         public int Plane => UnicodeUtility.GetPlane(this.value);
 
         // Displayed as "'<char>' (U+XXXX)"; e.g., "'e' (U+0065)"
-        public string DebuggerDisplay =>
-            FormattableString.Invariant($"\\u{this.value:x}");
-        //FormattableString.Invariant($"U+{this.value:X4} '{(IsValid(this.value) ? this.ToString() : "\uFFFD")}'");
+        private string DebuggerDisplay => FormattableString.Invariant($"U+{this.value:X4} '{(IsValid(this.value) ? this.ToString() : "\uFFFD")}'");
 
         /// <summary>
         /// Gets the Unicode value as an integer.
