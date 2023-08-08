@@ -30,6 +30,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         private static readonly Font GujaratiNotoSansTTF = CreateFont(TestFonts.NotoSansGujaratiRegular);
         private static readonly Font MalayalamNotoSansTTF = CreateFont(TestFonts.NotoSansMalayalamRegular);
         private static readonly Font OriyaNotoSansTTF = CreateFont(TestFonts.NotoSansOriyaRegular);
+        private static readonly Font KhmerNotoSansTTF = CreateFont(TestFonts.NotoSansKhmerRegular);
 
         private static Font CreateFont(string testFont)
         {
@@ -575,6 +576,46 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         {
             ColorGlyphRenderer renderer = new();
             TextRenderer.RenderTextTo(renderer, input, new TextOptions(OriyaNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
+
+        [Theory]
+        [InlineData("\u1781\u17d2\u1798\u17c2", new int[] { 108, 45, 169 })]
+        [InlineData("\u1787\u17b6", new int[] { 51, 96 })]
+        [InlineData("\u1790\u17d2\u1784\u17c3", new int[] { 109, 60, 148 })]
+        [InlineData("\u1798\u17b6", new int[] { 68, 96 })]
+        [InlineData("\u1798\u17d2\u1796\u17bb", new int[] { 68, 167, 177 })]
+        [InlineData("\u179a", new int[] { 70 })]
+        [InlineData("\u179a\u17b8", new int[] { 70, 194 })]
+        [InlineData("\u179a\u17cd", new int[] { 70, 199 })]
+        [InlineData("\u179f\u17c5", new int[] { 107, 75, 111 })]
+        [InlineData("\u179a\u17d2\u17a5", new int[] { 70, 124, 81 })]
+        [InlineData("\u1784\u17b9\u17d2\u1788", new int[] { 48, 99, 152 })]
+        [InlineData("\u1784\u17d2\u1788\u17b9", new int[] { 48, 152, 99 })]
+        [InlineData("\u1784\u17d2\u1782\u17d2\u179a", new int[] { 189, 48, 146 })]
+        [InlineData("\u1798\u17c9\u17d2\u179b\u17c1\u17c7", new int[] { 107, 68, 115, 172, 113 })]
+
+        // Harfbuzz replaces the default ignorable with id 262 with a space (3) and sets the advance to 0. We skip it entirely on rendering.
+        [InlineData("\u1798\u200c\u17c9\u17d2\u179b\u17c1\u17c7", new int[] { 107, 68, 115, 172, 113 })]
+        [InlineData("\u1794\u17ca\u17d0", new int[] { 64, 116, 122 })]
+        [InlineData("\u1793\u17c2\u17ce", new int[] { 108, 63, 120 })]
+        [InlineData("\u1780\u17c1\u17d2\u179a", new int[] { 107, 171, 44 })]
+        [InlineData("\u1780\u17c0\u17d2\u179a", new int[] { 171, 107, 44, 106 })]
+        [InlineData("\u1780\u17c4\u17d2\u179a", new int[] { 171, 107, 44, 110 })]
+        [InlineData("\u1780\u17c5\u17d2\u179a", new int[] { 171, 107, 44, 111 })]
+        [InlineData("\u1796\u17d1\u17b6", new int[] { 66, 123, 96 })]
+        [InlineData(
+            "\u178a\u17be\u1798\u17d2\u1794\u17b8\u17b2\u17d2\u1799\u1794\u17b6\u1793\u1780\u17b6\u1793\u17cb\u178f\u17c2\u1794\u17d2\u179a\u179f\u17be\u179a\u17a1\u17be\u1784\u179f\u1798\u17d2\u179a\u17b6\u1794\u17cb\u1780\u17b6\u179a\u1792\u17d2\u179c\u17be\u178a\u17c6\u178e\u17be\u179a\u179a\u1794\u179f\u17cb\u1797\u17d2\u1789\u17c0\u179c\u1791\u17c1\u179f\u1785\u179a\u178e\u17cd",
+            new int[] { 107, 54, 104, 68, 165, 98, 94, 170, 188, 96, 63, 44, 96, 63, 117, 108, 59, 171, 64, 107, 75, 104, 70, 107, 77, 104, 48, 75, 171, 68, 96, 64, 117, 44, 96, 70, 107, 62, 173, 104, 54, 112, 107, 58, 104, 70, 70, 64, 75, 117, 107, 67, 153, 192, 72, 107, 61, 75, 49, 70, 58, 119 })]
+        public void CanShapeKhmerText(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(KhmerNotoSansTTF));
 
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
