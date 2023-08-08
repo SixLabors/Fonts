@@ -338,7 +338,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         }
 
         private static bool IsHalant(GlyphShapingData data)
-            => (data.UniversalShapingEngineInfo?.Category is "H" or "HVM" or "IS") && data.LigatureId == 0;
+            => (data.UniversalShapingEngineInfo?.Category is "H" or "HVM" or "IS") && !data.IsLigated;
 
         private static bool IsBase(UniversalShapingEngineInfo? info)
             => info?.Category is "B" or "GB";

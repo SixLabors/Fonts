@@ -863,11 +863,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return;
             }
 
-            // Create a reusable temporary substitution collection and buffer to allow checking whether
-            // certain combinations will be substituted.
-            GlyphSubstitutionCollection tempCollection = new(this.textOptions);
-            Span<GlyphShapingData> tempBuffer = new GlyphShapingData[3];
-
             int max = index + count;
             int start = index;
             int end = NextSyllable(substitutionCollection, index, max);
@@ -901,7 +896,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                                 GlyphShapingData current = substitutionCollection[i];
                                 if (current.Features.FindIndex(x => x.Tag == PrefTag && x.Enabled) >= 0)
                                 {
-                                    if (!current.IsSubstituted && current.LigatureId != 0 && !current.IsDecomposed)
+                                    if (!current.IsSubstituted && current.IsLigated && !current.IsDecomposed)
                                     {
                                         // Ok, this was a 'pref' candidate but didn't form any.
                                         // Base is around here...
@@ -945,14 +940,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                                     i++;
                                 }
 
-                                GlyphShapingData current = substitutionCollection[i];
-                                if (i < end && IsConsonant(current) && current.IndicShapingEngineInfo?.Position == Positions.Below_C)
+                                if (i < end)
                                 {
-                                    basePosition = i;
-                                    IndicShapingEngineInfo? info = substitutionCollection[basePosition].IndicShapingEngineInfo;
-                                    if (info != null)
+                                    GlyphShapingData current = substitutionCollection[i];
+                                    if (IsConsonant(current) && current.IndicShapingEngineInfo?.Position == Positions.Below_C)
                                     {
-                                        info.Position = Positions.Base_C;
+                                        basePosition = i;
+                                        IndicShapingEngineInfo? info = substitutionCollection[basePosition].IndicShapingEngineInfo;
+                                        if (info != null)
+                                        {
+                                            info.Position = Positions.Base_C;
+                                        }
                                     }
                                 }
                             }
@@ -1063,7 +1061,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 GlyphShapingData original = substitutionCollection[start];
                 if (start + 1 < end &&
                     original.IndicShapingEngineInfo?.Position == Positions.Ra_To_Become_Reph &&
-                    (original.IndicShapingEngineInfo?.Category == Categories.Repha != (original.LigatureId != 0 && !original.IsDecomposed)))
+                    (original.IndicShapingEngineInfo?.Category == Categories.Repha != (original.IsLigated && !original.IsDecomposed)))
                 {
                     int newRephPos = start;
                     Positions rephPos = this.indicConfiguration.RephPosition;
@@ -1177,7 +1175,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         {
                             for (int i = basePosition + 1; i < newRephPos; i++)
                             {
-                                if (substitutionCollection[i].IndicShapingEngineInfo?.Category == Categories.H)
+                                if (substitutionCollection[i].IndicShapingEngineInfo?.Category == Categories.M)
                                 {
                                     newRephPos--;
                                 }
@@ -1215,7 +1213,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                             // the <pref> feature actually did it...
                             //
                             // Reorder pref only if it ligated.
-                            if (current.LigatureId != 0 && !current.IsDecomposed)
+                            if (current.IsLigated && !current.IsDecomposed)
                             {
                                 // 2. Try to find a target position the same way as for pre-base matra.
                                 //    If it is found, reorder pre-base consonant glyph.
@@ -1229,14 +1227,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                                 // We want to position matra after them.
                                 if (this.ScriptClass is not ScriptClass.Malayalam and not ScriptClass.Tamil)
                                 {
-                                    while (newPos > start && (substitutionCollection[newPos + 1].IndicShapingEngineInfo?.Category & (Categories.M | HalantOrCoengFlags)) == 0)
+                                    while (newPos > start && (substitutionCollection[newPos - 1].IndicShapingEngineInfo?.Category & (Categories.M | HalantOrCoengFlags)) == 0)
                                     {
                                         newPos--;
                                     }
 
                                     // In Khmer coeng model, a H,Ra can go *after* matras.  If it goes after a
                                     // split matra, it should be reordered to *before* the left part of such matra.
-                                    if (newPos > start && substitutionCollection[newPos + 1].IndicShapingEngineInfo?.Category == Categories.M)
+                                    if (newPos > start && substitutionCollection[newPos - 1].IndicShapingEngineInfo?.Category == Categories.M)
                                     {
                                         int oldPos = i;
                                         for (int j = basePosition + 1; j < oldPos; j++)
@@ -1248,22 +1246,22 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                                             }
                                         }
                                     }
+                                }
 
-                                    if (newPos > start && IsHalantOrCoeng(substitutionCollection[newPos - 1]))
+                                if (newPos > start && IsHalantOrCoeng(substitutionCollection[newPos - 1]))
+                                {
+                                    // -> If ZWJ or ZWNJ follow this halant, position is moved after it.
+                                    if (newPos < end && IsJoiner(substitutionCollection[newPos]))
                                     {
-                                        // -> If ZWJ or ZWNJ follow this halant, position is moved after it.
-                                        if (newPos < end && IsJoiner(substitutionCollection[newPos]))
-                                        {
-                                            newPos++;
-                                        }
+                                        newPos++;
                                     }
+                                }
 
-                                    substitutionCollection.MoveGlyph(i, newPos);
+                                substitutionCollection.MoveGlyph(i, newPos);
 
-                                    if (newPos <= basePosition && basePosition < i)
-                                    {
-                                        basePosition++;
-                                    }
+                                if (newPos <= basePosition && basePosition < i)
+                                {
+                                    basePosition++;
                                 }
                             }
 

@@ -34,6 +34,7 @@ namespace SixLabors.Fonts
             this.Direction = data.Direction;
             this.TextRun = data.TextRun;
             this.LigatureId = data.LigatureId;
+            this.IsLigated = data.IsLigated;
             this.LigatureComponent = data.LigatureComponent;
             this.MarkAttachment = data.MarkAttachment;
             this.CursiveAttachment = data.CursiveAttachment;
@@ -92,6 +93,11 @@ namespace SixLabors.Fonts
         /// Gets or sets the id of any ligature this glyph is a member of.
         /// </summary>
         public int LigatureId { get; set; } = 0;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the glyph is ligated.
+        /// </summary>
+        public bool IsLigated { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the ligature component index of the glyph.

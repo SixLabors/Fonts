@@ -261,6 +261,7 @@ namespace SixLabors.Fonts
             current.CodePointCount += codePointCount;
             current.GlyphId = glyphId;
             current.LigatureId = ligatureId;
+            current.IsLigated = true;
             current.LigatureComponent = -1;
             current.MarkAttachment = -1;
             current.CursiveAttachment = -1;
