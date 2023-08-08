@@ -29,6 +29,7 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         private static readonly Font GurmukhiNotoSansTTF = CreateFont(TestFonts.NotoSansGurmukhiRegular);
         private static readonly Font GujaratiNotoSansTTF = CreateFont(TestFonts.NotoSansGujaratiRegular);
         private static readonly Font MalayalamNotoSansTTF = CreateFont(TestFonts.NotoSansMalayalamRegular);
+        private static readonly Font OriyaNotoSansTTF = CreateFont(TestFonts.NotoSansOriyaRegular);
 
         private static Font CreateFont(string testFont)
         {
@@ -553,6 +554,27 @@ namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub
         {
             ColorGlyphRenderer renderer = new();
             TextRenderer.RenderTextTo(renderer, input, new TextOptions(MalayalamNotoSansTTF));
+
+            Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
+            for (int i = 0; i < expectedGlyphIndices.Length; i++)
+            {
+                Assert.Equal(expectedGlyphIndices[i], renderer.GlyphKeys[i].GlyphId);
+            }
+        }
+
+        [Theory]
+        [InlineData("\u0b15\u0b4d\u0b24\u0b4d\u0b30", new int[] { 165, 527 })]
+        [InlineData("\u0b24\u0b4d\u0b24\u0b4d\u0b2c", new int[] { 195, 150 })]
+        [InlineData("\u0b28\u0b4d\u0b24\u0b4d\u0b2c", new int[] { 206, 525 })]
+        [InlineData("\u0b28\u0b4d\u0b24\u0b4d\u0b30", new int[] { 38, 161 })]
+        [InlineData("\u0b28\u0b4d\u0b24\u0b4d\u0b30\u0b4d\u0b2f", new int[] { 38, 161, 162 })]
+        [InlineData("\u0b38\u0b4d\u0b24\u0b4d\u0b30", new int[] { 51, 161 })]
+        [InlineData("\u0b2e\u0b41\u0b01", new int[] { 43, 4, 58 })]
+        [InlineData("\u0b2e\u0b41\u0b02", new int[] { 43, 58, 5 })]
+        public void CanShapeOriyaText(string input, int[] expectedGlyphIndices)
+        {
+            ColorGlyphRenderer renderer = new();
+            TextRenderer.RenderTextTo(renderer, input, new TextOptions(OriyaNotoSansTTF));
 
             Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
             for (int i = 0; i < expectedGlyphIndices.Length; i++)
