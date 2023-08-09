@@ -136,7 +136,7 @@ namespace SixLabors.Fonts
             GlyphShapingData data = this[fromIndex];
             if (fromIndex > toIndex)
             {
-                // Move item to the left
+                // Move item to the right
                 for (int i = fromIndex; i > toIndex; i--)
                 {
                     this.glyphs[i].Data = this.glyphs[i - 1].Data;
@@ -144,7 +144,7 @@ namespace SixLabors.Fonts
             }
             else
             {
-                // Move item to the right
+                // Move item to the left
                 for (int i = fromIndex; i < toIndex; i++)
                 {
                     this.glyphs[i].Data = this.glyphs[i + 1].Data;
