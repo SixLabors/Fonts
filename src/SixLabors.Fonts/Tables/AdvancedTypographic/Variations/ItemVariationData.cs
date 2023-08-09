@@ -8,15 +8,15 @@ using System.IO;
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 {
     [DebuggerDisplay("ItemCount: {ItemCount}, WordDeltaCount: {WordDeltaCount}, RegionIndexCount: {RegionIndexes.Length}")]
-    internal class ItemVariationData
+    internal sealed class ItemVariationData
     {
         /// <summary>
-        /// Count of “word” deltas.
+        /// Count of "word" deltas.
         /// </summary>
         private const int WordDeltaCountMask = 0x7FFF;
 
         /// <summary>
-        /// Flag indicating that “word” deltas are long (int32).
+        /// Flag indicating that "word" deltas are long (int32).
         /// </summary>
         private const int LongWordsMask = 0x8000;
 
@@ -84,7 +84,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             // Logically, each DeltaSet record has regionIndexCount number of elements. The elements are represented using long and short types.
             // These are either int16 and int8, or int32 and int16, according to whether the LONG_WORDS flag is set.
             // The delta array has a sequence of deltas using the long type followed by a sequence of deltas using the short type.
-            bool longWords = (wordDeltaCount & LongWordsMask) == LongWordsMask;
+            bool longWords = (wordDeltaCount & LongWordsMask) != 0;
             int wordDeltas = wordDeltaCount & WordDeltaCountMask;
             uint[] longDeltas = new uint[wordDeltas];
             for (int i = 0; i < wordDeltas; i++)

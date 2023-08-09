@@ -6,12 +6,13 @@ using System.Collections.Generic;
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 {
     /// <summary>
+    /// <para>
     /// This class is transforms TrueType glyphs according to the data from
     /// the Apple Advanced Typography variation tables(fvar, gvar, and avar).
     /// These tables allow infinite adjustments to glyph weight, width, slant,
     /// and optical size without the designer needing to specify every exact style.
-    ///
-    /// Implementation is based on fontkit: https://github.com/foliojs/fontkit/blob/master/src/glyph/GlyphVariationProcessor.js
+    /// </para>
+    /// <para>Implementation is based on fontkit: <see href="https://github.com/foliojs/fontkit/blob/master/src/glyph/GlyphVariationProcessor.js"/></para>
     /// </summary>
     internal class GlyphVariationProcessor
     {
