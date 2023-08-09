@@ -66,8 +66,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             { new byte[] { None, 0 }, new byte[] { None, 1 }, new byte[] { None, 0 }, new byte[] { None, 0 }, new byte[] { Decompose, 2 }, new byte[] { Decompose, 3 }, new byte[] { ToneMark, 0 } },
         };
 
-        public HangulShaper(TextOptions textOptions)
-            : base(MarkZeroingMode.None, textOptions)
+        public HangulShaper(ScriptClass script, TextOptions textOptions)
+            : base(script, MarkZeroingMode.None, textOptions)
         {
         }
 
@@ -102,7 +102,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         break;
                     }
 
-                    GlyphShapingData data = substitutionCollection.GetGlyphShapingData(i + index);
+                    GlyphShapingData data = substitutionCollection[i + index];
                     CodePoint codePoint = data.CodePoint;
                     int type = GetSyllableType(codePoint);
                     byte[] actionsWithState = StateTable[state, type];
@@ -152,7 +152,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                         break;
                     }
 
-                    GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                    GlyphShapingData data = collection[i + index];
                     CodePoint codePoint = data.CodePoint;
                     switch (GetSyllableType(codePoint))
                     {
@@ -243,9 +243,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             }
 
             Span<ushort> iii = stackalloc ushort[3];
-            iii[0] = ljmo;
-            iii[1] = vjmo;
             iii[2] = tjmo;
+            iii[1] = vjmo;
+            iii[0] = ljmo;
 
             collection.Replace(index, iii);
             collection.EnableShapingFeature(index, LjmoTag);
@@ -261,7 +261,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return index;
             }
 
-            GlyphShapingData prev = collection.GetGlyphShapingData(index - 1);
+            GlyphShapingData prev = collection[index - 1];
             CodePoint prevCodePoint = prev.CodePoint;
             int prevType = GetSyllableType(prevCodePoint);
 
@@ -291,8 +291,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     tjmo = index;
                 }
 
-                CodePoint l = collection.GetGlyphShapingData(ljmo).CodePoint;
-                CodePoint v = collection.GetGlyphShapingData(vjmo).CodePoint;
+                CodePoint l = collection[ljmo].CodePoint;
+                CodePoint v = collection[vjmo].CodePoint;
 
                 // Make sure L and V are combining characters
                 if (IsCombiningL(l) && IsCombiningV(v))
@@ -301,7 +301,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 }
             }
 
-            CodePoint t = tjmo >= 0 ? collection.GetGlyphShapingData(tjmo).CodePoint : new CodePoint(TBase);
+            CodePoint t = tjmo >= 0 ? collection[tjmo].CodePoint : new CodePoint(TBase);
             if ((lv != default) && (t.Value == TBase || IsCombiningT(t)))
             {
                 CodePoint s = new(lv.Value + (t.Value - TBase));
@@ -314,7 +314,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     int del = prevType == V ? 3 : 2;
                     int idx = index - del + 1;
                     collection.Replace(idx, del - 1, id);
-                    collection.GetGlyphShapingData(idx).CodePoint = s;
+                    collection[idx].CodePoint = s;
                     return idx;
                 }
             }
@@ -340,7 +340,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Sequence was originally <L,V>, which got combined earlier.
                 // Either the T was non-combining, or the LVT glyph wasn't supported.
                 // Decompose the glyph again and apply OT features.
-                data = collection.GetGlyphShapingData(index - 1);
+                data = collection[index - 1];
                 this.DecomposeGlyph(collection, data, index - 1);
                 return index + 1;
             }
@@ -373,7 +373,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 }
             }
 
-            GlyphShapingData prev = collection.GetGlyphShapingData(index - 1);
+            GlyphShapingData prev = collection[index - 1];
             int len = GetSyllableLength(prev.CodePoint);
             collection.MoveGlyph(index, index - len);
         }
@@ -405,13 +405,13 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 Span<ushort> glyphs = stackalloc ushort[2];
                 if (after)
                 {
-                    glyphs[0] = data.GlyphId;
                     glyphs[1] = id;
+                    glyphs[0] = data.GlyphId;
                 }
                 else
                 {
-                    glyphs[0] = id;
                     glyphs[1] = data.GlyphId;
+                    glyphs[0] = id;
                 }
 
                 collection.Replace(index, glyphs);

@@ -20,7 +20,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         /// <summary>
         /// If set, skips over base glyphs.
         /// </summary>
-        IgnoreBaseGlypghs = 0x0002,
+        IgnoreBaseGlyphs = 0x0002,
 
         /// <summary>
         /// If set, skips over ligatures.
@@ -37,6 +37,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         /// The layout engine skips over all mark glyphs not in the mark filtering set indicated.
         /// </summary>
         UseMarkFilteringSet = 0x0010,
+
+        /// <summary>
+        /// For future use (Set to zero).
+        /// </summary>
+        Reserved = 0x00E0,
 
         /// <summary>
         /// If not zero, skips over all marks of attachment type different from specified.

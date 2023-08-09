@@ -42,8 +42,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private const int DottedCircle = 0x25cc;
 
-        public UniversalShaper(TextOptions textOptions)
-           : base(MarkZeroingMode.PreGPos, textOptions)
+        public UniversalShaper(ScriptClass script, TextOptions textOptions)
+           : base(script, MarkZeroingMode.PreGPos, textOptions)
         {
         }
 
@@ -90,33 +90,42 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return;
             }
 
+            Span<ushort> buffer = stackalloc ushort[16];
             int end = index + count;
             for (int i = end - 1; i >= 0; i--)
             {
-                GlyphShapingData data = substitutionCollection.GetGlyphShapingData(i);
+                GlyphShapingData data = substitutionCollection[i];
                 FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
                 if (UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) && decompositions != null)
                 {
-                    Span<ushort> ids = stackalloc ushort[decompositions.Length];
+                    Span<ushort> ids = buffer.Slice(0, decompositions.Length);
                     for (int j = 0; j < decompositions.Length; j++)
                     {
                         // Font should always contain the decomposed glyph.
                         fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
-
                         ids[j] = id;
                     }
 
                     substitutionCollection.Replace(i, ids);
+                    for (int j = 0; j < decompositions.Length; j++)
+                    {
+                        substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    }
                 }
             }
         }
 
         private static void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
             Span<int> values = count <= 64 ? stackalloc int[count] : new int[count];
             for (int i = index; i < index + count; i++)
             {
-                CodePoint codePoint = collection.GetGlyphShapingData(i).CodePoint;
+                CodePoint codePoint = substitutionCollection[i].CodePoint;
                 values[i - index] = UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value);
             }
 
@@ -128,7 +137,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Create shaper info
                 for (int i = match.StartIndex; i <= match.EndIndex; i++)
                 {
-                    GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                    GlyphShapingData data = substitutionCollection[i + index];
                     CodePoint codePoint = data.CodePoint;
                     string category = UniversalShapingData.Categories[UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value)];
 
@@ -136,33 +145,43 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 }
 
                 // Assign rphf feature
-                int limit = collection.GetGlyphShapingData(match.StartIndex).UniversalShapingEngineInfo!.Category == "R"
+                int limit = substitutionCollection[match.StartIndex].UniversalShapingEngineInfo!.Category == "R"
                     ? 1
                     : Math.Min(3, match.EndIndex - match.StartIndex);
 
                 for (int i = match.StartIndex; i < match.StartIndex + limit; i++)
                 {
-                    collection.AddShapingFeature(i + index, new TagEntry(RcltTag, true));
+                    substitutionCollection.AddShapingFeature(i + index, new TagEntry(RcltTag, true));
                 }
             }
         }
 
         private static void ClearSubstitutionFlags(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
+                GlyphShapingData data = substitutionCollection[i];
                 data.IsSubstituted = false;
             }
         }
 
         private static void RecordRhpf(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
+                GlyphShapingData data = substitutionCollection[i];
                 if (data.IsSubstituted && data.Features.Any(x => x.Tag == RphfTag))
                 {
                     // Mark a substituted repha.
@@ -176,10 +195,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private static void RecordPref(IGlyphShapingCollection collection, int index, int count)
         {
+            if (collection is not GlyphSubstitutionCollection substitutionCollection)
+            {
+                return;
+            }
+
             int end = index + count;
             for (int i = index; i < end; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i);
+                GlyphShapingData data = substitutionCollection[i];
                 if (data.IsSubstituted)
                 {
                     // Mark a substituted pref as VPre, as they behave the same way.
@@ -203,7 +227,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             int end = NextSyllable(substitutionCollection, index, max);
             while (start < max)
             {
-                GlyphShapingData data = substitutionCollection.GetGlyphShapingData(start);
+                GlyphShapingData data = substitutionCollection[start];
                 UniversalShapingEngineInfo? info = data.UniversalShapingEngineInfo;
                 string? type = info?.SyllableType;
 
@@ -218,7 +242,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 {
                     // Insert after possible Repha.
                     int i = start;
-                    GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
+                    GlyphShapingData current = substitutionCollection[i];
                     for (i = start; i < end; i++)
                     {
                         if (current.UniversalShapingEngineInfo?.Category != "R")
@@ -226,7 +250,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                             break;
                         }
 
-                        current = substitutionCollection.GetGlyphShapingData(i);
+                        current = substitutionCollection[i];
                     }
 
                     Span<ushort> glyphs = stackalloc ushort[2];
@@ -244,7 +268,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     // Got a repha. Reorder it to after first base, before first halant.
                     for (int i = start + 1; i < end; i++)
                     {
-                        GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
+                        GlyphShapingData current = substitutionCollection[i];
                         info = current.UniversalShapingEngineInfo;
                         if (IsBase(info) || IsHalant(current))
                         {
@@ -264,7 +288,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 // Move things back
                 for (int i = start, j = end; i < end; i++)
                 {
-                    GlyphShapingData current = substitutionCollection.GetGlyphShapingData(i);
+                    GlyphShapingData current = substitutionCollection[i];
                     info = current.UniversalShapingEngineInfo;
 
                     if (IsBase(info) || IsHalant(current))
@@ -301,10 +325,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 return index;
             }
 
-            int? syllable = collection.GetGlyphShapingData(index).UniversalShapingEngineInfo?.Syllable;
+            int? syllable = collection[index].UniversalShapingEngineInfo?.Syllable;
             while (++index < count)
             {
-                if (collection.GetGlyphShapingData(index).UniversalShapingEngineInfo?.Syllable != syllable)
+                if (collection[index].UniversalShapingEngineInfo?.Syllable != syllable)
                 {
                     break;
                 }
@@ -314,7 +338,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         }
 
         private static bool IsHalant(GlyphShapingData data)
-            => (data.UniversalShapingEngineInfo?.Category is "H" or "HVM" or "IS") && data.LigatureId == 0;
+            => (data.UniversalShapingEngineInfo?.Category is "H" or "HVM" or "IS") && !data.IsLigated;
 
         private static bool IsBase(UniversalShapingEngineInfo? info)
             => info?.Category is "B" or "GB";

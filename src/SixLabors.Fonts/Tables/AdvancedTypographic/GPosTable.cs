@@ -117,8 +117,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     continue;
                 }
 
-                ScriptClass current = CodePoint.GetScriptClass(collection.GetGlyphShapingData(i).CodePoint);
-                BaseShaper shaper = ShaperFactory.Create(current, collection.TextOptions);
+                ScriptClass current = CodePoint.GetScriptClass(collection[i].CodePoint);
 
                 int index = i;
                 int count = 1;
@@ -127,11 +126,18 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     // We want to assign the same feature lookups to individual sections of the text rather
                     // than the text as a whole to ensure that different language shapers do not interfere
                     // with each other when the text contains multiple languages.
-                    GlyphShapingData nextData = collection.GetGlyphShapingData(i + 1);
+                    GlyphShapingData nextData = collection[i + 1];
                     ScriptClass next = CodePoint.GetScriptClass(nextData.CodePoint);
-                    if (next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited && next != current)
+                    if (next != current &&
+                        current is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited &&
+                        next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited)
                     {
                         break;
+                    }
+
+                    if (current is ScriptClass.Common or ScriptClass.Unknown or ScriptClass.Inherited)
+                    {
+                        current = next;
                     }
 
                     i++;
@@ -142,6 +148,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         break;
                     }
                 }
+
+                Tag unicodeScriptTag = this.GetUnicodeScriptTag(current);
+                BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, collection.TextOptions);
 
                 if (shaper.MarkZeroingMode == MarkZeroingMode.PreGPos)
                 {
@@ -173,7 +182,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                                     goto EndLookups;
                                 }
 
-                                List<TagEntry> glyphFeatures = collection.GetGlyphShapingData(iterator.Index).Features;
+                                List<TagEntry> glyphFeatures = collection[iterator.Index].Features;
                                 if (!HasFeature(glyphFeatures, in feature))
                                 {
                                     iterator.Next();
@@ -243,6 +252,25 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             return value.Count > 0;
         }
 
+        private Tag GetUnicodeScriptTag(ScriptClass script)
+        {
+            if (this.ScriptList is null)
+            {
+                return default;
+            }
+
+            Tag[] tags = UnicodeScriptTagMap.Instance[script];
+            for (int i = 0; i < tags.Length; i++)
+            {
+                if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? _))
+                {
+                    return tags[i];
+                }
+            }
+
+            return default;
+        }
+
         private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, params LangSysTable[] langSysTables)
         {
             List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = new();
@@ -293,7 +321,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             for (int i = 0; i < count; i++)
             {
                 int currentIndex = i + index;
-                GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
+                GlyphShapingData data = collection[currentIndex];
                 if (data.CursiveAttachment != -1)
                 {
                     int j = data.CursiveAttachment + currentIndex;
@@ -302,7 +330,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                         return;
                     }
 
-                    GlyphShapingData cursiveData = collection.GetGlyphShapingData(j);
+                    GlyphShapingData cursiveData = collection[j];
                     if (!AdvancedTypographicUtils.IsVerticalGlyph(data.CodePoint, layoutMode))
                     {
                         data.Bounds.Y += cursiveData.Bounds.Y;
@@ -320,11 +348,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             for (int i = 0; i < count; i++)
             {
                 int currentIndex = i + index;
-                GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
+                GlyphShapingData data = collection[currentIndex];
                 if (data.MarkAttachment != -1)
                 {
                     int j = data.MarkAttachment;
-                    GlyphShapingData markData = collection.GetGlyphShapingData(j);
+                    GlyphShapingData markData = collection[j];
                     data.Bounds.X += markData.Bounds.X;
                     data.Bounds.Y += markData.Bounds.Y;
 
@@ -332,7 +360,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     {
                         for (int k = j; k < currentIndex; k++)
                         {
-                            markData = collection.GetGlyphShapingData(k);
+                            markData = collection[k];
                             data.Bounds.X -= markData.Bounds.Width;
                             data.Bounds.Y -= markData.Bounds.Height;
                         }
@@ -341,7 +369,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
                     {
                         for (int k = j + 1; k < currentIndex + 1; k++)
                         {
-                            markData = collection.GetGlyphShapingData(k);
+                            markData = collection[k];
                             data.Bounds.X += markData.Bounds.Width;
                             data.Bounds.Y += markData.Bounds.Height;
                         }
@@ -355,7 +383,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             for (int i = 0; i < count; i++)
             {
                 int currentIndex = i + index;
-                GlyphShapingData data = collection.GetGlyphShapingData(currentIndex);
+                GlyphShapingData data = collection[currentIndex];
                 if (AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, data.GlyphId, data))
                 {
                     data.Bounds.Width = 0;

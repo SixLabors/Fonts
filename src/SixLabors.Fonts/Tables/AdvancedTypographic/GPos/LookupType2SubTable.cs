@@ -100,7 +100,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                ushort glyphId = collection[index];
+                ushort glyphId = collection[index].GlyphId;
                 if (glyphId == 0)
                 {
                     return false;
@@ -110,7 +110,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 if (coverage > -1)
                 {
                     PairSetTable pairSet = this.pairSets[coverage];
-                    ushort glyphId2 = collection[index + 1];
+                    ushort glyphId2 = collection[index + 1].GlyphId;
                     if (glyphId2 == 0)
                     {
                         return false;
@@ -265,7 +265,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                     return false;
                 }
 
-                ushort glyphId = collection[index];
+                ushort glyphId = collection[index].GlyphId;
                 if (glyphId == 0)
                 {
                     return false;
@@ -275,7 +275,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
                 if (coverage > -1)
                 {
                     int classDef1 = this.classDefinitionTable1.ClassIndexOf(glyphId);
-                    ushort glyphId2 = collection[index + 1];
+                    ushort glyphId2 = collection[index + 1].GlyphId;
                     if (glyphId2 == 0)
                     {
                         return false;

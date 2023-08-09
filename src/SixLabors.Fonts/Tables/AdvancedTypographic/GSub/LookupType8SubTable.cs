@@ -107,7 +107,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             int count)
         {
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#81-reverse-chaining-contextual-single-substitution-format-1-coverage-based-glyph-contexts
-            ushort glyphId = collection[index];
+            ushort glyphId = collection[index].GlyphId;
             if (glyphId == 0)
             {
                 return false;
@@ -121,7 +121,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
 
             for (int i = 0; i < this.backtrackCoverageTables.Length; ++i)
             {
-                ushort id = collection[index - 1 - i];
+                ushort id = collection[index - 1 - i].GlyphId;
                 if (id == 0 || this.backtrackCoverageTables[i].CoverageIndexOf(id) < 0)
                 {
                     return false;
@@ -130,7 +130,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
 
             for (int i = 0; i < this.lookaheadCoverageTables.Length; ++i)
             {
-                ushort id = collection[index + i];
+                ushort id = collection[index + i].GlyphId;
                 if (id == 0 || this.lookaheadCoverageTables[i].CoverageIndexOf(id) < 0)
                 {
                     return false;

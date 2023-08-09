@@ -257,10 +257,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             MarkRecord markRecord,
             int baseGlyphIndex)
         {
-            GlyphShapingData baseData = collection.GetGlyphShapingData(baseGlyphIndex);
+            GlyphShapingData baseData = collection[baseGlyphIndex];
             AnchorXY baseXY = baseAnchor.GetAnchor(fontMetrics, baseData, collection);
 
-            GlyphShapingData markData = collection.GetGlyphShapingData(index);
+            GlyphShapingData markData = collection[index];
             AnchorXY markXY = markRecord.MarkAnchorTable.GetAnchor(fontMetrics, markData, collection);
 
             markData.Bounds.X = baseXY.XCoordinate - markXY.XCoordinate;
@@ -273,7 +273,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             int index,
             ValueRecord record)
         {
-            GlyphShapingData current = collection.GetGlyphShapingData(index);
+            GlyphShapingData current = collection[index];
             current.Bounds.Width += record.XAdvance;
             current.Bounds.Height += record.YAdvance;
             current.Bounds.X += record.XPlacement;
@@ -342,7 +342,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             int i = 0;
             while (i < sequence.Length && i < MaxContextLength && offset < collection.Count)
             {
-                if (!condition(sequence[i], collection.GetGlyphShapingData(offset)))
+                if (!condition(sequence[i], collection[offset]))
                 {
                     break;
                 }

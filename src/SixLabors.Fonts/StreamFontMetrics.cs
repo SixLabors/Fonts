@@ -285,13 +285,22 @@ namespace SixLabors.Fonts
         }
 
         /// <inheritdoc/>
-        internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
+        internal override bool TryGetGSubTable([NotNullWhen(true)] out GSubTable? gSubTable)
         {
-            GSubTable? gsub = this.outlineType == OutlineType.TrueType
+            gSubTable = this.outlineType == OutlineType.TrueType
                 ? this.trueTypeFontTables!.GSub
                 : this.compactFontTables!.GSub;
 
-            gsub?.ApplySubstitution(this, collection);
+            return gSubTable is not null;
+        }
+
+        /// <inheritdoc/>
+        internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
+        {
+            if (this.TryGetGSubTable(out GSubTable? gSubTable))
+            {
+                gSubTable.ApplySubstitution(this, collection);
+            }
         }
 
         /// <inheritdoc/>

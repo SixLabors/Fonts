@@ -2,11 +2,14 @@
 // Licensed under the Apache License, Version 2.0.
 
 using System.Collections.Generic;
+using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 {
     internal abstract class BaseShaper
     {
+        public ScriptClass ScriptClass { get; protected set; }
+
         public MarkZeroingMode MarkZeroingMode { get; protected set; }
 
         /// <summary>

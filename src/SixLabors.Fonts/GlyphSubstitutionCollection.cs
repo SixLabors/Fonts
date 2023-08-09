@@ -42,15 +42,11 @@ namespace SixLabors.Fonts
         public int LigatureId { get; set; } = 1;
 
         /// <inheritdoc />
-        public ushort this[int index]
+        public GlyphShapingData this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this.glyphs[index].Data.GlyphId;
+            get => this.glyphs[index].Data;
         }
-
-        /// <inheritdoc />
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index].Data;
 
         /// <summary>
         /// Gets the shaping data at the specified position.
@@ -102,6 +98,14 @@ namespace SixLabors.Fonts
         }
 
         /// <summary>
+        /// Adds a clone of the glyph shaping data to the collection at the specified offset.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <param name="offset">The zero-based index within the input codepoint collection.</param>
+        public void AddGlyph(GlyphShapingData data, int offset)
+            => this.glyphs.Add(new(offset, new(data, false)));
+
+        /// <summary>
         /// Adds the glyph id and the codepoint it represents to the collection.
         /// </summary>
         /// <param name="glyphId">The id of the glyph to add.</param>
@@ -124,27 +128,56 @@ namespace SixLabors.Fonts
         /// <param name="toIndex">The index to move to.</param>
         public void MoveGlyph(int fromIndex, int toIndex)
         {
-            GlyphShapingData data = this.GetGlyphShapingData(fromIndex);
+            if (fromIndex == toIndex)
+            {
+                return;
+            }
+
+            GlyphShapingData data = this[fromIndex];
             if (fromIndex > toIndex)
             {
-                int idx = fromIndex;
-                while (idx > toIndex)
+                // Move item to the right
+                for (int i = fromIndex; i > toIndex; i--)
                 {
-                    this.glyphs[idx].Data = this.glyphs[idx - 1].Data;
-                    idx--;
+                    this.glyphs[i].Data = this.glyphs[i - 1].Data;
                 }
             }
             else
             {
-                int idx = toIndex;
-                while (idx > fromIndex)
+                // Move item to the left
+                for (int i = fromIndex; i < toIndex; i++)
                 {
-                    this.glyphs[idx - 1].Data = this.glyphs[idx].Data;
-                    idx--;
+                    this.glyphs[i].Data = this.glyphs[i + 1].Data;
                 }
             }
 
             this.glyphs[toIndex].Data = data;
+        }
+
+        /// <summary>
+        /// Performs a stable sort of the glyphs by the comparison delegate starting at the specified index.
+        /// </summary>
+        /// <param name="startIndex">The start index.</param>
+        /// <param name="endIndex">The end index.</param>
+        /// <param name="comparer">The comparison delegate.</param>
+        public void Sort(int startIndex, int endIndex, Comparison<GlyphShapingData> comparer)
+        {
+            for (int i = startIndex + 1; i < endIndex; i++)
+            {
+                int j = i;
+                while (j > startIndex && comparer(this[j - 1], this[i]) > 0)
+                {
+                    j--;
+                }
+
+                if (i == j)
+                {
+                    continue;
+                }
+
+                // Move item i to occupy place for item j, shift what's in between.
+                this.MoveGlyph(i, j);
+            }
         }
 
         /// <summary>
@@ -228,6 +261,7 @@ namespace SixLabors.Fonts
             current.CodePointCount += codePointCount;
             current.GlyphId = glyphId;
             current.LigatureId = ligatureId;
+            current.IsLigated = true;
             current.LigatureComponent = -1;
             current.MarkAttachment = -1;
             current.CursiveAttachment = -1;

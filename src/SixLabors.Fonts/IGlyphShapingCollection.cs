@@ -21,18 +21,11 @@ namespace SixLabors.Fonts
         TextOptions TextOptions { get; }
 
         /// <summary>
-        /// Gets the glyph id at the specified index.
-        /// </summary>
-        /// <param name="index">The zero-based index of the elements to get.</param>
-        /// <returns>The <see cref="ushort"/>.</returns>
-        ushort this[int index] { get; }
-
-        /// <summary>
-        /// Gets the shaping data at the specified position.
+        /// Gets the glyph shaping data at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index of the elements to get.</param>
         /// <returns>The <see cref="GlyphShapingData"/>.</returns>
-        GlyphShapingData GetGlyphShapingData(int index);
+        GlyphShapingData this[int index] { get; }
 
         /// <summary>
         /// Adds the shaping feature to the collection which should be applied to the glyph at a specified index.

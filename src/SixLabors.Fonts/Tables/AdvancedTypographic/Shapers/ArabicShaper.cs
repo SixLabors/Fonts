@@ -70,8 +70,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 2 }, new byte[] { None, Fin3, 5 }, new byte[] { None, Isol, 6 } },
         };
 
-        public ArabicShaper(TextOptions textOptions)
-            : base(MarkZeroingMode.PostGpos, textOptions)
+        public ArabicShaper(ScriptClass script, TextOptions textOptions)
+            : base(script, MarkZeroingMode.PostGpos, textOptions)
         {
         }
 
@@ -103,7 +103,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             // Apply the state machine to map glyphs to features.
             for (int i = 0; i < count; i++)
             {
-                GlyphShapingData data = collection.GetGlyphShapingData(i + index);
+                GlyphShapingData data = collection[i + index];
                 ArabicJoiningClass joiningClass = CodePoint.GetArabicJoiningClass(data.CodePoint);
                 ArabicJoiningType joiningType = joiningClass.JoiningType;
                 if (joiningType == ArabicJoiningType.Transparent)

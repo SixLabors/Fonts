@@ -65,13 +65,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
 
         private readonly IReadOnlyList<Tag> featureTags;
 
-        internal DefaultShaper(TextOptions textOptions)
-            : this(MarkZeroingMode.PostGpos, textOptions)
+        internal DefaultShaper(ScriptClass script, TextOptions textOptions)
+            : this(script, MarkZeroingMode.PostGpos, textOptions)
         {
         }
 
-        protected DefaultShaper(MarkZeroingMode markZeroingMode, TextOptions textOptions)
+        protected DefaultShaper(ScriptClass script, MarkZeroingMode markZeroingMode, TextOptions textOptions)
         {
+            this.ScriptClass = script;
             this.MarkZeroingMode = markZeroingMode;
             this.kerningMode = textOptions.KerningMode;
             this.featureTags = textOptions.FeatureTags;
@@ -91,7 +92,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             bool isVerticalLayout = false;
             for (int i = index; i < count; i++)
             {
-                GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
+                GlyphShapingData shapingData = collection[i];
                 isVerticalLayout |= AdvancedTypographicUtils.IsVerticalGlyph(shapingData.CodePoint, layoutMode);
 
                 if (shapingData.Direction == TextDirection.LeftToRight)
@@ -123,7 +124,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             bool isVerticalLayout = false;
             for (int i = index; i < count; i++)
             {
-                GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
+                GlyphShapingData shapingData = collection[i];
                 isVerticalLayout |= AdvancedTypographicUtils.IsVerticalGlyph(shapingData.CodePoint, layoutMode);
             }
 
@@ -207,7 +208,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
             // Enable contextual fractions.
             for (int i = index; i < index + count; i++)
             {
-                GlyphShapingData shapingData = collection.GetGlyphShapingData(i);
+                GlyphShapingData shapingData = collection[i];
                 if (shapingData.CodePoint == FractionSlash || shapingData.CodePoint == Slash)
                 {
                     int start = i;
@@ -216,7 +217,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     // Apply numerator.
                     if (start > 0)
                     {
-                        shapingData = collection.GetGlyphShapingData(start - 1);
+                        shapingData = collection[start - 1];
                         while (start > 0 && CodePoint.IsDigit(shapingData.CodePoint))
                         {
                             this.AddFeature(collection, start - 1, 1, NumrTag);
@@ -228,7 +229,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                     // Apply denominator.
                     if (end < collection.Count)
                     {
-                        shapingData = collection.GetGlyphShapingData(end);
+                        shapingData = collection[end];
                         while (end < collection.Count && CodePoint.IsDigit(shapingData.CodePoint))
                         {
                             this.AddFeature(collection, end, 1, DnomTag);

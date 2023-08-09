@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
+using SixLabors.Fonts.Unicode.Resources;
 
 namespace SixLabors.Fonts
 {
@@ -33,13 +34,26 @@ namespace SixLabors.Fonts
             this.Direction = data.Direction;
             this.TextRun = data.TextRun;
             this.LigatureId = data.LigatureId;
+            this.IsLigated = data.IsLigated;
             this.LigatureComponent = data.LigatureComponent;
             this.MarkAttachment = data.MarkAttachment;
             this.CursiveAttachment = data.CursiveAttachment;
             this.IsDecomposed = data.IsDecomposed;
             if (data.UniversalShapingEngineInfo != null)
             {
-                this.UniversalShapingEngineInfo = new(data.UniversalShapingEngineInfo.Category, data.UniversalShapingEngineInfo.SyllableType, data.UniversalShapingEngineInfo.Syllable);
+                this.UniversalShapingEngineInfo = new(
+                    data.UniversalShapingEngineInfo.Category,
+                    data.UniversalShapingEngineInfo.SyllableType,
+                    data.UniversalShapingEngineInfo.Syllable);
+            }
+
+            if (data.IndicShapingEngineInfo != null)
+            {
+                this.IndicShapingEngineInfo = new(
+                    data.IndicShapingEngineInfo.Category,
+                    data.IndicShapingEngineInfo.Position,
+                    data.IndicShapingEngineInfo.SyllableType,
+                    data.IndicShapingEngineInfo.Syllable);
             }
 
             if (!clearFeatures)
@@ -81,6 +95,11 @@ namespace SixLabors.Fonts
         public int LigatureId { get; set; } = 0;
 
         /// <summary>
+        /// Gets or sets a value indicating whether the glyph is ligated.
+        /// </summary>
+        public bool IsLigated { get; set; } = false;
+
+        /// <summary>
         /// Gets or sets the ligature component index of the glyph.
         /// </summary>
         public int LigatureComponent { get; set; } = -1;
@@ -120,6 +139,11 @@ namespace SixLabors.Fonts
         /// </summary>
         public UniversalShapingEngineInfo? UniversalShapingEngineInfo { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Indic shaping information.
+        /// </summary>
+        public IndicShapingEngineInfo? IndicShapingEngineInfo { get; set; }
+
         private string DebuggerDisplay
             => FormattableString
             .Invariant($" {this.GlyphId} : {this.CodePoint.ToDebuggerDisplay()} : {CodePoint.GetScriptClass(this.CodePoint)} : {this.Direction} : {this.TextRun.TextAttributes} : {this.LigatureId} : {this.LigatureComponent} : {this.IsDecomposed}");
@@ -140,6 +164,29 @@ namespace SixLabors.Fonts
         }
 
         public string Category { get; set; }
+
+        public string SyllableType { get; }
+
+        public int Syllable { get; }
+    }
+
+    internal class IndicShapingEngineInfo
+    {
+        public IndicShapingEngineInfo(
+            IndicShapingData.Categories category,
+            IndicShapingData.Positions position,
+            string syllableType,
+            int syllable)
+        {
+            this.Category = category;
+            this.Position = position;
+            this.SyllableType = syllableType;
+            this.Syllable = syllable;
+        }
+
+        public IndicShapingData.Categories Category { get; set; }
+
+        public IndicShapingData.Positions Position { get; set; }
 
         public string SyllableType { get; }
 
