@@ -143,6 +143,10 @@ namespace SixLabors.Fonts
             => this.fontMetrics.Value.GetAvailableCodePoints();
 
         /// <inheritdoc/>
+        internal override bool TryGetGSubTable([NotNullWhen(true)] out GSubTable? gSubTable)
+            => this.fontMetrics.Value.TryGetGSubTable(out gSubTable);
+
+        /// <inheritdoc/>
         internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
             => this.fontMetrics.Value.ApplySubstitution(collection);
 

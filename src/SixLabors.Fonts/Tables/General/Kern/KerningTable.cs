@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace SixLabors.Fonts.Tables.General.Kern
@@ -65,8 +64,8 @@ namespace SixLabors.Fonts.Tables.General.Kern
                 return;
             }
 
-            ushort previous = collection[left];
-            ushort current = collection[right];
+            ushort previous = collection[left].GlyphId;
+            ushort current = collection[right].GlyphId;
 
             if (this.TryGetKerningOffset(previous, current, out Vector2 result))
             {

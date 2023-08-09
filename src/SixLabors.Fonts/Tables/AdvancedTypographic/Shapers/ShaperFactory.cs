@@ -11,9 +11,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
         /// Creates a Shaper based on the given script language.
         /// </summary>
         /// <param name="script">The script language.</param>
+        /// <param name="unicodeScriptTag">The unicode script tag found in the font matching the script.</param>
         /// <param name="textOptions">The text options.</param>
         /// <returns>A shaper for the given script.</returns>
-        public static BaseShaper Create(ScriptClass script, TextOptions textOptions)
+        public static BaseShaper Create(ScriptClass script, Tag unicodeScriptTag, TextOptions textOptions)
             => script switch
             {
                 // Arabic
@@ -24,10 +25,22 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 or ScriptClass.PhagsPa
                 or ScriptClass.Mandaic
                 or ScriptClass.Manichaean
-                or ScriptClass.PsalterPahlavi => new ArabicShaper(textOptions),
+                or ScriptClass.PsalterPahlavi => new ArabicShaper(script, textOptions),
 
                 // Hangul
-                ScriptClass.Hangul => new HangulShaper(textOptions),
+                ScriptClass.Hangul => new HangulShaper(script, textOptions),
+
+                // Indic
+                ScriptClass.Bengali
+                or ScriptClass.Devanagari
+                or ScriptClass.Gujarati
+                or ScriptClass.Gurmukhi
+                or ScriptClass.Kannada
+                or ScriptClass.Malayalam
+                or ScriptClass.Oriya
+                or ScriptClass.Tamil
+                or ScriptClass.Telugu
+                or ScriptClass.Khmer => new IndicShaper(script, unicodeScriptTag, textOptions),
 
                 // Universal
                 ScriptClass.Balinese
@@ -69,8 +82,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers
                 or ScriptClass.Tibetan
                 or ScriptClass.Tifinagh
                 or ScriptClass.Tirhuta
-                => new UniversalShaper(textOptions),
-                _ => new DefaultShaper(textOptions),
+                => new UniversalShaper(script, textOptions),
+                _ => new DefaultShaper(script, textOptions),
             };
     }
 }

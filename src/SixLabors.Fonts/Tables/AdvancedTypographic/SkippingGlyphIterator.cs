@@ -9,19 +9,23 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
     {
         private readonly FontMetrics fontMetrics;
         private bool ignoreMarks;
-        private bool ignoreBaseGlypghs;
+        private bool ignoreBaseGlyphs;
         private bool ignoreLigatures;
         private ushort markAttachmentType;
 
-        public SkippingGlyphIterator(FontMetrics fontMetrics, IGlyphShapingCollection collection, int index, LookupFlags lookupFlags)
+        public SkippingGlyphIterator(
+            FontMetrics fontMetrics,
+            IGlyphShapingCollection collection,
+            int index,
+            LookupFlags lookupFlags)
         {
             this.fontMetrics = fontMetrics;
             this.Collection = collection;
             this.Index = index;
             this.ignoreMarks = (lookupFlags & LookupFlags.IgnoreMarks) != 0;
-            this.ignoreBaseGlypghs = (lookupFlags & LookupFlags.IgnoreBaseGlypghs) != 0;
+            this.ignoreBaseGlyphs = (lookupFlags & LookupFlags.IgnoreBaseGlyphs) != 0;
             this.ignoreLigatures = (lookupFlags & LookupFlags.IgnoreLigatures) != 0;
-            this.markAttachmentType = 0; // TODO: Lookup HarfBuzz to see how this is assigned.
+            this.markAttachmentType = (ushort)((int)(lookupFlags & LookupFlags.MarkAttachmentTypeMask) >> 8);
         }
 
         public IGlyphShapingCollection Collection { get; }
@@ -50,9 +54,9 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
         {
             this.Index = index;
             this.ignoreMarks = (lookupFlags & LookupFlags.IgnoreMarks) != 0;
-            this.ignoreBaseGlypghs = (lookupFlags & LookupFlags.IgnoreBaseGlypghs) != 0;
+            this.ignoreBaseGlyphs = (lookupFlags & LookupFlags.IgnoreBaseGlyphs) != 0;
             this.ignoreLigatures = (lookupFlags & LookupFlags.IgnoreLigatures) != 0;
-            this.markAttachmentType = 0; // TODO: Lookup HarfBuzz
+            this.markAttachmentType = (ushort)((int)(lookupFlags & LookupFlags.MarkAttachmentTypeMask) >> 8);
         }
 
         private void Move(int direction)
@@ -69,12 +73,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic
             }
         }
 
-        private bool ShouldIgnore(int index)
+        private readonly bool ShouldIgnore(int index)
         {
-            GlyphShapingData data = this.Collection.GetGlyphShapingData(index);
+            GlyphShapingData data = this.Collection[index];
             GlyphShapingClass shapingClass = AdvancedTypographicUtils.GetGlyphShapingClass(this.fontMetrics, data.GlyphId, data);
             return (this.ignoreMarks && shapingClass.IsMark) ||
-                (this.ignoreBaseGlypghs && shapingClass.IsBase) ||
+                (this.ignoreBaseGlyphs && shapingClass.IsBase) ||
                 (this.ignoreLigatures && shapingClass.IsLigature) ||
                 (this.markAttachmentType > 0 && shapingClass.IsMark && shapingClass.MarkAttachmentType != this.markAttachmentType);
         }

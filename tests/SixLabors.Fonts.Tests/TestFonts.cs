@@ -214,6 +214,28 @@ namespace SixLabors.Fonts.Tests
 
         public static string NotoSansBalineseRegular => GetFullPath("NotoSansBalinese-Regular.ttf");
 
+        public static string NotoSansBengaliRegular => GetFullPath("NotoSansBengali-Regular.ttf");
+
+        public static string NotoSansDevanagariRegular => GetFullPath("NotoSansDevanagari-Regular.ttf");
+
+        public static string NotoSerifKannadaRegular => GetFullPath("NotoSerifKannada-Regular.ttf");
+
+        public static string NotoSansTeluguRegular => GetFullPath("NotoSansTelugu-Regular.ttf");
+
+        public static string NotoSansTamilRegular => GetFullPath("NotoSansTamil-Regular.ttf");
+
+        public static string NotoSansKannadaRegular => GetFullPath("NotoSansKannada-Regular.ttf");
+
+        public static string NotoSansGurmukhiRegular => GetFullPath("NotoSansGurmukhi-Regular.ttf");
+
+        public static string NotoSansGujaratiRegular => GetFullPath("NotoSansGujarati-Regular.ttf");
+
+        public static string NotoSansMalayalamRegular => GetFullPath("NotoSansMalayalam-Regular.ttf");
+
+        public static string NotoSansOriyaRegular => GetFullPath("NotoSansOriya-Regular.ttf");
+
+        public static string NotoSansKhmerRegular => GetFullPath("NotoSansKhmer-Regular.ttf");
+
         public static string HelveticaTTCFile => GetFullPath("Helvetica.ttc");
 
         public static string MeQuranFile => GetFullPath("me_quran_volt_newmet.ttf");

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
@@ -33,15 +34,11 @@ namespace SixLabors.Fonts
         public TextOptions TextOptions { get; }
 
         /// <inheritdoc />
-        public ushort this[int index]
+        public GlyphShapingData this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this.glyphs[index].Data.GlyphId;
+            get => this.glyphs[index].Data;
         }
-
-        /// <inheritdoc />
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public GlyphShapingData GetGlyphShapingData(int index) => this.glyphs[index].Data;
 
         /// <inheritdoc />
         public void AddShapingFeature(int index, TagEntry feature)
@@ -268,7 +265,7 @@ namespace SixLabors.Fonts
         /// <param name="index">The zero-based index of the element.</param>
         public void UpdatePosition(FontMetrics fontMetrics, int index)
         {
-            GlyphShapingData data = this.GetGlyphShapingData(index);
+            GlyphShapingData data = this[index];
             bool isDirtyXY = data.Bounds.IsDirtyXY;
             bool isDirtyWH = data.Bounds.IsDirtyWH;
             if (!isDirtyXY && !isDirtyWH)
@@ -325,6 +322,7 @@ namespace SixLabors.Fonts
         public bool ShouldProcess(FontMetrics fontMetrics, int index)
             => this.glyphs[index].Metrics[0].FontMetrics == fontMetrics;
 
+        [DebuggerDisplay("{DebuggerDisplay,nq}")]
         private class GlyphPositioningData
         {
             public GlyphPositioningData(int offset, GlyphShapingData data, float pointSize, GlyphMetrics[] metrics)
@@ -342,6 +340,8 @@ namespace SixLabors.Fonts
             public float PointSize { get; set; }
 
             public GlyphMetrics[] Metrics { get; set; }
+
+            private string DebuggerDisplay => FormattableString.Invariant($"Offset: {this.Offset}, Data: {this.Data.ToDebuggerDisplay()}");
         }
     }
 }

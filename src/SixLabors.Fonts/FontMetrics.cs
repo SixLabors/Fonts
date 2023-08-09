@@ -211,6 +211,13 @@ namespace SixLabors.Fonts
             ColorFontSupport support);
 
         /// <summary>
+        /// Tries to get the GSUB table.
+        /// </summary>
+        /// <param name="gSubTable">The GSUB table.</param>
+        /// <returns>true, if the glyph class could be retrieved.</returns>
+        internal abstract bool TryGetGSubTable([NotNullWhen(true)] out GSubTable? gSubTable);
+
+        /// <summary>
         /// Applies any available substitutions to the collection of glyphs.
         /// </summary>
         /// <param name="collection">The glyph substitution collection.</param>

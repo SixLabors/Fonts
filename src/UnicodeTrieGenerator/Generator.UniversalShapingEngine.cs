@@ -15,11 +15,11 @@ using ISC = SixLabors.Fonts.Unicode.IndicSyllabicCategory;
 namespace UnicodeTrieGenerator
 {
     /// <content>
-    /// Contains code to generate a trie for storing Universal Shaping Data categories.
+    /// Contains code to generate a trie and state machine for storing Universal Shaping Data category data.
     /// </content>
     public static partial class Generator
     {
-        private static readonly Dictionary<string, List<object>> Categories = new()
+        private static readonly Dictionary<string, List<object>> UniversalCategories = new()
         {
             {
                 "B", new List<object>
@@ -160,7 +160,7 @@ namespace UnicodeTrieGenerator
             { "O", new List<object> { ISC.Other } }
         };
 
-        private static readonly Dictionary<string, Dictionary<string, List<IPC>>> Positions = new()
+        private static readonly Dictionary<string, Dictionary<string, List<IPC>>> UniversalPositions = new()
         {
             {
                 "F",
@@ -389,9 +389,9 @@ namespace UnicodeTrieGenerator
         private static string GetPositionalCategory(Codepoint code, string uSE)
         {
             IPC uIPC = GetUIPC(code);
-            if (Positions.ContainsKey(uSE))
+            if (UniversalPositions.ContainsKey(uSE))
             {
-                Dictionary<string, List<IPC>> pos = Positions[uSE];
+                Dictionary<string, List<IPC>> pos = UniversalPositions[uSE];
                 foreach (string key in pos.Keys)
                 {
                     if (pos[key].Contains(uIPC))
@@ -415,9 +415,9 @@ namespace UnicodeTrieGenerator
 
         private static string? GetCategory(Codepoint code)
         {
-            foreach (string category in Categories.Keys)
+            foreach (string category in UniversalCategories.Keys)
             {
-                foreach (object pattern in Categories[category])
+                foreach (object pattern in UniversalCategories[category])
                 {
                     if (Matches(pattern, code))
                     {
@@ -429,7 +429,7 @@ namespace UnicodeTrieGenerator
             return null;
         }
 
-        private static void GenerateUniversalShapingDataTrie(
+        private static List<Codepoint> GenerateUniversalShapingDataTrie(
                     UnicodeTrie unicodeGeneralCategory,
                     UnicodeTrie indicSyllabicCategoryTrie,
                     UnicodeTrie indicPositionalCategoryTrie,
@@ -545,6 +545,8 @@ namespace UnicodeTrieGenerator
             StateMachine machine = GetStateMachine("use", symbols);
 
             GenerateDataClass("UniversalShaping", symbols, decompositions, machine);
+
+            return codePoints;
         }
 
         private static void OverrideIndicSyllabicCategory(List<Codepoint> codePoints)
@@ -676,12 +678,15 @@ namespace UnicodeTrieGenerator
         /// <param name="decompositions">The decompositions data.</param>
         private static void GenerateDataClass(
             string name,
-            Dictionary<string, int> symbols,
-            Dictionary<int, List<int>> decompositions,
-            StateMachine machine)
+            Dictionary<string, int>? symbols,
+            Dictionary<int, List<int>>? decompositions,
+            StateMachine machine,
+            bool partial = false)
         {
             using FileStream fileStream = GetStreamWriter($"{name}Data.Generated.cs");
             using StreamWriter writer = new(fileStream);
+
+            string partialKeyword = partial ? " partial " : " ";
 
             writer.WriteLine("// Copyright (c) Six Labors.");
             writer.WriteLine("// Licensed under the Apache License, Version 2.0.");
@@ -692,52 +697,60 @@ namespace UnicodeTrieGenerator
             writer.WriteLine();
             writer.WriteLine("namespace SixLabors.Fonts.Unicode.Resources");
             writer.WriteLine("{");
-            writer.WriteLine($"    internal static class {name}Data");
+            writer.WriteLine($"    internal static{partialKeyword}class {name}Data");
             writer.WriteLine("    {");
 
-            // Write the categories.
-            writer.WriteLine("        public static string[] Categories => new string[]");
-            writer.WriteLine("        {");
-
             int counter = 0;
-            int max = symbols.Count - 1;
-            foreach (KeyValuePair<string, int> item in symbols)
+            int max = 0;
+
+            if (symbols != null)
             {
-                writer.Write($"            \"{item.Key}\"");
-                if (counter != max)
+                // Write the categories.
+                writer.WriteLine("        public static string[] Categories => new string[]");
+                writer.WriteLine("        {");
+
+                max = symbols.Count - 1;
+                foreach (KeyValuePair<string, int> item in symbols)
                 {
-                    writer.Write(",");
+                    writer.Write($"            \"{item.Key}\"");
+                    if (counter != max)
+                    {
+                        writer.Write(",");
+                    }
+
+                    counter++;
+                    writer.Write(Environment.NewLine);
                 }
 
-                counter++;
+                writer.WriteLine("        };");
                 writer.Write(Environment.NewLine);
             }
-
-            writer.WriteLine("        };");
 
             // Write the decompositions
-            writer.Write(Environment.NewLine);
-            writer.WriteLine("        public static Dictionary<int, int[]> Decompositions => new()");
-            writer.WriteLine("        {");
-
-            counter = 0;
-            max = decompositions.Count - 1;
-            foreach (KeyValuePair<int, List<int>> item in decompositions)
+            if (decompositions != null)
             {
-                writer.Write($"            {{ {item.Key}, new int[] {{ {string.Join(',', item.Value.Select(x => x))} }} }}");
-                if (counter != max)
+                writer.WriteLine("        public static Dictionary<int, int[]> Decompositions => new()");
+                writer.WriteLine("        {");
+
+                counter = 0;
+                max = decompositions.Count - 1;
+                foreach (KeyValuePair<int, List<int>> item in decompositions)
                 {
-                    writer.Write(",");
+                    writer.Write($"            {{ 0x{item.Key:X}, new int[] {{ {string.Join(',', item.Value.Select(x => "0x" + x.ToString("X")))} }} }}");
+                    if (counter != max)
+                    {
+                        writer.Write(",");
+                    }
+
+                    counter++;
+                    writer.Write(Environment.NewLine);
                 }
 
-                counter++;
+                writer.WriteLine("        };");
                 writer.Write(Environment.NewLine);
             }
 
-            writer.WriteLine("        };");
-
             // Writes the state machine state table.
-            writer.Write(Environment.NewLine);
             writer.WriteLine($"        public static int[][] StateTable => new int[{machine.StateTable.Length}][]");
             writer.WriteLine("        {");
 
@@ -833,6 +846,8 @@ namespace UnicodeTrieGenerator
             public IEnumerable<int> Decomposition { get; set; } = Array.Empty<int>();
 
             public GC Category { get; set; }
+
+            public string Block { get; set; } = "No_Block";
         }
     }
 }

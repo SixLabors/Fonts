@@ -120,7 +120,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
             int index,
             int count)
         {
-            ushort glyphId = collection[index];
+            ushort glyphId = collection[index].GlyphId;
             if (glyphId == 0)
             {
                 return false;
@@ -174,7 +174,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                 //   the new ligature with a component value of 2.
                 //
                 //   This in fact happened to a font...  See https://bugzilla.gnome.org/show_bug.cgi?id=437633
-                GlyphShapingData data = collection.GetGlyphShapingData(index);
+                GlyphShapingData data = collection[index];
                 GlyphShapingClass shapingClass = AdvancedTypographicUtils.GetGlyphShapingClass(fontMetrics, glyphId, data);
                 bool isBaseLigature = shapingClass.IsBase;
                 bool isMarkLigature = shapingClass.IsMark;
@@ -182,7 +182,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                 Span<int> matches = matchBuffer.Slice(0, Math.Min(ligatureTable.ComponentGlyphs.Length, matchBuffer.Length));
                 for (int j = 0; j < matches.Length && isMarkLigature; j++)
                 {
-                    GlyphShapingData match = collection.GetGlyphShapingData(matches[j]);
+                    GlyphShapingData match = collection[matches[j]];
                     if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, match.GlyphId, match))
                     {
                         isBaseLigature = false;
@@ -212,7 +212,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                     {
                         while (idx < matchIndex)
                         {
-                            GlyphShapingData current = collection.GetGlyphShapingData(idx);
+                            GlyphShapingData current = collection[idx];
                             int currentLC = current.LigatureComponent == -1 ? 1 : current.LigatureComponent;
                             int ligatureComponent = currentComponentCount - lastComponentCount + Math.Min(currentLC, lastComponentCount);
                             current.LigatureId = ligatureId;
@@ -222,7 +222,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                         }
                     }
 
-                    GlyphShapingData last = collection.GetGlyphShapingData(idx);
+                    GlyphShapingData last = collection[idx];
                     lastLigatureId = last.LigatureId;
                     lastComponentCount = last.CodePointCount;
                     currentComponentCount += lastComponentCount;
@@ -236,7 +236,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub
                     int followingCount = count - (idx - index);
                     for (int j = idx; j < followingCount; j++)
                     {
-                        GlyphShapingData current = collection.GetGlyphShapingData(j);
+                        GlyphShapingData current = collection[j];
                         if (current.LigatureId == lastLigatureId)
                         {
                             int currentLC = current.LigatureComponent == -1 ? 1 : current.LigatureComponent;
