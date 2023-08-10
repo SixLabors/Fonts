@@ -23,19 +23,19 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
         /// </summary>
         private const int LongWordsMask = 0x8000;
 
-        private ItemVariationData(ushort itemCount, ushort wordDeltaCount, ushort[] regionIndices, int[] longDeltas, short[] shortDeltas)
+        private ItemVariationData(ushort itemCount, ushort wordDeltaCount, ushort[] regionIndices, int[] regionDeltas, short[] shortDeltas)
         {
             this.ItemCount = itemCount;
             this.WordDeltaCount = wordDeltaCount;
             this.RegionIndexes = regionIndices;
-            this.LongDeltas = longDeltas;
+            this.RegionDeltas = regionDeltas;
             this.ShortDeltas = shortDeltas;
 
-            this.Deltas = new int[longDeltas.Length + shortDeltas.Length];
+            this.Deltas = new int[regionDeltas.Length + shortDeltas.Length];
             int offset = 0;
-            for (int i = 0; i < longDeltas.Length; i++)
+            for (int i = 0; i < regionDeltas.Length; i++)
             {
-                this.Deltas[offset++] = longDeltas[i];
+                this.Deltas[offset++] = regionDeltas[i];
             }
 
             for (int i = 0; i < shortDeltas.Length; i++)
@@ -50,7 +50,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
         public ushort[] RegionIndexes { get; }
 
-        public int[] LongDeltas { get; }
+        public int[] RegionDeltas { get; }
 
         public short[] ShortDeltas { get; }
 
@@ -89,10 +89,10 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             // The delta array has a sequence of deltas using the long type followed by a sequence of deltas using the short type.
             bool longWords = (wordDeltaCount & LongWordsMask) != 0;
             int wordDeltas = wordDeltaCount & WordDeltaCountMask;
-            int[] longDeltas = new int[wordDeltas];
+            int[] regionDeltas = new int[wordDeltas];
             for (int i = 0; i < wordDeltas; i++)
             {
-                longDeltas[i] = longWords ? reader.ReadInt32() : reader.ReadInt16();
+                regionDeltas[i] = longWords ? reader.ReadInt32() : reader.ReadInt16();
             }
 
             int remaining = regionIndexCount - wordDeltas;
@@ -102,7 +102,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                 shortDeltas[i] = longWords ? reader.ReadInt16() : reader.ReadSByte();
             }
 
-            return new ItemVariationData(itemCount, wordDeltaCount, regionIndexes, longDeltas, shortDeltas);
+            return new ItemVariationData(itemCount, wordDeltaCount, regionIndexes, regionDeltas, shortDeltas);
         }
 
         /// <inheritdoc />
