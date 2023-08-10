@@ -209,12 +209,12 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             }
 
             ItemVariationData variationData = this.itemStore.ItemVariations[outerIndex];
-            if (innerIndex >= variationData.Deltas.Length)
+            if (innerIndex >= variationData.DeltaSets.Length)
             {
                 return 0;
             }
 
-            int deltaSet = variationData.Deltas[innerIndex];
+            DeltaSet deltaSet = variationData.DeltaSets[innerIndex];
             float[] blendVector = this.BlendVector(outerIndex);
             int netAdjustment = 0;
             for (int master = 0; master < variationData.RegionIndexes.Length; master++)
