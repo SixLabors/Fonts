@@ -13,6 +13,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
     /// and optical size without the designer needing to specify every exact style.
     /// </para>
     /// <para>Implementation is based on fontkit: <see href="https://github.com/foliojs/fontkit/blob/master/src/glyph/GlyphVariationProcessor.js"/></para>
+    /// <para>Docs for the item variations: <see href="https://learn.microsoft.com/en-us/typography/opentype/otspec191alpha/otvarcommonformats_delta#item-variation-store"/></para>
     /// </summary>
     internal class GlyphVariationProcessor
     {
@@ -213,7 +214,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
                 return 0;
             }
 
-            uint deltaSet = variationData.Deltas[innerIndex];
+            int deltaSet = variationData.Deltas[innerIndex];
             float[] blendVector = this.BlendVector(outerIndex);
             int netAdjustment = 0;
             for (int master = 0; master < variationData.RegionIndexes.Length; master++)

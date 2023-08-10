@@ -7,6 +7,9 @@ using System.IO;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 {
+    /// <summary>
+    /// <para>Item variation data, docs: <see href="https://learn.microsoft.com/en-us/typography/opentype/otspec191alpha/otvarcommonformats_delta#item-variation-store-header-and-item-variation-data-subtables"/></para>
+    /// </summary>
     [DebuggerDisplay("ItemCount: {ItemCount}, WordDeltaCount: {WordDeltaCount}, RegionIndexCount: {RegionIndexes.Length}")]
     internal sealed class ItemVariationData
     {
@@ -20,7 +23,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
         /// </summary>
         private const int LongWordsMask = 0x8000;
 
-        private ItemVariationData(ushort itemCount, ushort wordDeltaCount, ushort[] regionIndices, uint[] longDeltas, ushort[] shortDeltas)
+        private ItemVariationData(ushort itemCount, ushort wordDeltaCount, ushort[] regionIndices, int[] longDeltas, short[] shortDeltas)
         {
             this.ItemCount = itemCount;
             this.WordDeltaCount = wordDeltaCount;
@@ -28,7 +31,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             this.LongDeltas = longDeltas;
             this.ShortDeltas = shortDeltas;
 
-            this.Deltas = new uint[longDeltas.Length + shortDeltas.Length];
+            this.Deltas = new int[longDeltas.Length + shortDeltas.Length];
             int offset = 0;
             for (int i = 0; i < longDeltas.Length; i++)
             {
@@ -47,11 +50,11 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
 
         public ushort[] RegionIndexes { get; }
 
-        public uint[] LongDeltas { get; }
+        public int[] LongDeltas { get; }
 
-        public ushort[] ShortDeltas { get; }
+        public short[] ShortDeltas { get; }
 
-        public uint[] Deltas { get; }
+        public int[] Deltas { get; }
 
         public static ItemVariationData Load(BigEndianBinaryReader reader, long offset)
         {
@@ -86,17 +89,17 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             // The delta array has a sequence of deltas using the long type followed by a sequence of deltas using the short type.
             bool longWords = (wordDeltaCount & LongWordsMask) != 0;
             int wordDeltas = wordDeltaCount & WordDeltaCountMask;
-            uint[] longDeltas = new uint[wordDeltas];
+            int[] longDeltas = new int[wordDeltas];
             for (int i = 0; i < wordDeltas; i++)
             {
-                longDeltas[i] = longWords ? reader.ReadUInt32() : reader.ReadUInt16();
+                longDeltas[i] = longWords ? reader.ReadInt32() : reader.ReadInt16();
             }
 
             int remaining = regionIndexCount - wordDeltas;
-            ushort[] shortDeltas = new ushort[remaining];
+            short[] shortDeltas = new short[remaining];
             for (int i = 0; i < remaining; i++)
             {
-                shortDeltas[i] = longWords ? reader.ReadUInt16() : reader.ReadUInt8();
+                shortDeltas[i] = longWords ? reader.ReadInt16() : reader.ReadByte();
             }
 
             return new ItemVariationData(itemCount, wordDeltaCount, regionIndexes, longDeltas, shortDeltas);
