@@ -99,7 +99,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations
             short[] shortDeltas = new short[remaining];
             for (int i = 0; i < remaining; i++)
             {
-                shortDeltas[i] = longWords ? reader.ReadInt16() : reader.ReadByte();
+                shortDeltas[i] = longWords ? reader.ReadInt16() : reader.ReadSByte();
             }
 
             return new ItemVariationData(itemCount, wordDeltaCount, regionIndexes, longDeltas, shortDeltas);
