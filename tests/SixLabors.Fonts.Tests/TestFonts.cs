@@ -202,6 +202,8 @@ namespace SixLabors.Fonts.Tests
 
         public static string RobotoRegular => GetFullPath("Roboto-Regular.ttf");
 
+        public static string RobotoFlex => GetFullPath("RobotoFlex.ttf");
+
         public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
         public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
