@@ -393,9 +393,8 @@ public static partial class Generator
     private static string GetPositionalCategory(Codepoint code, string uSE)
     {
         IPC uIPC = GetUIPC(code);
-        if (UniversalPositions.ContainsKey(uSE))
+        if (UniversalPositions.TryGetValue(uSE, out Dictionary<string, List<IPC>>? pos))
         {
-            Dictionary<string, List<IPC>> pos = UniversalPositions[uSE];
             foreach (string key in pos.Keys)
             {
                 if (pos[key].Contains(uIPC))
