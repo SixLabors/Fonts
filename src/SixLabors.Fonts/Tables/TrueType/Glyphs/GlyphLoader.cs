@@ -1,25 +1,24 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts.Tables.TrueType.Glyphs
+namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
+
+internal abstract class GlyphLoader
 {
-    internal abstract class GlyphLoader
+    public abstract GlyphVector CreateGlyph(GlyphTable table);
+
+    public static GlyphLoader Load(BigEndianBinaryReader reader)
     {
-        public abstract GlyphVector CreateGlyph(GlyphTable table);
+        short contoursCount = reader.ReadInt16();
+        var bounds = Bounds.Load(reader);
 
-        public static GlyphLoader Load(BigEndianBinaryReader reader)
+        if (contoursCount >= 0)
         {
-            short contoursCount = reader.ReadInt16();
-            var bounds = Bounds.Load(reader);
-
-            if (contoursCount >= 0)
-            {
-                return SimpleGlyphLoader.LoadSimpleGlyph(reader, contoursCount, bounds);
-            }
-            else
-            {
-                return CompositeGlyphLoader.LoadCompositeGlyph(reader, bounds);
-            }
+            return SimpleGlyphLoader.LoadSimpleGlyph(reader, contoursCount, bounds);
+        }
+        else
+        {
+            return CompositeGlyphLoader.LoadCompositeGlyph(reader, bounds);
         }
     }
 }

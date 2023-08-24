@@ -1,14 +1,11 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.Collections.Generic;
+namespace SixLabors.Fonts.Tests;
 
-namespace SixLabors.Fonts.Tests
+public class ColorGlyphRenderer : GlyphRenderer, IColorGlyphRenderer
 {
-    public class ColorGlyphRenderer : GlyphRenderer, IColorGlyphRenderer
-    {
-        public List<GlyphColor> Colors { get; } = new List<GlyphColor>();
+    public List<GlyphColor> Colors { get; } = new List<GlyphColor>();
 
-        public void SetColor(GlyphColor color) => this.Colors.Add(color);
-    }
+    public void SetColor(GlyphColor color) => this.Colors.Add(color);
 }

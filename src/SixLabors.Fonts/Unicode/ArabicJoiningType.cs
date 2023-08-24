@@ -1,42 +1,41 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts.Unicode
+namespace SixLabors.Fonts.Unicode;
+
+/// <summary>
+/// Unicode Arabic Joining Types
+/// <see href="https://www.unicode.org/versions/Unicode13.0.0/ch09.pdf"/> Table 9-3.
+/// </summary>
+public enum ArabicJoiningType
 {
     /// <summary>
-    /// Unicode Arabic Joining Types
-    /// <see href="https://www.unicode.org/versions/Unicode13.0.0/ch09.pdf"/> Table 9-3.
+    /// Right Joining (R)
     /// </summary>
-    public enum ArabicJoiningType
-    {
-        /// <summary>
-        /// Right Joining (R)
-        /// </summary>
-        RightJoining,
+    RightJoining,
 
-        /// <summary>
-        /// Left Joining (L)
-        /// </summary>
-        LeftJoining,
+    /// <summary>
+    /// Left Joining (L)
+    /// </summary>
+    LeftJoining,
 
-        /// <summary>
-        /// Dual Joining (D)
-        /// </summary>
-        DualJoining,
+    /// <summary>
+    /// Dual Joining (D)
+    /// </summary>
+    DualJoining,
 
-        /// <summary>
-        /// Join Causing (C)
-        /// </summary>
-        JoinCausing,
+    /// <summary>
+    /// Join Causing (C)
+    /// </summary>
+    JoinCausing,
 
-        /// <summary>
-        /// Non Joining (U)
-        /// </summary>
-        NonJoining,
+    /// <summary>
+    /// Non Joining (U)
+    /// </summary>
+    NonJoining,
 
-        /// <summary>
-        /// Transparent (T)
-        /// </summary>
-        Transparent
-    }
+    /// <summary>
+    /// Transparent (T)
+    /// </summary>
+    Transparent
 }

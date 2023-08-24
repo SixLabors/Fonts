@@ -2,33 +2,31 @@
 // Licensed under the Six Labors Split License.
 
 #if !SUPPORTS_ENCODING_STRING
-using System;
 using System.Text;
 
-namespace SixLabors.Fonts
+namespace SixLabors.Fonts;
+
+/// <summary>
+/// Extension methods for the <see cref="Encoder"/> type.
+/// </summary>
+internal static unsafe class EncodingExtensions
 {
     /// <summary>
-    /// Extension methods for the <see cref="Encoder"/> type.
+    /// Gets a string from the provided buffer data.
     /// </summary>
-    internal static unsafe class EncodingExtensions
+    /// <param name="encoding">The encoding.</param>
+    /// <param name="buffer">The buffer.</param>
+    /// <returns>The string.</returns>
+    public static string GetString(this Encoding encoding, ReadOnlySpan<byte> buffer)
     {
-        /// <summary>
-        /// Gets a string from the provided buffer data.
-        /// </summary>
-        /// <param name="encoding">The encoding.</param>
-        /// <param name="buffer">The buffer.</param>
-        /// <returns>The string.</returns>
-        public static string GetString(this Encoding encoding, ReadOnlySpan<byte> buffer)
+        if (buffer.Length == 0)
         {
-            if (buffer.Length == 0)
-            {
-                return string.Empty;
-            }
+            return string.Empty;
+        }
 
-            fixed (byte* bytes = buffer)
-            {
-                return encoding.GetString(bytes, buffer.Length);
-            }
+        fixed (byte* bytes = buffer)
+        {
+            return encoding.GetString(bytes, buffer.Length);
         }
     }
 }

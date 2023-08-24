@@ -1,86 +1,82 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-using System.Collections.Generic;
+namespace SixLabors.Fonts.Tables.Cff;
 
-namespace SixLabors.Fonts.Tables.Cff
+internal struct FDRangeProvider
 {
-    internal struct FDRangeProvider
+    // helper class
+    private readonly int format;
+    private readonly FDRange3[] ranges;
+    private readonly Dictionary<int, byte> fdSelectMap;
+    private ushort currentGlyphIndex;
+    private ushort endGlyphIndexMax;
+    private FDRange3 currentRange;
+    private int currentSelectedRangeIndex;
+
+    public FDRangeProvider(CidFontInfo cidFontInfo)
     {
-        // helper class
-        private readonly int format;
-        private readonly FDRange3[] ranges;
-        private readonly Dictionary<int, byte> fdSelectMap;
-        private ushort currentGlyphIndex;
-        private ushort endGlyphIndexMax;
-        private FDRange3 currentRange;
-        private int currentSelectedRangeIndex;
+        this.format = cidFontInfo.FdSelectFormat;
+        this.ranges = cidFontInfo.FdRanges;
+        this.fdSelectMap = cidFontInfo.FdSelectMap;
+        this.currentGlyphIndex = 0;
+        this.currentSelectedRangeIndex = 0;
 
-        public FDRangeProvider(CidFontInfo cidFontInfo)
+        if (this.ranges.Length is not 0)
         {
-            this.format = cidFontInfo.FdSelectFormat;
-            this.ranges = cidFontInfo.FdRanges;
-            this.fdSelectMap = cidFontInfo.FdSelectMap;
-            this.currentGlyphIndex = 0;
-            this.currentSelectedRangeIndex = 0;
-
-            if (this.ranges.Length is not 0)
-            {
-                this.currentRange = this.ranges[0];
-                this.endGlyphIndexMax = this.ranges[1].First;
-            }
-            else
-            {
-                // empty
-                this.currentRange = default;
-                this.endGlyphIndexMax = 0;
-            }
-
-            this.SelectedFDArray = 0;
+            this.currentRange = this.ranges[0];
+            this.endGlyphIndexMax = this.ranges[1].First;
+        }
+        else
+        {
+            // empty
+            this.currentRange = default;
+            this.endGlyphIndexMax = 0;
         }
 
-        public byte SelectedFDArray { get; private set; }
+        this.SelectedFDArray = 0;
+    }
 
-        public void SetCurrentGlyphIndex(ushort index)
+    public byte SelectedFDArray { get; private set; }
+
+    public void SetCurrentGlyphIndex(ushort index)
+    {
+        switch (this.format)
         {
-            switch (this.format)
-            {
-                case 0:
-                    this.currentGlyphIndex = this.fdSelectMap[index];
-                    break;
+            case 0:
+                this.currentGlyphIndex = this.fdSelectMap[index];
+                break;
 
-                case 3:
-                    // Find proper range for selected index.
+            case 3:
+                // Find proper range for selected index.
+                if (index >= this.currentRange.First && index < this.endGlyphIndexMax)
+                {
+                    // Ok, in current range.
+                    this.SelectedFDArray = this.currentRange.FontDictionary;
+                }
+                else
+                {
+                    // Move to next range.
+                    this.currentSelectedRangeIndex++;
+                    this.currentRange = this.ranges[this.currentSelectedRangeIndex];
+
+                    this.endGlyphIndexMax = this.ranges[this.currentSelectedRangeIndex + 1].First;
                     if (index >= this.currentRange.First && index < this.endGlyphIndexMax)
                     {
-                        // Ok, in current range.
                         this.SelectedFDArray = this.currentRange.FontDictionary;
                     }
                     else
                     {
-                        // Move to next range.
-                        this.currentSelectedRangeIndex++;
-                        this.currentRange = this.ranges[this.currentSelectedRangeIndex];
-
-                        this.endGlyphIndexMax = this.ranges[this.currentSelectedRangeIndex + 1].First;
-                        if (index >= this.currentRange.First && index < this.endGlyphIndexMax)
-                        {
-                            this.SelectedFDArray = this.currentRange.FontDictionary;
-                        }
-                        else
-                        {
-                            throw new NotSupportedException();
-                        }
+                        throw new NotSupportedException();
                     }
+                }
 
-                    this.currentGlyphIndex = index;
+                this.currentGlyphIndex = index;
 
-                    break;
+                break;
 
-                default:
-                    throw new NotSupportedException();
-            }
+            default:
+                throw new NotSupportedException();
         }
     }
 }

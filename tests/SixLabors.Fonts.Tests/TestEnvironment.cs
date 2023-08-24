@@ -1,60 +1,56 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 
-namespace SixLabors.Fonts.Tests
+namespace SixLabors.Fonts.Tests;
+
+internal static class TestEnvironment
 {
-    internal static class TestEnvironment
+    private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
+
+    private const string UnicodeTestDataRelativePath = @"tests\UnicodeTestData\";
+
+    private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new(GetSolutionDirectoryFullPathImpl);
+
+    internal static string SolutionDirectoryFullPath => SolutionDirectoryFullPathLazy.Value;
+
+    /// <summary>
+    /// Gets the correct full path to the Unicode TestData directory.
+    /// </summary>
+    internal static string UnicodeTestDataFullPath => GetFullPath(UnicodeTestDataRelativePath);
+
+    private static string GetSolutionDirectoryFullPathImpl()
     {
-        private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
+        string assemblyLocation = Path.GetDirectoryName(new Uri(typeof(TestEnvironment).GetTypeInfo().Assembly.CodeBase).LocalPath);
 
-        private const string UnicodeTestDataRelativePath = @"tests\UnicodeTestData\";
+        var assemblyFile = new FileInfo(assemblyLocation);
 
-        private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new(GetSolutionDirectoryFullPathImpl);
+        DirectoryInfo directory = assemblyFile.Directory;
 
-        internal static string SolutionDirectoryFullPath => SolutionDirectoryFullPathLazy.Value;
-
-        /// <summary>
-        /// Gets the correct full path to the Unicode TestData directory.
-        /// </summary>
-        internal static string UnicodeTestDataFullPath => GetFullPath(UnicodeTestDataRelativePath);
-
-        private static string GetSolutionDirectoryFullPathImpl()
+        while (!directory.EnumerateFiles(SixLaborsSolutionFileName).Any())
         {
-            string assemblyLocation = Path.GetDirectoryName(new Uri(typeof(TestEnvironment).GetTypeInfo().Assembly.CodeBase).LocalPath);
-
-            var assemblyFile = new FileInfo(assemblyLocation);
-
-            DirectoryInfo directory = assemblyFile.Directory;
-
-            while (!directory.EnumerateFiles(SixLaborsSolutionFileName).Any())
+            try
             {
-                try
-                {
-                    directory = directory.Parent;
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception(
-                        $"Unable to find SixLabors solution directory from {assemblyLocation} because of {ex.GetType().Name}!",
-                        ex);
-                }
-
-                if (directory == null)
-                {
-                    throw new Exception($"Unable to find SixLabors solution directory from {assemblyLocation}!");
-                }
+                directory = directory.Parent;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(
+                    $"Unable to find SixLabors solution directory from {assemblyLocation} because of {ex.GetType().Name}!",
+                    ex);
             }
 
-            return directory.FullName;
+            if (directory == null)
+            {
+                throw new Exception($"Unable to find SixLabors solution directory from {assemblyLocation}!");
+            }
         }
 
-        private static string GetFullPath(string relativePath) =>
-            Path.Combine(SolutionDirectoryFullPath, relativePath)
-            .Replace('\\', Path.DirectorySeparatorChar);
+        return directory.FullName;
     }
+
+    private static string GetFullPath(string relativePath) =>
+        Path.Combine(SolutionDirectoryFullPath, relativePath)
+        .Replace('\\', Path.DirectorySeparatorChar);
 }

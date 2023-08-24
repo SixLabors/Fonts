@@ -3,12 +3,11 @@
 
 using BenchmarkDotNet.Running;
 
-namespace SixLabors.Fonts.Benchmarks
+namespace SixLabors.Fonts.Benchmarks;
+
+internal class Program
 {
-    internal class Program
-    {
-        public static void Main(string[] args) => BenchmarkSwitcher
-            .FromAssembly(typeof(Program).Assembly)
-            .Run(args);
-    }
+    public static void Main(string[] args) => BenchmarkSwitcher
+        .FromAssembly(typeof(Program).Assembly)
+        .Run(args);
 }

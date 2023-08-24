@@ -1,36 +1,33 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.Collections.Generic;
-using System.Linq;
 using SixLabors.Fonts.Tables.General.CMap;
 using SixLabors.Fonts.Unicode;
 
-namespace SixLabors.Fonts.Tests.Fakes
+namespace SixLabors.Fonts.Tests.Fakes;
+
+internal class FakeCmapSubtable : CMapSubTable
 {
-    internal class FakeCmapSubtable : CMapSubTable
+    private readonly List<FakeGlyphSource> glyphs;
+
+    public FakeCmapSubtable(List<FakeGlyphSource> glyphs)
+        => this.glyphs = glyphs;
+
+    public override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
     {
-        private readonly List<FakeGlyphSource> glyphs;
-
-        public FakeCmapSubtable(List<FakeGlyphSource> glyphs)
-            => this.glyphs = glyphs;
-
-        public override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
+        foreach (FakeGlyphSource c in this.glyphs)
         {
-            foreach (FakeGlyphSource c in this.glyphs)
+            if (c.CodePoint == codePoint)
             {
-                if (c.CodePoint == codePoint)
-                {
-                    glyphId = c.Index;
-                    return true;
-                }
+                glyphId = c.Index;
+                return true;
             }
-
-            glyphId = 0;
-            return false;
         }
 
-        public override IEnumerable<int> GetAvailableCodePoints()
-            => this.glyphs.Select(x => x.CodePoint.Value);
+        glyphId = 0;
+        return false;
     }
+
+    public override IEnumerable<int> GetAvailableCodePoints()
+        => this.glyphs.Select(x => x.CodePoint.Value);
 }

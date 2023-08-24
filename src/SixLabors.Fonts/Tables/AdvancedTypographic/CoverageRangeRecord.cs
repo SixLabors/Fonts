@@ -3,22 +3,21 @@
 
 using System.Diagnostics;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic
+namespace SixLabors.Fonts.Tables.AdvancedTypographic;
+
+[DebuggerDisplay("StartGlyphId: {StartGlyphId}, EndGlyphId: {EndGlyphId}, Index: {Index}")]
+internal readonly struct CoverageRangeRecord
 {
-    [DebuggerDisplay("StartGlyphId: {StartGlyphId}, EndGlyphId: {EndGlyphId}, Index: {Index}")]
-    internal readonly struct CoverageRangeRecord
+    public CoverageRangeRecord(ushort startGlyphId, ushort endGlyphId, ushort startCoverageIndex)
     {
-        public CoverageRangeRecord(ushort startGlyphId, ushort endGlyphId, ushort startCoverageIndex)
-        {
-            this.StartGlyphId = startGlyphId;
-            this.EndGlyphId = endGlyphId;
-            this.Index = startCoverageIndex;
-        }
-
-        public ushort StartGlyphId { get; }
-
-        public ushort EndGlyphId { get; }
-
-        public ushort Index { get; }
+        this.StartGlyphId = startGlyphId;
+        this.EndGlyphId = endGlyphId;
+        this.Index = startCoverageIndex;
     }
+
+    public ushort StartGlyphId { get; }
+
+    public ushort EndGlyphId { get; }
+
+    public ushort Index { get; }
 }

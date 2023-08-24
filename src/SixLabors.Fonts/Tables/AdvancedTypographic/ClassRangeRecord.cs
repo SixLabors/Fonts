@@ -3,22 +3,21 @@
 
 using System.Diagnostics;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic
+namespace SixLabors.Fonts.Tables.AdvancedTypographic;
+
+[DebuggerDisplay("StartGlyphId: {StartGlyphId}, EndGlyphId: {EndGlyphId}, Class: {Class}")]
+internal readonly struct ClassRangeRecord
 {
-    [DebuggerDisplay("StartGlyphId: {StartGlyphId}, EndGlyphId: {EndGlyphId}, Class: {Class}")]
-    internal readonly struct ClassRangeRecord
+    public ClassRangeRecord(ushort startGlyphId, ushort endGlyphId, ushort glyphClass)
     {
-        public ClassRangeRecord(ushort startGlyphId, ushort endGlyphId, ushort glyphClass)
-        {
-            this.StartGlyphId = startGlyphId;
-            this.EndGlyphId = endGlyphId;
-            this.Class = glyphClass;
-        }
-
-        public ushort StartGlyphId { get; }
-
-        public ushort EndGlyphId { get; }
-
-        public ushort Class { get; }
+        this.StartGlyphId = startGlyphId;
+        this.EndGlyphId = endGlyphId;
+        this.Class = glyphClass;
     }
+
+    public ushort StartGlyphId { get; }
+
+    public ushort EndGlyphId { get; }
+
+    public ushort Class { get; }
 }

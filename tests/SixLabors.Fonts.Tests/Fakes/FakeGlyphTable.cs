@@ -1,30 +1,28 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.Collections.Generic;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
-namespace SixLabors.Fonts.Tests.Fakes
+namespace SixLabors.Fonts.Tests.Fakes;
+
+internal class FakeGlyphTable : GlyphTable
 {
-    internal class FakeGlyphTable : GlyphTable
+    private readonly List<FakeGlyphSource> glyphs;
+
+    public FakeGlyphTable(List<FakeGlyphSource> glyphs)
+        : base(new GlyphLoader[glyphs.Count])
+        => this.glyphs = glyphs;
+
+    internal override GlyphVector GetGlyph(int index)
     {
-        private readonly List<FakeGlyphSource> glyphs;
-
-        public FakeGlyphTable(List<FakeGlyphSource> glyphs)
-            : base(new GlyphLoader[glyphs.Count])
-            => this.glyphs = glyphs;
-
-        internal override GlyphVector GetGlyph(int index)
+        foreach (FakeGlyphSource c in this.glyphs)
         {
-            foreach (FakeGlyphSource c in this.glyphs)
+            if (c.Index == index)
             {
-                if (c.Index == index)
-                {
-                    return c.Vector;
-                }
+                return c.Vector;
             }
-
-            return default;
         }
+
+        return default;
     }
 }
