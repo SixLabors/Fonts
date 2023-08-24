@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
     - name: Ask a Question
-      url: https://github.com/SixLabors/Fonts/discussions?discussions_q=category%3AHelp
+      url: https://github.com/SixLabors/Fonts/discussions/categories/q-a
       about: Ask a question about this project.
     - name: Feature Request
-      url: https://github.com/SixLabors/Fonts/discussions?discussions_q=category%3AIdeas
+      url: https://github.com/SixLabors/Fonts/discussions/categories/ideas
       about: Share ideas for new features for this project.
