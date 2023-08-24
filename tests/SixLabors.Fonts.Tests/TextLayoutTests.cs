@@ -913,19 +913,7 @@ public class TextLayoutTests
         const string text = "Hello World!";
         FontRectangle first = TextMeasurer.MeasureAdvance(text, options);
 
-        // TODO: We should probably drop the 32bit test runner.
-#if NET472
-        if (Environment.Is64BitProcess)
-        {
-            Assert.Equal(new FontRectangle(0, 0, 11729, 2049), first);
-        }
-        else
-        {
-            Assert.Equal(new FontRectangle(0, 0, 11729, 2048), first);
-        }
-#else
         Assert.Equal(new FontRectangle(0, 0, 11729, 2049), first);
-#endif
 
         options.LineSpacing = 2F;
         FontRectangle second = TextMeasurer.MeasureAdvance(text, options);

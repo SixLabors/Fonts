@@ -80,7 +80,6 @@ public class FontLoaderTests
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
     }
 
-#if NETCOREAPP3_0_OR_GREATER
     [Fact]
     public void LoadFontMetadata_WithWoff2Format()
     {
@@ -104,7 +103,6 @@ public class FontLoaderTests
         Assert.Single(r.GlyphKeys);
         Assert.Single(r.GlyphRects);
     }
-#endif
 
     [Fact]
     public void LoadFont()

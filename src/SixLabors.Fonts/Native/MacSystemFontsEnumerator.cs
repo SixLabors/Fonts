@@ -4,7 +4,6 @@
 using System.Buffers;
 using System.Collections;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using static SixLabors.Fonts.Native.CoreFoundation;
 using static SixLabors.Fonts.Native.CoreText;
@@ -59,22 +58,12 @@ internal class MacSystemFontsEnumerator : IEnumerable<string>, IEnumerator<strin
             Debug.Assert(CFGetTypeID(fontUrl) == CFURLGetTypeID(), "The elements of the fontUrls array must be a CFURLRef");
             IntPtr fontPath = CFURLCopyFileSystemPath(fontUrl, CFURLPathStyle.kCFURLPOSIXPathStyle);
 
-#if !NETSTANDARD2_0
-            string? current = Marshal.PtrToStringUTF8(CFStringGetCStringPtr(fontPath, CFStringEncoding.kCFStringEncodingUTF8));
-            if (current is not null)
-            {
-                this.Current = current;
-            }
-            else
-#endif
-            {
-                int fontPathLength = (int)CFStringGetLength(fontPath);
-                int fontPathBufferSize = (fontPathLength + 1) * 2; // +1 for the NULL byte and *2 for UTF-16
-                byte[] fontPathBuffer = BytePool.Rent(fontPathBufferSize);
-                CFStringGetCString(fontPath, fontPathBuffer, fontPathBufferSize, CFStringEncoding.kCFStringEncodingUTF16LE);
-                this.Current = Encoding.Unicode.GetString(fontPathBuffer, 0, fontPathBufferSize - 2); // -2 for the UTF-16 NULL
-                BytePool.Return(fontPathBuffer);
-            }
+            int fontPathLength = (int)CFStringGetLength(fontPath);
+            int fontPathBufferSize = (fontPathLength + 1) * 2; // +1 for the NULL byte and *2 for UTF-16
+            byte[] fontPathBuffer = BytePool.Rent(fontPathBufferSize);
+            CFStringGetCString(fontPath, fontPathBuffer, fontPathBufferSize, CFStringEncoding.kCFStringEncodingUTF16LE);
+            this.Current = Encoding.Unicode.GetString(fontPathBuffer, 0, fontPathBufferSize - 2); // -2 for the UTF-16 NULL
+            BytePool.Return(fontPathBuffer);
 
             CFRelease(fontPath);
 

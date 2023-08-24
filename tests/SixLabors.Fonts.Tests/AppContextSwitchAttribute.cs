@@ -10,10 +10,6 @@ namespace SixLabors.Fonts.Tests;
 /// Sets the AppContext switch <see cref="SwitchName"/> to <see cref="IsEnabled"/> before the test execution
 /// and resets the switch after the text execution.
 /// </summary>
-/// <remarks>
-/// On .NET Core 3.1, the switch is actually reset to its default value (i.e. <c>null</c>) after execution.
-/// On .NET Core 2.1, the switch is set to <c>!IsEnabled</c> after execution.
-/// </remarks>
 public class AppContextSwitchAttribute : BeforeAfterTestAttribute
 {
     public string SwitchName { get; }
@@ -27,20 +23,8 @@ public class AppContextSwitchAttribute : BeforeAfterTestAttribute
     }
 
     public override void Before(MethodInfo methodUnderTest)
-    {
-#if NETCOREAPP3_1_OR_GREATER
-        AppDomain.CurrentDomain.SetData(this.SwitchName, this.IsEnabled.ToString());
-#else
-        AppContext.SetSwitch(this.SwitchName, this.IsEnabled);
-#endif
-    }
+        => AppDomain.CurrentDomain.SetData(this.SwitchName, this.IsEnabled.ToString());
 
     public override void After(MethodInfo methodUnderTest)
-    {
-#if NETCOREAPP3_1_OR_GREATER
-        AppDomain.CurrentDomain.SetData(this.SwitchName, null);
-#else
-        AppContext.SetSwitch(this.SwitchName, !this.IsEnabled);
-#endif
-    }
+        => AppDomain.CurrentDomain.SetData(this.SwitchName, null);
 }

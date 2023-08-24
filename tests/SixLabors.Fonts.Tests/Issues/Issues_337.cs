@@ -31,17 +31,7 @@ public class Issues_337
 
         for (int i = 0; i < expected.Length; i++)
         {
-#if NET472
-            if (!Environment.Is64BitProcess)
-            {
-                // 32 bit process has different rounding
-                CompareRectangle(expected[i], renderer.GlyphRects[i], 1F);
-            }
-            else
-#endif
-            {
-                CompareRectangleExact(expected[i], renderer.GlyphRects[i]);
-            }
+            CompareRectangleExact(expected[i], renderer.GlyphRects[i]);
         }
     }
 

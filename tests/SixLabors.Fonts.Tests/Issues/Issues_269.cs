@@ -1,10 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-#if NET472
-using System;
-#endif
-
 namespace SixLabors.Fonts.Tests.Issues;
 
 public class Issues_269

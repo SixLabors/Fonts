@@ -68,10 +68,6 @@ internal sealed class FontReader
             // This is a woff2 file.
             this.TableFormat = TableFormat.Woff2;
 
-#if NETSTANDARD2_0
-            throw new NotSupportedException("Brotli compression is not available and is required for decoding woff2");
-#else
-
             uint flavor = reader.ReadUInt32();
             this.OutlineType = (OutlineType)flavor;
             uint length = reader.ReadUInt32();
@@ -98,7 +94,6 @@ internal sealed class FontReader
             this.stream.Dispose();
             this.stream = decompressedStream;
             return;
-#endif
         }
         else
         {
