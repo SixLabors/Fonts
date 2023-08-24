@@ -116,7 +116,7 @@ internal static class TextLayout
         {
             bidiData.SaveTypes();
             bidiData.Types.Span.Fill(BidiCharacterType.OtherNeutral);
-            bidiData.PairedBracketTypes.Span.Fill(BidiPairedBracketType.None);
+            bidiData.PairedBracketTypes.Span.Clear();
         }
 
         bidi.Process(bidiData);

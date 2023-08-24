@@ -312,9 +312,8 @@ public static partial class Generator
     private static bool Check(dynamic pattern, dynamic value)
     {
         // TODO:This is nasty. Port to use the harfbuzz approach using Function<CodePoint, bool>
-        if (pattern is Dictionary<string, object> dictionary && dictionary.ContainsKey("not"))
+        if (pattern is Dictionary<string, object> dictionary && dictionary.TryGetValue("not", out object? not))
         {
-            object not = dictionary["not"];
             if (not is List<object> list)
             {
                 foreach (object item in list)
@@ -372,10 +371,24 @@ public static partial class Generator
     }
 
     private static ISC GetUISC(Codepoint code)
-        => SyllabicOverrides.ContainsKey(code.Code) ? SyllabicOverrides[code.Code] : code.IndicSyllabicCategory;
+    {
+        if (SyllabicOverrides.TryGetValue(code.Code, out ISC isc))
+        {
+            return isc;
+        }
+
+        return code.IndicSyllabicCategory;
+    }
 
     private static IPC GetUIPC(Codepoint code)
-        => PositionalOverrides.ContainsKey(code.Code) ? PositionalOverrides[code.Code] : code.IndicPositionalCategory;
+    {
+        if (PositionalOverrides.TryGetValue(code.Code, out IPC ipc))
+        {
+            return ipc;
+        }
+
+        return code.IndicPositionalCategory;
+    }
 
     private static string GetPositionalCategory(Codepoint code, string uSE)
     {

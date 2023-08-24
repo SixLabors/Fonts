@@ -16,6 +16,7 @@ internal static class CoreFoundation
     /// <param name="theArray">The array to examine.</param>
     /// <returns>The number of values in <paramref name="theArray"/>.</returns>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern long CFArrayGetCount(IntPtr theArray);
 
     /// <summary>
@@ -24,6 +25,7 @@ internal static class CoreFoundation
     /// <returns>The type identifier for the CFArray opaque type.</returns>
     /// <remarks>CFMutableArray objects have the same type identifier as CFArray objects.</remarks>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern ulong CFArrayGetTypeID();
 
     /// <summary>
@@ -33,6 +35,7 @@ internal static class CoreFoundation
     /// <param name="idx">The index of the value to retrieve. If the index is outside the index space of <paramref name="theArray"/> (<c>0</c> to <c>N-1</c> inclusive where <c>N</c> is the count of <paramref name="theArray"/>), the behavior is undefined.</param>
     /// <returns>The value at the <paramref name="idx"/> index in <paramref name="theArray"/>. If the return value is a Core Foundation Object, ownership follows The Get Rule.</returns>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern IntPtr CFArrayGetValueAtIndex(IntPtr theArray, long idx);
 
     /// <summary>
@@ -46,6 +49,7 @@ internal static class CoreFoundation
     /// These values might change from release to release or platform to platform.
     /// </remarks>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern ulong CFGetTypeID(IntPtr cf);
 
     /// <summary>
@@ -54,6 +58,7 @@ internal static class CoreFoundation
     /// <param name="theString">The string to examine.</param>
     /// <returns>The number (in terms of UTF-16 code pairs) of characters stored in <paramref name="theString"/>.</returns>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern long CFStringGetLength(IntPtr theString);
 
     /// <summary>
@@ -69,6 +74,7 @@ internal static class CoreFoundation
     /// <returns><see langword="true"/> upon success or <see langword="false"/> if the conversion fails or the provided buffer is too small.</returns>
     /// <remarks>This function is useful when you need your own copy of a string’s character data as a C string. You also typically call it as a “backup” when a prior call to the <see cref="CFStringGetCStringPtr"/> function fails.</remarks>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern bool CFStringGetCString(IntPtr theString, byte[] buffer, long bufferSize, CFStringEncoding encoding);
 
     /// <summary>
@@ -86,6 +92,7 @@ internal static class CoreFoundation
     /// </para>
     /// </remarks>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern IntPtr CFStringGetCStringPtr(IntPtr theString, CFStringEncoding encoding);
 
     /// <summary>
@@ -93,6 +100,7 @@ internal static class CoreFoundation
     /// </summary>
     /// <param name="cf">A CFType object to release. This value must not be <c>NULL</c>.</param>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern void CFRelease(IntPtr cf);
 
     /// <summary>
@@ -103,6 +111,7 @@ internal static class CoreFoundation
     /// <returns>The URL's path in the format specified by <paramref name="pathStyle"/>. Ownership follows the create rule. See The Create Rule.</returns>
     /// <remarks>This function returns the URL's path as a file system path for a given path style.</remarks>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern IntPtr CFURLCopyFileSystemPath(IntPtr anURL, CFURLPathStyle pathStyle);
 
     /// <summary>
@@ -110,5 +119,6 @@ internal static class CoreFoundation
     /// </summary>
     /// <returns>The type identifier for the CFURL opaque type.</returns>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern ulong CFURLGetTypeID();
 }

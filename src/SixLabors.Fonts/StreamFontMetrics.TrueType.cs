@@ -20,7 +20,6 @@ namespace SixLabors.Fonts;
 /// </content>
 internal partial class StreamFontMetrics
 {
-    [ThreadStatic]
     private TrueTypeInterpreter? interpreter;
 
     internal void ApplyTrueTypeHinting(HintingMode hintingMode, GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float pixelSize)
