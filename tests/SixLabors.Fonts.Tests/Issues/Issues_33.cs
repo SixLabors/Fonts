@@ -20,14 +20,14 @@ public class Issues_33
         Font font = CreateFont(text);
         FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
-        Assert.Equal(height, size.Height, 2);
-        Assert.Equal(width, size.Width, 2);
+        Assert.Equal(height, size.Height, 2F);
+        Assert.Equal(width, size.Width, 2F);
     }
 
     public static Font CreateFont(string text)
     {
         var fc = (IFontMetricsCollection)new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
-        return new Font(d, 1);
+        return new Font(d, 1F);
     }
 }

@@ -13,12 +13,12 @@ internal ref struct SimpleBinaryReader
         this.Position = 0;
     }
 
-    public int Length => this.buffer.Length;
+    public readonly int Length => this.buffer.Length;
 
     // TODO: Bounds checks.
     public int Position { get; set; }
 
-    public bool CanRead() => (uint)this.Position < this.buffer.Length;
+    public readonly bool CanRead() => (uint)this.Position < this.buffer.Length;
 
     public byte ReadByte() => this.buffer[this.Position++];
 

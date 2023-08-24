@@ -34,7 +34,7 @@ public ref struct SpanGraphemeEnumerator
     /// Returns an enumerator that iterates through the collection.
     /// </summary>
     /// <returns>An enumerator that iterates through the collection.</returns>
-    public SpanGraphemeEnumerator GetEnumerator() => this;
+    public readonly SpanGraphemeEnumerator GetEnumerator() => this;
 
     /// <summary>
     /// Advances the enumerator to the next element of the collection.

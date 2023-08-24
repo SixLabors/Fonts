@@ -115,10 +115,10 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> glyphsToRender = TextLayout.GenerateLayout(text.AsSpan(), options);
         FontRectangle bound = TextMeasurer.GetBounds(glyphsToRender, options.Dpi);
 
-        Assert.Equal(310, bound.Width, 3);
-        Assert.Equal(40, bound.Height, 3);
-        Assert.Equal(left, bound.Left, 3);
-        Assert.Equal(top, bound.Top, 3);
+        Assert.Equal(310, bound.Width, 3F);
+        Assert.Equal(40, bound.Height, 3F);
+        Assert.Equal(left, bound.Left, 3F);
+        Assert.Equal(top, bound.Top, 3F);
     }
 
     [Theory]
@@ -190,10 +190,10 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> glyphsToRender = TextLayout.GenerateLayout(text.AsSpan(), options);
         FontRectangle bound = TextMeasurer.GetBounds(glyphsToRender, options.Dpi);
 
-        Assert.Equal(310, bound.Width, 3);
-        Assert.Equal(40, bound.Height, 3);
-        Assert.Equal(left, bound.Left, 3);
-        Assert.Equal(top, bound.Top, 3);
+        Assert.Equal(310, bound.Width, 3F);
+        Assert.Equal(40, bound.Height, 3F);
+        Assert.Equal(left, bound.Left, 3F);
+        Assert.Equal(top, bound.Top, 3F);
     }
 
     [Fact]
@@ -213,8 +213,8 @@ public class TextLayoutTests
         // 72 * emSize means 1pt = 1px
         FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
-        Assert.Equal(10, size.Height, 4);
-        Assert.Equal(130, size.Width, 4);
+        Assert.Equal(10, size.Height, 4F);
+        Assert.Equal(130, size.Width, 4F);
     }
 
     [Theory]
@@ -230,8 +230,8 @@ public class TextLayoutTests
         Font font = CreateFont(text);
         FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
-        Assert.Equal(height, size.Height, 4);
-        Assert.Equal(width, size.Width, 4);
+        Assert.Equal(height, size.Height, 4F);
+        Assert.Equal(width, size.Width, 4F);
     }
 
     [Fact]
@@ -261,10 +261,10 @@ public class TextLayoutTests
             Assert.Equal(expected.Codepoint, actual.Codepoint);
 
             // 4 dp as there is minor offset difference in the float values
-            Assert.Equal(expected.Bounds.X, actual.Bounds.X, 4);
-            Assert.Equal(expected.Bounds.Y, actual.Bounds.Y, 4);
-            Assert.Equal(expected.Bounds.Height, actual.Bounds.Height, 4);
-            Assert.Equal(expected.Bounds.Width, actual.Bounds.Width, 4);
+            Assert.Equal(expected.Bounds.X, actual.Bounds.X, 4F);
+            Assert.Equal(expected.Bounds.Y, actual.Bounds.Y, 4F);
+            Assert.Equal(expected.Bounds.Height, actual.Bounds.Height, 4F);
+            Assert.Equal(expected.Bounds.Width, actual.Bounds.Width, 4F);
         }
     }
 
@@ -288,8 +288,8 @@ public class TextLayoutTests
             LayoutMode = LayoutMode.HorizontalTopBottom
         });
 
-        Assert.Equal(width, size.Width, 4);
-        Assert.Equal(height, size.Height, 4);
+        Assert.Equal(width, size.Width, 4F);
+        Assert.Equal(height, size.Height, 4F);
     }
 
     [Theory]
@@ -312,8 +312,8 @@ public class TextLayoutTests
             LayoutMode = LayoutMode.HorizontalBottomTop
         });
 
-        Assert.Equal(width, size.Width, 4);
-        Assert.Equal(height, size.Height, 4);
+        Assert.Equal(width, size.Width, 4F);
+        Assert.Equal(height, size.Height, 4F);
     }
 
     [Theory]
@@ -330,8 +330,8 @@ public class TextLayoutTests
             LayoutMode = LayoutMode.VerticalLeftRight
         });
 
-        Assert.Equal(width, size.Width, 4);
-        Assert.Equal(height, size.Height, 4);
+        Assert.Equal(width, size.Width, 4F);
+        Assert.Equal(height, size.Height, 4F);
     }
 
     [Theory]
@@ -348,8 +348,8 @@ public class TextLayoutTests
             LayoutMode = LayoutMode.VerticalRightLeft
         });
 
-        Assert.Equal(width, size.Width, 4);
-        Assert.Equal(height, size.Height, 4);
+        Assert.Equal(width, size.Width, 4F);
+        Assert.Equal(height, size.Height, 4F);
     }
 
     [Theory]
@@ -366,8 +366,8 @@ public class TextLayoutTests
             LayoutMode = LayoutMode.VerticalMixedLeftRight
         });
 
-        Assert.Equal(width, size.Width, 4);
-        Assert.Equal(height, size.Height, 4);
+        Assert.Equal(width, size.Width, 4F);
+        Assert.Equal(height, size.Height, 4F);
     }
 
 #if OS_WINDOWS
@@ -398,8 +398,8 @@ public class TextLayoutTests
                 FallbackFontFamilies = new[] { jhengHei }
             });
 
-        Assert.Equal(width, size.Width, 4);
-        Assert.Equal(height, size.Height, 4);
+        Assert.Equal(width, size.Width, 4F);
+        Assert.Equal(height, size.Height, 4F);
     }
 #endif
 
@@ -420,8 +420,8 @@ public class TextLayoutTests
                 KerningMode = applyKerning ? KerningMode.Standard : KerningMode.None,
             });
 
-        Assert.Equal(height, size.Height, 4);
-        Assert.Equal(width, size.Width, 4);
+        Assert.Equal(height, size.Height, 4F);
+        Assert.Equal(width, size.Width, 4F);
     }
 
     [Theory]
@@ -441,8 +441,8 @@ public class TextLayoutTests
                 Origin = new Vector2(x, y)
             });
 
-        Assert.Equal(expectedX, glyphRenderer.GlyphRects[0].Location.X, 2);
-        Assert.Equal(expectedY, glyphRenderer.GlyphRects[0].Location.Y, 2);
+        Assert.Equal(expectedX, glyphRenderer.GlyphRects[0].Location.X, 2F);
+        Assert.Equal(expectedY, glyphRenderer.GlyphRects[0].Location.Y, 2F);
     }
 
     // https://github.com/SixLabors/Fonts/issues/244
@@ -620,7 +620,7 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
 
-        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Width), 4);
+        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Width), 4F);
 
         // Now compare character widths.
         options.TextJustification = TextJustification.None;
@@ -664,7 +664,7 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
 
-        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Width), 4);
+        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Width), 4F);
 
         // Now compare character widths.
         options.TextJustification = TextJustification.None;
@@ -709,7 +709,7 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
 
-        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Height), 4);
+        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Height), 4F);
 
         // Now compare character widths.
         options.TextJustification = TextJustification.None;
@@ -754,7 +754,7 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
 
-        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Height), 4);
+        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Height), 4F);
 
         // Now compare character widths.
         options.TextJustification = TextJustification.None;
@@ -997,8 +997,8 @@ public class TextLayoutTests
             if (lastAdvance.HasValue)
             {
                 Assert.Equal(lastAdvance.Value.Bounds, advance.Bounds);
-                Assert.Equal(lastSize.Value.Bounds.Width, size.Bounds.Width, 2);
-                Assert.Equal(lastSize.Value.Bounds.Height, size.Bounds.Height, 2);
+                Assert.Equal(lastSize.Value.Bounds.Width, size.Bounds.Width, 2F);
+                Assert.Equal(lastSize.Value.Bounds.Height, size.Bounds.Height, 2F);
             }
 
             lastAdvance = advance;
@@ -1161,7 +1161,7 @@ public class TextLayoutTests
     {
         var fc = (IFontMetricsCollection)new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
-        return new Font(d, 1);
+        return new Font(d, 1F);
     }
 
     public static Font CreateFont(string text, float pointSize)

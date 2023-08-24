@@ -59,7 +59,7 @@ internal ref struct LineBreakEnumerator
     /// Returns an enumerator that iterates through the collection.
     /// </summary>
     /// <returns>An enumerator that iterates through the collection.</returns>
-    public LineBreakEnumerator GetEnumerator() => this;
+    public readonly LineBreakEnumerator GetEnumerator() => this;
 
     /// <summary>
     /// Advances the enumerator to the next element of the collection.
@@ -75,7 +75,7 @@ internal ref struct LineBreakEnumerator
         {
             LineBreakClass firstClass = this.NextCharClass();
             this.first = false;
-            this.currentClass = this.MapFirst(firstClass);
+            this.currentClass = MapFirst(firstClass);
             this.nextClass = firstClass;
             this.lb8a = firstClass == LineBreakClass.ZWJ;
             this.lb30a = 0;
@@ -92,7 +92,7 @@ internal ref struct LineBreakEnumerator
             {
                 case LineBreakClass.BK:
                 case LineBreakClass.CR when this.nextClass != LineBreakClass.LF:
-                    this.currentClass = this.MapFirst(this.nextClass);
+                    this.currentClass = MapFirst(this.nextClass);
                     this.Current = new LineBreak(this.FindPriorNonWhitespace(this.lastPosition), this.lastPosition, true);
                     return true;
             }
@@ -129,7 +129,7 @@ internal ref struct LineBreakEnumerator
         return false;
     }
 
-    private LineBreakClass MapClass(CodePoint cp, LineBreakClass c)
+    private static LineBreakClass MapClass(CodePoint cp, LineBreakClass c)
     {
         // LB 1
         // ==========================================
@@ -160,7 +160,7 @@ internal ref struct LineBreakEnumerator
         }
     }
 
-    private LineBreakClass MapFirst(LineBreakClass c)
+    private static LineBreakClass MapFirst(LineBreakClass c)
         => c switch
         {
             LineBreakClass.LF or LineBreakClass.NL => LineBreakClass.BK,
@@ -168,28 +168,28 @@ internal ref struct LineBreakEnumerator
             _ => c,
         };
 
-    private bool IsAlphaNumeric(LineBreakClass cls)
+    private static bool IsAlphaNumeric(LineBreakClass cls)
         => cls is LineBreakClass.AL
         or LineBreakClass.HL
         or LineBreakClass.NU;
 
-    private LineBreakClass PeekNextCharClass()
+    private readonly LineBreakClass PeekNextCharClass()
     {
-        var cp = CodePoint.DecodeFromUtf16At(this.source, this.charPosition);
-        return this.MapClass(cp, CodePoint.GetLineBreakClass(cp));
+        CodePoint cp = CodePoint.DecodeFromUtf16At(this.source, this.charPosition);
+        return MapClass(cp, CodePoint.GetLineBreakClass(cp));
     }
 
     // Get the next character class
     private LineBreakClass NextCharClass()
     {
-        var cp = CodePoint.DecodeFromUtf16At(this.source, this.charPosition, out int count);
-        LineBreakClass cls = this.MapClass(cp, CodePoint.GetLineBreakClass(cp));
+        CodePoint cp = CodePoint.DecodeFromUtf16At(this.source, this.charPosition, out int count);
+        LineBreakClass cls = MapClass(cp, CodePoint.GetLineBreakClass(cp));
         this.charPosition += count;
         this.position++;
 
         // Keep track of alphanumeric + any combining marks.
         // This is used for LB22 and LB30.
-        if (this.IsAlphaNumeric(this.currentClass) || (this.alphaNumericCount > 0 && cls == LineBreakClass.CM))
+        if (IsAlphaNumeric(this.currentClass) || (this.alphaNumericCount > 0 && cls == LineBreakClass.CM))
         {
             this.alphaNumericCount++;
         }
@@ -455,7 +455,7 @@ internal ref struct LineBreakEnumerator
             // Mahjong Tiles (Unicode block) are extended pictographics but have a class of ID
             // Unassigned codepoints with Line_Break=ID in some blocks are also assigned the Extended_Pictographic property.
             // Those blocks are intended for future allocation of emoji characters.
-            var cp = CodePoint.DecodeFromUtf16At(this.source, this.lastPosition - 1, out int _);
+            CodePoint cp = CodePoint.DecodeFromUtf16At(this.source, this.lastPosition - 1, out int _);
             if (UnicodeUtility.IsInRangeInclusive((uint)cp.Value, 0x1F000, 0x1F02F))
             {
                 shouldBreak = false;
@@ -467,11 +467,11 @@ internal ref struct LineBreakEnumerator
         return shouldBreak;
     }
 
-    private int FindPriorNonWhitespace(int from)
+    private readonly int FindPriorNonWhitespace(int from)
     {
         if (from > 0)
         {
-            var cp = CodePoint.DecodeFromUtf16At(this.source, from - 1, out int count);
+            CodePoint cp = CodePoint.DecodeFromUtf16At(this.source, from - 1, out int count);
             LineBreakClass cls = CodePoint.GetLineBreakClass(cp);
 
             if (cls is LineBreakClass.BK or LineBreakClass.LF or LineBreakClass.CR)
@@ -482,7 +482,7 @@ internal ref struct LineBreakEnumerator
 
         while (from > 0)
         {
-            var cp = CodePoint.DecodeFromUtf16At(this.source, from - 1, out int count);
+            CodePoint cp = CodePoint.DecodeFromUtf16At(this.source, from - 1, out int count);
             LineBreakClass cls = CodePoint.GetLineBreakClass(cp);
 
             if (cls == LineBreakClass.SP)

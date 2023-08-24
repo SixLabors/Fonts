@@ -14,7 +14,7 @@ namespace SixLabors.Fonts;
 /// Unlike <see cref="ReadOnlySpan{T}"/>, it is not a byref-like type.
 /// </summary>
 /// <typeparam name="T">The type of item contained in the slice.</typeparam>
-internal readonly struct ReadOnlyArraySlice<T> : IEnumerable<T>, IEnumerable
+internal readonly struct ReadOnlyArraySlice<T> : IEnumerable<T>
     where T : struct
 {
     private readonly T[] data;
@@ -48,7 +48,7 @@ internal readonly struct ReadOnlyArraySlice<T> : IEnumerable<T>, IEnumerable
     /// <summary>
     /// Gets an empty <see cref="ReadOnlyArraySlice{T}"/>
     /// </summary>
-    public static ReadOnlyArraySlice<T> Empty => new(new T[0]);
+    public static ReadOnlyArraySlice<T> Empty => new(Array.Empty<T>());
 
     /// <summary>
     /// Gets the offset position in the underlying buffer this slice was created from.
@@ -91,6 +91,7 @@ internal readonly struct ReadOnlyArraySlice<T> : IEnumerable<T>, IEnumerable
     /// <summary>
     /// Defines an implicit conversion of an array to a <see cref="ReadOnlyArraySlice{T}"/>
     /// </summary>
+    /// <param name="array">The input array.</param>
     public static implicit operator ReadOnlyArraySlice<T>(T[] array)
         => new(array, 0, array.Length);
 
@@ -148,7 +149,7 @@ internal readonly struct ReadOnlyArraySlice<T> : IEnumerable<T>, IEnumerable
         }
 
         /// <inheritdoc/>
-        public T Current
+        public readonly T Current
         {
             get
             {
@@ -183,7 +184,7 @@ internal readonly struct ReadOnlyArraySlice<T> : IEnumerable<T>, IEnumerable
         /// <inheritdoc/>
         void IEnumerator.Reset() => this.current = this.start - 1;
 
-        public void Dispose()
+        public readonly void Dispose()
         {
         }
 

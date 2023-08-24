@@ -61,7 +61,7 @@ internal sealed class IndicShaper : DefaultShaper
             this.indicConfiguration = ShapingConfiguration.Default;
         }
 
-        this.isOldSpec = this.indicConfiguration.HasOldSpec && !unicodeScriptTag.ToString().EndsWith("2");
+        this.isOldSpec = this.indicConfiguration.HasOldSpec && !unicodeScriptTag.ToString().EndsWith("2", StringComparison.OrdinalIgnoreCase);
     }
 
     protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
@@ -113,7 +113,7 @@ internal sealed class IndicShaper : DefaultShaper
                 UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out decompositions)) &&
                 decompositions != null)
             {
-                Span<ushort> ids = buffer.Slice(0, decompositions.Length);
+                Span<ushort> ids = buffer[..decompositions.Length];
                 for (int j = 0; j < decompositions.Length; j++)
                 {
                     // Font should always contain the decomposed glyph.
@@ -238,6 +238,7 @@ internal sealed class IndicShaper : DefaultShaper
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
+        Span<ushort> glyphs = stackalloc ushort[2];
         while (start < max)
         {
             GlyphShapingData data = substitutionCollection[start];
@@ -270,7 +271,6 @@ internal sealed class IndicShaper : DefaultShaper
                     current = substitutionCollection[i];
                 }
 
-                Span<ushort> glyphs = stackalloc ushort[2];
                 glyphs[0] = current.GlyphId;
                 glyphs[1] = id;
 
@@ -278,8 +278,8 @@ internal sealed class IndicShaper : DefaultShaper
 
                 // Update shaping info for newly inserted data.
                 GlyphShapingData dotted = substitutionCollection[i + 1];
-                var dottedCategory = (Categories)(1 << IndicShapingCategory(dotted.CodePoint));
-                var dottedPosition = (Positions)IndicShapingPosition(dotted.CodePoint);
+                Categories dottedCategory = (Categories)(1 << IndicShapingCategory(dotted.CodePoint));
+                Positions dottedPosition = (Positions)IndicShapingPosition(dotted.CodePoint);
                 dotted.IndicShapingEngineInfo = new(dottedCategory, dottedPosition, dataInfo.SyllableType, dataInfo.Syllable);
 
                 end++;
@@ -313,7 +313,7 @@ internal sealed class IndicShaper : DefaultShaper
                 tempBuffer[0] = substitutionCollection[start];
 
                 if ((indicConfiguration.RephMode == RephMode.Explicit && this.WouldSubstitute(tempCollection, in RphfTag, tempBuffer)) ||
-                    this.WouldSubstitute(tempCollection, in RphfTag, tempBuffer.Slice(0, 2)))
+                    this.WouldSubstitute(tempCollection, in RphfTag, tempBuffer[..2]))
                 {
                     limit += 2;
                     while (limit < end && IsJoiner(substitutionCollection[limit]))
@@ -699,7 +699,7 @@ internal sealed class IndicShaper : DefaultShaper
                 {
                     tempBuffer[1] = substitutionCollection[i + 1];
                     tempBuffer[0] = substitutionCollection[i];
-                    if (this.WouldSubstitute(tempCollection, in PrefTag, tempBuffer.Slice(0, 2)))
+                    if (this.WouldSubstitute(tempCollection, in PrefTag, tempBuffer[..2]))
                     {
                         for (int j = 0; j < prefLen; j++)
                         {
@@ -760,19 +760,19 @@ internal sealed class IndicShaper : DefaultShaper
 
     private Positions ConsonantPosition(GlyphSubstitutionCollection collection, ReadOnlySpan<GlyphShapingData> data)
     {
-        if (this.WouldSubstitute(collection, in BlwfTag, data.Slice(0, 2)) ||
+        if (this.WouldSubstitute(collection, in BlwfTag, data[..2]) ||
             this.WouldSubstitute(collection, in BlwfTag, data.Slice(1, 2)))
         {
             return Positions.Below_C;
         }
 
-        if (this.WouldSubstitute(collection, in PstfTag, data.Slice(0, 2)) ||
+        if (this.WouldSubstitute(collection, in PstfTag, data[..2]) ||
             this.WouldSubstitute(collection, in PstfTag, data.Slice(1, 2)))
         {
             return Positions.Post_C;
         }
 
-        if (this.WouldSubstitute(collection, in PrefTag, data.Slice(0, 2)) ||
+        if (this.WouldSubstitute(collection, in PrefTag, data[..2]) ||
             this.WouldSubstitute(collection, in PrefTag, data.Slice(1, 2)))
         {
             return Positions.Post_C;

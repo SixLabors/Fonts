@@ -15,7 +15,7 @@ public readonly struct FontRectangle : IEquatable<FontRectangle>
     /// <summary>
     /// Represents a <see cref="FontRectangle"/> that has X, Y, Width, and Height values set to zero.
     /// </summary>
-    public static readonly FontRectangle Empty = default;
+    public static readonly FontRectangle Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FontRectangle"/> struct.
@@ -205,8 +205,8 @@ public readonly struct FontRectangle : IEquatable<FontRectangle>
     /// <returns>A transformed <see cref="FontRectangle"/>.</returns>
     public static FontRectangle Transform(in FontRectangle rectangle, Matrix3x2 matrix)
     {
-        var bottomRight = Vector2.Transform(new Vector2(rectangle.Right, rectangle.Bottom), matrix);
-        var topLeft = Vector2.Transform(rectangle.Location, matrix);
+        Vector2 bottomRight = Vector2.Transform(new Vector2(rectangle.Right, rectangle.Bottom), matrix);
+        Vector2 topLeft = Vector2.Transform(rectangle.Location, matrix);
         Vector2 size = bottomRight - topLeft;
 
         return new FontRectangle(topLeft, size);

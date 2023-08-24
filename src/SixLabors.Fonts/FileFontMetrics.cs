@@ -164,14 +164,14 @@ internal sealed class FileFontMetrics : FontMetrics
     {
         using FileStream fs = File.OpenRead(path);
         long startPos = fs.Position;
-        var reader = new BigEndianBinaryReader(fs, true);
-        var ttcHeader = TtcHeader.Read(reader);
-        var fonts = new FileFontMetrics[(int)ttcHeader.NumFonts];
+        BigEndianBinaryReader reader = new(fs, true);
+        TtcHeader ttcHeader = TtcHeader.Read(reader);
+        FileFontMetrics[] fonts = new FileFontMetrics[(int)ttcHeader.NumFonts];
 
         for (int i = 0; i < ttcHeader.NumFonts; ++i)
         {
             fs.Position = startPos + ttcHeader.OffsetTable[i];
-            var description = FontDescription.LoadDescription(fs);
+            FontDescription description = FontDescription.LoadDescription(fs);
             fonts[i] = new FileFontMetrics(description, path, ttcHeader.OffsetTable[i]);
         }
 

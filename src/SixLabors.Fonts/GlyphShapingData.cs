@@ -90,12 +90,12 @@ internal class GlyphShapingData
     /// <summary>
     /// Gets or sets the id of any ligature this glyph is a member of.
     /// </summary>
-    public int LigatureId { get; set; } = 0;
+    public int LigatureId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the glyph is ligated.
     /// </summary>
-    public bool IsLigated { get; set; } = false;
+    public bool IsLigated { get; set; }
 
     /// <summary>
     /// Gets or sets the ligature component index of the glyph.

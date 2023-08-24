@@ -3,7 +3,6 @@
 
 #nullable enable
 
-
 namespace UnicodeTrieGenerator.StateAutomation;
 
 internal static class Compile

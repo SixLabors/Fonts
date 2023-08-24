@@ -137,7 +137,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     /// <inheritdoc/>
     FontFamily IFontMetricsCollection.AddMetrics(FontMetrics metrics, CultureInfo culture)
     {
-        ((IFontMetricsCollection)this).AddMetrics(metrics);
+        ((IFontMetricsCollection)this).AddMetrics(metrics, culture);
         return new FontFamily(metrics.Description.FontFamily(culture), this, culture);
     }
 

@@ -117,5 +117,5 @@ internal struct GlyphVector
     /// Returns a value indicating whether the current instance is empty.
     /// </summary>
     /// <returns>The <see cref="bool"/> indicating the result.</returns>
-    public bool HasValue() => this.ControlPoints?.Count > 0;
+    public readonly bool HasValue() => this.ControlPoints?.Count > 0;
 }

@@ -325,11 +325,13 @@ internal class UnicodeTrieBuilder
     /// </summary>
     /// <param name="codePoint">The code point.</param>
     /// <param name="value">The value.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Invalid codepoint.</exception>
+    /// <exception cref="InvalidOperationException">Already compacted.</exception>
     public void Set(int codePoint, uint value)
     {
         if (codePoint is < 0 or > 0x10ffff)
         {
-            throw new ArgumentOutOfRangeException("Invalid code point");
+            throw new ArgumentOutOfRangeException(nameof(codePoint));
         }
 
         if (this.isCompacted)
@@ -351,11 +353,13 @@ internal class UnicodeTrieBuilder
     /// <param name="end">The last code point to get the value (inclusive).</param>
     /// <param name="value">The value.</param>
     /// <param name="overwrite">Whether old non-initial values are to be overwritten.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Invalid codepoint.</exception>
+    /// <exception cref="InvalidOperationException">Already compacted.</exception>
     public void SetRange(int start, int end, uint value, bool overwrite)
     {
         if ((start > 0x10ffff) || (end > 0x10ffff) || start > end)
         {
-            throw new ArgumentOutOfRangeException("Invalid code point");
+            throw new ArgumentOutOfRangeException(nameof(start));
         }
 
         if (this.isCompacted)
@@ -378,12 +382,6 @@ internal class UnicodeTrieBuilder
 
             // set partial block at [start..following block boundary[
             block = this.GetDataBlock(start, true);
-
-            if (block < 0)
-            {
-                throw new IndexOutOfRangeException(nameof(block));
-            }
-
             nextStart = (start + UTRIE2_DATA_MASK) & ~UTRIE2_DATA_MASK;
             if (nextStart <= limit)
             {
@@ -426,11 +424,6 @@ internal class UnicodeTrieBuilder
 
             // get index value
             i2 = this.GetIndex2Block(start, true);
-            if (i2 < 0)
-            {
-                throw new IndexOutOfRangeException(nameof(i2));
-            }
-
             i2 += (start >> UTRIE2_SHIFT_2) & UTRIE2_INDEX_2_MASK;
             block = this.index2[i2];
             if (this.IsWritableBlock(block))
@@ -478,11 +471,6 @@ internal class UnicodeTrieBuilder
                 {
                     // create and set and fill the repeatBlock
                     repeatBlock = this.GetDataBlock(start, true);
-                    if (repeatBlock < 0)
-                    {
-                        throw new IndexOutOfRangeException(nameof(repeatBlock));
-                    }
-
                     this.WriteBlock(repeatBlock, value);
                 }
             }
@@ -494,11 +482,6 @@ internal class UnicodeTrieBuilder
         {
             // set partial block at [last block boundary..limit[
             block = this.GetDataBlock(start, true);
-            if (block < 0)
-            {
-                throw new IndexOutOfRangeException(nameof(block));
-            }
-
             this.FillBlock(block, 0, rest, value, this.initialValue, overwrite);
         }
     }
@@ -507,6 +490,7 @@ internal class UnicodeTrieBuilder
     /// Compacts the data and populates an optimized readonly Trie.
     /// </summary>
     /// <returns>The <see cref="UnicodeTrie"/>.</returns>
+    /// <exception cref="InvalidOperationException">Trie data is too large.</exception>
     public UnicodeTrie Freeze()
     {
         int allIndexesLength, i;
@@ -619,12 +603,6 @@ internal class UnicodeTrieBuilder
     private int GetDataBlock(int c, bool forLSCP)
     {
         int i2 = this.GetIndex2Block(c, forLSCP);
-
-        if (i2 < 0)
-        {
-            throw new IndexOutOfRangeException(nameof(i2));
-        }
-
         i2 += (c >> UTRIE2_SHIFT_2) & UTRIE2_INDEX_2_MASK;
 
         int oldBlock = this.index2[i2];
@@ -635,12 +613,6 @@ internal class UnicodeTrieBuilder
 
         // allocate a new data block
         int newBlock = this.AllocDataBlock(oldBlock);
-
-        if (newBlock < 0)
-        {
-            throw new IndexOutOfRangeException(nameof(newBlock));
-        }
-
         this.SetIndex2Entry(i2, newBlock);
         return newBlock;
     }
@@ -657,11 +629,6 @@ internal class UnicodeTrieBuilder
         if (i2 == this.index2NullOffset)
         {
             i2 = this.AllocIndex2Block();
-            if (i2 < 0)
-            {
-                throw new IndexOutOfRangeException(nameof(i2));
-            }
-
             this.index1[i1] = i2;
         }
 

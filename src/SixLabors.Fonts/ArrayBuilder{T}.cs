@@ -37,7 +37,7 @@ internal struct ArrayBuilder<T>
     /// </summary>
     public int Length
     {
-        get => this.size;
+        readonly get => this.size;
 
         set
         {
@@ -64,7 +64,7 @@ internal struct ArrayBuilder<T>
     /// <exception cref="IndexOutOfRangeException">
     /// Thrown when index less than 0 or index greater than or equal to <see cref="Length"/>.
     /// </exception>
-    public ref T this[int index]
+    public readonly ref T this[int index]
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
@@ -178,7 +178,7 @@ internal struct ArrayBuilder<T>
     /// <param name="length">The number of items in the slice.</param>
     /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ArraySlice<T> AsSlice(int length)
+    public readonly ArraySlice<T> AsSlice(int length)
         => new(this.data!, 0, length);
 
     /// <summary>
@@ -188,6 +188,6 @@ internal struct ArrayBuilder<T>
     /// <param name="length">The number of items in the slice.</param>
     /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ArraySlice<T> AsSlice(int start, int length)
+    public readonly ArraySlice<T> AsSlice(int start, int length)
         => new(this.data!, start, length);
 }

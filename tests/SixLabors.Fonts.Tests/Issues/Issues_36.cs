@@ -22,7 +22,7 @@ public class Issues_36
         string tabString = string.Empty.PadRight(tabCount, '\t');
         FontRectangle tabCountWidth = TextMeasurer.MeasureBounds(tabString, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
 
-        Assert.Equal(tabWidth.Width * tabCount, tabCountWidth.Width, 2);
+        Assert.Equal(tabWidth.Width * tabCount, tabCountWidth.Width, 2F);
     }
 
     [Theory]
@@ -42,13 +42,13 @@ public class Issues_36
 
         float singleTabWidth = tabWidth.Width - xWidth.Width;
         float finalTabWidth = tabCountWidth.Width - xWidth.Width;
-        Assert.Equal(singleTabWidth * tabCount, finalTabWidth, 2);
+        Assert.Equal(singleTabWidth * tabCount, finalTabWidth, 2F);
     }
 
     public static Font CreateFont(string text)
     {
         var fc = (IFontMetricsCollection)new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
-        return new Font(d, 1);
+        return new Font(d, 1F);
     }
 }

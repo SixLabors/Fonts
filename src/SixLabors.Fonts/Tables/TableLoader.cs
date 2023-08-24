@@ -97,6 +97,6 @@ internal class TableLoader
             return (TTable?)func.Invoke(reader);
         }
 
-        throw new Exception("Font table not registered.");
+        throw new MissingFontTableException("Font table not registered.", nameof(TTable));
     }
 }

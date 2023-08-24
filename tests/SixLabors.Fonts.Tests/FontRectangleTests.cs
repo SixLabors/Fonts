@@ -178,8 +178,8 @@ public class FontRectangleTests
     public void IntersectIntersectingRectsTest()
     {
         var rect1 = new FontRectangle(0, 0, 5, 5);
-        var rect2 = new FontRectangle(1, 1, 3, 3);
-        var expected = new FontRectangle(1, 1, 3, 3);
+        var rect2 = new FontRectangle(1, 1, 3, 3F);
+        var expected = new FontRectangle(1, 1, 3, 3F);
 
         Assert.Equal(expected, FontRectangle.Intersect(rect1, rect2));
     }
@@ -226,7 +226,7 @@ public class FontRectangleTests
     [Fact]
     public void ToStringTest()
     {
-        var r = new FontRectangle(5, 5.1F, 1.3F, 1);
+        var r = new FontRectangle(5, 5.1F, 1.3F, 1F);
         Assert.Equal(string.Format(CultureInfo.CurrentCulture, "FontRectangle [ X={0}, Y={1}, Width={2}, Height={3} ]", r.X, r.Y, r.Width, r.Height), r.ToString());
     }
 

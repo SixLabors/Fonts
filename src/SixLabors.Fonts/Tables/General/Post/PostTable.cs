@@ -122,7 +122,7 @@ internal class PostTable : Table
         uint minMemType1 = reader.ReadUInt32();
         uint maxMemType1 = reader.ReadUInt32();
 
-        var records = new PostNameRecord[0];
+        PostNameRecord[] records = Array.Empty<PostNameRecord>();
 
         if (formatMajor == 1)
         {

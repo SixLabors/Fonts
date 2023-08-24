@@ -50,7 +50,7 @@ public class GlyphVectorTests
     public void TtfTransformWith2x2Matrix_Works()
     {
         // arrange
-        int precision = 2;
+        const float precision = 2F;
         ControlPoint[] controlPoints =
         {
             new(new Vector2(653.0f, 791.0f), true),

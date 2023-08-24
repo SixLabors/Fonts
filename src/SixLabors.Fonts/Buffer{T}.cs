@@ -35,7 +35,7 @@ internal ref struct Buffer<T>
 
     public Memory<T> Memory { get; }
 
-    public Span<T> GetSpan()
+    public readonly Span<T> GetSpan()
     {
         if (this.buffer is null)
         {

@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Benchmarks;
 /// <para>We should see if we can include the Skia HarfBuzz extensions to see how we compare.</para>
 /// </summary>
 [MediumRunJob]
-public class MeasureTextBenchmark : IDisposable
+public sealed class MeasureTextBenchmark : IDisposable
 {
     private readonly TextOptions textOptions;
     private readonly SKTypeface arialTypeface;

@@ -205,7 +205,7 @@ internal class TrueTypeInterpreter
                 // ==== STORAGE MANAGEMENT ====
                 case OpCode.RS:
                 {
-                    int loc = this.CheckIndex(this.stack.Pop(), this.storage.Length);
+                    int loc = CheckIndex(this.stack.Pop(), this.storage.Length);
                     this.stack.Push(this.storage[loc]);
                 }
 
@@ -213,7 +213,7 @@ internal class TrueTypeInterpreter
                 case OpCode.WS:
                 {
                     int value = this.stack.Pop();
-                    int loc = this.CheckIndex(this.stack.Pop(), this.storage.Length);
+                    int loc = CheckIndex(this.stack.Pop(), this.storage.Length);
                     this.storage[loc] = value;
                 }
 
@@ -223,7 +223,7 @@ internal class TrueTypeInterpreter
                 case OpCode.WCVTP:
                 {
                     float value = this.stack.PopFloat();
-                    int loc = this.CheckIndex(this.stack.Pop(), this.controlValueTable.Length);
+                    int loc = CheckIndex(this.stack.Pop(), this.controlValueTable.Length);
                     this.controlValueTable[loc] = value;
                 }
 
@@ -231,7 +231,7 @@ internal class TrueTypeInterpreter
                 case OpCode.WCVTF:
                 {
                     int value = this.stack.Pop();
-                    int loc = this.CheckIndex(this.stack.Pop(), this.controlValueTable.Length);
+                    int loc = CheckIndex(this.stack.Pop(), this.controlValueTable.Length);
                     this.controlValueTable[loc] = value * this.scale;
                 }
 
@@ -1193,7 +1193,7 @@ internal class TrueTypeInterpreter
                     int b = this.stack.Pop();
                     if (b == 0)
                     {
-                        throw new Exception("Division by zero.");
+                        throw new InvalidOperationException("Division by zero.");
                     }
 
                     int a = this.stack.Pop();
@@ -1252,7 +1252,7 @@ internal class TrueTypeInterpreter
                 {
                     if (!allowFunctionDefs || inFunction)
                     {
-                        throw new Exception("Can't define functions here.");
+                        throw new FontException("Can't define functions here.");
                     }
 
                     this.functions[this.stack.Pop()] = stream.ToMemory();
@@ -1266,7 +1266,7 @@ internal class TrueTypeInterpreter
                 {
                     if (!allowFunctionDefs || inFunction)
                     {
-                        throw new Exception("Can't define functions here.");
+                        throw new FontException("Can't define functions here.");
                     }
 
                     this.instructionDefs[this.stack.Pop()] = stream.ToMemory();
@@ -1280,7 +1280,7 @@ internal class TrueTypeInterpreter
                 {
                     if (!inFunction)
                     {
-                        throw new Exception("Found invalid ENDF marker outside of a function definition.");
+                        throw new FontException("Found invalid ENDF marker outside of a function definition.");
                     }
 
                     return;
@@ -1292,7 +1292,7 @@ internal class TrueTypeInterpreter
                     this.callStackSize++;
                     if (this.callStackSize > MaxCallStack)
                     {
-                        throw new Exception("Stack overflow; infinite recursion?");
+                        throw new FontException("Stack overflow; infinite recursion?");
                     }
 
                     InstructionStream function = this.functions[this.stack.Pop()];
@@ -1357,7 +1357,7 @@ internal class TrueTypeInterpreter
                             amount *= 1 << (6 - this.state.DeltaShift);
 
                             // update the CVT
-                            this.CheckIndex(cvtIndex, this.controlValueTable.Length);
+                            CheckIndex(cvtIndex, this.controlValueTable.Length);
                             this.controlValueTable[cvtIndex] += F26Dot6ToFloat(amount);
                         }
                     }
@@ -1463,13 +1463,13 @@ internal class TrueTypeInterpreter
                         int index = (int)opcode;
                         if (index > this.instructionDefs.Length || !this.instructionDefs[index].IsValid)
                         {
-                            throw new Exception("Unknown opcode in font program.");
+                            throw new FontException("Unknown opcode in font program.");
                         }
 
                         this.callStackSize++;
                         if (this.callStackSize > MaxCallStack)
                         {
-                            throw new Exception("Stack overflow; infinite recursion?");
+                            throw new FontException("Stack overflow; infinite recursion?");
                         }
 
                         this.Execute(this.instructionDefs[index].ToStack(), true, false);
@@ -1482,13 +1482,13 @@ internal class TrueTypeInterpreter
         }
     }
 
-    private int CheckIndex(int index, int length)
+    private static int CheckIndex(int index, int length)
     {
         Guard.MustBeBetweenOrEqualTo(index, 0, length - 1, nameof(index));
         return index;
     }
 
-    private float ReadCvt() => this.controlValueTable[this.CheckIndex(this.stack.Pop(), this.controlValueTable.Length)];
+    private float ReadCvt() => this.controlValueTable[CheckIndex(this.stack.Pop(), this.controlValueTable.Length)];
 
     private void OnVectorsUpdated()
     {
@@ -1590,7 +1590,7 @@ internal class TrueTypeInterpreter
         {
             0 => this.twilight,
             1 => this.points,
-            _ => throw new Exception("Invalid zone pointer."),
+            _ => throw new FontException("Invalid zone pointer."),
         };
 
     private void SetSuperRound(float period)
@@ -1603,7 +1603,7 @@ internal class TrueTypeInterpreter
             0 => period / 2,
             0x40 => period,
             0x80 => period * 2,
-            _ => throw new Exception("Unknown rounding period multiplier."),
+            _ => throw new FontException("Unknown rounding period multiplier."),
         };
 
         // bits 5-4 are the phase
@@ -2223,9 +2223,9 @@ internal class TrueTypeInterpreter
             this.ip = offset;
         }
 
-        public bool IsValid => !this.instructions.IsEmpty;
+        public readonly bool IsValid => !this.instructions.IsEmpty;
 
-        public bool Done => this.ip >= this.instructions.Length;
+        public readonly bool Done => this.ip >= this.instructions.Length;
 
         public int NextByte()
         {
@@ -2258,9 +2258,9 @@ internal class TrueTypeInterpreter
 
         public void Jump(int offset) => this.ip += offset;
 
-        public InstructionStream ToMemory() => new(this.origin, this.ip);
+        public readonly InstructionStream ToMemory() => new(this.origin, this.ip);
 
-        private static void ThrowEndOfInstructions() => throw new Exception("no more instructions");
+        private static void ThrowEndOfInstructions() => throw new FontException("no more instructions");
     }
 
     private struct GraphicsState
@@ -2327,9 +2327,9 @@ internal class TrueTypeInterpreter
             this.TouchState = new TouchState[controlPoints.Length];
         }
 
-        public Vector2 GetCurrent(int index) => this.Current[index].Point;
+        public readonly Vector2 GetCurrent(int index) => this.Current[index].Point;
 
-        public Vector2 GetOriginal(int index) => this.Original[index].Point;
+        public readonly Vector2 GetOriginal(int index) => this.Original[index].Point;
     }
 
     private class ExecutionStack
@@ -2418,6 +2418,6 @@ internal class TrueTypeInterpreter
             return this.s[this.count - index - 1];
         }
 
-        private static void ThrowStackOverflow() => throw new Exception("stack overflow");
+        private static void ThrowStackOverflow() => throw new FontException("stack overflow");
     }
 }

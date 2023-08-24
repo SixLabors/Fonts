@@ -42,15 +42,15 @@ internal struct ControlPoint : IEquatable<ControlPoint>
         => obj is ControlPoint point && this.Equals(point);
 
     /// <inheritdoc/>
-    public bool Equals(ControlPoint other)
+    public readonly bool Equals(ControlPoint other)
         => this.Point.Equals(other.Point)
         && this.OnCurve == other.OnCurve;
 
     /// <inheritdoc/>
-    public override int GetHashCode()
+    public override readonly int GetHashCode()
         => HashCode.Combine(this.Point, this.OnCurve);
 
     /// <inheritdoc/>
-    public override string ToString()
+    public override readonly string ToString()
         => FormattableString.Invariant($"Point: {this.Point}, OnCurve: {this.OnCurve}");
 }

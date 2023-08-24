@@ -96,13 +96,13 @@ internal struct TransformingGlyphRenderer : IGlyphRenderer
         this.renderer.QuadraticBezierTo(this.Transform(secondControlPoint), this.Transform(point));
     }
 
-    public TextDecorations EnabledDecorations()
+    public readonly TextDecorations EnabledDecorations()
         => this.renderer.EnabledDecorations();
 
     public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
         => this.renderer.SetDecoration(textDecorations, this.Transform(start), this.Transform(end), thickness);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Vector2 Transform(Vector2 point)
+    private readonly Vector2 Transform(Vector2 point)
         => (Vector2.Transform((point * this.scale) + this.offset, this.transform) * YInverter) + this.origin;
 }

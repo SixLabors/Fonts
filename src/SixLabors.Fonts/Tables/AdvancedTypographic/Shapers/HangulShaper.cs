@@ -127,7 +127,7 @@ internal sealed class HangulShaper : DefaultShaper
                     case ToneMark:
 
                         // Got a valid syllable, followed by a tone mark. Move the tone mark to the beginning of the syllable.
-                        this.ReOrderToneMark(substitutionCollection, data, i);
+                        ReOrderToneMark(substitutionCollection, data, i);
                         break;
 
                     case Invalid:
@@ -346,7 +346,7 @@ internal sealed class HangulShaper : DefaultShaper
         return index;
     }
 
-    private void ReOrderToneMark(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
+    private static void ReOrderToneMark(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
     {
         if (index == 0)
         {

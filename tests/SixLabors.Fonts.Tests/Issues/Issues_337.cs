@@ -35,7 +35,7 @@ public class Issues_337
             if (!Environment.Is64BitProcess)
             {
                 // 32 bit process has different rounding
-                CompareRectangle(expected[i], renderer.GlyphRects[i], 1);
+                CompareRectangle(expected[i], renderer.GlyphRects[i], 1F);
             }
             else
 #endif
@@ -45,7 +45,7 @@ public class Issues_337
         }
     }
 
-    private static void CompareRectangle(FontRectangle expected, FontRectangle actual, int precision = 4)
+    private static void CompareRectangle(FontRectangle expected, FontRectangle actual, float precision = 4F)
     {
         Assert.Equal(expected.X, actual.X, precision);
         Assert.Equal(expected.Y, actual.Y, precision);

@@ -20,14 +20,14 @@ public class Issues_32
         });
 
         // tab width of 0 should make tabs not render at all
-        Assert.Equal(10, size.Height, 4);
-        Assert.Equal(320, size.Width, 4);
+        Assert.Equal(10, size.Height, 4F);
+        Assert.Equal(320, size.Width, 4F);
     }
 
     public static Font CreateFont(string text)
     {
         var fc = (IFontMetricsCollection)new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
-        return new Font(d, 1);
+        return new Font(d, 1F);
     }
 }

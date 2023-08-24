@@ -48,7 +48,7 @@ internal readonly struct ArraySlice<T> : IEnumerable<T>, IEnumerable
     /// <summary>
     /// Gets an empty <see cref="ArraySlice{T}"/>
     /// </summary>
-    public static ArraySlice<T> Empty => new(new T[0]);
+    public static ArraySlice<T> Empty => new(Array.Empty<T>());
 
     /// <summary>
     /// Gets the offset position in the underlying buffer this slice was created from.
@@ -159,7 +159,7 @@ internal readonly struct ArraySlice<T> : IEnumerable<T>, IEnumerable
         }
 
         /// <inheritdoc/>
-        public T Current
+        public readonly T Current
         {
             get
             {
@@ -194,7 +194,7 @@ internal readonly struct ArraySlice<T> : IEnumerable<T>, IEnumerable
         /// <inheritdoc/>
         void IEnumerator.Reset() => this.current = this.start - 1;
 
-        public void Dispose()
+        public readonly void Dispose()
         {
         }
 

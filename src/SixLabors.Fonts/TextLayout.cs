@@ -107,7 +107,7 @@ internal static class TextLayout
 
         // Analyse the text for bidi directional runs.
         BidiAlgorithm bidi = BidiAlgorithm.Instance.Value!;
-        var bidiData = new BidiData();
+        BidiData bidiData = new();
         bidiData.Init(text, (sbyte)options.TextDirection);
 
         // If we have embedded directional overrides then change those
@@ -740,7 +740,7 @@ internal static class TextLayout
 
         // Enumerate through each grapheme in the text.
         int graphemeIndex = start;
-        var graphemeEnumerator = new SpanGraphemeEnumerator(text);
+        SpanGraphemeEnumerator graphemeEnumerator = new(text);
         while (graphemeEnumerator.MoveNext())
         {
             int graphemeMax = graphemeEnumerator.Current.Length - 1;
@@ -754,7 +754,7 @@ internal static class TextLayout
 
             // Now enumerate through each codepoint in the grapheme.
             bool skipNextCodePoint = false;
-            var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
+            SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current);
             while (codePointEnumerator.MoveNext())
             {
                 if (codePointIndex == bidiRuns[bidiRunIndex].End)
@@ -862,7 +862,7 @@ internal static class TextLayout
         bool isVerticalMixedLayout = layoutMode.IsVerticalMixed();
 
         // Calculate the position of potential line breaks.
-        var lineBreakEnumerator = new LineBreakEnumerator(text);
+        LineBreakEnumerator lineBreakEnumerator = new(text);
         List<LineBreak> lineBreaks = new();
         while (lineBreakEnumerator.MoveNext())
         {
@@ -884,12 +884,12 @@ internal static class TextLayout
         Span<float> decomposedAdvancesBuffer = stackalloc float[64];
 
         // Enumerate through each grapheme in the text.
-        var graphemeEnumerator = new SpanGraphemeEnumerator(text);
+        SpanGraphemeEnumerator graphemeEnumerator = new(text);
         for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
         {
             // Now enumerate through each codepoint in the grapheme.
             int graphemeCodePointIndex = 0;
-            var codePointEnumerator = new SpanCodePointEnumerator(graphemeEnumerator.Current);
+            SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current);
             while (codePointEnumerator.MoveNext())
             {
                 if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out bool isDecomposed, out IReadOnlyList<GlyphMetrics>? metrics))
@@ -922,7 +922,7 @@ internal static class TextLayout
                 // if, for some crazy reason, a glyph does contain more than 64 metrics.
                 Span<float> decomposedAdvances = metrics.Count > decomposedAdvancesBuffer.Length
                     ? new float[metrics.Count]
-                    : decomposedAdvancesBuffer.Slice(0, isDecomposed ? metrics.Count : 1);
+                    : decomposedAdvancesBuffer[..(isDecomposed ? metrics.Count : 1)];
 
                 if (isHorizontalLayout || isRotated)
                 {
@@ -1253,7 +1253,7 @@ internal static class TextLayout
 
         public int Count => this.data.Count;
 
-        public float ScaledLineAdvance { get; private set; } = 0;
+        public float ScaledLineAdvance { get; private set; }
 
         public float ScaledMaxLineHeight { get; private set; } = -1;
 

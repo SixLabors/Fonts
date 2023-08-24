@@ -8,7 +8,7 @@ namespace SixLabors.Fonts;
 
 internal readonly struct Bounds : IEquatable<Bounds>
 {
-    public static Bounds Empty = default;
+    public static Bounds Empty;
 
     public Bounds(Vector2 min, Vector2 max)
     {

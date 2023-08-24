@@ -32,7 +32,7 @@ internal struct CffGlyphData
 
     public string? GlyphName { get; set; }
 
-    public Bounds GetBounds()
+    public readonly Bounds GetBounds()
     {
         using var engine = new CffEvaluationEngine(
             this.charStrings,
@@ -43,7 +43,7 @@ internal struct CffGlyphData
         return engine.GetBounds();
     }
 
-    public void RenderTo(IGlyphRenderer renderer, Vector2 origin, Vector2 scale, Vector2 offset, Matrix3x2 transform)
+    public readonly void RenderTo(IGlyphRenderer renderer, Vector2 origin, Vector2 scale, Vector2 offset, Matrix3x2 transform)
     {
         using var engine = new CffEvaluationEngine(
              this.charStrings,

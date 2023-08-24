@@ -34,7 +34,7 @@ internal ref struct RefStack<T>
 
     public T this[int index]
     {
-        get
+        readonly get
         {
             if ((uint)index >= (uint)this.Length)
             {

@@ -30,14 +30,14 @@ internal class CffParser
     {
         this.offset = offset;
 
-        string fontName = this.ReadNameIndex(reader);
+        string fontName = ReadNameIndex(reader);
 
         List<CffDataDicEntry>? dataDicEntries = this.ReadTopDICTIndex(reader);
-        string[] stringIndex = this.ReadStringIndex(reader);
+        string[] stringIndex = ReadStringIndex(reader);
 
         CffTopDictionary topDictionary = this.ResolveTopDictInfo(dataDicEntries, stringIndex);
 
-        byte[][] globalSubrRawBuffers = this.ReadGlobalSubrIndex(reader);
+        byte[][] globalSubrRawBuffers = ReadGlobalSubrIndex(reader);
 
         this.ReadFDSelect(reader, topDictionary.CidFontInfo);
         FontDict[] fontDicts = this.ReadFDArray(reader, topDictionary.CidFontInfo);
@@ -51,9 +51,9 @@ internal class CffParser
         return new(fontName, topDictionary, glyphs);
     }
 
-    private string ReadNameIndex(BigEndianBinaryReader reader)
+    private static string ReadNameIndex(BigEndianBinaryReader reader)
     {
-        if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
+        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
             throw new InvalidFontFileException("No name index found.");
         }
@@ -74,7 +74,7 @@ internal class CffParser
         // the top-level dictionary of a PostScript font.
         // A font is identified by an entry in the Name INDEX and its data
         // is accessed via the corresponding Top DICT
-        if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
+        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
             throw new InvalidFontFileException("No Top DICT index found.");
         }
@@ -91,9 +91,9 @@ internal class CffParser
         return this.ReadDICTData(reader, offsets[0].Length);
     }
 
-    private string[] ReadStringIndex(BigEndianBinaryReader reader)
+    private static string[] ReadStringIndex(BigEndianBinaryReader reader)
     {
-        if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
+        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
             return Array.Empty<string>();
         }
@@ -101,7 +101,7 @@ internal class CffParser
         string[] stringIndex = new string[offsets.Length];
 
         // Allow reusing the same buffer for shorter reads.
-        using var buffer = new Buffer<byte>(512);
+        using Buffer<byte> buffer = new Buffer<byte>(512);
         Span<byte> bufferSpan = buffer.GetSpan();
 
         for (int i = 0; i < offsets.Length; ++i)
@@ -127,7 +127,7 @@ internal class CffParser
         return stringIndex;
     }
 
-    private string GetSid(int index, string[] stringIndex)
+    private static string GetSid(int index, string[] stringIndex)
     {
         if (index >= 0 && index <= CffStandardStrings.Count - 1)
         {
@@ -160,22 +160,22 @@ internal class CffParser
                 case "XUID":
                     break; // nothing
                 case "version":
-                    metrics.Version = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                    metrics.Version = GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                     break;
                 case "Notice":
-                    metrics.Notice = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                    metrics.Notice = GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                     break;
                 case "Copyright":
-                    metrics.CopyRight = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                    metrics.CopyRight = GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                     break;
                 case "FullName":
-                    metrics.FullName = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                    metrics.FullName = GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                     break;
                 case "FamilyName":
-                    metrics.FamilyName = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                    metrics.FamilyName = GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                     break;
                 case "Weight":
-                    metrics.Weight = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                    metrics.Weight = GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
                     break;
                 case "UnderlinePosition":
                     metrics.UnderlinePosition = entry.Operands[0].RealNumValue;
@@ -214,9 +214,9 @@ internal class CffParser
 
                     // ROS operator combines the Registry, Ordering, and Supplement keys together.
                     // see Adobe Cmap resource , https://github.com/adobe-type-tools/cmap-resources
-                    metrics.CidFontInfo.ROS_Register = this.GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
-                    metrics.CidFontInfo.ROS_Ordering = this.GetSid((int)entry.Operands[1].RealNumValue, stringIndex);
-                    metrics.CidFontInfo.ROS_Supplement = this.GetSid((int)entry.Operands[2].RealNumValue, stringIndex);
+                    metrics.CidFontInfo.ROS_Register = GetSid((int)entry.Operands[0].RealNumValue, stringIndex);
+                    metrics.CidFontInfo.ROS_Ordering = GetSid((int)entry.Operands[1].RealNumValue, stringIndex);
+                    metrics.CidFontInfo.ROS_Supplement = GetSid((int)entry.Operands[2].RealNumValue, stringIndex);
 
                     break;
                 case "CIDFontVersion":
@@ -237,7 +237,7 @@ internal class CffParser
         return metrics;
     }
 
-    private byte[][] ReadGlobalSubrIndex(BigEndianBinaryReader reader)
+    private static byte[][] ReadGlobalSubrIndex(BigEndianBinaryReader reader)
 
        // 16. Local / Global Subrs INDEXes
        // Both Type 1 and Type 2 charstrings support the notion of
@@ -266,9 +266,9 @@ internal class CffParser
        // Global subrs are stored in an INDEX structure which follows the
        // String INDEX. A FontSet without any global subrs is represented
        // by an empty Global Subrs INDEX.
-       => this.ReadSubrBuffer(reader);
+       => ReadSubrBuffer(reader);
 
-    private byte[][] ReadLocalSubrs(BigEndianBinaryReader reader) => this.ReadSubrBuffer(reader);
+    private static byte[][] ReadLocalSubrs(BigEndianBinaryReader reader) => ReadSubrBuffer(reader);
 
     // TODO: We don't actually need this right now. Will be important though if we ever introduce subsetting.
     private void ReadEncodings(BigEndianBinaryReader reader)
@@ -292,10 +292,10 @@ internal class CffParser
             switch (encoding)
             {
                 case 0:
-                    this.ReadFormat0Encoding(reader);
+                    ReadFormat0Encoding(reader);
                     break;
                 case 1:
-                    this.ReadFormat1Encoding(reader);
+                    ReadFormat1Encoding(reader);
                     break;
                 default:
 
@@ -320,18 +320,18 @@ internal class CffParser
             default:
                 throw new NotSupportedException();
             case 0:
-                this.ReadCharsetsFormat0(reader, stringIndex, glyphs);
+                ReadCharsetsFormat0(reader, stringIndex, glyphs);
                 break;
             case 1:
-                this.ReadCharsetsFormat1(reader, stringIndex, glyphs);
+                ReadCharsetsFormat1(reader, stringIndex, glyphs);
                 break;
             case 2:
-                this.ReadCharsetsFormat2(reader, stringIndex, glyphs);
+                ReadCharsetsFormat2(reader, stringIndex, glyphs);
                 break;
         }
     }
 
-    private void ReadCharsetsFormat0(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
+    private static void ReadCharsetsFormat0(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
     {
         // Table 17: Format 0
         // Type     Name                Description
@@ -348,11 +348,11 @@ internal class CffParser
         for (int i = 1; i < glyphs.Length; ++i)
         {
             ref CffGlyphData data = ref glyphs[i];
-            data.GlyphName = this.GetSid(reader.ReadUInt16(), stringIndex);
+            data.GlyphName = GetSid(reader.ReadUInt16(), stringIndex);
         }
     }
 
-    private void ReadCharsetsFormat1(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
+    private static void ReadCharsetsFormat1(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
     {
         // Table 18 Format 1
         // Type     Name                Description
@@ -376,7 +376,7 @@ internal class CffParser
             do
             {
                 ref CffGlyphData data = ref glyphs[i];
-                data.GlyphName = this.GetSid(sid, stringIndex);
+                data.GlyphName = GetSid(sid, stringIndex);
 
                 count--;
                 i++;
@@ -386,7 +386,7 @@ internal class CffParser
         }
     }
 
-    private void ReadCharsetsFormat2(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
+    private static void ReadCharsetsFormat2(BigEndianBinaryReader reader, string[] stringIndex, CffGlyphData[] glyphs)
     {
         // note:eg, Adobe's source-code-pro font
 
@@ -411,7 +411,7 @@ internal class CffParser
             do
             {
                 ref CffGlyphData data = ref glyphs[i];
-                data.GlyphName = this.GetSid(sid, stringIndex);
+                data.GlyphName = GetSid(sid, stringIndex);
 
                 count--;
                 i++;
@@ -443,7 +443,7 @@ internal class CffParser
             case 3:
                 cidFontInfo.FdSelectFormat = 3;
                 ushort nRanges = reader.ReadUInt16();
-                var ranges = new FDRange3[nRanges + 1];
+                FDRange3[] ranges = new FDRange3[nRanges + 1];
 
                 cidFontInfo.FdSelectFormat = 3;
                 cidFontInfo.FdRanges = ranges;
@@ -469,12 +469,12 @@ internal class CffParser
 
         reader.BaseStream.Position = this.offset + cidFontInfo.FDArray;
 
-        if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
+        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
             return Array.Empty<FontDict>();
         }
 
-        var fontDicts = new FontDict[offsets.Length];
+        FontDict[] fontDicts = new FontDict[offsets.Length];
         for (int i = 0; i < fontDicts.Length; ++i)
         {
             // read DICT data
@@ -520,7 +520,7 @@ internal class CffParser
                         case "Subrs":
                             int localSubrsOffset = (int)dicEntry.Operands[0].RealNumValue;
                             reader.BaseStream.Position = this.offset + fdict.PrivateDicOffset + localSubrsOffset;
-                            fdict.LocalSubr = this.ReadSubrBuffer(reader);
+                            fdict.LocalSubr = ReadSubrBuffer(reader);
                             break;
 
                         case "defaultWidthX":
@@ -572,13 +572,13 @@ internal class CffParser
         // “Type 2 Charstring Format.” Other charstring types may also be
         // supported by this method.
         reader.BaseStream.Position = this.offset + this.charStringsOffset;
-        if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
+        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
             throw new InvalidFontFileException("No glyph data found.");
         }
 
         int glyphCount = offsets.Length;
-        var glyphs = new CffGlyphData[glyphCount];
+        CffGlyphData[] glyphs = new CffGlyphData[glyphCount];
         byte[][]? localSubBuffer = privateDictionary?.LocalSubrRawBuffers;
 
         // Is the font a CID font?
@@ -609,7 +609,7 @@ internal class CffParser
         return glyphs;
     }
 
-    private void ReadFormat0Encoding(BigEndianBinaryReader reader)
+    private static void ReadFormat0Encoding(BigEndianBinaryReader reader)
     {
         // Table 11: Format 0
         // Type      Name            Description
@@ -629,7 +629,7 @@ internal class CffParser
         // TODO: Implement based on PDFPig
     }
 
-    private void ReadFormat1Encoding(BigEndianBinaryReader reader)
+    private static void ReadFormat1Encoding(BigEndianBinaryReader reader)
     {
         // Table 12 Format 1
         // Type      Name              Description
@@ -692,7 +692,7 @@ internal class CffParser
                     case "Subrs":
                         int localSubrsOffset = (int)dicEntry.Operands[0].RealNumValue;
                         reader.BaseStream.Position = this.offset + this.privateDICTOffset + localSubrsOffset;
-                        localSubrRawBuffers = this.ReadLocalSubrs(reader);
+                        localSubrRawBuffers = ReadLocalSubrs(reader);
                         break;
 
                     case "defaultWidthX":
@@ -709,9 +709,9 @@ internal class CffParser
         return new CffPrivateDictionary(localSubrRawBuffers, defaultWidthX, nominalWidthX);
     }
 
-    private byte[][] ReadSubrBuffer(BigEndianBinaryReader reader)
+    private static byte[][] ReadSubrBuffer(BigEndianBinaryReader reader)
     {
-        if (!this.TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
+        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
             return Array.Empty<byte[]>();
         }
@@ -778,12 +778,12 @@ internal class CffParser
             if (b0 is >= 0 and <= 21)
             {
                 // operators
-                @operator = this.ReadOperator(reader, b0);
+                @operator = ReadOperator(reader, b0);
                 break; // **break after found operator
             }
             else if (b0 is 28 or 29)
             {
-                int num = this.ReadIntegerNumber(reader, b0);
+                int num = ReadIntegerNumber(reader, b0);
                 operands.Add(new CffOperand(num, OperandKind.IntNumber));
             }
             else if (b0 == 30)
@@ -793,7 +793,7 @@ internal class CffParser
             }
             else if (b0 is >= 32 and <= 254)
             {
-                int num = this.ReadIntegerNumber(reader, b0);
+                int num = ReadIntegerNumber(reader, b0);
                 operands.Add(new CffOperand(num, OperandKind.IntNumber));
             }
             else
@@ -806,7 +806,7 @@ internal class CffParser
         return new CffDataDicEntry(@operator!, operands.ToArray());
     }
 
-    private CFFOperator ReadOperator(BigEndianBinaryReader reader, byte b0)
+    private static CFFOperator ReadOperator(BigEndianBinaryReader reader, byte b0)
     {
         // read operator key
         byte b1 = 0;
@@ -863,10 +863,10 @@ internal class CffParser
                         exponentMissing = false;
                         break;
                     case 0xa:
-                        sb.Append(".");
+                        sb.Append('.');
                         break;
                     case 0xb:
-                        sb.Append("E");
+                        sb.Append('E');
                         exponentMissing = true;
                         break;
                     case 0xc:
@@ -876,13 +876,13 @@ internal class CffParser
                     case 0xd:
                         break;
                     case 0xe:
-                        sb.Append("-");
+                        sb.Append('-');
                         break;
                     case 0xf:
                         done = true;
                         break;
                     default:
-                        throw new Exception("IllegalArgumentException");
+                        throw new FontException("IllegalArgumentException");
                 }
             }
         }
@@ -892,7 +892,7 @@ internal class CffParser
             // the exponent is missing, just append "0" to avoid an exception
             // not sure if 0 is the correct value, but it seems to fit
             // see PDFBOX-1522
-            sb.Append("0");
+            sb.Append('0');
         }
 
         if (sb.Length == 0)
@@ -912,7 +912,7 @@ internal class CffParser
         return value;
     }
 
-    private int ReadIntegerNumber(BigEndianBinaryReader reader, byte b0)
+    private static int ReadIntegerNumber(BigEndianBinaryReader reader, byte b0)
     {
         if (b0 == 28)
         {
@@ -942,7 +942,7 @@ internal class CffParser
         }
     }
 
-    private bool TryReadIndexDataOffsets(BigEndianBinaryReader reader, [NotNullWhen(true)] out CffIndexOffset[]? value)
+    private static bool TryReadIndexDataOffsets(BigEndianBinaryReader reader, [NotNullWhen(true)] out CffIndexOffset[]? value)
     {
         // INDEX Data
         // An INDEX is an array of variable-sized objects.It comprises a
@@ -986,7 +986,7 @@ internal class CffParser
 
         int offSize = reader.ReadByte();
         int[] offsets = new int[count + 1];
-        var indexElems = new CffIndexOffset[count];
+        CffIndexOffset[] indexElems = new CffIndexOffset[count];
         for (int i = 0; i <= count; ++i)
         {
             offsets[i] = reader.ReadOffset(offSize);

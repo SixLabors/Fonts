@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Diagnostics;
+using System.Globalization;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -20,7 +21,7 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
         float dpi,
         GlyphLayoutMode layoutMode)
     {
-        this.Font = metrics.FontMetrics.Description.FontNameInvariantCulture?.ToUpper() ?? string.Empty;
+        this.Font = metrics.FontMetrics.Description.FontNameInvariantCulture?.ToUpper(CultureInfo.InvariantCulture) ?? string.Empty;
         this.FontStyle = metrics.FontMetrics.Description.Style;
         this.GlyphId = metrics.GlyphId;
         this.PointSize = pointSize;

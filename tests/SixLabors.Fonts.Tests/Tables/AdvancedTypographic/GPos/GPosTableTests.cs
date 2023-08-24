@@ -508,7 +508,7 @@ public class GPosTableTests
         for (int i = 0; i < expectedFontRectangles.Length; i++)
         {
             // NET FX requires lower precision
-            CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i], 3);
+            CompareRectangle(expectedFontRectangles[i], renderer.GlyphRects[i], 3F);
         }
     }
 
@@ -547,7 +547,7 @@ public class GPosTableTests
         }
     }
 
-    private static void CompareRectangle(FontRectangle expected, FontRectangle actual, int precision = 4)
+    private static void CompareRectangle(FontRectangle expected, FontRectangle actual, float precision = 4F)
     {
         Assert.Equal(expected.X, actual.X, precision);
         Assert.Equal(expected.Y, actual.Y, precision);

@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.IO;
 
 internal sealed class ZlibInflateStream : Stream
 {
-    private long position = 0;
+    private long position;
 
     /// <summary>
     /// The raw stream containing the uncompressed image data.
@@ -72,7 +72,7 @@ internal sealed class ZlibInflateStream : Stream
 
         if ((cmf & 0x0f) != 8)
         {
-            throw new Exception($"Bad compression method for ZLIB header: cmf={cmf}");
+            throw new IOException($"Bad compression method for ZLIB header: cmf={cmf}");
         }
 
         // CINFO is the base-2 logarithm of the LZ77 window size, minus eight.
@@ -118,9 +118,6 @@ internal sealed class ZlibInflateStream : Stream
     /// <inheritdoc/>
     public override void Flush()
         => this.deflateStream?.Flush();
-
-    public override int ReadByte()
-        => base.ReadByte();
 
     /// <inheritdoc/>
     public override int Read(byte[] buffer, int offset, int count)

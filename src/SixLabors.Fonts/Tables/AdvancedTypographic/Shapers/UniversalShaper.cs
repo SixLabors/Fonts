@@ -96,7 +96,7 @@ internal sealed class UniversalShaper : DefaultShaper
             FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
             if (UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) && decompositions != null)
             {
-                Span<ushort> ids = buffer.Slice(0, decompositions.Length);
+                Span<ushort> ids = buffer[..decompositions.Length];
                 for (int j = 0; j < decompositions.Length; j++)
                 {
                     // Font should always contain the decomposed glyph.
@@ -223,6 +223,8 @@ internal sealed class UniversalShaper : DefaultShaper
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
+
+        Span<ushort> glyphs = stackalloc ushort[2];
         while (start < max)
         {
             GlyphShapingData data = substitutionCollection[start];
@@ -251,7 +253,6 @@ internal sealed class UniversalShaper : DefaultShaper
                     current = substitutionCollection[i];
                 }
 
-                Span<ushort> glyphs = stackalloc ushort[2];
                 glyphs[0] = current.GlyphId;
                 glyphs[1] = id;
 

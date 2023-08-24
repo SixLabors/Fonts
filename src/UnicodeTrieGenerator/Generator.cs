@@ -493,8 +493,8 @@ public static partial class Generator
     /// </summary>
     public static void GenerateGraphemeBreakTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        var builder = new UnicodeTrieBuilder((uint)GraphemeClusterClass.Any);
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        UnicodeTrieBuilder builder = new((uint)GraphemeClusterClass.Any);
 
         using (StreamReader sr = GetStreamReader("GraphemeBreakProperty.txt"))
         {
@@ -555,8 +555,8 @@ public static partial class Generator
     /// </summary>
     private static void GenerateBidiBracketsTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+);\s([0-9A-F]+);\s([ocn])");
-        var builder = new UnicodeTrieBuilder(0u);
+        Regex regex = new(@"^([0-9A-F]+);\s([0-9A-F]+);\s([ocn])");
+        UnicodeTrieBuilder builder = new(0u);
 
         using (StreamReader sr = GetStreamReader("BidiBrackets.txt"))
         {
@@ -593,8 +593,8 @@ public static partial class Generator
     /// </summary>
     private static void GenerateBidiMirrorTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+);\s([0-9A-F]+)\s#");
-        var builder = new UnicodeTrieBuilder(0u);
+        Regex regex = new(@"^([0-9A-F]+);\s([0-9A-F]+)\s#");
+        UnicodeTrieBuilder builder = new(0u);
 
         using (StreamReader sr = GetStreamReader("BidiMirroring.txt"))
         {
@@ -620,8 +620,8 @@ public static partial class Generator
     /// </summary>
     private static void GenerateLineBreakTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        var builder = new UnicodeTrieBuilder((uint)LineBreakClass.XX);
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        UnicodeTrieBuilder builder = new((uint)LineBreakClass.XX);
 
         using (StreamReader sr = GetStreamReader("LineBreak.txt"))
         {
@@ -655,8 +655,8 @@ public static partial class Generator
     /// </summary>
     private static UnicodeTrie GenerateUnicodeCategoryTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        var builder = new UnicodeTrieBuilder((uint)UnicodeCategory.OtherNotAssigned);
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        UnicodeTrieBuilder builder = new((uint)UnicodeCategory.OtherNotAssigned);
 
         using (StreamReader sr = GetStreamReader("DerivedGeneralCategory.txt"))
         {
@@ -691,8 +691,8 @@ public static partial class Generator
     /// </summary>
     private static void GenerateScriptTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        var builder = new UnicodeTrieBuilder((uint)ScriptClass.Unknown);
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        UnicodeTrieBuilder builder = new((uint)ScriptClass.Unknown);
 
         // TODO: Figure out how to map to shared categories via ScripExtensions.txt
         using (StreamReader sr = GetStreamReader("Scripts.txt"))
@@ -727,9 +727,9 @@ public static partial class Generator
     /// </summary>
     private static UnicodeTrie GenerateArabicShapingTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;[\w\s]+;\s*([A-Z]+);\s*([\w\s]+)");
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;[\w\s]+;\s*([A-Z]+);\s*([\w\s]+)");
         const uint initial = ((int)ArabicJoiningType.NonJoining) | (((int)ArabicJoiningGroup.NoJoiningGroup) << 16);
-        var builder = new UnicodeTrieBuilder(initial);
+        UnicodeTrieBuilder builder = new(initial);
 
         using (StreamReader sr = GetStreamReader("ArabicShaping.txt"))
         {
@@ -765,8 +765,8 @@ public static partial class Generator
 
     private static void GenerateVerticalOrientationTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        var builder = new UnicodeTrieBuilder((uint)VerticalOrientationType.Upright);
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        UnicodeTrieBuilder builder = new((uint)VerticalOrientationType.Upright);
 
         using (StreamReader sr = GetStreamReader("VerticalOrientation.txt"))
         {
@@ -800,8 +800,8 @@ public static partial class Generator
     /// </summary>
     private static UnicodeTrie GenerateIndicSyllabicCategoryTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        var builder = new UnicodeTrieBuilder((uint)IndicSyllabicCategory.Other);
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        UnicodeTrieBuilder builder = new((uint)IndicSyllabicCategory.Other);
 
         using (StreamReader sr = GetStreamReader("IndicSyllabicCategory.txt"))
         {
@@ -836,8 +836,8 @@ public static partial class Generator
     /// </summary>
     private static UnicodeTrie GenerateIndicPositionalCategoryTrie()
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
-        var builder = new UnicodeTrieBuilder((uint)IndicPositionalCategory.NA);
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        UnicodeTrieBuilder builder = new((uint)IndicPositionalCategory.NA);
 
         using (StreamReader sr = GetStreamReader("IndicPositionalCategory.txt"))
         {
@@ -874,12 +874,12 @@ public static partial class Generator
     /// <param name="trie">The Unicode trie.</param>
     private static void GenerateTrieClass(string name, UnicodeTrie trie)
     {
-        var stream = new MemoryStream();
+        MemoryStream stream = new();
 
         trie.Save(stream);
 
         using FileStream fileStream = GetStreamWriter($"{name}Trie.Generated.cs");
-        using var writer = new StreamWriter(fileStream);
+        using StreamWriter writer = new(fileStream);
 
         writer.WriteLine("// Copyright (c) Six Labors.");
         writer.WriteLine("// Licensed under the Apache License, Version 2.0.");
@@ -908,7 +908,7 @@ public static partial class Generator
                 break;
             }
 
-            writer.Write(b.ToString());
+            writer.Write(b.ToString(CultureInfo.InvariantCulture));
 
             if (stream.Position % 100 > 0 && stream.Position != length)
             {
@@ -947,9 +947,9 @@ public static partial class Generator
     {
         string assemblyLocation = typeof(Generator).Assembly.Location;
 
-        var assemblyFile = new FileInfo(assemblyLocation);
+        FileInfo assemblyFile = new(assemblyLocation);
 
-        DirectoryInfo directory = assemblyFile.Directory;
+        DirectoryInfo? directory = assemblyFile.Directory ?? throw new IOException($"Unable to find SixLabors solution directory from {assemblyLocation}!");
 
         while (!directory.EnumerateFiles(SixLaborsSolutionFileName).Any())
         {
@@ -959,14 +959,14 @@ public static partial class Generator
             }
             catch (Exception ex)
             {
-                throw new Exception(
+                throw new IOException(
                     $"Unable to find SixLabors solution directory from {assemblyLocation} because of {ex.GetType().Name}!",
                     ex);
             }
 
             if (directory == null)
             {
-                throw new Exception($"Unable to find SixLabors solution directory from {assemblyLocation}!");
+                throw new IOException($"Unable to find SixLabors solution directory from {assemblyLocation}!");
             }
         }
 
@@ -974,7 +974,7 @@ public static partial class Generator
     }
 
     private static int ParseHexInt(string value)
-        => int.Parse(value, NumberStyles.HexNumber);
+        => int.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
     private static string GetFullPath(string relativePath)
         => Path.Combine(SolutionDirectoryFullPath, relativePath).Replace('\\', Path.DirectorySeparatorChar);

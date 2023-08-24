@@ -287,7 +287,7 @@ internal static class WriterExtensions
         writer.WriteUInt16((ushort)(subtable.Segments.Length * 2));
         double searchRange = Math.Pow(2, Math.Floor(Math.Log(segCount, 2)));
         writer.WriteUInt16((ushort)searchRange);
-        double entrySelector = Math.Log(searchRange / 2, 2);
+        double entrySelector = Math.Log(searchRange / 2, 2F);
         writer.WriteUInt16((ushort)entrySelector);
         double rangeShift = (2 * segCount) - searchRange;
         writer.WriteUInt16((ushort)rangeShift);

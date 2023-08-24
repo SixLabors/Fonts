@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Globalization;
 using System.Text.RegularExpressions;
 using SixLabors.Fonts.Unicode;
 using UnicodeTrieGenerator.StateAutomation;
@@ -318,20 +319,14 @@ public static partial class Generator
             {
                 foreach (object item in list)
                 {
-                    if (value is int i && item is int i2)
+                    if (value is int i && item is int i2 && i == i2)
                     {
-                        if (i == i2)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
 
-                    if (value is GC gc && item is GC gc2)
+                    if (value is GC gc && item is GC gc2 && gc == gc2)
                     {
-                        if (gc == gc2)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                 }
 
@@ -443,7 +438,7 @@ public static partial class Generator
 
         static ArabicJoiningType GetJoiningType(int codePoint, uint value, GC category)
         {
-            var type = (ArabicJoiningType)(value & 0xFF);
+            ArabicJoiningType type = (ArabicJoiningType)(value & 0xFF);
 
             // All others not explicitly listed have joining type U
             if (type == ArabicJoiningType.NonJoining)
@@ -547,7 +542,7 @@ public static partial class Generator
 
     private static void OverrideIndicSyllabicCategory(List<Codepoint> codePoints)
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
 
         using StreamReader sr = GetStreamReader("IndicSyllabicCategory-Additional.txt");
         string? line;
@@ -585,7 +580,7 @@ public static partial class Generator
 
     private static void OverrideIndicPositionalCategory(List<Codepoint> codePoints)
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*(.*?)\s*#");
 
         using StreamReader sr = GetStreamReader("IndicPositionalCategory-Additional.txt");
         string? line;
@@ -672,6 +667,8 @@ public static partial class Generator
     /// <param name="name">The name of the class.</param>
     /// <param name="symbols">The symbols data.</param>
     /// <param name="decompositions">The decompositions data.</param>
+    /// <param name="machine">The state machine.</param>
+    /// <param name="partial">Whether the generated class is partial.</param>
     private static void GenerateDataClass(
         string name,
         Dictionary<string, int>? symbols,
@@ -732,7 +729,7 @@ public static partial class Generator
             max = decompositions.Count - 1;
             foreach (KeyValuePair<int, List<int>> item in decompositions)
             {
-                writer.Write($"            {{ 0x{item.Key:X}, new int[] {{ {string.Join(',', item.Value.Select(x => "0x" + x.ToString("X")))} }} }}");
+                writer.Write($"            {{ 0x{item.Key:X}, new int[] {{ {string.Join(',', item.Value.Select(x => "0x" + x.ToString("X", CultureInfo.InvariantCulture)))} }} }}");
                 if (counter != max)
                 {
                     writer.Write(",");
@@ -798,7 +795,7 @@ public static partial class Generator
         {
             if (item.Count == 0)
             {
-                writer.Write($"            Array.Empty<string>()");
+                writer.Write("            Array.Empty<string>()");
             }
             else
             {

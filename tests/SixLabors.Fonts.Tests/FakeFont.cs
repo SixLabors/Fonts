@@ -34,6 +34,6 @@ public class FakeFont
         var fc = (IFontMetricsCollection)new FontCollection();
         instance = FakeFontInstance.CreateFontWithVaryingVerticalFontMetrics(text, name);
         Font d = fc.AddMetrics(instance, CultureInfo.InvariantCulture).CreateFont(12);
-        return new Font(d, 1);
+        return new Font(d, 1F);
     }
 }

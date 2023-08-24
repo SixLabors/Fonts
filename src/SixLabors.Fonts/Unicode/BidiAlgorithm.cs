@@ -1080,12 +1080,12 @@ internal sealed class BidiAlgorithm
         for (i = 0; i < this.runLength; ++i)
         {
             BidiCharacterType t = this.runResolvedTypes[i];
-            if (this.IsNeutralType(t))
+            if (IsNeutralType(t))
             {
                 // Locate end of sequence
                 int seqStart = i;
                 int seqEnd = i;
-                while (seqEnd < this.runLength && this.IsNeutralType(this.runResolvedTypes[seqEnd]))
+                while (seqEnd < this.runLength && IsNeutralType(this.runResolvedTypes[seqEnd]))
                 {
                     seqEnd++;
                 }
@@ -1270,7 +1270,7 @@ internal sealed class BidiAlgorithm
         BidiCharacterType dirOpposite = BidiCharacterType.OtherNeutral;
         for (int ich = pb.OpeningIndex + 1; ich < pb.ClosingIndex; ich++)
         {
-            BidiCharacterType dir = this.GetStrongTypeN0(this.runResolvedTypes[ich]);
+            BidiCharacterType dir = GetStrongTypeN0(this.runResolvedTypes[ich]);
             if (dir == BidiCharacterType.OtherNeutral)
             {
                 continue;
@@ -1297,7 +1297,7 @@ internal sealed class BidiAlgorithm
     {
         for (int ich = pb.OpeningIndex - 1; ich >= 0; --ich)
         {
-            BidiCharacterType dir = this.GetStrongTypeN0(this.runResolvedTypes[ich]);
+            BidiCharacterType dir = GetStrongTypeN0(this.runResolvedTypes[ich]);
             if (dir != BidiCharacterType.OtherNeutral)
             {
                 return dir;
@@ -1485,8 +1485,9 @@ internal sealed class BidiAlgorithm
     /// <summary>
     /// Check if a a directionality is neutral for rules N1 and N2
     /// </summary>
+    /// <param name="dir">The direction.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool IsNeutralType(BidiCharacterType dir)
+    private static bool IsNeutralType(BidiCharacterType dir)
         => dir switch
         {
             BidiCharacterType.ParagraphSeparator
@@ -1506,7 +1507,7 @@ internal sealed class BidiAlgorithm
     /// <param name="dir">The direction to map</param>
     /// <returns>A strong direction - R, L or ON</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private BidiCharacterType GetStrongTypeN0(BidiCharacterType dir)
+    private static BidiCharacterType GetStrongTypeN0(BidiCharacterType dir)
         => dir switch
         {
             BidiCharacterType.EuropeanNumber

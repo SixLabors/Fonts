@@ -16,7 +16,7 @@ public class Issues_269
         Font font = new FontCollection().Add(TestFonts.AliceFrancesHMKRegularFile).CreateFont(25);
 
         FontRectangle size = TextMeasurer.MeasureSize("H", new TextOptions(font));
-        Assert.Equal(32, size.Width, 1);
-        Assert.Equal(27, size.Height, 1);
+        Assert.Equal(32, size.Width, 1F);
+        Assert.Equal(27, size.Height, 1F);
     }
 }

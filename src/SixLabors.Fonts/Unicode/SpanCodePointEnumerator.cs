@@ -30,7 +30,7 @@ public ref struct SpanCodePointEnumerator
     /// Returns an enumerator that iterates through the collection.
     /// </summary>
     /// <returns>An enumerator that iterates through the collection.</returns>
-    public SpanCodePointEnumerator GetEnumerator() => this;
+    public readonly SpanCodePointEnumerator GetEnumerator() => this;
 
     /// <summary>
     /// Advances the enumerator to the next element of the collection.

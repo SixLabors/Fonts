@@ -68,7 +68,7 @@ public struct FontFamily : IEquatable<FontFamily>
     /// </summary>
     /// <param name="size">The size of the font in PT units.</param>
     /// <returns>The new <see cref="Font" />.</returns>
-    public Font CreateFont(float size)
+    public readonly Font CreateFont(float size)
     {
         if (this == default)
         {
@@ -84,7 +84,7 @@ public struct FontFamily : IEquatable<FontFamily>
     /// <param name="size">The size of the font in PT units.</param>
     /// <param name="style">The font style.</param>
     /// <returns>The new <see cref="Font" />.</returns>
-    public Font CreateFont(float size, FontStyle style)
+    public readonly Font CreateFont(float size, FontStyle style)
     {
         if (this == default)
         {
@@ -98,7 +98,7 @@ public struct FontFamily : IEquatable<FontFamily>
     /// Gets the collection of <see cref="FontStyle" /> that are currently available.
     /// </summary>
     /// <returns>The <see cref="IEnumerable{T}" />.</returns>
-    public IEnumerable<FontStyle> GetAvailableStyles()
+    public readonly IEnumerable<FontStyle> GetAvailableStyles()
     {
         if (this == default)
         {
@@ -153,7 +153,7 @@ public struct FontFamily : IEquatable<FontFamily>
     /// <see langword="true"/> if the <see cref="FontFamily"/> contains font metrics
     /// with the specified name; otherwise, <see langword="false"/>.
     /// </returns>
-    public bool TryGetMetrics(FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)
+    public readonly bool TryGetMetrics(FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)
     {
         if (this == default)
         {
@@ -168,7 +168,7 @@ public struct FontFamily : IEquatable<FontFamily>
         => obj is FontFamily family && this.Equals(family);
 
     /// <inheritdoc/>
-    public bool Equals(FontFamily other)
+    public readonly bool Equals(FontFamily other)
     {
         StringComparer comparer = StringComparerHelpers.GetCaseInsensitiveStringComparer(this.Culture);
         return comparer.Equals(this.Name, other.Name)
@@ -177,9 +177,9 @@ public struct FontFamily : IEquatable<FontFamily>
     }
 
     /// <inheritdoc/>
-    public override int GetHashCode()
+    public override readonly int GetHashCode()
         => HashCode.Combine(this.collection, this.Name, this.Culture);
 
     /// <inheritdoc/>
-    public override string ToString() => this.Name;
+    public override readonly string ToString() => this.Name;
 }
