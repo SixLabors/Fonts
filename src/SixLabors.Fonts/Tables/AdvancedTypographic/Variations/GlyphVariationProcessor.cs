@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.Collections.Generic;
-
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 /// <summary>
@@ -131,12 +129,12 @@ internal class GlyphVariationProcessor
     public float[] BlendVector(int outerIndex)
     {
         ItemVariationData variationData = this.itemStore.ItemVariations[outerIndex];
-        if (this.blendVectors.ContainsKey(variationData))
+        if (this.blendVectors.TryGetValue(variationData, out float[]? blendVector))
         {
-            return this.blendVectors[variationData];
+            return blendVector;
         }
 
-        float[] blendVector = new float[variationData.RegionIndexes.Length];
+        blendVector = new float[variationData.RegionIndexes.Length];
 
         // Outer loop steps through master designs to be blended.
         for (int i = 0; i < variationData.RegionIndexes.Length; i++)
