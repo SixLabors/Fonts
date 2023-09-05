@@ -1,82 +1,78 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
 #nullable enable
 
-using System;
-using System.Collections.Generic;
+namespace UnicodeTrieGenerator.StateAutomation;
 
-namespace UnicodeTrieGenerator.StateAutomation
+internal class SymbolTable
 {
-    internal class SymbolTable
+    public SymbolTable(IList<INode> statements, Dictionary<string, int> externalSymbols)
     {
-        public SymbolTable(IList<INode> statements, Dictionary<string, int> externalSymbols)
+        this.Size = 0;
+        this.AddExternalSymbols(externalSymbols);
+        this.Process(statements);
+    }
+
+    public Dictionary<string, ILogicalNode> Variables { get; set; } = new();
+
+    public Dictionary<string, int> Symbols { get; set; } = new();
+
+    public int Size { get; set; }
+
+    public ILogicalNode Main()
+    {
+        if (!this.Variables.TryGetValue(nameof(this.Main), out ILogicalNode? main))
         {
-            this.Size = 0;
-            this.AddExternalSymbols(externalSymbols);
-            this.Process(statements);
+            throw new InvalidOperationException("No 'Main' variable declaration found");
         }
 
-        public Dictionary<string, ILogicalNode> Variables { get; set; } = new();
+        return main;
+    }
 
-        public Dictionary<string, int> Symbols { get; set; } = new();
-
-        public int Size { get; set; }
-
-        public ILogicalNode Main()
+    private void AddExternalSymbols(Dictionary<string, int> externalSymbols)
+    {
+        foreach (string key in externalSymbols.Keys)
         {
-            if (!this.Variables.TryGetValue(nameof(this.Main), out ILogicalNode? main))
-            {
-                throw new InvalidOperationException("No 'Main' variable declaration found");
-            }
-
-            return main;
+            int symbol = externalSymbols[key];
+            this.Variables[key] = new Literal(symbol);
+            this.Symbols[key] = symbol;
+            this.Size++;
         }
+    }
 
-        private void AddExternalSymbols(Dictionary<string, int> externalSymbols)
+    private void Process(IList<INode> statements)
+    {
+        foreach (INode statement in statements)
         {
-            foreach (string key in externalSymbols.Keys)
+            if (statement is Assignment assignment)
             {
-                int symbol = externalSymbols[key];
-                this.Variables[key] = new Literal(symbol);
-                this.Symbols[key] = symbol;
-                this.Size++;
-            }
-        }
+                this.Variables[assignment.Variable.Name] = (ILogicalNode)this.ProcessExpression(assignment.Expression);
 
-        private void Process(IList<INode> statements)
-        {
-            foreach (INode statement in statements)
-            {
-                if (statement is Assignment assignment)
+                if (assignment.Expression is Literal literal)
                 {
-                    this.Variables[assignment.Variable.Name] = (ILogicalNode)this.ProcessExpression(assignment.Expression);
-
-                    if (assignment.Expression is Literal literal)
-                    {
-                        this.Symbols[assignment.Variable.Name] = literal.Value;
-                        this.Size++;
-                    }
+                    this.Symbols[assignment.Variable.Name] = literal.Value;
+                    this.Size++;
                 }
             }
         }
+    }
 
-        private INode ProcessExpression(INode expression)
+    private INode ProcessExpression(INode expression)
+    {
+        // Process children
+        for (int i = 0; i < expression.Count; i++)
         {
-            // Process children
-            for (int i = 0; i < expression.Count; i++)
-            {
-                expression[i] = this.ProcessExpression(expression[i]);
-            }
-
-            // Replace variable references with their values
-            if (expression is Variable variable)
-            {
-                ILogicalNode value = this.Variables[variable.Name];
-                expression = this.ProcessExpression(value.Copy());
-            }
-
-            return expression;
+            expression[i] = this.ProcessExpression(expression[i]);
         }
+
+        // Replace variable references with their values
+        if (expression is Variable variable)
+        {
+            ILogicalNode value = this.Variables[variable.Name];
+            expression = this.ProcessExpression(value.Copy());
+        }
+
+        return expression;
     }
 }

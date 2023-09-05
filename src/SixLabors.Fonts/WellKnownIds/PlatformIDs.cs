@@ -1,36 +1,35 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts.WellKnownIds
+namespace SixLabors.Fonts.WellKnownIds;
+
+/// <summary>
+/// platforms ids
+/// </summary>
+internal enum PlatformIDs : ushort
 {
     /// <summary>
-    /// platforms ids
+    /// Unicode platform
     /// </summary>
-    internal enum PlatformIDs : ushort
-    {
-        /// <summary>
-        /// Unicode platform
-        /// </summary>
-        Unicode = 0,
+    Unicode = 0,
 
-        /// <summary>
-        /// Script manager code
-        /// </summary>
-        Macintosh = 1,
+    /// <summary>
+    /// Script manager code
+    /// </summary>
+    Macintosh = 1,
 
-        /// <summary>
-        /// [deprecated] ISO encoding
-        /// </summary>
-        ISO = 2,
+    /// <summary>
+    /// [deprecated] ISO encoding
+    /// </summary>
+    ISO = 2,
 
-        /// <summary>
-        /// Window encoding
-        /// </summary>
-        Windows = 3,
+    /// <summary>
+    /// Window encoding
+    /// </summary>
+    Windows = 3,
 
-        /// <summary>
-        /// Custom platform
-        /// </summary>
-        Custom = 4 // Custom  None
-    }
+    /// <summary>
+    /// Custom platform
+    /// </summary>
+    Custom = 4 // Custom  None
 }

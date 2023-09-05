@@ -1,22 +1,21 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos
+namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
+
+internal class NotImplementedSubTable : LookupSubTable
 {
-    internal class NotImplementedSubTable : LookupSubTable
+    public NotImplementedSubTable()
+        : base(default)
     {
-        public NotImplementedSubTable()
-            : base(default)
-        {
-        }
-
-        public override bool TryUpdatePosition(
-            FontMetrics fontMetrics,
-            GPosTable table,
-            GlyphPositioningCollection collection,
-            Tag feature,
-            int index,
-            int count)
-            => false;
     }
+
+    public override bool TryUpdatePosition(
+        FontMetrics fontMetrics,
+        GPosTable table,
+        GlyphPositioningCollection collection,
+        Tag feature,
+        int index,
+        int count)
+        => false;
 }

@@ -1,13 +1,12 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts.Tables
+namespace SixLabors.Fonts.Tables;
+
+internal sealed class UnknownTable : Table
 {
-    internal sealed class UnknownTable : Table
-    {
-        internal UnknownTable(string name)
-            => this.Name = name;
+    internal UnknownTable(string name)
+        => this.Name = name;
 
-        public string Name { get; }
-    }
+    public string Name { get; }
 }

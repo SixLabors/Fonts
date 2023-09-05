@@ -1,9 +1,8 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts.Tables
+namespace SixLabors.Fonts.Tables;
+
+internal abstract class Table
 {
-    internal abstract class Table
-    {
-    }
 }

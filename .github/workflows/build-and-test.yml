@@ -9,41 +9,66 @@ on:
   pull_request:
     branches:
       - main
-
+      - release/*
+    types: [ labeled, opened, synchronize, reopened ]
 jobs:
   Build:
     strategy:
       matrix:
+        isARM:
+          - ${{ contains(github.event.pull_request.labels.*.name, 'arch:arm32') || contains(github.event.pull_request.labels.*.name, 'arch:arm64') }}
         options:
           - os: ubuntu-latest
-            framework: netcoreapp3.1
+            framework: net7.0
+            sdk: 7.0.x
+            sdk-preview: true
             runtime: -x64
             codecov: false
           - os: macos-latest
-            framework: netcoreapp3.1
+            framework: net7.0
+            sdk: 7.0.x
+            sdk-preview: true
             runtime: -x64
             codecov: false
           - os: windows-latest
-            framework: netcoreapp3.1
+            framework: net7.0
+            sdk: 7.0.x
+            sdk-preview: true
+            runtime: -x64
+            codecov: false
+          - os: buildjet-4vcpu-ubuntu-2204-arm
+            framework: net7.0
+            sdk: 7.0.x
+            sdk-preview: true
+            runtime: -x64
+            codecov: false
+          - os: ubuntu-latest
+            framework: net6.0
+            sdk: 6.0.x
+            runtime: -x64
+            codecov: false
+          - os: macos-latest
+            framework: net6.0
+            sdk: 6.0.x
+            runtime: -x64
+            codecov: false
+          - os: windows-latest
+            framework: net6.0
+            sdk: 6.0.x
             runtime: -x64
             codecov: true
-          - os: windows-latest
-            framework: netcoreapp2.1
-            runtime: -x64
-            codecov: false
-          - os: windows-latest
-            framework: net472
-            runtime: -x64
-            codecov: false
-          - os: windows-latest
-            framework: net472
-            runtime: -x86
-            codecov: false
+        exclude:
+          - isARM: false
+            options:
+              os: buildjet-4vcpu-ubuntu-2204-arm
 
     runs-on: ${{matrix.options.os}}
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
+      - name: Install libgdi+, which is required for tests running on ubuntu
+        if: ${{ matrix.options.os == 'buildjet-4vcpu-ubuntu-2204-arm' }}
+        run: sudo apt-get -y install libgdiplus libgif-dev libglib2.0-dev libcairo2-dev libtiff-dev libexif-dev
+
       - name: Git Config
         shell: bash
         run: |
@@ -51,13 +76,13 @@ jobs:
           git config --global core.longpaths true
 
       - name: Git Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
 
       # See https://github.com/actions/checkout/issues/165#issuecomment-657673315
-      - name: Git Create LFS file list
+      - name: Git Create LFS FileList
         run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
 
       - name: Git Setup LFS Cache
@@ -82,25 +107,47 @@ jobs:
           restore-keys: ${{ runner.os }}-nuget-
 
       - name: DotNet Setup
+        if: ${{ matrix.options.sdk-preview != true }}
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
             6.0.x
-            5.0.x
-            3.1.x
-            2.1.x
+
+      - name: DotNet Setup Preview
+        if: ${{ matrix.options.sdk-preview == true }}
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: |
+            7.0.x
 
       - name: DotNet Build
+        if: ${{ matrix.options.sdk-preview != true }}
         shell: pwsh
         run: ./ci-build.ps1 "${{matrix.options.framework}}"
         env:
           SIXLABORS_TESTING: True
 
+      - name: DotNet Build Preview
+        if: ${{ matrix.options.sdk-preview == true }}
+        shell: pwsh
+        run: ./ci-build.ps1 "${{matrix.options.framework}}"
+        env:
+          SIXLABORS_TESTING_PREVIEW: True
+
       - name: DotNet Test
+        if: ${{ matrix.options.sdk-preview != true }}
         shell: pwsh
         run: ./ci-test.ps1 "${{matrix.options.os}}" "${{matrix.options.framework}}" "${{matrix.options.runtime}}" "${{matrix.options.codecov}}"
         env:
           SIXLABORS_TESTING: True
+          XUNIT_PATH: .\tests\SixLabors.Fonts.Tests # Required for xunit
+
+      - name: DotNet Test Preview
+        if: ${{ matrix.options.sdk-preview == true }}
+        shell: pwsh
+        run: ./ci-test.ps1 "${{matrix.options.os}}" "${{matrix.options.framework}}" "${{matrix.options.runtime}}" "${{matrix.options.codecov}}"
+        env:
+          SIXLABORS_TESTING_PREVIEW: True
           XUNIT_PATH: .\tests\SixLabors.Fonts.Tests # Required for xunit
 
       - name: Export Failed Output
@@ -115,6 +162,7 @@ jobs:
         if: matrix.options.codecov == true && startsWith(github.repository, 'SixLabors')
         with:
           flags: unittests
+
 
   Publish:
     needs: [Build]
@@ -131,7 +179,7 @@ jobs:
           git config --global core.longpaths true
 
       - name: Git Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
@@ -163,3 +211,4 @@ jobs:
         run: |
           dotnet nuget push .\artifacts\*.nupkg -k ${{secrets.NUGET_TOKEN}} -s https://api.nuget.org/v3/index.json --skip-duplicate
           dotnet nuget push .\artifacts\*.snupkg -k ${{secrets.NUGET_TOKEN}} -s https://api.nuget.org/v3/index.json --skip-duplicate
+

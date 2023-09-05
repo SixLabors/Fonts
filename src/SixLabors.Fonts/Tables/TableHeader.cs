@@ -1,39 +1,36 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-using System.IO;
+namespace SixLabors.Fonts.Tables;
 
-namespace SixLabors.Fonts.Tables
+internal class TableHeader
 {
-    internal class TableHeader
+    public TableHeader(string tag, uint checkSum, uint offset, uint len)
     {
-        public TableHeader(string tag, uint checkSum, uint offset, uint len)
-        {
-            this.Tag = tag;
-            this.CheckSum = checkSum;
-            this.Offset = offset;
-            this.Length = len;
-        }
+        this.Tag = tag;
+        this.CheckSum = checkSum;
+        this.Offset = offset;
+        this.Length = len;
+    }
 
-        public string Tag { get; }
+    public string Tag { get; }
 
-        public uint Offset { get; }
+    public uint Offset { get; }
 
-        public uint CheckSum { get; }
+    public uint CheckSum { get; }
 
-        public uint Length { get; }
+    public uint Length { get; }
 
-        public static TableHeader Read(BigEndianBinaryReader reader) => new TableHeader(
-                reader.ReadTag(),
-                reader.ReadUInt32(),
-                reader.ReadOffset32(),
-                reader.ReadUInt32());
+    public static TableHeader Read(BigEndianBinaryReader reader) => new TableHeader(
+            reader.ReadTag(),
+            reader.ReadUInt32(),
+            reader.ReadOffset32(),
+            reader.ReadUInt32());
 
-        public virtual BigEndianBinaryReader CreateReader(Stream stream)
-        {
-            stream.Seek(this.Offset, SeekOrigin.Begin);
+    public virtual BigEndianBinaryReader CreateReader(Stream stream)
+    {
+        stream.Seek(this.Offset, SeekOrigin.Begin);
 
-            return new BigEndianBinaryReader(stream, true);
-        }
+        return new BigEndianBinaryReader(stream, true);
     }
 }

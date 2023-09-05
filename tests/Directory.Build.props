@@ -19,5 +19,5 @@
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\SixLabors.Fonts\SixLabors.Fonts.csproj" />
   </ItemGroup>
-
+  
 </Project>

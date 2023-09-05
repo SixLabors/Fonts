@@ -20,17 +20,16 @@ SixLabors.Fonts
 **SixLabors.Fonts** is a new cross-platform font loading and drawing library.
 
 ## License
-
-- Fonts is licensed under the [Apache License, Version 2.0](https://opensource.org/licenses/Apache-2.0)
-- An alternative Commercial Support License can be purchased **for projects and applications requiring support**.
-Please visit https://sixlabors.com/pricing for details.
+  
+- Fonts is licensed under the [Six Labors Split License, Version 1.0](https://github.com/SixLabors/Fonts/blob/main/LICENSE)  
 
 ## Support Six Labors
 
 Support the efforts of the development of the Six Labors projects. 
- - [Purchase a Commercial Support License :heart:](https://sixlabors.com/pricing/)
+ - [Purchase a Commercial License :heart:](https://sixlabors.com/pricing/)
  - [Become a sponsor via GitHub Sponsors :heart:]( https://github.com/sponsors/SixLabors)
  - [Become a sponsor via Open Collective :heart:](https://opencollective.com/sixlabors)
+
 
 ## Documentation
 
@@ -44,7 +43,6 @@ Support the efforts of the development of the Six Labors projects.
 
 ## Code of Conduct
 This project has adopted the code of conduct defined by the [Contributor Covenant](https://contributor-covenant.org/) to clarify expected behavior in our community.
-For more information, see the [.NET Foundation Code of Conduct](https://dotnetfoundation.org/code-of-conduct).
 
 ## Installation
 
@@ -58,9 +56,9 @@ Install stable releases via Nuget; development releases are available via Feedz.
 
 If you prefer, you can compile Fonts yourself (please do and help!)
 
-- Using [Visual Studio 2019](https://visualstudio.microsoft.com/vs/)
+- Using [Visual Studio 2022](https://visualstudio.microsoft.com/vs/)
   - Make sure you have the latest version installed
-  - Make sure you have [the .NET Core 3.1 SDK](https://www.microsoft.com/net/core#windows) installed
+  - Make sure you have [the .NET 7 SDK](https://www.microsoft.com/net/core#windows) installed
 
 Alternatively, you can work from command line and/or with a lightweight editor on **both Linux/Unix and Windows**:
 
@@ -128,7 +126,7 @@ Please... Spread the word, contribute algorithms, submit performance improvement
 
 ### Projects using SixLabors.Fonts
 
-* [SixLabors.ImageSharp](https://github.com/jimBobSquarePants/ImageSharp) - cross platform, fully managed, image manipulation and drawing library.
+* [SixLabors.ImageSharp.Drawing](https://github.com/SixLabors/ImageSharp.Drawing) - cross platform, fully managed, image drawing library.
 
 ### The SixLabors.Fonts Team
 

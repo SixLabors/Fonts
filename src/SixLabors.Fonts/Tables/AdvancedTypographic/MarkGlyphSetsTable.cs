@@ -1,28 +1,25 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-using System.IO;
+namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic
+internal sealed class MarkGlyphSetsTable
 {
-    internal sealed class MarkGlyphSetsTable
+    public ushort Format { get; internal set; }
+
+    public ushort[]? CoverageOffset { get; internal set; }
+
+    public static MarkGlyphSetsTable Load(BigEndianBinaryReader reader, long offset)
     {
-        public ushort Format { get; internal set; }
+        reader.Seek(offset, SeekOrigin.Begin);
 
-        public ushort[]? CoverageOffset { get; internal set; }
-
-        public static MarkGlyphSetsTable Load(BigEndianBinaryReader reader, long offset)
+        var markGlyphSetsTable = new MarkGlyphSetsTable
         {
-            reader.Seek(offset, SeekOrigin.Begin);
+            Format = reader.ReadUInt16()
+        };
+        ushort markSetCount = reader.ReadUInt16();
+        markGlyphSetsTable.CoverageOffset = reader.ReadUInt16Array(markSetCount);
 
-            var markGlyphSetsTable = new MarkGlyphSetsTable
-            {
-                Format = reader.ReadUInt16()
-            };
-            ushort markSetCount = reader.ReadUInt16();
-            markGlyphSetsTable.CoverageOffset = reader.ReadUInt16Array(markSetCount);
-
-            return markGlyphSetsTable;
-        }
+        return markGlyphSetsTable;
     }
 }

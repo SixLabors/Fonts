@@ -1,26 +1,25 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts
+namespace SixLabors.Fonts;
+
+/// <summary>
+/// Provides enumeration for the various layout mode of an individual glyph within a body of text.
+/// </summary>
+public enum GlyphLayoutMode
 {
     /// <summary>
-    /// Provides enumeration for the various layout mode of an individual glyph within a body of text.
+    /// Horizontal.
     /// </summary>
-    public enum GlyphLayoutMode
-    {
-        /// <summary>
-        /// Horizontal.
-        /// </summary>
-        Horizontal,
+    Horizontal,
 
-        /// <summary>
-        /// Vertical.
-        /// </summary>
-        Vertical,
+    /// <summary>
+    /// Vertical.
+    /// </summary>
+    Vertical,
 
-        /// <summary>
-        /// Rotated 90 degrees clockwise.
-        /// </summary>
-        VerticalRotated
-    }
+    /// <summary>
+    /// Rotated 90 degrees clockwise.
+    /// </summary>
+    VerticalRotated
 }
