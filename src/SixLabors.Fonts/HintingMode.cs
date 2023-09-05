@@ -1,22 +1,21 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts
+namespace SixLabors.Fonts;
+
+/// <summary>
+/// Defines modes to determine how to apply hinting. The use of mathematical instructions
+/// to adjust the display of an outline font so that it lines up with a rasterized grid.
+/// </summary>
+public enum HintingMode
 {
     /// <summary>
-    /// Defines modes to determine how to apply hinting. The use of mathematical instructions
-    /// to adjust the display of an outline font so that it lines up with a rasterized grid.
+    /// Do not hint the glyphs.
     /// </summary>
-    public enum HintingMode
-    {
-        /// <summary>
-        /// Do not hint the glyphs.
-        /// </summary>
-        None,
+    None,
 
-        /// <summary>
-        /// Hint the glyph using standard configuration.
-        /// </summary>
-        Standard
-    }
+    /// <summary>
+    /// Hint the glyph using standard configuration.
+    /// </summary>
+    Standard
 }

@@ -1,5 +1,5 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
 using System.Numerics;
 using SixLabors.Fonts;
@@ -9,44 +9,43 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace DrawWithImageSharp
+namespace DrawWithImageSharp;
+
+public static class BoundingBoxes
 {
-    public static class BoundingBoxes
+    public static void Generate(string text, Font font)
     {
-        public static void Generate(string text, Font font)
-        {
-            using var img = new Image<Rgba32>(1000, 1000);
-            img.Mutate(x => x.Fill(Color.White));
+        using var img = new Image<Rgba32>(1000, 1000);
+        img.Mutate(x => x.Fill(Color.White));
 
-            TextOptions options = new(font);
-            FontRectangle box = TextMeasurer.MeasureBounds(text, options);
-            (IPathCollection paths, IPathCollection boxes) = GenerateGlyphsWithBox(text, options);
+        TextOptions options = new(font);
+        FontRectangle box = TextMeasurer.MeasureBounds(text, options);
+        (IPathCollection paths, IPathCollection boxes) = GenerateGlyphsWithBox(text, options);
 
-            Rgba32 f = Color.Fuchsia;
-            f.A = 128;
+        Rgba32 f = Color.Fuchsia;
+        f.A = 128;
 
-            img.Mutate(x => x.Fill(Color.Black, paths)
-                            .Draw(f, 1, boxes)
-                            .Draw(Color.Lime, 1, new RectangularPolygon(box.Location, box.Size)));
+        img.Mutate(x => x.Fill(Color.Black, paths)
+                        .Draw(f, 1, boxes)
+                        .Draw(Color.Lime, 1, new RectangularPolygon(box.Location, box.Size)));
 
-            img.Save("Output/Boxed.png");
-        }
+        img.Save("Output/Boxed.png");
+    }
 
-        /// <summary>
-        /// Generates the shapes corresponding the glyphs described by the font and with the setting ing withing the FontSpan
-        /// </summary>
-        /// <param name="text">The text to generate glyphs for</param>
-        /// <param name="options">The style and settings to use while rendering the glyphs</param>
-        /// <returns>The paths, boxes, and text box.</returns>
-        private static (IPathCollection Paths, IPathCollection Boxes) GenerateGlyphsWithBox(string text, TextOptions options)
-        {
-            var glyphBuilder = new CustomGlyphBuilder(Vector2.Zero);
+    /// <summary>
+    /// Generates the shapes corresponding the glyphs described by the font and with the setting ing withing the FontSpan
+    /// </summary>
+    /// <param name="text">The text to generate glyphs for</param>
+    /// <param name="options">The style and settings to use while rendering the glyphs</param>
+    /// <returns>The paths, boxes, and text box.</returns>
+    private static (IPathCollection Paths, IPathCollection Boxes) GenerateGlyphsWithBox(string text, TextOptions options)
+    {
+        var glyphBuilder = new CustomGlyphBuilder(Vector2.Zero);
 
-            var renderer = new TextRenderer(glyphBuilder);
+        var renderer = new TextRenderer(glyphBuilder);
 
-            renderer.RenderText(text, options);
+        renderer.RenderText(text, options);
 
-            return (glyphBuilder.Paths, glyphBuilder.Boxes);
-        }
+        return (glyphBuilder.Paths, glyphBuilder.Boxes);
     }
 }

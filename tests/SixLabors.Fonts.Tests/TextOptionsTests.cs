@@ -1,371 +1,367 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-using System;
-using System.Collections.Generic;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
-using Xunit;
 
-namespace SixLabors.Fonts.Tests
+namespace SixLabors.Fonts.Tests;
+
+public class TextOptionsTests
 {
-    public class TextOptionsTests
+    private readonly Font fakeFont;
+    private readonly TextOptions newTextOptions;
+    private readonly TextOptions clonedTextOptions;
+
+    public TextOptionsTests()
     {
-        private readonly Font fakeFont;
-        private readonly TextOptions newTextOptions;
-        private readonly TextOptions clonedTextOptions;
+        this.fakeFont = FakeFont.CreateFont("ABC");
+        this.newTextOptions = new TextOptions(this.fakeFont);
+        this.clonedTextOptions = new TextOptions(this.newTextOptions);
+    }
 
-        public TextOptionsTests()
+    [Fact]
+    public void ConstructorTest_FontOnly()
+    {
+        Font font = FakeFont.CreateFont("ABC");
+        var options = new TextOptions(font);
+
+        Assert.Equal(72, options.Dpi);
+        Assert.Empty(options.FallbackFontFamilies);
+        Assert.Equal(font, options.Font);
+        Assert.Equal(Vector2.Zero, options.Origin);
+        VerifyPropertyDefault(options);
+    }
+
+    [Fact]
+    public void ConstructorTest_FontWithSingleDpi()
+    {
+        Font font = FakeFont.CreateFont("ABC");
+        const float dpi = 123;
+        var options = new TextOptions(font) { Dpi = dpi };
+
+        Assert.Equal(dpi, options.Dpi);
+        Assert.Empty(options.FallbackFontFamilies);
+        Assert.Equal(font, options.Font);
+        Assert.Equal(Vector2.Zero, options.Origin);
+        VerifyPropertyDefault(options);
+    }
+
+    [Fact]
+    public void ConstructorTest_FontWithOrigin()
+    {
+        Font font = FakeFont.CreateFont("ABC");
+        var origin = new Vector2(123, 345);
+        TextOptions options = new(font) { Origin = origin };
+
+        Assert.Equal(72, options.Dpi);
+        Assert.Empty(options.FallbackFontFamilies);
+        Assert.Equal(font, options.Font);
+        Assert.Equal(origin, options.Origin);
+        VerifyPropertyDefault(options);
+    }
+
+    [Fact]
+    public void ConstructorTest_FontWithSingleDpiWithOrigin()
+    {
+        Font font = FakeFont.CreateFont("ABC");
+        var origin = new Vector2(123, 345);
+        const float dpi = 123;
+        TextOptions options = new(font) { Dpi = dpi, Origin = origin };
+
+        Assert.Equal(dpi, options.Dpi);
+        Assert.Empty(options.FallbackFontFamilies);
+        Assert.Equal(font, options.Font);
+        Assert.Equal(origin, options.Origin);
+        VerifyPropertyDefault(options);
+    }
+
+    [Fact]
+    public void ConstructorTest_FontOnly_WithFallbackFonts()
+    {
+        Font font = FakeFont.CreateFont("ABC");
+        FontFamily[] fontFamilies = new[]
         {
-            this.fakeFont = FakeFont.CreateFont("ABC");
-            this.newTextOptions = new TextOptions(this.fakeFont);
-            this.clonedTextOptions = new TextOptions(this.newTextOptions);
-        }
+            FakeFont.CreateFont("DEF").Family,
+            FakeFont.CreateFont("GHI").Family
+        };
 
-        [Fact]
-        public void ConstructorTest_FontOnly()
+        var options = new TextOptions(font)
         {
-            Font font = FakeFont.CreateFont("ABC");
-            var options = new TextOptions(font);
+            FallbackFontFamilies = fontFamilies
+        };
 
-            Assert.Equal(72, options.Dpi);
-            Assert.Empty(options.FallbackFontFamilies);
-            Assert.Equal(font, options.Font);
-            Assert.Equal(Vector2.Zero, options.Origin);
-            VerifyPropertyDefault(options);
-        }
+        Assert.Equal(72, options.Dpi);
+        Assert.Equal(fontFamilies, options.FallbackFontFamilies);
+        Assert.Equal(font, options.Font);
+        Assert.Equal(Vector2.Zero, options.Origin);
+        VerifyPropertyDefault(options);
+    }
 
-        [Fact]
-        public void ConstructorTest_FontWithSingleDpi()
+    [Fact]
+    public void ConstructorTest_FontWithSingleDpi_WithFallbackFonts()
+    {
+        Font font = FakeFont.CreateFont("ABC");
+        FontFamily[] fontFamilies = new[]
         {
-            Font font = FakeFont.CreateFont("ABC");
-            const float dpi = 123;
-            var options = new TextOptions(font) { Dpi = dpi };
+            FakeFont.CreateFont("DEF").Family,
+            FakeFont.CreateFont("GHI").Family
+        };
 
-            Assert.Equal(dpi, options.Dpi);
-            Assert.Empty(options.FallbackFontFamilies);
-            Assert.Equal(font, options.Font);
-            Assert.Equal(Vector2.Zero, options.Origin);
-            VerifyPropertyDefault(options);
-        }
-
-        [Fact]
-        public void ConstructorTest_FontWithOrigin()
+        const float dpi = 123;
+        var options = new TextOptions(font)
         {
-            Font font = FakeFont.CreateFont("ABC");
-            var origin = new Vector2(123, 345);
-            TextOptions options = new(font) { Origin = origin };
+            Dpi = dpi,
+            FallbackFontFamilies = fontFamilies
+        };
 
-            Assert.Equal(72, options.Dpi);
-            Assert.Empty(options.FallbackFontFamilies);
-            Assert.Equal(font, options.Font);
-            Assert.Equal(origin, options.Origin);
-            VerifyPropertyDefault(options);
-        }
+        Assert.Equal(dpi, options.Dpi);
+        Assert.Equal(fontFamilies, options.FallbackFontFamilies);
+        Assert.Equal(font, options.Font);
+        Assert.Equal(Vector2.Zero, options.Origin);
+        VerifyPropertyDefault(options);
+    }
 
-        [Fact]
-        public void ConstructorTest_FontWithSingleDpiWithOrigin()
+    [Fact]
+    public void ConstructorTest_FontWithOrigin_WithFallbackFonts()
+    {
+        Font font = FakeFont.CreateFont("ABC");
+        FontFamily[] fontFamilies = new[]
         {
-            Font font = FakeFont.CreateFont("ABC");
-            var origin = new Vector2(123, 345);
-            const float dpi = 123;
-            TextOptions options = new(font) { Dpi = dpi, Origin = origin };
+            FakeFont.CreateFont("DEF").Family,
+            FakeFont.CreateFont("GHI").Family
+        };
 
-            Assert.Equal(dpi, options.Dpi);
-            Assert.Empty(options.FallbackFontFamilies);
-            Assert.Equal(font, options.Font);
-            Assert.Equal(origin, options.Origin);
-            VerifyPropertyDefault(options);
-        }
-
-        [Fact]
-        public void ConstructorTest_FontOnly_WithFallbackFonts()
+        var origin = new Vector2(123, 345);
+        TextOptions options = new(font)
         {
-            Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilies = new[]
-            {
-                FakeFont.CreateFont("DEF").Family,
-                FakeFont.CreateFont("GHI").Family
-            };
+            FallbackFontFamilies = fontFamilies,
+            Origin = origin
+        };
 
-            var options = new TextOptions(font)
-            {
-                FallbackFontFamilies = fontFamilies
-            };
+        Assert.Equal(72, options.Dpi);
+        Assert.Equal(fontFamilies, options.FallbackFontFamilies);
+        Assert.Equal(font, options.Font);
+        Assert.Equal(origin, options.Origin);
+        VerifyPropertyDefault(options);
+    }
 
-            Assert.Equal(72, options.Dpi);
-            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
-            Assert.Equal(font, options.Font);
-            Assert.Equal(Vector2.Zero, options.Origin);
-            VerifyPropertyDefault(options);
-        }
-
-        [Fact]
-        public void ConstructorTest_FontWithSingleDpi_WithFallbackFonts()
+    [Fact]
+    public void ConstructorTest_FontWithSingleDpiWithOrigin_WithFallbackFonts()
+    {
+        Font font = FakeFont.CreateFont("ABC");
+        FontFamily[] fontFamilies = new[]
         {
-            Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilies = new[]
-            {
-                FakeFont.CreateFont("DEF").Family,
-                FakeFont.CreateFont("GHI").Family
-            };
+            FakeFont.CreateFont("DEF").Family,
+            FakeFont.CreateFont("GHI").Family
+        };
 
-            const float dpi = 123;
-            var options = new TextOptions(font)
-            {
-                Dpi = dpi,
-                FallbackFontFamilies = fontFamilies
-            };
-
-            Assert.Equal(dpi, options.Dpi);
-            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
-            Assert.Equal(font, options.Font);
-            Assert.Equal(Vector2.Zero, options.Origin);
-            VerifyPropertyDefault(options);
-        }
-
-        [Fact]
-        public void ConstructorTest_FontWithOrigin_WithFallbackFonts()
+        var origin = new Vector2(123, 345);
+        const float dpi = 123;
+        TextOptions options = new(font)
         {
-            Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilies = new[]
-            {
-                FakeFont.CreateFont("DEF").Family,
-                FakeFont.CreateFont("GHI").Family
-            };
+            Dpi = dpi,
+            FallbackFontFamilies = fontFamilies,
+            Origin = origin
+        };
 
-            var origin = new Vector2(123, 345);
-            TextOptions options = new(font)
-            {
-                FallbackFontFamilies = fontFamilies,
-                Origin = origin
-            };
+        Assert.Equal(dpi, options.Dpi);
+        Assert.Equal(fontFamilies, options.FallbackFontFamilies);
+        Assert.Equal(font, options.Font);
+        Assert.Equal(origin, options.Origin);
+        VerifyPropertyDefault(options);
+    }
 
-            Assert.Equal(72, options.Dpi);
-            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
-            Assert.Equal(font, options.Font);
-            Assert.Equal(origin, options.Origin);
-            VerifyPropertyDefault(options);
-        }
-
-        [Fact]
-        public void ConstructorTest_FontWithSingleDpiWithOrigin_WithFallbackFonts()
+    [Fact]
+    public void GetMissingGlyphFromMainFont()
+    {
+        Font font = FakeFont.CreateFontWithInstance("ABC", "ABC", out Fakes.FakeFontInstance abcFontInstance);
+        FontFamily[] fontFamilies = new[]
         {
-            Font font = FakeFont.CreateFont("ABC");
-            FontFamily[] fontFamilies = new[]
-            {
-                FakeFont.CreateFont("DEF").Family,
-                FakeFont.CreateFont("GHI").Family
-            };
+            FakeFont.CreateFontWithInstance("DEF", "DEF", out Fakes.FakeFontInstance defFontInstance).Family,
+            FakeFont.CreateFontWithInstance("GHI", "GHI", out Fakes.FakeFontInstance ghiFontInstance).Family
+        };
 
-            var origin = new Vector2(123, 345);
-            const float dpi = 123;
-            TextOptions options = new(font)
-            {
-                Dpi = dpi,
-                FallbackFontFamilies = fontFamilies,
-                Origin = origin
-            };
-
-            Assert.Equal(dpi, options.Dpi);
-            Assert.Equal(fontFamilies, options.FallbackFontFamilies);
-            Assert.Equal(font, options.Font);
-            Assert.Equal(origin, options.Origin);
-            VerifyPropertyDefault(options);
-        }
-
-        [Fact]
-        public void GetMissingGlyphFromMainFont()
+        var options = new TextOptions(font)
         {
-            Font font = FakeFont.CreateFontWithInstance("ABC", "ABC", out Fakes.FakeFontInstance abcFontInstance);
-            FontFamily[] fontFamilies = new[]
-            {
-                FakeFont.CreateFontWithInstance("DEF", "DEF", out Fakes.FakeFontInstance defFontInstance).Family,
-                FakeFont.CreateFontWithInstance("GHI", "GHI", out Fakes.FakeFontInstance ghiFontInstance).Family
-            };
+            FallbackFontFamilies = fontFamilies,
+            ColorFontSupport = ColorFontSupport.None
+        };
 
-            var options = new TextOptions(font)
-            {
-                FallbackFontFamilies = fontFamilies,
-                ColorFontSupport = ColorFontSupport.None
-            };
+        ReadOnlySpan<char> text = "Z".AsSpan();
+        var renderer = new GlyphRenderer();
+        TextRenderer.RenderTextTo(renderer, text, options);
 
-            ReadOnlySpan<char> text = "Z".AsSpan();
-            var renderer = new GlyphRenderer();
-            TextRenderer.RenderTextTo(renderer, text, options);
+        GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
+        Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
+        Assert.Equal(abcFontInstance.Description.FontNameInvariantCulture.ToUpper(), glyph.Font);
+    }
 
-            GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
-            Assert.Equal(GlyphType.Fallback, glyph.GlyphType);
-            Assert.Equal(abcFontInstance.Description.FontNameInvariantCulture.ToUpper(), glyph.Font);
-        }
-
-        [Theory]
-        [InlineData('A', "abcFontInstance")]
-        [InlineData('F', "defFontInstance")]
-        [InlineData('H', "efghiFontInstance")]
-        public void GetGlyphFromFirstAvailableInstance(char character, string instance)
+    [Theory]
+    [InlineData('A', "abcFontInstance")]
+    [InlineData('F', "defFontInstance")]
+    [InlineData('H', "efghiFontInstance")]
+    public void GetGlyphFromFirstAvailableInstance(char character, string instance)
+    {
+        Font font = FakeFont.CreateFontWithInstance("ABC", "ABC", out Fakes.FakeFontInstance abcFontInstance);
+        FontFamily[] fontFamilies = new[]
         {
-            Font font = FakeFont.CreateFontWithInstance("ABC", "ABC", out Fakes.FakeFontInstance abcFontInstance);
-            FontFamily[] fontFamilies = new[]
-            {
-                FakeFont.CreateFontWithInstance("DEF", "DEF", out Fakes.FakeFontInstance defFontInstance).Family,
-                FakeFont.CreateFontWithInstance("EFGHI", "EFGHI", out Fakes.FakeFontInstance efghiFontInstance).Family
-            };
+            FakeFont.CreateFontWithInstance("DEF", "DEF", out Fakes.FakeFontInstance defFontInstance).Family,
+            FakeFont.CreateFontWithInstance("EFGHI", "EFGHI", out Fakes.FakeFontInstance efghiFontInstance).Family
+        };
 
-            var options = new TextOptions(font)
-            {
-                FallbackFontFamilies = fontFamilies,
-                ColorFontSupport = ColorFontSupport.None
-            };
-
-            ReadOnlySpan<char> text = new[] { character };
-            var renderer = new GlyphRenderer();
-            TextRenderer.RenderTextTo(renderer, text, options);
-            GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
-            Assert.Equal(GlyphType.Standard, glyph.GlyphType);
-            Fakes.FakeFontInstance expectedInstance = instance switch
-            {
-                "abcFontInstance" => abcFontInstance,
-                "defFontInstance" => defFontInstance,
-                "efghiFontInstance" => efghiFontInstance,
-                _ => throw new Exception("does not match")
-            };
-
-            Assert.Equal(expectedInstance.Description.FontNameInvariantCulture.ToUpper(), glyph.Font);
-        }
-
-        [Fact]
-        public void CloneTextOptionsIsNotNull() => Assert.True(this.clonedTextOptions != null);
-
-        [Fact]
-        public void DefaultTextOptionsApplyKerning()
+        var options = new TextOptions(font)
         {
-            const KerningMode expected = KerningMode.Standard;
-            Assert.Equal(expected, this.newTextOptions.KerningMode);
-            Assert.Equal(expected, this.clonedTextOptions.KerningMode);
-        }
+            FallbackFontFamilies = fontFamilies,
+            ColorFontSupport = ColorFontSupport.None
+        };
 
-        [Fact]
-        public void DefaultTextOptionsHorizontalAlignment()
+        ReadOnlySpan<char> text = new[] { character };
+        var renderer = new GlyphRenderer();
+        TextRenderer.RenderTextTo(renderer, text, options);
+        GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
+        Assert.Equal(GlyphType.Standard, glyph.GlyphType);
+        Fakes.FakeFontInstance expectedInstance = instance switch
         {
-            const HorizontalAlignment expected = HorizontalAlignment.Left;
-            Assert.Equal(expected, this.newTextOptions.HorizontalAlignment);
-            Assert.Equal(expected, this.clonedTextOptions.HorizontalAlignment);
-        }
+            "abcFontInstance" => abcFontInstance,
+            "defFontInstance" => defFontInstance,
+            "efghiFontInstance" => efghiFontInstance,
+            _ => throw new Exception("does not match")
+        };
 
-        [Fact]
-        public void DefaultTextOptionsVerticalAlignment()
+        Assert.Equal(expectedInstance.Description.FontNameInvariantCulture.ToUpper(), glyph.Font);
+    }
+
+    [Fact]
+    public void CloneTextOptionsIsNotNull() => Assert.True(this.clonedTextOptions != null);
+
+    [Fact]
+    public void DefaultTextOptionsApplyKerning()
+    {
+        const KerningMode expected = KerningMode.Standard;
+        Assert.Equal(expected, this.newTextOptions.KerningMode);
+        Assert.Equal(expected, this.clonedTextOptions.KerningMode);
+    }
+
+    [Fact]
+    public void DefaultTextOptionsHorizontalAlignment()
+    {
+        const HorizontalAlignment expected = HorizontalAlignment.Left;
+        Assert.Equal(expected, this.newTextOptions.HorizontalAlignment);
+        Assert.Equal(expected, this.clonedTextOptions.HorizontalAlignment);
+    }
+
+    [Fact]
+    public void DefaultTextOptionsVerticalAlignment()
+    {
+        const VerticalAlignment expected = VerticalAlignment.Top;
+        Assert.Equal(expected, this.newTextOptions.VerticalAlignment);
+        Assert.Equal(expected, this.clonedTextOptions.VerticalAlignment);
+    }
+
+    [Fact]
+    public void DefaultTextOptionsDpi()
+    {
+        const float expected = 72F;
+        Assert.Equal(expected, this.newTextOptions.Dpi);
+        Assert.Equal(expected, this.clonedTextOptions.Dpi);
+    }
+
+    [Fact]
+    public void DefaultTextOptionsTabWidth()
+    {
+        const float expected = -1F;
+        Assert.Equal(expected, this.newTextOptions.TabWidth);
+        Assert.Equal(expected, this.clonedTextOptions.TabWidth);
+    }
+
+    [Fact]
+    public void DefaultTextOptionsWrappingLength()
+    {
+        const float expected = -1F;
+        Assert.Equal(expected, this.newTextOptions.WrappingLength);
+        Assert.Equal(expected, this.clonedTextOptions.WrappingLength);
+    }
+
+    [Fact]
+    public void DefaultTextOptionsLineSpacing()
+    {
+        const float expected = 1F;
+        Assert.Equal(expected, this.newTextOptions.LineSpacing);
+        Assert.Equal(expected, this.clonedTextOptions.LineSpacing);
+    }
+
+    [Fact]
+    public void DefaultTextOptionsTextJustification()
+    {
+        const TextJustification expected = TextJustification.None;
+        Assert.Equal(expected, this.newTextOptions.TextJustification);
+        Assert.Equal(expected, this.clonedTextOptions.TextJustification);
+    }
+
+    [Fact]
+    public void NonDefaultClone()
+    {
+        TextOptions expected = new(this.fakeFont)
         {
-            const VerticalAlignment expected = VerticalAlignment.Top;
-            Assert.Equal(expected, this.newTextOptions.VerticalAlignment);
-            Assert.Equal(expected, this.clonedTextOptions.VerticalAlignment);
-        }
+            KerningMode = KerningMode.None,
+            Dpi = 46F,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TabWidth = 3F,
+            LineSpacing = -1F,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            WrappingLength = 42F,
+            FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures }
+        };
 
-        [Fact]
-        public void DefaultTextOptionsDpi()
+        TextOptions actual = new(expected);
+
+        Assert.Equal(expected.KerningMode, actual.KerningMode);
+        Assert.Equal(expected.Dpi, actual.Dpi);
+        Assert.Equal(expected.LineSpacing, actual.LineSpacing);
+        Assert.Equal(expected.HorizontalAlignment, actual.HorizontalAlignment);
+        Assert.Equal(expected.TabWidth, actual.TabWidth);
+        Assert.Equal(expected.VerticalAlignment, actual.VerticalAlignment);
+        Assert.Equal(expected.WrappingLength, actual.WrappingLength);
+        Assert.Equal(expected.FeatureTags, actual.FeatureTags);
+    }
+
+    [Fact]
+    public void CloneIsDeep()
+    {
+        var expected = new TextOptions(this.fakeFont);
+        TextOptions actual = new(expected)
         {
-            const float expected = 72F;
-            Assert.Equal(expected, this.newTextOptions.Dpi);
-            Assert.Equal(expected, this.clonedTextOptions.Dpi);
-        }
+            KerningMode = KerningMode.None,
+            Dpi = 46F,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TabWidth = 3F,
+            LineSpacing = 2F,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            TextJustification = TextJustification.InterCharacter,
+            WrappingLength = 42F
+        };
 
-        [Fact]
-        public void DefaultTextOptionsTabWidth()
-        {
-            const float expected = -1F;
-            Assert.Equal(expected, this.newTextOptions.TabWidth);
-            Assert.Equal(expected, this.clonedTextOptions.TabWidth);
-        }
+        Assert.NotEqual(expected.KerningMode, actual.KerningMode);
+        Assert.NotEqual(expected.Dpi, actual.Dpi);
+        Assert.NotEqual(expected.LineSpacing, actual.LineSpacing);
+        Assert.NotEqual(expected.HorizontalAlignment, actual.HorizontalAlignment);
+        Assert.NotEqual(expected.TabWidth, actual.TabWidth);
+        Assert.NotEqual(expected.VerticalAlignment, actual.VerticalAlignment);
+        Assert.NotEqual(expected.WrappingLength, actual.WrappingLength);
+        Assert.NotEqual(expected.TextJustification, actual.TextJustification);
+    }
 
-        [Fact]
-        public void DefaultTextOptionsWrappingLength()
-        {
-            const float expected = -1F;
-            Assert.Equal(expected, this.newTextOptions.WrappingLength);
-            Assert.Equal(expected, this.clonedTextOptions.WrappingLength);
-        }
-
-        [Fact]
-        public void DefaultTextOptionsLineSpacing()
-        {
-            const float expected = 1F;
-            Assert.Equal(expected, this.newTextOptions.LineSpacing);
-            Assert.Equal(expected, this.clonedTextOptions.LineSpacing);
-        }
-
-        [Fact]
-        public void DefaultTextOptionsTextJustification()
-        {
-            const TextJustification expected = TextJustification.None;
-            Assert.Equal(expected, this.newTextOptions.TextJustification);
-            Assert.Equal(expected, this.clonedTextOptions.TextJustification);
-        }
-
-        [Fact]
-        public void NonDefaultClone()
-        {
-            TextOptions expected = new(this.fakeFont)
-            {
-                KerningMode = KerningMode.None,
-                Dpi = 46F,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                TabWidth = 3F,
-                LineSpacing = -1F,
-                VerticalAlignment = VerticalAlignment.Bottom,
-                WrappingLength = 42F,
-                FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures }
-            };
-
-            TextOptions actual = new(expected);
-
-            Assert.Equal(expected.KerningMode, actual.KerningMode);
-            Assert.Equal(expected.Dpi, actual.Dpi);
-            Assert.Equal(expected.LineSpacing, actual.LineSpacing);
-            Assert.Equal(expected.HorizontalAlignment, actual.HorizontalAlignment);
-            Assert.Equal(expected.TabWidth, actual.TabWidth);
-            Assert.Equal(expected.VerticalAlignment, actual.VerticalAlignment);
-            Assert.Equal(expected.WrappingLength, actual.WrappingLength);
-            Assert.Equal(expected.FeatureTags, actual.FeatureTags);
-        }
-
-        [Fact]
-        public void CloneIsDeep()
-        {
-            var expected = new TextOptions(this.fakeFont);
-            TextOptions actual = new(expected)
-            {
-                KerningMode = KerningMode.None,
-                Dpi = 46F,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                TabWidth = 3F,
-                LineSpacing = 2F,
-                VerticalAlignment = VerticalAlignment.Bottom,
-                TextJustification = TextJustification.InterCharacter,
-                WrappingLength = 42F
-            };
-
-            Assert.NotEqual(expected.KerningMode, actual.KerningMode);
-            Assert.NotEqual(expected.Dpi, actual.Dpi);
-            Assert.NotEqual(expected.LineSpacing, actual.LineSpacing);
-            Assert.NotEqual(expected.HorizontalAlignment, actual.HorizontalAlignment);
-            Assert.NotEqual(expected.TabWidth, actual.TabWidth);
-            Assert.NotEqual(expected.VerticalAlignment, actual.VerticalAlignment);
-            Assert.NotEqual(expected.WrappingLength, actual.WrappingLength);
-            Assert.NotEqual(expected.TextJustification, actual.TextJustification);
-        }
-
-        private static void VerifyPropertyDefault(TextOptions options)
-        {
-            Assert.Equal(-1, options.TabWidth);
-            Assert.Equal(KerningMode.Standard, options.KerningMode);
-            Assert.Equal(-1, options.WrappingLength);
-            Assert.Equal(HorizontalAlignment.Left, options.HorizontalAlignment);
-            Assert.Equal(VerticalAlignment.Top, options.VerticalAlignment);
-            Assert.Equal(TextAlignment.Start, options.TextAlignment);
-            Assert.Equal(TextJustification.None, options.TextJustification);
-            Assert.Equal(TextDirection.Auto, options.TextDirection);
-            Assert.Equal(LayoutMode.HorizontalTopBottom, options.LayoutMode);
-            Assert.Equal(1, options.LineSpacing);
-        }
+    private static void VerifyPropertyDefault(TextOptions options)
+    {
+        Assert.Equal(-1, options.TabWidth);
+        Assert.Equal(KerningMode.Standard, options.KerningMode);
+        Assert.Equal(-1, options.WrappingLength);
+        Assert.Equal(HorizontalAlignment.Left, options.HorizontalAlignment);
+        Assert.Equal(VerticalAlignment.Top, options.VerticalAlignment);
+        Assert.Equal(TextAlignment.Start, options.TextAlignment);
+        Assert.Equal(TextJustification.None, options.TextJustification);
+        Assert.Equal(TextDirection.Auto, options.TextDirection);
+        Assert.Equal(LayoutMode.HorizontalTopBottom, options.LayoutMode);
+        Assert.Equal(1, options.LineSpacing);
     }
 }

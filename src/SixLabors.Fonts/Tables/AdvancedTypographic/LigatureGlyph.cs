@@ -1,25 +1,22 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-using System.IO;
+namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic
+internal sealed class LigatureGlyph
 {
-    internal sealed class LigatureGlyph
+    public ushort[]? CaretValueOffsets { get; internal set; }
+
+    public static LigatureGlyph Load(BigEndianBinaryReader reader, long offset)
     {
-        public ushort[]? CaretValueOffsets { get; internal set; }
+        reader.Seek(offset, SeekOrigin.Begin);
 
-        public static LigatureGlyph Load(BigEndianBinaryReader reader, long offset)
+        ushort caretCount = reader.ReadUInt16();
+        var ligatureGlyph = new LigatureGlyph()
         {
-            reader.Seek(offset, SeekOrigin.Begin);
+            CaretValueOffsets = reader.ReadUInt16Array(caretCount)
+        };
 
-            ushort caretCount = reader.ReadUInt16();
-            var ligatureGlyph = new LigatureGlyph()
-            {
-                CaretValueOffsets = reader.ReadUInt16Array(caretCount)
-            };
-
-            return ligatureGlyph;
-        }
+        return ligatureGlyph;
     }
 }

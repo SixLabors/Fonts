@@ -1,17 +1,14 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-using Xunit;
+namespace SixLabors.Fonts.Tests.Issues;
 
-namespace SixLabors.Fonts.Tests.Issues
+public class Issues_203
 {
-    public class Issues_203
+    [Fact]
+    public void CanParseVersion1Font()
     {
-        [Fact]
-        public void CanParseVersion1Font()
-        {
-            var font = FontDescription.LoadDescription(TestFonts.Version1Font);
-            Assert.NotNull(font);
-        }
+        var font = FontDescription.LoadDescription(TestFonts.Version1Font);
+        Assert.NotNull(font);
     }
 }

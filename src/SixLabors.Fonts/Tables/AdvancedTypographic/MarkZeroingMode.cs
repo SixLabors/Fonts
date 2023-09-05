@@ -1,17 +1,16 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts.Tables.AdvancedTypographic
+namespace SixLabors.Fonts.Tables.AdvancedTypographic;
+
+/// <summary>
+/// Provides enumeration determining when to zero mark advances.
+/// </summary>
+internal enum MarkZeroingMode
 {
-    /// <summary>
-    /// Provides enumeration determining when to zero mark advances.
-    /// </summary>
-    internal enum MarkZeroingMode
-    {
-        PreGPos,
+    PreGPos,
 
-        PostGpos,
+    PostGpos,
 
-        None
-    }
+    None
 }

@@ -2,12 +2,33 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <!--Used to hide test project from dotnet test-->
     <IsTestProject>false</IsTestProject>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!--Avoid culture analysis in FontCollection overloads-->
+    <NoWarn>CA1304</NoWarn>
+
+    <!--BenchmarkDotNet cannot run static benchmarks-->
+    <!--Mark members as static-->
+    <NoWarn>CA1822</NoWarn>
+  </PropertyGroup>
+  
+  <Choose>
+    <When Condition="$(SIXLABORS_TESTING_PREVIEW) == true">
+      <PropertyGroup>
+        <TargetFrameworks>net7.0;net6.0</TargetFrameworks>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <TargetFrameworks>net6.0</TargetFrameworks>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
     <PackageReference Include="SkiaSharp" />

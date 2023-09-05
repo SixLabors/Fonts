@@ -1,44 +1,41 @@
 // Copyright (c) Six Labors.
-// Licensed under the Apache License, Version 2.0.
+// Licensed under the Six Labors Split License.
 
-using System;
+namespace SixLabors.Fonts;
 
-namespace SixLabors.Fonts
+/// <summary>
+/// Defines modes to determine the layout direction of text.
+/// </summary>
+[Flags]
+public enum LayoutMode
 {
     /// <summary>
-    /// Defines modes to determine the layout direction of text.
+    /// Text is laid out horizontally from top to bottom.
     /// </summary>
-    [Flags]
-    public enum LayoutMode
-    {
-        /// <summary>
-        /// Text is laid out horizontally from top to bottom.
-        /// </summary>
-        HorizontalTopBottom = 0,
+    HorizontalTopBottom = 0,
 
-        /// <summary>
-        /// Text is laid out horizontally from bottom to top.
-        /// </summary>
-        HorizontalBottomTop = 1 << 0,
+    /// <summary>
+    /// Text is laid out horizontally from bottom to top.
+    /// </summary>
+    HorizontalBottomTop = 1 << 0,
 
-        /// <summary>
-        /// Text is laid out vertically from left to right.
-        /// </summary>
-        VerticalLeftRight = 1 << 1,
+    /// <summary>
+    /// Text is laid out vertically from left to right.
+    /// </summary>
+    VerticalLeftRight = 1 << 1,
 
-        /// <summary>
-        /// Text is laid out vertically from right to left.
-        /// </summary>
-        VerticalRightLeft = 1 << 2,
+    /// <summary>
+    /// Text is laid out vertically from right to left.
+    /// </summary>
+    VerticalRightLeft = 1 << 2,
 
-        /// <summary>
-        /// Text is laid out vertically from left to right. Horizontal glyphs are rotated 90 degrees clockwise.
-        /// </summary>
-        VerticalMixedLeftRight = 1 << 3,
+    /// <summary>
+    /// Text is laid out vertically from left to right. Horizontal glyphs are rotated 90 degrees clockwise.
+    /// </summary>
+    VerticalMixedLeftRight = 1 << 3,
 
-        /// <summary>
-        /// Text is laid out vertically from right to left. Horizontal glyphs are rotated 90 degrees clockwise.
-        /// </summary>
-        VerticalMixedRightLeft = 1 << 4,
-    }
+    /// <summary>
+    /// Text is laid out vertically from right to left. Horizontal glyphs are rotated 90 degrees clockwise.
+    /// </summary>
+    VerticalMixedRightLeft = 1 << 4,
 }
