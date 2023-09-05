@@ -1,13 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
@@ -20,441 +16,458 @@ using SixLabors.Fonts.Tables.General.Post;
 using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Unicode;
 
-namespace SixLabors.Fonts
+namespace SixLabors.Fonts;
+
+/// <summary>
+/// <para>
+/// Represents a font face with metrics, which is a set of glyphs with a specific style (regular, italic, bold etc).
+/// </para>
+/// <para>The font source is a stream.</para>
+/// </summary>
+internal partial class StreamFontMetrics : FontMetrics
 {
+    private readonly TrueTypeFontTables? trueTypeFontTables;
+    private readonly CompactFontTables? compactFontTables;
+    private readonly OutlineType outlineType;
+
+    // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
+    private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]> glyphCache;
+    private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]>? colorGlyphCache;
+    private readonly FontDescription description;
+    private readonly HorizontalMetrics horizontalMetrics;
+    private readonly VerticalMetrics verticalMetrics;
+    private ushort unitsPerEm;
+    private float scaleFactor;
+    private short subscriptXSize;
+    private short subscriptYSize;
+    private short subscriptXOffset;
+    private short subscriptYOffset;
+    private short superscriptXSize;
+    private short superscriptYSize;
+    private short superscriptXOffset;
+    private short superscriptYOffset;
+    private short strikeoutSize;
+    private short strikeoutPosition;
+    private short underlinePosition;
+    private short underlineThickness;
+    private float italicAngle;
+
     /// <summary>
-    /// <para>
-    /// Represents a font face with metrics, which is a set of glyphs with a specific style (regular, italic, bold etc).
-    /// </para>
-    /// <para>The font source is a stream.</para>
+    /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
     /// </summary>
-    internal partial class StreamFontMetrics : FontMetrics
+    /// <param name="tables">The True Type font tables.</param>
+    internal StreamFontMetrics(TrueTypeFontTables tables)
     {
-        private readonly TrueTypeFontTables? trueTypeFontTables;
-        private readonly CompactFontTables? compactFontTables;
-        private readonly OutlineType outlineType;
-
-        // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
-        private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]> glyphCache;
-        private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]>? colorGlyphCache;
-        private readonly FontDescription description;
-        private readonly HorizontalMetrics horizontalMetrics;
-        private readonly VerticalMetrics verticalMetrics;
-        private ushort unitsPerEm;
-        private float scaleFactor;
-        private short subscriptXSize;
-        private short subscriptYSize;
-        private short subscriptXOffset;
-        private short subscriptYOffset;
-        private short superscriptXSize;
-        private short superscriptYSize;
-        private short superscriptXOffset;
-        private short superscriptYOffset;
-        private short strikeoutSize;
-        private short strikeoutPosition;
-        private short underlinePosition;
-        private short underlineThickness;
-        private float italicAngle;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
-        /// </summary>
-        /// <param name="tables">The True Type font tables.</param>
-        internal StreamFontMetrics(TrueTypeFontTables tables)
+        this.trueTypeFontTables = tables;
+        this.outlineType = OutlineType.TrueType;
+        this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+        this.glyphCache = new();
+        if (tables.Colr is not null)
         {
-            this.trueTypeFontTables = tables;
-            this.outlineType = OutlineType.TrueType;
-            this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
-            this.glyphCache = new();
-            if (tables.Colr is not null)
+            this.colorGlyphCache = new();
+        }
+
+        (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
+        this.horizontalMetrics = metrics.HorizontalMetrics;
+        this.verticalMetrics = metrics.VerticalMetrics;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
+    /// </summary>
+    /// <param name="tables">The Compact Font tables.</param>
+    /// <param name="glyphVariationProcessor">Processor which handles glyph variations.</param>
+    internal StreamFontMetrics(CompactFontTables tables, GlyphVariationProcessor? glyphVariationProcessor = null)
+    {
+        this.compactFontTables = tables;
+        this.outlineType = OutlineType.CFF;
+        this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+        this.GlyphVariationProcessor = glyphVariationProcessor;
+        this.glyphCache = new();
+        if (tables.Colr is not null)
+        {
+            this.colorGlyphCache = new();
+        }
+
+        (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
+        this.horizontalMetrics = metrics.HorizontalMetrics;
+        this.verticalMetrics = metrics.VerticalMetrics;
+    }
+
+    public HeadTable.HeadFlags HeadFlags { get; private set; }
+
+    public GlyphVariationProcessor? GlyphVariationProcessor { get; private set; }
+
+    /// <inheritdoc/>
+    public override FontDescription Description => this.description;
+
+    /// <inheritdoc/>
+    public override ushort UnitsPerEm => this.unitsPerEm;
+
+    /// <inheritdoc/>
+    public override float ScaleFactor => this.scaleFactor;
+
+    /// <inheritdoc/>
+    public override HorizontalMetrics HorizontalMetrics => this.horizontalMetrics;
+
+    /// <inheritdoc/>
+    public override VerticalMetrics VerticalMetrics => this.verticalMetrics;
+
+    /// <inheritdoc/>
+    public override short SubscriptXSize => this.subscriptXSize;
+
+    /// <inheritdoc/>
+    public override short SubscriptYSize => this.subscriptYSize;
+
+    /// <inheritdoc/>
+    public override short SubscriptXOffset => this.subscriptXOffset;
+
+    /// <inheritdoc/>
+    public override short SubscriptYOffset => this.subscriptYOffset;
+
+    /// <inheritdoc/>
+    public override short SuperscriptXSize => this.superscriptXSize;
+
+    /// <inheritdoc/>
+    public override short SuperscriptYSize => this.superscriptYSize;
+
+    /// <inheritdoc/>
+    public override short SuperscriptXOffset => this.superscriptXOffset;
+
+    /// <inheritdoc/>
+    public override short SuperscriptYOffset => this.superscriptYOffset;
+
+    /// <inheritdoc/>
+    public override short StrikeoutSize => this.strikeoutSize;
+
+    /// <inheritdoc/>
+    public override short StrikeoutPosition => this.strikeoutPosition;
+
+    /// <inheritdoc/>
+    public override short UnderlinePosition => this.underlinePosition;
+
+    /// <inheritdoc/>
+    public override short UnderlineThickness => this.underlineThickness;
+
+    /// <inheritdoc/>
+    public override float ItalicAngle => this.italicAngle;
+
+    /// <inheritdoc/>
+    internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
+        => this.TryGetGlyphId(codePoint, null, out glyphId, out bool _);
+
+    /// <inheritdoc/>
+    internal override bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+    {
+        CMapTable cmap = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.Cmap
+            : this.compactFontTables!.Cmap;
+
+        return cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+    }
+
+    /// <inheritdoc/>
+    internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
+    {
+        GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.Gdef
+            : this.compactFontTables!.Gdef;
+
+        glyphClass = null;
+        return gdef is not null && gdef.TryGetGlyphClass(glyphId, out glyphClass);
+    }
+
+    /// <inheritdoc/>
+    internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
+    {
+        GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.Gdef
+            : this.compactFontTables!.Gdef;
+
+        markAttachmentClass = null;
+        return gdef is not null && gdef.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
+    }
+
+    /// <inheritdoc/>
+    public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
+    {
+        if (this.trueTypeFontTables?.Fvar == null)
+        {
+            variationAxes = Array.Empty<VariationAxis>();
+            return false;
+        }
+
+        FVarTable? fvar = this.trueTypeFontTables?.Fvar;
+        Tables.General.Name.NameTable? names = this.trueTypeFontTables?.Name;
+        variationAxes = new VariationAxis[fvar!.Axes.Length];
+        for (int i = 0; i < fvar.Axes.Length; i++)
+        {
+            VariationAxisRecord axis = fvar.Axes[i];
+            string name = names != null ? names.GetNameById(CultureInfo.InvariantCulture, axis.AxisNameId) : string.Empty;
+            variationAxes[i] = new VariationAxis()
             {
-                this.colorGlyphCache = new();
-            }
-
-            (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
-            this.horizontalMetrics = metrics.HorizontalMetrics;
-            this.verticalMetrics = metrics.VerticalMetrics;
+                Tag = axis.Tag,
+                Min = axis.MinValue,
+                Max = axis.MaxValue,
+                Default = axis.DefaultValue,
+                Name = name
+            };
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
-        /// </summary>
-        /// <param name="tables">The Compact Font tables.</param>
-        /// <param name="glyphVariationProcessor">Processor which handles glyph variations.</param>
-        internal StreamFontMetrics(CompactFontTables tables, GlyphVariationProcessor? glyphVariationProcessor = null)
-        {
-            this.compactFontTables = tables;
-            this.outlineType = OutlineType.CFF;
-            this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
-            this.GlyphVariationProcessor = glyphVariationProcessor;
-            this.glyphCache = new();
-            if (tables.Colr is not null)
-            {
-                this.colorGlyphCache = new();
-            }
+        return true;
+    }
 
-            (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
-            this.horizontalMetrics = metrics.HorizontalMetrics;
-            this.verticalMetrics = metrics.VerticalMetrics;
+    /// <inheritdoc/>
+    public override bool TryGetGlyphMetrics(
+        CodePoint codePoint,
+        TextAttributes textAttributes,
+        TextDecorations textDecorations,
+        LayoutMode layoutMode,
+        ColorFontSupport support,
+        [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
+    {
+        // We return metrics for the special glyph representing a missing character, commonly known as .notdef.
+        this.TryGetGlyphId(codePoint, out ushort glyphId);
+        metrics = this.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support);
+        return metrics.Any();
+    }
+
+    /// <inheritdoc/>
+    internal override IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
+        CodePoint codePoint,
+        ushort glyphId,
+        TextAttributes textAttributes,
+        TextDecorations textDecorations,
+        LayoutMode layoutMode,
+        ColorFontSupport support)
+    {
+        GlyphType glyphType = GlyphType.Standard;
+        if (glyphId == 0)
+        {
+            // A glyph was not found in this face for the previously matched
+            // codepoint. Set to fallback.
+            glyphType = GlyphType.Fallback;
         }
 
-        public HeadTable.HeadFlags HeadFlags { get; private set; }
-
-        public GlyphVariationProcessor? GlyphVariationProcessor { get; private set; }
-
-        /// <inheritdoc/>
-        public override FontDescription Description => this.description;
-
-        /// <inheritdoc/>
-        public override ushort UnitsPerEm => this.unitsPerEm;
-
-        /// <inheritdoc/>
-        public override float ScaleFactor => this.scaleFactor;
-
-        /// <inheritdoc/>
-        public override HorizontalMetrics HorizontalMetrics => this.horizontalMetrics;
-
-        /// <inheritdoc/>
-        public override VerticalMetrics VerticalMetrics => this.verticalMetrics;
-
-        /// <inheritdoc/>
-        public override short SubscriptXSize => this.subscriptXSize;
-
-        /// <inheritdoc/>
-        public override short SubscriptYSize => this.subscriptYSize;
-
-        /// <inheritdoc/>
-        public override short SubscriptXOffset => this.subscriptXOffset;
-
-        /// <inheritdoc/>
-        public override short SubscriptYOffset => this.subscriptYOffset;
-
-        /// <inheritdoc/>
-        public override short SuperscriptXSize => this.superscriptXSize;
-
-        /// <inheritdoc/>
-        public override short SuperscriptYSize => this.superscriptYSize;
-
-        /// <inheritdoc/>
-        public override short SuperscriptXOffset => this.superscriptXOffset;
-
-        /// <inheritdoc/>
-        public override short SuperscriptYOffset => this.superscriptYOffset;
-
-        /// <inheritdoc/>
-        public override short StrikeoutSize => this.strikeoutSize;
-
-        /// <inheritdoc/>
-        public override short StrikeoutPosition => this.strikeoutPosition;
-
-        /// <inheritdoc/>
-        public override short UnderlinePosition => this.underlinePosition;
-
-        /// <inheritdoc/>
-        public override short UnderlineThickness => this.underlineThickness;
-
-        /// <inheritdoc/>
-        public override float ItalicAngle => this.italicAngle;
-
-        /// <inheritdoc/>
-        internal override bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId)
-            => this.TryGetGlyphId(codePoint, null, out glyphId, out bool _);
-
-        /// <inheritdoc/>
-        internal override bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint)
+        if (support == ColorFontSupport.MicrosoftColrFormat
+            && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, out GlyphMetrics[]? metrics))
         {
-            CMapTable cmap = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Cmap
-                : this.compactFontTables!.Cmap;
-
-            return cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+            return metrics;
         }
 
-        /// <inheritdoc/>
-        internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
-        {
-            GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Gdef
-                : this.compactFontTables!.Gdef;
+        // We overwrite the cache entry for this type should the attributes change.
+        return this.glyphCache.GetOrAdd(
+              CreateCacheKey(codePoint, glyphId, textAttributes, layoutMode),
+              key => new[]
+              {
+                this.CreateGlyphMetrics(
+                codePoint,
+                key.Id,
+                glyphType,
+                key.Attributes,
+                textDecorations,
+                key.IsVerticalLayout)
+              });
+    }
 
-            glyphClass = null;
-            return gdef is not null && gdef.TryGetGlyphClass(glyphId, out glyphClass);
+    /// <inheritdoc />
+    internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
+    {
+        CMapTable cmap = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.Cmap
+            : this.compactFontTables!.Cmap;
+
+        return cmap.GetAvailableCodePoints();
+    }
+
+    /// <inheritdoc/>
+    internal override bool TryGetGSubTable([NotNullWhen(true)] out GSubTable? gSubTable)
+    {
+        gSubTable = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.GSub
+            : this.compactFontTables!.GSub;
+
+        return gSubTable is not null;
+    }
+
+    /// <inheritdoc/>
+    internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
+    {
+        if (this.TryGetGSubTable(out GSubTable? gSubTable))
+        {
+            gSubTable.ApplySubstitution(this, collection);
+        }
+    }
+
+    /// <inheritdoc/>
+    internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
+    {
+        bool isTTF = this.outlineType == OutlineType.TrueType;
+        KerningTable? kern = isTTF
+            ? this.trueTypeFontTables!.Kern
+            : this.compactFontTables!.Kern;
+
+        if (kern is null)
+        {
+            vector = default;
+            return false;
         }
 
-        /// <inheritdoc/>
-        internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
+        return kern.TryGetKerningOffset(previousId, currentId, out vector);
+    }
+
+    /// <inheritdoc/>
+    internal override void UpdatePositions(GlyphPositioningCollection collection)
+    {
+        bool isTTF = this.outlineType == OutlineType.TrueType;
+        GPosTable? gpos = isTTF
+            ? this.trueTypeFontTables!.GPos
+            : this.compactFontTables!.GPos;
+
+        bool kerned = false;
+        KerningMode kerningMode = collection.TextOptions.KerningMode;
+
+        gpos?.TryUpdatePositions(this, collection, out kerned);
+
+        // TODO: I don't think we should disable kerning here.
+        if (!kerned && kerningMode != KerningMode.None)
         {
-            GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Gdef
-                : this.compactFontTables!.Gdef;
-
-            markAttachmentClass = null;
-            return gdef is not null && gdef.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
-        }
-
-        /// <inheritdoc/>
-        public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
-        {
-            if (this.trueTypeFontTables?.Fvar == null)
-            {
-                variationAxes = Array.Empty<VariationAxis>();
-                return false;
-            }
-
-            FVarTable? fvar = this.trueTypeFontTables?.Fvar;
-            Tables.General.Name.NameTable? names = this.trueTypeFontTables?.Name;
-            variationAxes = new VariationAxis[fvar!.Axes.Length];
-            for (int i = 0; i < fvar.Axes.Length; i++)
-            {
-                VariationAxisRecord axis = fvar.Axes[i];
-                string name = names != null ? names.GetNameById(CultureInfo.InvariantCulture, axis.AxisNameId) : string.Empty;
-                variationAxes[i] = new VariationAxis()
-                {
-                    Tag = axis.Tag,
-                    Min = axis.MinValue,
-                    Max = axis.MaxValue,
-                    Default = axis.DefaultValue,
-                    Name = name
-                };
-            }
-
-            return true;
-        }
-
-        /// <inheritdoc/>
-        public override bool TryGetGlyphMetrics(
-            CodePoint codePoint,
-            TextAttributes textAttributes,
-            TextDecorations textDecorations,
-            LayoutMode layoutMode,
-            ColorFontSupport support,
-            [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
-        {
-            // We return metrics for the special glyph representing a missing character, commonly known as .notdef.
-            this.TryGetGlyphId(codePoint, out ushort glyphId);
-            metrics = this.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support);
-            return metrics.Any();
-        }
-
-        /// <inheritdoc/>
-        internal override IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
-            CodePoint codePoint,
-            ushort glyphId,
-            TextAttributes textAttributes,
-            TextDecorations textDecorations,
-            LayoutMode layoutMode,
-            ColorFontSupport support)
-        {
-            GlyphType glyphType = GlyphType.Standard;
-            if (glyphId == 0)
-            {
-                // A glyph was not found in this face for the previously matched
-                // codepoint. Set to fallback.
-                glyphType = GlyphType.Fallback;
-            }
-
-            if (support == ColorFontSupport.MicrosoftColrFormat
-                && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, out GlyphMetrics[]? metrics))
-            {
-                return metrics;
-            }
-
-            // We overwrite the cache entry for this type should the attributes change.
-            return this.glyphCache.GetOrAdd(
-                  CreateCacheKey(codePoint, glyphId, textAttributes, layoutMode),
-                  key => new[]
-                  {
-                    this.CreateGlyphMetrics(
-                    codePoint,
-                    key.Id,
-                    glyphType,
-                    key.Attributes,
-                    textDecorations,
-                    key.IsVerticalLayout)
-                  });
-        }
-
-        /// <inheritdoc />
-        internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
-        {
-            CMapTable cmap = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Cmap
-                : this.compactFontTables!.Cmap;
-
-            return cmap.GetAvailableCodePoints();
-        }
-
-        /// <inheritdoc/>
-        internal override bool TryGetGSubTable([NotNullWhen(true)] out GSubTable? gSubTable)
-        {
-            gSubTable = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.GSub
-                : this.compactFontTables!.GSub;
-
-            return gSubTable is not null;
-        }
-
-        /// <inheritdoc/>
-        internal override void ApplySubstitution(GlyphSubstitutionCollection collection)
-        {
-            if (this.TryGetGSubTable(out GSubTable? gSubTable))
-            {
-                gSubTable.ApplySubstitution(this, collection);
-            }
-        }
-
-        /// <inheritdoc/>
-        internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
-        {
-            bool isTTF = this.outlineType == OutlineType.TrueType;
             KerningTable? kern = isTTF
                 ? this.trueTypeFontTables!.Kern
                 : this.compactFontTables!.Kern;
 
-            if (kern is null)
+            if (kern?.Count > 0)
             {
-                vector = default;
-                return false;
-            }
-
-            return kern.TryGetKerningOffset(previousId, currentId, out vector);
-        }
-
-        /// <inheritdoc/>
-        internal override void UpdatePositions(GlyphPositioningCollection collection)
-        {
-            bool isTTF = this.outlineType == OutlineType.TrueType;
-            GPosTable? gpos = isTTF
-                ? this.trueTypeFontTables!.GPos
-                : this.compactFontTables!.GPos;
-
-            bool kerned = false;
-            KerningMode kerningMode = collection.TextOptions.KerningMode;
-
-            gpos?.TryUpdatePositions(this, collection, out kerned);
-
-            // TODO: I don't think we should disable kerning here.
-            if (!kerned && kerningMode != KerningMode.None)
-            {
-                KerningTable? kern = isTTF
-                    ? this.trueTypeFontTables!.Kern
-                    : this.compactFontTables!.Kern;
-
-                if (kern?.Count > 0)
+                // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
+                int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(collection.Count);
+                for (int index = 1; index < collection.Count; index++)
                 {
-                    // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
-                    int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(collection.Count);
-                    for (int index = 1; index < collection.Count; index++)
+                    if (index >= maxCount)
                     {
-                        if (index >= maxCount)
-                        {
-                            break;
-                        }
-
-                        kern.UpdatePositions(this, collection, index - 1, index);
+                        break;
                     }
+
+                    kern.UpdatePositions(this, collection, index - 1, index);
                 }
             }
         }
+    }
 
-        /// <summary>
-        /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
-        /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
-        public static StreamFontMetrics LoadFont(string path)
+    /// <summary>
+    /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
+    /// </summary>
+    /// <param name="path">The file path.</param>
+    /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
+    public static StreamFontMetrics LoadFont(string path)
+    {
+        using FileStream fs = File.OpenRead(path);
+        var reader = new FontReader(fs);
+        return LoadFont(reader);
+    }
+
+    /// <summary>
+    /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
+    /// </summary>
+    /// <param name="path">The file path.</param>
+    /// <param name="offset">Position in the stream to read the font from.</param>
+    /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
+    public static StreamFontMetrics LoadFont(string path, long offset)
+    {
+        using FileStream fs = File.OpenRead(path);
+        fs.Position = offset;
+        return LoadFont(fs);
+    }
+
+    /// <summary>
+    /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
+    /// </summary>
+    /// <param name="stream">The stream.</param>
+    /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
+    public static StreamFontMetrics LoadFont(Stream stream)
+    {
+        var reader = new FontReader(stream);
+        return LoadFont(reader);
+    }
+
+    internal static StreamFontMetrics LoadFont(FontReader reader)
+    {
+        if (reader.OutlineType == OutlineType.TrueType)
         {
-            using FileStream fs = File.OpenRead(path);
-            var reader = new FontReader(fs);
-            return LoadFont(reader);
+            return LoadTrueTypeFont(reader);
         }
 
-        /// <summary>
-        /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
-        /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <param name="offset">Position in the stream to read the font from.</param>
-        /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
-        public static StreamFontMetrics LoadFont(string path, long offset)
+        return LoadCompactFont(reader);
+    }
+
+    private (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) Initialize<T>(T tables)
+        where T : IFontTables
+    {
+        HeadTable head = tables.Head;
+        HorizontalHeadTable hhea = tables.Hhea;
+        VerticalHeadTable? vhea = tables.Vhea;
+        OS2Table os2 = tables.Os2;
+        PostTable post = tables.Post;
+
+        this.HeadFlags = head.Flags;
+        this.unitsPerEm = head.UnitsPerEm;
+        this.scaleFactor = this.unitsPerEm * 72F; // 72 * UnitsPerEm means 1pt = 1px
+        this.subscriptXSize = os2.SubscriptXSize;
+        this.subscriptYSize = os2.SubscriptYSize;
+        this.subscriptXOffset = os2.SubscriptXOffset;
+        this.subscriptYOffset = os2.SubscriptYOffset;
+        this.superscriptXSize = os2.SuperscriptXSize;
+        this.superscriptYSize = os2.SuperscriptYSize;
+        this.superscriptXOffset = os2.SuperscriptXOffset;
+        this.superscriptYOffset = os2.SuperscriptYOffset;
+        this.strikeoutSize = os2.StrikeoutSize;
+        this.strikeoutPosition = os2.StrikeoutPosition;
+        this.underlinePosition = post.UnderlinePosition;
+        this.underlineThickness = post.UnderlineThickness;
+        this.italicAngle = post.ItalicAngle;
+
+        HorizontalMetrics horizontalMetrics = InitializeHorizontalMetrics(hhea, vhea, os2);
+        VerticalMetrics verticalMetrics = InitializeVerticalMetrics(horizontalMetrics, vhea);
+        return (horizontalMetrics, verticalMetrics);
+    }
+
+    private static HorizontalMetrics InitializeHorizontalMetrics(HorizontalHeadTable hhea, VerticalHeadTable? vhea, OS2Table os2)
+    {
+        short ascender;
+        short descender;
+        short lineGap;
+        short lineHeight;
+        short advanceWidthMax;
+        short advanceHeightMax;
+
+        // https://www.microsoft.com/typography/otspec/recom.htm#tad
+        // We use the same approach as FreeType for calculating the the global  ascender, descender,  and
+        // height of  OpenType fonts for consistency.
+        //
+        // 1.If the OS/ 2 table exists and the fsSelection bit 7 is set (USE_TYPO_METRICS), trust the font
+        //   and use the Typo* metrics.
+        // 2.Otherwise, use the HorizontalHeadTable "hhea" table's metrics.
+        // 3.If they are zero and the OS/ 2 table exists,
+        //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
+        //    - Otherwise, use the OS / 2 table's usWin* metrics.
+        bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
+        if (useTypoMetrics)
         {
-            using FileStream fs = File.OpenRead(path);
-            fs.Position = offset;
-            return LoadFont(fs);
+            ascender = os2.TypoAscender;
+            descender = os2.TypoDescender;
+            lineGap = os2.TypoLineGap;
+            lineHeight = (short)(ascender - descender + lineGap);
+        }
+        else
+        {
+            ascender = hhea.Ascender;
+            descender = hhea.Descender;
+            lineGap = hhea.LineGap;
+            lineHeight = (short)(ascender - descender + lineGap);
         }
 
-        /// <summary>
-        /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
-        public static StreamFontMetrics LoadFont(Stream stream)
+        if (ascender == 0 || descender == 0)
         {
-            var reader = new FontReader(stream);
-            return LoadFont(reader);
-        }
-
-        internal static StreamFontMetrics LoadFont(FontReader reader)
-        {
-            if (reader.OutlineType == OutlineType.TrueType)
-            {
-                return LoadTrueTypeFont(reader);
-            }
-
-            return LoadCompactFont(reader);
-        }
-
-        private (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) Initialize<T>(T tables)
-            where T : IFontTables
-        {
-            HeadTable head = tables.Head;
-            HorizontalHeadTable hhea = tables.Hhea;
-            VerticalHeadTable? vhea = tables.Vhea;
-            OS2Table os2 = tables.Os2;
-            PostTable post = tables.Post;
-
-            this.HeadFlags = head.Flags;
-            this.unitsPerEm = head.UnitsPerEm;
-            this.scaleFactor = this.unitsPerEm * 72F; // 72 * UnitsPerEm means 1pt = 1px
-            this.subscriptXSize = os2.SubscriptXSize;
-            this.subscriptYSize = os2.SubscriptYSize;
-            this.subscriptXOffset = os2.SubscriptXOffset;
-            this.subscriptYOffset = os2.SubscriptYOffset;
-            this.superscriptXSize = os2.SuperscriptXSize;
-            this.superscriptYSize = os2.SuperscriptYSize;
-            this.superscriptXOffset = os2.SuperscriptXOffset;
-            this.superscriptYOffset = os2.SuperscriptYOffset;
-            this.strikeoutSize = os2.StrikeoutSize;
-            this.strikeoutPosition = os2.StrikeoutPosition;
-            this.underlinePosition = post.UnderlinePosition;
-            this.underlineThickness = post.UnderlineThickness;
-            this.italicAngle = post.ItalicAngle;
-
-            HorizontalMetrics horizontalMetrics = InitializeHorizontalMetrics(hhea, vhea, os2);
-            VerticalMetrics verticalMetrics = InitializeVerticalMetrics(horizontalMetrics, vhea);
-            return (horizontalMetrics, verticalMetrics);
-        }
-
-        private static HorizontalMetrics InitializeHorizontalMetrics(HorizontalHeadTable hhea, VerticalHeadTable? vhea, OS2Table os2)
-        {
-            short ascender;
-            short descender;
-            short lineGap;
-            short lineHeight;
-            short advanceWidthMax;
-            short advanceHeightMax;
-
-            // https://www.microsoft.com/typography/otspec/recom.htm#tad
-            // We use the same approach as FreeType for calculating the the global  ascender, descender,  and
-            // height of  OpenType fonts for consistency.
-            //
-            // 1.If the OS/ 2 table exists and the fsSelection bit 7 is set (USE_TYPO_METRICS), trust the font
-            //   and use the Typo* metrics.
-            // 2.Otherwise, use the HorizontalHeadTable "hhea" table's metrics.
-            // 3.If they are zero and the OS/ 2 table exists,
-            //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
-            //    - Otherwise, use the OS / 2 table's usWin* metrics.
-            bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
-            if (useTypoMetrics)
+            if (os2.TypoAscender != 0 || os2.TypoDescender != 0)
             {
                 ascender = os2.TypoAscender;
                 descender = os2.TypoDescender;
@@ -463,168 +476,150 @@ namespace SixLabors.Fonts
             }
             else
             {
-                ascender = hhea.Ascender;
-                descender = hhea.Descender;
-                lineGap = hhea.LineGap;
-                lineHeight = (short)(ascender - descender + lineGap);
+                ascender = (short)os2.WinAscent;
+                descender = (short)-os2.WinDescent;
+                lineHeight = (short)(ascender - descender);
             }
-
-            if (ascender == 0 || descender == 0)
-            {
-                if (os2.TypoAscender != 0 || os2.TypoDescender != 0)
-                {
-                    ascender = os2.TypoAscender;
-                    descender = os2.TypoDescender;
-                    lineGap = os2.TypoLineGap;
-                    lineHeight = (short)(ascender - descender + lineGap);
-                }
-                else
-                {
-                    ascender = (short)os2.WinAscent;
-                    descender = (short)-os2.WinDescent;
-                    lineHeight = (short)(ascender - descender);
-                }
-            }
-
-            advanceWidthMax = (short)hhea.AdvanceWidthMax;
-            advanceHeightMax = vhea == null ? lineHeight : vhea.AdvanceHeightMax;
-
-            return new()
-            {
-                Ascender = ascender,
-                Descender = descender,
-                LineGap = lineGap,
-                LineHeight = lineHeight,
-                AdvanceWidthMax = advanceWidthMax,
-                AdvanceHeightMax = advanceHeightMax
-            };
         }
 
-        private static VerticalMetrics InitializeVerticalMetrics(HorizontalMetrics metrics, VerticalHeadTable? vhea)
+        advanceWidthMax = (short)hhea.AdvanceWidthMax;
+        advanceHeightMax = vhea == null ? lineHeight : vhea.AdvanceHeightMax;
+
+        return new()
         {
-            VerticalMetrics verticalMetrics = new()
-            {
-                Ascender = metrics.Ascender,
-                Descender = metrics.Descender,
-                LineGap = metrics.LineGap,
-                LineHeight = metrics.LineHeight,
-                AdvanceWidthMax = metrics.AdvanceWidthMax,
-                AdvanceHeightMax = metrics.AdvanceHeightMax,
-                Synthesized = true
-            };
+            Ascender = ascender,
+            Descender = descender,
+            LineGap = lineGap,
+            LineHeight = lineHeight,
+            AdvanceWidthMax = advanceWidthMax,
+            AdvanceHeightMax = advanceHeightMax
+        };
+    }
 
-            if (vhea is null)
-            {
-                return verticalMetrics;
-            }
+    private static VerticalMetrics InitializeVerticalMetrics(HorizontalMetrics metrics, VerticalHeadTable? vhea)
+    {
+        VerticalMetrics verticalMetrics = new()
+        {
+            Ascender = metrics.Ascender,
+            Descender = metrics.Descender,
+            LineGap = metrics.LineGap,
+            LineHeight = metrics.LineHeight,
+            AdvanceWidthMax = metrics.AdvanceWidthMax,
+            AdvanceHeightMax = metrics.AdvanceHeightMax,
+            Synthesized = true
+        };
 
-            short ascender = vhea.Ascender;
-
-            // Always negative due to the grid orientation.
-            short descender = (short)(vhea.Descender > 0 ? -vhea.Descender : vhea.Descender);
-            short lineGap = vhea.LineGap;
-            short lineHeight = (short)(ascender - descender + lineGap);
-
-            verticalMetrics.Ascender = ascender;
-            verticalMetrics.Descender = descender;
-            verticalMetrics.LineGap = lineGap;
-            verticalMetrics.LineHeight = lineHeight;
-            verticalMetrics.Synthesized = false;
-
+        if (vhea is null)
+        {
             return verticalMetrics;
         }
 
-        /// <summary>
-        /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
-        /// </summary>
-        /// <param name="path">The file path.</param>
-        /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
-        public static StreamFontMetrics[] LoadFontCollection(string path)
-        {
-            using FileStream fs = File.OpenRead(path);
-            return LoadFontCollection(fs);
-        }
+        short ascender = vhea.Ascender;
 
-        /// <summary>
-        /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
-        public static StreamFontMetrics[] LoadFontCollection(Stream stream)
-        {
-            long startPos = stream.Position;
-            var reader = new BigEndianBinaryReader(stream, true);
-            var ttcHeader = TtcHeader.Read(reader);
-            var fonts = new StreamFontMetrics[(int)ttcHeader.NumFonts];
+        // Always negative due to the grid orientation.
+        short descender = (short)(vhea.Descender > 0 ? -vhea.Descender : vhea.Descender);
+        short lineGap = vhea.LineGap;
+        short lineHeight = (short)(ascender - descender + lineGap);
 
-            for (int i = 0; i < ttcHeader.NumFonts; ++i)
-            {
-                stream.Position = startPos + ttcHeader.OffsetTable[i];
-                fonts[i] = LoadFont(stream);
-            }
+        verticalMetrics.Ascender = ascender;
+        verticalMetrics.Descender = descender;
+        verticalMetrics.LineGap = lineGap;
+        verticalMetrics.LineHeight = lineHeight;
+        verticalMetrics.Synthesized = false;
 
-            return fonts;
-        }
-
-        private static (ushort Id, TextAttributes Attributes, bool IsVerticalLayout) CreateCacheKey(
-            CodePoint codePoint,
-            ushort glyphId,
-            TextAttributes textAttributes,
-            LayoutMode layoutMode)
-            => (glyphId, textAttributes, AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode));
-
-        private bool TryGetColoredMetrics(
-            CodePoint codePoint,
-            ushort glyphId,
-            TextAttributes textAttributes,
-            TextDecorations textDecorations,
-            LayoutMode layoutMode,
-            [NotNullWhen(true)] out GlyphMetrics[]? metrics)
-        {
-            ColrTable? colr = this.outlineType == OutlineType.TrueType
-                ? this.trueTypeFontTables!.Colr
-                : this.compactFontTables!.Colr;
-
-            if (colr == null || this.colorGlyphCache == null)
-            {
-                metrics = null;
-                return false;
-            }
-
-            // We overwrite the cache entry for this type should the attributes change.
-            metrics = this.colorGlyphCache.GetOrAdd(CreateCacheKey(codePoint, glyphId, textAttributes, layoutMode), key =>
-            {
-                GlyphMetrics[] m = Array.Empty<GlyphMetrics>();
-                Span<LayerRecord> indexes = colr.GetLayers(key.Id);
-                if (indexes.Length > 0)
-                {
-                    m = new GlyphMetrics[indexes.Length];
-                    for (int i = 0; i < indexes.Length; i++)
-                    {
-                        LayerRecord layer = indexes[i];
-                        m[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, key.Attributes, textDecorations, key.IsVerticalLayout, layer.PaletteIndex);
-                    }
-                }
-
-                return m;
-            });
-
-            return metrics.Length > 0;
-        }
-
-        private GlyphMetrics CreateGlyphMetrics(
-            CodePoint codePoint,
-            ushort glyphId,
-            GlyphType glyphType,
-            TextAttributes textAttributes,
-            TextDecorations textDecorations,
-            bool isVerticalLayout,
-            ushort paletteIndex = 0)
-            => this.outlineType switch
-            {
-                OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
-                OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
-                _ => throw new NotSupportedException(),
-            };
+        return verticalMetrics;
     }
+
+    /// <summary>
+    /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
+    /// </summary>
+    /// <param name="path">The file path.</param>
+    /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
+    public static StreamFontMetrics[] LoadFontCollection(string path)
+    {
+        using FileStream fs = File.OpenRead(path);
+        return LoadFontCollection(fs);
+    }
+
+    /// <summary>
+    /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
+    /// </summary>
+    /// <param name="stream">The stream.</param>
+    /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
+    public static StreamFontMetrics[] LoadFontCollection(Stream stream)
+    {
+        long startPos = stream.Position;
+        var reader = new BigEndianBinaryReader(stream, true);
+        var ttcHeader = TtcHeader.Read(reader);
+        var fonts = new StreamFontMetrics[(int)ttcHeader.NumFonts];
+
+        for (int i = 0; i < ttcHeader.NumFonts; ++i)
+        {
+            stream.Position = startPos + ttcHeader.OffsetTable[i];
+            fonts[i] = LoadFont(stream);
+        }
+
+        return fonts;
+    }
+
+    private static (ushort Id, TextAttributes Attributes, bool IsVerticalLayout) CreateCacheKey(
+        CodePoint codePoint,
+        ushort glyphId,
+        TextAttributes textAttributes,
+        LayoutMode layoutMode)
+        => (glyphId, textAttributes, AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode));
+
+    private bool TryGetColoredMetrics(
+        CodePoint codePoint,
+        ushort glyphId,
+        TextAttributes textAttributes,
+        TextDecorations textDecorations,
+        LayoutMode layoutMode,
+        [NotNullWhen(true)] out GlyphMetrics[]? metrics)
+    {
+        ColrTable? colr = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.Colr
+            : this.compactFontTables!.Colr;
+
+        if (colr == null || this.colorGlyphCache == null)
+        {
+            metrics = null;
+            return false;
+        }
+
+        // We overwrite the cache entry for this type should the attributes change.
+        metrics = this.colorGlyphCache.GetOrAdd(CreateCacheKey(codePoint, glyphId, textAttributes, layoutMode), key =>
+        {
+            GlyphMetrics[] m = Array.Empty<GlyphMetrics>();
+            Span<LayerRecord> indexes = colr.GetLayers(key.Id);
+            if (indexes.Length > 0)
+            {
+                m = new GlyphMetrics[indexes.Length];
+                for (int i = 0; i < indexes.Length; i++)
+                {
+                    LayerRecord layer = indexes[i];
+                    m[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, key.Attributes, textDecorations, key.IsVerticalLayout, layer.PaletteIndex);
+                }
+            }
+
+            return m;
+        });
+
+        return metrics.Length > 0;
+    }
+
+    private GlyphMetrics CreateGlyphMetrics(
+        CodePoint codePoint,
+        ushort glyphId,
+        GlyphType glyphType,
+        TextAttributes textAttributes,
+        TextDecorations textDecorations,
+        bool isVerticalLayout,
+        ushort paletteIndex = 0)
+        => this.outlineType switch
+        {
+            OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
+            OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
+            _ => throw new NotSupportedException(),
+        };
 }

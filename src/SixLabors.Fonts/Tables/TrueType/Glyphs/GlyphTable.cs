@@ -5,69 +5,68 @@ using System.IO;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Woff;
 
-namespace SixLabors.Fonts.Tables.TrueType.Glyphs
+namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
+
+internal class GlyphTable : Table
 {
-    internal class GlyphTable : Table
+    internal const string TableName = "glyf";
+    private readonly GlyphLoader[] loaders;
+
+    public GlyphTable(GlyphLoader[] glyphLoaders)
+        => this.loaders = glyphLoaders;
+
+    public int GlyphCount => this.loaders.Length;
+
+    // TODO: Make this non-virtual
+    internal virtual GlyphVector GetGlyph(int index)
+        => this.loaders[index].CreateGlyph(this);
+
+    public static GlyphTable Load(FontReader reader)
     {
-        internal const string TableName = "glyf";
-        private readonly GlyphLoader[] loaders;
+        uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
 
-        public GlyphTable(GlyphLoader[] glyphLoaders)
-            => this.loaders = glyphLoaders;
+        FVarTable? fvar = reader.TryGetTable<FVarTable>();
+        AVarTable? avar = reader.TryGetTable<AVarTable>();
+        GVarTable? gvar = reader.TryGetTable<GVarTable>();
+        HVarTable? hvar = reader.TryGetTable<HVarTable>();
+        GlyphVariationProcessor? glyphVariationProcessor = fvar is null || hvar is null ? null : new GlyphVariationProcessor(hvar!.ItemVariationStore, fvar, avar, gvar);
 
-        public int GlyphCount => this.loaders.Length;
+        // Use an empty bounds instance as the fallback.
+        // We will substitute this with the advance width/height to determine bounds instead when rendering/measuring.
+        Bounds fallbackEmptyBounds = Bounds.Empty;
 
-        // TODO: Make this non-virtual
-        internal virtual GlyphVector GetGlyph(int index)
-            => this.loaders[index].CreateGlyph(this);
+        using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
+        return Load(binaryReader, reader.TableFormat, locations, in fallbackEmptyBounds);
+    }
 
-        public static GlyphTable Load(FontReader reader)
+    public static GlyphTable Load(BigEndianBinaryReader reader, TableFormat format, uint[] locations, in Bounds fallbackEmptyBounds)
+    {
+        EmptyGlyphLoader empty = new(fallbackEmptyBounds);
+        int entryCount = locations.Length;
+        int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
+        var glyphs = new GlyphLoader[glyphCount];
+
+        // Special case for WOFF2 format where all glyphs need to be read in one go.
+        if (format is TableFormat.Woff2)
         {
-            uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
-
-            FVarTable? fvar = reader.TryGetTable<FVarTable>();
-            AVarTable? avar = reader.TryGetTable<AVarTable>();
-            GVarTable? gvar = reader.TryGetTable<GVarTable>();
-            HVarTable? hvar = reader.TryGetTable<HVarTable>();
-            GlyphVariationProcessor? glyphVariationProcessor = fvar is null || hvar is null ? null : new GlyphVariationProcessor(hvar!.ItemVariationStore, fvar, avar, gvar);
-
-            // Use an empty bounds instance as the fallback.
-            // We will substitute this with the advance width/height to determine bounds instead when rendering/measuring.
-            Bounds fallbackEmptyBounds = Bounds.Empty;
-
-            using BigEndianBinaryReader binaryReader = reader.GetReaderAtTablePosition(TableName);
-            return Load(binaryReader, reader.TableFormat, locations, in fallbackEmptyBounds);
+            return new GlyphTable(Woff2Utils.LoadAllGlyphs(reader, empty));
         }
 
-        public static GlyphTable Load(BigEndianBinaryReader reader, TableFormat format, uint[] locations, in Bounds fallbackEmptyBounds)
+        for (int i = 0; i < glyphCount; i++)
         {
-            EmptyGlyphLoader empty = new(fallbackEmptyBounds);
-            int entryCount = locations.Length;
-            int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
-            var glyphs = new GlyphLoader[glyphCount];
-
-            // Special case for WOFF2 format where all glyphs need to be read in one go.
-            if (format is TableFormat.Woff2)
+            if (locations[i] == locations[i + 1])
             {
-                return new GlyphTable(Woff2Utils.LoadAllGlyphs(reader, empty));
+                // This is an empty glyph;
+                glyphs[i] = empty;
             }
-
-            for (int i = 0; i < glyphCount; i++)
+            else
             {
-                if (locations[i] == locations[i + 1])
-                {
-                    // This is an empty glyph;
-                    glyphs[i] = empty;
-                }
-                else
-                {
-                    // Move to start of glyph.
-                    reader.Seek(locations[i], SeekOrigin.Begin);
-                    glyphs[i] = GlyphLoader.Load(reader);
-                }
+                // Move to start of glyph.
+                reader.Seek(locations[i], SeekOrigin.Begin);
+                glyphs[i] = GlyphLoader.Load(reader);
             }
-
-            return new GlyphTable(glyphs);
         }
+
+        return new GlyphTable(glyphs);
     }
 }
