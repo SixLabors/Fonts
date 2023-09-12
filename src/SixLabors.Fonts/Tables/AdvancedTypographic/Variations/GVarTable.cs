@@ -1,9 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-using System.IO;
-
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 /// <summary>
@@ -14,14 +11,17 @@ internal class GVarTable : Table
 {
     internal const string TableName = "gvar";
 
-    public GVarTable(int axisCount, float[,] sharedTuples, GlyphVariationData[] glyphVariations)
+    public GVarTable(ushort axisCount, ushort glyphCount, float[,] sharedTuples, GlyphVariationData[] glyphVariations)
     {
         this.AxisCount = axisCount;
+        this.GlyphCount = glyphCount;
         this.SharedTuples = sharedTuples;
         this.GlyphVariations = glyphVariations;
     }
 
-    public int AxisCount { get; }
+    public ushort AxisCount { get; }
+
+    public ushort GlyphCount { get; }
 
     public float[,] SharedTuples { get; }
 
@@ -100,13 +100,12 @@ internal class GVarTable : Table
         }
 
         int glyphVariationsCount = glyphCount + 1;
-        var glyphVariations = new GlyphVariationData[glyphVariationsCount];
+        GlyphVariationData[] glyphVariations = new GlyphVariationData[glyphVariationsCount];
         for (int i = 0; i < glyphVariationsCount; i++)
         {
-            var glyphVariation = GlyphVariationData.Load(reader, glyphVariationDataArrayOffset, is32BitOffset, axisCount);
-            glyphVariations[i] = glyphVariation;
+            glyphVariations[i] = GlyphVariationData.Load(reader, glyphVariationDataArrayOffset, is32BitOffset, axisCount);
         }
 
-        return new GVarTable(axisCount, sharedTuples, glyphVariations);
+        return new GVarTable(axisCount, glyphCount, sharedTuples, glyphVariations);
     }
 }

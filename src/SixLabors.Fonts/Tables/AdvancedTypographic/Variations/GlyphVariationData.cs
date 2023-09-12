@@ -41,7 +41,7 @@ internal class GlyphVariationData
         bool sharedPointNumbers = (tupleVariationCount & SharedPointNumbersMask) == SharedPointNumbersMask;
 
         int tupleVariationTables = tupleVariationCount & CountMask;
-        var variationHeaders = new TupleVariation[tupleVariationTables];
+        TupleVariation[] variationHeaders = new TupleVariation[tupleVariationTables];
         for (int i = 0; i < tupleVariationTables; i++)
         {
             variationHeaders[i] = TupleVariation.Load(reader, axisCount);

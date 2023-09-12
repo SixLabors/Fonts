@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Tables.TrueType.Glyphs;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 /// <summary>
@@ -31,6 +33,7 @@ internal class GlyphVariationProcessor
 
     /// <summary>
     /// Epsilon as used in fontkit reference implementation.
+    /// TODO: This could be float.Epsilon, but we need to check if it works.
     /// </summary>
     private const float Epsilon = 2.2204460492503130808472633361816E-16F;
 
@@ -48,55 +51,24 @@ internal class GlyphVariationProcessor
         this.blendVectors = new Dictionary<ItemVariationData, float[]>();
     }
 
-    private float[] NormalizeDefaultCoords()
+    public void TransformPoints(ushort glyphId, ref GlyphVector glyphPoints)
     {
-        float[] coords = new float[this.fvar.AxisCount];
-        for (int i = 0; i < this.fvar.AxisCount; i++)
+        if (this.fvar is null || this.gVar is null)
         {
-            coords[i] = this.fvar.Axes[i].DefaultValue;
+            return;
         }
 
-        // The default mapping is linear along each axis, in two segments:
-        // from the minValue to defaultValue, and from defaultValue to maxValue.
-        float[] normalized = new float[this.fvar.AxisCount];
-        for (int i = 0; i < this.fvar.AxisCount; i++)
+        if (glyphId > this.gVar.GlyphCount)
         {
-            VariationAxisRecord axis = this.fvar.Axes[i];
-            if (coords[i] < axis.DefaultValue)
-            {
-                normalized[i] = (coords[i] - axis.DefaultValue + Epsilon) / (axis.DefaultValue - axis.MinValue + Epsilon);
-            }
-            else
-            {
-                normalized[i] = (coords[i] - axis.DefaultValue + Epsilon) / (axis.MaxValue - axis.DefaultValue + Epsilon);
-            }
+            return;
         }
 
-        // If there is an avar table, the normalized value is calculated
-        // by interpolating between the two nearest mapped values.
-        if (this.avar is not null)
-        {
-            for (int i = 0; i < this.avar.SegmentMaps.Length; i++)
-            {
-                SegmentMapRecord segment = this.avar.SegmentMaps[i];
-                for (int j = 0; j < segment.AxisValueMap.Length; j++)
-                {
-                    AxisValueMapRecord pair = segment.AxisValueMap[j];
-                    if (j >= 1 && normalized[i] < pair.FromCoordinate)
-                    {
-                        AxisValueMapRecord prev = segment.AxisValueMap[j - 1];
-                        normalized[i] = ((((normalized[i] - prev.FromCoordinate) * (pair.ToCoordinate - prev.ToCoordinate)) + Epsilon) /
-                                        (pair.FromCoordinate - prev.FromCoordinate + Epsilon)) + prev.ToCoordinate;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return normalized;
+        // TODO: It looks like more work is required in TupleVariation.Load to ensure
+        // we have all the information we require to transform the points.
+        GlyphVector originPoints = GlyphVector.DeepClone(glyphPoints);
     }
 
-    public int AdvanceAdjustment(int glyphId)
+    public float AdvanceAdjustment(int glyphId)
     {
         if (this.hVar is null)
         {
@@ -199,7 +171,55 @@ internal class GlyphVariationProcessor
         return blendVector;
     }
 
-    private int Delta(int outerIndex, int innerIndex)
+    private float[] NormalizeDefaultCoords()
+    {
+        float[] coords = new float[this.fvar.AxisCount];
+        for (int i = 0; i < this.fvar.AxisCount; i++)
+        {
+            coords[i] = this.fvar.Axes[i].DefaultValue;
+        }
+
+        // The default mapping is linear along each axis, in two segments:
+        // from the minValue to defaultValue, and from defaultValue to maxValue.
+        float[] normalized = new float[this.fvar.AxisCount];
+        for (int i = 0; i < this.fvar.AxisCount; i++)
+        {
+            VariationAxisRecord axis = this.fvar.Axes[i];
+            if (coords[i] < axis.DefaultValue)
+            {
+                normalized[i] = (coords[i] - axis.DefaultValue + Epsilon) / (axis.DefaultValue - axis.MinValue + Epsilon);
+            }
+            else
+            {
+                normalized[i] = (coords[i] - axis.DefaultValue + Epsilon) / (axis.MaxValue - axis.DefaultValue + Epsilon);
+            }
+        }
+
+        // If there is an avar table, the normalized value is calculated
+        // by interpolating between the two nearest mapped values.
+        if (this.avar is not null)
+        {
+            for (int i = 0; i < this.avar.SegmentMaps.Length; i++)
+            {
+                SegmentMapRecord segment = this.avar.SegmentMaps[i];
+                for (int j = 0; j < segment.AxisValueMap.Length; j++)
+                {
+                    AxisValueMapRecord pair = segment.AxisValueMap[j];
+                    if (j >= 1 && normalized[i] < pair.FromCoordinate)
+                    {
+                        AxisValueMapRecord prev = segment.AxisValueMap[j - 1];
+                        normalized[i] = ((((normalized[i] - prev.FromCoordinate) * (pair.ToCoordinate - prev.ToCoordinate)) + Epsilon) /
+                                        (pair.FromCoordinate - prev.FromCoordinate + Epsilon)) + prev.ToCoordinate;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return normalized;
+    }
+
+    private float Delta(int outerIndex, int innerIndex)
     {
         if (outerIndex >= this.itemStore.ItemVariations.Length)
         {
@@ -214,11 +234,10 @@ internal class GlyphVariationProcessor
 
         DeltaSet deltaSet = variationData.DeltaSets[innerIndex];
         float[] blendVector = this.BlendVector(outerIndex);
-        int netAdjustment = 0;
+        float netAdjustment = 0;
         for (int master = 0; master < variationData.RegionIndexes.Length; master++)
         {
-            // TODO: disabled, no deltaSet does not have Deltas field.
-            // netAdjustment += deltaSet.Deltas[master] * blendVector[master];
+            netAdjustment += deltaSet.Deltas[master] * blendVector[master];
         }
 
         return netAdjustment;
