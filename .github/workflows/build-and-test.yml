@@ -9,7 +9,7 @@ on:
   pull_request:
     branches:
       - main
-
+      - release/*
 jobs:
   Build:
     strategy:
