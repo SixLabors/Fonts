@@ -828,6 +828,11 @@ namespace SixLabors.Fonts
 
             // TODO: This only replaces certain glyphs. We should investigate the specification further.
             // https://www.unicode.org/reports/tr50/#vertical_alternates
+            if (collection.TextOptions.LayoutMode.IsHorizontal())
+            {
+                return;
+            }
+
             for (int i = 0; i < collection.Count; i++)
             {
                 GlyphShapingData data = collection[i];
