@@ -23,7 +23,7 @@ public static class SystemFonts
     public static IEnumerable<FontFamily> Families => Collection.Families;
 
     /// <inheritdoc cref="IReadOnlyFontCollection.Get(string)"/>
-    public static FontFamily Get(string name) => LazySystemFonts.Value.Get(name);
+    public static FontFamily Get(string name) => Get(name, CultureInfo.InvariantCulture);
 
     /// <inheritdoc cref="IReadOnlyFontCollection.TryGet(string, out FontFamily)" />
     public static bool TryGet(string fontFamily, out FontFamily family)
