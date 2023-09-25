@@ -78,11 +78,11 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
 
     /// <inheritdoc/>
     public FontFamily Get(string name)
-        => this.GetImpl(name, CultureInfo.InvariantCulture);
+        => this.Get(name, CultureInfo.InvariantCulture);
 
     /// <inheritdoc/>
     public bool TryGet(string name, out FontFamily family)
-        => this.TryGetImpl(name, CultureInfo.InvariantCulture, out family);
+        => this.TryGet(name, CultureInfo.InvariantCulture, out family);
 
     /// <inheritdoc/>
     public FontFamily Add(string path, CultureInfo culture)
@@ -195,14 +195,14 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
 
     private FontFamily AddImpl(string path, CultureInfo culture, out FontDescription description)
     {
-        var instance = new FileFontMetrics(path);
+        FileFontMetrics instance = new(path);
         description = instance.Description;
         return ((IFontMetricsCollection)this).AddMetrics(instance, culture);
     }
 
     private FontFamily AddImpl(Stream stream, CultureInfo culture, out FontDescription description)
     {
-        var metrics = StreamFontMetrics.LoadFont(stream);
+        StreamFontMetrics metrics = StreamFontMetrics.LoadFont(stream);
         description = metrics.Description;
 
         return ((IFontMetricsCollection)this).AddMetrics(metrics, culture);
@@ -215,8 +215,8 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
     {
         FileFontMetrics[] fonts = FileFontMetrics.LoadFontCollection(path);
 
-        var description = new FontDescription[fonts.Length];
-        var families = new HashSet<FontFamily>();
+        FontDescription[] description = new FontDescription[fonts.Length];
+        HashSet<FontFamily> families = new();
         for (int i = 0; i < fonts.Length; i++)
         {
             description[i] = fonts[i].Description;
@@ -234,14 +234,14 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         out IEnumerable<FontDescription> descriptions)
     {
         long startPos = stream.Position;
-        var reader = new BigEndianBinaryReader(stream, true);
-        var ttcHeader = TtcHeader.Read(reader);
-        var result = new List<FontDescription>((int)ttcHeader.NumFonts);
-        var installedFamilies = new HashSet<FontFamily>();
+        BigEndianBinaryReader reader = new(stream, true);
+        TtcHeader ttcHeader = TtcHeader.Read(reader);
+        List<FontDescription> result = new((int)ttcHeader.NumFonts);
+        HashSet<FontFamily> installedFamilies = new();
         for (int i = 0; i < ttcHeader.NumFonts; ++i)
         {
             stream.Position = startPos + ttcHeader.OffsetTable[i];
-            var instance = StreamFontMetrics.LoadFont(stream);
+            StreamFontMetrics instance = StreamFontMetrics.LoadFont(stream);
             installedFamilies.Add(((IFontMetricsCollection)this).AddMetrics(instance, culture));
             FontDescription fontDescription = instance.Description;
             result.Add(fontDescription);

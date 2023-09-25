@@ -108,7 +108,7 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
     public IEnumerable<string> SearchDirectories => this.searchDirectories;
 
     /// <inheritdoc/>
-    public FontFamily Get(string name) => this.collection.Get(name);
+    public FontFamily Get(string name) => this.Get(name, CultureInfo.InvariantCulture);
 
     /// <inheritdoc/>
     public bool TryGet(string name, out FontFamily family)
