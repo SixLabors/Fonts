@@ -137,4 +137,16 @@ public class FontLoaderTests
         // the test font only has characters .notdef, 'a' & 'b' defined
         Assert.Equal(6, r.ControlPoints.Distinct().Count());
     }
+
+    [Fact]
+    public void LoadFontWithIncorrectClassDefinitionTableOffset()
+    {
+        // The following font contains a ClassDefinitionTable with an invalid offset.
+        // See https://forum.stimulsoft.com/viewtopic.php?t=60972
+        Font font = new FontCollection().Add(TestFonts.THSarabunFile).CreateFont(12);
+
+        FontRectangle advance = TextMeasurer.MeasureAdvance("เราใช้คุกกี้เพื่อพัฒนาประสิทธิภาพ และประสบการณ์ที่ดีในการใช้เว็บไซต์ของคุณ คุณสามารถศึกษารายละเอียดได้ที่", new(font));
+
+        Assert.NotEqual(default, advance);
+    }
 }
