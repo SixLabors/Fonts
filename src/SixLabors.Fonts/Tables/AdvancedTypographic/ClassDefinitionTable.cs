@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
 /// <summary>
@@ -19,6 +21,26 @@ internal abstract class ClassDefinitionTable
     /// <param name="glyphId">The glyph identifier.</param>
     /// <returns>The class id.</returns>
     public abstract int ClassIndexOf(ushort glyphId);
+
+    public static bool TryLoad(BigEndianBinaryReader reader, long offset, [NotNullWhen(true)] out ClassDefinitionTable? table)
+    {
+        if (offset == 0)
+        {
+            table = null;
+            return false;
+        }
+
+        reader.Seek(offset, SeekOrigin.Begin);
+        ushort classFormat = reader.ReadUInt16();
+        table = classFormat switch
+        {
+            1 => ClassDefinitionFormat1Table.Load(reader),
+            2 => ClassDefinitionFormat2Table.Load(reader),
+            _ => null
+        };
+
+        return table is not null;
+    }
 
     public static ClassDefinitionTable Load(BigEndianBinaryReader reader, long offset)
     {
@@ -97,7 +119,7 @@ internal sealed class ClassDefinitionFormat2Table : ClassDefinitionTable
         // |                  |                                    | startGlyphID                            |
         // +------------------+------------------------------------+-----------------------------------------+
         ushort classRangeCount = reader.ReadUInt16();
-        var records = new ClassRangeRecord[classRangeCount];
+        ClassRangeRecord[] records = new ClassRangeRecord[classRangeCount];
         for (int i = 0; i < records.Length; ++i)
         {
             // +--------+--------------+------------------------------------+

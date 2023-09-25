@@ -13,7 +13,7 @@ internal sealed class MarkGlyphSetsTable
     {
         reader.Seek(offset, SeekOrigin.Begin);
 
-        var markGlyphSetsTable = new MarkGlyphSetsTable
+        MarkGlyphSetsTable markGlyphSetsTable = new()
         {
             Format = reader.ReadUInt16()
         };
