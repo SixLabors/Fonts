@@ -289,7 +289,7 @@ public static class Program
 
                 FontRectangle textSize = TextMeasurer.MeasureSize(text, textOptions);
                 using var img = new Image<Rgba32>(((int)textSize.Width * 2) + 20, ((int)textSize.Height * 2) + 20);
-                Size size = img.Size();
+                Size size = img.Size;
                 textOptions.Origin = new PointF(size.Width / 2F, size.Height / 2F);
 
                 img.Mutate(x => x.Fill(Color.Black).ApplyProcessor(
