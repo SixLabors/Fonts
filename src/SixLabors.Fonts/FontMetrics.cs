@@ -186,7 +186,7 @@ public abstract class FontMetrics
     /// Gets the unicode codepoints for which a glyph exists in the font.
     /// </summary>
     /// <returns>The <see cref="IReadOnlyList{CodePoint}"/>.</returns>
-    internal abstract IReadOnlyList<CodePoint> GetAvailableCodePoints();
+    public abstract IReadOnlyList<CodePoint> GetAvailableCodePoints();
 
     /// <summary>
     /// Gets the glyph metrics for a given code point and glyph id.
