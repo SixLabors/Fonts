@@ -145,13 +145,14 @@ internal sealed class GlyphDefinitionTable : Table
                 throw new InvalidFontFileException($"Invalid value for 'minor version' {minorVersion} of GDEF table. Should be '0', '2' or '3'.");
         }
 
-        ClassDefinitionTable? classDefinitionTable = glyphClassDefOffset is 0 ? null : ClassDefinitionTable.Load(reader, glyphClassDefOffset);
+        ClassDefinitionTable.TryLoad(reader, glyphClassDefOffset, out ClassDefinitionTable? classDefinitionTable);
         AttachmentListTable? attachmentListTable = attachListOffset is 0 ? null : AttachmentListTable.Load(reader, attachListOffset);
         LigatureCaretList? ligatureCaretList = ligatureCaretListOffset is 0 ? null : LigatureCaretList.Load(reader, ligatureCaretListOffset);
-        ClassDefinitionTable? markAttachmentClassDef = markAttachClassDefOffset is 0 ? null : ClassDefinitionTable.Load(reader, markAttachClassDefOffset);
+        ClassDefinitionTable.TryLoad(reader, markAttachClassDefOffset, out ClassDefinitionTable? markAttachmentClassDef);
         MarkGlyphSetsTable? markGlyphSetsTable = markGlyphSetsDefOffset is 0 ? null : MarkGlyphSetsTable.Load(reader, markGlyphSetsDefOffset);
 
-        var glyphDefinitionTable = new GlyphDefinitionTable()
+        // TODO: read itemVarStore.
+        return new GlyphDefinitionTable()
         {
             GlyphClassDefinition = classDefinitionTable,
             AttachmentListTable = attachmentListTable,
@@ -159,8 +160,5 @@ internal sealed class GlyphDefinitionTable : Table
             MarkAttachmentClassDef = markAttachmentClassDef,
             MarkGlyphSetsTable = markGlyphSetsTable
         };
-
-        // TODO: read itemVarStore.
-        return glyphDefinitionTable;
     }
 }

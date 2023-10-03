@@ -29,7 +29,7 @@ internal sealed class AttachmentListTable
         Span<ushort> attachPointOffsets = attachPointOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(attachPointOffsets);
 
-        var attachmentListTable = new AttachmentListTable
+        AttachmentListTable attachmentListTable = new()
         {
             CoverageTable = CoverageTable.Load(reader, offset + coverageOffset),
             AttachPoints = new AttachPoint[glyphCount]
