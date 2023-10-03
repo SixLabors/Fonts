@@ -250,6 +250,8 @@ public static class TestFonts
 
     public static string DFKaiSBFile => GetFullPath("kaiu.ttf");
 
+    public static string THSarabunFile => GetFullPath("THSarabun.ttf");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);

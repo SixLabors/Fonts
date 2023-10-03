@@ -141,7 +141,7 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support);
 
     /// <inheritdoc />
-    internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
+    public override IReadOnlyList<CodePoint> GetAvailableCodePoints()
         => this.fontMetrics.Value.GetAvailableCodePoints();
 
     /// <inheritdoc/>

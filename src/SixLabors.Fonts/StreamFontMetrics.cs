@@ -271,7 +271,7 @@ internal partial class StreamFontMetrics : FontMetrics
     }
 
     /// <inheritdoc />
-    internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
+    public override IReadOnlyList<CodePoint> GetAvailableCodePoints()
     {
         CMapTable cmap = this.outlineType == OutlineType.TrueType
             ? this.trueTypeFontTables!.Cmap

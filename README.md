@@ -9,8 +9,7 @@ SixLabors.Fonts
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/SixLabors/Fonts/build-and-test.yml?branch=main)](https://github.com/SixLabors/Fonts/actions)
 [![codecov](https://codecov.io/gh/SixLabors/Fonts/branch/main/graph/badge.svg)](https://codecov.io/gh/SixLabors/Fonts)
-[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
+[![License: Six Labors Split](https://img.shields.io/badge/license-Six%20Labors%20Split-%23e30183)](https://github.com/SixLabors/Fonts/blob/main/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/issues)
 [![GitHub stars](https://img.shields.io/github/stars/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/SixLabors/Fonts.svg)](https://github.com/SixLabors/Fonts/network)
@@ -92,7 +91,7 @@ git submodule update --init --recursive
 - Loading [WOFF fonts](https://www.w3.org/Submission/WOFF/).
 - Loading [WOFF2 fonts](https://www.w3.org/TR/WOFF2).
 - Load all compatible fonts from local machine store.
-- Suppord for line breaking based on [UAX 14](https://www.unicode.org/reports/tr14/)
+- Support for line breaking based on [UAX 14](https://www.unicode.org/reports/tr14/)
 - Support for rendering left to right, right to left and bidirectional text.
 - Support for ligatures.
 - Support for advanced OpenType features glyph substitution ([GSUB](https://docs.microsoft.com/en-us/typography/opentype/spec/gsub)) and glyph positioning ([GPOS](https://docs.microsoft.com/en-us/typography/opentype/spec/gpos))
