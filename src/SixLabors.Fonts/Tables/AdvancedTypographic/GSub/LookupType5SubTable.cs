@@ -150,7 +150,12 @@ internal sealed class LookupType5Format2SubTable : LookupSubTable
             return false;
         }
 
-        ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
+        ClassSequenceRuleSetTable? ruleSetTable = this.sequenceRuleSetTables[offset];
+        if (ruleSetTable is null)
+        {
+            return false;
+        }
+
         SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
         foreach (ClassSequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
         {

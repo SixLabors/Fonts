@@ -528,12 +528,13 @@ public static partial class Generator
 
             if (category != null)
             {
-                if (!symbols.ContainsKey(category))
+                if (!symbols.TryGetValue(category, out int value))
                 {
-                    symbols[category] = numSymbols++;
+                    value = numSymbols++;
+                    symbols[category] = value;
                 }
 
-                builder.Set(codePoint.Code, (uint)symbols[category]);
+                builder.Set(codePoint.Code, (uint)value);
             }
 
             if (codePoint.IndicSyllabicCategory == ISC.VowelDependent && codePoint.Decomposition.Any())
