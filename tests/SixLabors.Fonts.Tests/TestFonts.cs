@@ -247,6 +247,8 @@ public static class TestFonts
 
     public static string BNazaninFile => GetFullPath("BNazanin.ttf");
 
+    public static string PlantinStdRegularFile => GetFullPath("PlantinStdRegular.otf");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);

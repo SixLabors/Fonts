@@ -29,8 +29,8 @@ internal partial class StreamFontMetrics : FontMetrics
     private readonly OutlineType outlineType;
 
     // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
-    private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]> glyphCache;
-    private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]>? colorGlyphCache;
+    private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]> glyphCache;
+    private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]>? colorGlyphCache;
     private readonly FontDescription description;
     private readonly HorizontalMetrics horizontalMetrics;
     private readonly VerticalMetrics verticalMetrics;
@@ -529,12 +529,12 @@ internal partial class StreamFontMetrics : FontMetrics
         return fonts;
     }
 
-    private static (ushort Id, TextAttributes Attributes, bool IsVerticalLayout) CreateCacheKey(
+    private static (int CodePoint, ushort Id, TextAttributes Attributes, bool IsVerticalLayout) CreateCacheKey(
         CodePoint codePoint,
         ushort glyphId,
         TextAttributes textAttributes,
         LayoutMode layoutMode)
-        => (glyphId, textAttributes, AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode));
+        => (codePoint.Value, glyphId, textAttributes, AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode));
 
     private bool TryGetColoredMetrics(
         CodePoint codePoint,
