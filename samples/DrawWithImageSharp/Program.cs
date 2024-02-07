@@ -21,18 +21,18 @@ public static class Program
     {
         var fonts = new FontCollection();
         var woffFonts = new FontCollection();
-        FontFamily font = fonts.Add(@"Fonts\SixLaborsSampleAB.ttf");
-        FontFamily fontWoff = woffFonts.Add(@"Fonts\SixLaborsSampleAB.woff");
-        FontFamily fontWoff2 = woffFonts.Add(@"Fonts\OpenSans-Regular.woff2");
-        FontFamily carter = fonts.Add(@"Fonts\CarterOne.ttf");
-        FontFamily wendyOne = fonts.Add(@"Fonts\WendyOne-Regular.ttf");
-        FontFamily whitneyBook = fonts.Add(@"Fonts\whitney-book.ttf");
-        FontFamily colorEmoji = fonts.Add(@"Fonts\Twemoji Mozilla.ttf");
-        FontFamily font2 = fonts.Add(@"Fonts\OpenSans-Regular.ttf");
-        FontFamily sunflower = fonts.Add(@"Fonts\Sunflower-Medium.ttf");
-        FontFamily bugzilla = fonts.Add(@"Fonts\me_quran_volt_newmet.ttf");
+        FontFamily font = fonts.Add(IOPath.Combine("Fonts", "SixLaborsSampleAB.ttf"));
+        FontFamily fontWoff = woffFonts.Add(IOPath.Combine("Fonts", "SixLaborsSampleAB.woff"));
+        FontFamily fontWoff2 = woffFonts.Add(IOPath.Combine("Fonts", "OpenSans-Regular.woff2"));
+        FontFamily carter = fonts.Add(IOPath.Combine("Fonts", "CarterOne.ttf"));
+        FontFamily wendyOne = fonts.Add(IOPath.Combine("Fonts", "WendyOne-Regular.ttf"));
+        FontFamily whitneyBook = fonts.Add(IOPath.Combine("Fonts", "whitney-book.ttf"));
+        FontFamily colorEmoji = fonts.Add(IOPath.Combine("Fonts", "Twemoji Mozilla.ttf"));
+        FontFamily font2 = fonts.Add(IOPath.Combine("Fonts", "OpenSans-Regular.ttf"));
+        FontFamily sunflower = fonts.Add(IOPath.Combine("Fonts", "Sunflower-Medium.ttf"));
+        FontFamily bugzilla = fonts.Add(IOPath.Combine("Fonts", "me_quran_volt_newmet.ttf"));
 
-        FontFamily notoKR = fonts.Add(@"Fonts\NotoSansKR-Regular.otf");
+        FontFamily notoKR = fonts.Add(IOPath.Combine("Fonts", "NotoSansKR-Regular.otf"));
 
         RenderText(notoKR, "\uD734", pointSize: 72);
         RenderText(notoKR, "Sphinx of black quartz, judge my vow!", pointSize: 72);
