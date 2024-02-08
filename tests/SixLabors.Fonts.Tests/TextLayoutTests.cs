@@ -952,7 +952,8 @@ public class TextLayoutTests
 
             // Since this is a single line starting at 0,0 the following should be predictable.
             Assert.Equal(advance.Bounds.X, size.Bounds.X);
-            Assert.Equal(size.Bounds.Bottom, bound.Bounds.Bottom);
+            Assert.Equal(size.Bounds.Width, bound.Bounds.Width);
+            Assert.Equal(size.Bounds.Height, bound.Bounds.Height);
         }
     }
 
