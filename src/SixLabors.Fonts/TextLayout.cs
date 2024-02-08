@@ -1178,35 +1178,6 @@ internal static class TextLayout
                         : metric.FontMetrics.VerticalMetrics;
                     float ascender = metricsHeader.Ascender * scaleY;
 
-                    // Adjust ascender for glyphs with a negative tsb. e.g. emoji to prevent cutoff.
-                    if (!CodePoint.IsWhiteSpace(codePoint))
-                    {
-                        if (!isDecomposed)
-                        {
-                            short tsbOffset = 0;
-
-                            // We need to check all the metrics.
-                            for (int mi = 0; mi < metrics.Count; mi++)
-                            {
-                                tsbOffset = Math.Min(tsbOffset, metrics[mi].TopSideBearing);
-                            }
-
-                            if (tsbOffset < 0)
-                            {
-                                ascender -= tsbOffset * scaleY;
-                            }
-                        }
-                        else
-                        {
-                            // Decomposed glyphs contain a single metric.
-                            short tsbOffset = metric.TopSideBearing;
-                            if (tsbOffset < 0)
-                            {
-                                ascender -= tsbOffset * scaleY;
-                            }
-                        }
-                    }
-
                     // Match how line height is calculated for browsers.
                     // https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
                     float descender = Math.Abs(metricsHeader.Descender * scaleY);
