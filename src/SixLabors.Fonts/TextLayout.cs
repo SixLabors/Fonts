@@ -409,6 +409,7 @@ internal static class TextLayout
                 continue;
             }
 
+            int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
                 glyphs.Add(new GlyphLayout(
@@ -419,7 +420,9 @@ internal static class TextLayout
                     data.ScaledAdvance,
                     advanceY,
                     GlyphLayoutMode.Horizontal,
-                    i == 0));
+                    i == 0 && j == 0));
+
+                j++;
             }
 
             boxLocation.X += data.ScaledAdvance;
@@ -537,6 +540,7 @@ internal static class TextLayout
                 continue;
             }
 
+            int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
                 // Align the glyph horizontally and vertically centering horizontally around the baseline.
@@ -552,7 +556,9 @@ internal static class TextLayout
                     advanceX,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
-                    i == 0));
+                    i == 0 && j == 0));
+
+                j++;
             }
 
             penLocation.Y += data.ScaledAdvance;
@@ -671,6 +677,7 @@ internal static class TextLayout
 
             if (data.IsRotated)
             {
+                int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
                 {
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
@@ -682,11 +689,14 @@ internal static class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
-                        i == 0));
+                        i == 0 && j == 0));
+
+                    j++;
                 }
             }
             else
             {
+                int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
                 {
                     // Align the glyph horizontally and vertically centering horizontally around the baseline.
@@ -702,7 +712,9 @@ internal static class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.Vertical,
-                        i == 0));
+                        i == 0 && j == 0));
+
+                    j++;
                 }
             }
 

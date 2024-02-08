@@ -129,7 +129,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
 
         if (renderer.BeginGlyph(in box, in parameters))
         {
-            if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
+            if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
             {
                 if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)
                 {

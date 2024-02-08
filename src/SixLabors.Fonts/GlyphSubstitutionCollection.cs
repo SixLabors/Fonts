@@ -247,15 +247,30 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     {
         // Remove the glyphs at each index.
         int codePointCount = 0;
+        CodePoint codePoint = default;
         for (int i = removalIndices.Length - 1; i >= 0; i--)
         {
             int match = removalIndices[i];
             codePointCount += this.glyphs[match].Data.CodePointCount;
+            CodePoint currentCodePoint = this.glyphs[match].Data.CodePoint;
+            if (!UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) || UnicodeUtility.ShouldRenderWhiteSpaceOnly(codePoint))
+            {
+                if (!CodePoint.IsZeroWidthJoiner(currentCodePoint))
+                {
+                    codePoint = currentCodePoint;
+                }
+            }
+
             this.glyphs.RemoveAt(match);
         }
 
         // Assign our new id at the index.
         GlyphShapingData current = this.glyphs[index].Data;
+        if (codePoint != default)
+        {
+            current.CodePoint = codePoint;
+        }
+
         current.CodePointCount += codePointCount;
         current.GlyphId = glyphId;
         current.LigatureId = ligatureId;
@@ -276,15 +291,30 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     {
         // Remove the glyphs at each index.
         int codePointCount = 0;
+        CodePoint codePoint = default;
         for (int i = count; i > 0; i--)
         {
             int match = index + i;
             codePointCount += this.glyphs[match].Data.CodePointCount;
+            CodePoint currentCodePoint = this.glyphs[match].Data.CodePoint;
+            if (!UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) || UnicodeUtility.ShouldRenderWhiteSpaceOnly(codePoint))
+            {
+                if (!CodePoint.IsZeroWidthJoiner(currentCodePoint))
+                {
+                    codePoint = currentCodePoint;
+                }
+            }
+
             this.glyphs.RemoveAt(match);
         }
 
         // Assign our new id at the index.
         GlyphShapingData current = this.glyphs[index].Data;
+        if (codePoint != default)
+        {
+            current.CodePoint = codePoint;
+        }
+
         current.CodePointCount += codePointCount;
         current.GlyphId = glyphId;
         current.LigatureId = 0;

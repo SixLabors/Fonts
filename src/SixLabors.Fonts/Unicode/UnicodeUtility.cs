@@ -232,6 +232,7 @@ internal static class UnicodeUtility
     /// <summary>
     /// Returns <see langword="true"/> if <paramref name="value"/> is a Default Ignorable Code Point.
     /// </summary>
+    /// <param name="value">The codepoint value.</param>
     /// <remarks>
     /// <see href="http://www.unicode.org/reports/tr44/#Default_Ignorable_Code_Point"/>
     /// <see href="https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt"/>
@@ -396,6 +397,38 @@ internal static class UnicodeUtility
 
         // <reserved-E01F0>..<reserved-E0FFF>
         if (IsInRangeInclusive(value, 0xE01F0, 0xE0FFF))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the specified code point should be rendered as a white space only.
+    /// </summary>
+    /// <param name="codePoint">The code point.</param>
+    /// <returns>The <see cref="bool"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool ShouldRenderWhiteSpaceOnly(CodePoint codePoint)
+    {
+        if (CodePoint.IsWhiteSpace(codePoint))
+        {
+            return true;
+        }
+
+        // Note: While U+115F, U+1160, U+3164 and U+FFA0 are Default_Ignorable,
+        // we do NOT want to hide them, as the way Uniscribe has implemented them
+        // is with regular spacing glyphs, and that's the way fonts are made to work.
+        // As such, we make exceptions for those four.
+        // Also ignoring U+1BCA0..1BCA3. https://github.com/harfbuzz/harfbuzz/issues/503
+        uint value = (uint)codePoint.Value;
+        if (value is 0x115F or 0x1160 or 0x3164 or 0xFFA0)
+        {
+            return true;
+        }
+
+        if (IsInRangeInclusive(value, 0x1BCA0, 0x1BCA3))
         {
             return true;
         }
