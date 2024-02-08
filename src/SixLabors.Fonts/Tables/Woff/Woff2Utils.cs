@@ -237,7 +237,8 @@ internal static class Woff2Utils
         }
 
         // Read the bounding box stream.
-        int bitmapCount = (numGlyphs + 7) / 8;
+        reader.BaseStream.Position = bboxStreamOffset;
+        int bitmapCount = ((numGlyphs + 31) >> 5) << 2;
         byte[] boundsBitmap = ExpandBitmap(reader.ReadBytes(bitmapCount));
         for (ushort i = 0; i < numGlyphs; i++)
         {
