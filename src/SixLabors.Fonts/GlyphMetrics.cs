@@ -401,39 +401,7 @@ public abstract class GlyphMetrics
     /// <returns>The <see cref="bool"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected internal static bool ShouldSkipGlyphRendering(CodePoint codePoint)
-        => UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) && !ShouldRenderWhiteSpaceOnly(codePoint);
-
-    /// <summary>
-    /// Gets a value indicating whether the specified code point should be rendered as a white space only.
-    /// </summary>
-    /// <param name="codePoint">The code point.</param>
-    /// <returns>The <see cref="bool"/>.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool ShouldRenderWhiteSpaceOnly(CodePoint codePoint)
-    {
-        if (CodePoint.IsWhiteSpace(codePoint))
-        {
-            return true;
-        }
-
-        // Note: While U+115F, U+1160, U+3164 and U+FFA0 are Default_Ignorable,
-        // we do NOT want to hide them, as the way Uniscribe has implemented them
-        // is with regular spacing glyphs, and that's the way fonts are made to work.
-        // As such, we make exceptions for those four.
-        // Also ignoring U+1BCA0..1BCA3. https://github.com/harfbuzz/harfbuzz/issues/503
-        uint value = (uint)codePoint.Value;
-        if (value is 0x115F or 0x1160 or 0x3164 or 0xFFA0)
-        {
-            return true;
-        }
-
-        if (UnicodeUtility.IsInRangeInclusive(value, 0x1BCA0, 0x1BCA3))
-        {
-            return true;
-        }
-
-        return false;
-    }
+        => UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) && !UnicodeUtility.ShouldRenderWhiteSpaceOnly(codePoint);
 
     /// <summary>
     /// Returns the size to render/measure the glyph based on the given size and resolution in px units.

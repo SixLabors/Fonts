@@ -82,12 +82,12 @@ internal readonly struct GlyphLayout
     /// Gets a value indicating whether the glyph represents a whitespace character.
     /// </summary>
     /// <returns>The <see cref="bool"/>.</returns>
-    public bool IsWhiteSpace() => GlyphMetrics.ShouldRenderWhiteSpaceOnly(this.CodePoint);
+    public bool IsWhiteSpace() => UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint);
 
     internal FontRectangle BoundingBox(float dpi)
     {
         Vector2 origin = (this.PenLocation + this.Offset) * dpi;
-        FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, Vector2.Zero, dpi);
+        FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, this.BoxLocation, dpi);
 
         if (this.IsWhiteSpace())
         {
