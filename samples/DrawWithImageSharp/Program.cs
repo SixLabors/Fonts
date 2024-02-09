@@ -28,11 +28,21 @@ public static class Program
         FontFamily wendyOne = fonts.Add(IOPath.Combine("Fonts", "WendyOne-Regular.ttf"));
         FontFamily whitneyBook = fonts.Add(IOPath.Combine("Fonts", "whitney-book.ttf"));
         FontFamily colorEmoji = fonts.Add(IOPath.Combine("Fonts", "Twemoji Mozilla.ttf"));
-        FontFamily font2 = fonts.Add(IOPath.Combine("Fonts", "OpenSans-Regular.ttf"));
+        FontFamily openSans = fonts.Add(IOPath.Combine("Fonts", "OpenSans-Regular.ttf"));
         FontFamily sunflower = fonts.Add(IOPath.Combine("Fonts", "Sunflower-Medium.ttf"));
         FontFamily bugzilla = fonts.Add(IOPath.Combine("Fonts", "me_quran_volt_newmet.ttf"));
 
         FontFamily notoKR = fonts.Add(IOPath.Combine("Fonts", "NotoSansKR-Regular.otf"));
+        FontFamily marker = fonts.Add(IOPath.Combine("Fonts", "PermanentMarker-Regular.ttf"));
+
+        FontFamily sEmji = fonts.Add(IOPath.Combine("Fonts", "seguiemj-win11.ttf"));
+        BoundingBoxes.Generate("\U0001F469\U0001F3FB\u200D\U0001F91D\u200D\U0001F469\U0001F3FC", new TextOptions(sEmji.CreateFont(72)) { LineSpacing = 1.4f });
+        BoundingBoxes.Generate("\U0001F46D\U0001F3FB", new TextOptions(sEmji.CreateFont(72)) { LineSpacing = 1.4f });
+        BoundingBoxes.Generate("È", new TextOptions(marker.CreateFont(142)) { LineSpacing = 1.4f });
+        BoundingBoxes.Generate("H", new TextOptions(whitneyBook.CreateFont(25)));
+
+        openSans.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+        BoundingBoxes.Generate("A\nA\nA\nA", new TextOptions(openSans.CreateFont(metrics.UnitsPerEm)) { LineSpacing = 1.5f });
 
         RenderText(notoKR, "\uD734", pointSize: 72);
         RenderText(notoKR, "Sphinx of black quartz, judge my vow!", pointSize: 72);
@@ -47,16 +57,28 @@ public static class Program
 
 #if OS_WINDOWS
 
+        FontFamily arial = SystemFonts.Get("Arial");
+        FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
         FontFamily emojiFont = SystemFonts.Get("Segoe UI Emoji");
         FontFamily uiFont = SystemFonts.Get("Segoe UI");
         FontFamily arabicFont = SystemFonts.Get("Dubai");
-
         FontFamily tahoma = SystemFonts.Get("Tahoma");
 
-        RenderText(SystemFonts.Get("Arial"), "abcdefghijklmnopqrstuvwxyz", pointSize: 30);
-        RenderText(SystemFonts.Get("Arial"), "abcdefghijklmnopqrstuvwxyz\r\nabcdefghijklmnopqrstuvwxyz", pointSize: 30);
-        RenderText(SystemFonts.Get("Arial"), "abcdef ghijk lmnopq rstuvwxyz", pointSize: 30);
+        BoundingBoxes.Generate(
+            "This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉",
+            new TextOptions(arial.CreateFont(20))
+            {
+                WrappingLength = 400,
+                LayoutMode = LayoutMode.HorizontalBottomTop,
+                WordBreaking = WordBreaking.Standard,
+                FallbackFontFamilies = new[] { jhengHei }
+            });
+
         return;
+        RenderText(arial, "abcdefghijklmnopqrstuvwxyz", pointSize: 30);
+        RenderText(arial, "abcdefghijklmnopqrstuvwxyz\r\nabcdefghijklmnopqrstuvwxyz", pointSize: 30);
+        RenderText(arial, "abcdef ghijk lmnopq rstuvwxyz", pointSize: 30);
+        // return;
 
         var textRuns = new List<RichTextRun>
         {
@@ -80,7 +102,7 @@ public static class Program
         };
         RenderText(bugzilla, arabic, pointSize: 72, textRuns: textRuns);
 
-        RenderText(font2, "\uFB01", pointSize: 11.25F);
+        RenderText(openSans, "\uFB01", pointSize: 11.25F);
         RenderText(fontWoff2, "\uFB01", pointSize: 11.25F);
         RenderText(tahoma, "p", pointSize: 11.25F);
         RenderText(tahoma, "Lorem ipsum dolor sit amet", pointSize: 11.25F);
@@ -88,11 +110,11 @@ public static class Program
 
         RenderText(uiFont, "Soft\u00ADHyphen", pointSize: 72);
 
-        RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { font2 });
+        RenderText(uiFont, "first\n\n\n\nl", pointSize: 20, fallbackFonts: new[] { openSans });
 
-        RenderText(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
+        RenderText(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { openSans });
         RenderText(uiFont, "Testing", pointSize: 20);
-        RenderText(emojiFont, "👩🏽‍🚒a", pointSize: 72, fallbackFonts: new[] { font2 });
+        RenderText(emojiFont, "👩🏽‍🚒a", pointSize: 72, fallbackFonts: new[] { openSans });
         RenderText(arabicFont, "English اَلْعَرَبِيَّةُ English", pointSize: 20);
         RenderText(arabicFont, "English English", pointSize: 20);
         RenderText(arabicFont, "اَلْعَرَبِيَّةُ اَلْعَرَبِيَّةُ", pointSize: 20);
@@ -102,19 +124,19 @@ public static class Program
         RenderText(arabicFont, "English اَلْعَرَبِيَّةُ", pointSize: 20);
 
         RenderTextProcessorWithAlignment(emojiFont, "😀A😀", pointSize: 20, fallbackFonts: new[] { colorEmoji });
-        RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { font2 });
-        RenderTextProcessorWithAlignment(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { font2 });
+        RenderTextProcessorWithAlignment(uiFont, "this\nis\na\ntest", pointSize: 20, fallbackFonts: new[] { openSans });
+        RenderTextProcessorWithAlignment(uiFont, "first\n\n\n\nlast", pointSize: 20, fallbackFonts: new[] { openSans });
 
-        RenderText(emojiFont, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
-        RenderText(font2, string.Empty, pointSize: 72, fallbackFonts: new[] { emojiFont });
-        RenderText(font2, "😀 Hello World! 😀", pointSize: 72, fallbackFonts: new[] { emojiFont });
+        RenderText(emojiFont, "😀", pointSize: 72, fallbackFonts: new[] { openSans });
+        RenderText(openSans, string.Empty, pointSize: 72, fallbackFonts: new[] { emojiFont });
+        RenderText(openSans, "😀 Hello World! 😀", pointSize: 72, fallbackFonts: new[] { emojiFont });
 #endif
 
         // fallback font tests
-        RenderTextProcessor(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
-        RenderText(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { font2 });
+        RenderTextProcessor(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { openSans });
+        RenderText(colorEmoji, "a😀d", pointSize: 72, fallbackFonts: new[] { openSans });
 
-        RenderText(colorEmoji, "😀", pointSize: 72, fallbackFonts: new[] { font2 });
+        RenderText(colorEmoji, "😀", pointSize: 72, fallbackFonts: new[] { openSans });
 
         //// general
         RenderText(font, "abc", 72);
@@ -122,50 +144,46 @@ public static class Program
         RenderText(fontWoff, "abe", 72);
         RenderText(fontWoff, "ABf", 72);
         RenderText(fontWoff2, "woff2", 72);
-        RenderText(font2, "ov", 72);
-        RenderText(font2, "a\ta", 72);
-        RenderText(font2, "aa\ta", 72);
-        RenderText(font2, "aaa\ta", 72);
-        RenderText(font2, "aaaa\ta", 72);
-        RenderText(font2, "aaaaa\ta", 72);
-        RenderText(font2, "aaaaaa\ta", 72);
-        RenderText(font2, "Hello\nWorld", 72);
+        RenderText(openSans, "ov", 72);
+        RenderText(openSans, "a\ta", 72);
+        RenderText(openSans, "aa\ta", 72);
+        RenderText(openSans, "aaa\ta", 72);
+        RenderText(openSans, "aaaa\ta", 72);
+        RenderText(openSans, "aaaaa\ta", 72);
+        RenderText(openSans, "aaaaaa\ta", 72);
+        RenderText(openSans, "Hello\nWorld", 72);
         RenderText(carter, "Hello\0World", 72);
         RenderText(wendyOne, "Hello\0World", 72);
         RenderText(whitneyBook, "Hello\0World", 72);
         RenderText(sunflower, "í", 30);
 
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\tx");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\tx");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\tx");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 4 }, "\t\t\t\t\tx");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 4 }, "\t\tx");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 4 }, "\t\t\tx");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 4 }, "\t\t\t\tx");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 4 }, "\t\t\t\t\tx");
 
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 0 }, "Zero\tTab");
 
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 0 }, "Zero\tTab");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "One\tTab");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 6 }, "\tTab Then Words");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Tab Then Words");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Tab\t");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
-        RenderText(new RichTextOptions(new Font(font2, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 0 }, "Zero\tTab");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 1 }, "One\tTab");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 6 }, "\tTab Then Words");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 1 }, "Tab Then Words");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 1 }, "Words Then Tab\t");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 1 }, "                 Spaces Then Words");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 1 }, "Words Then Spaces                 ");
+        RenderText(new RichTextOptions(new Font(openSans, 72)) { TabWidth = 1 }, "\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs");
 
 #if OS_WINDOWS
         RenderText(new Font(SystemFonts.Get("Arial"), 20f, FontStyle.Regular), "á é í ó ú ç ã õ", 200, 50);
         RenderText(new Font(SystemFonts.Get("Arial"), 10f, FontStyle.Regular), "PGEP0JK867", 200, 50);
         RenderText(new RichTextOptions(SystemFonts.CreateFont("consolas", 72)) { TabWidth = 4 }, "xxxxxxxxxxxxxxxx\n\txxxx\txxxx\n\t\txxxxxxxx\n\t\t\txxxx");
-        BoundingBoxes.Generate("a b c y q G H T", SystemFonts.CreateFont("arial", 40f));
+        BoundingBoxes.Generate("a b c y q G H T", new TextOptions(SystemFonts.CreateFont("arial", 40f)));
         TextAlignmentSample.Generate(SystemFonts.CreateFont("arial", 50f));
         TextAlignmentWrapped.Generate(SystemFonts.CreateFont("arial", 50f));
 
         FontFamily simsum = SystemFonts.Get("SimSun");
         RenderText(simsum, "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 16);
-
-        FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
         RenderText(jhengHei, " ，；：！￥（）？｛｝－＝＋＼｜～！＠＃％＆", 16);
-
-        FontFamily arial = SystemFonts.Get("Arial");
         RenderText(arial, "ìíîï", 72);
 #endif
         var sb = new StringBuilder();
@@ -211,7 +229,7 @@ public static class Program
 
     public static void RenderText(RichTextOptions options, string text)
     {
-        FontRectangle size = TextMeasurer.MeasureSize(text, options);
+        FontRectangle size = TextMeasurer.MeasureAdvance(text, options);
         if (size == FontRectangle.Empty)
         {
             return;
@@ -253,7 +271,7 @@ public static class Program
             textOptions.FallbackFontFamilies = fallbackFonts.ToArray();
         }
 
-        FontRectangle textSize = TextMeasurer.MeasureSize(text, textOptions);
+        FontRectangle textSize = TextMeasurer.MeasureAdvance(text, textOptions);
         textOptions.Origin = new PointF(5, 5);
 
         using var img = new Image<Rgba32>((int)Math.Ceiling(textSize.Width) + 20, (int)Math.Ceiling(textSize.Height) + 20);

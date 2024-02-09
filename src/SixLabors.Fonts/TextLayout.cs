@@ -409,6 +409,7 @@ internal static class TextLayout
                 continue;
             }
 
+            int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
                 glyphs.Add(new GlyphLayout(
@@ -419,7 +420,9 @@ internal static class TextLayout
                     data.ScaledAdvance,
                     advanceY,
                     GlyphLayoutMode.Horizontal,
-                    i == 0));
+                    i == 0 && j == 0));
+
+                j++;
             }
 
             boxLocation.X += data.ScaledAdvance;
@@ -537,6 +540,7 @@ internal static class TextLayout
                 continue;
             }
 
+            int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
                 // Align the glyph horizontally and vertically centering horizontally around the baseline.
@@ -552,7 +556,9 @@ internal static class TextLayout
                     advanceX,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
-                    i == 0));
+                    i == 0 && j == 0));
+
+                j++;
             }
 
             penLocation.Y += data.ScaledAdvance;
@@ -671,6 +677,7 @@ internal static class TextLayout
 
             if (data.IsRotated)
             {
+                int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
                 {
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
@@ -682,11 +689,14 @@ internal static class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
-                        i == 0));
+                        i == 0 && j == 0));
+
+                    j++;
                 }
             }
             else
             {
+                int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
                 {
                     // Align the glyph horizontally and vertically centering horizontally around the baseline.
@@ -702,7 +712,9 @@ internal static class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.Vertical,
-                        i == 0));
+                        i == 0 && j == 0));
+
+                    j++;
                 }
             }
 
@@ -1092,6 +1104,12 @@ internal static class TextLayout
                                 textLine = split;
                                 lineAdvance = split.ScaledLineAdvance;
                             }
+                            else if (textLine.Count > 0)
+                            {
+                                textLines.Add(textLine.Finalize());
+                                textLine = new();
+                                lineAdvance = 0;
+                            }
                         }
                         else if (lastLineBreak.PositionWrap < codePointIndex && !CodePoint.IsWhiteSpace(codePoint))
                         {
@@ -1165,35 +1183,6 @@ internal static class TextLayout
                         ? metric.FontMetrics.HorizontalMetrics
                         : metric.FontMetrics.VerticalMetrics;
                     float ascender = metricsHeader.Ascender * scaleY;
-
-                    // Adjust ascender for glyphs with a negative tsb. e.g. emoji to prevent cutoff.
-                    if (!CodePoint.IsWhiteSpace(codePoint))
-                    {
-                        if (!isDecomposed)
-                        {
-                            short tsbOffset = 0;
-
-                            // We need to check all the metrics.
-                            for (int mi = 0; mi < metrics.Count; mi++)
-                            {
-                                tsbOffset = Math.Min(tsbOffset, metrics[mi].TopSideBearing);
-                            }
-
-                            if (tsbOffset < 0)
-                            {
-                                ascender -= tsbOffset * scaleY;
-                            }
-                        }
-                        else
-                        {
-                            // Decomposed glyphs contain a single metric.
-                            short tsbOffset = metric.TopSideBearing;
-                            if (tsbOffset < 0)
-                            {
-                                ascender -= tsbOffset * scaleY;
-                            }
-                        }
-                    }
 
                     // Match how line height is calculated for browsers.
                     // https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height

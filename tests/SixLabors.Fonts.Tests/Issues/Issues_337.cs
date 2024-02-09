@@ -22,11 +22,11 @@ public class Issues_337
 
         var expected = new FontRectangle[]
         {
-            new FontRectangle(0, -101.99994F, 1024, 1024),
-            new FontRectangle(1024, -101.99994F, 1024, 1024),
-            new FontRectangle(2048, -101.99994F, 1024, 1024),
-            new FontRectangle(3072, -101.99994F, 1024, 1024),
-            new FontRectangle(4096, -101.99994F, 1024, 1024)
+            new FontRectangle(0, -254.99994F, 1024, 1024),
+            new FontRectangle(1024, -254.99994F, 1024, 1024),
+            new FontRectangle(2048, -254.99994F, 1024, 1024),
+            new FontRectangle(3072, -254.99994F, 1024, 1024),
+            new FontRectangle(4096, -254.99994F, 1024, 1024)
         };
 
         for (int i = 0; i < expected.Length; i++)

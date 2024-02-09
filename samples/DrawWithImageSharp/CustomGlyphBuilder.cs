@@ -27,17 +27,17 @@ internal class CustomGlyphBuilder : GlyphBuilder
     /// <summary>
     /// Gets the paths that have been rendered by this.
     /// </summary>
-    public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new RectangularPolygon(x.Location, x.Size)));
+    public IPathCollection Boxes => new PathCollection(this.glyphBounds.Select(x => new RectangularPolygon(x.X, x.Y, x.Width, x.Height)));
 
     /// <summary>
     /// Gets the paths that have been rendered by this builder.
     /// </summary>
     public IPath TextBox { get; private set; }
 
-    protected override void BeginText(in FontRectangle rect)
+    protected override void BeginText(in FontRectangle bounds)
     {
-        this.TextBox = new RectangularPolygon(rect.Location, rect.Size);
-        base.BeginText(rect);
+        this.TextBox = new RectangularPolygon(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        base.BeginText(bounds);
     }
 
     protected override void BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
