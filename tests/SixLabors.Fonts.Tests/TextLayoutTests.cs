@@ -493,7 +493,7 @@ public class TextLayoutTests
     [Theory]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 7)]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 7)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 6)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 7)]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 200, 6)]
     public void CountLinesWrappingLength(string text, int wrappingLength, int usedLines)
     {

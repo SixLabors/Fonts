@@ -1104,6 +1104,12 @@ internal static class TextLayout
                                 textLine = split;
                                 lineAdvance = split.ScaledLineAdvance;
                             }
+                            else if (textLine.Count > 0)
+                            {
+                                textLines.Add(textLine.Finalize());
+                                textLine = new();
+                                lineAdvance = 0;
+                            }
                         }
                         else if (lastLineBreak.PositionWrap < codePointIndex && !CodePoint.IsWhiteSpace(codePoint))
                         {

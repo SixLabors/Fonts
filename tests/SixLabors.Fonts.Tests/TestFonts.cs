@@ -253,6 +253,8 @@ public static class TestFonts
 
     public static string PermanentMarkerRegularWoff2File => GetFullPath("PermanentMarker-Regular.woff2");
 
+    public static string CourierPrimeFile => GetFullPath("courier-prime.woff2");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);
