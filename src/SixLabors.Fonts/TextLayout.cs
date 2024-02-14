@@ -1335,10 +1335,24 @@ internal static class TextLayout
             // Create a new line ensuring we capture the initial metrics.
             TextLine result = new();
             result.data.AddRange(this.data.GetRange(index, this.data.Count - index));
-            result.ScaledLineAdvance = result.data.Sum(x => x.ScaledAdvance);
-            result.ScaledMaxAscender = result.data.Max(x => x.ScaledAscender);
-            result.ScaledMaxDescender = result.data.Max(x => x.ScaledDescender);
-            result.ScaledMaxLineHeight = result.data.Max(x => x.ScaledLineHeight);
+
+            float advance = 0;
+            float ascender = 0;
+            float descender = 0;
+            float lineHeight = 0;
+            for (int i = 0; i < result.data.Count; i++)
+            {
+                GlyphLayoutData glyph = result.data[i];
+                advance += glyph.ScaledAdvance;
+                ascender = MathF.Max(ascender, glyph.ScaledAscender);
+                descender = MathF.Max(descender, glyph.ScaledDescender);
+                lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
+            }
+
+            result.ScaledLineAdvance = advance;
+            result.ScaledMaxAscender = ascender;
+            result.ScaledMaxDescender = descender;
+            result.ScaledMaxLineHeight = lineHeight;
 
             // Remove those items from this line.
             this.data.RemoveRange(index, this.data.Count - index);
@@ -1361,10 +1375,23 @@ internal static class TextLayout
             }
 
             // Lastly recalculate this line metrics.
-            this.ScaledLineAdvance = this.data.Sum(x => x.ScaledAdvance);
-            this.ScaledMaxAscender = this.data.Max(x => x.ScaledAscender);
-            this.ScaledMaxDescender = this.data.Max(x => x.ScaledDescender);
-            this.ScaledMaxLineHeight = this.data.Max(x => x.ScaledLineHeight);
+            advance = 0;
+            ascender = 0;
+            descender = 0;
+            lineHeight = 0;
+            for (int i = 0; i < this.data.Count; i++)
+            {
+                GlyphLayoutData glyph = this.data[i];
+                advance += glyph.ScaledAdvance;
+                ascender = MathF.Max(ascender, glyph.ScaledAscender);
+                descender = MathF.Max(descender, glyph.ScaledDescender);
+                lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
+            }
+
+            this.ScaledLineAdvance = advance;
+            this.ScaledMaxAscender = ascender;
+            this.ScaledMaxDescender = descender;
+            this.ScaledMaxLineHeight = lineHeight;
 
             return result;
         }
