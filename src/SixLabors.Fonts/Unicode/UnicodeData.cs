@@ -9,18 +9,18 @@ namespace SixLabors.Fonts.Unicode;
 
 internal static class UnicodeData
 {
-    private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new(() => GetBidiTrie());
-    private static readonly Lazy<UnicodeTrie> LazyBidiMirrorTrie = new(() => GetBidiMirrorTrie());
-    private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new(() => GetGraphemeTrie());
-    private static readonly Lazy<UnicodeTrie> LazyLineBreakTrie = new(() => GetLineBreakTrie());
-    private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetScriptTrie());
-    private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new(() => GetCategoryTrie());
-    private static readonly Lazy<UnicodeTrie> LazyArabicShapingTrie = new(() => GetArabicShapingTrie());
-    private static readonly Lazy<UnicodeTrie> LazyIndicSyllabicCategoryTrie = new(() => GetIndicSyllabicCategoryTrie());
-    private static readonly Lazy<UnicodeTrie> LazyIndicPositionalCategoryTrie = new(() => GetIndicPositionalCategoryTrie());
-    private static readonly Lazy<UnicodeTrie> LazyVerticalOrientationTrie = new(() => GetVerticalOrientationTrie());
-    private static readonly Lazy<UnicodeTrie> LazyUniversalShapingTrie = new(() => GetUniversalShapingTrie());
-    private static readonly Lazy<UnicodeTrie> LazyIndicShapingTrie = new(() => GetIndicShapingTrie());
+    private static readonly Lazy<UnicodeTrie> LazyBidiTrie = new(() => GetBidiTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyBidiMirrorTrie = new(() => GetBidiMirrorTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyGraphemeTrie = new(() => GetGraphemeTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyLineBreakTrie = new(() => GetLineBreakTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyScriptTrie = new(() => GetScriptTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyCategoryTrie = new(() => GetCategoryTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyArabicShapingTrie = new(() => GetArabicShapingTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyIndicSyllabicCategoryTrie = new(() => GetIndicSyllabicCategoryTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyIndicPositionalCategoryTrie = new(() => GetIndicPositionalCategoryTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyVerticalOrientationTrie = new(() => GetVerticalOrientationTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyUniversalShapingTrie = new(() => GetUniversalShapingTrie(), true);
+    private static readonly Lazy<UnicodeTrie> LazyIndicShapingTrie = new(() => GetIndicShapingTrie(), true);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint GetBidiData(uint codePoint) => LazyBidiTrie.Value.Get(codePoint);

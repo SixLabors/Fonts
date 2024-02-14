@@ -11,7 +11,6 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal class CffGlyphMetrics : GlyphMetrics
 {
-    private static readonly Vector2 YInverter = new(1, -1);
     private CffGlyphData glyphData;
 
     internal CffGlyphMetrics(
