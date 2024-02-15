@@ -1066,7 +1066,7 @@ internal static class TextLayout
                     else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
                     {
                         // Forced wordbreak
-                        if (breakAll)
+                        if (breakAll && textLine.Count > 0)
                         {
                             textLines.Add(textLine.Finalize());
                             glyphCount += textLine.Count;
@@ -1086,7 +1086,7 @@ internal static class TextLayout
                                     lineAdvance = split.ScaledLineAdvance;
                                 }
                             }
-                            else
+                            else if (textLine.Count > 0)
                             {
                                 textLines.Add(textLine.Finalize());
                                 glyphCount += textLine.Count;
@@ -1123,7 +1123,7 @@ internal static class TextLayout
                                 textLine = split;
                                 lineAdvance = split.ScaledLineAdvance;
                             }
-                            else if (breakWord)
+                            else if (breakWord && textLine.Count > 0)
                             {
                                 textLines.Add(textLine.Finalize());
                                 glyphCount += textLine.Count;
@@ -1131,7 +1131,7 @@ internal static class TextLayout
                                 lineAdvance = 0;
                             }
                         }
-                        else if (breakWord)
+                        else if (breakWord && textLine.Count > 0)
                         {
                             textLines.Add(textLine.Finalize());
                             glyphCount += textLine.Count;
