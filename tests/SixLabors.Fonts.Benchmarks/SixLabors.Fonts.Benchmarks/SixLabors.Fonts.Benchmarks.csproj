@@ -30,7 +30,7 @@
   </Choose>
   
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" />
-    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
+    <PackageReference Include="SkiaSharp" Version="2.88.7" />
   </ItemGroup>
 </Project>
