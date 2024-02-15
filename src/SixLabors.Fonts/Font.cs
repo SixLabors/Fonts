@@ -42,8 +42,8 @@ public sealed class Font
         this.Family = family;
         this.RequestedStyle = style;
         this.Size = size;
-        this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal);
-        this.fontName = new Lazy<string>(this.LoadFontName);
+        this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal, true);
+        this.fontName = new Lazy<string>(this.LoadFontName, true);
     }
 
     /// <summary>
@@ -95,6 +95,7 @@ public sealed class Font
     /// <summary>
     /// Gets the font metrics.
     /// </summary>
+    /// <exception cref="FontException">Font instance not found.</exception>
     public FontMetrics FontMetrics => this.metrics.Value ?? throw new FontException("Font instance not found.");
 
     /// <summary>
@@ -194,7 +195,7 @@ public sealed class Font
     /// </summary>
     /// <param name="codePoint">The code point of the character.</param>
     /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
-    /// <param name="layoutMode">The layout mode to apply to thte glyphs.</param>
+    /// <param name="layoutMode">The layout mode to apply to the glyphs.</param>
     /// <param name="support">Options for enabling color font support during layout and rendering.</param>
     /// <param name="glyphs">
     /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
@@ -217,7 +218,7 @@ public sealed class Font
     /// <param name="codePoint">The code point of the character.</param>
     /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
     /// <param name="textDecorations">The text decorations to apply to the glyphs.</param>
-    /// <param name="layoutMode">The layout mode to apply to thte glyphs.</param>
+    /// <param name="layoutMode">The layout mode to apply to the glyphs.</param>
     /// <param name="support">Options for enabling color font support during layout and rendering.</param>
     /// <param name="glyphs">
     /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
