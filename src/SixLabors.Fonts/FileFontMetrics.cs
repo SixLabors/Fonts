@@ -34,7 +34,7 @@ internal sealed class FileFontMetrics : FontMetrics
     {
         this.Description = description;
         this.Path = path;
-        this.fontMetrics = new Lazy<StreamFontMetrics>(() => StreamFontMetrics.LoadFont(path, offset));
+        this.fontMetrics = new Lazy<StreamFontMetrics>(() => StreamFontMetrics.LoadFont(path, offset), true);
     }
 
     /// <inheritdoc cref="FontMetrics.Description"/>

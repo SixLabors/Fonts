@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tables.Cff;
 
 internal sealed class CFFOperator
 {
-    private static readonly Lazy<Dictionary<int, CFFOperator>> RegisteredOperators = new(() => CreateDictionary());
+    private static readonly Lazy<Dictionary<int, CFFOperator>> RegisteredOperators = new(() => CreateDictionary(), true);
     private readonly byte b0;
     private readonly byte b1;
     private readonly OperatorOperandKind operatorOperandKind;
