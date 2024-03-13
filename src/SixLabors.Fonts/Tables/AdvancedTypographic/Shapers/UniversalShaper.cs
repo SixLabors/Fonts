@@ -143,7 +143,7 @@ internal sealed class UniversalShaper : DefaultShaper
             }
 
             // Assign rphf feature
-            int limit = substitutionCollection[match.StartIndex].UniversalShapingEngineInfo!.Category == "R"
+            int limit = substitutionCollection[match.StartIndex + index].UniversalShapingEngineInfo!.Category == "R"
                 ? 1
                 : Math.Min(3, match.EndIndex - match.StartIndex);
 
