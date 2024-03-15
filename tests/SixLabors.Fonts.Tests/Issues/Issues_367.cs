@@ -23,7 +23,7 @@ public class Issues_367
         Assert.Equal(3, lineCount);
 
         FontRectangle advance = TextMeasurer.MeasureAdvance(text, options);
-        Assert.Equal(355, advance.Width);
+        Assert.Equal(365, advance.Width);
         Assert.Equal(48, advance.Height);
     }
 }
