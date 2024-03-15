@@ -1307,6 +1307,7 @@ internal static class TextLayout
 
             if (index == 0)
             {
+                this.TrimTrailingWhitespaceAndRecalculateMetrics();
                 return this;
             }
 
@@ -1336,29 +1337,20 @@ internal static class TextLayout
             TextLine result = new();
             result.data.AddRange(this.data.GetRange(index, this.data.Count - index));
 
-            float advance = 0;
-            float ascender = 0;
-            float descender = 0;
-            float lineHeight = 0;
-            for (int i = 0; i < result.data.Count; i++)
-            {
-                GlyphLayoutData glyph = result.data[i];
-                advance += glyph.ScaledAdvance;
-                ascender = MathF.Max(ascender, glyph.ScaledAscender);
-                descender = MathF.Max(descender, glyph.ScaledDescender);
-                lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
-            }
-
-            result.ScaledLineAdvance = advance;
-            result.ScaledMaxAscender = ascender;
-            result.ScaledMaxDescender = descender;
-            result.ScaledMaxLineHeight = lineHeight;
+            this.TrimTrailingWhitespaceAndRecalculateMetrics();
 
             // Remove those items from this line.
             this.data.RemoveRange(index, this.data.Count - index);
 
             // Now trim trailing whitespace from this line.
-            index = this.data.Count;
+            this.TrimTrailingWhitespaceAndRecalculateMetrics();
+
+            return result;
+        }
+
+        private void TrimTrailingWhitespaceAndRecalculateMetrics()
+        {
+            int index = this.data.Count;
             while (index > 0)
             {
                 if (!CodePoint.IsWhiteSpace(this.data[index - 1].CodePoint))
@@ -1375,13 +1367,12 @@ internal static class TextLayout
             }
 
             // Lastly recalculate this line metrics.
-            advance = 0;
-            ascender = 0;
-            descender = 0;
-            lineHeight = 0;
-            for (int i = 0; i < this.data.Count; i++)
+            float advance = 0;
+            float ascender = 0;
+            float descender = 0;
+            float lineHeight = 0;
+            foreach (GlyphLayoutData glyph in this.data)
             {
-                GlyphLayoutData glyph = this.data[i];
                 advance += glyph.ScaledAdvance;
                 ascender = MathF.Max(ascender, glyph.ScaledAscender);
                 descender = MathF.Max(descender, glyph.ScaledDescender);
@@ -1392,8 +1383,6 @@ internal static class TextLayout
             this.ScaledMaxAscender = ascender;
             this.ScaledMaxDescender = descender;
             this.ScaledMaxLineHeight = lineHeight;
-
-            return result;
         }
 
         public TextLine Finalize() => this.BidiReOrder();
