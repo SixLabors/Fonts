@@ -1358,7 +1358,14 @@ internal static class TextLayout
             this.data.RemoveRange(index, this.data.Count - index);
 
             // Now trim trailing whitespace from this line.
-            index = this.data.Count;
+            this.TrimTrailingWhitespaceAndRecalculateMetrics();
+
+            return result;
+        }
+
+        private void TrimTrailingWhitespaceAndRecalculateMetrics()
+        {
+            int index = this.data.Count;
             while (index > 0)
             {
                 if (!CodePoint.IsWhiteSpace(this.data[index - 1].CodePoint))
@@ -1375,10 +1382,10 @@ internal static class TextLayout
             }
 
             // Lastly recalculate this line metrics.
-            advance = 0;
-            ascender = 0;
-            descender = 0;
-            lineHeight = 0;
+            float advance = 0;
+            float ascender = 0;
+            float descender = 0;
+            float lineHeight = 0;
             for (int i = 0; i < this.data.Count; i++)
             {
                 GlyphLayoutData glyph = this.data[i];
@@ -1392,8 +1399,6 @@ internal static class TextLayout
             this.ScaledMaxAscender = ascender;
             this.ScaledMaxDescender = descender;
             this.ScaledMaxLineHeight = lineHeight;
-
-            return result;
         }
 
         public TextLine Finalize() => this.BidiReOrder();
