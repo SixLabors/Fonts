@@ -1328,6 +1328,9 @@ internal static class TextLayout
 
                 if (index == 0)
                 {
+                    // Now trim trailing whitespace from this line in the case of an exact
+                    // length line break (non CJK)
+                    this.TrimTrailingWhitespaceAndRecalculateMetrics();
                     return this;
                 }
             }
