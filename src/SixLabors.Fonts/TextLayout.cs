@@ -420,7 +420,9 @@ internal static class TextLayout
                     data.ScaledAdvance,
                     advanceY,
                     GlyphLayoutMode.Horizontal,
-                    i == 0 && j == 0));
+                    i == 0 && j == 0,
+                    data.GraphemeIndex,
+                    data.StringIndex));
 
                 j++;
             }
@@ -556,7 +558,9 @@ internal static class TextLayout
                     advanceX,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
-                    i == 0 && j == 0));
+                    i == 0 && j == 0,
+                    data.GraphemeIndex,
+                    data.StringIndex));
 
                 j++;
             }
@@ -689,7 +693,9 @@ internal static class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
-                        i == 0 && j == 0));
+                        i == 0 && j == 0,
+                        data.GraphemeIndex,
+                        data.StringIndex));
 
                     j++;
                 }
@@ -712,7 +718,9 @@ internal static class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.Vertical,
-                        i == 0 && j == 0));
+                        i == 0 && j == 0,
+                        data.GraphemeIndex,
+                        data.StringIndex));
 
                     j++;
                 }
@@ -895,6 +903,7 @@ internal static class TextLayout
         List<TextLine> textLines = new();
         TextLine textLine = new();
         int glyphCount = 0;
+        int stringIndex = 0;
 
         // No glyph should contain more than 64 metrics.
         // We do a sanity check below just in case.
@@ -1205,12 +1214,15 @@ internal static class TextLayout
                         graphemeIndex,
                         codePointIndex,
                         isRotated,
-                        isDecomposed);
+                        isDecomposed,
+                        stringIndex);
                 }
 
                 codePointIndex++;
                 graphemeCodePointIndex++;
             }
+
+            stringIndex += graphemeEnumerator.Current.Length;
         }
 
         // Add the final line.
@@ -1268,7 +1280,8 @@ internal static class TextLayout
             int graphemeIndex,
             int offset,
             bool isRotated,
-            bool isDecomposed)
+            bool isDecomposed,
+            int stringIndex)
         {
             // Reset metrics.
             // We track the maximum metrics for each line to ensure glyphs can be aligned.
@@ -1288,7 +1301,8 @@ internal static class TextLayout
                 graphemeIndex,
                 offset,
                 isRotated,
-                isDecomposed));
+                isDecomposed,
+                stringIndex));
         }
 
         public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
@@ -1627,7 +1641,8 @@ internal static class TextLayout
                 int graphemeIndex,
                 int offset,
                 bool isRotated,
-                bool isDecomposed)
+                bool isDecomposed,
+                int stringIndex)
             {
                 this.Metrics = metrics;
                 this.PointSize = pointSize;
@@ -1640,6 +1655,7 @@ internal static class TextLayout
                 this.Offset = offset;
                 this.IsRotated = isRotated;
                 this.IsDecomposed = isDecomposed;
+                this.StringIndex = stringIndex;
             }
 
             public readonly CodePoint CodePoint => this.Metrics[0].CodePoint;
@@ -1667,6 +1683,8 @@ internal static class TextLayout
             public bool IsRotated { get; }
 
             public bool IsDecomposed { get; }
+
+            public int StringIndex { get; }
 
             public readonly bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);
 
