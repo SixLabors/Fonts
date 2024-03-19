@@ -3,7 +3,6 @@
 
 using System.Globalization;
 using System.Numerics;
-using System.Text;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
 
@@ -241,10 +240,10 @@ public class TextLayoutTests
         const string text = "a b\nc";
         GlyphBounds[] expectedGlyphMetrics =
         {
-            new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10)),
-            new(new CodePoint(' '), new FontRectangle(40, 0, 30, 10)),
-            new(new CodePoint('b'), new FontRectangle(70, 0, 10, 10)),
-            new(new CodePoint('c'), new FontRectangle(10, 30, 10, 10)),
+            new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10), 0, 0),
+            new(new CodePoint(' '), new FontRectangle(40, 0, 30, 10), 1, 1),
+            new(new CodePoint('b'), new FontRectangle(70, 0, 10, 10), 2, 2),
+            new(new CodePoint('c'), new FontRectangle(10, 30, 10, 10), 3, 3),
         };
         Font font = CreateFont(text);
 
@@ -994,6 +993,73 @@ public class TextLayoutTests
             lastAdvance = advance;
             lastSize = size;
         }
+    }
+
+    [Fact]
+    public void DoesMeasureCharacterLayoutIncludeStringIndex()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+            LineSpacing = 1.5F
+        };
+
+        const string text = "The quick👩🏽‍🚒 brown fox jumps over \r\n the lazy dog";
+
+        Assert.True(TextMeasurer.TryMeasureCharacterAdvances(text, options, out ReadOnlySpan<GlyphBounds> advances));
+        Assert.True(TextMeasurer.TryMeasureCharacterSizes(text, options, out ReadOnlySpan<GlyphBounds> sizes));
+        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds));
+
+        Assert.Equal(advances.Length, sizes.Length);
+        Assert.Equal(advances.Length, bounds.Length);
+
+        int stringIndex = -1;
+
+        for (int i = 0; i < advances.Length; i++)
+        {
+            GlyphBounds advance = advances[i];
+            GlyphBounds size = sizes[i];
+            GlyphBounds bound = bounds[i];
+
+            Assert.Equal(bound.StringIndex, advance.StringIndex);
+            Assert.Equal(bound.StringIndex, size.StringIndex);
+
+            Assert.Equal(bound.GraphemeIndex, advance.GraphemeIndex);
+            Assert.Equal(bound.GraphemeIndex, size.GraphemeIndex);
+
+            if (bound.Codepoint == new CodePoint("k"[0]))
+            {
+                stringIndex = text.IndexOf("k", StringComparison.InvariantCulture);
+                Assert.Equal(stringIndex, bound.StringIndex);
+                Assert.Equal(stringIndex, bound.GraphemeIndex);
+            }
+
+            // after emoji
+            if (bound.Codepoint == new CodePoint("b"[0]))
+            {
+                stringIndex = text.IndexOf("b", StringComparison.InvariantCulture);
+                Assert.NotEqual(bound.StringIndex, bound.GraphemeIndex);
+                Assert.Equal(stringIndex, bound.StringIndex);
+                Assert.Equal(11, bound.GraphemeIndex);
+            }
+        }
+
+        SpanGraphemeEnumerator graphemeEnumerator = new(text);
+        int graphemeCount = 0;
+        while (graphemeEnumerator.MoveNext())
+        {
+            graphemeCount += 1;
+        }
+
+        GlyphBounds firstBound = bounds[0];
+        Assert.Equal(0, firstBound.StringIndex);
+        Assert.Equal(0, firstBound.GraphemeIndex);
+
+        GlyphBounds lastBound = bounds[^1];
+        Assert.Equal(text.Length - 1, lastBound.StringIndex);
+        Assert.Equal(graphemeCount - 1, lastBound.GraphemeIndex);
     }
 
     private static readonly Font OpenSansTTF = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);

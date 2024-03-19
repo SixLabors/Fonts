@@ -19,7 +19,9 @@ internal readonly struct GlyphLayout
         float advanceWidth,
         float advanceHeight,
         GlyphLayoutMode layoutMode,
-        bool isStartOfLine)
+        bool isStartOfLine,
+        int graphemeIndex,
+        int stringIndex)
     {
         this.Glyph = glyph;
         this.CodePoint = glyph.GlyphMetrics.CodePoint;
@@ -30,6 +32,8 @@ internal readonly struct GlyphLayout
         this.AdvanceY = advanceHeight;
         this.LayoutMode = layoutMode;
         this.IsStartOfLine = isStartOfLine;
+        this.GraphemeIndex = graphemeIndex;
+        this.StringIndex = stringIndex;
     }
 
     /// <summary>
@@ -77,6 +81,16 @@ internal readonly struct GlyphLayout
     /// Gets a value indicating whether this glyph is the first glyph on a new line.
     /// </summary>
     public bool IsStartOfLine { get; }
+
+    /// <summary>
+    /// Gets grapheme index of glyph in original text.
+    /// </summary>
+    public int GraphemeIndex { get; }
+
+    /// <summary>
+    /// Gets string index of glyph in original text.
+    /// </summary>
+    public int StringIndex { get; }
 
     /// <summary>
     /// Gets a value indicating whether the glyph represents a whitespace character.

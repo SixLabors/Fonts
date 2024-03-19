@@ -265,7 +265,7 @@ public static class TextMeasurer
             GlyphLayout glyph = glyphLayouts[i];
             FontRectangle bounds = new(0, 0, glyph.AdvanceX * dpi, glyph.AdvanceY * dpi);
             hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, in bounds);
+            characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, in bounds, glyph.GraphemeIndex, glyph.StringIndex);
         }
 
         characterBounds = characterBoundsList;
@@ -290,7 +290,7 @@ public static class TextMeasurer
             bounds = new(0, 0, bounds.Width, bounds.Height);
 
             hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds);
+            characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds, g.GraphemeIndex, g.StringIndex);
         }
 
         characterBounds = characterBoundsList;
@@ -312,7 +312,7 @@ public static class TextMeasurer
             GlyphLayout g = glyphLayouts[i];
             FontRectangle bounds = g.BoundingBox(dpi);
             hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds);
+            characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds, g.GraphemeIndex, g.StringIndex);
         }
 
         characterBounds = characterBoundsList;
