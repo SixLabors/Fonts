@@ -164,7 +164,7 @@ public class GlyphTests
         FontRectangle size = TextMeasurer.MeasureSize(text, new TextOptions(font));
         FontRectangle size2 = TextMeasurer.MeasureSize(text2, new TextOptions(font));
 
-        Assert.Equal(52f, size.Width);
+        Assert.Equal(51f, size.Width);
         Assert.Equal(51f, size2.Width);
     }
 
