@@ -100,8 +100,15 @@ internal readonly struct GlyphLayout
 
     internal FontRectangle BoundingBox(float dpi)
     {
-        Vector2 origin = (this.PenLocation + this.Offset) * dpi;
-        FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, this.BoxLocation, dpi);
+        // Same logic as in TrueTypeGlyphMetrics.RenderTo
+        Vector2 location = this.PenLocation;
+        Vector2 offset = this.Offset;
+
+        location *= dpi;
+        offset *= dpi;
+        Vector2 renderLocation = location + offset;
+
+        FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, renderLocation, dpi);
 
         if (this.IsWhiteSpace())
         {
@@ -110,8 +117,8 @@ internal readonly struct GlyphLayout
             if (this.LayoutMode == GlyphLayoutMode.Vertical)
             {
                 return new FontRectangle(
-                    box.X + origin.X,
-                    box.Y + origin.Y,
+                    box.X,
+                    box.Y,
                     box.Width,
                     this.AdvanceY * dpi);
             }
@@ -119,24 +126,20 @@ internal readonly struct GlyphLayout
             if (this.LayoutMode == GlyphLayoutMode.VerticalRotated)
             {
                 return new FontRectangle(
-                    box.X + origin.X,
-                    box.Y + origin.Y,
+                    box.X,
+                    box.Y,
                     0,
                     this.AdvanceY * dpi);
             }
 
             return new FontRectangle(
-                box.X + origin.X,
-                box.Y + origin.Y,
+                box.X,
+                box.Y,
                 this.AdvanceX * dpi,
                 box.Height);
         }
 
-        return new FontRectangle(
-            box.X + origin.X,
-            box.Y + origin.Y,
-            box.Width,
-            box.Height);
+        return box;
     }
 
     /// <inheritdoc/>

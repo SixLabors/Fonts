@@ -1062,6 +1062,107 @@ public class TextLayoutTests
         Assert.Equal(graphemeCount - 1, lastBound.GraphemeIndex);
     }
 
+    [Fact]
+    public void DoesMeasureCharacterBoundsExtendForAdvanceMultipliers()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+            TabWidth = 8
+        };
+
+        const string text = "H\tH";
+
+        IReadOnlyList<FontRectangle> glyphsToRender = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
+        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
+
+        IReadOnlyList<GlyphLayout> glyphLayouts = TextLayout.GenerateLayout(text, options);
+
+        Assert.Equal(glyphsToRender.Count, bounds.Length);
+        Assert.Equal(glyphsToRender.Count, glyphsToRender.Count);
+
+        for (int glyphIndex = 0; glyphIndex < glyphsToRender.Count; glyphIndex++)
+        {
+            FontRectangle renderGlyph = glyphsToRender[glyphIndex];
+            FontRectangle measureGlyph = bounds[glyphIndex].Bounds;
+            GlyphLayout glyphLayout = glyphLayouts[glyphIndex];
+
+            if (glyphLayout.IsWhiteSpace())
+            {
+                Assert.Equal(renderGlyph.X, measureGlyph.X);
+                Assert.Equal(renderGlyph.Y, measureGlyph.Y);
+                Assert.Equal(glyphLayout.AdvanceX * options.Dpi, measureGlyph.Width);
+                Assert.Equal(renderGlyph.Height, measureGlyph.Height);
+            }
+            else
+            {
+                Assert.Equal(renderGlyph, measureGlyph);
+            }
+        }
+    }
+
+    [Fact]
+    public void IsMeasureCharacterBoundsSameAsRenderBounds()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+        };
+
+        const string text = "Hello WorLLd";
+
+        IReadOnlyList<FontRectangle> glyphsToRender = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
+        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
+
+        Assert.Equal(glyphsToRender.Count, bounds.Length);
+
+        for (int glyphIndex = 0; glyphIndex < glyphsToRender.Count; glyphIndex++)
+        {
+            FontRectangle renderGlyph = glyphsToRender[glyphIndex];
+            FontRectangle measureGlyph = bounds[glyphIndex].Bounds;
+
+            Assert.Equal(renderGlyph.X, measureGlyph.X);
+            Assert.Equal(renderGlyph.Y, measureGlyph.Y);
+            Assert.Equal(renderGlyph.Width, measureGlyph.Width);
+            Assert.Equal(renderGlyph.Height, measureGlyph.Height);
+
+            Assert.Equal(renderGlyph, measureGlyph);
+        }
+    }
+
+    private class CaptureGlyphBoundBuilder : IGlyphRenderer
+    {
+        public static List<FontRectangle> GenerateGlyphsBoxes(string text, TextOptions options)
+        {
+            CaptureGlyphBoundBuilder glyphBuilder = new();
+            TextRenderer renderer = new(glyphBuilder);
+            renderer.RenderText(text, options);
+            return glyphBuilder.GlyphBounds;
+        }
+        public readonly List<FontRectangle> GlyphBounds = new();
+        public CaptureGlyphBoundBuilder() { }
+        bool IGlyphRenderer.BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
+        {
+            this.GlyphBounds.Add(bounds);
+            return true;
+        }
+        public void BeginFigure() { }
+        public void MoveTo(Vector2 point) { }
+        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point) { }
+        public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point) { }
+        public void LineTo(Vector2 point) { }
+        public void EndFigure() { }
+        public void EndGlyph() { }
+        public void EndText() { }
+        void IGlyphRenderer.BeginText(in FontRectangle bounds) { }
+        public TextDecorations EnabledDecorations() => TextDecorations.None;
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness) { }
+    }
+
     private static readonly Font OpenSansTTF = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
     private static readonly Font OpenSansWoff = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
 
