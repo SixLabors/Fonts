@@ -83,6 +83,6 @@ internal static class ShaperFactory
             or ScriptClass.Tifinagh
             or ScriptClass.Tirhuta
             => new UniversalShaper(script, textOptions),
-            _ => new DefaultShaper(script, textOptions),
+            _ => textOptions.DoShaping ? new DefaultShaper(script, textOptions) : new NoShaper(),
         };
 }

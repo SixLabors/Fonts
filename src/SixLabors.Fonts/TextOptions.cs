@@ -184,4 +184,9 @@ public class TextOptions
     /// Gets or sets an optional collection of text runs to apply to the body of text.
     /// </summary>
     public IReadOnlyList<TextRun> TextRuns { get; set; } = Array.Empty<TextRun>();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to do font shaping. Note that is will break emoji rendering.
+    /// </summary>
+    public bool DoShaping { get; set; } = true;
 }

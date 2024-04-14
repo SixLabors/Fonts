@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Tests.Fakes;
@@ -1131,6 +1132,76 @@ public class TextLayoutTests
             Assert.Equal(renderGlyph.Height, measureGlyph.Height);
 
             Assert.Equal(renderGlyph, measureGlyph);
+        }
+    }
+
+    [Fact]
+    public void IsNoShapingFaster()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+        };
+
+        const string text = "All human beings are born free and equal in dignity and rights. They are endowed with reason and conscience and should act towards one another in a spirit of brotherhood.";
+
+        // run once to remove first time font loading,etc
+        TextMeasurer.TryMeasureCharacterBounds(text, options, out _);
+
+        options.DoShaping = true;
+        Stopwatch sw = new();
+        sw.Start();
+        for (int i = 0; i < 10; i++)
+        {
+            TextMeasurer.TryMeasureCharacterBounds(text, options, out _);
+        }
+
+        sw.Stop();
+        TimeSpan durationWithShaping = sw.Elapsed;
+
+        options.DoShaping = false;
+        sw.Restart();
+        for (int i = 0; i < 10; i++)
+        {
+            TextMeasurer.TryMeasureCharacterBounds(text, options, out _);
+        }
+
+        sw.Stop();
+        TimeSpan durationWithoutShaping = sw.Elapsed;
+
+        double durationDifference = durationWithShaping / durationWithoutShaping;
+        Assert.True(durationDifference > 1.0d, $"durationDifference:{durationDifference}");
+    }
+
+    [Fact]
+    public void IsNoShapingSameAsShapedForPlainLatinText()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+        };
+
+        const string text = "All human beings are born free and equal in dignity and rights. They are endowed with reason and conscience and should act towards one another in a spirit of brotherhood.";
+
+        options.DoShaping = true;
+        IReadOnlyList<FontRectangle> glyphsToRender = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
+        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
+
+        options.DoShaping = false;
+        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> unshaped_bounds);
+
+        for (int glyphIndex = 0; glyphIndex < glyphsToRender.Count; glyphIndex++)
+        {
+            FontRectangle renderGlyph = glyphsToRender[glyphIndex];
+            FontRectangle measureGlyph = bounds[glyphIndex].Bounds;
+            FontRectangle unsharpedMeasureGlyph = unshaped_bounds[glyphIndex].Bounds;
+
+            Assert.Equal(renderGlyph, measureGlyph);
+            Assert.Equal(renderGlyph, unsharpedMeasureGlyph);
         }
     }
 
