@@ -255,6 +255,8 @@ public static class TestFonts
 
     public static string CourierPrimeFile => GetFullPath("courier-prime.woff2");
 
+    public static string KellySlabFile => GetFullPath("KellySlab-Regular.ttf");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);

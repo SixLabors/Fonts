@@ -148,8 +148,8 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.ApplySubstitution(collection);
 
     /// <inheritdoc/>
-    internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
-        => this.fontMetrics.Value.TryGetKerningOffset(previousId, currentId, out vector);
+    internal override bool TryGetKerningOffset(ushort currentId, ushort nextId, out Vector2 vector)
+        => this.fontMetrics.Value.TryGetKerningOffset(currentId, nextId, out vector);
 
     /// <inheritdoc/>
     internal override void UpdatePositions(GlyphPositioningCollection collection)
