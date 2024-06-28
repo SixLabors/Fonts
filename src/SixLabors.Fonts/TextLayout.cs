@@ -1396,7 +1396,7 @@ internal static class TextLayout
                 index--;
             }
 
-            if (index < this.data.Count)
+            if (index < this.data.Count && index != 0)
             {
                 this.data.RemoveRange(index, this.data.Count - index);
             }
