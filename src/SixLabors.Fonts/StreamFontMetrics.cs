@@ -272,7 +272,7 @@ internal partial class StreamFontMetrics : FontMetrics
     }
 
     /// <inheritdoc/>
-    internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
+    internal override bool TryGetKerningOffset(ushort currentId, ushort nextId, out Vector2 vector)
     {
         bool isTTF = this.outlineType == OutlineType.TrueType;
         KerningTable? kern = isTTF
@@ -285,7 +285,7 @@ internal partial class StreamFontMetrics : FontMetrics
             return false;
         }
 
-        return kern.TryGetKerningOffset(previousId, currentId, out vector);
+        return kern.TryGetKerningOffset(currentId, nextId, out vector);
     }
 
     /// <inheritdoc/>
@@ -312,14 +312,14 @@ internal partial class StreamFontMetrics : FontMetrics
             {
                 // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
                 int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(collection.Count);
-                for (int index = 1; index < collection.Count; index++)
+                for (int index = 0; index < collection.Count - 1; index++)
                 {
                     if (index >= maxCount)
                     {
                         break;
                     }
 
-                    kern.UpdatePositions(this, collection, index - 1, index);
+                    kern.UpdatePositions(this, collection, index, index + 1);
                 }
             }
         }
