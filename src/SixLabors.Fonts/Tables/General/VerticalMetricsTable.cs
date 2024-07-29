@@ -47,7 +47,10 @@ internal sealed class VerticalMetricsTable : Table
             return null;
         }
 
-        return Load(binaryReader, headTable.NumberOfVMetrics, profileTable.GlyphCount);
+        using (binaryReader)
+        {
+            return Load(binaryReader, headTable.NumberOfVMetrics, profileTable.GlyphCount);
+        }
     }
 
     public static VerticalMetricsTable Load(BigEndianBinaryReader reader, int metricCount, int glyphCount)
