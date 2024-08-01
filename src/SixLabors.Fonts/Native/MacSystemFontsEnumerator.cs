@@ -18,7 +18,7 @@ namespace SixLabors.Fonts.Native;
 /// Internally, it calls the native CoreText's <see cref="CTFontManagerCopyAvailableFontURLs"/> method to retrieve
 /// the list of fonts so using this class must be guarded by <c>RuntimeInformation.IsOSPlatform(OSPlatform.OSX)</c>.
 /// </remarks>
-internal class MacSystemFontsEnumerator : IEnumerable<string>, IEnumerator<string>
+internal sealed class MacSystemFontsEnumerator : IEnumerable<string>, IEnumerator<string>
 {
     private static readonly ArrayPool<byte> BytePool = ArrayPool<byte>.Shared;
 

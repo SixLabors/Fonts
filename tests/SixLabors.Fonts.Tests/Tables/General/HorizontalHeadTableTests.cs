@@ -35,9 +35,10 @@ public class HorizontalHeadTableTests
         var writer = new BigEndianBinaryWriter();
         writer.WriteTrueTypeFileHeader();
 
-        using (System.IO.MemoryStream stream = writer.GetStream())
+        using (MemoryStream stream = writer.GetStream())
         {
-            Assert.Null(HorizontalHeadTable.Load(new FontReader(stream)));
+            using var reader = new FontReader(stream);
+            Assert.Null(HorizontalHeadTable.Load(reader));
         }
     }
 }

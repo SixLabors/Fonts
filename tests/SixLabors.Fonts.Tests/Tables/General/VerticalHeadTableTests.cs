@@ -36,6 +36,7 @@ public class VerticalHeadTableTests
         writer.WriteTrueTypeFileHeader();
 
         using MemoryStream stream = writer.GetStream();
-        Assert.Null(VerticalHeadTable.Load(new FontReader(stream)));
+        using var reader = new FontReader(stream);
+        Assert.Null(VerticalHeadTable.Load(reader));
     }
 }

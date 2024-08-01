@@ -333,7 +333,7 @@ internal partial class StreamFontMetrics : FontMetrics
     public static StreamFontMetrics LoadFont(string path)
     {
         using FileStream fs = File.OpenRead(path);
-        var reader = new FontReader(fs);
+        using var reader = new FontReader(fs);
         return LoadFont(reader);
     }
 
@@ -357,7 +357,7 @@ internal partial class StreamFontMetrics : FontMetrics
     /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
     public static StreamFontMetrics LoadFont(Stream stream)
     {
-        var reader = new FontReader(stream);
+        using var reader = new FontReader(stream);
         return LoadFont(reader);
     }
 

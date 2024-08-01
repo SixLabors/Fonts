@@ -164,7 +164,7 @@ internal sealed class FileFontMetrics : FontMetrics
     {
         using FileStream fs = File.OpenRead(path);
         long startPos = fs.Position;
-        BigEndianBinaryReader reader = new(fs, true);
+        using BigEndianBinaryReader reader = new(fs, true);
         TtcHeader ttcHeader = TtcHeader.Read(reader);
         FileFontMetrics[] fonts = new FileFontMetrics[(int)ttcHeader.NumFonts];
 

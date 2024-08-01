@@ -15,8 +15,11 @@ public class MaximumProfileTableTests
 
         using (MemoryStream stream = writer.GetStream())
         {
-            InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(
-                () => MaximumProfileTable.Load(new FontReader(stream)));
+            InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() =>
+            {
+                using var reader = new FontReader(stream);
+                MaximumProfileTable.Load(reader);
+            });
 
             Assert.Equal("maxp", exception.Table);
         }

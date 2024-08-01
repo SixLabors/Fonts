@@ -234,7 +234,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         out IEnumerable<FontDescription> descriptions)
     {
         long startPos = stream.Position;
-        BigEndianBinaryReader reader = new(stream, true);
+        using BigEndianBinaryReader reader = new(stream, true);
         TtcHeader ttcHeader = TtcHeader.Read(reader);
         List<FontDescription> result = new((int)ttcHeader.NumFonts);
         HashSet<FontFamily> installedFamilies = new();
