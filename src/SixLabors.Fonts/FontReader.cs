@@ -9,21 +9,23 @@ using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts;
 
-internal sealed class FontReader
+internal sealed class FontReader : IDisposable
 {
     private readonly Stream stream;
     private readonly Dictionary<Type, Table> loadedTables = new();
     private readonly TableLoader loader;
+
+    private readonly bool isOwnedStream;
+    private bool isDisposed;
 
     internal FontReader(Stream stream, TableLoader loader)
     {
         this.loader = loader;
 
         Func<BigEndianBinaryReader, TableHeader> loadHeader = TableHeader.Read;
-        long startOfFilePosition = stream.Position;
 
         this.stream = stream;
-        var reader = new BigEndianBinaryReader(stream, true);
+        using var reader = new BigEndianBinaryReader(stream, true);
 
         // we should immediately read the table header to learn which tables we have and what order they are in
         uint version = reader.ReadUInt32();
@@ -85,13 +87,14 @@ internal sealed class FontReader
             this.CompressedTableData = true;
             this.Headers = Woff2Utils.ReadWoff2Headers(reader, tableCount);
 
+            this.isOwnedStream = true;
+
             byte[] compressedBuffer = reader.ReadBytes((int)totalCompressedSize);
             var decompressedStream = new MemoryStream();
             using var input = new MemoryStream(compressedBuffer);
             using var decompressor = new BrotliStream(input, CompressionMode.Decompress);
             decompressor.CopyTo(decompressedStream);
             decompressedStream.Position = 0;
-            this.stream.Dispose();
             this.stream = decompressedStream;
             return;
         }
@@ -196,5 +199,19 @@ internal sealed class FontReader
 
         reader = header?.CreateReader(this.stream);
         return reader != null;
+    }
+
+    public void Dispose()
+    {
+        if (this.isDisposed)
+        {
+            return;
+        }
+
+        if (this.isOwnedStream)
+        {
+            this.stream.Dispose();
+            this.isDisposed = true;
+        }
     }
 }

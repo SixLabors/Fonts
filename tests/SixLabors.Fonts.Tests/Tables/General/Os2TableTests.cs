@@ -1,4 +1,4 @@
-﻿// Copyright (c) Six Labors.
+// Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Tables.General;
@@ -13,9 +13,10 @@ public class OS2TableTests
         var writer = new BigEndianBinaryWriter();
         writer.WriteTrueTypeFileHeader();
 
-        using (System.IO.MemoryStream stream = writer.GetStream())
+        using (MemoryStream stream = writer.GetStream())
         {
-            Assert.Null(OS2Table.Load(new FontReader(stream)));
+            using var reader = new FontReader(stream);
+            Assert.Null(OS2Table.Load(reader));
         }
     }
 }

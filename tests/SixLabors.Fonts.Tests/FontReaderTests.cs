@@ -15,7 +15,7 @@ public class FontReaderTests
         var writer = new BigEndianBinaryWriter();
         writer.WriteTrueTypeFileHeader(0, 0, 0, 0);
 
-        var reader = new FontReader(writer.GetStream());
+        using var reader = new FontReader(writer.GetStream());
         Assert.Equal(OutlineType.TrueType, reader.OutlineType);
     }
 
@@ -25,7 +25,7 @@ public class FontReaderTests
         var writer = new BigEndianBinaryWriter();
         writer.WriteCffFileHeader(0, 0, 0, 0);
 
-        var reader = new FontReader(writer.GetStream());
+        using var reader = new FontReader(writer.GetStream());
         Assert.Equal(OutlineType.CFF, reader.OutlineType);
     }
 
@@ -37,7 +37,7 @@ public class FontReaderTests
         writer.WriteTableHeader("name", 0, 10, 0);
         writer.WriteTableHeader("cmap", 0, 1, 0);
 
-        var reader = new FontReader(writer.GetStream());
+        using var reader = new FontReader(writer.GetStream());
 
         Assert.Equal(2, reader.Headers.Count);
     }
@@ -59,7 +59,7 @@ public class FontReaderTests
                     new byte[] { 2, 9 })
             });
 
-        var reader = new FontReader(writer.GetStream());
+        using var reader = new FontReader(writer.GetStream());
         CMapTable cmap = reader.GetTable<CMapTable>();
         Assert.NotNull(cmap);
     }
@@ -67,8 +67,8 @@ public class FontReaderTests
     [Fact]
     public void ReadFont_WithWoffFormat_EqualsTtf()
     {
-        var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
-        var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff1Data());
+        using var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
+        using var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff1Data());
 
         Assert.Equal(fontReaderTtf.Headers.Count, fontReaderWoff.Headers.Count);
         foreach (string key in fontReaderTtf.Headers.Keys)
@@ -80,9 +80,9 @@ public class FontReaderTests
     [Fact]
     public void GlyphsCount_WithWoffFormat_EqualsTtf()
     {
-        var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff1Data());
+        using var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff1Data());
         GlyphTable glyphsWoff = fontReaderWoff.GetTable<GlyphTable>();
-        var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
+        using var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
         GlyphTable glyphsTtf = fontReaderTtf.GetTable<GlyphTable>();
 
         Assert.Equal(glyphsTtf.GlyphCount, glyphsWoff.GlyphCount);
@@ -91,8 +91,8 @@ public class FontReaderTests
     [Fact]
     public void ReadFont_WithWoff2Format_EqualsTtf()
     {
-        var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
-        var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff2Data());
+        using var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
+        using var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff2Data());
 
         Assert.Equal(fontReaderTtf.Headers.Count, fontReaderWoff.Headers.Count);
         foreach (string key in fontReaderTtf.Headers.Keys)
@@ -104,9 +104,9 @@ public class FontReaderTests
     [Fact]
     public void GlyphsCount_WithWoff2Format_EqualsTtf()
     {
-        var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff2Data());
+        using var fontReaderWoff = new FontReader(TestFonts.OpensSansWoff2Data());
         GlyphTable glyphsWoff = fontReaderWoff.GetTable<GlyphTable>();
-        var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
+        using var fontReaderTtf = new FontReader(TestFonts.OpenSansTtfData());
         GlyphTable glyphsTtf = fontReaderTtf.GetTable<GlyphTable>();
 
         Assert.Equal(glyphsTtf.GlyphCount, glyphsWoff.GlyphCount);

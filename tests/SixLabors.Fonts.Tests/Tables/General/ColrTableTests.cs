@@ -14,9 +14,10 @@ public class ColrTableTests
         var writer = new BigEndianBinaryWriter();
         writer.WriteTrueTypeFileHeader();
 
-        using (System.IO.MemoryStream stream = writer.GetStream())
+        using (MemoryStream stream = writer.GetStream())
         {
-            Assert.Null(ColrTable.Load(new FontReader(stream)));
+            using var reader = new FontReader(stream);
+            Assert.Null(ColrTable.Load(reader));
         }
     }
 
@@ -47,12 +48,12 @@ public class ColrTableTests
             }
         });
 
-        using (System.IO.Stream stream = TestFonts.TwemojiMozillaData())
+        using (Stream stream = TestFonts.TwemojiMozillaData())
         {
-            var reader = new FontReader(stream);
+            using var reader = new FontReader(stream);
             ColrTable tbl = reader.GetTable<ColrTable>();
 
-            System.Span<LayerRecord> layers = tbl.GetLayers(15);
+            Span<LayerRecord> layers = tbl.GetLayers(15);
             Assert.Equal(2, layers.Length);
         }
     }
