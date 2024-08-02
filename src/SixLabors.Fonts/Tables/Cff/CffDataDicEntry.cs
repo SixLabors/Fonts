@@ -26,13 +26,13 @@ internal class CffDataDicEntry
         {
             if (i > 0)
             {
-                builder.Append(' ');
+                builder.Append(" ");
             }
 
             builder.Append(this.Operands[i].ToString());
         }
 
-        builder.Append(' ');
+        builder.Append(" ");
         builder.Append(this.Operator?.ToString() ?? string.Empty);
         return builder.ToString();
     }

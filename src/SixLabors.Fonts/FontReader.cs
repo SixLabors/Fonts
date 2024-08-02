@@ -14,7 +14,9 @@ internal sealed class FontReader : IDisposable
     private readonly Stream stream;
     private readonly Dictionary<Type, Table> loadedTables = new();
     private readonly TableLoader loader;
-    private readonly bool disposable;
+
+    private readonly bool isOwnedStream;
+    private bool isDisposed;
 
     internal FontReader(Stream stream, TableLoader loader)
     {
@@ -85,7 +87,7 @@ internal sealed class FontReader : IDisposable
             this.CompressedTableData = true;
             this.Headers = Woff2Utils.ReadWoff2Headers(reader, tableCount);
 
-            this.disposable = true;
+            this.isOwnedStream = true;
 
             byte[] compressedBuffer = reader.ReadBytes((int)totalCompressedSize);
             var decompressedStream = new MemoryStream();
@@ -201,9 +203,15 @@ internal sealed class FontReader : IDisposable
 
     public void Dispose()
     {
-        if (this.disposable)
+        if (this.isDisposed)
+        {
+            return;
+        }
+
+        if (this.isOwnedStream)
         {
             this.stream.Dispose();
+            this.isDisposed = true;
         }
     }
 }
