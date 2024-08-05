@@ -1,6 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System;
+using System.Collections.Generic;
+
 namespace SixLabors.Fonts.Tables.Cff;
 
 internal class CidFontInfo
@@ -21,7 +24,7 @@ internal class CidFontInfo
 
     public int FdSelectFormat { get; set; }
 
-    public FDRange3[] FdRanges { get; set; } = Array.Empty<FDRange3>();
+    public FDRange[] FdRanges { get; set; } = Array.Empty<FDRange>();
 
     /// <summary>
     /// Gets or sets the fd select map, which maps glyph # to font #.

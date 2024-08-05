@@ -1,6 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
+
 namespace SixLabors.Fonts.Tables.Cff;
 
 internal sealed class Cff1Table : Table, ICffTable
@@ -12,6 +15,8 @@ internal sealed class Cff1Table : Table, ICffTable
     public Cff1Table(CffFont cff1Font) => this.glyphs = cff1Font.Glyphs;
 
     public int GlyphCount => this.glyphs.Length;
+
+    public ItemVariationStore? ItemVariationStore => null;
 
     public CffGlyphData GetGlyph(int index)
         => this.glyphs[index];
@@ -52,7 +57,7 @@ internal sealed class Cff1Table : Table, ICffTable
         switch (major)
         {
             case 1:
-                CffParser parser = new();
+                Cff1Parser parser = new();
                 return new(parser.Load(reader, position));
 
             default:
