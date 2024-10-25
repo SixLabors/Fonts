@@ -42,8 +42,8 @@ public sealed class Font
         this.Family = family;
         this.RequestedStyle = style;
         this.Size = size;
-        this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal);
-        this.fontName = new Lazy<string>(this.LoadFontName);
+        this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal, true);
+        this.fontName = new Lazy<string>(this.LoadFontName, true);
     }
 
     /// <summary>
@@ -95,6 +95,7 @@ public sealed class Font
     /// <summary>
     /// Gets the font metrics.
     /// </summary>
+    /// <exception cref="FontException">Font instance not found.</exception>
     public FontMetrics FontMetrics => this.metrics.Value ?? throw new FontException("Font instance not found.");
 
     /// <summary>
@@ -194,7 +195,7 @@ public sealed class Font
     /// </summary>
     /// <param name="codePoint">The code point of the character.</param>
     /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
-    /// <param name="layoutMode">The layout mode to apply to thte glyphs.</param>
+    /// <param name="layoutMode">The layout mode to apply to the glyphs.</param>
     /// <param name="support">Options for enabling color font support during layout and rendering.</param>
     /// <param name="glyphs">
     /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
@@ -217,7 +218,7 @@ public sealed class Font
     /// <param name="codePoint">The code point of the character.</param>
     /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
     /// <param name="textDecorations">The text decorations to apply to the glyphs.</param>
-    /// <param name="layoutMode">The layout mode to apply to thte glyphs.</param>
+    /// <param name="layoutMode">The layout mode to apply to the glyphs.</param>
     /// <param name="support">Options for enabling color font support during layout and rendering.</param>
     /// <param name="glyphs">
     /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
@@ -252,11 +253,11 @@ public sealed class Font
     }
 
     /// <summary>
-    /// Gets the amount, in px units, the <paramref name="current"/> glyph should be offset if it is proceeded by
-    /// the <paramref name="previous"/> glyph.
+    /// Gets the amount, in px units, the <paramref name="current"/> glyph should be offset if it is followed by
+    /// the <paramref name="next"/> glyph.
     /// </summary>
-    /// <param name="previous">The previous glyph.</param>
     /// <param name="current">The current glyph.</param>
+    /// <param name="next">The next glyph.</param>
     /// <param name="dpi">The DPI (Dots Per Inch) to render/measure the kerning offset at.</param>
     /// <param name="vector">
     /// When this method returns, contains the offset, in font units, that should be applied to the
@@ -266,12 +267,12 @@ public sealed class Font
     /// <returns>
     /// <see langword="true"/> if the face contains and offset for the glyph combination; otherwise, <see langword="false"/>.
     /// </returns>
-    public bool TryGetKerningOffset(Glyph previous, Glyph current, float dpi, out Vector2 vector)
+    public bool TryGetKerningOffset(Glyph current, Glyph next, float dpi, out Vector2 vector)
     {
-        if (this.FontMetrics.TryGetKerningOffset(previous.GlyphMetrics.GlyphId, current.GlyphMetrics.GlyphId, out vector))
+        if (this.FontMetrics.TryGetKerningOffset(current.GlyphMetrics.GlyphId, next.GlyphMetrics.GlyphId, out vector))
         {
             // Scale the result
-            Vector2 scale = new Vector2(this.Size * dpi) / current.GlyphMetrics.ScaleFactor;
+            Vector2 scale = new Vector2(this.Size * dpi) / next.GlyphMetrics.ScaleFactor;
             vector *= scale;
             return true;
         }

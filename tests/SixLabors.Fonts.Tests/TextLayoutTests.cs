@@ -240,10 +240,10 @@ public class TextLayoutTests
         const string text = "a b\nc";
         GlyphBounds[] expectedGlyphMetrics =
         {
-            new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10)),
-            new(new CodePoint(' '), new FontRectangle(40, 0, 30, 10)),
-            new(new CodePoint('b'), new FontRectangle(70, 0, 10, 10)),
-            new(new CodePoint('c'), new FontRectangle(10, 30, 10, 10)),
+            new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10), 0, 0),
+            new(new CodePoint(' '), new FontRectangle(40, 0, 30, 10), 1, 1),
+            new(new CodePoint('b'), new FontRectangle(70, 0, 10, 10), 2, 2),
+            new(new CodePoint('c'), new FontRectangle(10, 30, 10, 10), 3, 3),
         };
         Font font = CreateFont(text);
 
@@ -388,7 +388,7 @@ public class TextLayoutTests
         FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
 
         Font font = arial.CreateFont(20);
-        FontRectangle size = TextMeasurer.MeasureSize(
+        FontRectangle size = TextMeasurer.MeasureAdvance(
             text,
             new TextOptions(font)
             {
@@ -492,7 +492,7 @@ public class TextLayoutTests
     [Theory]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 7)]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 7)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 6)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 7)]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 200, 6)]
     public void CountLinesWrappingLength(string text, int wrappingLength, int usedLines)
     {
@@ -780,100 +780,100 @@ public class TextLayoutTests
     public static TheoryData<char, FontRectangle> OpenSans_Data
         = new()
         {
-            { '!', new(0, 0, 2, 10) },
-            { '"', new(0, 0, 4, 5) },
-            { '#', new(0, 0, 7, 9) },
-            { '$', new(0, 0, 6, 10) },
-            { '%', new(0, 0, 8, 9) },
-            { '&', new(0, 0, 8, 9) },
-            { '\'', new(0, 0, 2, 5) },
-            { '(', new(0, 0, 3, 11) },
-            { ')', new(0, 0, 3, 11) },
-            { '*', new(0, 0, 6, 6) },
-            { '+', new(0, 0, 6, 8) },
-            { ',', new(0, 0, 2, 11) },
-            { '-', new(0, 0, 3, 7) },
-            { '.', new(0, 0, 2, 10) },
-            { '/', new(0, 0, 4, 9) },
-            { '0', new(0, 0, 6, 9) },
-            { '1', new(0, 0, 4, 9) },
-            { '2', new(0, 0, 6, 9) },
-            { '3', new(0, 0, 6, 9) },
-            { '4', new(0, 0, 6, 9) },
-            { '5', new(0, 0, 6, 9) },
-            { '6', new(0, 0, 6, 9) },
-            { '7', new(0, 0, 6, 9) },
-            { '8', new(0, 0, 6, 9) },
-            { '9', new(0, 0, 6, 9) },
-            { ':', new(0, 0, 2, 10) },
-            { ';', new(0, 0, 2, 11) },
-            { '<', new(0, 0, 6, 8) },
-            { '=', new(0, 0, 6, 7) },
-            { '>', new(0, 0, 6, 8) },
-            { '?', new(0, 0, 5, 10) },
-            { '@', new(0, 0, 9, 10) },
-            { 'A', new(0, 0, 7, 9) },
-            { 'B', new(0, 0, 6, 9) },
-            { 'C', new(0, 0, 6, 9) },
-            { 'D', new(0, 0, 7, 9) },
-            { 'E', new(0, 0, 5, 9) },
-            { 'F', new(0, 0, 5, 9) },
-            { 'G', new(0, 0, 7, 9) },
-            { 'H', new(0, 0, 7, 9) },
-            { 'I', new(0, 0, 2, 9) },
-            { 'J', new(0, 0, 2, 11) },
-            { 'K', new(0, 0, 7, 9) },
-            { 'L', new(0, 0, 5, 9) },
-            { 'M', new(0, 0, 9, 9) },
-            { 'N', new(0, 0, 7, 9) },
-            { 'O', new(0, 0, 8, 9) },
-            { 'P', new(0, 0, 6, 9) },
-            { 'Q', new(0, 0, 8, 11) },
-            { 'R', new(0, 0, 7, 9) },
-            { 'S', new(0, 0, 6, 9) },
-            { 'T', new(0, 0, 6, 9) },
-            { 'U', new(0, 0, 7, 9) },
-            { 'V', new(0, 0, 6, 9) },
-            { 'W', new(0, 0, 10, 9) },
-            { 'X', new(0, 0, 6, 9) },
-            { 'Y', new(0, 0, 6, 9) },
-            { 'Z', new(0, 0, 6, 9) },
-            { '[', new(0, 0, 4, 11) },
-            { '\\', new(0, 0, 4, 9) },
-            { ']', new(0, 0, 3, 11) },
-            { '^', new(0, 0, 6, 7) },
-            { '_', new(0, 0, 5, 11) },
-            { '`', new(0, 0, 3, 3) },
-            { 'a', new(0, 0, 5, 9) },
-            { 'b', new(0, 0, 6, 9) },
-            { 'c', new(0, 0, 5, 9) },
-            { 'd', new(0, 0, 6, 9) },
-            { 'e', new(0, 0, 6, 9) },
-            { 'f', new(0, 0, 4, 9) },
-            { 'g', new(0, 0, 6, 12) },
-            { 'h', new(0, 0, 6, 9) },
-            { 'i', new(0, 0, 2, 9) },
-            { 'j', new(0, 0, 2, 12) },
-            { 'k', new(0, 0, 6, 9) },
-            { 'l', new(0, 0, 2, 9) },
-            { 'm', new(0, 0, 9, 9) },
-            { 'n', new(0, 0, 6, 9) },
-            { 'o', new(0, 0, 6, 9) },
-            { 'p', new(0, 0, 6, 12) },
-            { 'q', new(0, 0, 6, 12) },
-            { 'r', new(0, 0, 4, 9) },
-            { 's', new(0, 0, 5, 9) },
-            { 't', new(0, 0, 4, 9) },
-            { 'u', new(0, 0, 6, 9) },
-            { 'v', new(0, 0, 5, 9) },
-            { 'w', new(0, 0, 8, 9) },
-            { 'x', new(0, 0, 6, 9) },
-            { 'y', new(0, 0, 6, 12) },
-            { 'z', new(0, 0, 5, 9) },
-            { '{', new(0, 0, 4, 11) },
-            { '|', new(0, 0, 4, 12) },
-            { '}', new(0, 0, 4, 11) },
-            { '~', new(0, 0, 6, 6) },
+            { '!', new(0, 0, 2, 8) },
+            { '"', new(0, 0, 3, 3) },
+            { '#', new(0, 0, 6, 8) },
+            { '$', new(0, 0, 5, 9) },
+            { '%', new(0, 0, 8, 8) },
+            { '&', new(0, 0, 7, 8) },
+            { '\'', new(0, 0, 1, 3) },
+            { '(', new(0, 0, 3, 9) },
+            { ')', new(0, 0, 3, 9) },
+            { '*', new(0, 0, 5, 5) },
+            { '+', new(0, 0, 5, 5) },
+            { ',', new(0, 0, 2, 3) },
+            { '-', new(0, 0, 3, 1) },
+            { '.', new(0, 0, 2, 2) },
+            { '/', new(0, 0, 4, 8) },
+            { '0', new(0, 0, 5, 8) },
+            { '1', new(0, 0, 3, 8) },
+            { '2', new(0, 0, 5, 8) },
+            { '3', new(0, 0, 5, 8) },
+            { '4', new(0, 0, 6, 8) },
+            { '5', new(0, 0, 5, 8) },
+            { '6', new(0, 0, 5, 8) },
+            { '7', new(0, 0, 5, 8) },
+            { '8', new(0, 0, 5, 8) },
+            { '9', new(0, 0, 5, 8) },
+            { ':', new(0, 0, 2, 6) },
+            { ';', new(0, 0, 2, 7) },
+            { '<', new(0, 0, 5, 5) },
+            { '=', new(0, 0, 5, 3) },
+            { '>', new(0, 0, 5, 5) },
+            { '?', new(0, 0, 4, 8) },
+            { '@', new(0, 0, 8, 9) },
+            { 'A', new(0, 0, 7, 8) },
+            { 'B', new(0, 0, 5, 8) },
+            { 'C', new(0, 0, 6, 8) },
+            { 'D', new(0, 0, 6, 8) },
+            { 'E', new(0, 0, 4, 8) },
+            { 'F', new(0, 0, 4, 8) },
+            { 'G', new(0, 0, 6, 8) },
+            { 'H', new(0, 0, 6, 8) },
+            { 'I', new(0, 0, 1, 8) },
+            { 'J', new(0, 0, 3, 10) },
+            { 'K', new(0, 0, 6, 8) },
+            { 'L', new(0, 0, 4, 8) },
+            { 'M', new(0, 0, 8, 8) },
+            { 'N', new(0, 0, 6, 8) },
+            { 'O', new(0, 0, 7, 8) },
+            { 'P', new(0, 0, 5, 8) },
+            { 'Q', new(0, 0, 7, 9) },
+            { 'R', new(0, 0, 6, 8) },
+            { 'S', new(0, 0, 5, 8) },
+            { 'T', new(0, 0, 6, 8) },
+            { 'U', new(0, 0, 6, 8) },
+            { 'V', new(0, 0, 6, 8) },
+            { 'W', new(0, 0, 9, 8) },
+            { 'X', new(0, 0, 6, 8) },
+            { 'Y', new(0, 0, 6, 8) },
+            { 'Z', new(0, 0, 5, 8) },
+            { '[', new(0, 0, 3, 9) },
+            { '\\', new(0, 0, 4, 8) },
+            { ']', new(0, 0, 3, 9) },
+            { '^', new(0, 0, 5, 5) },
+            { '_', new(0, 0, 5, 1) },
+            { '`', new(0, 0, 2, 2) },
+            { 'a', new(0, 0, 5, 6) },
+            { 'b', new(0, 0, 5, 8) },
+            { 'c', new(0, 0, 4, 6) },
+            { 'd', new(0, 0, 5, 8) },
+            { 'e', new(0, 0, 5, 6) },
+            { 'f', new(0, 0, 4, 8) },
+            { 'g', new(0, 0, 6, 8) },
+            { 'h', new(0, 0, 5, 8) },
+            { 'i', new(0, 0, 1, 8) },
+            { 'j', new(0, 0, 3, 10) },
+            { 'k', new(0, 0, 5, 8) },
+            { 'l', new(0, 0, 1, 8) },
+            { 'm', new(0, 0, 8, 6) },
+            { 'n', new(0, 0, 5, 6) },
+            { 'o', new(0, 0, 5, 6) },
+            { 'p', new(0, 0, 5, 8) },
+            { 'q', new(0, 0, 5, 8) },
+            { 'r', new(0, 0, 4, 6) },
+            { 's', new(0, 0, 4, 6) },
+            { 't', new(0, 0, 4, 7) },
+            { 'u', new(0, 0, 5, 6) },
+            { 'v', new(0, 0, 5, 6) },
+            { 'w', new(0, 0, 8, 6) },
+            { 'x', new(0, 0, 5, 6) },
+            { 'y', new(0, 0, 5, 8) },
+            { 'z', new(0, 0, 4, 6) },
+            { '{', new(0, 0, 4, 9) },
+            { '|', new(0, 0, 1, 11) },
+            { '}', new(0, 0, 4, 9) },
+            { '~', new(0, 0, 5, 2) },
         };
 
     [Theory]
@@ -951,7 +951,8 @@ public class TextLayoutTests
 
             // Since this is a single line starting at 0,0 the following should be predictable.
             Assert.Equal(advance.Bounds.X, size.Bounds.X);
-            Assert.Equal(size.Bounds.Bottom, bound.Bounds.Bottom);
+            Assert.Equal(size.Bounds.Width, bound.Bounds.Width);
+            Assert.Equal(size.Bounds.Height, bound.Bounds.Height);
         }
     }
 
@@ -994,6 +995,174 @@ public class TextLayoutTests
         }
     }
 
+    [Fact]
+    public void DoesMeasureCharacterLayoutIncludeStringIndex()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+            LineSpacing = 1.5F
+        };
+
+        const string text = "The quick👩🏽‍🚒 brown fox jumps over \r\n the lazy dog";
+
+        Assert.True(TextMeasurer.TryMeasureCharacterAdvances(text, options, out ReadOnlySpan<GlyphBounds> advances));
+        Assert.True(TextMeasurer.TryMeasureCharacterSizes(text, options, out ReadOnlySpan<GlyphBounds> sizes));
+        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds));
+
+        Assert.Equal(advances.Length, sizes.Length);
+        Assert.Equal(advances.Length, bounds.Length);
+
+        int stringIndex = -1;
+
+        for (int i = 0; i < advances.Length; i++)
+        {
+            GlyphBounds advance = advances[i];
+            GlyphBounds size = sizes[i];
+            GlyphBounds bound = bounds[i];
+
+            Assert.Equal(bound.StringIndex, advance.StringIndex);
+            Assert.Equal(bound.StringIndex, size.StringIndex);
+
+            Assert.Equal(bound.GraphemeIndex, advance.GraphemeIndex);
+            Assert.Equal(bound.GraphemeIndex, size.GraphemeIndex);
+
+            if (bound.Codepoint == new CodePoint("k"[0]))
+            {
+                stringIndex = text.IndexOf("k", StringComparison.InvariantCulture);
+                Assert.Equal(stringIndex, bound.StringIndex);
+                Assert.Equal(stringIndex, bound.GraphemeIndex);
+            }
+
+            // after emoji
+            if (bound.Codepoint == new CodePoint("b"[0]))
+            {
+                stringIndex = text.IndexOf("b", StringComparison.InvariantCulture);
+                Assert.NotEqual(bound.StringIndex, bound.GraphemeIndex);
+                Assert.Equal(stringIndex, bound.StringIndex);
+                Assert.Equal(11, bound.GraphemeIndex);
+            }
+        }
+
+        SpanGraphemeEnumerator graphemeEnumerator = new(text);
+        int graphemeCount = 0;
+        while (graphemeEnumerator.MoveNext())
+        {
+            graphemeCount += 1;
+        }
+
+        GlyphBounds firstBound = bounds[0];
+        Assert.Equal(0, firstBound.StringIndex);
+        Assert.Equal(0, firstBound.GraphemeIndex);
+
+        GlyphBounds lastBound = bounds[^1];
+        Assert.Equal(text.Length - 1, lastBound.StringIndex);
+        Assert.Equal(graphemeCount - 1, lastBound.GraphemeIndex);
+    }
+
+    [Fact]
+    public void DoesMeasureCharacterBoundsExtendForAdvanceMultipliers()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+            TabWidth = 8
+        };
+
+        const string text = "H\tH";
+
+        IReadOnlyList<FontRectangle> glyphsToRender = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
+        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
+
+        IReadOnlyList<GlyphLayout> glyphLayouts = TextLayout.GenerateLayout(text, options);
+
+        Assert.Equal(glyphsToRender.Count, bounds.Length);
+        Assert.Equal(glyphsToRender.Count, glyphsToRender.Count);
+
+        for (int glyphIndex = 0; glyphIndex < glyphsToRender.Count; glyphIndex++)
+        {
+            FontRectangle renderGlyph = glyphsToRender[glyphIndex];
+            FontRectangle measureGlyph = bounds[glyphIndex].Bounds;
+            GlyphLayout glyphLayout = glyphLayouts[glyphIndex];
+
+            if (glyphLayout.IsWhiteSpace())
+            {
+                Assert.Equal(renderGlyph.X, measureGlyph.X);
+                Assert.Equal(renderGlyph.Y, measureGlyph.Y);
+                Assert.Equal(glyphLayout.AdvanceX * options.Dpi, measureGlyph.Width);
+                Assert.Equal(renderGlyph.Height, measureGlyph.Height);
+            }
+            else
+            {
+                Assert.Equal(renderGlyph, measureGlyph);
+            }
+        }
+    }
+
+    [Fact]
+    public void IsMeasureCharacterBoundsSameAsRenderBounds()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+        };
+
+        const string text = "Hello WorLLd";
+
+        IReadOnlyList<FontRectangle> glyphsToRender = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
+        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
+
+        Assert.Equal(glyphsToRender.Count, bounds.Length);
+
+        for (int glyphIndex = 0; glyphIndex < glyphsToRender.Count; glyphIndex++)
+        {
+            FontRectangle renderGlyph = glyphsToRender[glyphIndex];
+            FontRectangle measureGlyph = bounds[glyphIndex].Bounds;
+
+            Assert.Equal(renderGlyph.X, measureGlyph.X);
+            Assert.Equal(renderGlyph.Y, measureGlyph.Y);
+            Assert.Equal(renderGlyph.Width, measureGlyph.Width);
+            Assert.Equal(renderGlyph.Height, measureGlyph.Height);
+
+            Assert.Equal(renderGlyph, measureGlyph);
+        }
+    }
+
+    private class CaptureGlyphBoundBuilder : IGlyphRenderer
+    {
+        public static List<FontRectangle> GenerateGlyphsBoxes(string text, TextOptions options)
+        {
+            CaptureGlyphBoundBuilder glyphBuilder = new();
+            TextRenderer renderer = new(glyphBuilder);
+            renderer.RenderText(text, options);
+            return glyphBuilder.GlyphBounds;
+        }
+        public readonly List<FontRectangle> GlyphBounds = new();
+        public CaptureGlyphBoundBuilder() { }
+        bool IGlyphRenderer.BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
+        {
+            this.GlyphBounds.Add(bounds);
+            return true;
+        }
+        public void BeginFigure() { }
+        public void MoveTo(Vector2 point) { }
+        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point) { }
+        public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point) { }
+        public void LineTo(Vector2 point) { }
+        public void EndFigure() { }
+        public void EndGlyph() { }
+        public void EndText() { }
+        void IGlyphRenderer.BeginText(in FontRectangle bounds) { }
+        public TextDecorations EnabledDecorations() => TextDecorations.None;
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness) { }
+    }
+
     private static readonly Font OpenSansTTF = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
     private static readonly Font OpenSansWoff = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
 
@@ -1001,100 +1170,100 @@ public class TextLayoutTests
     public static TheoryData<char, FontRectangle> SegoeUi_Data
         = new()
         {
-            { '!', new(0, 0, 2, 10) },
-            { '"', new(0, 0, 4, 5) },
-            { '#', new(0, 0, 6, 9) },
-            { '$', new(0, 0, 5, 11) },
-            { '%', new(0, 0, 8, 10) },
-            { '&', new(0, 0, 8, 10) },
-            { '\'', new(0, 0, 2, 5) },
-            { '(', new(0, 0, 3, 11) },
-            { ')', new(0, 0, 3, 11) },
-            { '*', new(0, 0, 4, 6) },
-            { '+', new(0, 0, 6, 9) },
-            { ',', new(0, 0, 2, 11) },
-            { '-', new(0, 0, 4, 7) },
-            { '.', new(0, 0, 2, 10) },
-            { '/', new(0, 0, 4, 11) },
-            { '0', new(0, 0, 5, 10) },
-            { '1', new(0, 0, 4, 10) },
-            { '2', new(0, 0, 5, 10) },
-            { '3', new(0, 0, 5, 10) },
-            { '4', new(0, 0, 6, 10) },
-            { '5', new(0, 0, 5, 10) },
-            { '6', new(0, 0, 5, 10) },
-            { '7', new(0, 0, 5, 10) },
-            { '8', new(0, 0, 5, 10) },
-            { '9', new(0, 0, 5, 10) },
-            { ':', new(0, 0, 2, 10) },
-            { ';', new(0, 0, 2, 11) },
-            { '<', new(0, 0, 6, 9) },
-            { '=', new(0, 0, 6, 8) },
-            { '>', new(0, 0, 6, 9) },
-            { '?', new(0, 0, 4, 10) },
-            { '@', new(0, 0, 9, 11) },
-            { 'A', new(0, 0, 7, 10) },
-            { 'B', new(0, 0, 6, 10) },
-            { 'C', new(0, 0, 6, 10) },
-            { 'D', new(0, 0, 7, 10) },
-            { 'E', new(0, 0, 5, 10) },
-            { 'F', new(0, 0, 5, 10) },
-            { 'G', new(0, 0, 7, 10) },
-            { 'H', new(0, 0, 7, 10) },
-            { 'I', new(0, 0, 2, 10) },
-            { 'J', new(0, 0, 3, 10) },
-            { 'K', new(0, 0, 6, 10) },
-            { 'L', new(0, 0, 5, 10) },
-            { 'M', new(0, 0, 9, 10) },
-            { 'N', new(0, 0, 7, 10) },
-            { 'O', new(0, 0, 8, 10) },
-            { 'P', new(0, 0, 6, 10) },
-            { 'Q', new(0, 0, 8, 11) },
-            { 'R', new(0, 0, 6, 10) },
-            { 'S', new(0, 0, 5, 10) },
-            { 'T', new(0, 0, 6, 10) },
-            { 'U', new(0, 0, 7, 10) },
-            { 'V', new(0, 0, 7, 10) },
-            { 'W', new(0, 0, 10, 10) },
-            { 'X', new(0, 0, 6, 10) },
-            { 'Y', new(0, 0, 6, 10) },
-            { 'Z', new(0, 0, 6, 10) },
-            { '[', new(0, 0, 3, 11) },
-            { '\\', new(0, 0, 4, 11) },
-            { ']', new(0, 0, 3, 11) },
-            { '^', new(0, 0, 6, 7) },
-            { '_', new(0, 0, 5, 11) },
-            { '`', new(0, 0, 3, 4) },
-            { 'a', new(0, 0, 5, 10) },
-            { 'b', new(0, 0, 6, 10) },
-            { 'c', new(0, 0, 5, 10) },
-            { 'd', new(0, 0, 6, 10) },
-            { 'e', new(0, 0, 5, 10) },
-            { 'f', new(0, 0, 4, 10) },
-            { 'g', new(0, 0, 6, 12) },
-            { 'h', new(0, 0, 5, 10) },
-            { 'i', new(0, 0, 2, 10) },
-            { 'j', new(0, 0, 2, 12) },
-            { 'k', new(0, 0, 5, 10) },
-            { 'l', new(0, 0, 2, 10) },
-            { 'm', new(0, 0, 8, 10) },
-            { 'n', new(0, 0, 5, 10) },
-            { 'o', new(0, 0, 6, 10) },
-            { 'p', new(0, 0, 6, 12) },
-            { 'q', new(0, 0, 6, 12) },
-            { 'r', new(0, 0, 4, 10) },
-            { 's', new(0, 0, 4, 10) },
-            { 't', new(0, 0, 4, 10) },
-            { 'u', new(0, 0, 5, 10) },
-            { 'v', new(0, 0, 5, 10) },
-            { 'w', new(0, 0, 8, 10) },
-            { 'x', new(0, 0, 5, 10) },
-            { 'y', new(0, 0, 5, 12) },
-            { 'z', new(0, 0, 5, 10) },
-            { '{', new(0, 0, 3, 11) },
-            { '|', new(0, 0, 2, 12) },
-            { '}', new(0, 0, 3, 11) },
-            { '~', new(0, 0, 6, 7) }
+            { '!', new(0, 0, 2, 8) },
+            { '"', new(0, 0, 3, 3) },
+            { '#', new(0, 0, 6, 7) },
+            { '$', new(0, 0, 4, 9) },
+            { '%', new(0, 0, 8, 8) },
+            { '&', new(0, 0, 8, 8) },
+            { '\'', new(0, 0, 1, 3) },
+            { '(', new(0, 0, 3, 9) },
+            { ')', new(0, 0, 3, 9) },
+            { '*', new(0, 0, 4, 4) },
+            { '+', new(0, 0, 5, 5) },
+            { ',', new(0, 0, 2, 3) },
+            { '-', new(0, 0, 3, 1) },
+            { '.', new(0, 0, 2, 2) },
+            { '/', new(0, 0, 5, 9) },
+            { '0', new(0, 0, 5, 8) },
+            { '1', new(0, 0, 3, 8) },
+            { '2', new(0, 0, 5, 8) },
+            { '3', new(0, 0, 5, 8) },
+            { '4', new(0, 0, 5, 8) },
+            { '5', new(0, 0, 4, 8) },
+            { '6', new(0, 0, 5, 8) },
+            { '7', new(0, 0, 5, 8) },
+            { '8', new(0, 0, 5, 8) },
+            { '9', new(0, 0, 5, 8) },
+            { ':', new(0, 0, 2, 6) },
+            { ';', new(0, 0, 2, 7) },
+            { '<', new(0, 0, 5, 5) },
+            { '=', new(0, 0, 5, 3) },
+            { '>', new(0, 0, 5, 5) },
+            { '?', new(0, 0, 4, 8) },
+            { '@', new(0, 0, 8, 9) },
+            { 'A', new(0, 0, 7, 8) },
+            { 'B', new(0, 0, 5, 8) },
+            { 'C', new(0, 0, 6, 8) },
+            { 'D', new(0, 0, 6, 8) },
+            { 'E', new(0, 0, 4, 8) },
+            { 'F', new(0, 0, 4, 8) },
+            { 'G', new(0, 0, 6, 8) },
+            { 'H', new(0, 0, 6, 8) },
+            { 'I', new(0, 0, 1, 8) },
+            { 'J', new(0, 0, 3, 8) },
+            { 'K', new(0, 0, 5, 8) },
+            { 'L', new(0, 0, 4, 8) },
+            { 'M', new(0, 0, 8, 8) },
+            { 'N', new(0, 0, 6, 8) },
+            { 'O', new(0, 0, 7, 8) },
+            { 'P', new(0, 0, 5, 8) },
+            { 'Q', new(0, 0, 8, 9) },
+            { 'R', new(0, 0, 6, 8) },
+            { 'S', new(0, 0, 5, 8) },
+            { 'T', new(0, 0, 5, 8) },
+            { 'U', new(0, 0, 6, 8) },
+            { 'V', new(0, 0, 7, 8) },
+            { 'W', new(0, 0, 10, 8) },
+            { 'X', new(0, 0, 6, 8) },
+            { 'Y', new(0, 0, 6, 8) },
+            { 'Z', new(0, 0, 6, 8) },
+            { '[', new(0, 0, 2, 9) },
+            { '\\', new(0, 0, 5, 9) },
+            { ']', new(0, 0, 2, 9) },
+            { '^', new(0, 0, 5, 5) },
+            { '_', new(0, 0, 5, 1) },
+            { '`', new(0, 0, 2, 2) },
+            { 'a', new(0, 0, 4, 6) },
+            { 'b', new(0, 0, 5, 8) },
+            { 'c', new(0, 0, 4, 6) },
+            { 'd', new(0, 0, 5, 8) },
+            { 'e', new(0, 0, 5, 6) },
+            { 'f', new(0, 0, 4, 8) },
+            { 'g', new(0, 0, 5, 8) },
+            { 'h', new(0, 0, 5, 8) },
+            { 'i', new(0, 0, 2, 8) },
+            { 'j', new(0, 0, 3, 10) },
+            { 'k', new(0, 0, 5, 8) },
+            { 'l', new(0, 0, 1, 8) },
+            { 'm', new(0, 0, 8, 6) },
+            { 'n', new(0, 0, 5, 6) },
+            { 'o', new(0, 0, 5, 6) },
+            { 'p', new(0, 0, 5, 8) },
+            { 'q', new(0, 0, 5, 8) },
+            { 'r', new(0, 0, 3, 6) },
+            { 's', new(0, 0, 4, 6) },
+            { 't', new(0, 0, 3, 7) },
+            { 'u', new(0, 0, 5, 6) },
+            { 'v', new(0, 0, 5, 5) },
+            { 'w', new(0, 0, 7, 5) },
+            { 'x', new(0, 0, 5, 5) },
+            { 'y', new(0, 0, 5, 8) },
+            { 'z', new(0, 0, 5, 5) },
+            { '{', new(0, 0, 3, 9) },
+            { '|', new(0, 0, 1, 10) },
+            { '}', new(0, 0, 3, 9) },
+            { '~', new(0, 0, 5, 2) }
         };
 
     [Theory]
@@ -1108,6 +1277,7 @@ public class TextLayoutTests
         };
 
         FontRectangle actual = TextMeasurer.MeasureSize(c.ToString(), options);
+
         Assert.Equal(expected, actual);
     }
 

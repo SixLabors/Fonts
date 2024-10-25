@@ -52,9 +52,9 @@ internal sealed class IndicShaper : DefaultShaper
     {
         this.textOptions = textOptions;
 
-        if (IndicConfigurations.ContainsKey(script))
+        if (IndicConfigurations.TryGetValue(script, out ShapingConfiguration value))
         {
-            this.indicConfiguration = IndicConfigurations[script];
+            this.indicConfiguration = value;
         }
         else
         {

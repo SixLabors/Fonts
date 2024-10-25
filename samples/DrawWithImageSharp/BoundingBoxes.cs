@@ -8,41 +8,49 @@ using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using IOPath = System.IO.Path;
 
 namespace DrawWithImageSharp;
 
 public static class BoundingBoxes
 {
-    public static void Generate(string text, Font font)
+    public static void Generate(string text, TextOptions options)
     {
-        using var img = new Image<Rgba32>(1000, 1000);
-        img.Mutate(x => x.Fill(Color.White));
+        FontRectangle bounds = TextMeasurer.MeasureBounds(text, options);
+        FontRectangle advance = TextMeasurer.MeasureAdvance(text, options);
+        using Image<Rgba32> image = new((int)Math.Ceiling(options.Origin.X + (Math.Max(advance.Width, bounds.Width) + 1)), (int)Math.Ceiling(options.Origin.Y + (Math.Max(advance.Height, bounds.Height) + 1)));
+        image.Mutate(x => x.Fill(Color.White));
 
-        TextOptions options = new(font);
-        FontRectangle box = TextMeasurer.MeasureBounds(text, options);
+        Vector2 origin = options.Origin;
+
+        FontRectangle size = TextMeasurer.MeasureSize(text, options);
+
         (IPathCollection paths, IPathCollection boxes) = GenerateGlyphsWithBox(text, options);
+        image.Mutate(
+            x => x.Fill(Color.Black, paths)
+            .Draw(Color.Yellow, 1, boxes)
+            .Draw(Color.Purple, 1, new RectangularPolygon(bounds.X, bounds.Y, bounds.Width, bounds.Height))
+            .Draw(Color.Green, 1, new RectangularPolygon(size.X + bounds.X, size.Y + bounds.Y, size.Width, size.Height))
+            .Draw(Color.Red, 1, new RectangularPolygon(advance.X + origin.X, advance.Y + origin.Y, advance.Width, advance.Height)));
 
-        Rgba32 f = Color.Fuchsia;
-        f.A = 128;
+        string path = IOPath.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
+        string fullPath = IOPath.GetFullPath(IOPath.Combine($"Output/Boxed/{options.Font.Name}", IOPath.Combine(path)));
+        Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));
 
-        img.Mutate(x => x.Fill(Color.Black, paths)
-                        .Draw(f, 1, boxes)
-                        .Draw(Color.Lime, 1, new RectangularPolygon(box.Location, box.Size)));
-
-        img.Save("Output/Boxed.png");
+        image.Save($"{fullPath}.png");
     }
 
     /// <summary>
-    /// Generates the shapes corresponding the glyphs described by the font and with the setting ing withing the FontSpan
+    /// Generates the shapes corresponding the glyphs described by the font and settings.
     /// </summary>
     /// <param name="text">The text to generate glyphs for</param>
     /// <param name="options">The style and settings to use while rendering the glyphs</param>
     /// <returns>The paths, boxes, and text box.</returns>
     private static (IPathCollection Paths, IPathCollection Boxes) GenerateGlyphsWithBox(string text, TextOptions options)
     {
-        var glyphBuilder = new CustomGlyphBuilder(Vector2.Zero);
+        CustomGlyphBuilder glyphBuilder = new();
 
-        var renderer = new TextRenderer(glyphBuilder);
+        TextRenderer renderer = new(glyphBuilder);
 
         renderer.RenderText(text, options);
 

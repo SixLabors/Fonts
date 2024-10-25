@@ -12,7 +12,7 @@ namespace SixLabors.Fonts;
 /// BinaryReader using big-endian encoding.
 /// </summary>
 [DebuggerDisplay("Start: {StartOfStream}, Position: {BaseStream.Position}")]
-internal class BigEndianBinaryReader : IDisposable
+internal sealed class BigEndianBinaryReader : IDisposable
 {
     /// <summary>
     /// Buffer used for temporary storage before conversion into primitives

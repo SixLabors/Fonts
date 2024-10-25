@@ -33,7 +33,7 @@ internal sealed class FileFontMetrics : FontMetrics
     {
         this.Description = description;
         this.Path = path;
-        this.fontMetrics = new Lazy<StreamFontMetrics>(() => StreamFontMetrics.LoadFont(path, offset));
+        this.fontMetrics = new Lazy<StreamFontMetrics>(() => StreamFontMetrics.LoadFont(path, offset), true);
     }
 
     /// <inheritdoc cref="FontMetrics.Description"/>
@@ -136,7 +136,7 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.GetGlyphMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, support);
 
     /// <inheritdoc />
-    internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
+    public override IReadOnlyList<CodePoint> GetAvailableCodePoints()
         => this.fontMetrics.Value.GetAvailableCodePoints();
 
     /// <inheritdoc/>
@@ -148,8 +148,8 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.ApplySubstitution(collection);
 
     /// <inheritdoc/>
-    internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
-        => this.fontMetrics.Value.TryGetKerningOffset(previousId, currentId, out vector);
+    internal override bool TryGetKerningOffset(ushort currentId, ushort nextId, out Vector2 vector)
+        => this.fontMetrics.Value.TryGetKerningOffset(currentId, nextId, out vector);
 
     /// <inheritdoc/>
     internal override void UpdatePositions(GlyphPositioningCollection collection)
@@ -164,7 +164,7 @@ internal sealed class FileFontMetrics : FontMetrics
     {
         using FileStream fs = File.OpenRead(path);
         long startPos = fs.Position;
-        BigEndianBinaryReader reader = new(fs, true);
+        using BigEndianBinaryReader reader = new(fs, true);
         TtcHeader ttcHeader = TtcHeader.Read(reader);
         FileFontMetrics[] fonts = new FileFontMetrics[(int)ttcHeader.NumFonts];
 

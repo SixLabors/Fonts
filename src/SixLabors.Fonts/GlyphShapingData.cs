@@ -17,6 +17,7 @@ internal class GlyphShapingData
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphShapingData"/> class.
     /// </summary>
+    /// <param name="textRun">The text run.</param>
     public GlyphShapingData(TextRun textRun) => this.TextRun = textRun;
 
     /// <summary>

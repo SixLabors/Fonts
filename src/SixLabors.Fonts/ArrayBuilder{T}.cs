@@ -22,14 +22,13 @@ internal struct ArrayBuilder<T>
     /// <summary>
     /// Initializes a new instance of the <see cref="ArrayBuilder{T}"/> struct.
     /// </summary>
-    /// <param name="capacity">The intitial capacity of the array.</param>
+    /// <param name="capacity">The initial capacity of the array.</param>
     public ArrayBuilder(int capacity)
         : this()
     {
         Guard.MustBeGreaterThanOrEqualTo(capacity, 0, nameof(capacity));
 
         this.data = new T[capacity];
-        this.size = capacity;
     }
 
     /// <summary>

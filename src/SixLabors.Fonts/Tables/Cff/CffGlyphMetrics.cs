@@ -11,7 +11,6 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal class CffGlyphMetrics : GlyphMetrics
 {
-    private static readonly Vector2 YInverter = new(1, -1);
     private CffGlyphData glyphData;
 
     internal CffGlyphMetrics(
@@ -123,7 +122,7 @@ internal class CffGlyphMetrics : GlyphMetrics
 
         if (renderer.BeginGlyph(in box, in parameters))
         {
-            if (!ShouldRenderWhiteSpaceOnly(this.CodePoint))
+            if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
             {
                 if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)
                 {

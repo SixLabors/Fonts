@@ -42,10 +42,10 @@ internal sealed class KerningTable : Table
         ushort version = reader.ReadUInt16();
         ushort subTableCount = reader.ReadUInt16();
 
-        var tables = new List<KerningSubTable>(subTableCount);
+        List<KerningSubTable> tables = new(subTableCount);
         for (int i = 0; i < subTableCount; i++)
         {
-            var t = KerningSubTable.Load(reader); // returns null for unknown/supported table format
+            KerningSubTable? t = KerningSubTable.Load(reader); // returns null for unknown/supported table format
             if (t != null)
             {
                 tables.Add(t);
@@ -62,19 +62,19 @@ internal sealed class KerningTable : Table
             return;
         }
 
-        ushort previous = collection[left].GlyphId;
-        ushort current = collection[right].GlyphId;
+        ushort current = collection[left].GlyphId;
+        ushort next = collection[right].GlyphId;
 
-        if (this.TryGetKerningOffset(previous, current, out Vector2 result))
+        if (this.TryGetKerningOffset(current, next, out Vector2 result))
         {
-            collection.Advance(fontMetrics, right, current, (short)result.X, (short)result.Y);
+            collection.Advance(fontMetrics, left, current, (short)result.X, (short)result.Y);
         }
     }
 
-    public bool TryGetKerningOffset(ushort previous, ushort current, out Vector2 result)
+    public bool TryGetKerningOffset(ushort current, ushort next, out Vector2 result)
     {
         result = Vector2.Zero;
-        if (this.Count == 0 || previous == 0 || current == 0)
+        if (this.Count == 0 || current == 0 || next == 0)
         {
             return false;
         }
@@ -82,7 +82,7 @@ internal sealed class KerningTable : Table
         bool kerned = false;
         foreach (KerningSubTable sub in this.kerningSubTable)
         {
-            kerned |= sub.TryApplyOffset(previous, current, ref result);
+            kerned |= sub.TryApplyOffset(current, next, ref result);
         }
 
         return kerned;

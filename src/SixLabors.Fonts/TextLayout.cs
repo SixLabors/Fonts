@@ -409,6 +409,7 @@ internal static class TextLayout
                 continue;
             }
 
+            int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
                 glyphs.Add(new GlyphLayout(
@@ -419,7 +420,11 @@ internal static class TextLayout
                     data.ScaledAdvance,
                     advanceY,
                     GlyphLayoutMode.Horizontal,
-                    i == 0));
+                    i == 0 && j == 0,
+                    data.GraphemeIndex,
+                    data.StringIndex));
+
+                j++;
             }
 
             boxLocation.X += data.ScaledAdvance;
@@ -537,6 +542,7 @@ internal static class TextLayout
                 continue;
             }
 
+            int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
                 // Align the glyph horizontally and vertically centering horizontally around the baseline.
@@ -552,7 +558,11 @@ internal static class TextLayout
                     advanceX,
                     data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
-                    i == 0));
+                    i == 0 && j == 0,
+                    data.GraphemeIndex,
+                    data.StringIndex));
+
+                j++;
             }
 
             penLocation.Y += data.ScaledAdvance;
@@ -671,6 +681,7 @@ internal static class TextLayout
 
             if (data.IsRotated)
             {
+                int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
                 {
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
@@ -682,11 +693,16 @@ internal static class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
-                        i == 0));
+                        i == 0 && j == 0,
+                        data.GraphemeIndex,
+                        data.StringIndex));
+
+                    j++;
                 }
             }
             else
             {
+                int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
                 {
                     // Align the glyph horizontally and vertically centering horizontally around the baseline.
@@ -702,7 +718,11 @@ internal static class TextLayout
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.Vertical,
-                        i == 0));
+                        i == 0 && j == 0,
+                        data.GraphemeIndex,
+                        data.StringIndex));
+
+                    j++;
                 }
             }
 
@@ -883,6 +903,7 @@ internal static class TextLayout
         List<TextLine> textLines = new();
         TextLine textLine = new();
         int glyphCount = 0;
+        int stringIndex = 0;
 
         // No glyph should contain more than 64 metrics.
         // We do a sanity check below just in case.
@@ -1054,7 +1075,7 @@ internal static class TextLayout
                     else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
                     {
                         // Forced wordbreak
-                        if (breakAll)
+                        if (breakAll && textLine.Count > 0)
                         {
                             textLines.Add(textLine.Finalize());
                             glyphCount += textLine.Count;
@@ -1074,7 +1095,7 @@ internal static class TextLayout
                                     lineAdvance = split.ScaledLineAdvance;
                                 }
                             }
-                            else
+                            else if (textLine.Count > 0)
                             {
                                 textLines.Add(textLine.Finalize());
                                 glyphCount += textLine.Count;
@@ -1092,6 +1113,12 @@ internal static class TextLayout
                                 textLine = split;
                                 lineAdvance = split.ScaledLineAdvance;
                             }
+                            else if (textLine.Count > 0)
+                            {
+                                textLines.Add(textLine.Finalize());
+                                textLine = new();
+                                lineAdvance = 0;
+                            }
                         }
                         else if (lastLineBreak.PositionWrap < codePointIndex && !CodePoint.IsWhiteSpace(codePoint))
                         {
@@ -1105,7 +1132,7 @@ internal static class TextLayout
                                 textLine = split;
                                 lineAdvance = split.ScaledLineAdvance;
                             }
-                            else if (breakWord)
+                            else if (breakWord && textLine.Count > 0)
                             {
                                 textLines.Add(textLine.Finalize());
                                 glyphCount += textLine.Count;
@@ -1113,7 +1140,7 @@ internal static class TextLayout
                                 lineAdvance = 0;
                             }
                         }
-                        else if (breakWord)
+                        else if (breakWord && textLine.Count > 0)
                         {
                             textLines.Add(textLine.Finalize());
                             glyphCount += textLine.Count;
@@ -1166,35 +1193,6 @@ internal static class TextLayout
                         : metric.FontMetrics.VerticalMetrics;
                     float ascender = metricsHeader.Ascender * scaleY;
 
-                    // Adjust ascender for glyphs with a negative tsb. e.g. emoji to prevent cutoff.
-                    if (!CodePoint.IsWhiteSpace(codePoint))
-                    {
-                        if (!isDecomposed)
-                        {
-                            short tsbOffset = 0;
-
-                            // We need to check all the metrics.
-                            for (int mi = 0; mi < metrics.Count; mi++)
-                            {
-                                tsbOffset = Math.Min(tsbOffset, metrics[mi].TopSideBearing);
-                            }
-
-                            if (tsbOffset < 0)
-                            {
-                                ascender -= tsbOffset * scaleY;
-                            }
-                        }
-                        else
-                        {
-                            // Decomposed glyphs contain a single metric.
-                            short tsbOffset = metric.TopSideBearing;
-                            if (tsbOffset < 0)
-                            {
-                                ascender -= tsbOffset * scaleY;
-                            }
-                        }
-                    }
-
                     // Match how line height is calculated for browsers.
                     // https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
                     float descender = Math.Abs(metricsHeader.Descender * scaleY);
@@ -1216,12 +1214,15 @@ internal static class TextLayout
                         graphemeIndex,
                         codePointIndex,
                         isRotated,
-                        isDecomposed);
+                        isDecomposed,
+                        stringIndex);
                 }
 
                 codePointIndex++;
                 graphemeCodePointIndex++;
             }
+
+            stringIndex += graphemeEnumerator.Current.Length;
         }
 
         // Add the final line.
@@ -1279,7 +1280,8 @@ internal static class TextLayout
             int graphemeIndex,
             int offset,
             bool isRotated,
-            bool isDecomposed)
+            bool isDecomposed,
+            int stringIndex)
         {
             // Reset metrics.
             // We track the maximum metrics for each line to ensure glyphs can be aligned.
@@ -1299,7 +1301,8 @@ internal static class TextLayout
                 graphemeIndex,
                 offset,
                 isRotated,
-                isDecomposed));
+                isDecomposed,
+                stringIndex));
         }
 
         public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
@@ -1318,6 +1321,9 @@ internal static class TextLayout
 
             if (index == 0)
             {
+                // Now trim trailing whitespace from this line in the case of an exact
+                // length line break (non CJK)
+                this.TrimTrailingWhitespaceAndRecalculateMetrics();
                 return this;
             }
 
@@ -1339,6 +1345,9 @@ internal static class TextLayout
 
                 if (index == 0)
                 {
+                    // Now trim trailing whitespace from this line in the case of an exact
+                    // length line break (non CJK)
+                    this.TrimTrailingWhitespaceAndRecalculateMetrics();
                     return this;
                 }
             }
@@ -1346,16 +1355,37 @@ internal static class TextLayout
             // Create a new line ensuring we capture the initial metrics.
             TextLine result = new();
             result.data.AddRange(this.data.GetRange(index, this.data.Count - index));
-            result.ScaledLineAdvance = result.data.Sum(x => x.ScaledAdvance);
-            result.ScaledMaxAscender = result.data.Max(x => x.ScaledAscender);
-            result.ScaledMaxDescender = result.data.Max(x => x.ScaledDescender);
-            result.ScaledMaxLineHeight = result.data.Max(x => x.ScaledLineHeight);
+
+            float advance = 0;
+            float ascender = 0;
+            float descender = 0;
+            float lineHeight = 0;
+            for (int i = 0; i < result.data.Count; i++)
+            {
+                GlyphLayoutData glyph = result.data[i];
+                advance += glyph.ScaledAdvance;
+                ascender = MathF.Max(ascender, glyph.ScaledAscender);
+                descender = MathF.Max(descender, glyph.ScaledDescender);
+                lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
+            }
+
+            result.ScaledLineAdvance = advance;
+            result.ScaledMaxAscender = ascender;
+            result.ScaledMaxDescender = descender;
+            result.ScaledMaxLineHeight = lineHeight;
 
             // Remove those items from this line.
             this.data.RemoveRange(index, this.data.Count - index);
 
             // Now trim trailing whitespace from this line.
-            index = this.data.Count;
+            this.TrimTrailingWhitespaceAndRecalculateMetrics();
+
+            return result;
+        }
+
+        private void TrimTrailingWhitespaceAndRecalculateMetrics()
+        {
+            int index = this.data.Count;
             while (index > 0)
             {
                 if (!CodePoint.IsWhiteSpace(this.data[index - 1].CodePoint))
@@ -1366,18 +1396,29 @@ internal static class TextLayout
                 index--;
             }
 
-            if (index < this.data.Count)
+            if (index < this.data.Count && index != 0)
             {
                 this.data.RemoveRange(index, this.data.Count - index);
             }
 
             // Lastly recalculate this line metrics.
-            this.ScaledLineAdvance = this.data.Sum(x => x.ScaledAdvance);
-            this.ScaledMaxAscender = this.data.Max(x => x.ScaledAscender);
-            this.ScaledMaxDescender = this.data.Max(x => x.ScaledDescender);
-            this.ScaledMaxLineHeight = this.data.Max(x => x.ScaledLineHeight);
+            float advance = 0;
+            float ascender = 0;
+            float descender = 0;
+            float lineHeight = 0;
+            for (int i = 0; i < this.data.Count; i++)
+            {
+                GlyphLayoutData glyph = this.data[i];
+                advance += glyph.ScaledAdvance;
+                ascender = MathF.Max(ascender, glyph.ScaledAscender);
+                descender = MathF.Max(descender, glyph.ScaledDescender);
+                lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
+            }
 
-            return result;
+            this.ScaledLineAdvance = advance;
+            this.ScaledMaxAscender = ascender;
+            this.ScaledMaxDescender = descender;
+            this.ScaledMaxLineHeight = lineHeight;
         }
 
         public TextLine Finalize() => this.BidiReOrder();
@@ -1611,7 +1652,8 @@ internal static class TextLayout
                 int graphemeIndex,
                 int offset,
                 bool isRotated,
-                bool isDecomposed)
+                bool isDecomposed,
+                int stringIndex)
             {
                 this.Metrics = metrics;
                 this.PointSize = pointSize;
@@ -1624,6 +1666,7 @@ internal static class TextLayout
                 this.Offset = offset;
                 this.IsRotated = isRotated;
                 this.IsDecomposed = isDecomposed;
+                this.StringIndex = stringIndex;
             }
 
             public readonly CodePoint CodePoint => this.Metrics[0].CodePoint;
@@ -1651,6 +1694,8 @@ internal static class TextLayout
             public bool IsRotated { get; }
 
             public bool IsDecomposed { get; }
+
+            public int StringIndex { get; }
 
             public readonly bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);
 

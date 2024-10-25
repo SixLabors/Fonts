@@ -208,14 +208,8 @@ public static class TextMeasurer
 
     internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
     {
-        if (glyphLayouts.Count == 0)
-        {
-            return FontRectangle.Empty;
-        }
-
-        Vector2 topLeft = glyphLayouts[0].BoxLocation * dpi;
         FontRectangle bounds = GetBounds(glyphLayouts, dpi);
-        return new FontRectangle(0, 0, MathF.Ceiling(bounds.Right - topLeft.X), MathF.Ceiling(bounds.Bottom - topLeft.Y));
+        return new FontRectangle(0, 0, MathF.Ceiling(bounds.Width), MathF.Ceiling(bounds.Height));
     }
 
     internal static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
@@ -265,13 +259,13 @@ public static class TextMeasurer
             return hasSize;
         }
 
-        var characterBoundsList = new GlyphBounds[glyphLayouts.Count];
+        GlyphBounds[] characterBoundsList = new GlyphBounds[glyphLayouts.Count];
         for (int i = 0; i < glyphLayouts.Count; i++)
         {
             GlyphLayout glyph = glyphLayouts[i];
             FontRectangle bounds = new(0, 0, glyph.AdvanceX * dpi, glyph.AdvanceY * dpi);
             hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, in bounds);
+            characterBoundsList[i] = new GlyphBounds(glyph.Glyph.GlyphMetrics.CodePoint, in bounds, glyph.GraphemeIndex, glyph.StringIndex);
         }
 
         characterBounds = characterBoundsList;
@@ -287,17 +281,16 @@ public static class TextMeasurer
             return hasSize;
         }
 
-        var characterBoundsList = new GlyphBounds[glyphLayouts.Count];
+        GlyphBounds[] characterBoundsList = new GlyphBounds[glyphLayouts.Count];
 
         for (int i = 0; i < glyphLayouts.Count; i++)
         {
             GlyphLayout g = glyphLayouts[i];
             FontRectangle bounds = g.BoundingBox(dpi);
-            Vector2 location = g.BoxLocation * dpi;
-            bounds = new(0, 0, bounds.Right - location.X, bounds.Bottom - location.Y);
+            bounds = new(0, 0, bounds.Width, bounds.Height);
 
             hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds);
+            characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds, g.GraphemeIndex, g.StringIndex);
         }
 
         characterBounds = characterBoundsList;
@@ -313,13 +306,13 @@ public static class TextMeasurer
             return hasSize;
         }
 
-        var characterBoundsList = new GlyphBounds[glyphLayouts.Count];
+        GlyphBounds[] characterBoundsList = new GlyphBounds[glyphLayouts.Count];
         for (int i = 0; i < glyphLayouts.Count; i++)
         {
             GlyphLayout g = glyphLayouts[i];
             FontRectangle bounds = g.BoundingBox(dpi);
             hasSize |= bounds.Width > 0 || bounds.Height > 0;
-            characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds);
+            characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds, g.GraphemeIndex, g.StringIndex);
         }
 
         characterBounds = characterBoundsList;

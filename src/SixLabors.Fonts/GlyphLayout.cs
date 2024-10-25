@@ -19,7 +19,9 @@ internal readonly struct GlyphLayout
         float advanceWidth,
         float advanceHeight,
         GlyphLayoutMode layoutMode,
-        bool isStartOfLine)
+        bool isStartOfLine,
+        int graphemeIndex,
+        int stringIndex)
     {
         this.Glyph = glyph;
         this.CodePoint = glyph.GlyphMetrics.CodePoint;
@@ -30,6 +32,8 @@ internal readonly struct GlyphLayout
         this.AdvanceY = advanceHeight;
         this.LayoutMode = layoutMode;
         this.IsStartOfLine = isStartOfLine;
+        this.GraphemeIndex = graphemeIndex;
+        this.StringIndex = stringIndex;
     }
 
     /// <summary>
@@ -79,15 +83,32 @@ internal readonly struct GlyphLayout
     public bool IsStartOfLine { get; }
 
     /// <summary>
+    /// Gets grapheme index of glyph in original text.
+    /// </summary>
+    public int GraphemeIndex { get; }
+
+    /// <summary>
+    /// Gets string index of glyph in original text.
+    /// </summary>
+    public int StringIndex { get; }
+
+    /// <summary>
     /// Gets a value indicating whether the glyph represents a whitespace character.
     /// </summary>
     /// <returns>The <see cref="bool"/>.</returns>
-    public bool IsWhiteSpace() => GlyphMetrics.ShouldRenderWhiteSpaceOnly(this.CodePoint);
+    public bool IsWhiteSpace() => UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint);
 
     internal FontRectangle BoundingBox(float dpi)
     {
-        Vector2 origin = (this.PenLocation + this.Offset) * dpi;
-        FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, Vector2.Zero, dpi);
+        // Same logic as in TrueTypeGlyphMetrics.RenderTo
+        Vector2 location = this.PenLocation;
+        Vector2 offset = this.Offset;
+
+        location *= dpi;
+        offset *= dpi;
+        Vector2 renderLocation = location + offset;
+
+        FontRectangle box = this.Glyph.BoundingBox(this.LayoutMode, renderLocation, dpi);
 
         if (this.IsWhiteSpace())
         {
@@ -96,8 +117,8 @@ internal readonly struct GlyphLayout
             if (this.LayoutMode == GlyphLayoutMode.Vertical)
             {
                 return new FontRectangle(
-                    box.X + origin.X,
-                    box.Y + origin.Y,
+                    box.X,
+                    box.Y,
                     box.Width,
                     this.AdvanceY * dpi);
             }
@@ -105,24 +126,20 @@ internal readonly struct GlyphLayout
             if (this.LayoutMode == GlyphLayoutMode.VerticalRotated)
             {
                 return new FontRectangle(
-                    box.X + origin.X,
-                    box.Y + origin.Y,
+                    box.X,
+                    box.Y,
                     0,
                     this.AdvanceY * dpi);
             }
 
             return new FontRectangle(
-                box.X + origin.X,
-                box.Y + origin.Y,
+                box.X,
+                box.Y,
                 this.AdvanceX * dpi,
                 box.Height);
         }
 
-        return new FontRectangle(
-            box.X + origin.X,
-            box.Y + origin.Y,
-            box.Width,
-            box.Height);
+        return box;
     }
 
     /// <inheritdoc/>

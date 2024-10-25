@@ -29,8 +29,9 @@ internal partial class StreamFontMetrics : FontMetrics
     private readonly OutlineType outlineType;
 
     // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
-    private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]> glyphCache;
-    private readonly ConcurrentDictionary<(ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]>? colorGlyphCache;
+    private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]> glyphCache;
+    private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]>? colorGlyphCache;
+    private readonly ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)> glyphIdCache;
     private readonly FontDescription description;
     private readonly HorizontalMetrics horizontalMetrics;
     private readonly VerticalMetrics verticalMetrics;
@@ -59,6 +60,7 @@ internal partial class StreamFontMetrics : FontMetrics
         this.trueTypeFontTables = tables;
         this.outlineType = OutlineType.TrueType;
         this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+        this.glyphIdCache = new();
         this.glyphCache = new();
         if (tables.Colr is not null)
         {
@@ -79,6 +81,7 @@ internal partial class StreamFontMetrics : FontMetrics
         this.compactFontTables = tables;
         this.outlineType = OutlineType.CFF;
         this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+        this.glyphIdCache = new();
         this.glyphCache = new();
         if (tables.Colr is not null)
         {
@@ -157,7 +160,18 @@ internal partial class StreamFontMetrics : FontMetrics
             ? this.trueTypeFontTables!.Cmap
             : this.compactFontTables!.Cmap;
 
-        return cmap.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
+        (bool success, ushort id, bool skip) = this.glyphIdCache.GetOrAdd(
+                       (codePoint.Value, nextCodePoint?.Value ?? -1),
+                       static (_, arg) =>
+                       {
+                           bool success = arg.cmap.TryGetGlyphId(arg.codePoint, arg.nextCodePoint, out ushort id, out bool skip);
+                           return (success, id, skip);
+                       },
+                       (cmap, codePoint, nextCodePoint));
+
+        glyphId = id;
+        skipNextCodePoint = skip;
+        return success;
     }
 
     /// <inheritdoc/>
@@ -206,14 +220,6 @@ internal partial class StreamFontMetrics : FontMetrics
         LayoutMode layoutMode,
         ColorFontSupport support)
     {
-        GlyphType glyphType = GlyphType.Standard;
-        if (glyphId == 0)
-        {
-            // A glyph was not found in this face for the previously matched
-            // codepoint. Set to fallback.
-            glyphType = GlyphType.Fallback;
-        }
-
         if (support == ColorFontSupport.MicrosoftColrFormat
             && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, out GlyphMetrics[]? metrics))
         {
@@ -222,21 +228,22 @@ internal partial class StreamFontMetrics : FontMetrics
 
         // We overwrite the cache entry for this type should the attributes change.
         return this.glyphCache.GetOrAdd(
-              CreateCacheKey(codePoint, glyphId, textAttributes, layoutMode),
-              key => new[]
-              {
-                this.CreateGlyphMetrics(
-                codePoint,
-                key.Id,
-                glyphType,
-                key.Attributes,
-                textDecorations,
-                key.IsVerticalLayout)
-              });
+            CreateCacheKey(in codePoint, glyphId, textAttributes, layoutMode),
+            static (key, arg) => new[]
+            {
+                arg.Item3.CreateGlyphMetrics(
+                    in arg.codePoint,
+                    key.Id,
+                    key.Id == 0 ? GlyphType.Fallback : GlyphType.Standard,
+                    key.Attributes,
+                    arg.textDecorations,
+                    key.IsVerticalLayout)
+            },
+            (textDecorations, codePoint, this));
     }
 
     /// <inheritdoc />
-    internal override IReadOnlyList<CodePoint> GetAvailableCodePoints()
+    public override IReadOnlyList<CodePoint> GetAvailableCodePoints()
     {
         CMapTable cmap = this.outlineType == OutlineType.TrueType
             ? this.trueTypeFontTables!.Cmap
@@ -265,7 +272,7 @@ internal partial class StreamFontMetrics : FontMetrics
     }
 
     /// <inheritdoc/>
-    internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
+    internal override bool TryGetKerningOffset(ushort currentId, ushort nextId, out Vector2 vector)
     {
         bool isTTF = this.outlineType == OutlineType.TrueType;
         KerningTable? kern = isTTF
@@ -278,7 +285,7 @@ internal partial class StreamFontMetrics : FontMetrics
             return false;
         }
 
-        return kern.TryGetKerningOffset(previousId, currentId, out vector);
+        return kern.TryGetKerningOffset(currentId, nextId, out vector);
     }
 
     /// <inheritdoc/>
@@ -305,14 +312,14 @@ internal partial class StreamFontMetrics : FontMetrics
             {
                 // Set max constraints to prevent OutOfMemoryException or infinite loops from attacks.
                 int maxCount = AdvancedTypographicUtils.GetMaxAllowableShapingCollectionCount(collection.Count);
-                for (int index = 1; index < collection.Count; index++)
+                for (int index = 0; index < collection.Count - 1; index++)
                 {
                     if (index >= maxCount)
                     {
                         break;
                     }
 
-                    kern.UpdatePositions(this, collection, index - 1, index);
+                    kern.UpdatePositions(this, collection, index, index + 1);
                 }
             }
         }
@@ -326,7 +333,7 @@ internal partial class StreamFontMetrics : FontMetrics
     public static StreamFontMetrics LoadFont(string path)
     {
         using FileStream fs = File.OpenRead(path);
-        var reader = new FontReader(fs);
+        using var reader = new FontReader(fs);
         return LoadFont(reader);
     }
 
@@ -350,7 +357,7 @@ internal partial class StreamFontMetrics : FontMetrics
     /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
     public static StreamFontMetrics LoadFont(Stream stream)
     {
-        var reader = new FontReader(stream);
+        using var reader = new FontReader(stream);
         return LoadFont(reader);
     }
 
@@ -529,12 +536,12 @@ internal partial class StreamFontMetrics : FontMetrics
         return fonts;
     }
 
-    private static (ushort Id, TextAttributes Attributes, bool IsVerticalLayout) CreateCacheKey(
-        CodePoint codePoint,
+    private static (int CodePoint, ushort Id, TextAttributes Attributes, bool IsVerticalLayout) CreateCacheKey(
+        in CodePoint codePoint,
         ushort glyphId,
         TextAttributes textAttributes,
         LayoutMode layoutMode)
-        => (glyphId, textAttributes, AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode));
+        => (codePoint.Value, glyphId, textAttributes, AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode));
 
     private bool TryGetColoredMetrics(
         CodePoint codePoint,
@@ -555,28 +562,31 @@ internal partial class StreamFontMetrics : FontMetrics
         }
 
         // We overwrite the cache entry for this type should the attributes change.
-        metrics = this.colorGlyphCache.GetOrAdd(CreateCacheKey(codePoint, glyphId, textAttributes, layoutMode), key =>
-        {
-            GlyphMetrics[] m = Array.Empty<GlyphMetrics>();
-            Span<LayerRecord> indexes = colr.GetLayers(key.Id);
-            if (indexes.Length > 0)
+        metrics = this.colorGlyphCache.GetOrAdd(
+            CreateCacheKey(in codePoint, glyphId, textAttributes, layoutMode),
+            (key, args) =>
             {
-                m = new GlyphMetrics[indexes.Length];
-                for (int i = 0; i < indexes.Length; i++)
+                GlyphMetrics[] m = Array.Empty<GlyphMetrics>();
+                Span<LayerRecord> indexes = colr.GetLayers(key.Id);
+                if (indexes.Length > 0)
                 {
-                    LayerRecord layer = indexes[i];
-                    m[i] = this.CreateGlyphMetrics(codePoint, layer.GlyphId, GlyphType.ColrLayer, key.Attributes, textDecorations, key.IsVerticalLayout, layer.PaletteIndex);
+                    m = new GlyphMetrics[indexes.Length];
+                    for (int i = 0; i < indexes.Length; i++)
+                    {
+                        LayerRecord layer = indexes[i];
+                        m[i] = args.Item2.CreateGlyphMetrics(in args.codePoint, layer.GlyphId, GlyphType.ColrLayer, key.Attributes, textDecorations, key.IsVerticalLayout, layer.PaletteIndex);
+                    }
                 }
-            }
 
-            return m;
-        });
+                return m;
+            },
+            (codePoint, this));
 
         return metrics.Length > 0;
     }
 
     private GlyphMetrics CreateGlyphMetrics(
-        CodePoint codePoint,
+        in CodePoint codePoint,
         ushort glyphId,
         GlyphType glyphType,
         TextAttributes textAttributes,
@@ -585,8 +595,8 @@ internal partial class StreamFontMetrics : FontMetrics
         ushort paletteIndex = 0)
         => this.outlineType switch
         {
-            OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
-            OutlineType.CFF => this.CreateCffGlyphMetrics(codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
+            OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(in codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
+            OutlineType.CFF => this.CreateCffGlyphMetrics(in codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
             _ => throw new NotSupportedException(),
         };
 }

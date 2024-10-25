@@ -13,7 +13,7 @@ public class Issues_180
 
         FontRectangle size = TextMeasurer.MeasureSize("H", new TextOptions(font));
 
-        Assert.Equal(16, size.Width, 1F);
-        Assert.Equal(21, size.Height, 1F);
+        Assert.Equal(14, size.Width, 1F);
+        Assert.Equal(17, size.Height, 1F);
     }
 }

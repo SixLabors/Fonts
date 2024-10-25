@@ -26,7 +26,7 @@ internal ref struct Buffer<T>
         this.buffer = ArrayPool<byte>.Shared.Rent(bufferSizeInBytes);
         this.length = length;
 
-        ByteMemoryManager<T> manager = new(this.buffer);
+        using ByteMemoryManager<T> manager = new(this.buffer);
         this.Memory = manager.Memory.Slice(0, this.length);
         this.span = this.Memory.Span;
 
