@@ -5,6 +5,8 @@ namespace SixLabors.Fonts.Tests.Issues;
 
 public class Issues_269
 {
+    private static readonly ApproximateFloatComparer Comparer = new(.1F);
+
     [Fact]
     public void CorrectlySetsMetricsForFontsNotAdheringToSpec()
     {
@@ -12,7 +14,7 @@ public class Issues_269
         Font font = new FontCollection().Add(TestFonts.AliceFrancesHMKRegularFile).CreateFont(25);
 
         FontRectangle size = TextMeasurer.MeasureSize("H", new TextOptions(font));
-        Assert.Equal(32, size.Width, 1F);
-        Assert.Equal(25, size.Height, 1F);
+        Assert.Equal(30.6000004F, size.Width, Comparer);
+        Assert.Equal(24.75F, size.Height, Comparer);
     }
 }
