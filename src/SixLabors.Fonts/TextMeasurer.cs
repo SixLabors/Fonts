@@ -203,13 +203,13 @@ public static class TextMeasurer
         Vector2 topLeft = new(left, top);
         Vector2 bottomRight = new(right, bottom);
         Vector2 size = (bottomRight - topLeft) * dpi;
-        return new FontRectangle(0, 0, MathF.Ceiling(size.X), MathF.Ceiling(size.Y));
+        return new FontRectangle(0, 0, size.X, size.Y);
     }
 
     internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
     {
         FontRectangle bounds = GetBounds(glyphLayouts, dpi);
-        return new FontRectangle(0, 0, MathF.Ceiling(bounds.Width), MathF.Ceiling(bounds.Height));
+        return new FontRectangle(0, 0, bounds.Width, bounds.Height);
     }
 
     internal static FontRectangle GetBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)

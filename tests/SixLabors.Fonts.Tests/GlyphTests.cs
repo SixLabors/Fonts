@@ -14,6 +14,7 @@ namespace SixLabors.Fonts.Tests;
 public class GlyphTests
 {
     private readonly GlyphRenderer renderer = new();
+    private static readonly ApproximateFloatComparer Comparer = new(.1F);
 
     [Fact]
     public void RenderToPointAndSingleDPI()
@@ -164,8 +165,8 @@ public class GlyphTests
         FontRectangle size = TextMeasurer.MeasureSize(text, new TextOptions(font));
         FontRectangle size2 = TextMeasurer.MeasureSize(text2, new TextOptions(font));
 
-        Assert.Equal(51f, size.Width);
-        Assert.Equal(51f, size2.Width);
+        Assert.Equal(50.625F, size.Width, Comparer);
+        Assert.Equal(50.625F, size2.Width, Comparer);
     }
 
     [Theory]
