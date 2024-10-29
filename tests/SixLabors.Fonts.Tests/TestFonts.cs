@@ -257,6 +257,8 @@ public static class TestFonts
 
     public static string KellySlabFile => GetFullPath("KellySlab-Regular.ttf");
 
+    public static string NotoSansRegular => GetFullPath("NotoSans-Regular.ttf");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);
