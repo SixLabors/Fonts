@@ -202,7 +202,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// </returns>
     public bool TryGetGlyphShapingDataAtOffset(int offset, [NotNullWhen(true)] out IReadOnlyList<GlyphShapingData>? data)
     {
-        List<GlyphShapingData> match = new();
+        List<GlyphShapingData> match = new(this.glyphs.Count);
         for (int i = 0; i < this.glyphs.Count; i++)
         {
             if (this.glyphs[i].Offset == offset)

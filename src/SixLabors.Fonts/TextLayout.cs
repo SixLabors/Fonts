@@ -1,8 +1,11 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Buffers;
+using System.Collections;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -40,7 +43,7 @@ internal static class TextLayout
 
         int start = 0;
         int end = text.GetGraphemeCount();
-        List<TextRun> textRuns = new();
+        List<TextRun> textRuns = new((options.TextRuns!.Count << 1) + 1);
         foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
         {
             // Fill gaps within runs.
@@ -189,7 +192,6 @@ internal static class TextLayout
     private static IReadOnlyList<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
     {
         LayoutMode layoutMode = options.LayoutMode;
-        List<GlyphLayout> glyphs = new();
 
         Vector2 boxLocation = options.Origin / options.Dpi;
         Vector2 penLocation = boxLocation;
@@ -202,21 +204,41 @@ internal static class TextLayout
             maxScaledAdvance = Math.Max(options.WrappingLength / options.Dpi, maxScaledAdvance);
         }
 
+        int count = 0;
+        for (int i = 0; i < textBox.TextLines.Count; i++)
+        {
+            TextLine textLine = textBox.TextLines[i];
+            for (int j = 0; j < textLine.Count; j++)
+            {
+                TextLine.GlyphLayoutData data = textLine[i];
+                if (!data.IsNewLine)
+                {
+                    count += data.Metrics.Count;
+                }
+            }
+        }
+
         TextDirection direction = textBox.TextDirection();
+        List<GlyphLayout> glyphs = new(count);
 
         if (layoutMode == LayoutMode.HorizontalTopBottom)
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
-                glyphs.AddRange(LayoutLineHorizontal(
+                foreach ((GlyphLayout glyph, Vector2 box, Vector2 pen) in LayoutLineHorizontal(
                     textBox,
                     textBox.TextLines[i],
                     direction,
                     maxScaledAdvance,
                     options,
                     i,
-                    ref boxLocation,
-                    ref penLocation));
+                    boxLocation,
+                    penLocation))
+                {
+                    glyphs.Add(glyph);
+                    boxLocation = box;
+                    penLocation = pen;
+                }
             }
         }
         else if (layoutMode == LayoutMode.HorizontalBottomTop)
@@ -224,30 +246,40 @@ internal static class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
-                glyphs.AddRange(LayoutLineHorizontal(
+                foreach ((GlyphLayout glyph, Vector2 box, Vector2 pen) in LayoutLineHorizontal(
                     textBox,
                     textBox.TextLines[i],
                     direction,
                     maxScaledAdvance,
                     options,
                     index++,
-                    ref boxLocation,
-                    ref penLocation));
+                    boxLocation,
+                    penLocation))
+                {
+                    glyphs.Add(glyph);
+                    boxLocation = box;
+                    penLocation = pen;
+                }
             }
         }
         else if (layoutMode is LayoutMode.VerticalLeftRight)
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
-                glyphs.AddRange(LayoutLineVertical(
+                foreach ((GlyphLayout glyph, Vector2 box, Vector2 pen) in LayoutLineVertical(
                     textBox,
                     textBox.TextLines[i],
                     direction,
                     maxScaledAdvance,
                     options,
                     i,
-                    ref boxLocation,
-                    ref penLocation));
+                    boxLocation,
+                    penLocation))
+                {
+                    glyphs.Add(glyph);
+                    boxLocation = box;
+                    penLocation = pen;
+                }
             }
         }
         else if (layoutMode is LayoutMode.VerticalRightLeft)
@@ -255,30 +287,40 @@ internal static class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
-                glyphs.AddRange(LayoutLineVertical(
+                foreach ((GlyphLayout glyph, Vector2 box, Vector2 pen) in LayoutLineHorizontal(
                     textBox,
                     textBox.TextLines[i],
                     direction,
                     maxScaledAdvance,
                     options,
                     index++,
-                    ref boxLocation,
-                    ref penLocation));
+                    boxLocation,
+                    penLocation))
+                {
+                    glyphs.Add(glyph);
+                    boxLocation = box;
+                    penLocation = pen;
+                }
             }
         }
         else if (layoutMode is LayoutMode.VerticalMixedLeftRight)
         {
             for (int i = 0; i < textBox.TextLines.Count; i++)
             {
-                glyphs.AddRange(LayoutLineVerticalMixed(
+                foreach ((GlyphLayout glyph, Vector2 box, Vector2 pen) in LayoutLineVerticalMixed(
                     textBox,
                     textBox.TextLines[i],
                     direction,
                     maxScaledAdvance,
                     options,
                     i,
-                    ref boxLocation,
-                    ref penLocation));
+                    boxLocation,
+                    penLocation))
+                {
+                    glyphs.Add(glyph);
+                    boxLocation = box;
+                    penLocation = pen;
+                }
             }
         }
         else
@@ -286,30 +328,35 @@ internal static class TextLayout
             int index = 0;
             for (int i = textBox.TextLines.Count - 1; i >= 0; i--)
             {
-                glyphs.AddRange(LayoutLineVerticalMixed(
+                foreach ((GlyphLayout glyph, Vector2 box, Vector2 pen) in LayoutLineVerticalMixed(
                     textBox,
                     textBox.TextLines[i],
                     direction,
                     maxScaledAdvance,
                     options,
                     index++,
-                    ref boxLocation,
-                    ref penLocation));
+                    boxLocation,
+                    penLocation))
+                {
+                    glyphs.Add(glyph);
+                    boxLocation = box;
+                    penLocation = pen;
+                }
             }
         }
 
         return glyphs;
     }
 
-    private static IEnumerable<GlyphLayout> LayoutLineHorizontal(
+    private static IEnumerable<(GlyphLayout Glyph, Vector2 BoxLocation, Vector2 PenLocation)> LayoutLineHorizontal(
         TextBox textBox,
         TextLine textLine,
         TextDirection direction,
         float maxScaledAdvance,
         TextOptions options,
         int index,
-        ref Vector2 boxLocation,
-        ref Vector2 penLocation)
+        Vector2 boxLocation,
+        Vector2 penLocation)
     {
         // Offset the location to center the line vertically.
         bool isFirstLine = index == 0;
@@ -383,8 +430,8 @@ internal static class TextLayout
         }
 
         penLocation.X += offsetX;
-
-        List<GlyphLayout> glyphs = new();
+        int count = 0;
+        GlyphLayout? current = null;
         for (int i = 0; i < textLine.Count; i++)
         {
             TextLine.GlyphLayoutData data = textLine[i];
@@ -398,10 +445,15 @@ internal static class TextLayout
                 continue;
             }
 
-            int j = 0;
-            foreach (GlyphMetrics metric in data.Metrics)
+            for (int j = 0; j < data.Metrics.Count; j++)
             {
-                glyphs.Add(new GlyphLayout(
+                if (current != null)
+                {
+                    yield return (current.Value, boxLocation, penLocation);
+                }
+
+                GlyphMetrics metric = data.Metrics[j];
+                current = new GlyphLayout(
                     new Glyph(metric, data.PointSize),
                     boxLocation,
                     penLocation + new Vector2(0, textLine.ScaledMaxAscender),
@@ -411,9 +463,8 @@ internal static class TextLayout
                     GlyphLayoutMode.Horizontal,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
-                    data.StringIndex));
-
-                j++;
+                    data.StringIndex);
+                count++;
             }
 
             boxLocation.X += data.ScaledAdvance;
@@ -422,24 +473,27 @@ internal static class TextLayout
 
         boxLocation.X = originX;
         penLocation.X = originX;
-        if (glyphs.Count > 0)
+        if (count > 0)
         {
             penLocation.Y += yLineAdvance;
             boxLocation.Y += advanceY;
         }
 
-        return glyphs;
+        if (current != null)
+        {
+            yield return (current.Value, boxLocation, penLocation);
+        }
     }
 
-    private static IEnumerable<GlyphLayout> LayoutLineVertical(
+    private static IEnumerable<(GlyphLayout Glyph, Vector2 BoxLocation, Vector2 PenLocation)> LayoutLineVertical(
         TextBox textBox,
         TextLine textLine,
         TextDirection direction,
         float maxScaledAdvance,
         TextOptions options,
         int index,
-        ref Vector2 boxLocation,
-        ref Vector2 penLocation)
+        Vector2 boxLocation,
+        Vector2 penLocation)
     {
         float originY = penLocation.Y;
         float offsetY = 0;
@@ -517,7 +571,8 @@ internal static class TextLayout
 
         penLocation.X += offsetX;
 
-        List<GlyphLayout> glyphs = new();
+        int count = 0;
+        GlyphLayout? current = null;
         for (int i = 0; i < textLine.Count; i++)
         {
             TextLine.GlyphLayoutData data = textLine[i];
@@ -531,15 +586,21 @@ internal static class TextLayout
                 continue;
             }
 
-            int j = 0;
-            foreach (GlyphMetrics metric in data.Metrics)
+            for (int j = 0; j < data.Metrics.Count; j++)
             {
+                if (current != null)
+                {
+                    yield return (current.Value, boxLocation, penLocation);
+                }
+
+                GlyphMetrics metric = data.Metrics[j];
+
                 // Align the glyph horizontally and vertically centering horizontally around the baseline.
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
                 float oX = (data.ScaledLineHeight - (metric.Bounds.Size().X * scale.X)) * .5F;
                 Vector2 offset = new(oX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
-                glyphs.Add(new GlyphLayout(
+                current = new GlyphLayout(
                     new Glyph(metric, data.PointSize),
                     boxLocation,
                     penLocation + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
@@ -549,9 +610,8 @@ internal static class TextLayout
                     GlyphLayoutMode.Vertical,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
-                    data.StringIndex));
-
-                j++;
+                    data.StringIndex);
+                count++;
             }
 
             penLocation.Y += data.ScaledAdvance;
@@ -559,24 +619,27 @@ internal static class TextLayout
 
         boxLocation.Y = originY;
         penLocation.Y = originY;
-        if (glyphs.Count > 0)
+        if (count > 0)
         {
             boxLocation.X += advanceX;
             penLocation.X += xLineAdvance;
         }
 
-        return glyphs;
+        if (current != null)
+        {
+            yield return (current.Value, boxLocation, penLocation);
+        }
     }
 
-    private static IEnumerable<GlyphLayout> LayoutLineVerticalMixed(
+    private static IEnumerable<(GlyphLayout Glyph, Vector2 BoxLocation, Vector2 PenLocation)> LayoutLineVerticalMixed(
         TextBox textBox,
         TextLine textLine,
         TextDirection direction,
         float maxScaledAdvance,
         TextOptions options,
         int index,
-        ref Vector2 boxLocation,
-        ref Vector2 penLocation)
+        Vector2 boxLocation,
+        Vector2 penLocation)
     {
         float originY = penLocation.Y;
         float offsetY = 0;
@@ -654,7 +717,8 @@ internal static class TextLayout
 
         penLocation.X += offsetX;
 
-        List<GlyphLayout> glyphs = new();
+        int count = 0;
+        GlyphLayout? current = null;
         for (int i = 0; i < textLine.Count; i++)
         {
             TextLine.GlyphLayoutData data = textLine[i];
@@ -670,11 +734,16 @@ internal static class TextLayout
 
             if (data.IsRotated)
             {
-                int j = 0;
-                foreach (GlyphMetrics metric in data.Metrics)
+                for (int j = 0; j < data.Metrics.Count; j++)
                 {
+                    if (current != null)
+                    {
+                        yield return (current.Value, boxLocation, penLocation);
+                    }
+
+                    GlyphMetrics metric = data.Metrics[j];
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
-                    glyphs.Add(new GlyphLayout(
+                    current = new GlyphLayout(
                         new Glyph(metric, data.PointSize),
                         boxLocation,
                         penLocation + new Vector2(((scaledMaxLineHeight - data.ScaledLineHeight) * .5F) + data.ScaledDescender, 0),
@@ -684,22 +753,27 @@ internal static class TextLayout
                         GlyphLayoutMode.VerticalRotated,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
-                        data.StringIndex));
-
-                    j++;
+                        data.StringIndex);
+                    count++;
                 }
             }
             else
             {
-                int j = 0;
-                foreach (GlyphMetrics metric in data.Metrics)
+                for (int j = 0; j < data.Metrics.Count; j++)
                 {
+                    if (current != null)
+                    {
+                        yield return (current.Value, boxLocation, penLocation);
+                    }
+
+                    GlyphMetrics metric = data.Metrics[j];
+
                     // Align the glyph horizontally and vertically centering horizontally around the baseline.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
                     float oX = (data.ScaledLineHeight - (metric.Bounds.Size().X * scale.X)) * .5F;
                     Vector2 offset = new(oX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
-                    glyphs.Add(new GlyphLayout(
+                    current = new GlyphLayout(
                         new Glyph(metric, data.PointSize),
                         boxLocation,
                         penLocation + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
@@ -709,9 +783,8 @@ internal static class TextLayout
                         GlyphLayoutMode.Vertical,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
-                        data.StringIndex));
-
-                    j++;
+                        data.StringIndex);
+                    count++;
                 }
             }
 
@@ -720,13 +793,16 @@ internal static class TextLayout
 
         boxLocation.Y = originY;
         penLocation.Y = originY;
-        if (glyphs.Count > 0)
+        if (count > 0)
         {
             boxLocation.X += advanceX;
             penLocation.X += xLineAdvance;
         }
 
-        return glyphs;
+        if (current != null)
+        {
+            yield return (current.Value, boxLocation, penLocation);
+        }
     }
 
     private static bool DoFontRun(
@@ -889,7 +965,7 @@ internal static class TextLayout
         int graphemeIndex;
         int codePointIndex = 0;
         float lineAdvance = 0;
-        List<TextLine> textLines = new();
+        List<TextLine> textLines = new(lineBreaks.Count);
         TextLine textLine = new();
         int glyphCount = 0;
         int stringIndex = 0;
@@ -960,12 +1036,12 @@ internal static class TextLayout
                         if (glyph.FontMetrics.TryGetGlyphId(space, out ushort spaceGlyphId))
                         {
                             GlyphMetrics spaceMetrics = glyph.FontMetrics.GetGlyphMetrics(
-                                  space,
-                                  spaceGlyphId,
-                                  glyph.TextAttributes,
-                                  glyph.TextDecorations,
-                                  layoutMode,
-                                  options.ColorFontSupport)[0];
+                                space,
+                                spaceGlyphId,
+                                glyph.TextAttributes,
+                                glyph.TextDecorations,
+                                layoutMode,
+                                options.ColorFontSupport)[0];
 
                             if (isHorizontalLayout || isRotated)
                             {
@@ -1077,7 +1153,7 @@ internal static class TextLayout
                             if (keepAll)
                             {
                                 TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
-                                if (split != textLine)
+                                if (!split.Equals(textLine))
                                 {
                                     textLines.Add(textLine.Finalize());
                                     textLine = split;
@@ -1096,7 +1172,7 @@ internal static class TextLayout
                         {
                             // Exact length match. Check for CJK
                             TextLine split = textLine.SplitAt(currentLineBreak, keepAll);
-                            if (split != textLine)
+                            if (!split.Equals(textLine))
                             {
                                 textLines.Add(textLine.Finalize());
                                 textLine = split;
@@ -1115,7 +1191,7 @@ internal static class TextLayout
                             // does not represent whitespace. Whitespace characters will be correctly trimmed at the
                             // next iteration.
                             TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
-                            if (split != textLine)
+                            if (!split.Equals(textLine))
                             {
                                 textLines.Add(textLine.Finalize());
                                 textLine = split;
@@ -1223,7 +1299,7 @@ internal static class TextLayout
         return new TextBox(options, textLines);
     }
 
-    internal sealed class TextBox
+    internal readonly struct TextBox
     {
         public TextBox(TextOptions options, IReadOnlyList<TextLine> textLines)
         {
@@ -1242,13 +1318,17 @@ internal static class TextLayout
         public TextDirection TextDirection() => this.TextLines[0][0].TextDirection;
     }
 
-    internal sealed class TextLine
+    internal struct TextLine
     {
         private readonly List<GlyphLayoutData> data = new();
 
-        public int Count => this.data.Count;
+        public TextLine()
+        {
+        }
 
-        public float ScaledLineAdvance { get; private set; }
+        public readonly int Count => this.data.Count;
+
+        public float ScaledLineAdvance { get; private set; } = 0;
 
         public float ScaledMaxLineHeight { get; private set; } = -1;
 
@@ -1256,7 +1336,7 @@ internal static class TextLayout
 
         public float ScaledMaxDescender { get; private set; } = -1;
 
-        public GlyphLayoutData this[int index] => this.data[index];
+        public readonly GlyphLayoutData this[int index] => this.data[index];
 
         public void Add(
             IReadOnlyList<GlyphMetrics> metrics,
@@ -1410,9 +1490,9 @@ internal static class TextLayout
             this.ScaledMaxLineHeight = lineHeight;
         }
 
-        public TextLine Finalize() => this.BidiReOrder();
+        public readonly TextLine Finalize() => this.BidiReOrder();
 
-        public void Justify(TextOptions options)
+        public readonly void Justify(TextOptions options)
         {
             if (options.WrappingLength == -1F || options.TextJustification == TextJustification.None)
             {
@@ -1484,7 +1564,7 @@ internal static class TextLayout
             }
         }
 
-        private TextLine BidiReOrder()
+        private readonly TextLine BidiReOrder()
         {
             // Build up the collection of ordered runs.
             BidiRun run = this.data[0].BidiRun;

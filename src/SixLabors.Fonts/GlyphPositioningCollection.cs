@@ -124,7 +124,9 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         LayoutMode layoutMode = this.TextOptions.LayoutMode;
         ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
         bool hasFallBacks = false;
-        List<int> orphans = new();
+        int count = 0;
+        Span<int> orphans = this.glyphs.Count < 256 ? stackalloc int[this.glyphs.Count] : new int[this.glyphs.Count];
+        List<GlyphMetrics> metrics = new(16);
         for (int i = 0; i < this.glyphs.Count; i++)
         {
             GlyphPositioningData current = this.glyphs[i];
@@ -144,10 +146,10 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                     GlyphShapingData shape = data[j];
                     ushort id = shape.GlyphId;
                     CodePoint codePoint = shape.CodePoint;
+                    metrics.Clear();
 
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    var metrics = new List<GlyphMetrics>(data.Count);
                     TextAttributes textAttributes = shape.TextRun.TextAttributes;
                     TextDecorations textDecorations = shape.TextRun.TextDecorations;
                     foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport))
@@ -189,12 +191,12 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             {
                 // If a font had glyphs but a follow up font also has them and can substitute. e.g ligatures
                 // then we end up with orphaned fallbacks. We need to remove them.
-                orphans.Add(i);
+                orphans[count++] = i;
             }
         }
 
         // Remove any orphans.
-        for (int i = orphans.Count - 1; i >= 0; i--)
+        for (int i = count - 1; i >= 0; i--)
         {
             this.glyphs.RemoveAt(orphans[i]);
         }
@@ -216,6 +218,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         LayoutMode layoutMode = this.TextOptions.LayoutMode;
         ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
 
+        this.glyphs.Capacity = Math.Max(this.glyphs.Count + collection.Count, this.glyphs.Capacity);
         for (int i = 0; i < collection.Count; i++)
         {
             GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
