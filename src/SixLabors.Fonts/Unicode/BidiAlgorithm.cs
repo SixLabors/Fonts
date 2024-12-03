@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts.Unicode;
@@ -22,37 +23,37 @@ namespace SixLabors.Fonts.Unicode;
 /// as much as possible.
 /// </para>
 /// </remarks>
-internal sealed class BidiAlgorithm
+internal ref struct BidiAlgorithm
 {
     /// <summary>
     /// The original BidiCharacterType types as provided by the caller
     /// </summary>
-    private ReadOnlyArraySlice<BidiCharacterType> originalTypes;
+    private ReadOnlyArraySlice<BidiCharacterType> originalTypes = default;
 
     /// <summary>
     /// Paired bracket types as provided by caller
     /// </summary>
-    private ReadOnlyArraySlice<BidiPairedBracketType> pairedBracketTypes;
+    private ReadOnlyArraySlice<BidiPairedBracketType> pairedBracketTypes = default;
 
     /// <summary>
     /// Paired bracket values as provided by caller
     /// </summary>
-    private ReadOnlyArraySlice<int> pairedBracketValues;
+    private ReadOnlyArraySlice<int> pairedBracketValues = default;
 
     /// <summary>
     /// Try if the incoming data is known to contain brackets
     /// </summary>
-    private bool hasBrackets;
+    private bool hasBrackets = default;
 
     /// <summary>
     /// True if the incoming data is known to contain embedding runs
     /// </summary>
-    private bool hasEmbeddings;
+    private bool hasEmbeddings = default;
 
     /// <summary>
     /// True if the incoming data is known to contain isolating runs
     /// </summary>
-    private bool hasIsolates;
+    private bool hasIsolates = default;
 
     /// <summary>
     /// Two directional mapping of isolate start/end pairs
@@ -61,99 +62,99 @@ internal sealed class BidiAlgorithm
     /// The forward mapping maps the start index to the end index.
     /// The reverse mapping maps the end index to the start index.
     /// </remarks>
-    private readonly BidiDictionary<int, int> isolatePairs = new();
+    private BidiDictionary<Index, Index> isolatePairs = default;
 
     /// <summary>
     /// The working BidiCharacterType types
     /// </summary>
-    private ArraySlice<BidiCharacterType> workingTypes;
+    private ArraySlice<BidiCharacterType> workingTypes = default;
 
     /// <summary>
     /// The buffer underlying _workingTypes
     /// </summary>
-    private ArrayBuilder<BidiCharacterType> workingTypesBuffer;
+    private ArrayBuilder<BidiCharacterType> workingTypesBuffer = default;
 
     /// <summary>
     /// The buffer underlying resolvedLevels
     /// </summary>
-    private ArrayBuilder<sbyte> resolvedLevelsBuffer;
+    private ArrayBuilder<sbyte> resolvedLevelsBuffer = default;
 
     /// <summary>
     /// The resolve paragraph embedding level
     /// </summary>
-    private sbyte paragraphEmbeddingLevel;
+    private sbyte paragraphEmbeddingLevel = default;
 
     /// <summary>
     /// The status stack used during resolution of explicit
     /// embedding and isolating runs
     /// </summary>
-    private readonly Stack<Status> statusStack = new();
+    private Stack<Status> statusStack = default;
 
     /// <summary>
     /// Mapping used to virtually remove characters for rule X9
     /// </summary>
-    private ArrayBuilder<int> x9Map;
+    private ArrayBuilder<int> x9Map = default;
 
     /// <summary>
     /// Re-usable list of level runs
     /// </summary>
-    private readonly List<LevelRun> levelRuns = new();
+    private ArrayBuilder<LevelRun> levelRuns = default;
 
     /// <summary>
     /// Mapping for the current isolating sequence, built
     /// by joining level runs from the x9 map.
     /// </summary>
-    private ArrayBuilder<int> isolatedRunMapping;
+    private ArrayBuilder<int> isolatedRunMapping = default;
 
     /// <summary>
     /// A stack of pending isolate openings used by FindIsolatePairs()
     /// </summary>
-    private readonly Stack<int> pendingIsolateOpenings = new();
+    private Stack<int> pendingIsolateOpenings = new();
 
     /// <summary>
     /// The level of the isolating run currently being processed
     /// </summary>
-    private int runLevel;
+    private int runLevel = default;
 
     /// <summary>
     /// The direction of the isolating run currently being processed
     /// </summary>
-    private BidiCharacterType runDirection;
+    private BidiCharacterType runDirection = default;
 
     /// <summary>
     /// The length of the isolating run currently being processed
     /// </summary>
-    private int runLength;
+    private int runLength = default;
 
     /// <summary>
     /// A mapped slice of the resolved types for the isolating run currently
     /// being processed
     /// </summary>
-    private MappedArraySlice<BidiCharacterType> runResolvedTypes;
+    private MappedArraySlice<BidiCharacterType> runResolvedTypes = default;
 
     /// <summary>
     /// A mapped slice of the original types for the isolating run currently
     /// being processed
     /// </summary>
-    private ReadonlyMappedArraySlice<BidiCharacterType> runOriginalTypes;
+    private ReadonlyMappedArraySlice<BidiCharacterType> runOriginalTypes = default;
 
     /// <summary>
     /// A mapped slice of the run levels for the isolating run currently
     /// being processed
     /// </summary>
-    private MappedArraySlice<sbyte> runLevels;
+    private MappedArraySlice<sbyte> runLevels = default;
 
     /// <summary>
     /// A mapped slice of the paired bracket types of the isolating
     /// run currently being processed
     /// </summary>
-    private ReadonlyMappedArraySlice<BidiPairedBracketType> runBidiPairedBracketTypes;
+    private ReadonlyMappedArraySlice<BidiPairedBracketType> runBidiPairedBracketTypes = default;
 
     /// <summary>
     /// A mapped slice of the paired bracket values of the isolating
     /// run currently being processed
     /// </summary>
-    private ReadonlyMappedArraySlice<int> runPairedBracketValues;
+    private ReadonlyMappedArraySlice<int> runPairedBracketValues = default;
 
     /// <summary>
     /// Maximum pairing depth for paired brackets
@@ -164,35 +165,29 @@ internal sealed class BidiAlgorithm
     /// Reusable list of pending opening brackets used by the
     /// LocatePairedBrackets method
     /// </summary>
-    private readonly List<int> pendingOpeningBrackets = new();
+    private ArrayBuilder<int> pendingOpeningBrackets = default;
 
     /// <summary>
     /// Resolved list of paired brackets
     /// </summary>
-    private readonly List<BracketPair> pairedBrackets = new();
+    private ArrayBuilder<BracketPair> pairedBrackets = default;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BidiAlgorithm"/> class.
+    /// Initializes a new instance of the <see cref="BidiAlgorithm"/> struct.
     /// </summary>
     public BidiAlgorithm()
     {
     }
 
     /// <summary>
-    /// Gets a per-thread instance that can be re-used as often
-    /// as necessary.
-    /// </summary>
-    public static ThreadLocal<BidiAlgorithm> Instance { get; } = new ThreadLocal<BidiAlgorithm>(() => new BidiAlgorithm());
-
-    /// <summary>
     /// Gets the resolved levels.
     /// </summary>
-    public ArraySlice<sbyte> ResolvedLevels { get; private set; }
+    public ArraySlice<sbyte> ResolvedLevels { get; private set; } = default;
 
     /// <summary>
     /// Gets the resolved paragraph embedding level
     /// </summary>
-    public int ResolvedParagraphEmbeddingLevel => this.paragraphEmbeddingLevel;
+    public readonly int ResolvedParagraphEmbeddingLevel => this.paragraphEmbeddingLevel;
 
     /// <summary>
     /// Process data from a BidiData instance
@@ -286,13 +281,28 @@ internal sealed class BidiAlgorithm
         this.AssignLevelsToCodePointsRemovedByX9();
     }
 
+    public void Free()
+    {
+        this.isolatePairs.Free();
+        this.workingTypesBuffer.Free();
+        this.resolvedLevelsBuffer.Free();
+        this.statusStack.Free();
+        this.x9Map.Free();
+        this.levelRuns.Free();
+        this.isolatedRunMapping.Free();
+        this.pendingIsolateOpenings.Free();
+        this.pendingOpeningBrackets.Free();
+        this.pairedBrackets.Free();
+        this = default;
+    }
+
     /// <summary>
     /// Resolve the paragraph embedding level if not explicitly passed
     /// by the caller. Also used by rule X5c for FSI isolating sequences.
     /// </summary>
     /// <param name="data">The data to be evaluated</param>
     /// <returns>The resolved embedding level</returns>
-    public sbyte ResolveEmbeddingLevel(ReadOnlyArraySlice<BidiCharacterType> data)
+    private readonly sbyte ResolveEmbeddingLevel(ReadOnlyArraySlice<BidiCharacterType> data)
     {
         // P2
         for (int i = 0; i < data.Length; ++i)
@@ -314,9 +324,9 @@ internal sealed class BidiAlgorithm
                     // Skip isolate pairs
                     // (Because we're working with a slice, we need to adjust the indices
                     //  we're using for the isolatePairs map)
-                    if (this.isolatePairs.TryGetValue(data.Start + i, out i))
+                    if (this.isolatePairs.TryGetValue(data.Start + i, out Index index))
                     {
-                        i -= data.Start;
+                        i = index - data.Start;
                     }
                     else
                     {
@@ -481,13 +491,13 @@ internal sealed class BidiAlgorithm
 
                     if (resolvedIsolate == BidiCharacterType.FirstStrongIsolate)
                     {
-                        if (!this.isolatePairs.TryGetValue(i, out int endOfIsolate))
+                        if (!this.isolatePairs.TryGetValue(i, out Index endOfIsolate))
                         {
                             endOfIsolate = this.originalTypes.Length;
                         }
 
                         // Rule X5c
-                        if (this.ResolveEmbeddingLevel(this.originalTypes.Slice(i + 1, endOfIsolate - (i + 1))) == 1)
+                        if (this.ResolveEmbeddingLevel(this.originalTypes[(i + 1)..(int)endOfIsolate]) == 1)
                         {
                             resolvedIsolate = BidiCharacterType.RightToLeftIsolate;
                         }
@@ -648,7 +658,7 @@ internal sealed class BidiAlgorithm
     /// <param name="index">Index in the x9 removal map</param>
     /// <returns>Index to the original data</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int MapX9(int index) => this.x9Map[index];
+    private readonly int MapX9(int index) => this.x9Map[index];
 
     /// <summary>
     /// Add a new level run
@@ -660,7 +670,7 @@ internal sealed class BidiAlgorithm
     /// <param name="start">The index of the start of the run (in x9 removed units)</param>
     /// <param name="length">The length of the run (in x9 removed units)</param>
     /// <param name="level">The level of the run</param>
-    private void AddLevelRun(int start, int length, int level)
+    private readonly void AddLevelRun(int start, int length, int level)
     {
         // Get original indices to first and last character in this run
         int firstCharIndex = this.MapX9(start);
@@ -706,7 +716,7 @@ internal sealed class BidiAlgorithm
     /// Find all runs of the same level, populating the _levelRuns
     /// collection
     /// </summary>
-    private void FindLevelRuns()
+    private readonly void FindLevelRuns()
     {
         int currentLevel = -1;
         int runStart = 0;
@@ -737,9 +747,9 @@ internal sealed class BidiAlgorithm
     /// </summary>
     /// <param name="index">The index into the original (unmapped) data</param>
     /// <returns>The index of the run that starts at that index</returns>
-    private int FindRunForIndex(int index)
+    private readonly int FindRunForIndex(int index)
     {
-        for (int i = 0; i < this.levelRuns.Count; i++)
+        for (int i = 0; i < this.levelRuns.Length; i++)
         {
             // Passed index is for the original non-x9 filtered data, however
             // the level run ranges are for the x9 filtered data.  Convert before
@@ -767,7 +777,7 @@ internal sealed class BidiAlgorithm
         // form an complete run.  That full run mapping
         // will be placed in _isolatedRunMapping and then
         // processed by ProcessIsolatedRunSequence().
-        while (this.levelRuns.Count > 0)
+        while (this.levelRuns.Length > 0)
         {
             // Clear the mapping
             this.isolatedRunMapping.Clear();
@@ -798,7 +808,7 @@ internal sealed class BidiAlgorithm
                 int lastCharacterIndex = this.isolatedRunMapping[this.isolatedRunMapping.Length - 1];
                 BidiCharacterType lastType = this.originalTypes[lastCharacterIndex];
                 if ((lastType == BidiCharacterType.LeftToRightIsolate || lastType == BidiCharacterType.RightToLeftIsolate || lastType == BidiCharacterType.FirstStrongIsolate) &&
-                        this.isolatePairs.TryGetValue(lastCharacterIndex, out int nextRunIndex))
+                        this.isolatePairs.TryGetValue(lastCharacterIndex, out Index nextRunIndex))
                 {
                     // Find the continuing run index
                     runIndex = this.FindRunForIndex(nextRunIndex);
@@ -1046,8 +1056,8 @@ internal sealed class BidiAlgorithm
         if (this.hasBrackets)
         {
             int count;
-            List<BracketPair>? pairedBrackets = this.LocatePairedBrackets();
-            for (i = 0, count = pairedBrackets.Count; i < count; i++)
+            ArrayBuilder<BracketPair> pairedBrackets = this.LocatePairedBrackets();
+            for (i = 0, count = pairedBrackets.Length; i < count; i++)
             {
                 BracketPair pb = pairedBrackets[i];
                 BidiCharacterType dir = this.InspectPairedBracket(pb);
@@ -1181,7 +1191,7 @@ internal sealed class BidiAlgorithm
     /// Locate all pair brackets in the current isolating run
     /// </summary>
     /// <returns>A sorted list of BracketPairs</returns>
-    private List<BracketPair> LocatePairedBrackets()
+    private readonly ArrayBuilder<BracketPair> LocatePairedBrackets()
     {
         // Clear work collections
         this.pendingOpeningBrackets.Clear();
@@ -1207,7 +1217,7 @@ internal sealed class BidiAlgorithm
             switch (this.runBidiPairedBracketTypes[ich])
             {
                 case BidiPairedBracketType.Open:
-                    if (this.pendingOpeningBrackets.Count == MaxPairedBracketDepth)
+                    if (this.pendingOpeningBrackets.Length == MaxPairedBracketDepth)
                     {
                         goto exit;
                     }
@@ -1217,16 +1227,16 @@ internal sealed class BidiAlgorithm
 
                 case BidiPairedBracketType.Close:
                     // see if there is a match
-                    for (int i = 0; i < this.pendingOpeningBrackets.Count; i++)
+                    for (int i = 0; i < this.pendingOpeningBrackets.Length; i++)
                     {
                         if (this.runPairedBracketValues[ich] == this.runPairedBracketValues[this.pendingOpeningBrackets[i]])
                         {
                             // Add this paired bracket set
                             int opener = this.pendingOpeningBrackets[i];
-                            if (this.pairedBrackets.Count < sortLimit)
+                            if (this.pairedBrackets.Length < sortLimit)
                             {
                                 int ppi = 0;
-                                while (ppi < this.pairedBrackets.Count && this.pairedBrackets[ppi].OpeningIndex < opener)
+                                while (ppi < this.pairedBrackets.Length && this.pairedBrackets[ppi].OpeningIndex < opener)
                                 {
                                     ppi++;
                                 }
@@ -1251,7 +1261,7 @@ internal sealed class BidiAlgorithm
         exit:
 
         // Is a sort pending?
-        if (this.pairedBrackets.Count > sortLimit)
+        if (this.pairedBrackets.Length > sortLimit)
         {
             this.pairedBrackets.Sort();
         }
@@ -1264,7 +1274,7 @@ internal sealed class BidiAlgorithm
     /// </summary>
     /// <param name="pb">The paired bracket to be inspected</param>
     /// <returns>The direction of the bracket set content</returns>
-    private BidiCharacterType InspectPairedBracket(in BracketPair pb)
+    private readonly BidiCharacterType InspectPairedBracket(in BracketPair pb)
     {
         BidiCharacterType dirEmbed = DirectionFromLevel(this.runLevel);
         BidiCharacterType dirOpposite = BidiCharacterType.OtherNeutral;
@@ -1293,7 +1303,7 @@ internal sealed class BidiAlgorithm
     /// <param name="pb">The paired bracket set to be inspected</param>
     /// <param name="sos">The sos in case nothing found before the bracket</param>
     /// <returns>The strong direction before the brackets</returns>
-    private BidiCharacterType InspectBeforePairedBracket(in BracketPair pb, BidiCharacterType sos)
+    private readonly BidiCharacterType InspectBeforePairedBracket(in BracketPair pb, BidiCharacterType sos)
     {
         for (int ich = pb.OpeningIndex - 1; ich >= 0; --ich)
         {
@@ -1351,7 +1361,7 @@ internal sealed class BidiAlgorithm
     /// <summary>
     /// Resets whitespace levels. Implements rule L1
     /// </summary>
-    private void ResetWhitespaceLevels()
+    private readonly void ResetWhitespaceLevels()
     {
         for (int i = 0; i < this.ResolvedLevels.Length; i++)
         {
@@ -1592,5 +1602,49 @@ internal sealed class BidiAlgorithm
         public BidiCharacterType Sos { get; }
 
         public BidiCharacterType Eos { get; }
+    }
+
+    public ref struct Stack<T>
+    where T : unmanaged
+    {
+        private ArrayBuilder<T> items = default;
+
+        public Stack()
+        {
+        }
+
+        public readonly int Count => this.items.Length;
+
+        public void Push(T item) => this.items.Add(item);
+
+        public T Pop()
+        {
+            T result = this.items[this.items.Length - 1];
+            this.items.Length--;
+            return result;
+        }
+
+        public readonly T Peek() => this.items[this.items.Length - 1];
+
+        public void Clear() => this.items.Clear();
+
+        public void Free()
+        {
+            this.items.Free();
+            this.items = default;
+        }
+    }
+
+    private struct Index : IEqualityComparer<Index>
+    {
+        public int Value;
+
+        public static implicit operator Index(int value) => new() { Value = value };
+
+        public static implicit operator int(Index value) => value.Value;
+
+        public readonly bool Equals(Index x, Index y) => x.Value == y.Value;
+
+        public readonly int GetHashCode([DisallowNull] Index obj) => obj.Value;
     }
 }

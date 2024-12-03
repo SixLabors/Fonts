@@ -42,7 +42,7 @@ public ref struct SpanCodePointEnumerator
     public bool MoveNext()
     {
         this.Current = CodePoint.DecodeFromUtf16At(this.source, 0, out int consumed);
-        this.source = this.source.Slice(consumed);
+        this.source = this.source[consumed..];
         return consumed > 0;
     }
 }

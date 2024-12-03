@@ -333,7 +333,7 @@ internal partial class StreamFontMetrics : FontMetrics
     public static StreamFontMetrics LoadFont(string path)
     {
         using FileStream fs = File.OpenRead(path);
-        using var reader = new FontReader(fs);
+        using FontReader reader = new(fs);
         return LoadFont(reader);
     }
 
@@ -357,7 +357,7 @@ internal partial class StreamFontMetrics : FontMetrics
     /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
     public static StreamFontMetrics LoadFont(Stream stream)
     {
-        using var reader = new FontReader(stream);
+        using FontReader reader = new(stream);
         return LoadFont(reader);
     }
 
@@ -523,9 +523,9 @@ internal partial class StreamFontMetrics : FontMetrics
     public static StreamFontMetrics[] LoadFontCollection(Stream stream)
     {
         long startPos = stream.Position;
-        var reader = new BigEndianBinaryReader(stream, true);
-        var ttcHeader = TtcHeader.Read(reader);
-        var fonts = new StreamFontMetrics[(int)ttcHeader.NumFonts];
+        BigEndianBinaryReader reader = new(stream, true);
+        TtcHeader ttcHeader = TtcHeader.Read(reader);
+        StreamFontMetrics[] fonts = new StreamFontMetrics[(int)ttcHeader.NumFonts];
 
         for (int i = 0; i < ttcHeader.NumFonts; ++i)
         {

@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -17,7 +18,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <summary>
     /// Contains a map the index of a map within the collection, non-sequential codepoint offsets, and their glyph ids.
     /// </summary>
-    private readonly List<OffsetGlyphDataPair> glyphs = new();
+    private OffsetGlyphDataPair[] glyphs = ArrayPool<OffsetGlyphDataPair>.Shared.Rent(16);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphSubstitutionCollection"/> class.
@@ -25,11 +26,13 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <param name="textOptions">The text options.</param>
     public GlyphSubstitutionCollection(TextOptions textOptions) => this.TextOptions = textOptions;
 
+    ~GlyphSubstitutionCollection() => ArrayPool<OffsetGlyphDataPair>.Shared.Return(this.glyphs);
+
     /// <summary>
     /// Gets the number of glyphs ids contained in the collection.
     /// This may be more or less than original input codepoint count (due to substitution process).
     /// </summary>
-    public int Count => this.glyphs.Count;
+    public int Count { get; private set; }
 
     /// <inheritdoc />
     public TextOptions TextOptions { get; }
@@ -95,13 +98,34 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
         }
     }
 
+    private void EnsureCapacity(int capacity)
+    {
+        capacity = Math.Max(capacity, this.Count);
+        if (capacity > this.glyphs.Length)
+        {
+            capacity = Math.Max(capacity, this.glyphs.Length * 2);
+        }
+
+        if (this.glyphs.Length < capacity)
+        {
+            OffsetGlyphDataPair[] old = this.glyphs;
+            this.glyphs = ArrayPool<OffsetGlyphDataPair>.Shared.Rent(capacity);
+            Array.Copy(old, this.glyphs, old.Length);
+            ArrayPool<OffsetGlyphDataPair>.Shared.Return(old);
+        }
+    }
+
     /// <summary>
     /// Adds a clone of the glyph shaping data to the collection at the specified offset.
     /// </summary>
     /// <param name="data">The data.</param>
     /// <param name="offset">The zero-based index within the input codepoint collection.</param>
     public void AddGlyph(GlyphShapingData data, int offset)
-        => this.glyphs.Add(new(offset, new(data, false)));
+    {
+        this.EnsureCapacity(this.Count + 1);
+        this.glyphs[this.Count] = new(offset, data);
+        this.Count++;
+    }
 
     /// <summary>
     /// Adds the glyph id and the codepoint it represents to the collection.
@@ -112,12 +136,16 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <param name="textRun">The text run this glyph belongs to.</param>
     /// <param name="offset">The zero-based index within the input codepoint collection.</param>
     public void AddGlyph(ushort glyphId, CodePoint codePoint, TextDirection direction, TextRun textRun, int offset)
-        => this.glyphs.Add(new(offset, new(textRun)
+    {
+        this.EnsureCapacity(this.Count + 1);
+        this.glyphs[this.Count] = new(offset, new(textRun)
         {
             CodePoint = codePoint,
             Direction = direction,
             GlyphId = glyphId,
-        }));
+        });
+        this.Count++;
+    }
 
     /// <summary>
     /// Moves the specified glyph to the specified position.
@@ -183,7 +211,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// </summary>
     public void Clear()
     {
-        this.glyphs.Clear();
+        this.Count = 0;
         this.LigatureId = 1;
     }
 
@@ -202,8 +230,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// </returns>
     public bool TryGetGlyphShapingDataAtOffset(int offset, [NotNullWhen(true)] out IReadOnlyList<GlyphShapingData>? data)
     {
-        List<GlyphShapingData> match = new(this.glyphs.Count);
-        for (int i = 0; i < this.glyphs.Count; i++)
+        List<GlyphShapingData> match = new(this.Count);
+        for (int i = 0; i < this.Count; i++)
         {
             if (this.glyphs[i].Offset == offset)
             {
@@ -261,7 +289,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
                 }
             }
 
-            this.glyphs.RemoveAt(match);
+            Array.Copy(this.glyphs, match + 1, this.glyphs, match, this.Count - match - 1);
+            this.Count--;
         }
 
         // Assign our new id at the index.
@@ -305,7 +334,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
                 }
             }
 
-            this.glyphs.RemoveAt(match);
+            Array.Copy(this.glyphs, match + 1, this.glyphs, match, this.Count - match - 1);
+            this.Count--;
         }
 
         // Assign our new id at the index.
@@ -345,7 +375,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
             // Add additional glyphs from the rest of the sequence.
             if (glyphIds.Length > 1)
             {
-                glyphIds = glyphIds.Slice(1);
+                glyphIds = glyphIds[1..];
                 for (int i = 0; i < glyphIds.Length; i++)
                 {
                     GlyphShapingData data = new(current, false)
@@ -354,7 +384,11 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
                         LigatureComponent = i + 1
                     };
 
-                    this.glyphs.Insert(++index, new(pair.Offset, data));
+                    index++;
+                    this.Count++;
+                    this.EnsureCapacity(this.Count);
+                    Array.Copy(this.glyphs, index, this.glyphs, index + 1, this.Count - index - 1);
+                    this.glyphs[index] = new(pair.Offset, data);
                 }
             }
         }
@@ -362,7 +396,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
         {
             // Spec disallows removal of glyphs in this manner but it's common enough practice to allow it.
             // https://github.com/MicrosoftDocs/typography-issues/issues/673
-            this.glyphs.RemoveAt(index);
+            Array.Copy(this.glyphs, index + 1, this.glyphs, index, this.Count - index - 1);
+            this.Count--;
         }
     }
 

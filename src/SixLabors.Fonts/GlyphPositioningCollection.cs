@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -17,7 +18,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <summary>
     /// Contains a map the index of a map within the collection, non-sequential codepoint offsets, and their glyph ids, point size, and mtrics.
     /// </summary>
-    private readonly List<GlyphPositioningData> glyphs = new();
+    private GlyphPositioningData[] glyphs = ArrayPool<GlyphPositioningData>.Shared.Rent(16);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
@@ -25,8 +26,10 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <param name="textOptions">The text options.</param>
     public GlyphPositioningCollection(TextOptions textOptions) => this.TextOptions = textOptions;
 
+    ~GlyphPositioningCollection() => ArrayPool<GlyphPositioningData>.Shared.Return(this.glyphs);
+
     /// <inheritdoc />
-    public int Count => this.glyphs.Count;
+    public int Count { get; private set; }
 
     /// <inheritdoc />
     public TextOptions TextOptions { get; }
@@ -36,6 +39,23 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => this.glyphs[index].Data;
+    }
+
+    private void EnsureCapacity(int capacity)
+    {
+        capacity = Math.Max(capacity, this.Count);
+        if (capacity > this.glyphs.Length)
+        {
+            capacity = Math.Max(capacity, this.glyphs.Length * 2);
+        }
+
+        if (this.glyphs.Length < capacity)
+        {
+            GlyphPositioningData[] old = this.glyphs;
+            this.glyphs = ArrayPool<GlyphPositioningData>.Shared.Rent(capacity);
+            Array.Copy(old, this.glyphs, old.Length);
+            ArrayPool<GlyphPositioningData>.Shared.Return(old);
+        }
     }
 
     /// <inheritdoc />
@@ -91,7 +111,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         List<GlyphMetrics> match = new();
         pointSize = 0;
         isDecomposed = false;
-        for (int i = 0; i < this.glyphs.Count; i++)
+        for (int i = 0; i < this.Count; i++)
         {
             if (this.glyphs[i].Offset == offset)
             {
@@ -125,9 +145,9 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
         bool hasFallBacks = false;
         int count = 0;
-        Span<int> orphans = this.glyphs.Count < 256 ? stackalloc int[this.glyphs.Count] : new int[this.glyphs.Count];
+        Span<int> orphans = this.Count < 256 ? stackalloc int[this.Count] : new int[this.Count];
         List<GlyphMetrics> metrics = new(16);
-        for (int i = 0; i < this.glyphs.Count; i++)
+        for (int i = 0; i < this.Count; i++)
         {
             GlyphPositioningData current = this.glyphs[i];
             if (current.Metrics[0].GlyphType != GlyphType.Fallback)
@@ -170,7 +190,8 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                         if (j == 0)
                         {
                             // There should only be a single fallback glyph at this position from the previous collection.
-                            this.glyphs.RemoveAt(i);
+                            Array.Copy(this.glyphs, i + 1, this.glyphs, i, this.Count - i - 1);
+                            this.Count--;
                         }
 
                         // Track the number of inserted glyphs at the offset so we can correctly increment our position.
@@ -182,7 +203,10 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                             maxAdvancedHeight = Math.Max(maxAdvancedHeight, metrics[k].AdvanceHeight);
                         }
 
-                        this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = new(0, 0, maxAdvancedWidth, maxAdvancedHeight) }, pointSize, metrics.ToArray()));
+                        this.Count++;
+                        this.EnsureCapacity(this.Count);
+                        Array.Copy(this.glyphs, i, this.glyphs, i + 1, this.Count - i - 1);
+                        this.glyphs[i] = new(offset, new(shape, true) { Bounds = new(0, 0, maxAdvancedWidth, maxAdvancedHeight) }, pointSize, metrics.ToArray());
                         replacementCount++;
                     }
                 }
@@ -198,7 +222,8 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         // Remove any orphans.
         for (int i = count - 1; i >= 0; i--)
         {
-            this.glyphs.RemoveAt(orphans[i]);
+            Array.Copy(this.glyphs, orphans[i] + 1, this.glyphs, orphans[i], this.Count - orphans[i] - 1);
+            this.Count--;
         }
 
         return !hasFallBacks;
@@ -218,7 +243,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         LayoutMode layoutMode = this.TextOptions.LayoutMode;
         ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
 
-        this.glyphs.Capacity = Math.Max(this.glyphs.Count + collection.Count, this.glyphs.Capacity);
+        this.EnsureCapacity(this.Count + collection.Count);
         for (int i = 0; i < collection.Count; i++)
         {
             GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
@@ -245,13 +270,16 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             if (metrics.Count > 0)
             {
                 GlyphMetrics[] gm = metrics.ToArray();
+                int index = this.Count;
+                this.Count++;
+                this.EnsureCapacity(this.Count);
                 if (isVerticalLayout)
                 {
-                    this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) }, font.Size, gm));
+                    this.glyphs[index] = new(offset, new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) }, font.Size, gm);
                 }
                 else
                 {
-                    this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, 0) }, font.Size, gm));
+                    this.glyphs[index] = new(offset, new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, 0) }, font.Size, gm);
                 }
             }
         }

@@ -460,7 +460,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
         }
 
         int count = 0;
-        var enumerator = new SpanCodePointEnumerator(source);
+        SpanCodePointEnumerator enumerator = new(source);
         while (enumerator.MoveNext())
         {
             count++;

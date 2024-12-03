@@ -167,7 +167,7 @@ internal readonly struct ReadOnlyArraySlice<T> : IEnumerable<T>
             }
         }
 
-        object? IEnumerator.Current => this.Current;
+        readonly object? IEnumerator.Current => this.Current;
 
         /// <inheritdoc/>
         public bool MoveNext()

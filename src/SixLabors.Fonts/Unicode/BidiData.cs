@@ -7,38 +7,41 @@ namespace SixLabors.Fonts.Unicode;
 /// Represents a unicode string and all associated attributes
 /// for each character required for the Bidi algorithm
 /// </summary>
-internal class BidiData
+internal ref struct BidiData
 {
-    private ArrayBuilder<BidiCharacterType> types;
-    private ArrayBuilder<BidiPairedBracketType> pairedBracketTypes;
-    private ArrayBuilder<int> pairedBracketValues;
-    private ArrayBuilder<BidiCharacterType> savedTypes;
-    private ArrayBuilder<BidiPairedBracketType> savedPairedBracketTypes;
-    private ArrayBuilder<sbyte> tempLevelBuffer;
-    private readonly List<int> paragraphPositions = new();
+    private ArrayBuilder<BidiCharacterType> types = default;
+    private ArrayBuilder<BidiPairedBracketType> pairedBracketTypes = default;
+    private ArrayBuilder<int> pairedBracketValues = default;
+    private ArrayBuilder<BidiCharacterType> savedTypes = default;
+    private ArrayBuilder<BidiPairedBracketType> savedPairedBracketTypes = default;
+    private ArrayBuilder<sbyte> tempLevelBuffer = default;
 
-    public sbyte ParagraphEmbeddingLevel { get; private set; }
+    public BidiData()
+    {
+    }
 
-    public bool HasBrackets { get; private set; }
+    public sbyte ParagraphEmbeddingLevel { get; private set; } = default;
 
-    public bool HasEmbeddings { get; private set; }
+    public bool HasBrackets { get; private set; } = default;
 
-    public bool HasIsolates { get; private set; }
+    public bool HasEmbeddings { get; private set; } = default;
+
+    public bool HasIsolates { get; private set; } = default;
 
     /// <summary>
     /// Gets the length of the data held by the BidiData
     /// </summary>
-    public int Length => this.types.Length;
+    public readonly int Length => this.types.Length;
 
     /// <summary>
     /// Gets the bidi character type of each code point
     /// </summary>
-    public ArraySlice<BidiCharacterType> Types { get; private set; }
+    public ArraySlice<BidiCharacterType> Types { get; private set; } = default;
 
     /// <summary>
     /// Gets the paired bracket type for each code point
     /// </summary>
-    public ArraySlice<BidiPairedBracketType> PairedBracketTypes { get; private set; }
+    public ArraySlice<BidiPairedBracketType> PairedBracketTypes { get; private set; } = default;
 
     /// <summary>
     /// Gets the paired bracket value for code point
@@ -50,7 +53,7 @@ internal class BidiData
     /// matching.  Also, bracket code points are mapped
     /// to their canonical equivalents
     /// </remarks>
-    public ArraySlice<int> PairedBracketValues { get; private set; }
+    public ArraySlice<int> PairedBracketValues { get; private set; } = default;
 
     /// <summary>
     /// Initialize with a text value.
@@ -66,7 +69,6 @@ internal class BidiData
         this.pairedBracketTypes.Length = length;
         this.pairedBracketValues.Length = length;
 
-        this.paragraphPositions.Clear();
         this.ParagraphEmbeddingLevel = paragraphEmbeddingLevel;
 
         // Resolve the BidiCharacterType, paired bracket type and paired
@@ -76,7 +78,7 @@ internal class BidiData
         this.HasIsolates = false;
 
         int i = 0;
-        var codePointEnumerator = new SpanCodePointEnumerator(text);
+        SpanCodePointEnumerator codePointEnumerator = new(text);
         while (codePointEnumerator.MoveNext())
         {
             CodePoint codePoint = codePointEnumerator.Current;
@@ -171,5 +173,16 @@ internal class BidiData
     {
         this.tempLevelBuffer.Clear();
         return this.tempLevelBuffer.Add(length, false);
+    }
+
+    public void Free()
+    {
+        this.types.Free();
+        this.pairedBracketTypes.Free();
+        this.pairedBracketValues.Free();
+        this.savedTypes.Free();
+        this.savedPairedBracketTypes.Free();
+        this.tempLevelBuffer.Free();
+        this = default;
     }
 }

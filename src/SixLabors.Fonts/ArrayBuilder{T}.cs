@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Buffers;
 using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts;
@@ -28,7 +29,7 @@ internal struct ArrayBuilder<T>
     {
         Guard.MustBeGreaterThanOrEqualTo(capacity, 0, nameof(capacity));
 
-        this.data = new T[capacity];
+        this.data = ArrayPool<T>.Shared.Rent(capacity);
     }
 
     /// <summary>
@@ -153,15 +154,103 @@ internal struct ArrayBuilder<T>
                 newCapacity = (uint)min;
             }
 
-            var array = new T[newCapacity];
-
+            T[] array = ArrayPool<T>.Shared.Rent((int)newCapacity);
             if (this.size > 0)
             {
                 Array.Copy(this.data!, array, this.size);
+                ArrayPool<T>.Shared.Return(this.data!);
             }
 
             this.data = array;
         }
+    }
+
+    public readonly bool Contains(T item)
+    {
+        for (int i = 0; i < this.size; i++)
+        {
+            if (this[i].Equals(item))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public readonly int IndexOf(T item)
+    {
+        for (int i = 0; i < this.size; i++)
+        {
+            if (this[i].Equals(item))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    public void Insert(int index, T item)
+    {
+        if (index < 0 || index > this.size)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        this.Length++;
+        Array.Copy(this.data!, index, this.data!, index + 1, this.size - index - 1);
+        this[index] = item;
+    }
+
+    public bool Remove(T item)
+    {
+        int index = this.IndexOf(item);
+        if (index >= 0)
+        {
+            this.RemoveAt(index);
+            return true;
+        }
+
+        return false;
+    }
+
+    public void RemoveAt(int index)
+    {
+        if (index < 0 || index >= this.size)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        Array.Copy(this.data!, index + 1, this.data!, index, this.size - index - 1);
+        this.Length--;
+    }
+
+    public void RemoveRange(int start, int count)
+    {
+        if (start < 0 || start >= this.size)
+        {
+            throw new ArgumentOutOfRangeException(nameof(start));
+        }
+
+        if (start + count > this.size)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count));
+        }
+
+        this.Length -= count;
+    }
+
+    public readonly void Sort() => this.data!.AsSpan(0, this.size).Sort();
+
+    public unsafe void Free()
+    {
+        if (this.data != null)
+        {
+            ArrayPool<T>.Shared.Return(this.data!);
+        }
+
+        this = default;
     }
 
     /// <summary>
@@ -169,7 +258,7 @@ internal struct ArrayBuilder<T>
     /// </summary>
     /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ArraySlice<T> AsSlice() => this.AsSlice(this.Length);
+    public readonly ArraySlice<T> AsSlice() => this.AsSlice(this.Length);
 
     /// <summary>
     /// Returns the current state of the array as a slice.

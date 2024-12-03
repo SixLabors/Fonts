@@ -32,19 +32,19 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
         GlyphType glyphType = GlyphType.Standard,
         GlyphColor? glyphColor = null)
         : base(
-              font,
-              glyphId,
-              codePoint,
-              vector.Bounds,
-              advanceWidth,
-              advanceHeight,
-              leftSideBearing,
-              topSideBearing,
-              unitsPerEM,
-              textAttributes,
-              textDecorations,
-              glyphType,
-              glyphColor)
+            font,
+            glyphId,
+            codePoint,
+            vector.Bounds,
+            advanceWidth,
+            advanceHeight,
+            leftSideBearing,
+            topSideBearing,
+            unitsPerEM,
+            textAttributes,
+            textDecorations,
+            glyphType,
+            glyphColor)
         => this.vector = vector;
 
     internal TrueTypeGlyphMetrics(
@@ -140,10 +140,10 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
                 {
                     // Create a scaled deep copy of the vector so that we do not alter
                     // the globally cached instance.
-                    var clone = GlyphVector.DeepClone(this.vector);
+                    GlyphVector clone = GlyphVector.DeepClone(this.vector);
                     Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
 
-                    var matrix = Matrix3x2.CreateScale(scale);
+                    Matrix3x2 matrix = Matrix3x2.CreateScale(scale);
                     matrix.Translation = this.Offset * scale;
                     GlyphVector.TransformInPlace(ref clone, matrix);
 

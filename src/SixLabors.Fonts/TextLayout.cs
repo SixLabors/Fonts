@@ -2,8 +2,8 @@
 // Licensed under the Six Labors Split License.
 
 using System.Buffers;
-using System.Collections;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using SixLabors.Fonts.Unicode;
@@ -86,107 +86,163 @@ internal static class TextLayout
         return textRuns;
     }
 
-    private static TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
+    private static unsafe TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
     {
         // Gather the font and fallbacks.
-        Font[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
-            ? options.FallbackFontFamilies.Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle)).ToArray()
-            : Array.Empty<Font>();
-
-        LayoutMode layoutMode = options.LayoutMode;
-        GlyphSubstitutionCollection substitutions = new(options);
-        GlyphPositioningCollection positionings = new(options);
-
-        // Analyse the text for bidi directional runs.
-        BidiAlgorithm bidi = BidiAlgorithm.Instance.Value!;
-        BidiData bidiData = new();
-        bidiData.Init(text, (sbyte)options.TextDirection);
-
-        // If we have embedded directional overrides then change those
-        // ranges to neutral.
-        if (options.TextDirection != TextDirection.Auto)
+        // Font[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
+        //     ? options.FallbackFontFamilies.Where(x => !x.Equals(options.Font.Family)).Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle)).ToArray()
+        //     : Array.Empty<Font>();
+        Font[]? fallbackFonts = null;
+        BidiAlgorithm bidi = default;
+        BidiData bidiData = default;
+        try
         {
-            bidiData.SaveTypes();
-            bidiData.Types.Span.Fill(BidiCharacterType.OtherNeutral);
-            bidiData.PairedBracketTypes.Span.Clear();
-        }
-
-        bidi.Process(bidiData);
-
-        // Get the list of directional runs
-        BidiRun[] bidiRuns = BidiRun.CoalesceLevels(bidi.ResolvedLevels).ToArray();
-        Dictionary<int, int> bidiMap = new();
-
-        // Incrementally build out collection of glyphs.
-        IReadOnlyList<TextRun> textRuns = BuildTextRuns(text, options);
-
-        // First do multiple font runs using the individual text runs.
-        bool complete = true;
-        int textRunIndex = 0;
-        int codePointIndex = 0;
-        int bidiRunIndex = 0;
-        foreach (TextRun textRun in textRuns)
-        {
-            if (!DoFontRun(
-                textRun.Slice(text),
-                textRun.Start,
-                textRuns,
-                ref textRunIndex,
-                ref codePointIndex,
-                ref bidiRunIndex,
-                false,
-                textRun.Font!,
-                bidiRuns,
-                bidiMap,
-                substitutions,
-                positionings))
+            IReadOnlyList<FontFamily> fallbackFontFamilies = options.FallbackFontFamilies;
+            if (fallbackFontFamilies != null && fallbackFontFamilies.Count > 0)
             {
-                complete = false;
-            }
-        }
-
-        if (!complete)
-        {
-            // Finally try our fallback fonts.
-            // We do a complete run here across the whole collection.
-            foreach (Font font in fallbackFonts)
-            {
-                textRunIndex = 0;
-                codePointIndex = 0;
-                bidiRunIndex = 0;
-                if (DoFontRun(
-                    text,
-                    0,
-                    textRuns,
-                    ref textRunIndex,
-                    ref codePointIndex,
-                    ref bidiRunIndex,
-                    true,
-                    font,
-                    bidiRuns,
-                    bidiMap,
-                    substitutions,
-                    positionings))
+                fallbackFonts = ArrayPool<Font>.Shared.Rent(fallbackFontFamilies.Count);
+                int i = 0;
+                foreach (FontFamily family in fallbackFontFamilies)
                 {
-                    break;
+                    fallbackFonts[i++] = new Font(family, options.Font.Size, options.Font.RequestedStyle);
                 }
             }
-        }
 
-        // Update the positions of the glyphs in the completed collection.
-        // Each set of metrics is associated with single font and will only be updated
-        // by that font so it's safe to use a single collection.
-        foreach (TextRun textRun in textRuns)
+            LayoutMode layoutMode = options.LayoutMode;
+            GlyphSubstitutionCollection substitutions = new(options);
+            GlyphPositioningCollection positionings = new(options);
+
+            bidiData.Init(text, (sbyte)options.TextDirection);
+
+            // If we have embedded directional overrides then change those
+            // ranges to neutral.
+            if (options.TextDirection != TextDirection.Auto)
+            {
+                bidiData.SaveTypes();
+                bidiData.Types.Span.Fill(BidiCharacterType.OtherNeutral);
+                bidiData.PairedBracketTypes.Span.Clear();
+            }
+
+            bidi.Process(bidiData);
+
+            // Get the list of directional runs
+            // IEnumerable<BidiRun> bidiRuns = BidiRun.CoalesceLevels(bidi.ResolvedLevels);
+            int count = 0;
+            Span<BidiRun> bidiRuns = new(NativeMemory.Alloc((nuint)(bidi.ResolvedLevels.Length * sizeof(BidiRun))), bidi.ResolvedLevels.Length);
+            BidiDictionary<Index, Index> bidiMap = default;
+            try
+            {
+                foreach (BidiRun run in BidiRun.CoalesceLevels(bidi.ResolvedLevels))
+                {
+                    bidiRuns[count++] = run;
+                }
+
+                fixed (BidiRun* ptr = bidiRuns)
+                {
+                    bidiRuns = new Span<BidiRun>(NativeMemory.Realloc(ptr, (nuint)(count * sizeof(BidiRun))), count);
+                }
+
+                // Incrementally build out collection of glyphs.
+                IReadOnlyList<TextRun> textRuns = BuildTextRuns(text, options);
+
+                // First do multiple font runs using the individual text runs.
+                bool complete = true;
+                int textRunIndex = 0;
+                int codePointIndex = 0;
+                int bidiRunIndex = 0;
+                foreach (TextRun textRun in textRuns)
+                {
+                    if (!DoFontRun(
+                        textRun.Slice(text),
+                        textRun.Start,
+                        textRuns,
+                        ref textRunIndex,
+                        ref codePointIndex,
+                        ref bidiRunIndex,
+                        false,
+                        textRun.Font!,
+                        bidiRuns,
+                        ref bidiMap,
+                        substitutions,
+                        positionings))
+                    {
+                        complete = false;
+                    }
+                }
+
+                if (!complete && fallbackFonts != null && fallbackFonts.Length > 0)
+                {
+                    // Finally try our fallback fonts.
+                    // We do a complete run here across the whole collection.
+                    foreach (Font font in fallbackFonts)
+                    {
+                        textRunIndex = 0;
+                        codePointIndex = 0;
+                        bidiRunIndex = 0;
+                        if (DoFontRun(
+                            text,
+                            0,
+                            textRuns,
+                            ref textRunIndex,
+                            ref codePointIndex,
+                            ref bidiRunIndex,
+                            true,
+                            font,
+                            bidiRuns,
+                            ref bidiMap,
+                            substitutions,
+                            positionings))
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                // Update the positions of the glyphs in the completed collection.
+                // Each set of metrics is associated with single font and will only be updated
+                // by that font so it's safe to use a single collection.
+                foreach (TextRun textRun in textRuns)
+                {
+                    textRun.Font!.FontMetrics.UpdatePositions(positionings);
+                }
+
+                if (fallbackFonts != null && fallbackFonts.Length > 0)
+                {
+                    foreach (Font font in fallbackFonts)
+                    {
+                        font.FontMetrics.UpdatePositions(positionings);
+                    }
+
+                    ArrayPool<Font>.Shared.Return(fallbackFonts);
+                }
+
+                TextBox result = BreakLines(text, options, bidiRuns, ref bidiMap, positionings, layoutMode);
+                return result;
+            }
+            finally
+            {
+                fixed (BidiRun* ptr = bidiRuns)
+                {
+                    if (ptr != null)
+                    {
+                        NativeMemory.Free(ptr);
+                        bidiRuns = null;
+                    }
+                }
+
+                bidiMap.Free();
+            }
+        }
+        finally
         {
-            textRun.Font!.FontMetrics.UpdatePositions(positionings);
-        }
+            if (fallbackFonts != null)
+            {
+                ArrayPool<Font>.Shared.Return(fallbackFonts);
+            }
 
-        foreach (Font font in fallbackFonts)
-        {
-            font.FontMetrics.UpdatePositions(positionings);
+            bidi.Free();
+            bidiData.Free();
         }
-
-        return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
     }
 
     private static IReadOnlyList<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
@@ -814,8 +870,8 @@ internal static class TextLayout
         ref int bidiRunIndex,
         bool isFallbackRun,
         Font font,
-        BidiRun[] bidiRuns,
-        Dictionary<int, int> bidiMap,
+        ReadOnlySpan<BidiRun> bidiRuns,
+        ref BidiDictionary<Index, Index> bidiMap,
         GlyphSubstitutionCollection substitutions,
         GlyphPositioningCollection positionings)
     {
@@ -831,11 +887,6 @@ internal static class TextLayout
             int graphemeMax = graphemeEnumerator.Current.Length - 1;
             int graphemeCodePointIndex = 0;
             int charIndex = 0;
-
-            if (graphemeIndex == textRuns[textRunIndex].End)
-            {
-                textRunIndex++;
-            }
 
             // Now enumerate through each codepoint in the grapheme.
             bool skipNextCodePoint = false;
@@ -854,7 +905,7 @@ internal static class TextLayout
                     continue;
                 }
 
-                bidiMap[codePointIndex] = bidiRunIndex;
+                bidiMap.Add(codePointIndex, bidiRunIndex);
 
                 int charsConsumed = 0;
                 CodePoint current = codePointEnumerator.Current;
@@ -938,8 +989,8 @@ internal static class TextLayout
     private static TextBox BreakLines(
         ReadOnlySpan<char> text,
         TextOptions options,
-        BidiRun[] bidiRuns,
-        Dictionary<int, int> bidiMap,
+        ReadOnlySpan<BidiRun> bidiRuns,
+        ref BidiDictionary<Index, Index> bidiMap,
         GlyphPositioningCollection positionings,
         LayoutMode layoutMode)
     {
@@ -1267,6 +1318,7 @@ internal static class TextLayout
                     descender -= delta;
 
                     // Add our metrics to the line.
+                    bidiMap.TryGetValue(codePointIndex, out Index index);
                     lineAdvance += decomposedAdvance;
                     textLine.Add(
                         isDecomposed ? new GlyphMetrics[] { metric } : metrics,
@@ -1275,7 +1327,7 @@ internal static class TextLayout
                         lineHeight,
                         ascender,
                         descender,
-                        bidiRuns[bidiMap[codePointIndex]],
+                        bidiRuns[index],
                         graphemeIndex,
                         codePointIndex,
                         isRotated,
@@ -1297,6 +1349,19 @@ internal static class TextLayout
         }
 
         return new TextBox(options, textLines);
+    }
+
+    private struct Index : IEqualityComparer<Index>
+    {
+        public int Value;
+
+        public static implicit operator Index(int value) => new() { Value = value };
+
+        public static implicit operator int(Index value) => value.Value;
+
+        public readonly bool Equals(Index x, Index y) => x.Value == y.Value;
+
+        public readonly int GetHashCode([DisallowNull] Index obj) => obj.Value;
     }
 
     internal readonly struct TextBox
@@ -1777,6 +1842,12 @@ internal static class TextLayout
             private ArrayBuilder<GlyphLayoutData> info;
 
             public OrderedBidiRun(int level) => this.Level = level;
+
+            ~OrderedBidiRun()
+            {
+                this.info.Free();
+                this.info = default;
+            }
 
             public int Level { get; }
 
