@@ -50,13 +50,13 @@ public abstract class GlyphMetrics
 
         Vector2 offset = Vector2.Zero;
         Vector2 scaleFactor = new(unitsPerEM * 72F);
-        if (textAttributes.HasFlag(TextAttributes.Subscript))
+        if ((textAttributes & TextAttributes.Subscript) == TextAttributes.Subscript)
         {
             float units = this.UnitsPerEm;
             scaleFactor /= new Vector2(font.SubscriptXSize / units, font.SubscriptYSize / units);
             offset = new(font.SubscriptXOffset, font.SubscriptYOffset < 0 ? font.SubscriptYOffset : -font.SubscriptYOffset);
         }
-        else if (textAttributes.HasFlag(TextAttributes.Superscript))
+        else if ((textAttributes & TextAttributes.Superscript) == TextAttributes.Superscript)
         {
             float units = this.UnitsPerEm;
             scaleFactor /= new Vector2(font.SuperscriptXSize / units, font.SuperscriptYSize / units);
