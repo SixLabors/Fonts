@@ -13,7 +13,7 @@ namespace SixLabors.Fonts;
 /// <summary>
 /// Represents a collection of glyph metrics that are mapped to input codepoints.
 /// </summary>
-internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
+internal sealed class GlyphPositioningCollection : IGlyphShapingCollection, IDisposable
 {
     /// <summary>
     /// Contains a map the index of a map within the collection, non-sequential codepoint offsets, and their glyph ids, point size, and mtrics.
@@ -26,7 +26,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <param name="textOptions">The text options.</param>
     public GlyphPositioningCollection(TextOptions textOptions) => this.TextOptions = textOptions;
 
-    ~GlyphPositioningCollection() => ArrayPool<GlyphPositioningData>.Shared.Return(this.glyphs);
+    ~GlyphPositioningCollection() => this.Dispose();
 
     /// <inheritdoc />
     public int Count { get; private set; }
@@ -350,6 +350,17 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <returns><see langword="true"/> if the element should be processed; otherwise, <see langword="false"/>.</returns>
     public bool ShouldProcess(FontMetrics fontMetrics, int index)
         => this.glyphs[index].Metrics[0].FontMetrics == fontMetrics;
+
+    public void Dispose()
+    {
+        if (this.glyphs != null)
+        {
+            ArrayPool<GlyphPositioningData>.Shared.Return(this.glyphs);
+            this.glyphs = Array.Empty<GlyphPositioningData>();
+        }
+
+        GC.SuppressFinalize(this);
+    }
 
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     private class GlyphPositioningData

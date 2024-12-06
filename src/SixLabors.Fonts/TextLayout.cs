@@ -103,8 +103,6 @@ internal static class TextLayout
             }
 
             LayoutMode layoutMode = options.LayoutMode;
-            GlyphSubstitutionCollection substitutions = new(options);
-            GlyphPositioningCollection positionings = new(options);
 
             bidiData.Init(text, (sbyte)options.TextDirection);
 
@@ -123,6 +121,8 @@ internal static class TextLayout
             // IEnumerable<BidiRun> bidiRuns = BidiRun.CoalesceLevels(bidi.ResolvedLevels);
             ArrayBuilder<BidiRun> bidiRuns = new(bidiData.Length);
             ArrayBuilder<TextRun> textRuns = new((options.TextRuns.Count << 1) + 1);
+            GlyphSubstitutionCollection substitutions = new(options);
+            GlyphPositioningCollection positionings = new(options);
             Dictionary<Index, Index> bidiMap = default;
             try
             {
@@ -208,9 +208,11 @@ internal static class TextLayout
             }
             finally
             {
-                bidiMap.Dispose();
                 bidiRuns.Dispose();
                 textRuns.Dispose();
+                substitutions.Dispose();
+                positionings.Dispose();
+                bidiMap.Dispose();
             }
         }
         finally

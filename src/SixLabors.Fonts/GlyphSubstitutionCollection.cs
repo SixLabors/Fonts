@@ -13,7 +13,7 @@ namespace SixLabors.Fonts;
 /// <summary>
 /// Represents a collection of glyph indices that are mapped to input codepoints.
 /// </summary>
-internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
+internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection, IDisposable
 {
     /// <summary>
     /// Contains a map the index of a map within the collection, non-sequential codepoint offsets, and their glyph ids.
@@ -26,7 +26,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <param name="textOptions">The text options.</param>
     public GlyphSubstitutionCollection(TextOptions textOptions) => this.TextOptions = textOptions;
 
-    ~GlyphSubstitutionCollection() => ArrayPool<OffsetGlyphDataPair>.Shared.Return(this.glyphs);
+    ~GlyphSubstitutionCollection() => this.Dispose();
 
     /// <summary>
     /// Gets the number of glyphs ids contained in the collection.
@@ -399,6 +399,17 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
             Array.Copy(this.glyphs, index + 1, this.glyphs, index, this.Count - index - 1);
             this.Count--;
         }
+    }
+
+    public void Dispose()
+    {
+        if (this.glyphs != null)
+        {
+            ArrayPool<OffsetGlyphDataPair>.Shared.Return(this.glyphs);
+            this.glyphs = Array.Empty<OffsetGlyphDataPair>();
+        }
+
+        GC.SuppressFinalize(this);
     }
 
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
