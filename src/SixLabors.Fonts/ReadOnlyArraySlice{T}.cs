@@ -15,7 +15,6 @@ namespace SixLabors.Fonts;
 /// </summary>
 /// <typeparam name="T">The type of item contained in the slice.</typeparam>
 internal readonly struct ReadOnlyArraySlice<T> : IEnumerable<T>
-    where T : struct
 {
     private readonly T[] data;
 

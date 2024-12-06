@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Unicode;
+
 namespace SixLabors.Fonts.Tests.Issues;
 
 public class Issues_412
@@ -20,7 +22,7 @@ public class Issues_412
             }
         };
 
-        IReadOnlyList<TextRun> runs = TextLayout.BuildTextRuns("abcde", options);
+        IReadOnlyList<TextRun> runs = TextLayout.BuildTextRuns("abcde".AsSpan().GetGraphemeCount(), options).ToArray();
         Assert.Equal(2, runs.Count);
 
         TextRun run = runs[0];

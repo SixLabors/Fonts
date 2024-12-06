@@ -49,16 +49,18 @@ public class TextRenderer
     /// <param name="options">The style.</param>
     public void RenderText(ReadOnlySpan<char> text, TextOptions options)
     {
-        IReadOnlyList<GlyphLayout> glyphsToRender = TextLayout.GenerateLayout(text, options);
-        FontRectangle rect = TextMeasurer.GetBounds(glyphsToRender, options.Dpi);
-
-        this.renderer.BeginText(in rect);
-
-        foreach (GlyphLayout g in glyphsToRender)
+        using (ArrayBuilder<GlyphLayout> glyphsToRender = TextLayout.GenerateLayout(text, options))
         {
-            g.Glyph.RenderTo(this.renderer, g.PenLocation, g.Offset, g.LayoutMode, options);
-        }
+            FontRectangle rect = TextMeasurer.GetBounds(glyphsToRender, options.Dpi);
 
-        this.renderer.EndText();
+            this.renderer.BeginText(in rect);
+
+            foreach (GlyphLayout g in glyphsToRender)
+            {
+                g.Glyph.RenderTo(this.renderer, g.PenLocation, g.Offset, g.LayoutMode, options);
+            }
+
+            this.renderer.EndText();
+        }
     }
 }

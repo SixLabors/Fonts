@@ -8,9 +8,7 @@ namespace SixLabors.Fonts.Unicode;
 /// </summary>
 /// <typeparam name="T1">Key type</typeparam>
 /// <typeparam name="T2">Value type</typeparam>
-internal ref struct BidiDictionary<T1, T2>
-    where T1 : unmanaged, IEqualityComparer<T1>
-    where T2 : unmanaged, IEqualityComparer<T2>
+internal struct BidiDictionary<T1, T2> : IDisposable
 {
     private ArrayBuilder<KeyValuePair<T1, T2>> items = default;
     private ArrayBuilder<Entry<T1>> keys = default;
@@ -22,23 +20,21 @@ internal ref struct BidiDictionary<T1, T2>
 
     public void Clear()
     {
-        this.items.Free();
-        this.keys.Free();
-        this.values.Free();
+        this.items.Dispose();
+        this.keys.Dispose();
+        this.values.Dispose();
         this = default;
     }
 
     private void Resize()
     {
-        int length = this.items.Length;
-        this.keys.Length = length;
-        this.values.Length = length;
+        int length = this.items.Count;
+        this.keys.Count = length;
+        this.values.Count = length;
         for (int i = 0; i < length; i++)
         {
-            this.keys[i].Key = null;
-            this.keys[i].Next = -1;
-            this.values[i].Key = null;
-            this.values[i].Next = -1;
+            this.keys[i] = new();
+            this.values[i] = new();
         }
 
         for (int i = 0; i < length; i++)
@@ -49,7 +45,7 @@ internal ref struct BidiDictionary<T1, T2>
                 Next = -1,
                 Key = this.items[i].Key
             };
-            int index = Math.Abs(this.items[i].Key.GetHashCode()) % length;
+            int index = Math.Abs(this.items[i].Key!.GetHashCode()) % length;
             ref Entry<T1> currentKeyEntry = ref this.keys[index];
             while (currentKeyEntry.Next >= 0)
             {
@@ -57,7 +53,7 @@ internal ref struct BidiDictionary<T1, T2>
                 currentKeyEntry = ref this.keys[index];
             }
 
-            if (currentKeyEntry.Key == null)
+            if (currentKeyEntry.Index < 0)
             {
                 currentKeyEntry = keyEntry;
             }
@@ -67,7 +63,7 @@ internal ref struct BidiDictionary<T1, T2>
                 for (int j = 0; j < length; j++)
                 {
                     int k = (target + j) % length;
-                    if (this.keys[k].Key == null)
+                    if (this.keys[k].Index < 0)
                     {
                         target = k;
                         break;
@@ -90,7 +86,7 @@ internal ref struct BidiDictionary<T1, T2>
                 Key = this.items[i].Value
             };
 
-            index = Math.Abs(this.items[i].Value.GetHashCode()) % length;
+            index = Math.Abs(this.items[i].Value!.GetHashCode()) % length;
             ref Entry<T2> currentValueEntry = ref this.values[index];
             while (currentValueEntry.Next >= 0)
             {
@@ -98,7 +94,7 @@ internal ref struct BidiDictionary<T1, T2>
                 currentValueEntry = ref this.values[index];
             }
 
-            if (currentValueEntry.Key == null)
+            if (currentValueEntry.Index < 0)
             {
                 currentValueEntry = valueEntry;
             }
@@ -108,7 +104,7 @@ internal ref struct BidiDictionary<T1, T2>
                 for (int j = 0; j < length; j++)
                 {
                     int k = (target + j) % length;
-                    if (this.values[k].Key == null)
+                    if (this.values[k].Index < 0)
                     {
                         target = k;
                         break;
@@ -128,10 +124,20 @@ internal ref struct BidiDictionary<T1, T2>
 
     public void Add(T1 key, T2 value)
     {
-        bool found = false;
-        for (int i = 0; i < this.items.Length; i++)
+        if (key == null)
         {
-            if (this.items[i].Key.Equals(key) && this.items[i].Value.Equals(value))
+            throw new ArgumentNullException(nameof(key));
+        }
+
+        if (value == null)
+        {
+            throw new ArgumentNullException(nameof(value));
+        }
+
+        bool found = false;
+        for (int i = 0; i < this.items.Count; i++)
+        {
+            if (this.items[i].Key!.Equals(key) || this.items[i].Value!.Equals(value))
             {
                 found = true;
                 break;
@@ -147,7 +153,12 @@ internal ref struct BidiDictionary<T1, T2>
 
     public readonly bool TryGetValue(T1 key, out T2 value)
     {
-        int length = this.items.Length;
+        if (key == null)
+        {
+            throw new ArgumentNullException(nameof(key));
+        }
+
+        int length = this.items.Count;
         int index = Math.Abs(key.GetHashCode()) % length;
         Entry<T1> currentKeyEntry;
         do
@@ -155,11 +166,11 @@ internal ref struct BidiDictionary<T1, T2>
             currentKeyEntry = this.keys[index];
             index = currentKeyEntry.Next;
         }
-        while (index >= 0 && !currentKeyEntry.Key.Equals(key));
+        while (index >= 0 && !currentKeyEntry.Key!.Equals(key));
 
-        if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key.Equals(key))
+        if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key!.Equals(key))
         {
-            value = default;
+            value = default!;
             return false;
         }
         else
@@ -171,7 +182,12 @@ internal ref struct BidiDictionary<T1, T2>
 
     public readonly bool TryGetKey(T2 value, out T1 key)
     {
-        int length = this.items.Length;
+        if (value == null)
+        {
+            throw new ArgumentNullException(nameof(value));
+        }
+
+        int length = this.items.Count;
         int index = Math.Abs(value.GetHashCode()) % length;
         Entry<T2> currentKeyEntry;
         do
@@ -179,11 +195,11 @@ internal ref struct BidiDictionary<T1, T2>
             currentKeyEntry = this.values[index];
             index = currentKeyEntry.Next;
         }
-        while (index >= 0 && !currentKeyEntry.Key.Equals(value));
+        while (index >= 0 && !currentKeyEntry.Key!.Equals(value));
 
-        if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key.Equals(value))
+        if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key!.Equals(value))
         {
-            key = default;
+            key = default!;
             return false;
         }
         else
@@ -195,7 +211,12 @@ internal ref struct BidiDictionary<T1, T2>
 
     public readonly bool ContainsKey(T1 key)
     {
-        int length = this.items.Length;
+        if (key == null)
+        {
+            throw new ArgumentNullException(nameof(key));
+        }
+
+        int length = this.items.Count;
         int index = key.GetHashCode() % length;
         Entry<T1> currentKeyEntry;
         do
@@ -203,14 +224,19 @@ internal ref struct BidiDictionary<T1, T2>
             currentKeyEntry = this.keys[index];
             index = currentKeyEntry.Next;
         }
-        while (index >= 0 && !currentKeyEntry.Key.Equals(key));
+        while (index >= 0 && !currentKeyEntry.Key!.Equals(key));
 
-        return currentKeyEntry.Index >= 0 && currentKeyEntry.Key.Equals(key);
+        return currentKeyEntry.Index >= 0 && currentKeyEntry.Key!.Equals(key);
     }
 
     public readonly bool ContainsValue(T2 value)
     {
-        int length = this.items.Length;
+        if (value == null)
+        {
+            throw new ArgumentNullException(nameof(value));
+        }
+
+        int length = this.items.Count;
         int index = value.GetHashCode() % length;
         Entry<T2> currentKeyEntry;
         do
@@ -218,21 +244,20 @@ internal ref struct BidiDictionary<T1, T2>
             currentKeyEntry = this.values[index];
             index = currentKeyEntry.Next;
         }
-        while (index >= 0 && !currentKeyEntry.Key.Equals(value));
+        while (index >= 0 && !currentKeyEntry.Key!.Equals(value));
 
-        return currentKeyEntry.Index >= 0 && currentKeyEntry.Key.Equals(value);
+        return currentKeyEntry.Index >= 0 && currentKeyEntry.Key!.Equals(value);
     }
 
-    public void Free()
+    public void Dispose()
     {
-        this.items.Free();
-        this.keys.Free();
-        this.values.Free();
+        this.items.Dispose();
+        this.keys.Dispose();
+        this.values.Dispose();
         this = default;
     }
 
     private struct Entry<T>
-    where T : unmanaged, IEqualityComparer<T>
     {
         public int Index = -1;
         public int Next = -1;

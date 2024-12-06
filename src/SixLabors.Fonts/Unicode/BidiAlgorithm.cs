@@ -23,7 +23,7 @@ namespace SixLabors.Fonts.Unicode;
 /// as much as possible.
 /// </para>
 /// </remarks>
-internal ref struct BidiAlgorithm
+internal struct BidiAlgorithm : IDisposable
 {
     /// <summary>
     /// The original BidiCharacterType types as provided by the caller
@@ -281,18 +281,18 @@ internal ref struct BidiAlgorithm
         this.AssignLevelsToCodePointsRemovedByX9();
     }
 
-    public void Free()
+    public void Dispose()
     {
-        this.isolatePairs.Free();
-        this.workingTypesBuffer.Free();
-        this.resolvedLevelsBuffer.Free();
-        this.statusStack.Free();
-        this.x9Map.Free();
-        this.levelRuns.Free();
-        this.isolatedRunMapping.Free();
-        this.pendingIsolateOpenings.Free();
-        this.pendingOpeningBrackets.Free();
-        this.pairedBrackets.Free();
+        this.isolatePairs.Dispose();
+        this.workingTypesBuffer.Dispose();
+        this.resolvedLevelsBuffer.Dispose();
+        this.statusStack.Dispose();
+        this.x9Map.Dispose();
+        this.levelRuns.Dispose();
+        this.isolatedRunMapping.Dispose();
+        this.pendingIsolateOpenings.Dispose();
+        this.pendingOpeningBrackets.Dispose();
+        this.pairedBrackets.Dispose();
         this = default;
     }
 
@@ -626,7 +626,7 @@ internal ref struct BidiAlgorithm
     private void BuildX9RemovalMap()
     {
         // Reserve room for the x9 map
-        this.x9Map.Length = this.originalTypes.Length;
+        this.x9Map.Count = this.originalTypes.Length;
 
         if (this.hasEmbeddings || this.hasIsolates)
         {
@@ -641,7 +641,7 @@ internal ref struct BidiAlgorithm
             }
 
             // Set the final length
-            this.x9Map.Length = j;
+            this.x9Map.Count = j;
         }
         else
         {
@@ -720,7 +720,7 @@ internal ref struct BidiAlgorithm
     {
         int currentLevel = -1;
         int runStart = 0;
-        for (int i = 0; i < this.x9Map.Length; ++i)
+        for (int i = 0; i < this.x9Map.Count; ++i)
         {
             int level = this.ResolvedLevels[this.MapX9(i)];
             if (level != currentLevel)
@@ -738,7 +738,7 @@ internal ref struct BidiAlgorithm
         // Don't forget the final level run
         if (currentLevel != -1)
         {
-            this.AddLevelRun(runStart, this.x9Map.Length - runStart, currentLevel);
+            this.AddLevelRun(runStart, this.x9Map.Count - runStart, currentLevel);
         }
     }
 
@@ -749,7 +749,7 @@ internal ref struct BidiAlgorithm
     /// <returns>The index of the run that starts at that index</returns>
     private readonly int FindRunForIndex(int index)
     {
-        for (int i = 0; i < this.levelRuns.Length; i++)
+        for (int i = 0; i < this.levelRuns.Count; i++)
         {
             // Passed index is for the original non-x9 filtered data, however
             // the level run ranges are for the x9 filtered data.  Convert before
@@ -777,7 +777,7 @@ internal ref struct BidiAlgorithm
         // form an complete run.  That full run mapping
         // will be placed in _isolatedRunMapping and then
         // processed by ProcessIsolatedRunSequence().
-        while (this.levelRuns.Length > 0)
+        while (this.levelRuns.Count > 0)
         {
             // Clear the mapping
             this.isolatedRunMapping.Clear();
@@ -805,7 +805,7 @@ internal ref struct BidiAlgorithm
 
                 // Get the last character and see if it's an isolating run with a matching
                 // PDI and concatenate that run to this one
-                int lastCharacterIndex = this.isolatedRunMapping[this.isolatedRunMapping.Length - 1];
+                int lastCharacterIndex = this.isolatedRunMapping[this.isolatedRunMapping.Count - 1];
                 BidiCharacterType lastType = this.originalTypes[lastCharacterIndex];
                 if ((lastType == BidiCharacterType.LeftToRightIsolate || lastType == BidiCharacterType.RightToLeftIsolate || lastType == BidiCharacterType.FirstStrongIsolate) &&
                         this.isolatePairs.TryGetValue(lastCharacterIndex, out Index nextRunIndex))
@@ -1057,7 +1057,7 @@ internal ref struct BidiAlgorithm
         {
             int count;
             ArrayBuilder<BracketPair> pairedBrackets = this.LocatePairedBrackets();
-            for (i = 0, count = pairedBrackets.Length; i < count; i++)
+            for (i = 0, count = pairedBrackets.Count; i < count; i++)
             {
                 BracketPair pb = pairedBrackets[i];
                 BidiCharacterType dir = this.InspectPairedBracket(pb);
@@ -1217,7 +1217,7 @@ internal ref struct BidiAlgorithm
             switch (this.runBidiPairedBracketTypes[ich])
             {
                 case BidiPairedBracketType.Open:
-                    if (this.pendingOpeningBrackets.Length == MaxPairedBracketDepth)
+                    if (this.pendingOpeningBrackets.Count == MaxPairedBracketDepth)
                     {
                         goto exit;
                     }
@@ -1227,16 +1227,16 @@ internal ref struct BidiAlgorithm
 
                 case BidiPairedBracketType.Close:
                     // see if there is a match
-                    for (int i = 0; i < this.pendingOpeningBrackets.Length; i++)
+                    for (int i = 0; i < this.pendingOpeningBrackets.Count; i++)
                     {
                         if (this.runPairedBracketValues[ich] == this.runPairedBracketValues[this.pendingOpeningBrackets[i]])
                         {
                             // Add this paired bracket set
                             int opener = this.pendingOpeningBrackets[i];
-                            if (this.pairedBrackets.Length < sortLimit)
+                            if (this.pairedBrackets.Count < sortLimit)
                             {
                                 int ppi = 0;
-                                while (ppi < this.pairedBrackets.Length && this.pairedBrackets[ppi].OpeningIndex < opener)
+                                while (ppi < this.pairedBrackets.Count && this.pairedBrackets[ppi].OpeningIndex < opener)
                                 {
                                     ppi++;
                                 }
@@ -1261,7 +1261,7 @@ internal ref struct BidiAlgorithm
         exit:
 
         // Is a sort pending?
-        if (this.pairedBrackets.Length > sortLimit)
+        if (this.pairedBrackets.Count > sortLimit)
         {
             this.pairedBrackets.Sort();
         }
@@ -1604,7 +1604,7 @@ internal ref struct BidiAlgorithm
         public BidiCharacterType Eos { get; }
     }
 
-    public ref struct Stack<T>
+    public struct Stack<T> : IDisposable
     where T : unmanaged
     {
         private ArrayBuilder<T> items = default;
@@ -1613,24 +1613,24 @@ internal ref struct BidiAlgorithm
         {
         }
 
-        public readonly int Count => this.items.Length;
+        public readonly int Count => this.items.Count;
 
         public void Push(T item) => this.items.Add(item);
 
         public T Pop()
         {
-            T result = this.items[this.items.Length - 1];
-            this.items.Length--;
+            T result = this.items[this.items.Count - 1];
+            this.items.Count--;
             return result;
         }
 
-        public readonly T Peek() => this.items[this.items.Length - 1];
+        public readonly T Peek() => this.items[this.items.Count - 1];
 
         public void Clear() => this.items.Clear();
 
-        public void Free()
+        public void Dispose()
         {
-            this.items.Free();
+            this.items.Dispose();
             this.items = default;
         }
     }

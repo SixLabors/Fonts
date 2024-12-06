@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Unicode;
 /// Represents a unicode string and all associated attributes
 /// for each character required for the Bidi algorithm
 /// </summary>
-internal ref struct BidiData
+internal struct BidiData : IDisposable
 {
     private ArrayBuilder<BidiCharacterType> types = default;
     private ArrayBuilder<BidiPairedBracketType> pairedBracketTypes = default;
@@ -31,7 +31,7 @@ internal ref struct BidiData
     /// <summary>
     /// Gets the length of the data held by the BidiData
     /// </summary>
-    public readonly int Length => this.types.Length;
+    public readonly int Length => this.types.Count;
 
     /// <summary>
     /// Gets the bidi character type of each code point
@@ -65,9 +65,9 @@ internal ref struct BidiData
         // Set working buffer sizes
         // TODO: This allocates more than it should for some arrays.
         int length = CodePoint.GetCodePointCount(text);
-        this.types.Length = length;
-        this.pairedBracketTypes.Length = length;
-        this.pairedBracketValues.Length = length;
+        this.types.Count = length;
+        this.pairedBracketTypes.Count = length;
+        this.pairedBracketValues.Count = length;
 
         this.ParagraphEmbeddingLevel = paragraphEmbeddingLevel;
 
@@ -175,14 +175,14 @@ internal ref struct BidiData
         return this.tempLevelBuffer.Add(length, false);
     }
 
-    public void Free()
+    public void Dispose()
     {
-        this.types.Free();
-        this.pairedBracketTypes.Free();
-        this.pairedBracketValues.Free();
-        this.savedTypes.Free();
-        this.savedPairedBracketTypes.Free();
-        this.tempLevelBuffer.Free();
+        this.types.Dispose();
+        this.pairedBracketTypes.Dispose();
+        this.pairedBracketValues.Dispose();
+        this.savedTypes.Dispose();
+        this.savedPairedBracketTypes.Dispose();
+        this.tempLevelBuffer.Dispose();
         this = default;
     }
 }

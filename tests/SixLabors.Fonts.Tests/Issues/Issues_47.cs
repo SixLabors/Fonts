@@ -16,19 +16,20 @@ public class Issues_47
 
         var r = new GlyphRenderer();
 
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        using (ArrayBuilder<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350,
             HorizontalAlignment = HorizontalAlignment.Left
-        });
-
-        float lineYPos = layout[0].PenLocation.Y;
-        foreach (GlyphLayout glyph in layout)
+        }))
         {
-            if (lineYPos != glyph.PenLocation.Y)
+            float lineYPos = layout[0].PenLocation.Y;
+            foreach (GlyphLayout glyph in layout)
             {
-                Assert.False(glyph.IsWhiteSpace());
-                lineYPos = glyph.PenLocation.Y;
+                if (lineYPos != glyph.PenLocation.Y)
+                {
+                    Assert.False(glyph.IsWhiteSpace());
+                    lineYPos = glyph.PenLocation.Y;
+                }
             }
         }
     }
@@ -44,21 +45,22 @@ public class Issues_47
 
         var r = new GlyphRenderer();
 
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        using (ArrayBuilder<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350,
             HorizontalAlignment = horizontalAlignment
-        });
-
-        float lineYPos = layout[0].PenLocation.Y;
-        for (int i = 0; i < layout.Count; i++)
+        }))
         {
-            GlyphLayout glyph = layout[i];
-            if (lineYPos != glyph.PenLocation.Y)
+            float lineYPos = layout[0].PenLocation.Y;
+            for (int i = 0; i < layout.Count; i++)
             {
-                Assert.False(glyph.IsWhiteSpace());
-                Assert.False(layout[i - 1].IsWhiteSpace());
-                lineYPos = glyph.PenLocation.Y;
+                GlyphLayout glyph = layout[i];
+                if (lineYPos != glyph.PenLocation.Y)
+                {
+                    Assert.False(glyph.IsWhiteSpace());
+                    Assert.False(layout[i - 1].IsWhiteSpace());
+                    lineYPos = glyph.PenLocation.Y;
+                }
             }
         }
     }
@@ -71,14 +73,16 @@ public class Issues_47
 
         var r = new GlyphRenderer();
 
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        using (ArrayBuilder<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350
-        });
+        }))
+        {
+            Assert.True(layout[0].IsWhiteSpace());
+            Assert.True(layout[1].IsWhiteSpace());
+            Assert.True(layout[2].IsWhiteSpace());
+        }
 
-        Assert.True(layout[0].IsWhiteSpace());
-        Assert.True(layout[1].IsWhiteSpace());
-        Assert.True(layout[2].IsWhiteSpace());
     }
 
     [Fact]
@@ -89,14 +93,16 @@ public class Issues_47
 
         var r = new GlyphRenderer();
 
-        IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
+        using (ArrayBuilder<GlyphLayout> layout = TextLayout.GenerateLayout(text.AsSpan(), new TextOptions(new Font(font, 30))
         {
             WrappingLength = 350
-        });
+        }))
+        {
+            Assert.False(layout[layout.Count - 1].IsWhiteSpace());
+            Assert.False(layout[layout.Count - 2].IsWhiteSpace());
+            Assert.False(layout[layout.Count - 3].IsWhiteSpace());
+        }
 
-        Assert.False(layout[layout.Count - 1].IsWhiteSpace());
-        Assert.False(layout[layout.Count - 2].IsWhiteSpace());
-        Assert.False(layout[layout.Count - 3].IsWhiteSpace());
     }
 
     public static Font CreateFont(string text)

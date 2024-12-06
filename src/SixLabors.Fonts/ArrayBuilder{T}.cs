@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Buffers;
+using System.Collections;
 using System.Runtime.CompilerServices;
 
 namespace SixLabors.Fonts;
@@ -10,8 +11,7 @@ namespace SixLabors.Fonts;
 /// A helper type for avoiding allocations while building arrays.
 /// </summary>
 /// <typeparam name="T">The type of item contained in the array.</typeparam>
-internal struct ArrayBuilder<T>
-    where T : struct
+internal struct ArrayBuilder<T> : IDisposable, IList<T>, IReadOnlyList<T>
 {
     private const int DefaultCapacity = 4;
     private const int MaxCoreClrArrayLength = 0x7FeFFFFF;
@@ -35,7 +35,7 @@ internal struct ArrayBuilder<T>
     /// <summary>
     /// Gets or sets the number of items in the array.
     /// </summary>
-    public int Length
+    public int Count
     {
         readonly get => this.size;
 
@@ -56,13 +56,19 @@ internal struct ArrayBuilder<T>
         }
     }
 
+    public readonly bool IsReadOnly => false;
+
+    T IList<T>.this[int index] { readonly get => this[index]; set => this[index] = value; }
+
+    readonly T IReadOnlyList<T>.this[int index] => this[index];
+
     /// <summary>
     /// Returns a reference to specified element of the array.
     /// </summary>
     /// <param name="index">The index of the element to return.</param>
     /// <returns>The <typeparamref name="T"/>.</returns>
     /// <exception cref="IndexOutOfRangeException">
-    /// Thrown when index less than 0 or index greater than or equal to <see cref="Length"/>.
+    /// Thrown when index less than 0 or index greater than or equal to <see cref="Count"/>.
     /// </exception>
     public readonly ref T this[int index]
     {
@@ -83,7 +89,7 @@ internal struct ArrayBuilder<T>
         int position = this.size;
 
         // Expand the array.
-        this.Length++;
+        this.Count++;
         this.data![position] = item;
     }
 
@@ -99,9 +105,9 @@ internal struct ArrayBuilder<T>
         int position = this.size;
 
         // Expand the array.
-        this.Length += length;
+        this.Count += length;
 
-        ArraySlice<T> slice = this.AsSlice(position, this.Length - position);
+        ArraySlice<T> slice = this.AsSlice(position, this.Count - position);
         if (clear)
         {
             slice.Span.Clear();
@@ -120,9 +126,9 @@ internal struct ArrayBuilder<T>
         int position = this.size;
 
         // Expand the array.
-        this.Length += value.Length;
+        this.Count += value.Length;
 
-        ArraySlice<T> slice = this.AsSlice(position, this.Length - position);
+        ArraySlice<T> slice = this.AsSlice(position, this.Count - position);
         value.CopyTo(slice);
 
         return slice;
@@ -167,29 +173,15 @@ internal struct ArrayBuilder<T>
 
     public readonly bool Contains(T item)
     {
-        for (int i = 0; i < this.size; i++)
+        if (this.size != 0)
         {
-            if (this[i].Equals(item))
-            {
-                return true;
-            }
+            return this.IndexOf(item) != -1;
         }
 
         return false;
     }
 
-    public readonly int IndexOf(T item)
-    {
-        for (int i = 0; i < this.size; i++)
-        {
-            if (this[i].Equals(item))
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
+    public readonly int IndexOf(T item) => Array.IndexOf(this.data!, item, 0, this.size);
 
     public void Insert(int index, T item)
     {
@@ -198,8 +190,11 @@ internal struct ArrayBuilder<T>
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
-        this.Length++;
-        Array.Copy(this.data!, index, this.data!, index + 1, this.size - index - 1);
+        if (index != this.Count++)
+        {
+            Array.Copy(this.data!, index, this.data!, index + 1, this.size - index - 1);
+        }
+
         this[index] = item;
     }
 
@@ -222,8 +217,12 @@ internal struct ArrayBuilder<T>
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
-        Array.Copy(this.data!, index + 1, this.data!, index, this.size - index - 1);
-        this.Length--;
+        if (index != this.Count - 1)
+        {
+            Array.Copy(this.data!, index + 1, this.data!, index, this.size - index - 1);
+        }
+
+        this.Count--;
     }
 
     public void RemoveRange(int start, int count)
@@ -238,12 +237,18 @@ internal struct ArrayBuilder<T>
             throw new ArgumentOutOfRangeException(nameof(count));
         }
 
-        this.Length -= count;
+        int end = start + count;
+        if (end != this.Count - 1)
+        {
+            Array.Copy(this.data!, end, this.data!, start, this.size - end);
+        }
+
+        this.Count -= count;
     }
 
     public readonly void Sort() => this.data!.AsSpan(0, this.size).Sort();
 
-    public unsafe void Free()
+    public void Dispose()
     {
         if (this.data != null)
         {
@@ -253,12 +258,42 @@ internal struct ArrayBuilder<T>
         this = default;
     }
 
+    public readonly IEnumerator<T> GetEnumerator()
+    {
+        for (int i = 0; i < this.size; i++)
+        {
+            yield return this.data![i];
+        }
+    }
+
+    readonly IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+    public readonly void CopyTo(T[] array, int arrayIndex)
+    {
+        if (array == null)
+        {
+            throw new ArgumentNullException(nameof(array));
+        }
+
+        if (arrayIndex < 0 || arrayIndex >= array.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+        }
+
+        if (array.Length - arrayIndex < this.size)
+        {
+            throw new ArgumentException("Destination array is not long enough to copy all the items in the collection. Check array index and length.");
+        }
+
+        Array.Copy(this.data!, 0, array, arrayIndex, this.size);
+    }
+
     /// <summary>
     /// Returns the current state of the array as a slice.
     /// </summary>
     /// <returns>The <see cref="ArraySlice{T}"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly ArraySlice<T> AsSlice() => this.AsSlice(this.Length);
+    public readonly ArraySlice<T> AsSlice() => this.AsSlice(this.Count);
 
     /// <summary>
     /// Returns the current state of the array as a slice.

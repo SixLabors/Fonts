@@ -17,7 +17,7 @@ public class Issues_417
 
         // References values generated using.
         // https://www.corvelsoftware.co.uk/crowbar/
-        TextMeasurer.TryMeasureCharacterAdvances("Text", options, out ReadOnlySpan<GlyphBounds> advances);
+        TextMeasurer.TryMeasureCharacterAdvances("Text", options, out GlyphBounds[] advances);
 
         Assert.Equal(4, advances.Length);
         Assert.Equal(486, advances[0].Bounds.Width);

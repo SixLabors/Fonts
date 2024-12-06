@@ -2,10 +2,10 @@
 // Licensed under the Six Labors Split License.
 
 using System.Buffers;
+using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -15,75 +15,75 @@ namespace SixLabors.Fonts;
 /// </summary>
 internal static class TextLayout
 {
-    public static IReadOnlyList<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
+    public static ArrayBuilder<GlyphLayout> GenerateLayout(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
         {
-            return Array.Empty<GlyphLayout>();
+            return default;
         }
 
-        TextBox textBox = ProcessText(text, options);
-        return LayoutText(textBox, options);
+        using (TextBox textBox = ProcessText(text, options))
+        {
+            return LayoutText(textBox, options);
+        }
     }
 
-    public static IReadOnlyList<TextRun> BuildTextRuns(ReadOnlySpan<char> text, TextOptions options)
+    public static IEnumerable<TextRun> BuildTextRuns(int textGraphemeCount, TextOptions options)
     {
         if (options.TextRuns is null || options.TextRuns.Count == 0)
         {
-            return new TextRun[]
+            yield return new TextRun()
             {
-                new()
-                {
-                    Start = 0,
-                    End = text.GetGraphemeCount(),
-                    Font = options.Font
-                }
+                Start = 0,
+                End = textGraphemeCount,
+                Font = options.Font
             };
+            yield break;
         }
 
         int start = 0;
-        int end = text.GetGraphemeCount();
-        List<TextRun> textRuns = new((options.TextRuns!.Count << 1) + 1);
+        TextRun? previous = null;
         foreach (TextRun textRun in options.TextRuns!.OrderBy(x => x.Start))
         {
-            // Fill gaps within runs.
+            if (previous != null)
+            {
+                start = Math.Min(previous.End, textRun.Start);
+                previous.End = start;
+                yield return previous;
+            }
+
             if (textRun.Start > start)
             {
-                textRuns.Add(new()
+                yield return new()
                 {
                     Start = start,
                     End = textRun.Start,
                     Font = options.Font
-                });
+                };
+                start = textRun.Start;
             }
 
-            // Add the current run, ensuring the font is not null.
             textRun.Font ??= options.Font;
+            previous = textRun;
+        }
 
-            // Ensure that the previous run does not overlap the current.
-            if (textRuns.Count > 0)
-            {
-                int prevIndex = textRuns.Count - 1;
-                TextRun previous = textRuns[prevIndex];
-                previous.End = Math.Min(previous.End, textRun.Start);
-            }
-
-            textRuns.Add(textRun);
-            start = textRun.End;
+        if (previous != null)
+        {
+            start = Math.Min(previous.End, textGraphemeCount);
+            previous.End = start;
+            yield return previous;
         }
 
         // Add a final run if required.
-        if (start < end)
+        if (start < textGraphemeCount)
         {
-            textRuns.Add(new()
+            yield return new()
             {
                 Start = start,
-                End = end,
+                End = textGraphemeCount,
                 Font = options.Font
-            });
+            };
         }
-
-        return textRuns;
     }
 
     private static unsafe TextBox ProcessText(ReadOnlySpan<char> text, TextOptions options)
@@ -92,20 +92,14 @@ internal static class TextLayout
         // Font[] fallbackFonts = (options.FallbackFontFamilies?.Count > 0)
         //     ? options.FallbackFontFamilies.Where(x => !x.Equals(options.Font.Family)).Select(x => new Font(x, options.Font.Size, options.Font.RequestedStyle)).ToArray()
         //     : Array.Empty<Font>();
-        Font[]? fallbackFonts = null;
-        BidiAlgorithm bidi = default;
         BidiData bidiData = default;
+        BidiAlgorithm bidi = default;
+        ArrayBuilder<Font> fallbackFonts = new(options.FallbackFontFamilies.Count);
         try
         {
-            IReadOnlyList<FontFamily> fallbackFontFamilies = options.FallbackFontFamilies;
-            if (fallbackFontFamilies != null && fallbackFontFamilies.Count > 0)
+            foreach (FontFamily family in options.FallbackFontFamilies)
             {
-                fallbackFonts = ArrayPool<Font>.Shared.Rent(fallbackFontFamilies.Count);
-                int i = 0;
-                foreach (FontFamily family in fallbackFontFamilies)
-                {
-                    fallbackFonts[i++] = new Font(family, options.Font.Size, options.Font.RequestedStyle);
-                }
+                fallbackFonts.Add(new Font(family, options.Font.Size, options.Font.RequestedStyle));
             }
 
             LayoutMode layoutMode = options.LayoutMode;
@@ -127,23 +121,21 @@ internal static class TextLayout
 
             // Get the list of directional runs
             // IEnumerable<BidiRun> bidiRuns = BidiRun.CoalesceLevels(bidi.ResolvedLevels);
-            int count = 0;
-            Span<BidiRun> bidiRuns = new(NativeMemory.Alloc((nuint)(bidi.ResolvedLevels.Length * sizeof(BidiRun))), bidi.ResolvedLevels.Length);
-            BidiDictionary<Index, Index> bidiMap = default;
+            ArrayBuilder<BidiRun> bidiRuns = new(bidiData.Length);
+            ArrayBuilder<TextRun> textRuns = new((options.TextRuns.Count << 1) + 1);
+            Dictionary<Index, Index> bidiMap = default;
             try
             {
+                // Incrementally build out collection of glyphs.
                 foreach (BidiRun run in BidiRun.CoalesceLevels(bidi.ResolvedLevels))
                 {
-                    bidiRuns[count++] = run;
+                    bidiRuns.Add(run);
                 }
 
-                fixed (BidiRun* ptr = bidiRuns)
+                foreach (TextRun run in BuildTextRuns(text.GetGraphemeCount(), options))
                 {
-                    bidiRuns = new Span<BidiRun>(NativeMemory.Realloc(ptr, (nuint)(count * sizeof(BidiRun))), count);
+                    textRuns.Add(run);
                 }
-
-                // Incrementally build out collection of glyphs.
-                IReadOnlyList<TextRun> textRuns = BuildTextRuns(text, options);
 
                 // First do multiple font runs using the individual text runs.
                 bool complete = true;
@@ -155,13 +147,13 @@ internal static class TextLayout
                     if (!DoFontRun(
                         textRun.Slice(text),
                         textRun.Start,
-                        textRuns,
+                        ref textRuns,
                         ref textRunIndex,
                         ref codePointIndex,
                         ref bidiRunIndex,
                         false,
                         textRun.Font!,
-                        bidiRuns,
+                        ref bidiRuns,
                         ref bidiMap,
                         substitutions,
                         positionings))
@@ -170,7 +162,7 @@ internal static class TextLayout
                     }
                 }
 
-                if (!complete && fallbackFonts != null && fallbackFonts.Length > 0)
+                if (!complete)
                 {
                     // Finally try our fallback fonts.
                     // We do a complete run here across the whole collection.
@@ -182,13 +174,13 @@ internal static class TextLayout
                         if (DoFontRun(
                             text,
                             0,
-                            textRuns,
+                            ref textRuns,
                             ref textRunIndex,
                             ref codePointIndex,
                             ref bidiRunIndex,
                             true,
                             font,
-                            bidiRuns,
+                            ref bidiRuns,
                             ref bidiMap,
                             substitutions,
                             positionings))
@@ -206,46 +198,30 @@ internal static class TextLayout
                     textRun.Font!.FontMetrics.UpdatePositions(positionings);
                 }
 
-                if (fallbackFonts != null && fallbackFonts.Length > 0)
+                foreach (Font font in fallbackFonts)
                 {
-                    foreach (Font font in fallbackFonts)
-                    {
-                        font.FontMetrics.UpdatePositions(positionings);
-                    }
-
-                    ArrayPool<Font>.Shared.Return(fallbackFonts);
+                    font.FontMetrics.UpdatePositions(positionings);
                 }
 
-                TextBox result = BreakLines(text, options, bidiRuns, ref bidiMap, positionings, layoutMode);
+                TextBox result = BreakLines(text, options, ref bidiRuns, ref bidiMap, positionings, layoutMode);
                 return result;
             }
             finally
             {
-                fixed (BidiRun* ptr = bidiRuns)
-                {
-                    if (ptr != null)
-                    {
-                        NativeMemory.Free(ptr);
-                        bidiRuns = null;
-                    }
-                }
-
-                bidiMap.Free();
+                bidiMap.Dispose();
+                bidiRuns.Dispose();
+                textRuns.Dispose();
             }
         }
         finally
         {
-            if (fallbackFonts != null)
-            {
-                ArrayPool<Font>.Shared.Return(fallbackFonts);
-            }
-
-            bidi.Free();
-            bidiData.Free();
+            bidiData.Dispose();
+            bidi.Dispose();
+            fallbackFonts.Dispose();
         }
     }
 
-    private static IReadOnlyList<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
+    private static ArrayBuilder<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
     {
         LayoutMode layoutMode = options.LayoutMode;
 
@@ -275,7 +251,7 @@ internal static class TextLayout
         }
 
         TextDirection direction = textBox.TextDirection();
-        List<GlyphLayout> glyphs = new(count);
+        ArrayBuilder<GlyphLayout> glyphs = new(count);
 
         if (layoutMode == LayoutMode.HorizontalTopBottom)
         {
@@ -864,14 +840,14 @@ internal static class TextLayout
     private static bool DoFontRun(
         ReadOnlySpan<char> text,
         int start,
-        IReadOnlyList<TextRun> textRuns,
+        ref ArrayBuilder<TextRun> textRuns,
         ref int textRunIndex,
         ref int codePointIndex,
         ref int bidiRunIndex,
         bool isFallbackRun,
         Font font,
-        ReadOnlySpan<BidiRun> bidiRuns,
-        ref BidiDictionary<Index, Index> bidiMap,
+        ref ArrayBuilder<BidiRun> bidiRuns,
+        ref Dictionary<Index, Index> bidiMap,
         GlyphSubstitutionCollection substitutions,
         GlyphPositioningCollection positionings)
     {
@@ -905,7 +881,7 @@ internal static class TextLayout
                     continue;
                 }
 
-                bidiMap.Add(codePointIndex, bidiRunIndex);
+                bidiMap[codePointIndex] = bidiRunIndex;
 
                 int charsConsumed = 0;
                 CodePoint current = codePointEnumerator.Current;
@@ -989,8 +965,8 @@ internal static class TextLayout
     private static TextBox BreakLines(
         ReadOnlySpan<char> text,
         TextOptions options,
-        ReadOnlySpan<BidiRun> bidiRuns,
-        ref BidiDictionary<Index, Index> bidiMap,
+        ref ArrayBuilder<BidiRun> bidiRuns,
+        ref Dictionary<Index, Index> bidiMap,
         GlyphPositioningCollection positionings,
         LayoutMode layoutMode)
     {
@@ -1004,351 +980,354 @@ internal static class TextLayout
 
         // Calculate the position of potential line breaks.
         LineBreakEnumerator lineBreakEnumerator = new(text);
-        List<LineBreak> lineBreaks = new();
-        while (lineBreakEnumerator.MoveNext())
+        using (ArrayBuilder<LineBreak> lineBreaks = default)
         {
-            lineBreaks.Add(lineBreakEnumerator.Current);
-        }
-
-        int lineBreakIndex = 0;
-        LineBreak lastLineBreak = lineBreaks[lineBreakIndex];
-        LineBreak currentLineBreak = lineBreaks[lineBreakIndex];
-        int graphemeIndex;
-        int codePointIndex = 0;
-        float lineAdvance = 0;
-        List<TextLine> textLines = new(lineBreaks.Count);
-        TextLine textLine = new();
-        int glyphCount = 0;
-        int stringIndex = 0;
-
-        // No glyph should contain more than 64 metrics.
-        // We do a sanity check below just in case.
-        Span<float> decomposedAdvancesBuffer = stackalloc float[64];
-
-        // Enumerate through each grapheme in the text.
-        SpanGraphemeEnumerator graphemeEnumerator = new(text);
-        for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
-        {
-            // Now enumerate through each codepoint in the grapheme.
-            int graphemeCodePointIndex = 0;
-            SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current);
-            while (codePointEnumerator.MoveNext())
+            while (lineBreakEnumerator.MoveNext())
             {
-                if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out bool isDecomposed, out IReadOnlyList<GlyphMetrics>? metrics))
+                lineBreaks.Add(lineBreakEnumerator.Current);
+            }
+
+            int lineBreakIndex = 0;
+            LineBreak lastLineBreak = lineBreaks[lineBreakIndex];
+            LineBreak currentLineBreak = lineBreaks[lineBreakIndex];
+            int graphemeIndex;
+            int codePointIndex = 0;
+            float lineAdvance = 0;
+            ArrayBuilder<TextLine> textLines = new(lineBreaks.Count);
+            TextLine textLine = new();
+            int glyphCount = 0;
+            int stringIndex = 0;
+
+            // Enumerate through each grapheme in the text.
+            SpanGraphemeEnumerator graphemeEnumerator = new(text);
+            for (graphemeIndex = 0; graphemeEnumerator.MoveNext(); graphemeIndex++)
+            {
+                // Now enumerate through each codepoint in the grapheme.
+                int graphemeCodePointIndex = 0;
+                SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current);
+                while (codePointEnumerator.MoveNext())
                 {
-                    // Codepoint was skipped during original enumeration.
-                    codePointIndex++;
-                    graphemeCodePointIndex++;
-                    continue;
-                }
-
-                // Determine whether the glyph advance should be calculated using vertical or horizontal metrics
-                // For vertical mixed layout we will be rotating glyphs with the vertical orientation type R or TR.
-                CodePoint codePoint = codePointEnumerator.Current;
-                VerticalOrientationType verticalOrientationType = CodePoint.GetVerticalOrientationType(codePoint);
-                bool isRotated = isVerticalMixedLayout && verticalOrientationType is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate;
-
-                if (CodePoint.IsVariationSelector(codePoint))
-                {
-                    codePointIndex++;
-                    graphemeCodePointIndex++;
-                    continue;
-                }
-
-                // Calculate the advance for the current codepoint.
-                GlyphMetrics glyph = metrics[0];
-
-                float glyphAdvance;
-
-                // This should never happen, but we need to ensure that the buffer is large enough
-                // if, for some crazy reason, a glyph does contain more than 64 metrics.
-                Span<float> decomposedAdvances = metrics.Count > decomposedAdvancesBuffer.Length
-                    ? new float[metrics.Count]
-                    : decomposedAdvancesBuffer[..(isDecomposed ? metrics.Count : 1)];
-
-                if (isHorizontalLayout || isRotated)
-                {
-                    glyphAdvance = glyph.AdvanceWidth;
-                }
-                else
-                {
-                    glyphAdvance = glyph.AdvanceHeight;
-                }
-
-                decomposedAdvances[0] = glyphAdvance;
-
-                if (CodePoint.IsTabulation(codePoint))
-                {
-                    if (options.TabWidth > -1F)
+                    if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out bool isDecomposed, out IReadOnlyList<GlyphMetrics>? metrics))
                     {
-                        // Do not use the default font tab width. Instead find the advance for the space glyph
-                        // and multiply that by the options value.
-                        CodePoint space = new(0x0020);
-                        if (glyph.FontMetrics.TryGetGlyphId(space, out ushort spaceGlyphId))
-                        {
-                            GlyphMetrics spaceMetrics = glyph.FontMetrics.GetGlyphMetrics(
-                                space,
-                                spaceGlyphId,
-                                glyph.TextAttributes,
-                                glyph.TextDecorations,
-                                layoutMode,
-                                options.ColorFontSupport)[0];
+                        // Codepoint was skipped during original enumeration.
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
+                        continue;
+                    }
 
+                    // Determine whether the glyph advance should be calculated using vertical or horizontal metrics
+                    // For vertical mixed layout we will be rotating glyphs with the vertical orientation type R or TR.
+                    CodePoint codePoint = codePointEnumerator.Current;
+                    VerticalOrientationType verticalOrientationType = CodePoint.GetVerticalOrientationType(codePoint);
+                    bool isRotated = isVerticalMixedLayout && verticalOrientationType is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate;
+
+                    if (CodePoint.IsVariationSelector(codePoint))
+                    {
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
+                        continue;
+                    }
+
+                    // Calculate the advance for the current codepoint.
+                    GlyphMetrics glyph = metrics[0];
+
+                    float glyphAdvance;
+
+                    // This should never happen, but we need to ensure that the buffer is large enough
+                    // if, for some crazy reason, a glyph does contain more than 64 metrics.
+                    float[] rentedArray = ArrayPool<float>.Shared.Rent(isDecomposed ? metrics.Count : 1);
+                    Span<float> decomposedAdvances = new(rentedArray, 0, isDecomposed ? metrics.Count : 1);
+                    try
+                    {
+                        if (isHorizontalLayout || isRotated)
+                        {
+                            glyphAdvance = glyph.AdvanceWidth;
+                        }
+                        else
+                        {
+                            glyphAdvance = glyph.AdvanceHeight;
+                        }
+
+                        decomposedAdvances[0] = glyphAdvance;
+
+                        if (CodePoint.IsTabulation(codePoint))
+                        {
+                            if (options.TabWidth > -1F)
+                            {
+                                // Do not use the default font tab width. Instead find the advance for the space glyph
+                                // and multiply that by the options value.
+                                CodePoint space = new(0x0020);
+                                if (glyph.FontMetrics.TryGetGlyphId(space, out ushort spaceGlyphId))
+                                {
+                                    GlyphMetrics spaceMetrics = glyph.FontMetrics.GetGlyphMetrics(
+                                        space,
+                                        spaceGlyphId,
+                                        glyph.TextAttributes,
+                                        glyph.TextDecorations,
+                                        layoutMode,
+                                        options.ColorFontSupport)[0];
+
+                                    if (isHorizontalLayout || isRotated)
+                                    {
+                                        glyphAdvance = spaceMetrics.AdvanceWidth * options.TabWidth;
+                                        glyph.SetAdvanceWidth((ushort)glyphAdvance);
+                                    }
+                                    else
+                                    {
+                                        glyphAdvance = spaceMetrics.AdvanceHeight * options.TabWidth;
+                                        glyph.SetAdvanceHeight((ushort)glyphAdvance);
+                                    }
+                                }
+                            }
+                        }
+                        else if (metrics.Count == 1 && (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthNonJoiner(codePoint)))
+                        {
+                            // The zero-width joiner characters should be ignored when determining word or
+                            // line break boundaries so are safe to skip here. Any existing instances are the result of font error
+                            // unless multiple metrics are associated with code point. In this case they are most likely the result
+                            // of a substitution and shouldn't be ignored.
+                            glyphAdvance = 0;
+                            decomposedAdvances[0] = 0;
+                        }
+                        else if (!CodePoint.IsNewLine(codePoint))
+                        {
+                            // Standard text.
+                            // If decomposed we need to add the advance; otherwise, use the largest advance for the metrics.
                             if (isHorizontalLayout || isRotated)
                             {
-                                glyphAdvance = spaceMetrics.AdvanceWidth * options.TabWidth;
-                                glyph.SetAdvanceWidth((ushort)glyphAdvance);
+                                for (int i = 1; i < metrics.Count; i++)
+                                {
+                                    float a = metrics[i].AdvanceWidth;
+                                    if (isDecomposed)
+                                    {
+                                        glyphAdvance += a;
+                                        decomposedAdvances[i] = a;
+                                    }
+                                    else if (a > glyphAdvance)
+                                    {
+                                        glyphAdvance = a;
+                                    }
+                                }
                             }
                             else
                             {
-                                glyphAdvance = spaceMetrics.AdvanceHeight * options.TabWidth;
-                                glyph.SetAdvanceHeight((ushort)glyphAdvance);
-                            }
-                        }
-                    }
-                }
-                else if (metrics.Count == 1 && (CodePoint.IsZeroWidthJoiner(codePoint) || CodePoint.IsZeroWidthNonJoiner(codePoint)))
-                {
-                    // The zero-width joiner characters should be ignored when determining word or
-                    // line break boundaries so are safe to skip here. Any existing instances are the result of font error
-                    // unless multiple metrics are associated with code point. In this case they are most likely the result
-                    // of a substitution and shouldn't be ignored.
-                    glyphAdvance = 0;
-                    decomposedAdvances[0] = 0;
-                }
-                else if (!CodePoint.IsNewLine(codePoint))
-                {
-                    // Standard text.
-                    // If decomposed we need to add the advance; otherwise, use the largest advance for the metrics.
-                    if (isHorizontalLayout || isRotated)
-                    {
-                        for (int i = 1; i < metrics.Count; i++)
-                        {
-                            float a = metrics[i].AdvanceWidth;
-                            if (isDecomposed)
-                            {
-                                glyphAdvance += a;
-                                decomposedAdvances[i] = a;
-                            }
-                            else if (a > glyphAdvance)
-                            {
-                                glyphAdvance = a;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        for (int i = 1; i < metrics.Count; i++)
-                        {
-                            float a = metrics[i].AdvanceHeight;
-                            if (isDecomposed)
-                            {
-                                glyphAdvance += a;
-                                decomposedAdvances[i] = a;
-                            }
-                            else if (a > glyphAdvance)
-                            {
-                                glyphAdvance = a;
-                            }
-                        }
-                    }
-                }
-
-                // Now scale the advance.
-                if (isHorizontalLayout || isRotated)
-                {
-                    float scaleAX = pointSize / glyph.ScaleFactor.X;
-                    glyphAdvance *= scaleAX;
-
-                    for (int i = 0; i < decomposedAdvances.Length; i++)
-                    {
-                        decomposedAdvances[i] *= scaleAX;
-                    }
-                }
-                else
-                {
-                    float scaleAY = pointSize / glyph.ScaleFactor.Y;
-                    glyphAdvance *= scaleAY;
-                    for (int i = 0; i < decomposedAdvances.Length; i++)
-                    {
-                        decomposedAdvances[i] *= scaleAY;
-                    }
-                }
-
-                // Should we start a new line?
-                bool requiredBreak = false;
-                if (graphemeCodePointIndex == 0)
-                {
-                    // Mandatory wrap at index.
-                    if (currentLineBreak.PositionWrap == codePointIndex && currentLineBreak.Required)
-                    {
-                        textLines.Add(textLine.Finalize());
-                        glyphCount += textLine.Count;
-                        textLine = new();
-                        lineAdvance = 0;
-                        requiredBreak = true;
-                    }
-                    else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
-                    {
-                        // Forced wordbreak
-                        if (breakAll && textLine.Count > 0)
-                        {
-                            textLines.Add(textLine.Finalize());
-                            glyphCount += textLine.Count;
-                            textLine = new();
-                            lineAdvance = 0;
-                        }
-                        else if (currentLineBreak.PositionMeasure == codePointIndex)
-                        {
-                            // Exact length match. Check for CJK
-                            if (keepAll)
-                            {
-                                TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
-                                if (!split.Equals(textLine))
+                                for (int i = 1; i < metrics.Count; i++)
                                 {
-                                    textLines.Add(textLine.Finalize());
-                                    textLine = split;
-                                    lineAdvance = split.ScaledLineAdvance;
+                                    float a = metrics[i].AdvanceHeight;
+                                    if (isDecomposed)
+                                    {
+                                        glyphAdvance += a;
+                                        decomposedAdvances[i] = a;
+                                    }
+                                    else if (a > glyphAdvance)
+                                    {
+                                        glyphAdvance = a;
+                                    }
                                 }
                             }
-                            else if (textLine.Count > 0)
+                        }
+
+                        // Now scale the advance.
+                        if (isHorizontalLayout || isRotated)
+                        {
+                            float scaleAX = pointSize / glyph.ScaleFactor.X;
+                            glyphAdvance *= scaleAX;
+
+                            for (int i = 0; i < decomposedAdvances.Length; i++)
+                            {
+                                decomposedAdvances[i] *= scaleAX;
+                            }
+                        }
+                        else
+                        {
+                            float scaleAY = pointSize / glyph.ScaleFactor.Y;
+                            glyphAdvance *= scaleAY;
+                            for (int i = 0; i < decomposedAdvances.Length; i++)
+                            {
+                                decomposedAdvances[i] *= scaleAY;
+                            }
+                        }
+
+                        // Should we start a new line?
+                        bool requiredBreak = false;
+                        if (graphemeCodePointIndex == 0)
+                        {
+                            // Mandatory wrap at index.
+                            if (currentLineBreak.PositionWrap == codePointIndex && currentLineBreak.Required)
                             {
                                 textLines.Add(textLine.Finalize());
                                 glyphCount += textLine.Count;
                                 textLine = new();
                                 lineAdvance = 0;
+                                requiredBreak = true;
+                            }
+                            else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
+                            {
+                                // Forced wordbreak
+                                if (breakAll && textLine.Count > 0)
+                                {
+                                    textLines.Add(textLine.Finalize());
+                                    glyphCount += textLine.Count;
+                                    textLine = new();
+                                    lineAdvance = 0;
+                                }
+                                else if (currentLineBreak.PositionMeasure == codePointIndex)
+                                {
+                                    // Exact length match. Check for CJK
+                                    if (keepAll)
+                                    {
+                                        TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
+                                        if (!split.Equals(textLine))
+                                        {
+                                            textLines.Add(textLine.Finalize());
+                                            textLine = split;
+                                            lineAdvance = split.ScaledLineAdvance;
+                                        }
+                                    }
+                                    else if (textLine.Count > 0)
+                                    {
+                                        textLines.Add(textLine.Finalize());
+                                        glyphCount += textLine.Count;
+                                        textLine = new();
+                                        lineAdvance = 0;
+                                    }
+                                }
+                                else if (currentLineBreak.PositionWrap == codePointIndex)
+                                {
+                                    // Exact length match. Check for CJK
+                                    TextLine split = textLine.SplitAt(currentLineBreak, keepAll);
+                                    if (!split.Equals(textLine))
+                                    {
+                                        textLines.Add(textLine.Finalize());
+                                        textLine = split;
+                                        lineAdvance = split.ScaledLineAdvance;
+                                    }
+                                    else if (textLine.Count > 0)
+                                    {
+                                        textLines.Add(textLine.Finalize());
+                                        textLine = new();
+                                        lineAdvance = 0;
+                                    }
+                                }
+                                else if (lastLineBreak.PositionWrap < codePointIndex && !CodePoint.IsWhiteSpace(codePoint))
+                                {
+                                    // Split the current text line into two at the last wrapping point if the current glyph
+                                    // does not represent whitespace. Whitespace characters will be correctly trimmed at the
+                                    // next iteration.
+                                    TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
+                                    if (!split.Equals(textLine))
+                                    {
+                                        textLines.Add(textLine.Finalize());
+                                        textLine = split;
+                                        lineAdvance = split.ScaledLineAdvance;
+                                    }
+                                    else if (breakWord && textLine.Count > 0)
+                                    {
+                                        textLines.Add(textLine.Finalize());
+                                        glyphCount += textLine.Count;
+                                        textLine = new();
+                                        lineAdvance = 0;
+                                    }
+                                }
+                                else if (breakWord && textLine.Count > 0)
+                                {
+                                    textLines.Add(textLine.Finalize());
+                                    glyphCount += textLine.Count;
+                                    textLine = new();
+                                    lineAdvance = 0;
+                                }
                             }
                         }
-                        else if (currentLineBreak.PositionWrap == codePointIndex)
+
+                        // Find the next line break.
+                        if (currentLineBreak.PositionWrap == codePointIndex)
                         {
-                            // Exact length match. Check for CJK
-                            TextLine split = textLine.SplitAt(currentLineBreak, keepAll);
-                            if (!split.Equals(textLine))
-                            {
-                                textLines.Add(textLine.Finalize());
-                                textLine = split;
-                                lineAdvance = split.ScaledLineAdvance;
-                            }
-                            else if (textLine.Count > 0)
-                            {
-                                textLines.Add(textLine.Finalize());
-                                textLine = new();
-                                lineAdvance = 0;
-                            }
+                            lastLineBreak = currentLineBreak;
+                            currentLineBreak = lineBreaks[++lineBreakIndex];
                         }
-                        else if (lastLineBreak.PositionWrap < codePointIndex && !CodePoint.IsWhiteSpace(codePoint))
+
+                        // Do not start a line following a break with breaking whitespace
+                        // unless the break was required.
+                        if (textLine.Count == 0
+                            && textLines.Count > 0
+                            && !requiredBreak
+                            && CodePoint.IsWhiteSpace(codePoint)
+                            && !CodePoint.IsNonBreakingSpace(codePoint)
+                            && !CodePoint.IsTabulation(codePoint)
+                            && !CodePoint.IsNewLine(codePoint))
                         {
-                            // Split the current text line into two at the last wrapping point if the current glyph
-                            // does not represent whitespace. Whitespace characters will be correctly trimmed at the
-                            // next iteration.
-                            TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
-                            if (!split.Equals(textLine))
-                            {
-                                textLines.Add(textLine.Finalize());
-                                textLine = split;
-                                lineAdvance = split.ScaledLineAdvance;
-                            }
-                            else if (breakWord && textLine.Count > 0)
-                            {
-                                textLines.Add(textLine.Finalize());
-                                glyphCount += textLine.Count;
-                                textLine = new();
-                                lineAdvance = 0;
-                            }
+                            codePointIndex++;
+                            graphemeCodePointIndex++;
+                            continue;
                         }
-                        else if (breakWord && textLine.Count > 0)
+
+                        if (textLine.Count > 0 && CodePoint.IsNewLine(codePoint))
                         {
-                            textLines.Add(textLine.Finalize());
-                            glyphCount += textLine.Count;
-                            textLine = new();
-                            lineAdvance = 0;
+                            // Do not add new lines unless at position zero.
+                            codePointIndex++;
+                            graphemeCodePointIndex++;
+                            continue;
                         }
+
+                        // For non-decomposed glyphs the length is always 1.
+                        for (int i = 0; i < decomposedAdvances.Length; i++)
+                        {
+                            float decomposedAdvance = decomposedAdvances[i];
+
+                            // Work out the scaled metrics for the glyph.
+                            GlyphMetrics metric = metrics[i];
+                            float scaleY = pointSize / metric.ScaleFactor.Y;
+                            IMetricsHeader metricsHeader = isHorizontalLayout || isRotated
+                                ? metric.FontMetrics.HorizontalMetrics
+                                : metric.FontMetrics.VerticalMetrics;
+                            float ascender = metricsHeader.Ascender * scaleY;
+
+                            // Match how line height is calculated for browsers.
+                            // https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
+                            float descender = Math.Abs(metricsHeader.Descender * scaleY);
+                            float lineHeight = metric.UnitsPerEm * scaleY;
+                            float delta = ((metricsHeader.LineHeight * scaleY) - lineHeight) * .5F;
+                            ascender -= delta;
+                            descender -= delta;
+
+                            // Add our metrics to the line.
+                            bidiMap.TryGetValue(codePointIndex, out Index index);
+                            lineAdvance += decomposedAdvance;
+                            textLine.Add(
+                                isDecomposed ? new GlyphMetrics[] { metric } : metrics,
+                                pointSize,
+                                decomposedAdvance,
+                                lineHeight,
+                                ascender,
+                                descender,
+                                bidiRuns[index],
+                                graphemeIndex,
+                                codePointIndex,
+                                isRotated,
+                                isDecomposed,
+                                stringIndex);
+                        }
+
+                        codePointIndex++;
+                        graphemeCodePointIndex++;
+                    }
+                    finally
+                    {
+                        ArrayPool<float>.Shared.Return(rentedArray);
                     }
                 }
 
-                // Find the next line break.
-                if (currentLineBreak.PositionWrap == codePointIndex)
-                {
-                    lastLineBreak = currentLineBreak;
-                    currentLineBreak = lineBreaks[++lineBreakIndex];
-                }
-
-                // Do not start a line following a break with breaking whitespace
-                // unless the break was required.
-                if (textLine.Count == 0
-                    && textLines.Count > 0
-                    && !requiredBreak
-                    && CodePoint.IsWhiteSpace(codePoint)
-                    && !CodePoint.IsNonBreakingSpace(codePoint)
-                    && !CodePoint.IsTabulation(codePoint)
-                    && !CodePoint.IsNewLine(codePoint))
-                {
-                    codePointIndex++;
-                    graphemeCodePointIndex++;
-                    continue;
-                }
-
-                if (textLine.Count > 0 && CodePoint.IsNewLine(codePoint))
-                {
-                    // Do not add new lines unless at position zero.
-                    codePointIndex++;
-                    graphemeCodePointIndex++;
-                    continue;
-                }
-
-                // For non-decomposed glyphs the length is always 1.
-                for (int i = 0; i < decomposedAdvances.Length; i++)
-                {
-                    float decomposedAdvance = decomposedAdvances[i];
-
-                    // Work out the scaled metrics for the glyph.
-                    GlyphMetrics metric = metrics[i];
-                    float scaleY = pointSize / metric.ScaleFactor.Y;
-                    IMetricsHeader metricsHeader = isHorizontalLayout || isRotated
-                        ? metric.FontMetrics.HorizontalMetrics
-                        : metric.FontMetrics.VerticalMetrics;
-                    float ascender = metricsHeader.Ascender * scaleY;
-
-                    // Match how line height is calculated for browsers.
-                    // https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
-                    float descender = Math.Abs(metricsHeader.Descender * scaleY);
-                    float lineHeight = metric.UnitsPerEm * scaleY;
-                    float delta = ((metricsHeader.LineHeight * scaleY) - lineHeight) * .5F;
-                    ascender -= delta;
-                    descender -= delta;
-
-                    // Add our metrics to the line.
-                    bidiMap.TryGetValue(codePointIndex, out Index index);
-                    lineAdvance += decomposedAdvance;
-                    textLine.Add(
-                        isDecomposed ? new GlyphMetrics[] { metric } : metrics,
-                        pointSize,
-                        decomposedAdvance,
-                        lineHeight,
-                        ascender,
-                        descender,
-                        bidiRuns[index],
-                        graphemeIndex,
-                        codePointIndex,
-                        isRotated,
-                        isDecomposed,
-                        stringIndex);
-                }
-
-                codePointIndex++;
-                graphemeCodePointIndex++;
+                stringIndex += graphemeEnumerator.Current.Length;
             }
 
-            stringIndex += graphemeEnumerator.Current.Length;
-        }
+            // Add the final line.
+            if (textLine.Count > 0)
+            {
+                textLines.Add(textLine.Finalize());
+            }
 
-        // Add the final line.
-        if (textLine.Count > 0)
-        {
-            textLines.Add(textLine.Finalize());
+            return new TextBox(options, textLines);
         }
-
-        return new TextBox(options, textLines);
     }
 
     private struct Index : IEqualityComparer<Index>
@@ -1364,7 +1343,413 @@ internal static class TextLayout
         public readonly int GetHashCode([DisallowNull] Index obj) => obj.Value;
     }
 
-    internal readonly struct TextBox
+    private struct Dictionary<T1, T2> : IDictionary<T1, T2>, IDisposable
+    {
+        private ArrayBuilder<KeyValuePair<T1, T2>> items = default;
+        private ArrayBuilder<Entry> entities = default;
+
+        public Dictionary()
+        {
+        }
+
+        public readonly ICollection<T1> Keys
+        {
+            get
+            {
+                List<T1> result = new(this.Count);
+                for (int i = 0; i < this.items.Count; i++)
+                {
+                    result.Add(this.items[i].Key);
+                }
+
+                return result;
+            }
+        }
+
+        public readonly ICollection<T2> Values
+        {
+            get
+            {
+                List<T2> result = new(this.Count);
+                for (int i = 0; i < this.items.Count; i++)
+                {
+                    result.Add(this.items[i].Value);
+                }
+
+                return result;
+            }
+        }
+
+        public readonly int Count => this.items.Count;
+
+        public readonly bool IsReadOnly => false;
+
+        public T2 this[T1 key]
+        {
+            readonly get
+            {
+                if (key == null)
+                {
+                    throw new ArgumentNullException(nameof(key));
+                }
+
+                int index = Math.Abs(key.GetHashCode()) % this.Count;
+                Entry currentKeyEntry;
+                do
+                {
+                    currentKeyEntry = this.entities[index];
+                    index = currentKeyEntry.Next;
+                }
+                while (index >= 0 && !currentKeyEntry.Key!.Equals(key));
+
+                if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key!.Equals(key))
+                {
+                    return default!;
+                }
+                else
+                {
+                    return this.items[currentKeyEntry.Index].Value;
+                }
+            }
+
+            set
+            {
+                if (key == null)
+                {
+                    throw new ArgumentNullException(nameof(key));
+                }
+
+                if (this.Count == 0)
+                {
+                    this.items.Add(new KeyValuePair<T1, T2>(key, value));
+                    this.Resize();
+                    return;
+                }
+
+                int index = Math.Abs(key.GetHashCode()) % this.Count;
+                Entry currentKeyEntry;
+                do
+                {
+                    currentKeyEntry = this.entities[index];
+                    index = currentKeyEntry.Next;
+                }
+                while (index >= 0 && !currentKeyEntry.Key!.Equals(key));
+
+                if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key!.Equals(key))
+                {
+                    this.items.Add(new KeyValuePair<T1, T2>(key, value));
+                    this.Resize();
+                }
+                else
+                {
+                    this.items[currentKeyEntry.Index] = new KeyValuePair<T1, T2>(key, value);
+                }
+            }
+        }
+
+        private void Resize()
+        {
+            int length = this.items.Count;
+            this.entities.Count = length;
+            for (int i = 0; i < length; i++)
+            {
+                this.entities[i] = new();
+            }
+
+            for (int i = 0; i < length; i++)
+            {
+                Entry keyEntry = new()
+                {
+                    Index = i,
+                    Next = -1,
+                    Key = this.items[i].Key
+                };
+                int index = Math.Abs(this.items[i].Key!.GetHashCode()) % length;
+                ref Entry currentKeyEntry = ref this.entities[index];
+                while (currentKeyEntry.Next >= 0)
+                {
+                    index = currentKeyEntry.Next;
+                    currentKeyEntry = ref this.entities[index];
+                }
+
+                if (currentKeyEntry.Index < 0)
+                {
+                    currentKeyEntry = keyEntry;
+                }
+                else
+                {
+                    int target = index;
+                    for (int j = 0; j < length; j++)
+                    {
+                        int k = (target + j) % length;
+                        if (this.entities[k].Index < 0)
+                        {
+                            target = k;
+                            break;
+                        }
+                        else
+                        {
+                            index = k;
+                            currentKeyEntry = ref this.entities[index];
+                        }
+                    }
+
+                    this.entities[target] = keyEntry;
+                    currentKeyEntry.Next = target;
+                }
+            }
+        }
+
+        public void Add(T1 key, T2 value)
+        {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            if (this.Count == 0)
+            {
+                this.items.Add(new KeyValuePair<T1, T2>(key, value));
+                this.Resize();
+                return;
+            }
+
+            int index = Math.Abs(key.GetHashCode()) % this.Count;
+            Entry currentKeyEntry;
+            do
+            {
+                currentKeyEntry = this.entities[index];
+                index = currentKeyEntry.Next;
+            }
+            while (index >= 0 && !currentKeyEntry.Key!.Equals(key));
+
+            if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key!.Equals(key))
+            {
+                this.items.Add(new KeyValuePair<T1, T2>(key, value));
+                this.Resize();
+            }
+            else
+            {
+                throw new ArgumentException("An item with the same key has already contained.");
+            }
+        }
+
+        public void Add(KeyValuePair<T1, T2> item)
+        {
+            if (item.Key == null)
+            {
+                throw new ArgumentNullException(nameof(item));
+            }
+
+            if (this.Count == 0)
+            {
+                this.items.Add(item);
+                this.Resize();
+                return;
+            }
+
+            int index = Math.Abs(item.Key.GetHashCode()) % this.Count;
+            Entry currentKeyEntry;
+            do
+            {
+                currentKeyEntry = this.entities[index];
+                index = currentKeyEntry.Next;
+            }
+            while (index >= 0 && !currentKeyEntry.Key!.Equals(item.Key));
+
+            if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key!.Equals(item.Key))
+            {
+                this.items.Add(item);
+                this.Resize();
+            }
+            else
+            {
+                throw new ArgumentException("An item with the same key has already contained.");
+            }
+        }
+
+        public void Clear()
+        {
+            this.items.Clear();
+            this.entities.Clear();
+        }
+
+        public readonly bool Contains(KeyValuePair<T1, T2> item)
+        {
+            if (item.Key == null)
+            {
+                return false;
+            }
+
+            if (this.Count == 0)
+            {
+                return false;
+            }
+
+            int index = Math.Abs(item.Key.GetHashCode()) % this.Count;
+            Entry currentKeyEntry;
+            do
+            {
+                currentKeyEntry = this.entities[index];
+                index = currentKeyEntry.Next;
+            }
+            while (index >= 0 && !currentKeyEntry.Key!.Equals(item.Key));
+
+            return currentKeyEntry.Index >= 0 && currentKeyEntry.Key!.Equals(item.Key) && this.items[currentKeyEntry.Index].Equals(item);
+        }
+
+        public readonly bool ContainsKey(T1 key)
+        {
+            if (key == null)
+            {
+                return false;
+            }
+
+            if (this.Count == 0)
+            {
+                return false;
+            }
+
+            int index = Math.Abs(key.GetHashCode()) % this.Count;
+            Entry currentKeyEntry;
+            do
+            {
+                currentKeyEntry = this.entities[index];
+                index = currentKeyEntry.Next;
+            }
+            while (index >= 0 && !currentKeyEntry.Key!.Equals(key));
+
+            return currentKeyEntry.Index >= 0 && currentKeyEntry.Key!.Equals(key);
+        }
+
+        public readonly void CopyTo(KeyValuePair<T1, T2>[] array, int arrayIndex) => this.items.CopyTo(array, arrayIndex);
+
+        public void Dispose()
+        {
+            this.items.Dispose();
+            this.entities.Dispose();
+            this = default;
+        }
+
+        public readonly IEnumerator<KeyValuePair<T1, T2>> GetEnumerator() => this.items.GetEnumerator();
+
+        public bool Remove(T1 key)
+        {
+            if (key == null)
+            {
+                return false;
+            }
+
+            if (this.Count == 0)
+            {
+                return false;
+            }
+
+            int index = Math.Abs(key.GetHashCode()) % this.Count;
+            Entry currentKeyEntry;
+            do
+            {
+                currentKeyEntry = this.entities[index];
+                index = currentKeyEntry.Next;
+            }
+            while (index >= 0 && !currentKeyEntry.Key!.Equals(key));
+
+            if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key!.Equals(key))
+            {
+                return false;
+            }
+            else
+            {
+                this.items.RemoveAt(currentKeyEntry.Index);
+                this.Resize();
+                return true;
+            }
+        }
+
+        public bool Remove(KeyValuePair<T1, T2> item)
+        {
+            if (item.Key == null)
+            {
+                return false;
+            }
+
+            if (this.Count == 0)
+            {
+                return false;
+            }
+
+            int index = Math.Abs(item.Key.GetHashCode()) % this.Count;
+            Entry currentKeyEntry;
+            do
+            {
+                currentKeyEntry = this.entities[index];
+                index = currentKeyEntry.Next;
+            }
+            while (index >= 0 && !currentKeyEntry.Key!.Equals(item.Key));
+
+            if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key!.Equals(item.Key))
+            {
+                return false;
+            }
+            else if (this.items[currentKeyEntry.Index].Equals(item))
+            {
+                this.items.RemoveAt(currentKeyEntry.Index);
+                this.Resize();
+                return true;
+            }
+
+            return false;
+        }
+
+        public readonly bool TryGetValue(T1 key, [MaybeNullWhen(false)] out T2 value)
+        {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            if (this.Count == 0)
+            {
+                value = default!;
+                return false;
+            }
+
+            int index = Math.Abs(key.GetHashCode()) % this.Count;
+            Entry currentKeyEntry;
+            do
+            {
+                currentKeyEntry = this.entities[index];
+                index = currentKeyEntry.Next;
+            }
+            while (index >= 0 && !currentKeyEntry.Key!.Equals(key));
+
+            if (currentKeyEntry.Index < 0 || !currentKeyEntry.Key!.Equals(key))
+            {
+                value = default!;
+                return false;
+            }
+            else
+            {
+                value = this.items[currentKeyEntry.Index].Value;
+                return true;
+            }
+        }
+
+        readonly IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+        private struct Entry
+        {
+            public int Index = -1;
+            public int Next = -1;
+            public T1? Key = default;
+
+            public Entry()
+            {
+            }
+        }
+    }
+
+    internal readonly struct TextBox : IDisposable
     {
         public TextBox(TextOptions options, IReadOnlyList<TextLine> textLines)
         {
@@ -1377,15 +1762,28 @@ internal static class TextLayout
 
         public IReadOnlyList<TextLine> TextLines { get; }
 
+        public void Dispose()
+        {
+            for (int i = 0; i < this.TextLines.Count; i++)
+            {
+                this.TextLines[i].Dispose();
+            }
+
+            if (this.TextLines is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+
         public float ScaledMaxAdvance()
             => this.TextLines.Max(x => x.ScaledLineAdvance);
 
         public TextDirection TextDirection() => this.TextLines[0][0].TextDirection;
     }
 
-    internal struct TextLine
+    internal struct TextLine : IDisposable
     {
-        private readonly List<GlyphLayoutData> data = new();
+        private ArrayBuilder<GlyphLayoutData> data = default;
 
         public TextLine()
         {
@@ -1488,7 +1886,7 @@ internal static class TextLayout
 
             // Create a new line ensuring we capture the initial metrics.
             TextLine result = new();
-            result.data.AddRange(this.data.GetRange(index, this.data.Count - index));
+            result.data.Add(this.data.AsSlice(index, this.data.Count - index));
 
             float advance = 0;
             float ascender = 0;
@@ -1632,83 +2030,91 @@ internal static class TextLayout
         private readonly TextLine BidiReOrder()
         {
             // Build up the collection of ordered runs.
-            BidiRun run = this.data[0].BidiRun;
-            OrderedBidiRun orderedRun = new(run.Level);
-            OrderedBidiRun? current = orderedRun;
-            for (int i = 0; i < this.data.Count; i++)
+            ArrayBuilder<OrderedBidiRun> runs = default;
+
+            try
             {
-                GlyphLayoutData g = this.data[i];
-                if (run != g.BidiRun)
+                if (this.data.Count > 0)
                 {
-                    run = g.BidiRun;
-                    current.Next = new(run.Level);
-                    current = current.Next;
-                }
-
-                current.Add(g);
-            }
-
-            // Reorder them into visual order.
-            orderedRun = LinearReOrder(orderedRun);
-
-            // Now perform a recursive reversal of each run.
-            // From the highest level found in the text to the lowest odd level on each line, including intermediate levels
-            // not actually present in the text, reverse any contiguous sequence of characters that are at that level or higher.
-            // https://unicode.org/reports/tr9/#L2
-            int max = 0;
-            int min = int.MaxValue;
-            for (int i = 0; i < this.data.Count; i++)
-            {
-                int level = this.data[i].BidiRun.Level;
-                if (level > max)
-                {
-                    max = level;
-                }
-
-                if ((level & 1) != 0 && level < min)
-                {
-                    min = level;
-                }
-            }
-
-            if (min > max)
-            {
-                min = max;
-            }
-
-            if (max == 0 || (min == max && (max & 1) == 0))
-            {
-                // Nothing to reverse.
-                return this;
-            }
-
-            // Now apply the reversal and replace the original contents.
-            int minLevelToReverse = max;
-            while (minLevelToReverse >= min)
-            {
-                current = orderedRun;
-                while (current != null)
-                {
-                    if (current.Level >= minLevelToReverse)
+                    BidiRun run = this.data[0].BidiRun;
+                    OrderedBidiRun current = new(run.Level);
+                    for (int i = 0; i < this.data.Count; i++)
                     {
-                        current.Reverse();
+                        GlyphLayoutData g = this.data[i];
+                        if (run != g.BidiRun)
+                        {
+                            run = g.BidiRun;
+                            runs.Add(current);
+                            current = new(run.Level);
+                        }
+
+                        current.Add(g);
                     }
 
-                    current = current.Next;
+                    // Reorder them into visual order.
+                    LinearReOrder(ref runs);
+
+                    // Now perform a recursive reversal of each run.
+                    // From the highest level found in the text to the lowest odd level on each line, including intermediate levels
+                    // not actually present in the text, reverse any contiguous sequence of characters that are at that level or higher.
+                    // https://unicode.org/reports/tr9/#L2
+                    int max = 0;
+                    int min = int.MaxValue;
+                    for (int i = 0; i < this.data.Count; i++)
+                    {
+                        int level = this.data[i].BidiRun.Level;
+                        if (level > max)
+                        {
+                            max = level;
+                        }
+
+                        if ((level & 1) != 0 && level < min)
+                        {
+                            min = level;
+                        }
+                    }
+
+                    if (min > max)
+                    {
+                        min = max;
+                    }
+
+                    if (max == 0 || (min == max && (max & 1) == 0))
+                    {
+                        // Nothing to reverse.
+                        return this;
+                    }
+
+                    // Now apply the reversal and replace the original contents.
+                    int minLevelToReverse = max;
+                    while (minLevelToReverse >= min)
+                    {
+                        for (int i = 0; i < this.data.Count; i++)
+                        {
+                            current = runs[i];
+                            if (current.Level >= minLevelToReverse)
+                            {
+                                current.Reverse();
+                            }
+                        }
+
+                        minLevelToReverse--;
+                    }
+
+                    this.data.Clear();
+                    for (int i = 0; i < this.data.Count; i++)
+                    {
+                        current = runs[i];
+                        this.data.Add(current.AsSlice());
+                    }
                 }
 
-                minLevelToReverse--;
+                return this;
             }
-
-            this.data.Clear();
-            current = orderedRun;
-            while (current != null)
+            finally
             {
-                this.data.AddRange(current.AsSlice());
-                current = current.Next;
+                runs.Dispose();
             }
-
-            return this;
         }
 
         /// <summary>
@@ -1716,60 +2122,65 @@ internal static class TextLayout
         /// <see href="https://github.com/fribidi/linear-reorder/blob/f2f872257d4d8b8e137fcf831f254d6d4db79d3c/linear-reorder.c"/>
         /// </summary>
         /// <param name="line">The ordered bidi run.</param>
-        /// <returns>The <see cref="OrderedBidiRun"/>.</returns>
-        private static OrderedBidiRun LinearReOrder(OrderedBidiRun? line)
+        private static void LinearReOrder(ref ArrayBuilder<OrderedBidiRun> line)
         {
-            BidiRange? range = null;
-            OrderedBidiRun? run = line;
-
-            while (run != null)
+            ArrayBuilder<OrderedBidiRun> dest = new(line.Count);
+            try
             {
-                OrderedBidiRun? next = run.Next;
-
-                while (range != null && range.Level > run.Level
-                    && range.Previous != null && range.Previous.Level >= run.Level)
+                int start = 0;
+                int end = 0;
+                OrderedBidiRun? pervious = null;
+                for (int i = 0; i < line.Count; i++)
                 {
-                    range = BidiRange.MergeWithPrevious(range);
-                }
-
-                if (range != null && range.Level >= run.Level)
-                {
-                    // Attach run to the range.
-                    if ((run.Level & 1) != 0)
+                    OrderedBidiRun current = line[i];
+                    if (pervious == null)
                     {
-                        // Odd, range goes to the right of run.
-                        run.Next = range.Left;
-                        range.Left = run;
+                        dest.Insert(end++, current);
+                    }
+                    else if (current.Level <= pervious.Value.Level)
+                    {
+                        if ((current.Level & 1) != 0)
+                        {
+                            // Odd, range goes to the right of run.
+                            dest.Insert(end++, current);
+                        }
+                        else
+                        {
+                            // Even, range goes to the left of run.
+                            dest.Insert(start, current);
+                            end++;
+                        }
                     }
                     else
                     {
-                        // Even, range goes to the left of run.
-                        range.Right!.Next = run;
-                        range.Right = run;
+                        if ((current.Level & 1) != 0)
+                        {
+                            // Odd, range goes to the right of run.
+                            start = end;
+                            dest.Insert(end++, current);
+                        }
+                        else
+                        {
+                            // Even, range goes to the left of run.
+                            dest.Insert(start, current);
+                            end = start + 1;
+                        }
                     }
 
-                    range.Level = run.Level;
+                    pervious = current;
                 }
-                else
-                {
-                    BidiRange r = new();
-                    r.Left = r.Right = run;
-                    r.Level = run.Level;
-                    r.Previous = range;
-                    range = r;
-                }
-
-                run = next;
             }
-
-            while (range?.Previous != null)
+            finally
             {
-                range = BidiRange.MergeWithPrevious(range);
+                line.Dispose();
+                line = dest;
             }
+        }
 
-            // Terminate.
-            range!.Right!.Next = null;
-            return range!.Left!;
+        public void Dispose()
+        {
+            this.data.Dispose();
+            this = default;
         }
 
         [DebuggerDisplay("{DebuggerDisplay,nq}")]
@@ -1837,64 +2248,24 @@ internal static class TextLayout
                 .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.Offset}, level: {this.BidiRun.Level}");
         }
 
-        private sealed class OrderedBidiRun
+        private struct OrderedBidiRun : IDisposable
         {
-            private ArrayBuilder<GlyphLayoutData> info;
+            private ArrayBuilder<GlyphLayoutData> info = default;
 
             public OrderedBidiRun(int level) => this.Level = level;
 
-            ~OrderedBidiRun()
-            {
-                this.info.Free();
-                this.info = default;
-            }
-
             public int Level { get; }
-
-            public OrderedBidiRun? Next { get; set; }
 
             public void Add(GlyphLayoutData info) => this.info.Add(info);
 
-            public ArraySlice<GlyphLayoutData> AsSlice() => this.info.AsSlice();
+            public readonly ArraySlice<GlyphLayoutData> AsSlice() => this.info.AsSlice();
 
-            public void Reverse() => this.AsSlice().Span.Reverse();
-        }
+            public readonly void Reverse() => this.AsSlice().Span.Reverse();
 
-        private sealed class BidiRange
-        {
-            public int Level { get; set; }
-
-            public OrderedBidiRun? Left { get; set; }
-
-            public OrderedBidiRun? Right { get; set; }
-
-            public BidiRange? Previous { get; set; }
-
-            public static BidiRange MergeWithPrevious(BidiRange? range)
+            public void Dispose()
             {
-                BidiRange previous = range!.Previous!;
-                BidiRange left;
-                BidiRange right;
-
-                if ((previous.Level & 1) != 0)
-                {
-                    // Odd, previous goes to the right of range.
-                    left = range;
-                    right = previous;
-                }
-                else
-                {
-                    // Even, previous goes to the left of range.
-                    left = previous;
-                    right = range;
-                }
-
-                // Stitch them
-                left.Right!.Next = right.Left;
-                previous.Left = left.Left;
-                previous.Right = right.Right;
-
-                return previous;
+                this.info.Dispose();
+                this = default;
             }
         }
     }
