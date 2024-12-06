@@ -181,7 +181,7 @@ internal struct ArrayBuilder<T> : IDisposable, IList<T>, IReadOnlyList<T>
         return false;
     }
 
-    public readonly int IndexOf(T item) => Array.IndexOf(this.data!, item, 0, this.size);
+    public readonly int IndexOf(T item) => this.size != 0 ? Array.IndexOf(this.data!, item, 0, this.size) : -1;
 
     public void Insert(int index, T item)
     {
@@ -195,7 +195,7 @@ internal struct ArrayBuilder<T> : IDisposable, IList<T>, IReadOnlyList<T>
             Array.Copy(this.data!, index, this.data!, index + 1, this.size - index - 1);
         }
 
-        this[index] = item;
+        this.data![index] = item;
     }
 
     public bool Remove(T item)
