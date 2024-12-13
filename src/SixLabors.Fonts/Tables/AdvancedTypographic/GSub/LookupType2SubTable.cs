@@ -98,7 +98,7 @@ internal class LookupType2Format1SubTable : LookupSubTable
 
         if (offset > -1)
         {
-            collection.Replace(index, this.sequenceTables[offset].SubstituteGlyphs);
+            collection.Replace(index, this.sequenceTables[offset].SubstituteGlyphs, feature);
             return true;
         }
 

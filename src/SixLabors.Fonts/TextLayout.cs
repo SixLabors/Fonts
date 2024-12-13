@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Numerics;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -534,10 +535,9 @@ internal static class TextLayout
             int j = 0;
             foreach (GlyphMetrics metric in data.Metrics)
             {
-                // Align the glyph horizontally and vertically centering horizontally around the baseline.
+                // Align the glyph horizontally and vertically centering vertically around the baseline.
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
-                float oX = (data.ScaledLineHeight - (metric.Bounds.Size().X * scale.X)) * .5F;
-                Vector2 offset = new(oX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                Vector2 offset = new(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
                 glyphs.Add(new GlyphLayout(
                     new Glyph(metric, data.PointSize),
@@ -678,7 +678,7 @@ internal static class TextLayout
                         new Glyph(metric, data.PointSize),
                         boxLocation,
                         penLocation + new Vector2(((scaledMaxLineHeight - data.ScaledLineHeight) * .5F) + data.ScaledDescender, 0),
-                        Vector2.Zero,
+                        Vector2.Zero, // TODO: We need to shift so the baseline is moved right.
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
@@ -694,10 +694,9 @@ internal static class TextLayout
                 int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
                 {
-                    // Align the glyph horizontally and vertically centering horizontally around the baseline.
+                    // Align the glyph horizontally and vertically centering vertically around the baseline.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
-                    float oX = (data.ScaledLineHeight - (metric.Bounds.Size().X * scale.X)) * .5F;
-                    Vector2 offset = new(oX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+                    Vector2 offset = new(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
@@ -828,7 +827,7 @@ internal static class TextLayout
 
             if (fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
             {
-                collection.Replace(i, glyphId);
+                collection.Replace(i, glyphId, FeatureTags.RightToLeftMirroredForms);
             }
         }
 
@@ -854,7 +853,7 @@ internal static class TextLayout
 
             if (fontMetrics.TryGetGlyphId(mirror, out ushort glyphId))
             {
-                collection.Replace(i, glyphId);
+                collection.Replace(i, glyphId, FeatureTags.VerticalAlternates);
             }
         }
     }
@@ -907,7 +906,13 @@ internal static class TextLayout
             SpanCodePointEnumerator codePointEnumerator = new(graphemeEnumerator.Current);
             while (codePointEnumerator.MoveNext())
             {
-                if (!positionings.TryGetGlyphMetricsAtOffset(codePointIndex, out float pointSize, out bool isDecomposed, out IReadOnlyList<GlyphMetrics>? metrics))
+                if (!positionings.TryGetGlyphMetricsAtOffset(
+                    codePointIndex,
+                    out float pointSize,
+                    out bool isSubstituted,
+                    out bool isVerticalSubstitution,
+                    out bool isDecomposed,
+                    out IReadOnlyList<GlyphMetrics>? metrics))
                 {
                     // Codepoint was skipped during original enumeration.
                     codePointIndex++;
@@ -915,11 +920,31 @@ internal static class TextLayout
                     continue;
                 }
 
-                // Determine whether the glyph advance should be calculated using vertical or horizontal metrics
-                // For vertical mixed layout we will be rotating glyphs with the vertical orientation type R or TR.
+                GlyphMetrics glyph = metrics[0];
+
+                // Retrieve the current codepoint from the enumerator.
+                // If the glyph represents a substituted codepoint and the substitution is a single codepoint substitution,
+                // or composite glyph, then the codepoint should be updated to the substitution value so we can read its properties.
+                // Substitutions that are decomposed glyphs will have multiple metrics and any layout should be based on the
+                // original codepoint.
+                //
+                // Note: Not all glyphs in a font will have a codepoint associated with them. e.g. most compositions, ligatures, etc.
                 CodePoint codePoint = codePointEnumerator.Current;
-                VerticalOrientationType verticalOrientationType = CodePoint.GetVerticalOrientationType(codePoint);
-                bool isRotated = isVerticalMixedLayout && verticalOrientationType is VerticalOrientationType.Rotate or VerticalOrientationType.TransformRotate;
+                if (isSubstituted &&
+                    metrics.Count == 1 &&
+                    glyph.FontMetrics.TryGetCodePoint(glyph.GlyphId, out CodePoint substitution))
+                {
+                    codePoint = substitution;
+                }
+
+                // Determine whether the glyph advance should be calculated using vertical or horizontal metrics
+                // For vertical mixed layout we will rotate glyphs with the vertical orientation type R or TR
+                // which do not already have a vertical substitution.
+                bool isRotated = isVerticalMixedLayout &&
+                     !isVerticalSubstitution &&
+                     CodePoint.GetVerticalOrientationType(codePoint) is
+                                 VerticalOrientationType.Rotate or
+                                 VerticalOrientationType.TransformRotate;
 
                 if (CodePoint.IsVariationSelector(codePoint))
                 {
@@ -929,8 +954,6 @@ internal static class TextLayout
                 }
 
                 // Calculate the advance for the current codepoint.
-                GlyphMetrics glyph = metrics[0];
-
                 float glyphAdvance;
 
                 // This should never happen, but we need to ensure that the buffer is large enough

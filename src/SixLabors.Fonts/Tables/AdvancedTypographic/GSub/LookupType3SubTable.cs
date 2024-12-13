@@ -100,7 +100,7 @@ internal sealed class LookupType3Format1SubTable : LookupSubTable
             // TODO: We're just choosing the first alternative here.
             // It looks like the choice is arbitrary and should be determined by
             // the client.
-            collection.Replace(index, this.alternateSetTables[offset].AlternateGlyphs[0]);
+            collection.Replace(index, this.alternateSetTables[offset].AlternateGlyphs[0], feature);
             return true;
         }
 

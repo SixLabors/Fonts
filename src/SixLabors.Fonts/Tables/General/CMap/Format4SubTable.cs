@@ -37,18 +37,61 @@ internal sealed class Format4SubTable : CMapSubTable
                     glyphId = (ushort)((charAsInt + seg.Delta) & ushort.MaxValue);
                     return true;
                 }
-                else
-                {
-                    long offset = (seg.Offset / 2) + (charAsInt - seg.Start);
-                    glyphId = this.GlyphIds[offset - this.Segments.Length + seg.Index];
-                    return true;
-                }
+
+                long offset = (seg.Offset / 2) + (charAsInt - seg.Start);
+                glyphId = this.GlyphIds[offset - this.Segments.Length + seg.Index];
+
+                return true;
             }
         }
 
         glyphId = 0;
         return false;
     }
+
+    public override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
+    {
+        for (int i = 0; i < this.Segments.Length; i++)
+        {
+            ref Segment seg = ref this.Segments[i];
+
+            if (seg.Offset == 0)
+            {
+                // Reverse the delta-based calculation
+                // Forward was: glyphId = (charAsInt + seg.Delta) & 0xFFFF
+                // Reverse should apply the inverse logic with the same wrap:
+                int candidate = (glyphId - seg.Delta) & ushort.MaxValue;
+
+                if (candidate >= seg.Start && candidate <= seg.End)
+                {
+                    codePoint = new CodePoint(candidate);
+                    return true;
+                }
+            }
+            else
+            {
+                // Reverse the offset-based calculation:
+                // Forward logic:
+                //   offset = (seg.Offset / 2) + (charAsInt - seg.Start)
+                //   glyphId = GlyphIds[offset - Segments.Length + seg.Index]
+
+                // To reverse, iterate over possible codepoints in the segment and find the matching glyphId.
+                for (long j = 0; j <= (seg.End - seg.Start); j++)
+                {
+                    long offset = (seg.Offset / 2) + j;
+                    if (this.GlyphIds[offset - this.Segments.Length + seg.Index] == glyphId)
+                    {
+                        codePoint = new CodePoint((int)(seg.Start + j));
+                        return true;
+                    }
+                }
+            }
+        }
+
+        codePoint = default;
+        return false;
+    }
+
 
     public override IEnumerable<int> GetAvailableCodePoints()
         => this.Segments.SelectMany(segment => Enumerable.Range(segment.Start, segment.End - segment.Start + 1));
