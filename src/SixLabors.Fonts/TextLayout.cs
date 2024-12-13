@@ -673,12 +673,27 @@ internal static class TextLayout
                 int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
                 {
+                    // Align the glyphs horizontally so the baseline is centered.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
+
+                    // Calculate the initial horizontal offset to center the glyph baseline:
+                    // - Take half the difference between the max line height (scaledMaxLineHeight)
+                    //   and the current glyph's line height (data.ScaledLineHeight).
+                    // - The line height includes both ascender and descender metrics.
+                    float baselineDelta = (scaledMaxLineHeight - data.ScaledLineHeight) * .5F;
+
+                    // Adjust the horizontal offset further by considering the descender differences:
+                    // - Subtract the current glyph's descender (data.ScaledDescender) to align it properly.
+                    float descenderDelta = (Math.Abs(textLine.ScaledMaxDescender) - Math.Abs(data.ScaledDescender)) * .5F;
+
+                    // Final horizontal center offset combines the baseline and descender adjustments.
+                    float centerOffsetX = (baselineDelta - data.ScaledDescender) + descenderDelta;
+
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
                         boxLocation,
-                        penLocation + new Vector2(((scaledMaxLineHeight - data.ScaledLineHeight) * .5F) + data.ScaledDescender, 0),
-                        Vector2.Zero, // TODO: We need to shift so the baseline is moved right.
+                        penLocation + new Vector2(centerOffsetX, 0),
+                        Vector2.Zero,
                         advanceX,
                         data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
