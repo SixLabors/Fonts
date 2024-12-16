@@ -92,7 +92,6 @@ internal sealed class Format4SubTable : CMapSubTable
         return false;
     }
 
-
     public override IEnumerable<int> GetAvailableCodePoints()
         => this.Segments.SelectMany(segment => Enumerable.Range(segment.Start, segment.End - segment.Start + 1));
 
