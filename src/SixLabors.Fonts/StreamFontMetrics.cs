@@ -446,7 +446,7 @@ internal partial class StreamFontMetrics : FontMetrics
         // 3.If they are zero and the OS/ 2 table exists,
         //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
         //    - Otherwise, use the OS / 2 table's usWin* metrics.
-        bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
+        bool useTypoMetrics = (os2.FontStyle & OS2Table.FontStyleSelection.USE_TYPO_METRICS) == OS2Table.FontStyleSelection.USE_TYPO_METRICS;
         if (useTypoMetrics)
         {
             ascender = os2.TypoAscender;
