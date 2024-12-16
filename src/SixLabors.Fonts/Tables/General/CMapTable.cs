@@ -67,16 +67,27 @@ internal sealed class CMapTable : Table
             // Regardless of the encoding scheme, character codes that do
             // not correspond to any glyph in the font should be mapped to glyph index 0.
             // The glyph at this location must be a special glyph representing a missing character, commonly known as .notdef.
-            if (t.TryGetGlyphId(codePoint, out glyphId))
+            if (t.TryGetGlyphId(codePoint, out glyphId) && glyphId > 0)
             {
-                if (glyphId > 0)
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
         glyphId = 0;
+        return false;
+    }
+
+    public bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
+    {
+        foreach (CMapSubTable t in this.Tables)
+        {
+            if (t.TryGetCodePoint(glyphId, out codePoint))
+            {
+                return true;
+            }
+        }
+
+        codePoint = default;
         return false;
     }
 
