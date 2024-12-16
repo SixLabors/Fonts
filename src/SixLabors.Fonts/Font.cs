@@ -290,7 +290,7 @@ public sealed class Font
             return metrics;
         }
 
-        if (this.RequestedStyle.HasFlag(FontStyle.Italic))
+        if ((this.RequestedStyle & FontStyle.Italic) == FontStyle.Italic)
         {
             // Can't find style requested and they want one that's at least partial italic.
             // Try the regular italic.
@@ -300,7 +300,7 @@ public sealed class Font
             }
         }
 
-        if (this.RequestedStyle.HasFlag(FontStyle.Bold))
+        if ((this.RequestedStyle & FontStyle.Bold) == FontStyle.Bold)
         {
             // Can't find style requested and they want one that's at least partial bold.
             // Try the regular bold.

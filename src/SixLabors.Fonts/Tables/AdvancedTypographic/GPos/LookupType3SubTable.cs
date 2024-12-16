@@ -176,7 +176,7 @@ internal static class LookupType3SubTable
             int parent = nextIndex;
             int xOffset = entryXY.XCoordinate - exitXY.XCoordinate;
             int yOffset = entryXY.YCoordinate - exitXY.YCoordinate;
-            if (this.LookupFlags.HasFlag(LookupFlags.RightToLeft))
+            if ((this.LookupFlags & LookupFlags.RightToLeft) == LookupFlags.RightToLeft)
             {
                 (parent, child) = (child, parent);
 

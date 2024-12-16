@@ -172,24 +172,24 @@ public class FontDescription
 
         if (os2 != null)
         {
-            if (os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.BOLD))
+            if ((os2.FontStyle & OS2Table.FontStyleSelection.BOLD) == OS2Table.FontStyleSelection.BOLD)
             {
                 style |= FontStyle.Bold;
             }
 
-            if (os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.ITALIC))
+            if ((os2.FontStyle & OS2Table.FontStyleSelection.ITALIC) == OS2Table.FontStyleSelection.ITALIC)
             {
                 style |= FontStyle.Italic;
             }
         }
         else if (head != null)
         {
-            if (head.MacStyle.HasFlag(HeadTable.HeadMacStyle.Bold))
+            if ((head.MacStyle & HeadTable.HeadMacStyle.Bold) == HeadTable.HeadMacStyle.Bold)
             {
                 style |= FontStyle.Bold;
             }
 
-            if (head.MacStyle.HasFlag(HeadTable.HeadMacStyle.Italic))
+            if ((head.MacStyle & HeadTable.HeadMacStyle.Italic) == HeadTable.HeadMacStyle.Italic)
             {
                 style |= FontStyle.Italic;
             }
