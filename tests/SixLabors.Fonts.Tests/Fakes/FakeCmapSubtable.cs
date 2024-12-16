@@ -28,6 +28,21 @@ internal class FakeCmapSubtable : CMapSubTable
         return false;
     }
 
+    public override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
+    {
+        foreach (FakeGlyphSource c in this.glyphs)
+        {
+            if (c.Index == glyphId)
+            {
+                codePoint = c.CodePoint;
+                return true;
+            }
+        }
+
+        codePoint = default;
+        return false;
+    }
+
     public override IEnumerable<int> GetAvailableCodePoints()
         => this.glyphs.Select(x => x.CodePoint.Value);
 }

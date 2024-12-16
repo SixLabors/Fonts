@@ -136,6 +136,12 @@ internal sealed class Format14SubTable : CMapSubTable
         return false;
     }
 
+    public override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
+    {
+        codePoint = default;
+        return false;
+    }
+
     public override IEnumerable<int> GetAvailableCodePoints()
         => Array.Empty<int>();
 

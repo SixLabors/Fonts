@@ -225,7 +225,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// </summary>
     /// <param name="index">The zero-based index of the element to replace.</param>
     /// <param name="glyphId">The replacement glyph id.</param>
-    public void Replace(int index, ushort glyphId)
+    /// <param name="feature">The feature to apply to the glyph at the specified index.</param>
+    public void Replace(int index, ushort glyphId, Tag feature)
     {
         GlyphShapingData current = this.glyphs[index].Data;
         current.GlyphId = glyphId;
@@ -234,6 +235,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
         current.MarkAttachment = -1;
         current.CursiveAttachment = -1;
         current.IsSubstituted = true;
+        current.AppliedFeatures.Add(feature);
     }
 
     /// <summary>
@@ -243,7 +245,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <param name="removalIndices">The indices at which to remove elements.</param>
     /// <param name="glyphId">The replacement glyph id.</param>
     /// <param name="ligatureId">The ligature id.</param>
-    public void Replace(int index, ReadOnlySpan<int> removalIndices, ushort glyphId, int ligatureId)
+    /// <param name="feature">The feature to apply to the glyph at the specified index.</param>
+    public void Replace(int index, ReadOnlySpan<int> removalIndices, ushort glyphId, int ligatureId, Tag feature)
     {
         // Remove the glyphs at each index.
         int codePointCount = 0;
@@ -279,6 +282,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
         current.MarkAttachment = -1;
         current.CursiveAttachment = -1;
         current.IsSubstituted = true;
+        current.AppliedFeatures.Add(feature);
     }
 
     /// <summary>
@@ -287,7 +291,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <param name="index">The zero-based index of the element to replace.</param>
     /// <param name="count">The number of glyphs to remove.</param>
     /// <param name="glyphId">The replacement glyph id.</param>
-    public void Replace(int index, int count, ushort glyphId)
+    /// <param name="feature">The feature to apply to the glyph at the specified index.</param>
+    public void Replace(int index, int count, ushort glyphId, Tag feature)
     {
         // Remove the glyphs at each index.
         int codePointCount = 0;
@@ -322,6 +327,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
         current.MarkAttachment = -1;
         current.CursiveAttachment = -1;
         current.IsSubstituted = true;
+        current.AppliedFeatures.Add(feature);
     }
 
     /// <summary>
@@ -329,7 +335,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// </summary>
     /// <param name="index">The zero-based index of the element to replace.</param>
     /// <param name="glyphIds">The collection of replacement glyph ids.</param>
-    public void Replace(int index, ReadOnlySpan<ushort> glyphIds)
+    /// <param name="feature">The feature to apply to the glyph at the specified index.</param>
+    public void Replace(int index, ReadOnlySpan<ushort> glyphIds, Tag feature)
     {
         if (glyphIds.Length > 0)
         {
@@ -345,7 +352,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
             // Add additional glyphs from the rest of the sequence.
             if (glyphIds.Length > 1)
             {
-                glyphIds = glyphIds.Slice(1);
+                glyphIds = glyphIds[1..];
                 for (int i = 0; i < glyphIds.Length; i++)
                 {
                     GlyphShapingData data = new(current, false)
@@ -353,6 +360,8 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
                         GlyphId = glyphIds[i],
                         LigatureComponent = i + 1
                     };
+
+                    data.AppliedFeatures.Add(feature);
 
                     this.glyphs.Insert(++index, new(pair.Offset, data));
                 }

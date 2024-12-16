@@ -37,6 +37,7 @@ internal class GlyphShapingData
         this.LigatureComponent = data.LigatureComponent;
         this.MarkAttachment = data.MarkAttachment;
         this.CursiveAttachment = data.CursiveAttachment;
+        this.IsSubstituted = data.IsSubstituted;
         this.IsDecomposed = data.IsDecomposed;
         if (data.UniversalShapingEngineInfo != null)
         {
@@ -57,8 +58,10 @@ internal class GlyphShapingData
 
         if (!clearFeatures)
         {
-            this.Features = new(data.Features);
+            this.Features.AddRange(data.Features);
         }
+
+        this.AppliedFeatures.AddRange(data.AppliedFeatures);
 
         this.Bounds = data.Bounds;
     }
@@ -116,7 +119,12 @@ internal class GlyphShapingData
     /// <summary>
     /// Gets or sets the collection of features.
     /// </summary>
-    public List<TagEntry> Features { get; set; } = new List<TagEntry>();
+    public List<TagEntry> Features { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the collection of applied features.
+    /// </summary>
+    public List<Tag> AppliedFeatures { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the shaping bounds.

@@ -38,6 +38,25 @@ internal sealed class Format12SubTable : CMapSubTable
         return false;
     }
 
+    public override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
+    {
+        for (int i = 0; i < this.SequentialMapGroups.Length; i++)
+        {
+            ref SequentialMapGroup seg = ref this.SequentialMapGroups[i];
+            if (glyphId >= seg.StartGlyphId && glyphId <= seg.StartGlyphId + seg.EndCodePoint - seg.StartCodePoint)
+            {
+                // Reverse the calculation:
+                // Forward: glyphId = (codePoint - StartCodePoint) + StartGlyphId
+                // Reverse: codePoint = (glyphId - StartGlyphId) + StartCodePoint
+                codePoint = new CodePoint(glyphId - seg.StartGlyphId + seg.StartCodePoint);
+                return true;
+            }
+        }
+
+        codePoint = default;
+        return false;
+    }
+
     public override IEnumerable<int> GetAvailableCodePoints()
         => this.SequentialMapGroups.SelectMany(segment =>
         {
