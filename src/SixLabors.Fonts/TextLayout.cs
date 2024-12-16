@@ -1055,11 +1055,14 @@ internal static class TextLayout
                     // Mandatory wrap at index.
                     if (currentLineBreak.PositionWrap == codePointIndex && currentLineBreak.Required)
                     {
-                        textLines.Add(textLine.Finalize());
-                        glyphCount += textLine.Count;
-                        textLine = new();
-                        lineAdvance = 0;
-                        requiredBreak = true;
+                        if (textLine.Count > 0)
+                        {
+                            textLines.Add(textLine.Finalize());
+                            glyphCount += textLine.Count;
+                            textLine = new();
+                            lineAdvance = 0;
+                            requiredBreak = true;
+                        }
                     }
                     else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
                     {
@@ -1140,6 +1143,7 @@ internal static class TextLayout
                 }
 
                 // Find the next line break.
+                bool lastMandatory = lastLineBreak.Required;
                 if (currentLineBreak.PositionWrap == codePointIndex)
                 {
                     lastLineBreak = currentLineBreak;
@@ -1161,9 +1165,22 @@ internal static class TextLayout
                     continue;
                 }
 
+                // The previous line ended with a non-mandatory break at the wrapping length but the new line starts
+                // with a mandatory line break. We should not add a new line in this case as the line break has
+                // already been synthesized.
+                if (textLine.Count == 0
+                    && textLines.Count > 0
+                    && !lastMandatory
+                    && CodePoint.IsNewLine(codePoint))
+                {
+                    codePointIndex++;
+                    graphemeCodePointIndex++;
+                    continue;
+                }
+
+                // Do not add new lines unless at position zero.
                 if (textLine.Count > 0 && CodePoint.IsNewLine(codePoint))
                 {
-                    // Do not add new lines unless at position zero.
                     codePointIndex++;
                     graphemeCodePointIndex++;
                     continue;
