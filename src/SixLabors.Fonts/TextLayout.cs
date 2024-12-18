@@ -537,7 +537,18 @@ internal static class TextLayout
             {
                 // Align the glyph horizontally and vertically centering vertically around the baseline.
                 Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
-                Vector2 offset = new(0, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
+
+                float alignX = 0;
+                if (data.IsTransformed)
+                {
+                    // Calculate the horizontal alignment offset:
+                    // - Normalize lsb to zero
+                    // - Center the glyph horizontally within the max line height.
+                    alignX -= metric.LeftSideBearing * scale.X;
+                    alignX += (scaledMaxLineHeight - (metric.Bounds.Size().X * scale.X)) * .5F;
+                }
+
+                Vector2 offset = new(alignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
                 glyphs.Add(new GlyphLayout(
                     new Glyph(metric, data.PointSize),
@@ -668,7 +679,7 @@ internal static class TextLayout
                 continue;
             }
 
-            if (data.IsRotated)
+            if (data.IsTransformed)
             {
                 int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
@@ -887,6 +898,7 @@ internal static class TextLayout
         bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
         bool breakWord = options.WordBreaking == WordBreaking.BreakWord;
         bool isHorizontalLayout = layoutMode.IsHorizontal();
+        bool isVerticalLayout = layoutMode.IsVertical();
         bool isVerticalMixedLayout = layoutMode.IsVerticalMixed();
 
         // Calculate the position of potential line breaks.
@@ -955,8 +967,15 @@ internal static class TextLayout
                 // Determine whether the glyph advance should be calculated using vertical or horizontal metrics
                 // For vertical mixed layout we will rotate glyphs with the vertical orientation type R or TR
                 // which do not already have a vertical substitution.
-                bool isRotated = isVerticalMixedLayout &&
+                bool shouldRotate = isVerticalMixedLayout &&
                      !isVerticalSubstitution &&
+                     CodePoint.GetVerticalOrientationType(codePoint) is
+                                 VerticalOrientationType.Rotate or
+                                 VerticalOrientationType.TransformRotate;
+
+                // Determine whether the glyph advance should be offset for vertical layout.
+                bool shouldOffset = isVerticalLayout &&
+                    !isVerticalSubstitution &&
                      CodePoint.GetVerticalOrientationType(codePoint) is
                                  VerticalOrientationType.Rotate or
                                  VerticalOrientationType.TransformRotate;
@@ -977,7 +996,7 @@ internal static class TextLayout
                     ? new float[metrics.Count]
                     : decomposedAdvancesBuffer[..(isDecomposed ? metrics.Count : 1)];
 
-                if (isHorizontalLayout || isRotated)
+                if (isHorizontalLayout || shouldRotate)
                 {
                     glyphAdvance = glyph.AdvanceWidth;
                 }
@@ -1005,7 +1024,7 @@ internal static class TextLayout
                                   layoutMode,
                                   options.ColorFontSupport)[0];
 
-                            if (isHorizontalLayout || isRotated)
+                            if (isHorizontalLayout || shouldRotate)
                             {
                                 glyphAdvance = spaceMetrics.AdvanceWidth * options.TabWidth;
                                 glyph.SetAdvanceWidth((ushort)glyphAdvance);
@@ -1031,7 +1050,7 @@ internal static class TextLayout
                 {
                     // Standard text.
                     // If decomposed we need to add the advance; otherwise, use the largest advance for the metrics.
-                    if (isHorizontalLayout || isRotated)
+                    if (isHorizontalLayout || shouldRotate)
                     {
                         for (int i = 1; i < metrics.Count; i++)
                         {
@@ -1066,7 +1085,7 @@ internal static class TextLayout
                 }
 
                 // Now scale the advance.
-                if (isHorizontalLayout || isRotated)
+                if (isHorizontalLayout || shouldRotate)
                 {
                     float scaleAX = pointSize / glyph.ScaleFactor.X;
                     glyphAdvance *= scaleAX;
@@ -1093,14 +1112,11 @@ internal static class TextLayout
                     // Mandatory wrap at index.
                     if (currentLineBreak.PositionWrap == codePointIndex && currentLineBreak.Required)
                     {
-                        if (textLine.Count > 0)
-                        {
-                            textLines.Add(textLine.Finalize());
-                            glyphCount += textLine.Count;
-                            textLine = new();
-                            lineAdvance = 0;
-                            requiredBreak = true;
-                        }
+                        textLines.Add(textLine.Finalize());
+                        glyphCount += textLine.Count;
+                        textLine = new();
+                        lineAdvance = 0;
+                        requiredBreak = true;
                     }
                     else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
                     {
@@ -1181,7 +1197,6 @@ internal static class TextLayout
                 }
 
                 // Find the next line break.
-                bool lastMandatory = lastLineBreak.Required;
                 if (currentLineBreak.PositionWrap == codePointIndex)
                 {
                     lastLineBreak = currentLineBreak;
@@ -1203,22 +1218,9 @@ internal static class TextLayout
                     continue;
                 }
 
-                // The previous line ended with a non-mandatory break at the wrapping length but the new line starts
-                // with a mandatory line break. We should not add a new line in this case as the line break has
-                // already been synthesized.
-                if (textLine.Count == 0
-                    && textLines.Count > 0
-                    && !lastMandatory
-                    && CodePoint.IsNewLine(codePoint))
-                {
-                    codePointIndex++;
-                    graphemeCodePointIndex++;
-                    continue;
-                }
-
-                // Do not add new lines unless at position zero.
                 if (textLine.Count > 0 && CodePoint.IsNewLine(codePoint))
                 {
+                    // Do not add new lines unless at position zero.
                     codePointIndex++;
                     graphemeCodePointIndex++;
                     continue;
@@ -1232,7 +1234,7 @@ internal static class TextLayout
                     // Work out the scaled metrics for the glyph.
                     GlyphMetrics metric = metrics[i];
                     float scaleY = pointSize / metric.ScaleFactor.Y;
-                    IMetricsHeader metricsHeader = isHorizontalLayout || isRotated
+                    IMetricsHeader metricsHeader = isHorizontalLayout || shouldRotate
                         ? metric.FontMetrics.HorizontalMetrics
                         : metric.FontMetrics.VerticalMetrics;
                     float ascender = metricsHeader.Ascender * scaleY;
@@ -1257,7 +1259,7 @@ internal static class TextLayout
                         bidiRuns[bidiMap[codePointIndex]],
                         graphemeIndex,
                         codePointIndex,
-                        isRotated,
+                        shouldRotate || shouldOffset,
                         isDecomposed,
                         stringIndex);
                 }
@@ -1323,7 +1325,7 @@ internal static class TextLayout
             BidiRun bidiRun,
             int graphemeIndex,
             int offset,
-            bool isRotated,
+            bool isTransformed,
             bool isDecomposed,
             int stringIndex)
         {
@@ -1344,7 +1346,7 @@ internal static class TextLayout
                 bidiRun,
                 graphemeIndex,
                 offset,
-                isRotated,
+                isTransformed,
                 isDecomposed,
                 stringIndex));
         }
@@ -1695,7 +1697,7 @@ internal static class TextLayout
                 BidiRun bidiRun,
                 int graphemeIndex,
                 int offset,
-                bool isRotated,
+                bool isTransformed,
                 bool isDecomposed,
                 int stringIndex)
             {
@@ -1708,7 +1710,7 @@ internal static class TextLayout
                 this.BidiRun = bidiRun;
                 this.GraphemeIndex = graphemeIndex;
                 this.Offset = offset;
-                this.IsRotated = isRotated;
+                this.IsTransformed = isTransformed;
                 this.IsDecomposed = isDecomposed;
                 this.StringIndex = stringIndex;
             }
@@ -1735,7 +1737,7 @@ internal static class TextLayout
 
             public int Offset { get; }
 
-            public bool IsRotated { get; }
+            public bool IsTransformed { get; }
 
             public bool IsDecomposed { get; }
 
