@@ -5,16 +5,16 @@ using System.Numerics;
 
 namespace SixLabors.Fonts.Tests.Issues;
 
-public class Issues_431
+public class Issues_434
 {
-    [Fact]
-    public void ShouldNotInsertExtraLineBreaks()
+    [Theory]
+    [InlineData("- Lorem ipsullll\n\ndolor sit amet\n-consectetur elit", 3)]
+    [InlineData("- Lorem ipsullll\n\n\ndolor sit amet\n-consectetur elit", 3)]
+    public void ShouldNotInsertExtraLineBreaks(string text, int expectedLineCount)
     {
         if (SystemFonts.TryGet("Arial", out FontFamily family))
         {
             Font font = family.CreateFont(60);
-            const string text = "- Lorem ipsullll\ndolor sit amet\n-consectetur elit";
-
             TextOptions options = new(font)
             {
                 Origin = new Vector2(50, 20),
@@ -22,7 +22,7 @@ public class Issues_431
             };
 
             int lineCount = TextMeasurer.CountLines(text, options);
-            Assert.Equal(3, lineCount);
+            Assert.Equal(expectedLineCount, lineCount);
 
             IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
             Assert.Equal(47, layout.Count);
