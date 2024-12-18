@@ -356,7 +356,7 @@ internal sealed class BigEndianBinaryReader : IDisposable
     }
 
     /// <summary>
-    /// Reads an offset consuming the given nuber of bytes.
+    /// Reads an offset consuming the given number of bytes.
     /// </summary>
     /// <param name="size">The offset size in bytes.</param>
     /// <returns>The 32-bit signed integer representing the offset.</returns>
@@ -393,6 +393,7 @@ internal sealed class BigEndianBinaryReader : IDisposable
         }
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         if (!this.leaveOpen)

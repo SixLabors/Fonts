@@ -21,8 +21,8 @@ internal enum Type2Operator1 : byte
     Escape, // 12
     Reserved13_,
     Endchar, // 14
-    Reserved15_,
-    Reserved16_,
+    VsIndex,
+    Blend,
     Reserved17_,
     Hstemhm, // 18
     Hintmask, // 19

@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
@@ -46,6 +47,10 @@ internal class TableLoader
         this.Register(PostTable.TableName, PostTable.Load);
         this.Register(Cff1Table.TableName, Cff1Table.Load);
         this.Register(Cff2Table.TableName, Cff2Table.Load);
+        this.Register(AVarTable.TableName, AVarTable.Load);
+        this.Register(GVarTable.TableName, GVarTable.Load);
+        this.Register(FVarTable.TableName, FVarTable.Load);
+        this.Register(HVarTable.TableName, HVarTable.Load);
     }
 
     public static TableLoader Default { get; } = new();
