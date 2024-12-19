@@ -901,24 +901,11 @@ internal static class TextLayout
         bool isVerticalLayout = layoutMode.IsVertical();
         bool isVerticalMixedLayout = layoutMode.IsVerticalMixed();
 
-        // Calculate the position of potential line breaks.
-        LineBreakEnumerator lineBreakEnumerator = new(text);
-        List<LineBreak> lineBreaks = new();
-        while (lineBreakEnumerator.MoveNext())
-        {
-            lineBreaks.Add(lineBreakEnumerator.Current);
-        }
-
-        int lineBreakIndex = 0;
-        int maxLineBreakIndex = lineBreaks.Count - 1;
-        LineBreak lastLineBreak = lineBreaks[lineBreakIndex];
-        LineBreak currentLineBreak = lineBreaks[lineBreakIndex];
         int graphemeIndex;
         int codePointIndex = 0;
         float lineAdvance = 0;
         List<TextLine> textLines = new();
         TextLine textLine = new();
-        int glyphCount = 0;
         int stringIndex = 0;
 
         // No glyph should contain more than 64 metrics.
@@ -1105,71 +1092,6 @@ internal static class TextLayout
                     }
                 }
 
-                // Should we start a new line?
-                if (graphemeCodePointIndex == 0 && textLine.Count > 0)
-                {
-                    if (codePointIndex == currentLineBreak.PositionWrap && currentLineBreak.Required)
-                    {
-                        // Mandatory line break at index.
-                        textLines.Add(textLine.Finalize());
-                        glyphCount += textLine.Count;
-                        textLine = new();
-                        lineAdvance = 0;
-                    }
-                    else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
-                    {
-                        if (breakAll)
-                        {
-                            // Insert a forced break at this index.
-                            textLines.Add(textLine.Finalize());
-                            glyphCount += textLine.Count;
-                            textLine = new();
-                            lineAdvance = 0;
-                        }
-                        else if (codePointIndex == currentLineBreak.PositionWrap)
-                        {
-                            // Split the line at the last line break.
-                            // CJK characters will not be split if 'keepAll' is true.
-                            TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
-                            if (split != textLine)
-                            {
-                                textLines.Add(textLine.Finalize());
-                                textLine = split;
-                                lineAdvance = split.ScaledLineAdvance;
-                            }
-                        }
-                        else if (breakWord)
-                        {
-                            // We have to do more work here and check each exceeding codepoint.
-                            // If we can split the line at the last line break, use that, otherwise
-                            // we have to insert a break at the current index.
-                            TextLine split = textLine.SplitAt(lastLineBreak, keepAll);
-                            if (split != textLine)
-                            {
-                                textLines.Add(textLine.Finalize());
-                                textLine = split;
-                                lineAdvance = split.ScaledLineAdvance;
-                            }
-                            else
-                            {
-                                // Insert a forced break at this index.
-                                textLines.Add(textLine.Finalize());
-                                glyphCount += textLine.Count;
-                                textLine = new();
-                                lineAdvance = 0;
-                            }
-                        }
-                    }
-                }
-
-                // Find the next line break.
-                if (lineBreakIndex < maxLineBreakIndex &&
-                    (currentLineBreak.PositionWrap == codePointIndex))
-                {
-                    lastLineBreak = currentLineBreak;
-                    currentLineBreak = lineBreaks[++lineBreakIndex];
-                }
-
                 // For non-decomposed glyphs the length is always 1.
                 for (int i = 0; i < decomposedAdvances.Length; i++)
                 {
@@ -1203,6 +1125,7 @@ internal static class TextLayout
                         bidiRuns[bidiMap[codePointIndex]],
                         graphemeIndex,
                         codePointIndex,
+                        graphemeCodePointIndex,
                         shouldRotate || shouldOffset,
                         isDecomposed,
                         stringIndex);
@@ -1213,6 +1136,93 @@ internal static class TextLayout
             }
 
             stringIndex += graphemeEnumerator.Current.Length;
+        }
+
+        // Resolve the bidi order for the line.
+        // This reorders the glyphs in the line to match the visual order.
+        textLine.BidiReOrder();
+
+        // Now we need to loop through our reordered line and split it at any line breaks.
+        //
+        // First calculate the position of potential line breaks.
+        LineBreakEnumerator lineBreakEnumerator = new(text);
+        List<LineBreak> lineBreaks = new();
+        while (lineBreakEnumerator.MoveNext())
+        {
+            lineBreaks.Add(lineBreakEnumerator.Current);
+        }
+
+        // Then split the line at the line breaks.
+        int lineBreakIndex = 0;
+        int maxLineBreakIndex = lineBreaks.Count - 1;
+        LineBreak lastLineBreak = lineBreaks[lineBreakIndex];
+        LineBreak currentLineBreak = lineBreaks[lineBreakIndex];
+
+        lineAdvance = 0;
+        for (int i = 0; i < textLine.Count; i++)
+        {
+            int max = textLine.Count - 1;
+            TextLine.GlyphLayoutData glyph = textLine[i];
+            codePointIndex = glyph.CodePointIndex;
+            int graphemeCodePointIndex = glyph.GraphemeCodePointIndex;
+            float glyphAdvance = glyph.ScaledAdvance;
+            lineAdvance += glyphAdvance;
+
+            if (graphemeCodePointIndex == 0 && textLine.Count > 0)
+            {
+                if (codePointIndex == currentLineBreak.PositionWrap && currentLineBreak.Required)
+                {
+                    // Mandatory line break at index.
+                    TextLine remaining = textLine.SplitAt(i);
+                    textLines.Add(textLine.Finalize());
+                    textLine = remaining;
+                    i = 0;
+                    lineAdvance = 0;
+                }
+                else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
+                {
+                    if (breakAll)
+                    {
+                        // Insert a forced break at this index.
+                        TextLine remaining = textLine.SplitAt(i);
+                        textLines.Add(textLine.Finalize());
+                        textLine = remaining;
+                        i = 0;
+                        lineAdvance = 0;
+                    }
+                    else if (codePointIndex == currentLineBreak.PositionWrap || i == max)
+                    {
+                        // If we are at the position wrap we can break here.
+                        // Split the line at the last line break.
+                        // CJK characters will not be split if 'keepAll' is true.
+                        TextLine remaining = textLine.SplitAt(lastLineBreak, keepAll);
+                        if (remaining != textLine)
+                        {
+                            textLines.Add(textLine.Finalize());
+                            textLine = remaining;
+                            i = 0;
+                            lineAdvance = 0;
+                        }
+                    }
+                    else if (breakWord)
+                    {
+                        // Insert a forced break at this index.
+                        TextLine remaining = textLine.SplitAt(i);
+                        textLines.Add(textLine.Finalize());
+                        textLine = remaining;
+                        i = 0;
+                        lineAdvance = 0;
+                    }
+                }
+            }
+
+            // Find the next line break.
+            if (lineBreakIndex < maxLineBreakIndex &&
+                (currentLineBreak.PositionWrap == codePointIndex))
+            {
+                lastLineBreak = currentLineBreak;
+                currentLineBreak = lineBreaks[++lineBreakIndex];
+            }
         }
 
         // Add the final line.
@@ -1245,7 +1255,11 @@ internal static class TextLayout
 
     internal sealed class TextLine
     {
-        private readonly List<GlyphLayoutData> data = new();
+        private readonly List<GlyphLayoutData> data;
+
+        public TextLine() => this.data = new(16);
+
+        public TextLine(int capacity) => this.data = new(capacity);
 
         public int Count => this.data.Count;
 
@@ -1268,7 +1282,8 @@ internal static class TextLayout
             float scaledDescender,
             BidiRun bidiRun,
             int graphemeIndex,
-            int offset,
+            int codePointIndex,
+            int graphemeCodePointIndex,
             bool isTransformed,
             bool isDecomposed,
             int stringIndex)
@@ -1289,10 +1304,22 @@ internal static class TextLayout
                 scaledDescender,
                 bidiRun,
                 graphemeIndex,
-                offset,
+                codePointIndex,
+                graphemeCodePointIndex,
                 isTransformed,
                 isDecomposed,
                 stringIndex));
+        }
+
+        public TextLine SplitAt(int index)
+        {
+            TextLine result = new();
+            result.data.AddRange(this.data.GetRange(index, this.data.Count - index));
+            RecalculateLineMetrics(result);
+
+            this.data.RemoveRange(index, this.data.Count - index);
+            RecalculateLineMetrics(this);
+            return result;
         }
 
         public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
@@ -1302,8 +1329,7 @@ internal static class TextLayout
             while (index > 0)
             {
                 glyphWrap = this.data[--index];
-
-                if (glyphWrap.Offset == lineBreak.PositionWrap)
+                if (glyphWrap.CodePointIndex == lineBreak.PositionWrap)
                 {
                     break;
                 }
@@ -1313,13 +1339,13 @@ internal static class TextLayout
             {
                 // Now trim trailing whitespace from this line in the case of an exact
                 // length line break (non CJK)
-                this.TrimTrailingWhitespaceAndRecalculateMetrics();
+                RecalculateLineMetrics(this);
                 return this;
             }
 
             // Word breaks should not be used for Chinese/Japanese/Korean (CJK) text
             // when word-breaking mode is keep-all.
-            if (keepAll && UnicodeUtility.IsCJKCodePoint((uint)glyphWrap.CodePoint.Value))
+            if (!lineBreak.Required && keepAll && UnicodeUtility.IsCJKCodePoint((uint)glyphWrap.CodePoint.Value))
             {
                 // Loop through previous glyphs to see if there is
                 // a non CJK codepoint we can break at.
@@ -1337,48 +1363,35 @@ internal static class TextLayout
                 {
                     // Now trim trailing whitespace from this line in the case of an exact
                     // length line break (non CJK)
-                    this.TrimTrailingWhitespaceAndRecalculateMetrics();
+                    RecalculateLineMetrics(this);
                     return this;
                 }
             }
 
             // Create a new line ensuring we capture the initial metrics.
-            TextLine result = new();
-            result.data.AddRange(this.data.GetRange(index, this.data.Count - index));
-
-            float advance = 0;
-            float ascender = 0;
-            float descender = 0;
-            float lineHeight = 0;
-            for (int i = 0; i < result.data.Count; i++)
-            {
-                GlyphLayoutData glyph = result.data[i];
-                advance += glyph.ScaledAdvance;
-                ascender = MathF.Max(ascender, glyph.ScaledAscender);
-                descender = MathF.Max(descender, glyph.ScaledDescender);
-                lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
-            }
-
-            result.ScaledLineAdvance = advance;
-            result.ScaledMaxAscender = ascender;
-            result.ScaledMaxDescender = descender;
-            result.ScaledMaxLineHeight = lineHeight;
+            int count = this.data.Count - index;
+            TextLine result = new(count);
+            result.data.AddRange(this.data.GetRange(index, count));
+            RecalculateLineMetrics(result);
 
             // Remove those items from this line.
-            this.data.RemoveRange(index, this.data.Count - index);
+            this.data.RemoveRange(index, count);
 
             // Now trim trailing whitespace from this line.
-            this.TrimTrailingWhitespaceAndRecalculateMetrics();
+            RecalculateLineMetrics(this);
+            // this.TrimTrailingWhitespaceAndRecalculateMetrics();
 
             return result;
         }
 
-        private void TrimTrailingWhitespaceAndRecalculateMetrics()
+        private TextLine TrimTrailingWhitespaceAndRecalculateMetrics()
         {
             int index = this.data.Count;
             while (index > 0)
             {
-                if (!CodePoint.IsWhiteSpace(this.data[index - 1].CodePoint))
+                // Trim trailing breaking whitespace.
+                CodePoint point = this.data[index - 1].CodePoint;
+                if (!CodePoint.IsWhiteSpace(point) || CodePoint.IsNonBreakingSpace(point))
                 {
                     break;
                 }
@@ -1391,31 +1404,12 @@ internal static class TextLayout
                 this.data.RemoveRange(index, this.data.Count - index);
             }
 
-            // Lastly recalculate this line metrics.
-            float advance = 0;
-            float ascender = 0;
-            float descender = 0;
-            float lineHeight = 0;
-            for (int i = 0; i < this.data.Count; i++)
-            {
-                GlyphLayoutData glyph = this.data[i];
-                advance += glyph.ScaledAdvance;
-                ascender = MathF.Max(ascender, glyph.ScaledAscender);
-                descender = MathF.Max(descender, glyph.ScaledDescender);
-                lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
-            }
-
-            this.ScaledLineAdvance = advance;
-            this.ScaledMaxAscender = ascender;
-            this.ScaledMaxDescender = descender;
-            this.ScaledMaxLineHeight = lineHeight;
+            RecalculateLineMetrics(this);
+            return this;
         }
 
         public TextLine Finalize()
-        {
-            this.TrimTrailingWhitespaceAndRecalculateMetrics();
-            return this.BidiReOrder();
-        }
+            => this.TrimTrailingWhitespaceAndRecalculateMetrics();
 
         public void Justify(TextOptions options)
         {
@@ -1489,7 +1483,7 @@ internal static class TextLayout
             }
         }
 
-        private TextLine BidiReOrder()
+        public void BidiReOrder()
         {
             // Build up the collection of ordered runs.
             BidiRun run = this.data[0].BidiRun;
@@ -1539,7 +1533,7 @@ internal static class TextLayout
             if (max == 0 || (min == max && (max & 1) == 0))
             {
                 // Nothing to reverse.
-                return this;
+                return;
             }
 
             // Now apply the reversal and replace the original contents.
@@ -1567,8 +1561,28 @@ internal static class TextLayout
                 this.data.AddRange(current.AsSlice());
                 current = current.Next;
             }
+        }
 
-            return this;
+        private static void RecalculateLineMetrics(TextLine textLine)
+        {
+            // Lastly recalculate this line metrics.
+            float advance = 0;
+            float ascender = 0;
+            float descender = 0;
+            float lineHeight = 0;
+            for (int i = 0; i < textLine.Count; i++)
+            {
+                GlyphLayoutData glyph = textLine[i];
+                advance += glyph.ScaledAdvance;
+                ascender = MathF.Max(ascender, glyph.ScaledAscender);
+                descender = MathF.Max(descender, glyph.ScaledDescender);
+                lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
+            }
+
+            textLine.ScaledLineAdvance = advance;
+            textLine.ScaledMaxAscender = ascender;
+            textLine.ScaledMaxDescender = descender;
+            textLine.ScaledMaxLineHeight = lineHeight;
         }
 
         /// <summary>
@@ -1644,7 +1658,8 @@ internal static class TextLayout
                 float scaledDescender,
                 BidiRun bidiRun,
                 int graphemeIndex,
-                int offset,
+                int codePointIndex,
+                int graphemeCodePointIndex,
                 bool isTransformed,
                 bool isDecomposed,
                 int stringIndex)
@@ -1657,7 +1672,8 @@ internal static class TextLayout
                 this.ScaledDescender = scaledDescender;
                 this.BidiRun = bidiRun;
                 this.GraphemeIndex = graphemeIndex;
-                this.Offset = offset;
+                this.CodePointIndex = codePointIndex;
+                this.GraphemeCodePointIndex = graphemeCodePointIndex;
                 this.IsTransformed = isTransformed;
                 this.IsDecomposed = isDecomposed;
                 this.StringIndex = stringIndex;
@@ -1683,7 +1699,9 @@ internal static class TextLayout
 
             public int GraphemeIndex { get; }
 
-            public int Offset { get; }
+            public int GraphemeCodePointIndex { get; }
+
+            public int CodePointIndex { get; }
 
             public bool IsTransformed { get; }
 
@@ -1694,7 +1712,7 @@ internal static class TextLayout
             public readonly bool IsNewLine => CodePoint.IsNewLine(this.CodePoint);
 
             private readonly string DebuggerDisplay => FormattableString
-                .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.Offset}, level: {this.BidiRun.Level}");
+                .Invariant($"{this.CodePoint.ToDebuggerDisplay()} : {this.TextDirection} : {this.CodePointIndex}, level: {this.BidiRun.Level}");
         }
 
         private sealed class OrderedBidiRun

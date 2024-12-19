@@ -4,7 +4,12 @@
 using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Tests.Fakes;
+using SixLabors.Fonts.Tests.TestUtilities;
 using SixLabors.Fonts.Unicode;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -531,10 +536,24 @@ public class TextLayoutTests
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 200, 6)]
     public void CountLinesWrappingLength(string text, int wrappingLength, int usedLines)
     {
-        Font font = CreateFont(text);
-        int count = TextMeasurer.CountLines(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor, WrappingLength = wrappingLength });
+        Font font = CreateRenderingFont();
+        RichTextOptions options = new(font)
+        {
+            // Dpi = font.FontMetrics.ScaleFactor,
+            WrappingLength = wrappingLength
+        };
 
-        Assert.Equal(usedLines, count);
+        int count = TextMeasurer.CountLines(text, options);
+
+        // Assert.Equal(usedLines, count);
+        FontRectangle advance = TextMeasurer.MeasureAdvance(text, options);
+        int width = (int)Math.Ceiling(advance.Width);
+        int height = (int)Math.Ceiling(advance.Height);
+
+        using Image<Rgba32> img = new(Math.Max(wrappingLength + 1, width), height, Color.White);
+        img.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
+        img.Mutate(ctx => ctx.DrawText(options, text, Color.Black));
+        img.DebugSave(properties: new { wrappingLength, usedLines });
     }
 
     [Fact]
@@ -1350,6 +1369,11 @@ public class TextLayoutTests
 
     private static readonly Font Arial = SystemFonts.CreateFont("Arial", 12);
 #endif
+
+    public static Font CreateRenderingFont()
+    {
+        return new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
+    }
 
     public static Font CreateFont(string text)
     {

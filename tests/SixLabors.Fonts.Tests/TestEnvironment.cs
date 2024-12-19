@@ -2,12 +2,19 @@
 // Licensed under the Six Labors Split License.
 
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace SixLabors.Fonts.Tests;
 
 internal static class TestEnvironment
 {
+    private static readonly FileInfo TestAssemblyFile = new(typeof(TestEnvironment).GetTypeInfo().Assembly.Location);
+
     private const string SixLaborsSolutionFileName = "SixLabors.Fonts.sln";
+
+    private const string ActualOutputDirectoryRelativePath = @"tests\Images\ActualOutput";
+
+    private const string ReferenceOutputDirectoryRelativePath = @"tests\Images\ReferenceOutput";
 
     private const string UnicodeTestDataRelativePath = @"tests\UnicodeTestData\";
 
@@ -20,15 +27,43 @@ internal static class TestEnvironment
     /// </summary>
     internal static string UnicodeTestDataFullPath => GetFullPath(UnicodeTestDataRelativePath);
 
+    /// <summary>
+    /// Gets the correct full path to the Actual Output directory. (To be written to by the test cases.)
+    /// </summary>
+    internal static string ActualOutputDirectoryFullPath => GetFullPath(ActualOutputDirectoryRelativePath);
+
+    /// <summary>
+    /// Gets the correct full path to the Expected Output directory. (To compare the test results to.)
+    /// </summary>
+    internal static string ReferenceOutputDirectoryFullPath => GetFullPath(ReferenceOutputDirectoryRelativePath);
+
+    internal static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
+    internal static bool IsMacOS => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
+    internal static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    internal static bool Is64BitProcess => Environment.Is64BitProcess;
+
+    internal static Architecture OSArchitecture => RuntimeInformation.OSArchitecture;
+
+    internal static Architecture ProcessArchitecture => RuntimeInformation.ProcessArchitecture;
+
+
+    /// <summary>
+    /// Gets a value indicating whether test execution runs on CI.
+    /// </summary>
+#if ENV_CI
+    internal static bool RunsOnCI => true;
+#else
+    internal static bool RunsOnCI => false;
+#endif
+
     private static string GetSolutionDirectoryFullPathImpl()
     {
-        string assemblyLocation = Path.GetDirectoryName(new Uri(typeof(TestEnvironment).GetTypeInfo().Assembly.CodeBase).LocalPath);
+        DirectoryInfo directory = TestAssemblyFile.Directory;
 
-        var assemblyFile = new FileInfo(assemblyLocation);
-
-        DirectoryInfo directory = assemblyFile.Directory;
-
-        while (!directory.EnumerateFiles(SixLaborsSolutionFileName).Any())
+        while (directory?.EnumerateFiles(SixLaborsSolutionFileName).Any() == false)
         {
             try
             {
@@ -36,14 +71,14 @@ internal static class TestEnvironment
             }
             catch (Exception ex)
             {
-                throw new Exception(
-                    $"Unable to find SixLabors solution directory from {assemblyLocation} because of {ex.GetType().Name}!",
+                throw new DirectoryNotFoundException(
+                    $"Unable to find  solution directory from {TestAssemblyFile} because of {ex.GetType().Name}!",
                     ex);
             }
 
             if (directory == null)
             {
-                throw new Exception($"Unable to find SixLabors solution directory from {assemblyLocation}!");
+                throw new DirectoryNotFoundException($"Unable to find  solution directory from {TestAssemblyFile}!");
             }
         }
 
