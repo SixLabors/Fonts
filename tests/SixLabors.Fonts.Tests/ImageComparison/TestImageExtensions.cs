@@ -3,6 +3,7 @@
 
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using SixLabors.Fonts.Tests.ImageComparison;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -15,7 +16,7 @@ public static class TestImageExtensions
         this Image image,
         string extension = null,
         [CallerMemberName] string test = "",
-        object properties = null)
+        params object[] properties)
     {
         string outputDirectory = TestEnvironment.ActualOutputDirectoryFullPath;
         if (!Directory.Exists(outputDirectory))
@@ -34,7 +35,7 @@ public static class TestImageExtensions
         float percentageTolerance = 0F,
         string extension = null,
         [CallerMemberName] string test = "",
-        object properties = null)
+        params object[] properties)
         where TPixel : unmanaged, IPixel<TPixel>
     {
         string path = image.DebugSave(extension, test, properties: properties);
@@ -55,7 +56,18 @@ public static class TestImageExtensions
         }
     }
 
-    private static string FormatTestDetails(object properties)
+    private static string FormatTestDetails(params object[] properties)
+    {
+        if (properties?.Any() != true)
+        {
+            return "-";
+        }
+
+        StringBuilder sb = new();
+        return $"_{string.Join("-", properties.Select(FormatTestDetails))}";
+    }
+
+    public static string FormatTestDetails(object properties)
     {
         if (properties is null)
         {
@@ -70,13 +82,24 @@ public static class TestImageExtensions
         {
             return FormattableString.Invariant($"-{s}-");
         }
+        else if (properties is Dictionary<string, object> dictionary)
+        {
+            return FormattableString.Invariant($"_{string.Join(
+                "-",
+                dictionary.Select(x => FormattableString.Invariant($"{x.Key}_{x.Value}")))}_");
+        }
 
-        IEnumerable<PropertyInfo> runtimeProperties = properties.GetType().GetRuntimeProperties();
+        Type type = properties.GetType();
+        TypeInfo info = type.GetTypeInfo();
+        if (info.IsPrimitive || info.IsEnum || type == typeof(decimal))
+        {
+            return FormattableString.Invariant($"{properties}");
+        }
 
+        IEnumerable<PropertyInfo> runtimeProperties = type.GetRuntimeProperties();
         return FormattableString.Invariant($"_{string.Join(
             "-",
             runtimeProperties.ToDictionary(x => x.Name, x => x.GetValue(properties))
                 .Select(x => FormattableString.Invariant($"{x.Key}_{x.Value}")))}_");
     }
 }
-

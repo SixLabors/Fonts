@@ -695,10 +695,11 @@ internal static class TextLayout
 
                     // Adjust the horizontal offset further by considering the descender differences:
                     // - Subtract the current glyph's descender (data.ScaledDescender) to align it properly.
-                    float descenderDelta = (Math.Abs(textLine.ScaledMaxDescender) - Math.Abs(data.ScaledDescender)) * .5F;
+                    float descenderAbs = Math.Abs(data.ScaledDescender);
+                    float descenderDelta = (Math.Abs(textLine.ScaledMaxDescender) - descenderAbs) * .5F;
 
                     // Final horizontal center offset combines the baseline and descender adjustments.
-                    float centerOffsetX = (baselineDelta - data.ScaledDescender) + descenderDelta;
+                    float centerOffsetX = baselineDelta + descenderAbs + descenderDelta;
 
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
@@ -1138,12 +1139,7 @@ internal static class TextLayout
             stringIndex += graphemeEnumerator.Current.Length;
         }
 
-        // Resolve the bidi order for the line.
-        // This reorders the glyphs in the line to match the visual order.
-        textLine.BidiReOrder();
-
-        // Now we need to loop through our reordered line and split it at any line breaks.
-        //
+        // Now we need to loop through our line and split it at any line breaks.
         // First calculate the position of potential line breaks.
         LineBreakEnumerator lineBreakEnumerator = new(text);
         List<LineBreak> lineBreaks = new();
@@ -1174,44 +1170,69 @@ internal static class TextLayout
                 {
                     // Mandatory line break at index.
                     TextLine remaining = textLine.SplitAt(i);
-                    textLines.Add(textLine.Finalize());
+                    textLines.Add(textLine.Finalize(options));
                     textLine = remaining;
                     i = 0;
                     lineAdvance = 0;
                 }
-                else if (shouldWrap && lineAdvance + glyphAdvance >= wrappingLength)
+                else if (shouldWrap)
                 {
-                    if (breakAll)
+                    float currentAdvance = lineAdvance + glyphAdvance;
+                    if (currentAdvance >= wrappingLength)
                     {
-                        // Insert a forced break at this index.
-                        TextLine remaining = textLine.SplitAt(i);
-                        textLines.Add(textLine.Finalize());
-                        textLine = remaining;
-                        i = 0;
-                        lineAdvance = 0;
-                    }
-                    else if (codePointIndex == currentLineBreak.PositionWrap || i == max)
-                    {
-                        // If we are at the position wrap we can break here.
-                        // Split the line at the last line break.
-                        // CJK characters will not be split if 'keepAll' is true.
-                        TextLine remaining = textLine.SplitAt(lastLineBreak, keepAll);
-                        if (remaining != textLine)
+                        if (breakAll)
                         {
-                            textLines.Add(textLine.Finalize());
+                            // Insert a forced break at this index.
+                            TextLine remaining = textLine.SplitAt(i);
+                            textLines.Add(textLine.Finalize(options));
                             textLine = remaining;
                             i = 0;
                             lineAdvance = 0;
                         }
-                    }
-                    else if (breakWord)
-                    {
-                        // Insert a forced break at this index.
-                        TextLine remaining = textLine.SplitAt(i);
-                        textLines.Add(textLine.Finalize());
-                        textLine = remaining;
-                        i = 0;
-                        lineAdvance = 0;
+                        else if (codePointIndex == currentLineBreak.PositionWrap || i == max)
+                        {
+                            LineBreak lineBreak = currentAdvance == wrappingLength
+                                ? currentLineBreak
+                                : lastLineBreak;
+
+                            if (i > 0)
+                            {
+                                // If the current break is a space, and the line minus the space
+                                // is less than the wrapping length, we can break using the current break.
+                                float positionAdvance = lineAdvance;
+                                TextLine.GlyphLayoutData lastGlyph = textLine[i - 1];
+                                if (CodePoint.IsWhiteSpace(lastGlyph.CodePoint))
+                                {
+                                    positionAdvance -= lastGlyph.ScaledAdvance;
+                                    if (positionAdvance <= wrappingLength)
+                                    {
+                                        lineBreak = currentLineBreak;
+                                    }
+                                }
+                            }
+
+                            // If we are at the position wrap we can break here.
+                            // Split the line at the appropriate break.
+                            // CJK characters will not be split if 'keepAll' is true.
+                            TextLine remaining = textLine.SplitAt(lineBreak, keepAll);
+
+                            if (remaining != textLine)
+                            {
+                                if (breakWord)
+                                {
+                                    // If the line is too long, insert a forced line break.
+                                    if (textLine.ScaledLineAdvance > wrappingLength)
+                                    {
+                                        remaining.InsertAt(0, textLine.SplitAt(wrappingLength));
+                                    }
+                                }
+
+                                textLines.Add(textLine.Finalize(options));
+                                textLine = remaining;
+                                i = 0;
+                                lineAdvance = 0;
+                            }
+                        }
                     }
                 }
             }
@@ -1228,27 +1249,23 @@ internal static class TextLayout
         // Add the final line.
         if (textLine.Count > 0)
         {
-            textLines.Add(textLine.Finalize());
+            textLines.Add(textLine.Finalize(options));
         }
 
-        return new TextBox(options, textLines);
+        return new TextBox(textLines);
     }
 
     internal sealed class TextBox
     {
-        public TextBox(TextOptions options, IReadOnlyList<TextLine> textLines)
-        {
-            this.TextLines = textLines;
-            for (int i = 0; i < this.TextLines.Count - 1; i++)
-            {
-                this.TextLines[i].Justify(options);
-            }
-        }
+        private float? scaledMaxAdvance;
+
+        public TextBox(IReadOnlyList<TextLine> textLines)
+            => this.TextLines = textLines;
 
         public IReadOnlyList<TextLine> TextLines { get; }
 
         public float ScaledMaxAdvance()
-            => this.TextLines.Max(x => x.ScaledLineAdvance);
+            => this.scaledMaxAdvance ??= this.TextLines.Max(x => x.ScaledLineAdvance);
 
         public TextDirection TextDirection() => this.TextLines[0][0].TextDirection;
     }
@@ -1311,8 +1328,20 @@ internal static class TextLayout
                 stringIndex));
         }
 
+        public TextLine InsertAt(int index, TextLine textLine)
+        {
+            this.data.InsertRange(index, textLine.data);
+            RecalculateLineMetrics(this);
+            return this;
+        }
+
         public TextLine SplitAt(int index)
         {
+            if (index == 0 || index >= this.Count)
+            {
+                return this;
+            }
+
             TextLine result = new();
             result.data.AddRange(this.data.GetRange(index, this.data.Count - index));
             RecalculateLineMetrics(result);
@@ -1320,6 +1349,28 @@ internal static class TextLayout
             this.data.RemoveRange(index, this.data.Count - index);
             RecalculateLineMetrics(this);
             return result;
+        }
+
+        public TextLine SplitAt(float length)
+        {
+            TextLine result = new();
+            float advance = 0;
+            for (int i = 0; i < this.data.Count; i++)
+            {
+                GlyphLayoutData glyph = this.data[i];
+                advance += glyph.ScaledAdvance;
+                if (advance >= length)
+                {
+                    result.data.AddRange(this.data.GetRange(i, this.data.Count - i));
+                    RecalculateLineMetrics(result);
+
+                    this.data.RemoveRange(i, this.data.Count - i);
+                    RecalculateLineMetrics(this);
+                    return result;
+                }
+            }
+
+            return this;
         }
 
         public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
@@ -1337,9 +1388,6 @@ internal static class TextLayout
 
             if (index == 0)
             {
-                // Now trim trailing whitespace from this line in the case of an exact
-                // length line break (non CJK)
-                RecalculateLineMetrics(this);
                 return this;
             }
 
@@ -1361,9 +1409,6 @@ internal static class TextLayout
 
                 if (index == 0)
                 {
-                    // Now trim trailing whitespace from this line in the case of an exact
-                    // length line break (non CJK)
-                    RecalculateLineMetrics(this);
                     return this;
                 }
             }
@@ -1376,15 +1421,11 @@ internal static class TextLayout
 
             // Remove those items from this line.
             this.data.RemoveRange(index, count);
-
-            // Now trim trailing whitespace from this line.
             RecalculateLineMetrics(this);
-            // this.TrimTrailingWhitespaceAndRecalculateMetrics();
-
             return result;
         }
 
-        private TextLine TrimTrailingWhitespaceAndRecalculateMetrics()
+        private void TrimTrailingWhitespace()
         {
             int index = this.data.Count;
             while (index > 0)
@@ -1403,13 +1444,18 @@ internal static class TextLayout
             {
                 this.data.RemoveRange(index, this.data.Count - index);
             }
+        }
 
+        public TextLine Finalize(TextOptions options)
+        {
+            this.TrimTrailingWhitespace();
+            this.BidiReOrder();
+            RecalculateLineMetrics(this);
+
+            this.Justify(options);
             RecalculateLineMetrics(this);
             return this;
         }
-
-        public TextLine Finalize()
-            => this.TrimTrailingWhitespaceAndRecalculateMetrics();
 
         public void Justify(TextOptions options)
         {

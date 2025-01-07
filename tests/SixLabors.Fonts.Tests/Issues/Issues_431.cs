@@ -22,10 +22,12 @@ public class Issues_431
             };
 
             int lineCount = TextMeasurer.CountLines(text, options);
-            Assert.Equal(3, lineCount);
+            Assert.Equal(4, lineCount);
 
             IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
-            Assert.Equal(47, layout.Count);
+            Assert.Equal(46, layout.Count);
+
+            TextLayoutTestUtilities.TestLayout(text, options);
         }
     }
 }

@@ -4,12 +4,8 @@
 using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Tests.Fakes;
-using SixLabors.Fonts.Tests.TestUtilities;
 using SixLabors.Fonts.Unicode;
-using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -276,172 +272,195 @@ public class TextLayoutTests
     }
 
     [Theory]
-    [InlineData("hello world", 10, 310)]
-    [InlineData(
-        "hello world hello world hello world",
-        70, // 30 actual line height * 2 + 10 actual height
-        310)]
+    [InlineData("hello world", 10, 87.125F)]
+    [InlineData("hello world hello world hello world", 11.438F, 279.13F)]
     [InlineData(// issue https://github.com/SixLabors/ImageSharp.Drawing/issues/115
         "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。",
-        160, // 30 actual line height * 2 + 10 actual height
-        310)]
+        62.625,
+        318.86F)]
     public void MeasureTextWordWrappingHorizontalTopBottom(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.HorizontalTopBottom
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.HorizontalTopBottom
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+        }
     }
 
     [Theory]
-    [InlineData("hello world", 10, 310)]
-    [InlineData(
-        "hello world hello world hello world",
-        70, // 30 actual line height * 2 + 10 actual height
-        310)]
+    [InlineData("hello world", 10, 87.125F)]
+    [InlineData("hello world hello world hello world", 11.438F, 279.13F)]
     [InlineData(// issue https://github.com/SixLabors/ImageSharp.Drawing/issues/115
         "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。",
-        160, // 30 actual line height * 2 + 10 actual height
-        310)]
+        62.625,
+        318.86F)]
     public void MeasureTextWordWrappingHorizontalBottomTop(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.HorizontalBottomTop
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.HorizontalBottomTop
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+        }
     }
 
     [Theory]
-    [InlineData("hello world", 310, 10)]
-    [InlineData("hello world hello world hello world", 310, 70)]
-    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+    [InlineData("hello world", 171.25F, 10)]
+    [InlineData("hello world hello world hello world", 267.25F, 23.875F)]
+    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 318.563F, 62.813F)]
     public void MeasureTextWordWrappingVerticalLeftRight(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.VerticalLeftRight
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.VerticalLeftRight
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+        }
     }
 
     [Theory]
-    [InlineData("hello world", 310, 10)]
-    [InlineData("hello world hello world hello world", 310, 70)]
-    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+    [InlineData("hello world", 171.25F, 10)]
+    [InlineData("hello world hello world hello world", 267.25F, 23.875F)]
+    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 318.563F, 62.813F)]
     public void MeasureTextWordWrappingVerticalRightLeft(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.VerticalRightLeft
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.VerticalRightLeft
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+        }
     }
 
     [Theory]
-    [InlineData("hello world", 310, 10)]
-    [InlineData("hello world hello world hello world", 310, 70)]
-    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+    [InlineData("hello world", 87.125F, 10)]
+    [InlineData("hello world hello world hello world", 279.125F, 11.438F)]
+    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 318.563F, 62.813F)]
     public void MeasureTextWordWrappingVerticalMixedLeftRight(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.VerticalMixedLeftRight
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.VerticalMixedLeftRight
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+        }
     }
 
-#if OS_WINDOWS
     [Theory]
-    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.Standard, 100, 870)]
-    //[InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakAll, 120, 399)]
-    //[InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakWord, 120, 400)]
-    //[InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.KeepAll, 60, 699)]
-    //[InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.Standard, 101, 870)]
-    //[InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakAll, 121, 399)]
-    //[InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakWord, 121, 400)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.KeepAll, 61, 699)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.Standard, 100, 696.51F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakAll, 129.29F, 237.53F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakWord, 128, 237.53F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.KeepAll, 65.29F, 699)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.Standard, 96F, 696.51F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakAll, 129.29F, 237.53F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakWord, 128, 237.53F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.KeepAll, 61, 699)]
     public void MeasureTextWordBreakMatchesMDN(string text, LayoutMode layoutMode, WordBreaking wordBreaking, float height, float width)
     {
-        // Testing using Windows only to ensure that actual glyphs are rendered
-        // against known physically tested values.
-        FontFamily arial = SystemFonts.Get("Arial");
-        FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
-
-        Font font = arial.CreateFont(16);
-        FontRectangle size = TextMeasurer.MeasureAdvance(
-            text,
-            new TextOptions(font)
+        // See https://developer.mozilla.org/en-US/docs/Web/CSS/word-break
+        if (SystemFonts.TryGet("Arial", out FontFamily arial) &&
+            SystemFonts.TryGet("Microsoft JhengHei", out FontFamily jhengHei))
+        {
+            Font font = arial.CreateFont(16);
+            TextOptions options = new(font)
             {
-                Dpi = 96,
                 WrappingLength = 238,
                 LayoutMode = layoutMode,
                 WordBreaking = wordBreaking,
                 FallbackFontFamilies = new[] { jhengHei }
-            });
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            FontRectangle size = TextMeasurer.MeasureAdvance(
+                text,
+                options);
+
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { layoutMode, wordBreaking });
+        }
     }
 
-
     [Theory]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.Standard, 100, 870)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakAll, 120, 399)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakWord, 120, 400)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.KeepAll, 60, 699)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.Standard, 101, 870)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakAll, 121, 399)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakWord, 121, 400)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.Standard, 100, 870.635F)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakAll, 100, 500)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakWord, 120, 490.35F)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.KeepAll, 81.89F, 870.635F)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.Standard, 101, 870.635F)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakAll, 100, 500)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakWord, 121, 490.35F)]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.KeepAll, 61, 699)]
     public void MeasureTextWordBreak(string text, LayoutMode layoutMode, WordBreaking wordBreaking, float height, float width)
     {
-        // Testing using Windows only to ensure that actual glyphs are rendered
-        // against known physically tested values.
-        FontFamily arial = SystemFonts.Get("Arial");
-        FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
-
-        Font font = arial.CreateFont(20);
-        FontRectangle size = TextMeasurer.MeasureAdvance(
-            text,
-            new TextOptions(font)
+        // See https://developer.mozilla.org/en-US/docs/Web/CSS/word-break
+        if (SystemFonts.TryGet("Arial", out FontFamily arial) &&
+            SystemFonts.TryGet("Microsoft JhengHei", out FontFamily jhengHei))
+        {
+            Font font = arial.CreateFont(20);
+            TextOptions options = new(font)
             {
-                WrappingLength = 400,
+                WrappingLength = 500,
                 LayoutMode = layoutMode,
                 WordBreaking = wordBreaking,
                 FallbackFontFamilies = new[] { jhengHei }
-            });
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            FontRectangle size = TextMeasurer.MeasureAdvance(
+                text,
+                options);
+
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { layoutMode, wordBreaking });
+        }
     }
-#endif
 
     [Theory]
     [InlineData("ab", 477, 1081, false)] // no kerning rules defined for lowercase ab so widths should stay the same
@@ -530,30 +549,21 @@ public class TextLayoutTests
     }
 
     [Theory]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 7)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 7)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 7)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 200, 6)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 6)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 5)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 4)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 200, 3)]
     public void CountLinesWrappingLength(string text, int wrappingLength, int usedLines)
     {
         Font font = CreateRenderingFont();
         RichTextOptions options = new(font)
         {
-            // Dpi = font.FontMetrics.ScaleFactor,
             WrappingLength = wrappingLength
         };
 
         int count = TextMeasurer.CountLines(text, options);
-
-        // Assert.Equal(usedLines, count);
-        FontRectangle advance = TextMeasurer.MeasureAdvance(text, options);
-        int width = (int)Math.Ceiling(advance.Width);
-        int height = (int)Math.Ceiling(advance.Height);
-
-        using Image<Rgba32> img = new(Math.Max(wrappingLength + 1, width), height, Color.White);
-        img.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
-        img.Mutate(ctx => ctx.DrawText(options, text, Color.Black));
-        img.DebugSave(properties: new { wrappingLength, usedLines });
+        Assert.Equal(usedLines, count);
+        TextLayoutTestUtilities.TestLayout(text, options, properties: usedLines);
     }
 
     [Fact]
@@ -660,8 +670,8 @@ public class TextLayoutTests
     {
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
-        const float pointSize = 20;
-        Font font = CreateFont(text, pointSize);
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
         TextOptions options = new(font)
         {
             TextDirection = direction,
@@ -672,9 +682,11 @@ public class TextLayoutTests
         // Collect the first line so we can compare it to the target wrapping length.
         IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
-        TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+        TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> advances);
 
-        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Width), 4F);
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, options.TextJustification });
+
+        Assert.Equal(wrappingLength, advances.ToArray().Sum(x => x.Bounds.Width), 4F);
 
         // Now compare character widths.
         options.TextJustification = TextJustification.None;
@@ -688,11 +700,11 @@ public class TextLayoutTests
         {
             if (i == characterBounds.Length - 1)
             {
-                Assert.Equal(justifiedCharacterBounds[i].Bounds.Width, characterBounds[i].Bounds.Width);
+                Assert.Equal(advances[i].Bounds.Width, characterBounds[i].Bounds.Width);
             }
             else
             {
-                Assert.True(justifiedCharacterBounds[i].Bounds.Width > characterBounds[i].Bounds.Width);
+                Assert.True(advances[i].Bounds.Width > characterBounds[i].Bounds.Width);
             }
         }
     }
@@ -704,8 +716,8 @@ public class TextLayoutTests
     {
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
-        const float pointSize = 20;
-        Font font = CreateFont(text, pointSize);
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
         TextOptions options = new(font)
         {
             TextDirection = direction,
@@ -717,6 +729,8 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, options.TextJustification });
 
         Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Width), 4F);
 
@@ -748,8 +762,8 @@ public class TextLayoutTests
     {
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
-        const float pointSize = 20;
-        Font font = CreateFont(text, pointSize);
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
         TextOptions options = new(font)
         {
             LayoutMode = LayoutMode.VerticalLeftRight,
@@ -762,6 +776,8 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, options.TextJustification });
 
         Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Height), 4F);
 
@@ -793,8 +809,8 @@ public class TextLayoutTests
     {
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
-        const float pointSize = 20;
-        Font font = CreateFont(text, pointSize);
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
         TextOptions options = new(font)
         {
             LayoutMode = LayoutMode.VerticalLeftRight,
@@ -807,6 +823,8 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, options.TextJustification });
 
         Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Height), 4F);
 
@@ -1370,10 +1388,8 @@ public class TextLayoutTests
     private static readonly Font Arial = SystemFonts.CreateFont("Arial", 12);
 #endif
 
-    public static Font CreateRenderingFont()
-    {
-        return new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
-    }
+    public static Font CreateRenderingFont(float pointSize = 12)
+        => new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(pointSize);
 
     public static Font CreateFont(string text)
     {
