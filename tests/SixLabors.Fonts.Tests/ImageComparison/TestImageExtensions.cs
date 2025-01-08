@@ -84,9 +84,7 @@ public static class TestImageExtensions
         }
         else if (properties is Dictionary<string, object> dictionary)
         {
-            return FormattableString.Invariant($"_{string.Join(
-                "-",
-                dictionary.Select(x => FormattableString.Invariant($"{x.Key}_{x.Value}")))}_");
+            return FormattableString.Invariant($"_{string.Join("-", dictionary.Select(x => FormattableString.Invariant($"{x.Key}_{x.Value}")))}_");
         }
 
         Type type = properties.GetType();
@@ -97,9 +95,6 @@ public static class TestImageExtensions
         }
 
         IEnumerable<PropertyInfo> runtimeProperties = type.GetRuntimeProperties();
-        return FormattableString.Invariant($"_{string.Join(
-            "-",
-            runtimeProperties.ToDictionary(x => x.Name, x => x.GetValue(properties))
-                .Select(x => FormattableString.Invariant($"{x.Key}_{x.Value}")))}_");
+        return FormattableString.Invariant($"_{string.Join("-", runtimeProperties.ToDictionary(x => x.Name, x => x.GetValue(properties)).Select(x => FormattableString.Invariant($"{x.Key}_{x.Value}")))}_");
     }
 }
