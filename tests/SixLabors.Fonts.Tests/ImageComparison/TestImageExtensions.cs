@@ -47,7 +47,7 @@ public static class TestImageExtensions
         }
 
         using Image<Rgba64> expected = Image.Load<Rgba64>(referencePath);
-        TolerantImageComparer comparer = new(percentageTolerance / 100F);
+        ImageComparer comparer = ImageComparer.TolerantPercentage(percentageTolerance);
         ImageSimilarityReport report = comparer.CompareImagesOrFrames(expected, image);
 
         if (!report.IsEmpty)
