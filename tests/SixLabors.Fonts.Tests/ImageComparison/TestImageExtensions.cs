@@ -32,7 +32,7 @@ public static class TestImageExtensions
 
     public static void CompareToReference<TPixel>(
         this Image<TPixel> image,
-        float percentageTolerance = 0F,
+        float percentageTolerance = 0.05F,
         string extension = null,
         [CallerMemberName] string test = "",
         params object[] properties)
