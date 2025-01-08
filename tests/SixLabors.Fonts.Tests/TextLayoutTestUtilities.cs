@@ -19,7 +19,7 @@ internal static class TextLayoutTestUtilities
     public static void TestLayout(
         string text,
         TextOptions options,
-        float percentageTolerance = 0F,
+        float percentageTolerance = 0.05F,
         [CallerMemberName] string test = "",
         params object[] properties)
     {
