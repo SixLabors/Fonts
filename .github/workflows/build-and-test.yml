@@ -157,7 +157,7 @@ jobs:
           name: actual_output_${{ runner.os }}_${{ matrix.options.framework }}${{ matrix.options.runtime }}.zip
           path: |
               tests/Images/ActualOutput/
-              msbuild.log
+              **/msbuild.binlog
 
       - name: Codecov Update
         uses: codecov/codecov-action@v4
