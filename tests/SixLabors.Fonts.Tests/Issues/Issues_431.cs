@@ -26,6 +26,8 @@ public class Issues_431
 
             IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
             Assert.Equal(46, layout.Count);
+
+            TextLayoutTestUtilities.TestLayout(text, options);
         }
     }
 }

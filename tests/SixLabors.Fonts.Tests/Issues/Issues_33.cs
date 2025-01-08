@@ -13,8 +13,8 @@ public class Issues_33
     [InlineData("\n\tHelloworld", 310, 10)]
     [InlineData("\tHelloworld", 310, 10)]
     [InlineData("  Helloworld", 340, 10)]
-    [InlineData("Hell owor ld\t", 390, 10)]
-    [InlineData("Helloworld  ", 360, 10)]
+    [InlineData("Hell owor ld\t", 340, 10)]
+    [InlineData("Helloworld  ", 280, 10)]
     public void WhiteSpaceAtStartOfLineNotMeasured(string text, float width, float height)
     {
         Font font = CreateFont(text);

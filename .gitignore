@@ -254,6 +254,8 @@ paket-files/
 *.sln.iml
 /samples/DrawWithImageSharp/Output
 
+# Tests
+**/Images/ActualOutput
 /tests/CodeCoverage/OpenCover.*
 SixLabors.Shapes.Coverage.xml
 /SixLabors.Fonts.Coverage.xml
