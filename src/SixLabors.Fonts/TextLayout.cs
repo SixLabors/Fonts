@@ -1223,7 +1223,11 @@ internal static class TextLayout
                                     // If the line is too long, insert a forced line break.
                                     if (textLine.ScaledLineAdvance > wrappingLength)
                                     {
-                                        remaining.InsertAt(0, textLine.SplitAt(wrappingLength));
+                                        TextLine overflow = textLine.SplitAt(wrappingLength);
+                                        if (overflow != textLine)
+                                        {
+                                            remaining.InsertAt(0, overflow);
+                                        }
                                     }
                                 }
 
@@ -1249,6 +1253,21 @@ internal static class TextLayout
         // Add the final line.
         if (textLine.Count > 0)
         {
+            if (shouldWrap && (breakWord || breakAll))
+            {
+                while (textLine.ScaledLineAdvance > wrappingLength)
+                {
+                    TextLine overflow = textLine.SplitAt(wrappingLength);
+                    if (overflow == textLine)
+                    {
+                        break;
+                    }
+
+                    textLines.Add(textLine.Finalize(options));
+                    textLine = overflow;
+                }
+            }
+
             textLines.Add(textLine.Finalize(options));
         }
 
@@ -1342,29 +1361,40 @@ internal static class TextLayout
                 return this;
             }
 
-            TextLine result = new();
-            result.data.AddRange(this.data.GetRange(index, this.data.Count - index));
+            int count = this.data.Count - index;
+            TextLine result = new(count);
+            result.data.AddRange(this.data.GetRange(index, count));
             RecalculateLineMetrics(result);
 
-            this.data.RemoveRange(index, this.data.Count - index);
+            this.data.RemoveRange(index, count);
             RecalculateLineMetrics(this);
             return result;
         }
 
         public TextLine SplitAt(float length)
         {
-            TextLine result = new();
-            float advance = 0;
-            for (int i = 0; i < this.data.Count; i++)
+            float advance = this.data[0].ScaledAdvance;
+
+            // Ensure at least one glyph is in the line.
+            // trailing whitespace should be ignored as it is trimmed
+            // on finalization.
+            for (int i = 1; i < this.data.Count; i++)
             {
                 GlyphLayoutData glyph = this.data[i];
                 advance += glyph.ScaledAdvance;
+                if (CodePoint.IsWhiteSpace(glyph.CodePoint))
+                {
+                    continue;
+                }
+
                 if (advance >= length)
                 {
-                    result.data.AddRange(this.data.GetRange(i, this.data.Count - i));
+                    int count = this.data.Count - i;
+                    TextLine result = new(count);
+                    result.data.AddRange(this.data.GetRange(i, count));
                     RecalculateLineMetrics(result);
 
-                    this.data.RemoveRange(i, this.data.Count - i);
+                    this.data.RemoveRange(i, count);
                     RecalculateLineMetrics(this);
                     return result;
                 }

@@ -1206,6 +1206,23 @@ public class TextLayoutTests
         }
     }
 
+    [Fact]
+    public void BreakWordEnsuresSingleCharacterPerLine()
+    {
+        Font font = CreateRenderingFont(20);
+        TextOptions options = new(font)
+        {
+            WordBreaking = WordBreaking.BreakWord,
+            WrappingLength = 1
+        };
+
+        const string text = "Hello World!";
+        int lineCount = TextMeasurer.CountLines(text, options);
+        Assert.Equal(text.Length - 1, lineCount);
+
+        TextLayoutTestUtilities.TestLayout(text, options);
+    }
+
     private class CaptureGlyphBoundBuilder : IGlyphRenderer
     {
         public static List<FontRectangle> GenerateGlyphsBoxes(string text, TextOptions options)
