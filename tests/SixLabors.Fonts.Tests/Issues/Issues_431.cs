@@ -21,13 +21,13 @@ public class Issues_431
                 WrappingLength = 400,
             };
 
+            TextLayoutTestUtilities.TestLayout(text, options);
+
             int lineCount = TextMeasurer.CountLines(text, options);
             Assert.Equal(4, lineCount);
 
             IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
             Assert.Equal(46, layout.Count);
-
-            TextLayoutTestUtilities.TestLayout(text, options);
         }
     }
 
@@ -45,13 +45,13 @@ public class Issues_431
                 WrappingLength = 400,
             };
 
+            TextLayoutTestUtilities.TestLayout(text, options);
+
             int lineCount = TextMeasurer.CountLines(text, options);
-            //Assert.Equal(4, lineCount);
+            Assert.Equal(4, lineCount);
 
             IReadOnlyList<GlyphLayout> layout = TextLayout.GenerateLayout(text, options);
-           // Assert.Equal(46, layout.Count);
-
-            TextLayoutTestUtilities.TestLayout(text, options);
+            Assert.Equal(46, layout.Count);
         }
     }
 }
