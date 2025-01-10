@@ -3,6 +3,7 @@
 
 using System.Globalization;
 using System.Numerics;
+using System.Text;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -289,11 +290,11 @@ public class TextLayoutTests
                 LayoutMode = LayoutMode.HorizontalTopBottom
             };
 
-            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
 
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
             Assert.Equal(width, size.Width, 4F);
             Assert.Equal(height, size.Height, 4F);
-            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
         }
     }
 
@@ -315,11 +316,12 @@ public class TextLayoutTests
                 LayoutMode = LayoutMode.HorizontalBottomTop
             };
 
-            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
 
+
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
             Assert.Equal(width, size.Width, 4F);
             Assert.Equal(height, size.Height, 4F);
-            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
         }
     }
 
@@ -338,11 +340,11 @@ public class TextLayoutTests
                 LayoutMode = LayoutMode.VerticalLeftRight
             };
 
-            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
 
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
             Assert.Equal(width, size.Width, 4F);
             Assert.Equal(height, size.Height, 4F);
-            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
         }
     }
 
@@ -361,11 +363,11 @@ public class TextLayoutTests
                 LayoutMode = LayoutMode.VerticalRightLeft
             };
 
-            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
 
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
             Assert.Equal(width, size.Width, 4F);
             Assert.Equal(height, size.Height, 4F);
-            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
         }
     }
 
@@ -384,11 +386,11 @@ public class TextLayoutTests
                 LayoutMode = LayoutMode.VerticalMixedLeftRight
             };
 
-            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
 
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
             Assert.Equal(width, size.Width, 4F);
             Assert.Equal(height, size.Height, 4F);
-            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
         }
     }
 
@@ -416,14 +418,11 @@ public class TextLayoutTests
                 FallbackFontFamilies = new[] { jhengHei }
             };
 
-            FontRectangle size = TextMeasurer.MeasureAdvance(
-                text,
-                options);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { layoutMode, wordBreaking });
 
+            FontRectangle size = TextMeasurer.MeasureAdvance(text, options);
             Assert.Equal(width, size.Width, 4F);
             Assert.Equal(height, size.Height, 4F);
-
-            TextLayoutTestUtilities.TestLayout(text, options, properties: new { layoutMode, wordBreaking });
         }
     }
 
@@ -455,10 +454,10 @@ public class TextLayoutTests
                 text,
                 options);
 
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { layoutMode, wordBreaking });
+
             Assert.Equal(width, size.Width, 4F);
             Assert.Equal(height, size.Height, 4F);
-
-            TextLayoutTestUtilities.TestLayout(text, options, properties: new { layoutMode, wordBreaking });
         }
     }
 
@@ -550,8 +549,8 @@ public class TextLayoutTests
 
     [Theory]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 6)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 5)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 4)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 4)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 3)]
     [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 200, 3)]
     public void CountLinesWrappingLength(string text, int wrappingLength, int usedLines)
     {
@@ -561,9 +560,10 @@ public class TextLayoutTests
             WrappingLength = wrappingLength
         };
 
+        TextLayoutTestUtilities.TestLayout(text, options, properties: usedLines);
+
         int count = TextMeasurer.CountLines(text, options);
         Assert.Equal(usedLines, count);
-        TextLayoutTestUtilities.TestLayout(text, options, properties: usedLines);
     }
 
     [Fact]
@@ -668,6 +668,14 @@ public class TextLayoutTests
     [InlineData(TextDirection.RightToLeft)]
     public void TextJustification_InterCharacter_Horizontal(TextDirection direction)
     {
+        //const string textI = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
+        //StringBuilder sb = new();
+        //for (int i = 0; i < textI.Length; i++)
+        //{
+        //    sb.Append(textI[i] == ' ' ? ' ' : 'x');
+        //}
+        //string text = sb.ToString();
+
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
         const float pointSize = 12;
@@ -1217,10 +1225,11 @@ public class TextLayoutTests
         };
 
         const string text = "Hello World!";
-        int lineCount = TextMeasurer.CountLines(text, options);
-        Assert.Equal(text.Length - 1, lineCount);
 
         TextLayoutTestUtilities.TestLayout(text, options);
+
+        int lineCount = TextMeasurer.CountLines(text, options);
+        Assert.Equal(text.Length - 1, lineCount);
     }
 
     private class CaptureGlyphBoundBuilder : IGlyphRenderer

@@ -894,6 +894,8 @@ internal static class TextLayout
         LayoutMode layoutMode)
     {
         bool shouldWrap = options.WrappingLength > 0;
+
+        // Wrapping length is always provided in pixels. Convert to inches for comparison.
         float wrappingLength = shouldWrap ? options.WrappingLength / options.Dpi : float.MaxValue;
         bool breakAll = options.WordBreaking == WordBreaking.BreakAll;
         bool keepAll = options.WordBreaking == WordBreaking.KeepAll;
@@ -904,7 +906,6 @@ internal static class TextLayout
 
         int graphemeIndex;
         int codePointIndex = 0;
-        float lineAdvance = 0;
         List<TextLine> textLines = new();
         TextLine textLine = new();
         int stringIndex = 0;
@@ -1073,7 +1074,7 @@ internal static class TextLayout
                     }
                 }
 
-                // Now scale the advance.
+                // Now scale the advance. We use inches for comparison.
                 if (isHorizontalLayout || shouldRotate)
                 {
                     float scaleAX = pointSize / glyph.ScaleFactor.X;
@@ -1115,7 +1116,6 @@ internal static class TextLayout
                     descender -= delta;
 
                     // Add our metrics to the line.
-                    lineAdvance += decomposedAdvance;
                     textLine.Add(
                         isDecomposed ? new GlyphMetrics[] { metric } : metrics,
                         pointSize,
@@ -1153,45 +1153,47 @@ internal static class TextLayout
         int maxLineBreakIndex = lineBreaks.Count - 1;
         LineBreak lastLineBreak = lineBreaks[lineBreakIndex];
         LineBreak currentLineBreak = lineBreaks[lineBreakIndex];
+        float lineAdvance = 0;
 
-        lineAdvance = 0;
         for (int i = 0; i < textLine.Count; i++)
         {
             int max = textLine.Count - 1;
             TextLine.GlyphLayoutData glyph = textLine[i];
             codePointIndex = glyph.CodePointIndex;
             int graphemeCodePointIndex = glyph.GraphemeCodePointIndex;
-            float glyphAdvance = glyph.ScaledAdvance;
-            lineAdvance += glyphAdvance;
 
             if (graphemeCodePointIndex == 0 && textLine.Count > 0)
             {
+                lineAdvance += glyph.ScaledAdvance;
+
                 if (codePointIndex == currentLineBreak.PositionWrap && currentLineBreak.Required)
                 {
                     // Mandatory line break at index.
                     TextLine remaining = textLine.SplitAt(i);
                     textLines.Add(textLine.Finalize(options));
                     textLine = remaining;
-                    i = 0;
+                    i = -1;
                     lineAdvance = 0;
                 }
                 else if (shouldWrap)
                 {
-                    float currentAdvance = lineAdvance + glyphAdvance;
-                    if (currentAdvance >= wrappingLength)
+                    if (lineAdvance >= wrappingLength)
                     {
                         if (breakAll)
                         {
-                            // Insert a forced break at this index.
+                            // Insert a forced break.
                             TextLine remaining = textLine.SplitAt(i);
-                            textLines.Add(textLine.Finalize(options));
-                            textLine = remaining;
-                            i = 0;
-                            lineAdvance = 0;
+                            if (remaining != textLine)
+                            {
+                                textLines.Add(textLine.Finalize(options));
+                                textLine = remaining;
+                                i = -1;
+                                lineAdvance = 0;
+                            }
                         }
                         else if (codePointIndex == currentLineBreak.PositionWrap || i == max)
                         {
-                            LineBreak lineBreak = currentAdvance == wrappingLength
+                            LineBreak lineBreak = lineAdvance == wrappingLength
                                 ? currentLineBreak
                                 : lastLineBreak;
 
@@ -1199,12 +1201,12 @@ internal static class TextLayout
                             {
                                 // If the current break is a space, and the line minus the space
                                 // is less than the wrapping length, we can break using the current break.
-                                float positionAdvance = lineAdvance;
+                                float previousAdvance = lineAdvance - (float)glyph.ScaledAdvance;
                                 TextLine.GlyphLayoutData lastGlyph = textLine[i - 1];
                                 if (CodePoint.IsWhiteSpace(lastGlyph.CodePoint))
                                 {
-                                    positionAdvance -= lastGlyph.ScaledAdvance;
-                                    if (positionAdvance <= wrappingLength)
+                                    previousAdvance -= lastGlyph.ScaledAdvance;
+                                    if (previousAdvance <= wrappingLength)
                                     {
                                         lineBreak = currentLineBreak;
                                     }
@@ -1220,7 +1222,7 @@ internal static class TextLayout
                             {
                                 if (breakWord)
                                 {
-                                    // If the line is too long, insert a forced line break.
+                                    // If the line is too long, insert a forced break.
                                     if (textLine.ScaledLineAdvance > wrappingLength)
                                     {
                                         TextLine overflow = textLine.SplitAt(wrappingLength);
@@ -1233,7 +1235,7 @@ internal static class TextLayout
 
                                 textLines.Add(textLine.Finalize(options));
                                 textLine = remaining;
-                                i = 0;
+                                i = -1;
                                 lineAdvance = 0;
                             }
                         }
@@ -1326,7 +1328,11 @@ internal static class TextLayout
         {
             // Reset metrics.
             // We track the maximum metrics for each line to ensure glyphs can be aligned.
-            this.ScaledLineAdvance += scaledAdvance;
+            if (graphemeIndex == 0)
+            {
+                this.ScaledLineAdvance += scaledAdvance;
+            }
+
             this.ScaledMaxLineHeight = MathF.Max(this.ScaledMaxLineHeight, scaledLineHeight);
             this.ScaledMaxAscender = MathF.Max(this.ScaledMaxAscender, scaledAscender);
             this.ScaledMaxDescender = MathF.Max(this.ScaledMaxDescender, scaledDescender);
