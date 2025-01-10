@@ -668,14 +668,6 @@ public class TextLayoutTests
     [InlineData(TextDirection.RightToLeft)]
     public void TextJustification_InterCharacter_Horizontal(TextDirection direction)
     {
-        //const string textI = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
-        //StringBuilder sb = new();
-        //for (int i = 0; i < textI.Length; i++)
-        //{
-        //    sb.Append(textI[i] == ' ' ? ' ' : 'x');
-        //}
-        //string text = sb.ToString();
-
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
         const float pointSize = 12;
