@@ -9,8 +9,8 @@ namespace SixLabors.Fonts.Tests.Issues;
 public class Issues_33
 {
     [Theory]
-    [InlineData("\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs", 580, 70)] // newlines aren't directly measured but it is used for offsetting
-    [InlineData("\n\tHelloworld", 310, 10)]
+    [InlineData("\naaaabbbbccccddddeeee\n\t\t\t3 tabs\n\t\t\t\t\t5 tabs", 580, 120)]
+    [InlineData("\n\tHelloworld", 310, 60)]
     [InlineData("\tHelloworld", 310, 10)]
     [InlineData("  Helloworld", 340, 10)]
     [InlineData("Hell owor ld\t", 340, 10)]
