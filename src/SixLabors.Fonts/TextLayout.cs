@@ -407,7 +407,7 @@ internal static class TextLayout
                 penLocation.Y += yLineAdvance;
                 boxLocation.X = originX;
                 boxLocation.Y += advanceY;
-                goto end;
+                return glyphs;
             }
 
             int j = 0;
@@ -440,7 +440,6 @@ internal static class TextLayout
             boxLocation.Y += advanceY;
         }
 
-        end:
         return glyphs;
     }
 
@@ -552,7 +551,7 @@ internal static class TextLayout
                 boxLocation.Y = originY;
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
-                goto end;
+                return glyphs;
             }
 
             int j = 0;
@@ -599,7 +598,6 @@ internal static class TextLayout
             penLocation.X += xLineAdvance;
         }
 
-        end:
         return glyphs;
     }
 
@@ -711,7 +709,7 @@ internal static class TextLayout
                 boxLocation.Y = originY;
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
-                goto end;
+                return glyphs;
             }
 
             if (data.IsTransformed)
@@ -787,7 +785,6 @@ internal static class TextLayout
             penLocation.X += xLineAdvance;
         }
 
-        end:
         return glyphs;
     }
 
