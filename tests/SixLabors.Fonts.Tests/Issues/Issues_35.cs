@@ -12,20 +12,10 @@ public class Issues_35
     public void RenderingTabAtStartOrLineTooShort()
     {
         Font font = CreateFont("\t x");
-        FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-        FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-        FontRectangle tabWithXWidth = TextMeasurer.MeasureBounds("\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-
-        Assert.Equal(tabWidth.Width + xWidth.Width, tabWithXWidth.Width, 2F);
-    }
-
-    [Fact]
-    public void Rendering2TabsAtStartOfLineTooShort()
-    {
-        Font font = CreateFont("\t x");
-        FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-        FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-        FontRectangle tabWithXWidth = TextMeasurer.MeasureBounds("\t\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
+        FontRectangle xWidth = TextMeasurer.MeasureBounds("x", options);
+        FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", options);
+        FontRectangle tabWithXWidth = TextMeasurer.MeasureBounds("\tx", options);
 
         Assert.Equal(tabWidth.Width + xWidth.Width, tabWithXWidth.Width, 2F);
     }
@@ -34,27 +24,17 @@ public class Issues_35
     public void TwoTabsAreDoubleWidthOfOneTab()
     {
         Font font = CreateFont("\t x");
-        FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-        FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-        FontRectangle twoTabWidth = TextMeasurer.MeasureBounds("\t\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
+        FontRectangle xWidth = TextMeasurer.MeasureBounds("x", options);
+        FontRectangle tabWithXWidth = TextMeasurer.MeasureBounds("\tx", options);
+        FontRectangle tabTabWithXWidth = TextMeasurer.MeasureBounds("\t\tx", options);
 
-        Assert.Equal(twoTabWidth.Width, tabWidth.Width * 2, 2F);
-    }
-
-    [Fact]
-    public void TwoTabsAreDoubleWidthOfOneTabMinusXWidth()
-    {
-        Font font = CreateFont("\t x");
-        FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-        FontRectangle tabWidth = TextMeasurer.MeasureBounds("\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-        FontRectangle twoTabWidth = TextMeasurer.MeasureBounds("\t\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-
-        Assert.Equal(twoTabWidth.Width - xWidth.Width, (tabWidth.Width - xWidth.Width) * 2, 2F);
+        Assert.Equal(tabTabWithXWidth.Width - xWidth.Width, 2 * (tabWithXWidth.Width - xWidth.Width), 2F);
     }
 
     public static Font CreateFont(string text)
     {
-        var fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);
     }

@@ -14,15 +14,16 @@ public class Issues_36
     [InlineData(3)]
     [InlineData(4)]
     [InlineData(5)]
-    public void TextWidthForTabOnlyTextShouldBeSingleTabWidthMultipliedByTabCount(int tabCount)
+    public void TextWidthForTabOnlyTextShouldBeSingleTabWidth(int tabCount)
     {
-        Font font = CreateFont("\t x");
+        Font font = CreateFont("\t");
+        TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
 
-        FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        FontRectangle tabWidth = TextMeasurer.MeasureBounds("\t", options);
         string tabString = string.Empty.PadRight(tabCount, '\t');
-        FontRectangle tabCountWidth = TextMeasurer.MeasureBounds(tabString, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        FontRectangle tabCountWidth = TextMeasurer.MeasureBounds(tabString, options);
 
-        Assert.Equal(tabWidth.Width * tabCount, tabCountWidth.Width, 2F);
+        Assert.Equal(tabWidth.Width, tabCountWidth.Width, 2F);
     }
 
     [Theory]
@@ -35,10 +36,11 @@ public class Issues_36
     {
         Font font = CreateFont("\t x");
 
-        FontRectangle xWidth = TextMeasurer.MeasureBounds("x", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
-        FontRectangle tabWidth = TextMeasurer.MeasureBounds("\tx", new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        TextOptions options = new(font) { Dpi = font.FontMetrics.ScaleFactor };
+        FontRectangle xWidth = TextMeasurer.MeasureBounds("x", options);
+        FontRectangle tabWidth = TextMeasurer.MeasureBounds("\tx", options);
         string tabString = "x".PadLeft(tabCount + 1, '\t');
-        FontRectangle tabCountWidth = TextMeasurer.MeasureBounds(tabString, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor });
+        FontRectangle tabCountWidth = TextMeasurer.MeasureBounds(tabString, options);
 
         float singleTabWidth = tabWidth.Width - xWidth.Width;
         float finalTabWidth = tabCountWidth.Width - xWidth.Width;
@@ -47,7 +49,7 @@ public class Issues_36
 
     public static Font CreateFont(string text)
     {
-        var fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);
     }

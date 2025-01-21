@@ -391,12 +391,23 @@ internal static class TextLayout
             TextLine.GlyphLayoutData data = textLine[i];
             if (data.IsNewLine)
             {
+                glyphs.Add(new GlyphLayout(
+                    new Glyph(data.Metrics[0], data.PointSize),
+                    boxLocation,
+                    penLocation,
+                    Vector2.Zero,
+                    data.ScaledAdvance,
+                    yLineAdvance,
+                    GlyphLayoutMode.Horizontal,
+                    true,
+                    data.GraphemeIndex,
+                    data.StringIndex));
+
                 penLocation.X = originX;
                 penLocation.Y += yLineAdvance;
-
                 boxLocation.X = originX;
                 boxLocation.Y += advanceY;
-                continue;
+                return glyphs;
             }
 
             int j = 0;
@@ -524,12 +535,23 @@ internal static class TextLayout
             TextLine.GlyphLayoutData data = textLine[i];
             if (data.IsNewLine)
             {
+                glyphs.Add(new GlyphLayout(
+                    new Glyph(data.Metrics[0], data.PointSize),
+                    boxLocation,
+                    penLocation,
+                    Vector2.Zero,
+                    xLineAdvance,
+                    data.ScaledAdvance,
+                    GlyphLayoutMode.Vertical,
+                    true,
+                    data.GraphemeIndex,
+                    data.StringIndex));
+
                 boxLocation.X += advanceX;
                 boxLocation.Y = originY;
-
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
-                continue;
+                return glyphs;
             }
 
             int j = 0;
@@ -671,12 +693,23 @@ internal static class TextLayout
             TextLine.GlyphLayoutData data = textLine[i];
             if (data.IsNewLine)
             {
+                glyphs.Add(new GlyphLayout(
+                    new Glyph(data.Metrics[0], data.PointSize),
+                    boxLocation,
+                    penLocation,
+                    Vector2.Zero,
+                    xLineAdvance,
+                    data.ScaledAdvance,
+                    GlyphLayoutMode.Vertical,
+                    true,
+                    data.GraphemeIndex,
+                    data.StringIndex));
+
                 boxLocation.X += advanceX;
                 boxLocation.Y = originY;
-
                 penLocation.X += xLineAdvance;
                 penLocation.Y = originY;
-                continue;
+                return glyphs;
             }
 
             if (data.IsTransformed)
@@ -1170,10 +1203,30 @@ internal static class TextLayout
                 {
                     // Mandatory line break at index.
                     TextLine remaining = textLine.SplitAt(i);
-                    textLines.Add(textLine.Finalize(options));
-                    textLine = remaining;
-                    i = -1;
-                    lineAdvance = 0;
+
+                    if (shouldWrap && textLine.ScaledLineAdvance - glyph.ScaledAdvance > wrappingLength)
+                    {
+                        // We've overshot the wrapping length so we need to split the line
+                        // at the previous break and add both lines.
+                        TextLine overflow = textLine.SplitAt(lastLineBreak, keepAll);
+                        if (overflow != textLine)
+                        {
+                            textLines.Add(textLine.Finalize(options));
+                            textLine = overflow;
+                        }
+
+                        textLines.Add(textLine.Finalize(options));
+                        textLine = remaining;
+                        i = -1;
+                        lineAdvance = 0;
+                    }
+                    else
+                    {
+                        textLines.Add(textLine.Finalize(options));
+                        textLine = remaining;
+                        i = -1;
+                        lineAdvance = 0;
+                    }
                 }
                 else if (shouldWrap)
                 {
@@ -1201,7 +1254,7 @@ internal static class TextLayout
                             {
                                 // If the current break is a space, and the line minus the space
                                 // is less than the wrapping length, we can break using the current break.
-                                float previousAdvance = lineAdvance - (float)glyph.ScaledAdvance;
+                                float previousAdvance = lineAdvance - glyph.ScaledAdvance;
                                 TextLine.GlyphLayoutData lastGlyph = textLine[i - 1];
                                 if (CodePoint.IsWhiteSpace(lastGlyph.CodePoint))
                                 {
@@ -1463,8 +1516,9 @@ internal static class TextLayout
 
         private void TrimTrailingWhitespace()
         {
-            int index = this.data.Count;
-            while (index > 0)
+            int count = this.data.Count;
+            int index = count;
+            while (index > 1)
             {
                 // Trim trailing breaking whitespace.
                 CodePoint point = this.data[index - 1].CodePoint;
@@ -1476,9 +1530,9 @@ internal static class TextLayout
                 index--;
             }
 
-            if (index < this.data.Count && index != 0)
+            if (index < count)
             {
-                this.data.RemoveRange(index, this.data.Count - index);
+                this.data.RemoveRange(index, count - index);
             }
         }
 

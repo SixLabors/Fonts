@@ -22,8 +22,10 @@ public class Issues_400
             .AppendLine("                NEWS_CATEGORY=EWF&NEWS_HASH=4b298ff9277ef9fdf515356be95ea3caf57cd36&OFFSET=0&SEARCH_VALUE=CA88105E1088&ID_NEWS")
             .Append("          ");
 
+        TextLayoutTestUtilities.TestLayout(stringBuilder.ToString(), options);
+
         int lineCount = TextMeasurer.CountLines(stringBuilder.ToString(), options);
-        Assert.Equal(2, lineCount);
+        Assert.Equal(4, lineCount);
 #endif
     }
 }
