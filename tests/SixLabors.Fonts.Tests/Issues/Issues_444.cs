@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Tests.Issues;
 
 public class Issues_444
 {
-    private FontFamily charisSL = new FontCollection().Add(TestFonts.CharisSILRegular);
+    private readonly FontFamily charisSIL = new FontCollection().Add(TestFonts.CharisSILRegular);
 
     [Fact]
     public void Issue_444_A()
@@ -46,7 +46,7 @@ public class Issues_444
     [Fact]
     public void Issue_444_C()
     {
-        Font font = this.charisSL.CreateFont(85);
+        Font font = this.charisSIL.CreateFont(85);
         TextLayoutTestUtilities.TestLayout(
             "⇒ Bill Clinton\n⇒ Richard Nixon\n⇒ Lyndon B. Johnson\n⇒ John F. Kennedy",
             new TextOptions(font)
@@ -59,7 +59,7 @@ public class Issues_444
     [Fact]
     public void Issue_444_D()
     {
-        Font font = this.charisSL.CreateFont(85);
+        Font font = this.charisSIL.CreateFont(85);
         TextLayoutTestUtilities.TestLayout(
             "⇒ Bill Clinton\r\n⇒ Richard Nixon\r\n⇒ Lyndon B. Johnson\r\n⇒ John F. Kennedy",
             new TextOptions(font)
@@ -72,7 +72,7 @@ public class Issues_444
     [Fact]
     public void Issue_444_E()
     {
-        Font font = this.charisSL.CreateFont(85);
+        Font font = this.charisSIL.CreateFont(85);
         TextLayoutTestUtilities.TestLayout(
             "⇒ Bill Clinton\n⇒ Richard Nixon\n⇒ John F. Kennedy\n⇒ Lyndon B. Johnson",
             new TextOptions(font)
