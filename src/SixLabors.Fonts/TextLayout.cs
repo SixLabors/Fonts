@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
@@ -1181,149 +1182,117 @@ internal static class TextLayout
             lineBreaks.Add(lineBreakEnumerator.Current);
         }
 
-        // Then split the line at the line breaks.
-        int lineBreakIndex = 0;
-        int maxLineBreakIndex = lineBreaks.Count - 1;
-        LineBreak lastLineBreak = lineBreaks[lineBreakIndex];
-        LineBreak currentLineBreak = lineBreaks[lineBreakIndex];
-        float lineAdvance = 0;
-
-        for (int i = 0; i < textLine.Count; i++)
+        int usedOffset = 0;
+        while (textLine.Count > 0)
         {
-            int max = textLine.Count - 1;
-            TextLine.GlyphLayoutData glyph = textLine[i];
-            codePointIndex = glyph.CodePointIndex;
-            int graphemeCodePointIndex = glyph.GraphemeCodePointIndex;
-
-            if (graphemeCodePointIndex == 0 && textLine.Count > 0)
+            LineBreak? bestBreak = null;
+            foreach (LineBreak lineBreak in lineBreaks)
             {
-                lineAdvance += glyph.ScaledAdvance;
+                // Adjust the break index relative to the current position in the original line
+                int measureAt = lineBreak.PositionMeasure - usedOffset;
 
-                if (codePointIndex == currentLineBreak.PositionWrap && currentLineBreak.Required)
+                // Skip breaks that are already behind the trimmed portion
+                if (measureAt < 0)
                 {
-                    // Mandatory line break at index.
-                    TextLine remaining = textLine.SplitAt(i);
+                    continue;
+                }
 
-                    if (shouldWrap && textLine.ScaledLineAdvance - glyph.ScaledAdvance > wrappingLength)
+                // Measure the text up to the adjusted break point
+                float measure = textLine.MeasureAt(measureAt);
+                if (measure > wrappingLength)
+                {
+                    // Stop and use the best break so far
+                    bestBreak ??= lineBreak;
+                    break;
+                }
+
+                // Update the best break
+                bestBreak = lineBreak;
+
+                // If it's a mandatory break, stop immediately
+                if (lineBreak.Required)
+                {
+                    break;
+                }
+            }
+
+            if (bestBreak != null)
+            {
+                if (breakAll)
+                {
+                    // Break-all works differently to the other modes.
+                    // It will break at any character so we simply toggle the breaking operation depending
+                    // on whether the break is required.
+                    TextLine? remaining;
+                    if (bestBreak.Value.Required)
                     {
-                        // We've overshot the wrapping length so we need to split the line
-                        // at the previous break and add both lines.
-                        TextLine overflow = textLine.SplitAt(lastLineBreak, keepAll);
-                        if (overflow != textLine)
+                        if (textLine.TrySplitAt(bestBreak.Value, keepAll, out remaining))
                         {
+                            usedOffset += textLine.Count;
                             textLines.Add(textLine.Finalize(options));
-                            textLine = overflow;
+                            textLine = remaining;
                         }
-
+                    }
+                    else if (textLine.TrySplitAt(wrappingLength, out remaining))
+                    {
+                        usedOffset += textLine.Count;
                         textLines.Add(textLine.Finalize(options));
                         textLine = remaining;
-                        i = -1;
-                        lineAdvance = 0;
                     }
                     else
                     {
+                        usedOffset += textLine.Count;
+                    }
+                }
+                else
+                {
+                    // Split the current line at the adjusted break index
+                    if (textLine.TrySplitAt(bestBreak.Value, keepAll, out TextLine? remaining))
+                    {
+                        usedOffset += textLine.Count;
+                        if (breakWord)
+                        {
+                            // A break was found, but we need to check if the line is too long
+                            // and break if required.
+                            if (textLine.ScaledLineAdvance > wrappingLength &&
+                                textLine.TrySplitAt(wrappingLength, out TextLine? overflow))
+                            {
+                                // Reinsert the overflow at the beginning of the remaining line
+                                usedOffset -= overflow.Count;
+                                remaining.InsertAt(0, overflow);
+                            }
+                        }
+
+                        // Add the split part to the list and continue processing.
                         textLines.Add(textLine.Finalize(options));
                         textLine = remaining;
-                        i = -1;
-                        lineAdvance = 0;
                     }
-                }
-                else if (shouldWrap)
-                {
-                    if (lineAdvance >= wrappingLength)
+                    else
                     {
-                        if (breakAll)
-                        {
-                            // Insert a forced break.
-                            TextLine remaining = textLine.SplitAt(i);
-                            if (remaining != textLine)
-                            {
-                                textLines.Add(textLine.Finalize(options));
-                                textLine = remaining;
-                                i = -1;
-                                lineAdvance = 0;
-                            }
-                        }
-                        else if (codePointIndex == currentLineBreak.PositionWrap || i == max)
-                        {
-                            LineBreak lineBreak = lineAdvance == wrappingLength
-                                ? currentLineBreak
-                                : lastLineBreak;
-
-                            if (i > 0)
-                            {
-                                // If the current break is a space, and the line minus the space
-                                // is less than the wrapping length, we can break using the current break.
-                                float previousAdvance = lineAdvance - glyph.ScaledAdvance;
-                                TextLine.GlyphLayoutData lastGlyph = textLine[i - 1];
-                                if (CodePoint.IsWhiteSpace(lastGlyph.CodePoint))
-                                {
-                                    previousAdvance -= lastGlyph.ScaledAdvance;
-                                    if (previousAdvance <= wrappingLength)
-                                    {
-                                        lineBreak = currentLineBreak;
-                                    }
-                                }
-                            }
-
-                            // If we are at the position wrap we can break here.
-                            // Split the line at the appropriate break.
-                            // CJK characters will not be split if 'keepAll' is true.
-                            TextLine remaining = textLine.SplitAt(lineBreak, keepAll);
-
-                            if (remaining != textLine)
-                            {
-                                if (breakWord)
-                                {
-                                    // If the line is too long, insert a forced break.
-                                    if (textLine.ScaledLineAdvance > wrappingLength)
-                                    {
-                                        TextLine overflow = textLine.SplitAt(wrappingLength);
-                                        if (overflow != textLine)
-                                        {
-                                            remaining.InsertAt(0, overflow);
-                                        }
-                                    }
-                                }
-
-                                textLines.Add(textLine.Finalize(options));
-                                textLine = remaining;
-                                i = -1;
-                                lineAdvance = 0;
-                            }
-                        }
+                        usedOffset += textLine.Count;
                     }
                 }
             }
-
-            // Find the next line break.
-            if (lineBreakIndex < maxLineBreakIndex &&
-                (currentLineBreak.PositionWrap == codePointIndex))
+            else
             {
-                lastLineBreak = currentLineBreak;
-                currentLineBreak = lineBreaks[++lineBreakIndex];
-            }
-        }
-
-        // Add the final line.
-        if (textLine.Count > 0)
-        {
-            if (shouldWrap && (breakWord || breakAll))
-            {
-                while (textLine.ScaledLineAdvance > wrappingLength)
+                // If no valid break is found, add the remaining line and exit
+                if (breakWord || breakAll)
                 {
-                    TextLine overflow = textLine.SplitAt(wrappingLength);
-                    if (overflow == textLine)
+                    while (textLine.ScaledLineAdvance > wrappingLength)
                     {
-                        break;
+                        if (!textLine.TrySplitAt(wrappingLength, out TextLine? overflow))
+                        {
+                            break;
+                        }
+
+                        textLines.Add(textLine.Finalize(options));
+                        textLine = overflow;
                     }
-
-                    textLines.Add(textLine.Finalize(options));
-                    textLine = overflow;
                 }
-            }
 
-            textLines.Add(textLine.Finalize(options));
+                textLines.Add(textLine.Finalize(options));
+                break;
+            }
         }
 
         return new TextBox(textLines);
@@ -1381,7 +1350,7 @@ internal static class TextLayout
         {
             // Reset metrics.
             // We track the maximum metrics for each line to ensure glyphs can be aligned.
-            if (graphemeIndex == 0)
+            if (graphemeCodePointIndex == 0)
             {
                 this.ScaledLineAdvance += scaledAdvance;
             }
@@ -1406,31 +1375,36 @@ internal static class TextLayout
                 stringIndex));
         }
 
-        public TextLine InsertAt(int index, TextLine textLine)
+        public void InsertAt(int index, TextLine textLine)
         {
             this.data.InsertRange(index, textLine.data);
             RecalculateLineMetrics(this);
-            return this;
         }
 
-        public TextLine SplitAt(int index)
+        public float MeasureAt(int index)
         {
-            if (index == 0 || index >= this.Count)
+            if (index >= this.data.Count)
             {
-                return this;
+                index = this.data.Count - 1;
             }
 
-            int count = this.data.Count - index;
-            TextLine result = new(count);
-            result.data.AddRange(this.data.GetRange(index, count));
-            RecalculateLineMetrics(result);
+            while (index >= 0 && CodePoint.IsWhiteSpace(this.data[index].CodePoint))
+            {
+                // If the index is whitespace, we need to measure at the previous
+                // non-whitespace glyph to ensure we don't break too early.
+                index--;
+            }
 
-            this.data.RemoveRange(index, count);
-            RecalculateLineMetrics(this);
-            return result;
+            float advance = 0;
+            for (int i = 0; i <= index; i++)
+            {
+                advance += this.data[i].ScaledAdvance;
+            }
+
+            return advance;
         }
 
-        public TextLine SplitAt(float length)
+        public bool TrySplitAt(float length, [NotNullWhen(true)] out TextLine? result)
         {
             float advance = this.data[0].ScaledAdvance;
 
@@ -1449,20 +1423,21 @@ internal static class TextLayout
                 if (advance >= length)
                 {
                     int count = this.data.Count - i;
-                    TextLine result = new(count);
+                    result = new(count);
                     result.data.AddRange(this.data.GetRange(i, count));
                     RecalculateLineMetrics(result);
 
                     this.data.RemoveRange(i, count);
                     RecalculateLineMetrics(this);
-                    return result;
+                    return true;
                 }
             }
 
-            return this;
+            result = null;
+            return false;
         }
 
-        public TextLine SplitAt(LineBreak lineBreak, bool keepAll)
+        public bool TrySplitAt(LineBreak lineBreak, bool keepAll, [NotNullWhen(true)] out TextLine? result)
         {
             int index = this.data.Count;
             GlyphLayoutData glyphWrap = default;
@@ -1475,14 +1450,12 @@ internal static class TextLayout
                 }
             }
 
-            if (index == 0)
-            {
-                return this;
-            }
-
             // Word breaks should not be used for Chinese/Japanese/Korean (CJK) text
             // when word-breaking mode is keep-all.
-            if (!lineBreak.Required && keepAll && UnicodeUtility.IsCJKCodePoint((uint)glyphWrap.CodePoint.Value))
+            if (index > 0
+                && !lineBreak.Required
+                && keepAll
+                && UnicodeUtility.IsCJKCodePoint((uint)glyphWrap.CodePoint.Value))
             {
                 // Loop through previous glyphs to see if there is
                 // a non CJK codepoint we can break at.
@@ -1495,23 +1468,25 @@ internal static class TextLayout
                         break;
                     }
                 }
+            }
 
-                if (index == 0)
-                {
-                    return this;
-                }
+            if (index == 0)
+            {
+                result = null;
+                return false;
             }
 
             // Create a new line ensuring we capture the initial metrics.
             int count = this.data.Count - index;
-            TextLine result = new(count);
+            result = new(count);
             result.data.AddRange(this.data.GetRange(index, count));
             RecalculateLineMetrics(result);
 
             // Remove those items from this line.
             this.data.RemoveRange(index, count);
             RecalculateLineMetrics(this);
-            return result;
+
+            return true;
         }
 
         private void TrimTrailingWhitespace()
