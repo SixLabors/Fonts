@@ -27,7 +27,7 @@ public class Issues_443
     {
         if (SystemFonts.TryGet("Arial", out FontFamily family))
         {
-            Font font = family.CreateFont(100);
+            Font font = family.CreateFont(50);
 
             TextLayoutTestUtilities.TestLayout(
                 "ABCDEF",
