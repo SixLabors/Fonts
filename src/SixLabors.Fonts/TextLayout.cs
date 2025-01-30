@@ -1327,8 +1327,6 @@ internal static class TextLayout
 
         public int Count => this.data.Count;
 
-        public int LeadCodePointIndex { get; private set; } = -1;
-
         public float ScaledLineAdvance { get; private set; }
 
         public float ScaledMaxLineHeight { get; private set; } = -1;
@@ -1359,11 +1357,6 @@ internal static class TextLayout
             if (graphemeCodePointIndex == 0)
             {
                 this.ScaledLineAdvance += scaledAdvance;
-            }
-
-            if (this.LeadCodePointIndex == -1)
-            {
-                this.LeadCodePointIndex = codePointIndex;
             }
 
             this.ScaledMaxLineHeight = MathF.Max(this.ScaledMaxLineHeight, scaledLineHeight);
@@ -1711,7 +1704,6 @@ internal static class TextLayout
             textLine.ScaledMaxAscender = ascender;
             textLine.ScaledMaxDescender = descender;
             textLine.ScaledMaxLineHeight = lineHeight;
-            textLine.LeadCodePointIndex = textLine[0].CodePointIndex;
             textLine.advances.Clear();
         }
 
