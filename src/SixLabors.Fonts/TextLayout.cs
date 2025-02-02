@@ -1182,42 +1182,40 @@ internal static class TextLayout
             lineBreaks.Add(lineBreakEnumerator.Current);
         }
 
-        int usedOffset = 0;
+        int processed = 0;
         while (textLine.Count > 0)
         {
             LineBreak? bestBreak = null;
             foreach (LineBreak lineBreak in lineBreaks)
             {
-                // Adjust the break index relative to the current position in the original line
-                int measureAt = lineBreak.PositionMeasure - usedOffset;
-
-                // Skip breaks that are already behind the trimmed portion
-                if (measureAt < 0)
+                // Skip breaks that are already behind the processed portion
+                if (lineBreak.PositionWrap <= processed)
                 {
                     continue;
                 }
 
                 // Measure the text up to the adjusted break point
-                float measure = textLine.MeasureAt(measureAt);
-                if (measure > wrappingLength)
+                float advance = textLine.MeasureAt(lineBreak.PositionMeasure - processed);
+                if (advance >= wrappingLength)
                 {
-                    // Stop and use the best break so far
                     bestBreak ??= lineBreak;
+                    break;
+                }
+
+                // If it's a mandatory break, stop immediately
+                if (lineBreak.Required)
+                {
+                    bestBreak = lineBreak;
                     break;
                 }
 
                 // Update the best break
                 bestBreak = lineBreak;
-
-                // If it's a mandatory break, stop immediately
-                if (lineBreak.Required)
-                {
-                    break;
-                }
             }
 
             if (bestBreak != null)
             {
+                LineBreak breakAt = bestBreak.Value;
                 if (breakAll)
                 {
                     // Break-all works differently to the other modes.
@@ -1226,30 +1224,34 @@ internal static class TextLayout
                     TextLine? remaining;
                     if (bestBreak.Value.Required)
                     {
-                        if (textLine.TrySplitAt(bestBreak.Value, keepAll, out remaining))
+                        if (textLine.TrySplitAt(breakAt, keepAll, out remaining))
                         {
-                            usedOffset += textLine.Count;
+                            processed = breakAt.PositionWrap;
                             textLines.Add(textLine.Finalize(options));
                             textLine = remaining;
                         }
                     }
                     else if (textLine.TrySplitAt(wrappingLength, out remaining))
                     {
-                        usedOffset += textLine.Count;
+                        processed += textLine.Count;
                         textLines.Add(textLine.Finalize(options));
                         textLine = remaining;
                     }
                     else
                     {
-                        usedOffset += textLine.Count;
+                        processed += textLine.Count;
                     }
                 }
                 else
                 {
                     // Split the current line at the adjusted break index
-                    if (textLine.TrySplitAt(bestBreak.Value, keepAll, out TextLine? remaining))
+                    if (textLine.TrySplitAt(breakAt, keepAll, out TextLine? remaining))
                     {
-                        usedOffset += textLine.Count;
+                        // If 'keepAll' is true then the break could be later than expected.
+                        processed = keepAll
+                            ? processed + Math.Max(textLine.Count, breakAt.PositionWrap - processed)
+                            : breakAt.PositionWrap;
+
                         if (breakWord)
                         {
                             // A break was found, but we need to check if the line is too long
@@ -1258,7 +1260,7 @@ internal static class TextLayout
                                 textLine.TrySplitAt(wrappingLength, out TextLine? overflow))
                             {
                                 // Reinsert the overflow at the beginning of the remaining line
-                                usedOffset -= overflow.Count;
+                                processed -= overflow.Count;
                                 remaining.InsertAt(0, overflow);
                             }
                         }
@@ -1269,13 +1271,14 @@ internal static class TextLayout
                     }
                     else
                     {
-                        usedOffset += textLine.Count;
+                        processed += textLine.Count;
                     }
                 }
             }
             else
             {
-                // If no valid break is found, add the remaining line and exit
+                // We're at the last line break which should be at the end of the
+                // text. We can break here and finalize the line.
                 if (breakWord || breakAll)
                 {
                     while (textLine.ScaledLineAdvance > wrappingLength)
@@ -1316,6 +1319,7 @@ internal static class TextLayout
     internal sealed class TextLine
     {
         private readonly List<GlyphLayoutData> data;
+        private readonly Dictionary<int, float> advances = new();
 
         public TextLine() => this.data = new(16);
 
@@ -1383,6 +1387,11 @@ internal static class TextLayout
 
         public float MeasureAt(int index)
         {
+            if (this.advances.TryGetValue(index, out float advance))
+            {
+                return advance;
+            }
+
             if (index >= this.data.Count)
             {
                 index = this.data.Count - 1;
@@ -1395,12 +1404,13 @@ internal static class TextLayout
                 index--;
             }
 
-            float advance = 0;
+            advance = 0;
             for (int i = 0; i <= index; i++)
             {
                 advance += this.data[i].ScaledAdvance;
             }
 
+            this.advances[index] = advance;
             return advance;
         }
 
@@ -1440,11 +1450,11 @@ internal static class TextLayout
         public bool TrySplitAt(LineBreak lineBreak, bool keepAll, [NotNullWhen(true)] out TextLine? result)
         {
             int index = this.data.Count;
-            GlyphLayoutData glyphWrap = default;
+            GlyphLayoutData glyphData = default;
             while (index > 0)
             {
-                glyphWrap = this.data[--index];
-                if (glyphWrap.CodePointIndex == lineBreak.PositionWrap)
+                glyphData = this.data[--index];
+                if (glyphData.CodePointIndex == lineBreak.PositionWrap)
                 {
                     break;
                 }
@@ -1455,14 +1465,14 @@ internal static class TextLayout
             if (index > 0
                 && !lineBreak.Required
                 && keepAll
-                && UnicodeUtility.IsCJKCodePoint((uint)glyphWrap.CodePoint.Value))
+                && UnicodeUtility.IsCJKCodePoint((uint)glyphData.CodePoint.Value))
             {
                 // Loop through previous glyphs to see if there is
                 // a non CJK codepoint we can break at.
                 while (index > 0)
                 {
-                    glyphWrap = this.data[--index];
-                    if (!UnicodeUtility.IsCJKCodePoint((uint)glyphWrap.CodePoint.Value))
+                    glyphData = this.data[--index];
+                    if (!UnicodeUtility.IsCJKCodePoint((uint)glyphData.CodePoint.Value))
                     {
                         index++;
                         break;
@@ -1694,6 +1704,7 @@ internal static class TextLayout
             textLine.ScaledMaxAscender = ascender;
             textLine.ScaledMaxDescender = descender;
             textLine.ScaledMaxLineHeight = lineHeight;
+            textLine.advances.Clear();
         }
 
         /// <summary>
