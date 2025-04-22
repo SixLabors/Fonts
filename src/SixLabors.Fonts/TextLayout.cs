@@ -1179,7 +1179,28 @@ internal static class TextLayout
         List<LineBreak> lineBreaks = new();
         while (lineBreakEnumerator.MoveNext())
         {
-            lineBreaks.Add(lineBreakEnumerator.Current);
+            // URLs are now so common in regular plain text that they need to be taken into account when
+            // assigning general-purpose line breaking properties.
+            //
+            // To handle this we disallow breaks after solidus (U+002F) entirely.
+            // Testing seems to indicate Chrome and other browsers do this as well.
+            //
+            // We do this outside of the line breaker so that the expected results from the Unicode
+            // tests are not affected.
+            // https://www.unicode.org/reports/tr14/#SY
+            LineBreak current = lineBreakEnumerator.Current;
+            int i = current.PositionMeasure;
+            if (i < textLine.Count)
+            {
+                CodePoint c = textLine[i].CodePoint;
+                CodePoint p = textLine[Math.Max(0, i - 1)].CodePoint;
+                if (c.Value == 0x002F || p.Value == 0x002F)
+                {
+                    continue;
+                }
+            }
+
+            lineBreaks.Add(current);
         }
 
         int processed = 0;

@@ -47,6 +47,43 @@ public class LineBreakEnumeratorTests
     }
 
     [Fact]
+    public void NumericTests()
+    {
+        const string text1 = "Super Smash Bros (1999)";
+        const string text2 = "Super, Smash Bros (1999)";
+        List<LineBreak> breaks1 = new();
+
+        foreach (LineBreak lineBreak in new LineBreakEnumerator(text1.AsSpan()))
+        {
+            breaks1.Add(lineBreak);
+        }
+
+        Assert.Equal(5, breaks1[0].PositionMeasure);
+        Assert.Equal(6, breaks1[0].PositionWrap);
+        Assert.Equal(11, breaks1[1].PositionMeasure);
+        Assert.Equal(12, breaks1[1].PositionWrap);
+        Assert.Equal(16, breaks1[2].PositionMeasure);
+        Assert.Equal(17, breaks1[2].PositionWrap);
+        Assert.Equal(23, breaks1[3].PositionMeasure);
+        Assert.Equal(23, breaks1[3].PositionWrap);
+
+        List<LineBreak> breaks2 = new();
+        foreach (LineBreak lineBreak in new LineBreakEnumerator(text2.AsSpan()))
+        {
+            breaks2.Add(lineBreak);
+        }
+
+        Assert.Equal(6, breaks2[0].PositionMeasure);
+        Assert.Equal(7, breaks2[0].PositionWrap);
+        Assert.Equal(12, breaks2[1].PositionMeasure);
+        Assert.Equal(13, breaks2[1].PositionWrap);
+        Assert.Equal(17, breaks2[2].PositionMeasure);
+        Assert.Equal(18, breaks2[2].PositionWrap);
+        Assert.Equal(24, breaks2[3].PositionMeasure);
+        Assert.Equal(24, breaks2[3].PositionWrap);
+    }
+
+    [Fact]
     public void ForwardTextWithOuterWhitespace()
     {
         string text = " Apples Pears Bananas   ";
