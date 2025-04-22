@@ -69,6 +69,7 @@ public class LineBreakEnumeratorTests
 
         List<LineBreak> breaks2 = new();
         foreach (LineBreak lineBreak in new LineBreakEnumerator(text2.AsSpan()))
+        {
             breaks2.Add(lineBreak);
         }
 
