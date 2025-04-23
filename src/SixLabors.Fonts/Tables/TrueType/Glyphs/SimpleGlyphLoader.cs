@@ -127,7 +127,7 @@ internal class SimpleGlyphLoader : GlyphLoader
         var controlPoints = new ControlPoint[xs.Length];
         for (int i = 0; i < flags.Length; i++)
         {
-            controlPoints[i] = new(new Vector2(xs[i], ys[i]), flags[i].HasFlag(Flags.OnCurve));
+            controlPoints[i] = new(new Vector2(xs[i], ys[i]), (flags[i] & Flags.OnCurve) == Flags.OnCurve);
         }
 
         return new SimpleGlyphLoader(controlPoints, endPoints, bounds, instructions);
@@ -148,7 +148,7 @@ internal class SimpleGlyphLoader : GlyphLoader
             else
             {
                 flag = (Flags)reader.ReadUInt8();
-                if (flag.HasFlag(Flags.Repeat))
+                if ((flag & Flags.Repeat) == Flags.Repeat)
                 {
                     repeatCount = reader.ReadByte();
                 }
@@ -167,21 +167,19 @@ internal class SimpleGlyphLoader : GlyphLoader
         for (int i = 0; i < pointCount; i++)
         {
             short dx;
-            if (flags[i].HasFlag(isByte))
+            Flags currentFlag = flags[i];
+            if ((currentFlag & isByte) == isByte)
             {
                 byte b = reader.ReadByte();
-                dx = (short)(flags[i].HasFlag(signOrSame) ? b : -b);
+                dx = (short)((currentFlag & signOrSame) == signOrSame ? b : -b);
+            }
+            else if ((currentFlag & signOrSame) == signOrSame)
+            {
+                dx = 0;
             }
             else
             {
-                if (flags[i].HasFlag(signOrSame))
-                {
-                    dx = 0;
-                }
-                else
-                {
-                    dx = reader.ReadInt16();
-                }
+                dx = reader.ReadInt16();
             }
 
             x += dx;

@@ -155,7 +155,9 @@ jobs:
         if: failure()
         with:
           name: actual_output_${{ runner.os }}_${{ matrix.options.framework }}${{ matrix.options.runtime }}.zip
-          path: tests/Images/ActualOutput/
+          path: |
+              tests/Images/ActualOutput/
+              **/msbuild.binlog
 
       - name: Codecov Update
         uses: codecov/codecov-action@v4

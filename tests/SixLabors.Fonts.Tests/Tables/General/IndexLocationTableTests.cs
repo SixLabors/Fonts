@@ -15,10 +15,13 @@ public class IndexLocationTableTests
         var writer = new BigEndianBinaryWriter();
         writer.WriteTrueTypeFileHeader();
 
-        using (System.IO.MemoryStream stream = writer.GetStream())
+        using (MemoryStream stream = writer.GetStream())
         {
-            MissingFontTableException exception = Assert.Throws<MissingFontTableException>(
-                    () => IndexLocationTable.Load(new FontReader(stream)));
+            MissingFontTableException exception = Assert.Throws<MissingFontTableException>(() =>
+            {
+                using var reader = new FontReader(stream);
+                IndexLocationTable.Load(reader);
+            });
 
             Assert.Equal("head", exception.Table);
         }
@@ -40,10 +43,13 @@ public class IndexLocationTableTests
             0,
             HeadTable.IndexLocationFormats.Offset16));
 
-        using (System.IO.MemoryStream stream = writer.GetStream())
+        using (MemoryStream stream = writer.GetStream())
         {
-            InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(
-                () => IndexLocationTable.Load(new FontReader(stream)));
+            InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() =>
+            {
+                using var reader = new FontReader(stream);
+                IndexLocationTable.Load(reader);
+            });
 
             Assert.Equal("maxp", exception.Table);
         }
@@ -65,9 +71,10 @@ public class IndexLocationTableTests
             0,
             HeadTable.IndexLocationFormats.Offset16));
 
-        using (System.IO.MemoryStream stream = writer.GetStream())
+        using (MemoryStream stream = writer.GetStream())
         {
-            Assert.Null(IndexLocationTable.Load(new FontReader(stream)));
+            using var reader = new FontReader(stream);
+            Assert.Null(IndexLocationTable.Load(reader));
         }
     }
 }

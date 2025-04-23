@@ -11,6 +11,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 [DebuggerDisplay("X: {XCoordinate}, Y: {YCoordinate}")]
 internal abstract class AnchorTable
 {
+    private static readonly AnchorTable Empty = new EmptyAnchor();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="AnchorTable"/> class.
     /// </summary>
@@ -50,7 +52,10 @@ internal abstract class AnchorTable
             1 => AnchorFormat1.Load(reader),
             2 => AnchorFormat2.Load(reader),
             3 => AnchorFormat3.Load(reader),
-            _ => throw new InvalidFontFileException($"anchorFormat identifier {anchorFormat} is invalid. Should be '1', '2' or '3'.")
+
+            // Harfbuzz (Anchor.hh) and FontKit appear to treat this as a default anchor and do not throw.
+            // NotoSans Regular can trigger this. See https://github.com/SixLabors/Fonts/issues/417
+            _ => Empty,
         };
     }
 
@@ -119,7 +124,6 @@ internal abstract class AnchorTable
                 {
                     foreach (GlyphMetrics metric in metrics)
                     {
-                        // TODO: What does HarfBuzz do here?
                         if (metric is not TrueTypeGlyphMetrics ttmetric)
                         {
                             break;
@@ -184,5 +188,19 @@ internal abstract class AnchorTable
 
         public override AnchorXY GetAnchor(FontMetrics fontMetrics, GlyphShapingData data, GlyphPositioningCollection collection)
             => new(this.XCoordinate, this.YCoordinate);
+    }
+
+    internal sealed class EmptyAnchor : AnchorTable
+    {
+        public EmptyAnchor()
+            : base(0, 0)
+        {
+        }
+
+        public override AnchorXY GetAnchor(
+            FontMetrics fontMetrics,
+            GlyphShapingData data,
+            GlyphPositioningCollection collection)
+            => new(0, 0);
     }
 }

@@ -121,7 +121,7 @@ internal sealed class IndicShaper : DefaultShaper
                     ids[j] = id;
                 }
 
-                substitutionCollection.Replace(i, ids);
+                substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
                 for (int j = 0; j < decompositions.Length; j++)
                 {
                     substitutionCollection[i + j].CodePoint = new(decompositions[j]);
@@ -274,7 +274,7 @@ internal sealed class IndicShaper : DefaultShaper
                 glyphs[0] = current.GlyphId;
                 glyphs[1] = id;
 
-                substitutionCollection.Replace(i, glyphs);
+                substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
 
                 // Update shaping info for newly inserted data.
                 GlyphShapingData dotted = substitutionCollection[i + 1];

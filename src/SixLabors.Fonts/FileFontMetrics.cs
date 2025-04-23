@@ -109,6 +109,10 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
     /// <inheritdoc/>
+    internal override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
+        => this.fontMetrics.Value.TryGetCodePoint(glyphId, out codePoint);
+
+    /// <inheritdoc/>
     internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
         => this.fontMetrics.Value.TryGetGlyphClass(glyphId, out glyphClass);
 
@@ -153,8 +157,8 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.ApplySubstitution(collection);
 
     /// <inheritdoc/>
-    internal override bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector)
-        => this.fontMetrics.Value.TryGetKerningOffset(previousId, currentId, out vector);
+    internal override bool TryGetKerningOffset(ushort currentId, ushort nextId, out Vector2 vector)
+        => this.fontMetrics.Value.TryGetKerningOffset(currentId, nextId, out vector);
 
     /// <inheritdoc/>
     internal override void UpdatePositions(GlyphPositioningCollection collection)
@@ -169,7 +173,7 @@ internal sealed class FileFontMetrics : FontMetrics
     {
         using FileStream fs = File.OpenRead(path);
         long startPos = fs.Position;
-        BigEndianBinaryReader reader = new(fs, true);
+        using BigEndianBinaryReader reader = new(fs, true);
         TtcHeader ttcHeader = TtcHeader.Read(reader);
         FileFontMetrics[] fonts = new FileFontMetrics[(int)ttcHeader.NumFonts];
 

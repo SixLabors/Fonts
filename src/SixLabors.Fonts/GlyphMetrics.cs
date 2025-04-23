@@ -50,13 +50,13 @@ public abstract class GlyphMetrics
 
         Vector2 offset = Vector2.Zero;
         Vector2 scaleFactor = new(unitsPerEM * 72F);
-        if (textAttributes.HasFlag(TextAttributes.Subscript))
+        if ((textAttributes & TextAttributes.Subscript) == TextAttributes.Subscript)
         {
             float units = this.UnitsPerEm;
             scaleFactor /= new Vector2(font.SubscriptXSize / units, font.SubscriptYSize / units);
             offset = new(font.SubscriptXOffset, font.SubscriptYOffset < 0 ? font.SubscriptYOffset : -font.SubscriptYOffset);
         }
-        else if (textAttributes.HasFlag(TextAttributes.Superscript))
+        else if ((textAttributes & TextAttributes.Superscript) == TextAttributes.Superscript)
         {
             float units = this.UnitsPerEm;
             scaleFactor /= new Vector2(font.SuperscriptXSize / units, font.SuperscriptYSize / units);
@@ -401,7 +401,8 @@ public abstract class GlyphMetrics
     /// <returns>The <see cref="bool"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected internal static bool ShouldSkipGlyphRendering(CodePoint codePoint)
-        => UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) && !UnicodeUtility.ShouldRenderWhiteSpaceOnly(codePoint);
+        => CodePoint.IsNewLine(codePoint) ||
+           (UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) && !UnicodeUtility.ShouldRenderWhiteSpaceOnly(codePoint));
 
     /// <summary>
     /// Returns the size to render/measure the glyph based on the given size and resolution in px units.

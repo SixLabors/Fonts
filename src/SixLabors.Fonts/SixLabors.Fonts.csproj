@@ -19,6 +19,9 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
+
+    <!--Temporarily disable the COM analyzer to work around build issue.-->
+    <NoWarn>$(NoWarn);IL2050;</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

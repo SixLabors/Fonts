@@ -92,7 +92,7 @@ public class FontDescription
         Guard.NotNullOrWhiteSpace(path, nameof(path));
 
         using FileStream fs = File.OpenRead(path);
-        var reader = new FontReader(fs);
+        using var reader = new FontReader(fs);
         return LoadDescription(reader);
     }
 
@@ -106,7 +106,7 @@ public class FontDescription
         Guard.NotNull(stream, nameof(stream));
 
         // Only read the name tables.
-        var reader = new FontReader(stream);
+        using var reader = new FontReader(stream);
 
         return LoadDescription(reader);
     }
@@ -152,14 +152,14 @@ public class FontDescription
     public static FontDescription[] LoadFontCollectionDescriptions(Stream stream)
     {
         long startPos = stream.Position;
-        var reader = new BigEndianBinaryReader(stream, true);
+        using var reader = new BigEndianBinaryReader(stream, true);
         var ttcHeader = TtcHeader.Read(reader);
 
         var result = new FontDescription[(int)ttcHeader.NumFonts];
         for (int i = 0; i < ttcHeader.NumFonts; ++i)
         {
             stream.Position = startPos + ttcHeader.OffsetTable[i];
-            var fontReader = new FontReader(stream);
+            using var fontReader = new FontReader(stream);
             result[i] = LoadDescription(fontReader);
         }
 
@@ -172,24 +172,24 @@ public class FontDescription
 
         if (os2 != null)
         {
-            if (os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.BOLD))
+            if ((os2.FontStyle & OS2Table.FontStyleSelection.BOLD) == OS2Table.FontStyleSelection.BOLD)
             {
                 style |= FontStyle.Bold;
             }
 
-            if (os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.ITALIC))
+            if ((os2.FontStyle & OS2Table.FontStyleSelection.ITALIC) == OS2Table.FontStyleSelection.ITALIC)
             {
                 style |= FontStyle.Italic;
             }
         }
         else if (head != null)
         {
-            if (head.MacStyle.HasFlag(HeadTable.HeadMacStyle.Bold))
+            if ((head.MacStyle & HeadTable.HeadMacStyle.Bold) == HeadTable.HeadMacStyle.Bold)
             {
                 style |= FontStyle.Bold;
             }
 
-            if (head.MacStyle.HasFlag(HeadTable.HeadMacStyle.Italic))
+            if ((head.MacStyle & HeadTable.HeadMacStyle.Italic) == HeadTable.HeadMacStyle.Italic)
             {
                 style |= FontStyle.Italic;
             }

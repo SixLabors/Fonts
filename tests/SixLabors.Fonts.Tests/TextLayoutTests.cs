@@ -6,11 +6,14 @@ using System.Numerics;
 using System.Text;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
+using SixLabors.ImageSharp.Drawing.Processing;
 
 namespace SixLabors.Fonts.Tests;
 
 public class TextLayoutTests
 {
+    private static readonly ApproximateFloatComparer Comparer = new(.1F);
+
     [Theory]
     [InlineData(LayoutMode.HorizontalTopBottom, true)]
     [InlineData(LayoutMode.HorizontalBottomTop, true)]
@@ -241,10 +244,10 @@ public class TextLayoutTests
         const string text = "a b\nc";
         GlyphBounds[] expectedGlyphMetrics =
         {
-            new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10)),
-            new(new CodePoint(' '), new FontRectangle(40, 0, 30, 10)),
-            new(new CodePoint('b'), new FontRectangle(70, 0, 10, 10)),
-            new(new CodePoint('c'), new FontRectangle(10, 30, 10, 10)),
+            new(new CodePoint('a'), new FontRectangle(10, 0, 10, 10), 0, 0),
+            new(new CodePoint(' '), new FontRectangle(40, 0, 30, 10), 1, 1),
+            new(new CodePoint('b'), new FontRectangle(70, 0, 10, 10), 2, 2),
+            new(new CodePoint('c'), new FontRectangle(10, 30, 10, 10), 3, 3),
         };
         Font font = CreateFont(text);
 
@@ -270,139 +273,193 @@ public class TextLayoutTests
     }
 
     [Theory]
-    [InlineData("hello world", 10, 310)]
-    [InlineData(
-        "hello world hello world hello world",
-        70, // 30 actual line height * 2 + 10 actual height
-        310)]
+    [InlineData("hello world", 10, 87.125F)]
+    [InlineData("hello world hello world hello world", 11.438F, 279.13F)]
     [InlineData(// issue https://github.com/SixLabors/ImageSharp.Drawing/issues/115
         "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。",
-        160, // 30 actual line height * 2 + 10 actual height
-        310)]
+        62.625,
+        318.86F)]
     public void MeasureTextWordWrappingHorizontalTopBottom(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.HorizontalTopBottom
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.HorizontalTopBottom
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+        }
     }
 
     [Theory]
-    [InlineData("hello world", 10, 310)]
-    [InlineData(
-        "hello world hello world hello world",
-        70, // 30 actual line height * 2 + 10 actual height
-        310)]
+    [InlineData("hello world", 10, 87.125F)]
+    [InlineData("hello world hello world hello world", 11.438F, 279.13F)]
     [InlineData(// issue https://github.com/SixLabors/ImageSharp.Drawing/issues/115
         "这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。",
-        160, // 30 actual line height * 2 + 10 actual height
-        310)]
+        62.625,
+        318.86F)]
     public void MeasureTextWordWrappingHorizontalBottomTop(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.HorizontalBottomTop
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.HorizontalBottomTop
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+
+
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+        }
     }
 
     [Theory]
-    [InlineData("hello world", 310, 10)]
-    [InlineData("hello world hello world hello world", 310, 70)]
-    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+    [InlineData("hello world", 171.25F, 10)]
+    [InlineData("hello world hello world hello world", 267.25F, 23.875F)]
+    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 318.563F, 62.813F)]
     public void MeasureTextWordWrappingVerticalLeftRight(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.VerticalLeftRight
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.VerticalLeftRight
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+        }
     }
 
     [Theory]
-    [InlineData("hello world", 310, 10)]
-    [InlineData("hello world hello world hello world", 310, 70)]
-    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+    [InlineData("hello world", 171.25F, 10)]
+    [InlineData("hello world hello world hello world", 267.25F, 23.875F)]
+    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 318.563F, 62.813F)]
     public void MeasureTextWordWrappingVerticalRightLeft(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.VerticalRightLeft
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.VerticalRightLeft
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+        }
     }
 
     [Theory]
-    [InlineData("hello world", 310, 10)]
-    [InlineData("hello world hello world hello world", 310, 70)]
-    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 310, 160)]
+    [InlineData("hello world", 87.125F, 10)]
+    [InlineData("hello world hello world hello world", 279.125F, 11.438F)]
+    [InlineData("这是一段长度超出设定的换行宽度的文本，但是没有在设定的宽度处换行。这段文本用于演示问题。希望可以修复。如果有需要可以联系我。", 318.563F, 62.813F)]
     public void MeasureTextWordWrappingVerticalMixedLeftRight(string text, float height, float width)
     {
-        Font font = CreateFont(text);
-        FontRectangle size = TextMeasurer.MeasureBounds(text, new TextOptions(font)
+        if (SystemFonts.TryGet("SimSun", out FontFamily family))
         {
-            Dpi = font.FontMetrics.ScaleFactor,
-            WrappingLength = 350,
-            LayoutMode = LayoutMode.VerticalMixedLeftRight
-        });
+            Font font = family.CreateFont(16);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 350,
+                LayoutMode = LayoutMode.VerticalMixedLeftRight
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
+
+            FontRectangle size = TextMeasurer.MeasureBounds(text, options);
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+        }
     }
 
-#if OS_WINDOWS
     [Theory]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.Standard, 100, 870)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakAll, 120, 399)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakWord, 120, 400)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.KeepAll, 60, 699)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.Standard, 101, 870)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakAll, 121, 399)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakWord, 121, 400)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.KeepAll, 61, 699)]
-    public void MeasureTextWordBreak(string text, LayoutMode layoutMode, WordBreaking wordBreaking, float height, float width)
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.Standard, 100, 696.51F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakAll, 129.29F, 237.53F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakWord, 128, 237.53F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.KeepAll, 65.29F, 699)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.Standard, 96F, 696.51F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakAll, 129.29F, 237.53F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakWord, 128, 237.53F)]
+    [InlineData("Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.KeepAll, 61, 699)]
+    public void MeasureTextWordBreakMatchesMDN(string text, LayoutMode layoutMode, WordBreaking wordBreaking, float height, float width)
     {
-        // Testing using Windows only to ensure that actual glyphs are rendered
-        // against known physically tested values.
-        FontFamily arial = SystemFonts.Get("Arial");
-        FontFamily jhengHei = SystemFonts.Get("Microsoft JhengHei");
-
-        Font font = arial.CreateFont(20);
-        FontRectangle size = TextMeasurer.MeasureAdvance(
-            text,
-            new TextOptions(font)
+        // See https://developer.mozilla.org/en-US/docs/Web/CSS/word-break
+        if (SystemFonts.TryGet("Arial", out FontFamily arial) &&
+            SystemFonts.TryGet("Microsoft JhengHei", out FontFamily jhengHei))
+        {
+            Font font = arial.CreateFont(16);
+            TextOptions options = new(font)
             {
-                WrappingLength = 400,
+                WrappingLength = 238,
                 LayoutMode = layoutMode,
                 WordBreaking = wordBreaking,
                 FallbackFontFamilies = new[] { jhengHei }
-            });
+            };
 
-        Assert.Equal(width, size.Width, 4F);
-        Assert.Equal(height, size.Height, 4F);
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { layoutMode, wordBreaking });
+
+            FontRectangle size = TextMeasurer.MeasureAdvance(text, options);
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+        }
     }
-#endif
+
+    [Theory]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.Standard, 100, 870.635F)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakAll, 100, 500)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.BreakWord, 120, 490.35F)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalTopBottom, WordBreaking.KeepAll, 81.89F, 870.635F)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.Standard, 101, 870.635F)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakAll, 100, 500)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.BreakWord, 121, 490.35F)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious グレートブリテンおよび北アイルランド連合王国という言葉は本当に長い言葉", LayoutMode.HorizontalBottomTop, WordBreaking.KeepAll, 61, 699)]
+    public void MeasureTextWordBreak(string text, LayoutMode layoutMode, WordBreaking wordBreaking, float height, float width)
+    {
+        // See https://developer.mozilla.org/en-US/docs/Web/CSS/word-break
+        if (SystemFonts.TryGet("Arial", out FontFamily arial) &&
+            SystemFonts.TryGet("Microsoft JhengHei", out FontFamily jhengHei))
+        {
+            Font font = arial.CreateFont(20);
+            TextOptions options = new(font)
+            {
+                WrappingLength = 500,
+                LayoutMode = layoutMode,
+                WordBreaking = wordBreaking,
+                FallbackFontFamilies = new[] { jhengHei }
+            };
+
+            FontRectangle size = TextMeasurer.MeasureAdvance(
+                text,
+                options);
+
+            TextLayoutTestUtilities.TestLayout(text, options, properties: new { layoutMode, wordBreaking });
+
+            Assert.Equal(width, size.Width, 4F);
+            Assert.Equal(height, size.Height, 4F);
+        }
+    }
 
     [Theory]
     [InlineData("ab", 477, 1081, false)] // no kerning rules defined for lowercase ab so widths should stay the same
@@ -491,15 +548,21 @@ public class TextLayoutTests
     }
 
     [Theory]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 7)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 7)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 7)]
-    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 200, 6)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 25, 6)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 50, 4)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 100, 3)]
+    [InlineData("This is a long and Honorificabilitudinitatibus califragilisticexpialidocious", 200, 3)]
     public void CountLinesWrappingLength(string text, int wrappingLength, int usedLines)
     {
-        Font font = CreateFont(text);
-        int count = TextMeasurer.CountLines(text, new TextOptions(font) { Dpi = font.FontMetrics.ScaleFactor, WrappingLength = wrappingLength });
+        Font font = CreateRenderingFont();
+        RichTextOptions options = new(font)
+        {
+            WrappingLength = wrappingLength
+        };
 
+        TextLayoutTestUtilities.TestLayout(text, options, properties: usedLines);
+
+        int count = TextMeasurer.CountLines(text, options);
         Assert.Equal(usedLines, count);
     }
 
@@ -607,8 +670,8 @@ public class TextLayoutTests
     {
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
-        const float pointSize = 20;
-        Font font = CreateFont(text, pointSize);
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
         TextOptions options = new(font)
         {
             TextDirection = direction,
@@ -619,9 +682,11 @@ public class TextLayoutTests
         // Collect the first line so we can compare it to the target wrapping length.
         IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
-        TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+        TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> advances);
 
-        Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Width), 4F);
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, options.TextJustification });
+
+        Assert.Equal(wrappingLength, advances.ToArray().Sum(x => x.Bounds.Width), 4F);
 
         // Now compare character widths.
         options.TextJustification = TextJustification.None;
@@ -635,11 +700,11 @@ public class TextLayoutTests
         {
             if (i == characterBounds.Length - 1)
             {
-                Assert.Equal(justifiedCharacterBounds[i].Bounds.Width, characterBounds[i].Bounds.Width);
+                Assert.Equal(advances[i].Bounds.Width, characterBounds[i].Bounds.Width);
             }
             else
             {
-                Assert.True(justifiedCharacterBounds[i].Bounds.Width > characterBounds[i].Bounds.Width);
+                Assert.True(advances[i].Bounds.Width > characterBounds[i].Bounds.Width);
             }
         }
     }
@@ -651,8 +716,8 @@ public class TextLayoutTests
     {
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
-        const float pointSize = 20;
-        Font font = CreateFont(text, pointSize);
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
         TextOptions options = new(font)
         {
             TextDirection = direction,
@@ -664,6 +729,8 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, options.TextJustification });
 
         Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Width), 4F);
 
@@ -695,8 +762,8 @@ public class TextLayoutTests
     {
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
-        const float pointSize = 20;
-        Font font = CreateFont(text, pointSize);
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
         TextOptions options = new(font)
         {
             LayoutMode = LayoutMode.VerticalLeftRight,
@@ -709,6 +776,8 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, options.TextJustification });
 
         Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Height), 4F);
 
@@ -740,8 +809,8 @@ public class TextLayoutTests
     {
         const string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ornare maximus vehicula. Duis nisi velit, dictum id mauris vitae, lobortis pretium quam. Quisque sed nisi pulvinar, consequat justo id, feugiat leo. Cras eu elementum dui.";
         const float wrappingLength = 400;
-        const float pointSize = 20;
-        Font font = CreateFont(text, pointSize);
+        const float pointSize = 12;
+        Font font = CreateRenderingFont(pointSize);
         TextOptions options = new(font)
         {
             LayoutMode = LayoutMode.VerticalLeftRight,
@@ -754,6 +823,8 @@ public class TextLayoutTests
         IReadOnlyList<GlyphLayout> justifiedGlyphs = TextLayout.GenerateLayout(text.AsSpan(), options);
         IReadOnlyList<GlyphLayout> justifiedLine = CollectFirstLine(justifiedGlyphs);
         TextMeasurer.TryGetCharacterAdvances(justifiedLine, options.Dpi, out ReadOnlySpan<GlyphBounds> justifiedCharacterBounds);
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: new { direction, options.TextJustification });
 
         Assert.Equal(wrappingLength, justifiedCharacterBounds.ToArray().Sum(x => x.Bounds.Height), 4F);
 
@@ -781,100 +852,100 @@ public class TextLayoutTests
     public static TheoryData<char, FontRectangle> OpenSans_Data
         = new()
         {
-            { '!', new(0, 0, 2, 8) },
-            { '"', new(0, 0, 3, 3) },
-            { '#', new(0, 0, 6, 8) },
-            { '$', new(0, 0, 5, 9) },
-            { '%', new(0, 0, 8, 8) },
-            { '&', new(0, 0, 7, 8) },
-            { '\'', new(0, 0, 1, 3) },
-            { '(', new(0, 0, 3, 9) },
-            { ')', new(0, 0, 3, 9) },
-            { '*', new(0, 0, 5, 5) },
-            { '+', new(0, 0, 5, 5) },
-            { ',', new(0, 0, 2, 3) },
-            { '-', new(0, 0, 3, 1) },
-            { '.', new(0, 0, 2, 2) },
-            { '/', new(0, 0, 4, 8) },
-            { '0', new(0, 0, 5, 8) },
-            { '1', new(0, 0, 3, 8) },
-            { '2', new(0, 0, 5, 8) },
-            { '3', new(0, 0, 5, 8) },
-            { '4', new(0, 0, 6, 8) },
-            { '5', new(0, 0, 5, 8) },
-            { '6', new(0, 0, 5, 8) },
-            { '7', new(0, 0, 5, 8) },
-            { '8', new(0, 0, 5, 8) },
-            { '9', new(0, 0, 5, 8) },
-            { ':', new(0, 0, 2, 6) },
-            { ';', new(0, 0, 2, 7) },
-            { '<', new(0, 0, 5, 5) },
-            { '=', new(0, 0, 5, 3) },
-            { '>', new(0, 0, 5, 5) },
-            { '?', new(0, 0, 4, 8) },
-            { '@', new(0, 0, 8, 9) },
-            { 'A', new(0, 0, 7, 8) },
-            { 'B', new(0, 0, 5, 8) },
-            { 'C', new(0, 0, 6, 8) },
-            { 'D', new(0, 0, 6, 8) },
-            { 'E', new(0, 0, 4, 8) },
-            { 'F', new(0, 0, 4, 8) },
-            { 'G', new(0, 0, 6, 8) },
-            { 'H', new(0, 0, 6, 8) },
-            { 'I', new(0, 0, 1, 8) },
-            { 'J', new(0, 0, 3, 10) },
-            { 'K', new(0, 0, 6, 8) },
-            { 'L', new(0, 0, 4, 8) },
-            { 'M', new(0, 0, 8, 8) },
-            { 'N', new(0, 0, 6, 8) },
-            { 'O', new(0, 0, 7, 8) },
-            { 'P', new(0, 0, 5, 8) },
-            { 'Q', new(0, 0, 7, 9) },
-            { 'R', new(0, 0, 6, 8) },
-            { 'S', new(0, 0, 5, 8) },
-            { 'T', new(0, 0, 6, 8) },
-            { 'U', new(0, 0, 6, 8) },
-            { 'V', new(0, 0, 6, 8) },
-            { 'W', new(0, 0, 9, 8) },
-            { 'X', new(0, 0, 6, 8) },
-            { 'Y', new(0, 0, 6, 8) },
-            { 'Z', new(0, 0, 5, 8) },
-            { '[', new(0, 0, 3, 9) },
-            { '\\', new(0, 0, 4, 8) },
-            { ']', new(0, 0, 3, 9) },
-            { '^', new(0, 0, 5, 5) },
-            { '_', new(0, 0, 5, 1) },
-            { '`', new(0, 0, 2, 2) },
-            { 'a', new(0, 0, 5, 6) },
-            { 'b', new(0, 0, 5, 8) },
-            { 'c', new(0, 0, 4, 6) },
-            { 'd', new(0, 0, 5, 8) },
-            { 'e', new(0, 0, 5, 6) },
-            { 'f', new(0, 0, 4, 8) },
-            { 'g', new(0, 0, 6, 8) },
-            { 'h', new(0, 0, 5, 8) },
-            { 'i', new(0, 0, 1, 8) },
-            { 'j', new(0, 0, 3, 10) },
-            { 'k', new(0, 0, 5, 8) },
-            { 'l', new(0, 0, 1, 8) },
-            { 'm', new(0, 0, 8, 6) },
-            { 'n', new(0, 0, 5, 6) },
-            { 'o', new(0, 0, 5, 6) },
-            { 'p', new(0, 0, 5, 8) },
-            { 'q', new(0, 0, 5, 8) },
-            { 'r', new(0, 0, 4, 6) },
-            { 's', new(0, 0, 4, 6) },
-            { 't', new(0, 0, 4, 7) },
-            { 'u', new(0, 0, 5, 6) },
-            { 'v', new(0, 0, 5, 6) },
-            { 'w', new(0, 0, 8, 6) },
-            { 'x', new(0, 0, 5, 6) },
-            { 'y', new(0, 0, 5, 8) },
-            { 'z', new(0, 0, 4, 6) },
-            { '{', new(0, 0, 4, 9) },
-            { '|', new(0, 0, 1, 11) },
-            { '}', new(0, 0, 4, 9) },
-            { '~', new(0, 0, 5, 2) },
+            { '!', new(0F, 0F, 1.1621094F, 7.2753906F) },
+            { '"', new(0F, 0F, 2.6660156F, 2.578125F) },
+            { '#', new(0F, 0F, 5.9472656F, 7.138672F) },
+            { '$', new(0F, 0F, 4.4921875F, 8.168945F) },
+            { '%', new(0F, 0F, 7.270508F, 7.338867F) },
+            { '&', new(0F, 0F, 6.689453F, 7.348633F) },
+            { '\'', new(0F, 0F, 0.87890625F, 2.578125F) },
+            { '(', new(0F, 0F, 2.2460938F, 8.720703F) },
+            { ')', new(0F, 0F, 2.2460938F, 8.720703F) },
+            { '*', new(0F, 0F, 4.614258F, 4.4433594F) },
+            { '+', new(0F, 0F, 4.692383F, 4.814453F) },
+            { ',', new(0F, 0F, 1.4404297F, 2.4511719F) },
+            { '-', new(0F, 0F, 2.421875F, 0.72265625F) },
+            { '.', new(0F, 0F, 1.1621094F, 1.2744141F) },
+            { '/', new(0F, 0F, 3.4570312F, 7.138672F) },
+            { '0', new(0F, 0F, 4.7070312F, 7.348633F) },
+            { '1', new(0F, 0F, 2.6074219F, 7.138672F) },
+            { '2', new(0F, 0F, 4.6777344F, 7.241211F) },
+            { '3', new(0F, 0F, 4.6777344F, 7.338867F) },
+            { '4', new(0F, 0F, 5.3125F, 7.1777344F) },
+            { '5', new(0F, 0F, 4.4970703F, 7.236328F) },
+            { '6', new(0F, 0F, 4.6679688F, 7.338867F) },
+            { '7', new(0F, 0F, 4.760742F, 7.138672F) },
+            { '8', new(0F, 0F, 4.6972656F, 7.338867F) },
+            { '9', new(0F, 0F, 4.6777344F, 7.34375F) },
+            { ':', new(0F, 0F, 1.1621094F, 5.6152344F) },
+            { ';', new(0F, 0F, 1.5576172F, 6.767578F) },
+            { '<', new(0F, 0F, 4.6972656F, 4.868164F) },
+            { '=', new(0F, 0F, 4.580078F, 2.65625F) },
+            { '>', new(0F, 0F, 4.6972656F, 4.868164F) },
+            { '?', new(0F, 0F, 3.8916016F, 7.3779297F) },
+            { '@', new(0F, 0F, 7.817383F, 8.032227F) },
+            { 'A', new(0F, 0F, 6.3134766F, 7.1679688F) },
+            { 'B', new(0F, 0F, 4.9414062F, 7.138672F) },
+            { 'C', new(0F, 0F, 5.3808594F, 7.338867F) },
+            { 'D', new(0F, 0F, 5.6689453F, 7.138672F) },
+            { 'E', new(0F, 0F, 3.9746094F, 7.138672F) },
+            { 'F', new(0F, 0F, 3.9746094F, 7.138672F) },
+            { 'G', new(0F, 0F, 5.913086F, 7.338867F) },
+            { 'H', new(0F, 0F, 5.4101562F, 7.138672F) },
+            { 'I', new(0F, 0F, 0.8300781F, 7.138672F) },
+            { 'J', new(0F, 0F, 2.5683594F, 9.018555F) },
+            { 'K', new(0F, 0F, 5.1464844F, 7.138672F) },
+            { 'L', new(0F, 0F, 3.9990234F, 7.138672F) },
+            { 'M', new(0F, 0F, 7.0410156F, 7.138672F) },
+            { 'N', new(0F, 0F, 5.5810547F, 7.138672F) },
+            { 'O', new(0F, 0F, 6.557617F, 7.348633F) },
+            { 'P', new(0F, 0F, 4.5214844F, 7.138672F) },
+            { 'Q', new(0F, 0F, 6.557617F, 8.950195F) },
+            { 'R', new(0F, 0F, 5.029297F, 7.138672F) },
+            { 'S', new(0F, 0F, 4.4921875F, 7.338867F) },
+            { 'T', new(0F, 0F, 5.317383F, 7.138672F) },
+            { 'U', new(0F, 0F, 5.473633F, 7.236328F) },
+            { 'V', new(0F, 0F, 5.961914F, 7.138672F) },
+            { 'W', new(0F, 0F, 8.94043F, 7.138672F) },
+            { 'X', new(0F, 0F, 5.7128906F, 7.138672F) },
+            { 'Y', new(0F, 0F, 5.5908203F, 7.138672F) },
+            { 'Z', new(0F, 0F, 4.9560547F, 7.138672F) },
+            { '[', new(0F, 0F, 2.211914F, 8.720703F) },
+            { '\\', new(0F, 0F, 3.4667969F, 7.138672F) },
+            { ']', new(0F, 0F, 2.2167969F, 8.720703F) },
+            { '^', new(0F, 0F, 4.9414062F, 4.5117188F) },
+            { '_', new(0F, 0F, 4.4189453F, 0.60058594F) },
+            { '`', new(0F, 0F, 1.9775391F, 1.6015625F) },
+            { 'a', new(0F, 0F, 4.2822266F, 5.5371094F) },
+            { 'b', new(0F, 0F, 4.7070312F, 7.6953125F) },
+            { 'c', new(0F, 0F, 3.90625F, 5.546875F) },
+            { 'd', new(0F, 0F, 4.7021484F, 7.6953125F) },
+            { 'e', new(0F, 0F, 4.536133F, 5.546875F) },
+            { 'f', new(0F, 0F, 3.671875F, 7.651367F) },
+            { 'g', new(0F, 0F, 5.078125F, 7.861328F) },
+            { 'h', new(0F, 0F, 4.4628906F, 7.5976562F) },
+            { 'i', new(0F, 0F, 0.9765625F, 7.3535156F) },
+            { 'j', new(0F, 0F, 2.3046875F, 9.755859F) },
+            { 'k', new(0F, 0F, 4.321289F, 7.5976562F) },
+            { 'l', new(0F, 0F, 0.8154297F, 7.5976562F) },
+            { 'm', new(0F, 0F, 7.5927734F, 5.4492188F) },
+            { 'n', new(0F, 0F, 4.4628906F, 5.4492188F) },
+            { 'o', new(0F, 0F, 4.9121094F, 5.546875F) },
+            { 'p', new(0F, 0F, 4.7070312F, 7.841797F) },
+            { 'q', new(0F, 0F, 4.7021484F, 7.841797F) },
+            { 'r', new(0F, 0F, 3.0810547F, 5.4492188F) },
+            { 's', new(0F, 0F, 3.8134766F, 5.546875F) },
+            { 't', new(0F, 0F, 3.178711F, 6.689453F) },
+            { 'u', new(0F, 0F, 4.477539F, 5.4492188F) },
+            { 'v', new(0F, 0F, 4.995117F, 5.3515625F) },
+            { 'w', new(0F, 0F, 7.5146484F, 5.3515625F) },
+            { 'x', new(0F, 0F, 4.8535156F, 5.3515625F) },
+            { 'y', new(0F, 0F, 5F, 7.758789F) },
+            { 'z', new(0F, 0F, 3.9013672F, 5.3515625F) },
+            { '{', new(0F, 0F, 3.149414F, 8.720703F) },
+            { '|', new(0F, 0F, 0.67871094F, 10.024414F) },
+            { '}', new(0F, 0F, 3.149414F, 8.720703F) },
+            { '~', new(0F, 0F, 4.6972656F, 1.2597656F) },
         };
 
     [Theory]
@@ -888,7 +959,7 @@ public class TextLayoutTests
         };
 
         FontRectangle actual = TextMeasurer.MeasureSize(c.ToString(), options);
-        Assert.Equal(expected, actual);
+        Assert.Equal(expected, actual, Comparer);
 
         options = new(OpenSansWoff)
         {
@@ -897,7 +968,7 @@ public class TextLayoutTests
         };
 
         actual = TextMeasurer.MeasureSize(c.ToString(), options);
-        Assert.Equal(expected, actual);
+        Assert.Equal(expected, actual, Comparer);
     }
 
     [Fact]
@@ -914,7 +985,7 @@ public class TextLayoutTests
         const string text = "Hello World!";
         FontRectangle first = TextMeasurer.MeasureAdvance(text, options);
 
-        Assert.Equal(new FontRectangle(0, 0, 11729, 2049), first);
+        Assert.Equal(new FontRectangle(0, 0, 11729, 2048), first, Comparer);
 
         options.LineSpacing = 2F;
         FontRectangle second = TextMeasurer.MeasureAdvance(text, options);
@@ -996,6 +1067,192 @@ public class TextLayoutTests
         }
     }
 
+    [Fact]
+    public void DoesMeasureCharacterLayoutIncludeStringIndex()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+            LineSpacing = 1.5F
+        };
+
+        const string text = "The quick👩🏽‍🚒 brown fox jumps over \r\n the lazy dog";
+
+        Assert.True(TextMeasurer.TryMeasureCharacterAdvances(text, options, out ReadOnlySpan<GlyphBounds> advances));
+        Assert.True(TextMeasurer.TryMeasureCharacterSizes(text, options, out ReadOnlySpan<GlyphBounds> sizes));
+        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds));
+
+        Assert.Equal(advances.Length, sizes.Length);
+        Assert.Equal(advances.Length, bounds.Length);
+
+        int stringIndex = -1;
+
+        for (int i = 0; i < advances.Length; i++)
+        {
+            GlyphBounds advance = advances[i];
+            GlyphBounds size = sizes[i];
+            GlyphBounds bound = bounds[i];
+
+            Assert.Equal(bound.StringIndex, advance.StringIndex);
+            Assert.Equal(bound.StringIndex, size.StringIndex);
+
+            Assert.Equal(bound.GraphemeIndex, advance.GraphemeIndex);
+            Assert.Equal(bound.GraphemeIndex, size.GraphemeIndex);
+
+            if (bound.Codepoint == new CodePoint("k"[0]))
+            {
+                stringIndex = text.IndexOf("k", StringComparison.InvariantCulture);
+                Assert.Equal(stringIndex, bound.StringIndex);
+                Assert.Equal(stringIndex, bound.GraphemeIndex);
+            }
+
+            // after emoji
+            if (bound.Codepoint == new CodePoint("b"[0]))
+            {
+                stringIndex = text.IndexOf("b", StringComparison.InvariantCulture);
+                Assert.NotEqual(bound.StringIndex, bound.GraphemeIndex);
+                Assert.Equal(stringIndex, bound.StringIndex);
+                Assert.Equal(11, bound.GraphemeIndex);
+            }
+        }
+
+        SpanGraphemeEnumerator graphemeEnumerator = new(text);
+        int graphemeCount = 0;
+        while (graphemeEnumerator.MoveNext())
+        {
+            graphemeCount += 1;
+        }
+
+        GlyphBounds firstBound = bounds[0];
+        Assert.Equal(0, firstBound.StringIndex);
+        Assert.Equal(0, firstBound.GraphemeIndex);
+
+        GlyphBounds lastBound = bounds[^1];
+        Assert.Equal(text.Length - 1, lastBound.StringIndex);
+        Assert.Equal(graphemeCount - 1, lastBound.GraphemeIndex);
+    }
+
+    [Fact]
+    public void DoesMeasureCharacterBoundsExtendForAdvanceMultipliers()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+            TabWidth = 8
+        };
+
+        const string text = "H\tH";
+
+        IReadOnlyList<FontRectangle> glyphsToRender = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
+        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
+
+        IReadOnlyList<GlyphLayout> glyphLayouts = TextLayout.GenerateLayout(text, options);
+
+        Assert.Equal(glyphsToRender.Count, bounds.Length);
+        Assert.Equal(glyphsToRender.Count, glyphsToRender.Count);
+
+        for (int glyphIndex = 0; glyphIndex < glyphsToRender.Count; glyphIndex++)
+        {
+            FontRectangle renderGlyph = glyphsToRender[glyphIndex];
+            FontRectangle measureGlyph = bounds[glyphIndex].Bounds;
+            GlyphLayout glyphLayout = glyphLayouts[glyphIndex];
+
+            if (glyphLayout.IsWhiteSpace())
+            {
+                Assert.Equal(renderGlyph.X, measureGlyph.X);
+                Assert.Equal(renderGlyph.Y, measureGlyph.Y);
+                Assert.Equal(glyphLayout.AdvanceX * options.Dpi, measureGlyph.Width);
+                Assert.Equal(renderGlyph.Height, measureGlyph.Height);
+            }
+            else
+            {
+                Assert.Equal(renderGlyph, measureGlyph);
+            }
+        }
+    }
+
+    [Fact]
+    public void IsMeasureCharacterBoundsSameAsRenderBounds()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.OpenSansFile);
+        family.TryGetMetrics(FontStyle.Regular, out FontMetrics metrics);
+
+        TextOptions options = new(family.CreateFont(metrics.UnitsPerEm))
+        {
+        };
+
+        const string text = "Hello WorLLd";
+
+        IReadOnlyList<FontRectangle> glyphsToRender = CaptureGlyphBoundBuilder.GenerateGlyphsBoxes(text, options);
+        TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds);
+
+        Assert.Equal(glyphsToRender.Count, bounds.Length);
+
+        for (int glyphIndex = 0; glyphIndex < glyphsToRender.Count; glyphIndex++)
+        {
+            FontRectangle renderGlyph = glyphsToRender[glyphIndex];
+            FontRectangle measureGlyph = bounds[glyphIndex].Bounds;
+
+            Assert.Equal(renderGlyph.X, measureGlyph.X);
+            Assert.Equal(renderGlyph.Y, measureGlyph.Y);
+            Assert.Equal(renderGlyph.Width, measureGlyph.Width);
+            Assert.Equal(renderGlyph.Height, measureGlyph.Height);
+
+            Assert.Equal(renderGlyph, measureGlyph);
+        }
+    }
+
+    [Fact]
+    public void BreakWordEnsuresSingleCharacterPerLine()
+    {
+        Font font = CreateRenderingFont(20);
+        TextOptions options = new(font)
+        {
+            WordBreaking = WordBreaking.BreakWord,
+            WrappingLength = 1
+        };
+
+        const string text = "Hello World!";
+
+        TextLayoutTestUtilities.TestLayout(text, options);
+
+        int lineCount = TextMeasurer.CountLines(text, options);
+        Assert.Equal(text.Length - 1, lineCount);
+    }
+
+    private class CaptureGlyphBoundBuilder : IGlyphRenderer
+    {
+        public static List<FontRectangle> GenerateGlyphsBoxes(string text, TextOptions options)
+        {
+            CaptureGlyphBoundBuilder glyphBuilder = new();
+            TextRenderer renderer = new(glyphBuilder);
+            renderer.RenderText(text, options);
+            return glyphBuilder.GlyphBounds;
+        }
+        public readonly List<FontRectangle> GlyphBounds = new();
+        public CaptureGlyphBoundBuilder() { }
+        bool IGlyphRenderer.BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
+        {
+            this.GlyphBounds.Add(bounds);
+            return true;
+        }
+        public void BeginFigure() { }
+        public void MoveTo(Vector2 point) { }
+        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point) { }
+        public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point) { }
+        public void LineTo(Vector2 point) { }
+        public void EndFigure() { }
+        public void EndGlyph() { }
+        public void EndText() { }
+        void IGlyphRenderer.BeginText(in FontRectangle bounds) { }
+        public TextDecorations EnabledDecorations() => TextDecorations.None;
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness) { }
+    }
+
     private static readonly Font OpenSansTTF = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
     private static readonly Font OpenSansWoff = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
 
@@ -1003,100 +1260,101 @@ public class TextLayoutTests
     public static TheoryData<char, FontRectangle> SegoeUi_Data
         = new()
         {
-            { '!', new(0, 0, 2, 8) },
-            { '"', new(0, 0, 3, 3) },
-            { '#', new(0, 0, 6, 7) },
-            { '$', new(0, 0, 4, 9) },
-            { '%', new(0, 0, 8, 8) },
-            { '&', new(0, 0, 8, 8) },
-            { '\'', new(0, 0, 1, 3) },
-            { '(', new(0, 0, 3, 9) },
-            { ')', new(0, 0, 3, 9) },
-            { '*', new(0, 0, 4, 4) },
-            { '+', new(0, 0, 5, 5) },
-            { ',', new(0, 0, 2, 3) },
-            { '-', new(0, 0, 3, 1) },
-            { '.', new(0, 0, 2, 2) },
-            { '/', new(0, 0, 5, 9) },
-            { '0', new(0, 0, 5, 8) },
-            { '1', new(0, 0, 3, 8) },
-            { '2', new(0, 0, 5, 8) },
-            { '3', new(0, 0, 5, 8) },
-            { '4', new(0, 0, 5, 8) },
-            { '5', new(0, 0, 4, 8) },
-            { '6', new(0, 0, 5, 8) },
-            { '7', new(0, 0, 5, 8) },
-            { '8', new(0, 0, 5, 8) },
-            { '9', new(0, 0, 5, 8) },
-            { ':', new(0, 0, 2, 6) },
-            { ';', new(0, 0, 2, 7) },
-            { '<', new(0, 0, 5, 5) },
-            { '=', new(0, 0, 5, 3) },
-            { '>', new(0, 0, 5, 5) },
-            { '?', new(0, 0, 4, 8) },
-            { '@', new(0, 0, 8, 9) },
-            { 'A', new(0, 0, 7, 8) },
-            { 'B', new(0, 0, 5, 8) },
-            { 'C', new(0, 0, 6, 8) },
-            { 'D', new(0, 0, 6, 8) },
-            { 'E', new(0, 0, 4, 8) },
-            { 'F', new(0, 0, 4, 8) },
-            { 'G', new(0, 0, 6, 8) },
-            { 'H', new(0, 0, 6, 8) },
-            { 'I', new(0, 0, 1, 8) },
-            { 'J', new(0, 0, 3, 8) },
-            { 'K', new(0, 0, 5, 8) },
-            { 'L', new(0, 0, 4, 8) },
-            { 'M', new(0, 0, 8, 8) },
-            { 'N', new(0, 0, 6, 8) },
-            { 'O', new(0, 0, 7, 8) },
-            { 'P', new(0, 0, 5, 8) },
-            { 'Q', new(0, 0, 8, 9) },
-            { 'R', new(0, 0, 6, 8) },
-            { 'S', new(0, 0, 5, 8) },
-            { 'T', new(0, 0, 5, 8) },
-            { 'U', new(0, 0, 6, 8) },
-            { 'V', new(0, 0, 7, 8) },
-            { 'W', new(0, 0, 10, 8) },
-            { 'X', new(0, 0, 6, 8) },
-            { 'Y', new(0, 0, 6, 8) },
-            { 'Z', new(0, 0, 6, 8) },
-            { '[', new(0, 0, 2, 9) },
-            { '\\', new(0, 0, 5, 9) },
-            { ']', new(0, 0, 2, 9) },
-            { '^', new(0, 0, 5, 5) },
-            { '_', new(0, 0, 5, 1) },
-            { '`', new(0, 0, 2, 2) },
-            { 'a', new(0, 0, 4, 6) },
-            { 'b', new(0, 0, 5, 8) },
-            { 'c', new(0, 0, 4, 6) },
-            { 'd', new(0, 0, 5, 8) },
-            { 'e', new(0, 0, 5, 6) },
-            { 'f', new(0, 0, 4, 8) },
-            { 'g', new(0, 0, 5, 8) },
-            { 'h', new(0, 0, 5, 8) },
-            { 'i', new(0, 0, 2, 8) },
-            { 'j', new(0, 0, 3, 10) },
-            { 'k', new(0, 0, 5, 8) },
-            { 'l', new(0, 0, 1, 8) },
-            { 'm', new(0, 0, 8, 6) },
-            { 'n', new(0, 0, 5, 6) },
-            { 'o', new(0, 0, 5, 6) },
-            { 'p', new(0, 0, 5, 8) },
-            { 'q', new(0, 0, 5, 8) },
-            { 'r', new(0, 0, 3, 6) },
-            { 's', new(0, 0, 4, 6) },
-            { 't', new(0, 0, 3, 7) },
-            { 'u', new(0, 0, 5, 6) },
-            { 'v', new(0, 0, 5, 5) },
-            { 'w', new(0, 0, 7, 5) },
-            { 'x', new(0, 0, 5, 5) },
-            { 'y', new(0, 0, 5, 8) },
-            { 'z', new(0, 0, 5, 5) },
-            { '{', new(0, 0, 3, 9) },
-            { '|', new(0, 0, 1, 10) },
-            { '}', new(0, 0, 3, 9) },
-            { '~', new(0, 0, 5, 2) }
+            { '!', new(0F, 0F, 1.0839844F, 7.0898438F) },
+            { '"', new(0F, 0F, 2.3291016F, 2.1826172F) },
+            { '#', new(0F, 0F, 5.5322266F, 6.401367F) },
+            { '$', new(0F, 0F, 3.9794922F, 8.911133F) },
+            { '%', new(0F, 0F, 7.421875F, 7.216797F) },
+            { '&', new(0F, 0F, 7.2216797F, 7.2314453F) },
+            { '\'', new(0F, 0F, 0.7080078F, 2.1826172F) },
+            { '(', new(0F, 0F, 2.2363281F, 8.59375F) },
+            { ')', new(0F, 0F, 2.2460938F, 8.59375F) },
+            { '*', new(0F, 0F, 3.4375F, 3.4423828F) },
+            { '+', new(0F, 0F, 4.5898438F, 4.5898438F) },
+            { ',', new(0F, 0F, 1.3525391F, 2.4023438F) },
+            { '-', new(0F, 0F, 2.6660156F, 0.6298828F) },
+            { '.', new(0F, 0F, 1.09375F, 1.0986328F) },
+            { '/', new(0F, 0F, 4.1064453F, 8.1640625F) },
+            { '0', new(0F, 0F, 4.560547F, 7.241211F) },
+            { '1', new(0F, 0F, 2.421875F, 7.158203F) },
+            { '2', new(0F, 0F, 4.321289F, 7.1191406F) },
+            { '3', new(0F, 0F, 4.0527344F, 7.241211F) },
+            { '4', new(0F, 0F, 4.9804688F, 7.001953F) },
+            { '5', new(0F, 0F, 3.930664F, 7.1240234F) },
+            { '6', new(0F, 0F, 4.448242F, 7.241211F) },
+            { '7', new(0F, 0F, 4.453125F, 7.001953F) },
+            { '8', new(0F, 0F, 4.5410156F, 7.2314453F) },
+            { '9', new(0F, 0F, 4.4433594F, 7.241211F) },
+            { ':', new(0F, 0F, 1.09375F, 5.2148438F) },
+            { ';', new(0F, 0F, 1.4599609F, 6.3964844F) },
+            { '<', new(0F, 0F, 4.1992188F, 4.7509766F) },
+            { '=', new(0F, 0F, 4.5898438F, 2.7246094F) },
+            { '>', new(0F, 0F, 4.1992188F, 4.7509766F) },
+            { '?', new(0F, 0F, 3.3496094F, 7.2070312F) },
+            { '@', new(0F, 0F, 7.890625F, 8.017578F) },
+            { 'A', new(0F, 0F, 6.2304688F, 7.001953F) },
+            { 'B', new(0F, 0F, 4.3115234F, 7.001953F) },
+            { 'C', new(0F, 0F, 5.2246094F, 7.236328F) },
+            { 'D', new(0F, 0F, 5.6347656F, 7.001953F) },
+            { 'E', new(0F, 0F, 3.7109375F, 7.001953F) },
+            { 'F', new(0F, 0F, 3.5546875F, 7.001953F) },
+            { 'G', new(0F, 0F, 5.6933594F, 7.236328F) },
+            { 'H', new(0F, 0F, 5.263672F, 7.001953F) },
+            { 'I', new(0F, 0F, 0.8203125F, 7.001953F) },
+            { 'J', new(0F, 0F, 2.6123047F, 7.1191406F) },
+            { 'K', new(0F, 0F, 4.873047F, 7.001953F) },
+            { 'L', new(0F, 0F, 3.6328125F, 7.001953F) },
+            { 'M', new(0F, 0F, 7.138672F, 7.001953F) },
+            { 'N', new(0F, 0F, 5.6445312F, 7.001953F) },
+            { 'O', new(0F, 0F, 6.6210938F, 7.236328F) },
+            { 'P', new(0F, 0F, 4.2822266F, 7.001953F) },
+            { 'Q', new(0F, 0F, 7.2216797F, 8.061523F) },
+            { 'R', new(0F, 0F, 5.0195312F, 7.001953F) },
+            { 'S', new(0F, 0F, 4.243164F, 7.236328F) },
+            { 'T', new(0F, 0F, 4.8583984F, 7.001953F) },
+            { 'U', new(0F, 0F, 5.209961F, 7.1191406F) },
+            { 'V', new(0F, 0F, 6.0351562F, 7.001953F) },
+            { 'W', new(0F, 0F, 9.091797F, 7.001953F) },
+            { 'X', new(0F, 0F, 5.625F, 7.001953F) },
+            { 'Y', new(0F, 0F, 5.3808594F, 7.001953F) },
+            { 'Z', new(0F, 0F, 5.3271484F, 7.001953F) },
+            { '[', new(0F, 0F, 1.796875F, 8.59375F) },
+            { '\\', new(0F, 0F, 4.0234375F, 8.173828F) },
+            { ']', new(0F, 0F, 1.7919922F, 8.59375F) },
+            { '^', new(0F, 0F, 4.609375F, 4.0722656F) },
+            { '_', new(0F, 0F, 4.1503906F, 0.5810547F) },
+            { '`', new(0F, 0F, 1.8994141F, 1.6015625F) },
+            { 'a', new(0F, 0F, 3.9501953F, 5.234375F) },
+            { 'b', new(0F, 0F, 4.5996094F, 7.5195312F) },
+            { 'c', new(0F, 0F, 3.7597656F, 5.234375F) },
+            { 'd', new(0F, 0F, 4.609375F, 7.5195312F) },
+            { 'e', new(0F, 0F, 4.3603516F, 5.234375F) },
+            { 'f', new(0F, 0F, 3.022461F, 7.5097656F) },
+            { 'g', new(0F, 0F, 4.609375F, 7.470703F) },
+            { 'h', new(0F, 0F, 4.1503906F, 7.4023438F) },
+            { 'i', new(0F, 0F, 1.0449219F, 7.3095703F) },
+            { 'j', new(0F, 0F, 2.7148438F, 9.663086F) },
+            { 'k', new(0F, 0F, 4.1503906F, 7.4023438F) },
+            { 'l', new(0F, 0F, 0.80078125F, 7.4023438F) },
+            { 'm', new(0F, 0F, 7.0996094F, 5.1171875F) },
+            { 'n', new(0F, 0F, 4.1503906F, 5.1171875F) },
+            { 'o', new(0F, 0F, 4.921875F, 5.234375F) },
+            { 'p', new(0F, 0F, 4.5996094F, 7.416992F) },
+            { 'q', new(0F, 0F, 4.609375F, 7.416992F) },
+            { 'r', new(0F, 0F, 2.6074219F, 5.0878906F) },
+            { 's', new(0F, 0F, 3.3154297F, 5.234375F) },
+            { 't', new(0F, 0F, 2.9199219F, 6.586914F) },
+            { 'u', new(0F, 0F, 4.1503906F, 5.1171875F) },
+            { 'v', new(0F, 0F, 4.6728516F, 5F) },
+            { 'w', new(0F, 0F, 6.9921875F, 5F) },
+            { 'x', new(0F, 0F, 4.3359375F, 5F) },
+            { 'y', new(0F, 0F, 4.7216797F, 7.3535156F) },
+            { 'z', new(0F, 0F, 4.135742F, 5F) },
+            { '{', new(0F, 0F, 2.2607422F, 8.59375F) },
+            { '|', new(0F, 0F, 0.72265625F, 10F) },
+            { '}', new(0F, 0F, 2.2558594F, 8.59375F) },
+            { '~', new(0F, 0F, 4.8095703F, 1.5136719F) },
+
         };
 
     [Theory]
@@ -1111,7 +1369,7 @@ public class TextLayoutTests
 
         FontRectangle actual = TextMeasurer.MeasureSize(c.ToString(), options);
 
-        Assert.Equal(expected, actual);
+        Assert.Equal(expected, actual, Comparer);
     }
 
     private static readonly Font SegoeUi = SystemFonts.CreateFont("Segoe Ui", 10);
@@ -1147,6 +1405,9 @@ public class TextLayoutTests
 
     private static readonly Font Arial = SystemFonts.CreateFont("Arial", 12);
 #endif
+
+    public static Font CreateRenderingFont(float pointSize = 12)
+        => new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(pointSize);
 
     public static Font CreateFont(string text)
     {

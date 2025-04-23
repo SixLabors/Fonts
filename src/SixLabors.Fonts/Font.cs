@@ -253,11 +253,11 @@ public sealed class Font
     }
 
     /// <summary>
-    /// Gets the amount, in px units, the <paramref name="current"/> glyph should be offset if it is proceeded by
-    /// the <paramref name="previous"/> glyph.
+    /// Gets the amount, in px units, the <paramref name="current"/> glyph should be offset if it is followed by
+    /// the <paramref name="next"/> glyph.
     /// </summary>
-    /// <param name="previous">The previous glyph.</param>
     /// <param name="current">The current glyph.</param>
+    /// <param name="next">The next glyph.</param>
     /// <param name="dpi">The DPI (Dots Per Inch) to render/measure the kerning offset at.</param>
     /// <param name="vector">
     /// When this method returns, contains the offset, in font units, that should be applied to the
@@ -267,12 +267,12 @@ public sealed class Font
     /// <returns>
     /// <see langword="true"/> if the face contains and offset for the glyph combination; otherwise, <see langword="false"/>.
     /// </returns>
-    public bool TryGetKerningOffset(Glyph previous, Glyph current, float dpi, out Vector2 vector)
+    public bool TryGetKerningOffset(Glyph current, Glyph next, float dpi, out Vector2 vector)
     {
-        if (this.FontMetrics.TryGetKerningOffset(previous.GlyphMetrics.GlyphId, current.GlyphMetrics.GlyphId, out vector))
+        if (this.FontMetrics.TryGetKerningOffset(current.GlyphMetrics.GlyphId, next.GlyphMetrics.GlyphId, out vector))
         {
             // Scale the result
-            Vector2 scale = new Vector2(this.Size * dpi) / current.GlyphMetrics.ScaleFactor;
+            Vector2 scale = new Vector2(this.Size * dpi) / next.GlyphMetrics.ScaleFactor;
             vector *= scale;
             return true;
         }
@@ -290,7 +290,7 @@ public sealed class Font
             return metrics;
         }
 
-        if (this.RequestedStyle.HasFlag(FontStyle.Italic))
+        if ((this.RequestedStyle & FontStyle.Italic) == FontStyle.Italic)
         {
             // Can't find style requested and they want one that's at least partial italic.
             // Try the regular italic.
@@ -300,7 +300,7 @@ public sealed class Font
             }
         }
 
-        if (this.RequestedStyle.HasFlag(FontStyle.Bold))
+        if ((this.RequestedStyle & FontStyle.Bold) == FontStyle.Bold)
         {
             // Can't find style requested and they want one that's at least partial bold.
             // Try the regular bold.

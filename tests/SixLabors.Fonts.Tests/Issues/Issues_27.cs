@@ -12,7 +12,7 @@ public class Issues_27
         Font font = new FontCollection().Add(TestFonts.WendyOneFile).CreateFont(12);
         FontRectangle size = TextMeasurer.MeasureBounds("          ", new TextOptions(new Font(font, 30)));
 
-        Assert.Equal(60, size.Width, 1F);
+        Assert.Equal(6, size.Width, 1F);
         Assert.Equal(0, size.Height, 1F);
     }
 }

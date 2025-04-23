@@ -76,10 +76,13 @@ public class NameTableTests
         var writer = new BigEndianBinaryWriter();
         writer.WriteTrueTypeFileHeader();
 
-        using (System.IO.MemoryStream stream = writer.GetStream())
+        using (MemoryStream stream = writer.GetStream())
         {
-            InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(
-                () => NameTable.Load(new FontReader(stream)));
+            InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() =>
+            {
+                using var reader = new FontReader(stream);
+                NameTable.Load(reader);
+            });
 
             Assert.Equal("name", exception.Table);
         }

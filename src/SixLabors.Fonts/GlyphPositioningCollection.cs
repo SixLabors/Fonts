@@ -79,6 +79,8 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// </summary>
     /// <param name="offset">The zero-based index within the input codepoint collection.</param>
     /// <param name="pointSize">The font size in PT units of the font containing this glyph.</param>
+    /// <param name="isSubstituted">Whether the glyph is the result of a substitution.</param>
+    /// <param name="isVerticalSubstitution">Whether the glyph is the result of a vertical substitution.</param>
     /// <param name="isDecomposed">Whether the glyph is the result of a decomposition substitution.</param>
     /// <param name="metrics">
     /// When this method returns, contains the glyph metrics associated with the specified offset,
@@ -86,17 +88,39 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// This parameter is passed uninitialized.
     /// </param>
     /// <returns>The metrics.</returns>
-    public bool TryGetGlyphMetricsAtOffset(int offset, out float pointSize, out bool isDecomposed, [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
+    public bool TryGetGlyphMetricsAtOffset(
+        int offset,
+        out float pointSize,
+        out bool isSubstituted,
+        out bool isVerticalSubstitution,
+        out bool isDecomposed,
+        [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
     {
         List<GlyphMetrics> match = new();
         pointSize = 0;
+        isSubstituted = false;
+        isVerticalSubstitution = false;
         isDecomposed = false;
+
+        Tag vert = FeatureTags.VerticalAlternates;
+        Tag vrt2 = FeatureTags.VerticalAlternatesAndRotation;
+        Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
+
         for (int i = 0; i < this.glyphs.Count; i++)
         {
             if (this.glyphs[i].Offset == offset)
             {
                 GlyphPositioningData glyph = this.glyphs[i];
+                isSubstituted = glyph.Data.IsSubstituted;
                 isDecomposed = glyph.Data.IsDecomposed;
+
+                foreach (Tag feature in glyph.Data.AppliedFeatures)
+                {
+                    isVerticalSubstitution |= feature == vert;
+                    isVerticalSubstitution |= feature == vrt2;
+                    isVerticalSubstitution |= feature == vrtr;
+                }
+
                 pointSize = glyph.PointSize;
                 match.AddRange(glyph.Metrics);
             }
@@ -147,7 +171,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
 
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    var metrics = new List<GlyphMetrics>(data.Count);
+                    List<GlyphMetrics> metrics = new(data.Count);
                     TextAttributes textAttributes = shape.TextRun.TextAttributes;
                     TextDecorations textDecorations = shape.TextRun.TextDecorations;
                     foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport))
@@ -216,6 +240,10 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         LayoutMode layoutMode = this.TextOptions.LayoutMode;
         ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
 
+        Tag vert = FeatureTags.VerticalAlternates;
+        Tag vrt2 = FeatureTags.VerticalAlternatesAndRotation;
+        Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
+
         for (int i = 0; i < collection.Count; i++)
         {
             GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
@@ -227,7 +255,14 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             // cache the original in the font metrics and only update our collection.
             TextAttributes textAttributes = data.TextRun.TextAttributes;
             TextDecorations textDecorations = data.TextRun.TextDecorations;
-            bool isVerticalLayout = AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode);
+
+            bool isVertical = AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode);
+            foreach (Tag feature in data.AppliedFeatures)
+            {
+                isVertical |= feature == vert;
+                isVertical |= feature == vrt2;
+                isVertical |= feature == vrtr;
+            }
 
             foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport))
             {
@@ -242,7 +277,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             if (metrics.Count > 0)
             {
                 GlyphMetrics[] gm = metrics.ToArray();
-                if (isVerticalLayout)
+                if (isVertical)
                 {
                     this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) }, font.Size, gm));
                 }
@@ -302,11 +337,25 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     public void Advance(FontMetrics fontMetrics, int index, ushort glyphId, short dx, short dy)
     {
         LayoutMode layoutMode = this.TextOptions.LayoutMode;
-        foreach (GlyphMetrics m in this.glyphs[index].Metrics)
+        Tag vert = FeatureTags.VerticalAlternates;
+        Tag vrt2 = FeatureTags.VerticalAlternatesAndRotation;
+        Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
+
+        GlyphPositioningData glyph = this.glyphs[index];
+        foreach (GlyphMetrics m in glyph.Metrics)
         {
             if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
             {
-                m.ApplyAdvance(dx, AdvancedTypographicUtils.IsVerticalGlyph(m.CodePoint, layoutMode) ? dy : (short)0);
+                bool isVertical = AdvancedTypographicUtils.IsVerticalGlyph(m.CodePoint, layoutMode);
+
+                foreach (Tag feature in glyph.Data.AppliedFeatures)
+                {
+                    isVertical |= feature == vert;
+                    isVertical |= feature == vrt2;
+                    isVertical |= feature == vrtr;
+                }
+
+                m.ApplyAdvance(dx, isVertical ? dy : (short)0);
             }
         }
     }

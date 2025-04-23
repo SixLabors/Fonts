@@ -17,6 +17,7 @@ internal class GlyphShapingData
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphShapingData"/> class.
     /// </summary>
+    /// <param name="textRun">The text run.</param>
     public GlyphShapingData(TextRun textRun) => this.TextRun = textRun;
 
     /// <summary>
@@ -36,6 +37,7 @@ internal class GlyphShapingData
         this.LigatureComponent = data.LigatureComponent;
         this.MarkAttachment = data.MarkAttachment;
         this.CursiveAttachment = data.CursiveAttachment;
+        this.IsSubstituted = data.IsSubstituted;
         this.IsDecomposed = data.IsDecomposed;
         if (data.UniversalShapingEngineInfo != null)
         {
@@ -56,7 +58,12 @@ internal class GlyphShapingData
 
         if (!clearFeatures)
         {
-            this.Features = new(data.Features);
+            this.Features.AddRange(data.Features);
+        }
+
+        foreach (Tag feature in data.AppliedFeatures)
+        {
+            this.AppliedFeatures.Add(feature);
         }
 
         this.Bounds = data.Bounds;
@@ -115,7 +122,12 @@ internal class GlyphShapingData
     /// <summary>
     /// Gets or sets the collection of features.
     /// </summary>
-    public List<TagEntry> Features { get; set; } = new List<TagEntry>();
+    public List<TagEntry> Features { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the collection of applied features.
+    /// </summary>
+    public HashSet<Tag> AppliedFeatures { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the shaping bounds.

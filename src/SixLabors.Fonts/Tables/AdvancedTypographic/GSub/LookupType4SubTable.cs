@@ -249,7 +249,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
             }
 
             // Delete the matched glyphs, and replace the current glyph with the ligature glyph
-            collection.Replace(index, matches, ligatureTable.GlyphId, ligatureId);
+            collection.Replace(index, matches, ligatureTable.GlyphId, ligatureId, feature);
             return true;
         }
 

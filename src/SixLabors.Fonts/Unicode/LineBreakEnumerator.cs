@@ -347,11 +347,52 @@ internal ref struct LineBreakEnumerator
                 }
 
                 // LB25
-                if (this.lb25ex && (this.nextClass == LineBreakClass.PR || this.nextClass == LineBreakClass.NU))
+                if (this.lb25ex)
                 {
-                    shouldBreak = true;
-                    this.lb25ex = false;
-                    break;
+                    switch (lastClass)
+                    {
+                        case LineBreakClass.PO:
+                        case LineBreakClass.PR:
+                            if (this.currentClass == LineBreakClass.NU)
+                            {
+                                this.lb25ex = false;
+                                return false;
+                            }
+
+                            LineBreakClass ahead = this.PeekNextCharClass();
+                            if (ahead == LineBreakClass.NU && this.nextClass is LineBreakClass.OP or LineBreakClass.HY)
+                            {
+                                this.lb25ex = false;
+                                return false;
+                            }
+
+                            break;
+                        case LineBreakClass.HY:
+                        case LineBreakClass.OP:
+                            if (this.currentClass == LineBreakClass.NU)
+                            {
+                                this.lb25ex = false;
+                                return false;
+                            }
+
+                            break;
+
+                        case LineBreakClass.NU:
+                            if (this.currentClass is LineBreakClass.PO or LineBreakClass.PR or LineBreakClass.NU)
+                            {
+                                this.lb25ex = false;
+                                return false;
+                            }
+
+                            break;
+                    }
+
+                    if (this.nextClass is LineBreakClass.PR or LineBreakClass.NU)
+                    {
+                        shouldBreak = true;
+                        this.lb25ex = false;
+                        break;
+                    }
                 }
 
                 // LB24

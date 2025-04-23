@@ -143,6 +143,19 @@ public abstract class FontMetrics
     internal abstract bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint);
 
     /// <summary>
+    /// Gets the specified glyph id matching the codepoint.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="codePoint">
+    /// When this method returns, contains the codepoint associated with the specified glyph id,
+    /// if the glyph id is found; otherwise, <value>default</value>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the face contains a codepoint for the specified glyph id; otherwise, <see langword="false"/>.
+    /// </returns>
+    internal abstract bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint);
+
+    /// <summary>
     /// Tries to get the glyph class for a given glyph id.
     /// The font needs to have a GDEF table defined.
     /// </summary>
@@ -232,11 +245,11 @@ public abstract class FontMetrics
     internal abstract void ApplySubstitution(GlyphSubstitutionCollection collection);
 
     /// <summary>
-    /// Gets the amount, in font units, the <paramref name="currentId"/> glyph should be offset if it is proceeded by
-    /// the <paramref name="previousId"/> glyph.
+    /// Gets the amount, in font units, the <paramref name="currentId"/> glyph should be offset if it is followed by
+    /// the <paramref name="nextId"/> glyph.
     /// </summary>
-    /// <param name="previousId">The previous glyph id.</param>
     /// <param name="currentId">The current glyph id.</param>
+    /// <param name="nextId">The next glyph id.</param>
     /// <param name="vector">
     /// When this method returns, contains the offset, in font units, that should be applied to the
     /// <paramref name="currentId"/> glyph, if the offset is found; otherwise the default vector value.
@@ -245,7 +258,7 @@ public abstract class FontMetrics
     /// <returns>
     /// <see langword="true"/> if the face contains and offset for the glyph combination; otherwise, <see langword="false"/>.
     /// </returns>
-    internal abstract bool TryGetKerningOffset(ushort previousId, ushort currentId, out Vector2 vector);
+    internal abstract bool TryGetKerningOffset(ushort currentId, ushort nextId, out Vector2 vector);
 
     /// <summary>
     /// Applies any available positioning updates to the collection of glyphs.
