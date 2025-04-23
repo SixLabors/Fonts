@@ -140,7 +140,7 @@ internal static class LookupType5SubTable
 
             MarkRecord markRecord = this.markArrayTable.MarkRecords[markIndex];
             AnchorTable baseAnchor = ligatureAttach.ComponentRecords[compIndex].LigatureAnchorTables[markRecord.MarkClass];
-            AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, baseGlyphIndex);
+            AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, baseGlyphIndex, feature);
 
             return true;
         }

@@ -61,7 +61,10 @@ internal class GlyphShapingData
             this.Features.AddRange(data.Features);
         }
 
-        this.AppliedFeatures.AddRange(data.AppliedFeatures);
+        foreach (Tag feature in data.AppliedFeatures)
+        {
+            this.AppliedFeatures.Add(feature);
+        }
 
         this.Bounds = data.Bounds;
     }
@@ -124,7 +127,7 @@ internal class GlyphShapingData
     /// <summary>
     /// Gets or sets the collection of applied features.
     /// </summary>
-    public List<Tag> AppliedFeatures { get; set; } = new();
+    public HashSet<Tag> AppliedFeatures { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the shaping bounds.
