@@ -81,7 +81,7 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
         if (coverage > -1)
         {
             ValueRecord record = this.valueRecord;
-            AdvancedTypographicUtils.ApplyPosition(collection, index, record);
+            AdvancedTypographicUtils.ApplyPosition(collection, index, record, feature);
 
             return true;
         }
@@ -152,7 +152,7 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         if (coverage > -1)
         {
             ValueRecord record = this.valueRecords[coverage];
-            AdvancedTypographicUtils.ApplyPosition(collection, index, record);
+            AdvancedTypographicUtils.ApplyPosition(collection, index, record, feature);
 
             return true;
         }

@@ -158,7 +158,7 @@ internal static class LookupType6SubTable
 
             MarkRecord markRecord = this.mark1ArrayTable.MarkRecords[mark1Index];
             AnchorTable baseAnchor = this.mark2ArrayTable.Mark2Records[mark2Index].MarkAnchorTable[markRecord.MarkClass];
-            AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, prevIdx);
+            AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, prevIdx, feature);
 
             return true;
         }
