@@ -48,7 +48,7 @@ internal static class TextLayout
             // Fill gaps within runs.
             if (textRun.Start > start)
             {
-                textRuns.Add(new()
+                textRuns.Add(new TextRun
                 {
                     Start = start,
                     End = textRun.Start,
@@ -74,7 +74,7 @@ internal static class TextLayout
         // Add a final run if required.
         if (start < end)
         {
-            textRuns.Add(new()
+            textRuns.Add(new TextRun
             {
                 Start = start,
                 End = end,
@@ -1342,9 +1342,9 @@ internal static class TextLayout
         private readonly List<GlyphLayoutData> data;
         private readonly Dictionary<int, float> advances = new();
 
-        public TextLine() => this.data = new(16);
+        public TextLine() => this.data = new List<GlyphLayoutData>(16);
 
-        public TextLine(int capacity) => this.data = new(capacity);
+        public TextLine(int capacity) => this.data = new List<GlyphLayoutData>(capacity);
 
         public int Count => this.data.Count;
 
@@ -1384,7 +1384,7 @@ internal static class TextLayout
             this.ScaledMaxAscender = MathF.Max(this.ScaledMaxAscender, scaledAscender);
             this.ScaledMaxDescender = MathF.Max(this.ScaledMaxDescender, scaledDescender);
 
-            this.data.Add(new(
+            this.data.Add(new GlyphLayoutData(
                 metrics,
                 pointSize,
                 scaledAdvance,
@@ -1454,7 +1454,7 @@ internal static class TextLayout
                 if (advance >= length)
                 {
                     int count = this.data.Count - i;
-                    result = new(count);
+                    result = new TextLine(count);
                     result.data.AddRange(this.data.GetRange(i, count));
                     RecalculateLineMetrics(result);
 
@@ -1509,7 +1509,7 @@ internal static class TextLayout
 
             // Create a new line ensuring we capture the initial metrics.
             int count = this.data.Count - index;
-            result = new(count);
+            result = new TextLine(count);
             result.data.AddRange(this.data.GetRange(index, count));
             RecalculateLineMetrics(result);
 
@@ -1637,7 +1637,7 @@ internal static class TextLayout
                 if (run != g.BidiRun)
                 {
                     run = g.BidiRun;
-                    current.Next = new(run.Level);
+                    current.Next = new OrderedBidiRun(run.Level);
                     current = current.Next;
                 }
 

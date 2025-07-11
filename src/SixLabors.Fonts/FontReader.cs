@@ -25,7 +25,7 @@ internal sealed class FontReader : IDisposable
         Func<BigEndianBinaryReader, TableHeader> loadHeader = TableHeader.Read;
 
         this.stream = stream;
-        using var reader = new BigEndianBinaryReader(stream, true);
+        using BigEndianBinaryReader reader = new(stream, true);
 
         // we should immediately read the table header to learn which tables we have and what order they are in
         uint version = reader.ReadUInt32();
@@ -90,9 +90,9 @@ internal sealed class FontReader : IDisposable
             this.isOwnedStream = true;
 
             byte[] compressedBuffer = reader.ReadBytes((int)totalCompressedSize);
-            var decompressedStream = new MemoryStream();
-            using var input = new MemoryStream(compressedBuffer);
-            using var decompressor = new BrotliStream(input, CompressionMode.Decompress);
+            MemoryStream decompressedStream = new();
+            using MemoryStream input = new(compressedBuffer);
+            using BrotliStream decompressor = new(input, CompressionMode.Decompress);
             decompressor.CopyTo(decompressedStream);
             decompressedStream.Position = 0;
             this.stream = decompressedStream;
@@ -111,7 +111,7 @@ internal sealed class FontReader : IDisposable
             this.CompressedTableData = false;
         }
 
-        var headers = new Dictionary<string, TableHeader>(tableCount);
+        Dictionary<string, TableHeader> headers = new(tableCount);
         for (int i = 0; i < tableCount; i++)
         {
             TableHeader tbl = loadHeader(reader);

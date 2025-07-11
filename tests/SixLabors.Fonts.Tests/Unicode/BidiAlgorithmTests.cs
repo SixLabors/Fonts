@@ -41,7 +41,7 @@ public class BidiAlgorithmTests
     {
         // arrange
         Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         const string testStr = "زناب فارسی را تک کمی سخت است";
         int[] expectedGlyphIndices =
         {
@@ -90,7 +90,7 @@ public class BidiAlgorithmTests
     {
         // arrange
         Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "٠١٢٣٤٥٦٧٨٩";
         int[] expectedGlyphIndices = { 403, 405, 407, 409, 411, 413, 415, 417, 419, 421 };
 
@@ -156,9 +156,9 @@ public class BidiAlgorithmTests
         // Read the test file
         string[] lines = File.ReadAllLines(Path.Combine(TestEnvironment.UnicodeTestDataFullPath, "BidiTest.txt"));
 
-        var bidi = new BidiAlgorithm();
+        BidiAlgorithm bidi = new();
 
-        var tests = new List<Test>();
+        List<Test> tests = new();
 
         // Process each line
         int[] levels = null;

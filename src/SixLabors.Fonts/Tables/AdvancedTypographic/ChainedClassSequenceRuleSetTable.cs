@@ -28,7 +28,7 @@ internal sealed class ChainedClassSequenceRuleSetTable
         Span<ushort> seqRuleOffsets = seqRuleOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(seqRuleOffsets);
 
-        var subRules = new ChainedClassSequenceRuleTable[seqRuleCount];
+        ChainedClassSequenceRuleTable[] subRules = new ChainedClassSequenceRuleTable[seqRuleCount];
         for (int i = 0; i < subRules.Length; i++)
         {
             subRules[i] = ChainedClassSequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);

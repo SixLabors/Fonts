@@ -468,7 +468,7 @@ public class TextLayoutTests
     [InlineData("AB", 465, 654, true)]
     public void MeasureTextWithKerning(string text, float height, float width, bool applyKerning)
     {
-        var c = new FontCollection();
+        FontCollection c = new();
         Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
         FontRectangle size = TextMeasurer.MeasureBounds(
             text,
@@ -486,11 +486,11 @@ public class TextLayoutTests
     [InlineData("a", 100, 100, 125, 396)]
     public void LayoutWithLocation(string text, float x, float y, float expectedX, float expectedY)
     {
-        var c = new FontCollection();
+        FontCollection c = new();
         Font font = c.Add(TestFonts.SimpleFontFileData()).CreateFont(12);
 
-        var glyphRenderer = new GlyphRenderer();
-        var renderer = new TextRenderer(glyphRenderer);
+        GlyphRenderer glyphRenderer = new();
+        TextRenderer renderer = new(glyphRenderer);
         renderer.RenderText(
             text,
             new TextOptions(new Font(font, 1))
@@ -591,9 +591,9 @@ public class TextLayoutTests
         {
             TextRuns = new List<TextRun>()
             {
-                new TextRun() { Start = 9, End = 23, Font = font2 },
-                new TextRun() { Start = 35, End = 54, Font = font2 },
-                new TextRun() { Start = 68, End = 70, Font = font2 },
+                new() { Start = 9, End = 23, Font = font2 },
+                new() { Start = 35, End = 54, Font = font2 },
+                new() { Start = 68, End = 70, Font = font2 },
             }
         };
 
@@ -646,8 +646,8 @@ public class TextLayoutTests
         {
             TextRuns = new List<TextRun>()
             {
-                new TextRun() { Start = 0, End = 23 },
-                new TextRun() { Start = 1, End = 76 },
+                new() { Start = 0, End = 23 },
+                new() { Start = 1, End = 76 },
             }
         };
 
@@ -852,100 +852,100 @@ public class TextLayoutTests
     public static TheoryData<char, FontRectangle> OpenSans_Data
         = new()
         {
-            { '!', new(0F, 0F, 1.1621094F, 7.2753906F) },
-            { '"', new(0F, 0F, 2.6660156F, 2.578125F) },
-            { '#', new(0F, 0F, 5.9472656F, 7.138672F) },
-            { '$', new(0F, 0F, 4.4921875F, 8.168945F) },
-            { '%', new(0F, 0F, 7.270508F, 7.338867F) },
-            { '&', new(0F, 0F, 6.689453F, 7.348633F) },
-            { '\'', new(0F, 0F, 0.87890625F, 2.578125F) },
-            { '(', new(0F, 0F, 2.2460938F, 8.720703F) },
-            { ')', new(0F, 0F, 2.2460938F, 8.720703F) },
-            { '*', new(0F, 0F, 4.614258F, 4.4433594F) },
-            { '+', new(0F, 0F, 4.692383F, 4.814453F) },
-            { ',', new(0F, 0F, 1.4404297F, 2.4511719F) },
-            { '-', new(0F, 0F, 2.421875F, 0.72265625F) },
-            { '.', new(0F, 0F, 1.1621094F, 1.2744141F) },
-            { '/', new(0F, 0F, 3.4570312F, 7.138672F) },
-            { '0', new(0F, 0F, 4.7070312F, 7.348633F) },
-            { '1', new(0F, 0F, 2.6074219F, 7.138672F) },
-            { '2', new(0F, 0F, 4.6777344F, 7.241211F) },
-            { '3', new(0F, 0F, 4.6777344F, 7.338867F) },
-            { '4', new(0F, 0F, 5.3125F, 7.1777344F) },
-            { '5', new(0F, 0F, 4.4970703F, 7.236328F) },
-            { '6', new(0F, 0F, 4.6679688F, 7.338867F) },
-            { '7', new(0F, 0F, 4.760742F, 7.138672F) },
-            { '8', new(0F, 0F, 4.6972656F, 7.338867F) },
-            { '9', new(0F, 0F, 4.6777344F, 7.34375F) },
-            { ':', new(0F, 0F, 1.1621094F, 5.6152344F) },
-            { ';', new(0F, 0F, 1.5576172F, 6.767578F) },
-            { '<', new(0F, 0F, 4.6972656F, 4.868164F) },
-            { '=', new(0F, 0F, 4.580078F, 2.65625F) },
-            { '>', new(0F, 0F, 4.6972656F, 4.868164F) },
-            { '?', new(0F, 0F, 3.8916016F, 7.3779297F) },
-            { '@', new(0F, 0F, 7.817383F, 8.032227F) },
-            { 'A', new(0F, 0F, 6.3134766F, 7.1679688F) },
-            { 'B', new(0F, 0F, 4.9414062F, 7.138672F) },
-            { 'C', new(0F, 0F, 5.3808594F, 7.338867F) },
-            { 'D', new(0F, 0F, 5.6689453F, 7.138672F) },
-            { 'E', new(0F, 0F, 3.9746094F, 7.138672F) },
-            { 'F', new(0F, 0F, 3.9746094F, 7.138672F) },
-            { 'G', new(0F, 0F, 5.913086F, 7.338867F) },
-            { 'H', new(0F, 0F, 5.4101562F, 7.138672F) },
-            { 'I', new(0F, 0F, 0.8300781F, 7.138672F) },
-            { 'J', new(0F, 0F, 2.5683594F, 9.018555F) },
-            { 'K', new(0F, 0F, 5.1464844F, 7.138672F) },
-            { 'L', new(0F, 0F, 3.9990234F, 7.138672F) },
-            { 'M', new(0F, 0F, 7.0410156F, 7.138672F) },
-            { 'N', new(0F, 0F, 5.5810547F, 7.138672F) },
-            { 'O', new(0F, 0F, 6.557617F, 7.348633F) },
-            { 'P', new(0F, 0F, 4.5214844F, 7.138672F) },
-            { 'Q', new(0F, 0F, 6.557617F, 8.950195F) },
-            { 'R', new(0F, 0F, 5.029297F, 7.138672F) },
-            { 'S', new(0F, 0F, 4.4921875F, 7.338867F) },
-            { 'T', new(0F, 0F, 5.317383F, 7.138672F) },
-            { 'U', new(0F, 0F, 5.473633F, 7.236328F) },
-            { 'V', new(0F, 0F, 5.961914F, 7.138672F) },
-            { 'W', new(0F, 0F, 8.94043F, 7.138672F) },
-            { 'X', new(0F, 0F, 5.7128906F, 7.138672F) },
-            { 'Y', new(0F, 0F, 5.5908203F, 7.138672F) },
-            { 'Z', new(0F, 0F, 4.9560547F, 7.138672F) },
-            { '[', new(0F, 0F, 2.211914F, 8.720703F) },
-            { '\\', new(0F, 0F, 3.4667969F, 7.138672F) },
-            { ']', new(0F, 0F, 2.2167969F, 8.720703F) },
-            { '^', new(0F, 0F, 4.9414062F, 4.5117188F) },
-            { '_', new(0F, 0F, 4.4189453F, 0.60058594F) },
-            { '`', new(0F, 0F, 1.9775391F, 1.6015625F) },
-            { 'a', new(0F, 0F, 4.2822266F, 5.5371094F) },
-            { 'b', new(0F, 0F, 4.7070312F, 7.6953125F) },
-            { 'c', new(0F, 0F, 3.90625F, 5.546875F) },
-            { 'd', new(0F, 0F, 4.7021484F, 7.6953125F) },
-            { 'e', new(0F, 0F, 4.536133F, 5.546875F) },
-            { 'f', new(0F, 0F, 3.671875F, 7.651367F) },
-            { 'g', new(0F, 0F, 5.078125F, 7.861328F) },
-            { 'h', new(0F, 0F, 4.4628906F, 7.5976562F) },
-            { 'i', new(0F, 0F, 0.9765625F, 7.3535156F) },
-            { 'j', new(0F, 0F, 2.3046875F, 9.755859F) },
-            { 'k', new(0F, 0F, 4.321289F, 7.5976562F) },
-            { 'l', new(0F, 0F, 0.8154297F, 7.5976562F) },
-            { 'm', new(0F, 0F, 7.5927734F, 5.4492188F) },
-            { 'n', new(0F, 0F, 4.4628906F, 5.4492188F) },
-            { 'o', new(0F, 0F, 4.9121094F, 5.546875F) },
-            { 'p', new(0F, 0F, 4.7070312F, 7.841797F) },
-            { 'q', new(0F, 0F, 4.7021484F, 7.841797F) },
-            { 'r', new(0F, 0F, 3.0810547F, 5.4492188F) },
-            { 's', new(0F, 0F, 3.8134766F, 5.546875F) },
-            { 't', new(0F, 0F, 3.178711F, 6.689453F) },
-            { 'u', new(0F, 0F, 4.477539F, 5.4492188F) },
-            { 'v', new(0F, 0F, 4.995117F, 5.3515625F) },
-            { 'w', new(0F, 0F, 7.5146484F, 5.3515625F) },
-            { 'x', new(0F, 0F, 4.8535156F, 5.3515625F) },
-            { 'y', new(0F, 0F, 5F, 7.758789F) },
-            { 'z', new(0F, 0F, 3.9013672F, 5.3515625F) },
-            { '{', new(0F, 0F, 3.149414F, 8.720703F) },
-            { '|', new(0F, 0F, 0.67871094F, 10.024414F) },
-            { '}', new(0F, 0F, 3.149414F, 8.720703F) },
-            { '~', new(0F, 0F, 4.6972656F, 1.2597656F) },
+            { '!', new FontRectangle(0F, 0F, 1.1621094F, 7.2753906F) },
+            { '"', new FontRectangle(0F, 0F, 2.6660156F, 2.578125F) },
+            { '#', new FontRectangle(0F, 0F, 5.9472656F, 7.138672F) },
+            { '$', new FontRectangle(0F, 0F, 4.4921875F, 8.168945F) },
+            { '%', new FontRectangle(0F, 0F, 7.270508F, 7.338867F) },
+            { '&', new FontRectangle(0F, 0F, 6.689453F, 7.348633F) },
+            { '\'', new FontRectangle(0F, 0F, 0.87890625F, 2.578125F) },
+            { '(', new FontRectangle(0F, 0F, 2.2460938F, 8.720703F) },
+            { ')', new FontRectangle(0F, 0F, 2.2460938F, 8.720703F) },
+            { '*', new FontRectangle(0F, 0F, 4.614258F, 4.4433594F) },
+            { '+', new FontRectangle(0F, 0F, 4.692383F, 4.814453F) },
+            { ',', new FontRectangle(0F, 0F, 1.4404297F, 2.4511719F) },
+            { '-', new FontRectangle(0F, 0F, 2.421875F, 0.72265625F) },
+            { '.', new FontRectangle(0F, 0F, 1.1621094F, 1.2744141F) },
+            { '/', new FontRectangle(0F, 0F, 3.4570312F, 7.138672F) },
+            { '0', new FontRectangle(0F, 0F, 4.7070312F, 7.348633F) },
+            { '1', new FontRectangle(0F, 0F, 2.6074219F, 7.138672F) },
+            { '2', new FontRectangle(0F, 0F, 4.6777344F, 7.241211F) },
+            { '3', new FontRectangle(0F, 0F, 4.6777344F, 7.338867F) },
+            { '4', new FontRectangle(0F, 0F, 5.3125F, 7.1777344F) },
+            { '5', new FontRectangle(0F, 0F, 4.4970703F, 7.236328F) },
+            { '6', new FontRectangle(0F, 0F, 4.6679688F, 7.338867F) },
+            { '7', new FontRectangle(0F, 0F, 4.760742F, 7.138672F) },
+            { '8', new FontRectangle(0F, 0F, 4.6972656F, 7.338867F) },
+            { '9', new FontRectangle(0F, 0F, 4.6777344F, 7.34375F) },
+            { ':', new FontRectangle(0F, 0F, 1.1621094F, 5.6152344F) },
+            { ';', new FontRectangle(0F, 0F, 1.5576172F, 6.767578F) },
+            { '<', new FontRectangle(0F, 0F, 4.6972656F, 4.868164F) },
+            { '=', new FontRectangle(0F, 0F, 4.580078F, 2.65625F) },
+            { '>', new FontRectangle(0F, 0F, 4.6972656F, 4.868164F) },
+            { '?', new FontRectangle(0F, 0F, 3.8916016F, 7.3779297F) },
+            { '@', new FontRectangle(0F, 0F, 7.817383F, 8.032227F) },
+            { 'A', new FontRectangle(0F, 0F, 6.3134766F, 7.1679688F) },
+            { 'B', new FontRectangle(0F, 0F, 4.9414062F, 7.138672F) },
+            { 'C', new FontRectangle(0F, 0F, 5.3808594F, 7.338867F) },
+            { 'D', new FontRectangle(0F, 0F, 5.6689453F, 7.138672F) },
+            { 'E', new FontRectangle(0F, 0F, 3.9746094F, 7.138672F) },
+            { 'F', new FontRectangle(0F, 0F, 3.9746094F, 7.138672F) },
+            { 'G', new FontRectangle(0F, 0F, 5.913086F, 7.338867F) },
+            { 'H', new FontRectangle(0F, 0F, 5.4101562F, 7.138672F) },
+            { 'I', new FontRectangle(0F, 0F, 0.8300781F, 7.138672F) },
+            { 'J', new FontRectangle(0F, 0F, 2.5683594F, 9.018555F) },
+            { 'K', new FontRectangle(0F, 0F, 5.1464844F, 7.138672F) },
+            { 'L', new FontRectangle(0F, 0F, 3.9990234F, 7.138672F) },
+            { 'M', new FontRectangle(0F, 0F, 7.0410156F, 7.138672F) },
+            { 'N', new FontRectangle(0F, 0F, 5.5810547F, 7.138672F) },
+            { 'O', new FontRectangle(0F, 0F, 6.557617F, 7.348633F) },
+            { 'P', new FontRectangle(0F, 0F, 4.5214844F, 7.138672F) },
+            { 'Q', new FontRectangle(0F, 0F, 6.557617F, 8.950195F) },
+            { 'R', new FontRectangle(0F, 0F, 5.029297F, 7.138672F) },
+            { 'S', new FontRectangle(0F, 0F, 4.4921875F, 7.338867F) },
+            { 'T', new FontRectangle(0F, 0F, 5.317383F, 7.138672F) },
+            { 'U', new FontRectangle(0F, 0F, 5.473633F, 7.236328F) },
+            { 'V', new FontRectangle(0F, 0F, 5.961914F, 7.138672F) },
+            { 'W', new FontRectangle(0F, 0F, 8.94043F, 7.138672F) },
+            { 'X', new FontRectangle(0F, 0F, 5.7128906F, 7.138672F) },
+            { 'Y', new FontRectangle(0F, 0F, 5.5908203F, 7.138672F) },
+            { 'Z', new FontRectangle(0F, 0F, 4.9560547F, 7.138672F) },
+            { '[', new FontRectangle(0F, 0F, 2.211914F, 8.720703F) },
+            { '\\', new FontRectangle(0F, 0F, 3.4667969F, 7.138672F) },
+            { ']', new FontRectangle(0F, 0F, 2.2167969F, 8.720703F) },
+            { '^', new FontRectangle(0F, 0F, 4.9414062F, 4.5117188F) },
+            { '_', new FontRectangle(0F, 0F, 4.4189453F, 0.60058594F) },
+            { '`', new FontRectangle(0F, 0F, 1.9775391F, 1.6015625F) },
+            { 'a', new FontRectangle(0F, 0F, 4.2822266F, 5.5371094F) },
+            { 'b', new FontRectangle(0F, 0F, 4.7070312F, 7.6953125F) },
+            { 'c', new FontRectangle(0F, 0F, 3.90625F, 5.546875F) },
+            { 'd', new FontRectangle(0F, 0F, 4.7021484F, 7.6953125F) },
+            { 'e', new FontRectangle(0F, 0F, 4.536133F, 5.546875F) },
+            { 'f', new FontRectangle(0F, 0F, 3.671875F, 7.651367F) },
+            { 'g', new FontRectangle(0F, 0F, 5.078125F, 7.861328F) },
+            { 'h', new FontRectangle(0F, 0F, 4.4628906F, 7.5976562F) },
+            { 'i', new FontRectangle(0F, 0F, 0.9765625F, 7.3535156F) },
+            { 'j', new FontRectangle(0F, 0F, 2.3046875F, 9.755859F) },
+            { 'k', new FontRectangle(0F, 0F, 4.321289F, 7.5976562F) },
+            { 'l', new FontRectangle(0F, 0F, 0.8154297F, 7.5976562F) },
+            { 'm', new FontRectangle(0F, 0F, 7.5927734F, 5.4492188F) },
+            { 'n', new FontRectangle(0F, 0F, 4.4628906F, 5.4492188F) },
+            { 'o', new FontRectangle(0F, 0F, 4.9121094F, 5.546875F) },
+            { 'p', new FontRectangle(0F, 0F, 4.7070312F, 7.841797F) },
+            { 'q', new FontRectangle(0F, 0F, 4.7021484F, 7.841797F) },
+            { 'r', new FontRectangle(0F, 0F, 3.0810547F, 5.4492188F) },
+            { 's', new FontRectangle(0F, 0F, 3.8134766F, 5.546875F) },
+            { 't', new FontRectangle(0F, 0F, 3.178711F, 6.689453F) },
+            { 'u', new FontRectangle(0F, 0F, 4.477539F, 5.4492188F) },
+            { 'v', new FontRectangle(0F, 0F, 4.995117F, 5.3515625F) },
+            { 'w', new FontRectangle(0F, 0F, 7.5146484F, 5.3515625F) },
+            { 'x', new FontRectangle(0F, 0F, 4.8535156F, 5.3515625F) },
+            { 'y', new FontRectangle(0F, 0F, 5F, 7.758789F) },
+            { 'z', new FontRectangle(0F, 0F, 3.9013672F, 5.3515625F) },
+            { '{', new FontRectangle(0F, 0F, 3.149414F, 8.720703F) },
+            { '|', new FontRectangle(0F, 0F, 0.67871094F, 10.024414F) },
+            { '}', new FontRectangle(0F, 0F, 3.149414F, 8.720703F) },
+            { '~', new FontRectangle(0F, 0F, 4.6972656F, 1.2597656F) },
         };
 
     [Theory]
@@ -961,7 +961,7 @@ public class TextLayoutTests
         FontRectangle actual = TextMeasurer.MeasureSize(c.ToString(), options);
         Assert.Equal(expected, actual, Comparer);
 
-        options = new(OpenSansWoff)
+        options = new TextOptions(OpenSansWoff)
         {
             KerningMode = KerningMode.Standard,
             HintingMode = HintingMode.Standard
@@ -1233,23 +1233,37 @@ public class TextLayoutTests
             renderer.RenderText(text, options);
             return glyphBuilder.GlyphBounds;
         }
+
         public readonly List<FontRectangle> GlyphBounds = new();
+
         public CaptureGlyphBoundBuilder() { }
+
         bool IGlyphRenderer.BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
         {
             this.GlyphBounds.Add(bounds);
             return true;
         }
+
         public void BeginFigure() { }
+
         public void MoveTo(Vector2 point) { }
+
         public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point) { }
+
         public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point) { }
+
         public void LineTo(Vector2 point) { }
+
         public void EndFigure() { }
+
         public void EndGlyph() { }
+
         public void EndText() { }
+
         void IGlyphRenderer.BeginText(in FontRectangle bounds) { }
+
         public TextDecorations EnabledDecorations() => TextDecorations.None;
+
         public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness) { }
     }
 
@@ -1411,14 +1425,14 @@ public class TextLayoutTests
 
     public static Font CreateFont(string text)
     {
-        var fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = (IFontMetricsCollection)new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);
     }
 
     public static Font CreateFont(string text, float pointSize)
     {
-        var fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = (IFontMetricsCollection)new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, pointSize);
     }

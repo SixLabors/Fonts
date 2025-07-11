@@ -20,13 +20,13 @@ public class Issues_337
         Assert.Equal(5, renderer.GlyphKeys.Count);
         Assert.Equal(5, renderer.GlyphRects.Count);
 
-        var expected = new FontRectangle[]
+        FontRectangle[] expected = new FontRectangle[]
         {
-            new FontRectangle(0, -254.99994F, 1024, 1024),
-            new FontRectangle(1024, -254.99994F, 1024, 1024),
-            new FontRectangle(2048, -254.99994F, 1024, 1024),
-            new FontRectangle(3072, -254.99994F, 1024, 1024),
-            new FontRectangle(4096, -254.99994F, 1024, 1024)
+            new(0, -254.99994F, 1024, 1024),
+            new(1024, -254.99994F, 1024, 1024),
+            new(2048, -254.99994F, 1024, 1024),
+            new(3072, -254.99994F, 1024, 1024),
+            new(4096, -254.99994F, 1024, 1024)
         };
 
         for (int i = 0; i < expected.Length; i++)

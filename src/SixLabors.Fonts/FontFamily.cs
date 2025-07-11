@@ -126,7 +126,7 @@ public struct FontFamily : IEquatable<FontFamily>
             FontsThrowHelper.ThrowDefaultInstance();
         }
 
-        var filePaths = new List<string>();
+        List<string> filePaths = new();
         foreach (FontStyle style in this.GetAvailableStyles())
         {
             if (this.collection.TryGetMetrics(this.Name, this.Culture, style, out FontMetrics? metrics)

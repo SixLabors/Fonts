@@ -15,7 +15,7 @@ public static class TextAlignmentSample
 {
     public static void Generate(Font font)
     {
-        using var img = new Image<Rgba32>(1000, 1000);
+        using Image<Rgba32> img = new(1000, 1000);
         img.Mutate(x => x.Fill(Color.White));
 
         foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
@@ -63,9 +63,9 @@ public static class TextAlignmentSample
                 break;
         }
 
-        var glyphBuilder = new CustomGlyphBuilder();
+        CustomGlyphBuilder glyphBuilder = new();
 
-        var renderer = new TextRenderer(glyphBuilder);
+        TextRenderer renderer = new(glyphBuilder);
 
         TextOptions textOptions = new(font)
         {

@@ -4,7 +4,6 @@ VisualStudioVersion = 17.2.32519.379
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_root", "_root", "{C317F1B1-D75E-4C6D-83EB-80367343E0D7}"
 	ProjectSection(SolutionItems) = preProject
-		standards\.editorconfig = standards\.editorconfig
 		ci-build.ps1 = ci-build.ps1
 		ci-pack.ps1 = ci-pack.ps1
 		ci-test.ps1 = ci-test.ps1
@@ -12,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_root", "_root", "{C317F1B1
 		Directory.Build.targets = Directory.Build.targets
 		NuGet.config = NuGet.config
 		README.md = README.md
+		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{815C0625-CD3D-440F-9F80-2D83856AB7AE}"

@@ -11,7 +11,7 @@ public class Issues_23
         // wendy one returns wrong points for 'o'
         Font font = new FontCollection().Add(TestFonts.WendyOneFile).CreateFont(12);
 
-        var r = new GlyphRenderer();
+        GlyphRenderer r = new();
 
         new TextRenderer(r).RenderText("o", new TextOptions(new Font(font, 30)));
 

@@ -11,12 +11,12 @@ public class ColrTableTests
     [Fact]
     public void ShouldReturnNullWhenTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader();
 
         using (MemoryStream stream = writer.GetStream())
         {
-            using var reader = new FontReader(stream);
+            using FontReader reader = new(stream);
             Assert.Null(ColrTable.Load(reader));
         }
     }
@@ -24,7 +24,7 @@ public class ColrTableTests
     [Fact]
     public void ShouldReturnTableValues()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader();
         writer.WriteColrTable(new[]
         {
@@ -50,7 +50,7 @@ public class ColrTableTests
 
         using (Stream stream = TestFonts.TwemojiMozillaData())
         {
-            using var reader = new FontReader(stream);
+            using FontReader reader = new(stream);
             ColrTable tbl = reader.GetTable<ColrTable>();
 
             Span<LayerRecord> layers = tbl.GetLayers(15);

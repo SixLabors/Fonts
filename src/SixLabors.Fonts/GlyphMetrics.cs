@@ -54,13 +54,13 @@ public abstract class GlyphMetrics
         {
             float units = this.UnitsPerEm;
             scaleFactor /= new Vector2(font.SubscriptXSize / units, font.SubscriptYSize / units);
-            offset = new(font.SubscriptXOffset, font.SubscriptYOffset < 0 ? font.SubscriptYOffset : -font.SubscriptYOffset);
+            offset = new Vector2(font.SubscriptXOffset, font.SubscriptYOffset < 0 ? font.SubscriptYOffset : -font.SubscriptYOffset);
         }
         else if ((textAttributes & TextAttributes.Superscript) == TextAttributes.Superscript)
         {
             float units = this.UnitsPerEm;
             scaleFactor /= new Vector2(font.SuperscriptXSize / units, font.SuperscriptYSize / units);
-            offset = new(font.SuperscriptXOffset, font.SuperscriptYOffset < 0 ? -font.SuperscriptYOffset : font.SuperscriptYOffset);
+            offset = new Vector2(font.SuperscriptXOffset, font.SuperscriptYOffset < 0 ? -font.SuperscriptYOffset : font.SuperscriptYOffset);
         }
 
         this.ScaleFactor = scaleFactor;

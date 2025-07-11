@@ -21,7 +21,7 @@ public class Issues_104
                 short.MaxValue, // delta
                 0) // zero to force correctly tested codepath
         };
-        var tbl = new Format4SubTable(
+        Format4SubTable tbl = new(
             0,
             WellKnownIds.PlatformIDs.Windows,
             0,

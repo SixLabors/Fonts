@@ -305,7 +305,7 @@ public static class TestFonts
 
     private static Stream Clone(this Stream src)
     {
-        var ms = new MemoryStream();
+        MemoryStream ms = new();
         src.Position = 0;
         src.CopyTo(ms);
         ms.Position = 0;

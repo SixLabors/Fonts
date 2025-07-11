@@ -287,7 +287,7 @@ public static class TextMeasurer
         {
             GlyphLayout g = glyphLayouts[i];
             FontRectangle bounds = g.BoundingBox(dpi);
-            bounds = new(0, 0, bounds.Width, bounds.Height);
+            bounds = new FontRectangle(0, 0, bounds.Width, bounds.Height);
 
             hasSize |= bounds.Width > 0 || bounds.Height > 0;
             characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds, g.GraphemeIndex, g.StringIndex);

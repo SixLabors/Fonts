@@ -28,8 +28,8 @@ internal class StringLoader
     public static StringLoader Create(BigEndianBinaryReader reader)
         => Create(reader, Encoding.BigEndianUnicode);
 
-    public static StringLoader Create(BigEndianBinaryReader reader, Encoding encoding)
-        => new StringLoader(reader.ReadUInt16(), reader.ReadUInt16(), encoding);
+    public static StringLoader Create(BigEndianBinaryReader reader, Encoding encoding) =>
+        new(reader.ReadUInt16(), reader.ReadUInt16(), encoding);
 
     public void LoadValue(BigEndianBinaryReader reader)
         => this.Value = reader.ReadString(this.Length, this.Encoding).Replace("\0", string.Empty);

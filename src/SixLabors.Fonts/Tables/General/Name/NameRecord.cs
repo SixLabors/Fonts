@@ -37,7 +37,7 @@ internal class NameRecord
         ushort languageID = reader.ReadUInt16();
         KnownNameIds nameID = reader.ReadUInt16<KnownNameIds>();
 
-        var stringReader = StringLoader.Create(reader, encoding);
+        StringLoader stringReader = StringLoader.Create(reader, encoding);
 
         return new NameRecord(platform, languageID, nameID, string.Empty)
         {

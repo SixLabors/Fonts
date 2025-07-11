@@ -92,7 +92,7 @@ public class FontDescription
         Guard.NotNullOrWhiteSpace(path, nameof(path));
 
         using FileStream fs = File.OpenRead(path);
-        using var reader = new FontReader(fs);
+        using FontReader reader = new(fs);
         return LoadDescription(reader);
     }
 
@@ -106,7 +106,7 @@ public class FontDescription
         Guard.NotNull(stream, nameof(stream));
 
         // Only read the name tables.
-        using var reader = new FontReader(stream);
+        using FontReader reader = new(stream);
 
         return LoadDescription(reader);
     }
@@ -152,14 +152,14 @@ public class FontDescription
     public static FontDescription[] LoadFontCollectionDescriptions(Stream stream)
     {
         long startPos = stream.Position;
-        using var reader = new BigEndianBinaryReader(stream, true);
-        var ttcHeader = TtcHeader.Read(reader);
+        using BigEndianBinaryReader reader = new(stream, true);
+        TtcHeader ttcHeader = TtcHeader.Read(reader);
 
-        var result = new FontDescription[(int)ttcHeader.NumFonts];
+        FontDescription[] result = new FontDescription[(int)ttcHeader.NumFonts];
         for (int i = 0; i < ttcHeader.NumFonts; ++i)
         {
             stream.Position = startPos + ttcHeader.OffsetTable[i];
-            using var fontReader = new FontReader(stream);
+            using FontReader fontReader = new(stream);
             result[i] = LoadDescription(fontReader);
         }
 

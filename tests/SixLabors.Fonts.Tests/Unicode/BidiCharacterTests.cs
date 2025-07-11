@@ -26,7 +26,7 @@ public class BidiCharacterTests
         string[] lines = File.ReadAllLines(Path.Combine(TestEnvironment.UnicodeTestDataFullPath, "BidiCharacterTest.txt"));
 
         // Parse lines
-        var tests = new List<Test>();
+        List<Test> tests = new();
         for (int lineNumber = 1; lineNumber < lines.Length + 1; lineNumber++)
         {
             // Get the line, remove comments
@@ -56,14 +56,14 @@ public class BidiCharacterTests
             // Parse field 4 - resolved levels
             int[] resolvedOrder = fields[4].Split(' ').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).Select(x => Convert.ToInt32(x)).ToArray();
 
-            var test = new Test(lineNumber, codePoints, paragraphLevel, resolvedParagraphLevel, resolvedLevels, resolvedOrder);
+            Test test = new(lineNumber, codePoints, paragraphLevel, resolvedParagraphLevel, resolvedLevels, resolvedOrder);
             tests.Add(test);
         }
 
         this.output.WriteLine($"Test data loaded: {tests.Count} test cases");
 
-        var bidi = new BidiAlgorithm();
-        var bidiData = new BidiData();
+        BidiAlgorithm bidi = new();
+        BidiData bidiData = new();
 
         // Run tests...
         for (int testNumber = 0; testNumber < tests.Count; testNumber++)

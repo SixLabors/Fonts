@@ -76,7 +76,7 @@ internal class BidiData
         this.HasIsolates = false;
 
         int i = 0;
-        var codePointEnumerator = new SpanCodePointEnumerator(text);
+        SpanCodePointEnumerator codePointEnumerator = new(text);
         while (codePointEnumerator.MoveNext())
         {
             CodePoint codePoint = codePointEnumerator.Current;

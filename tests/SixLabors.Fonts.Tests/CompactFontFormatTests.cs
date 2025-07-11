@@ -14,7 +14,7 @@ public class CompactFontFormatTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.FDArrayTest257File).CreateFont(8);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));

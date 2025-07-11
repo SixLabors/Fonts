@@ -10,7 +10,7 @@ public class FontCodePointsTests
     [Fact]
     public void TtfTest()
     {
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.SimpleFontFile);
         Font font = family.CreateFont(12);
 
@@ -47,7 +47,7 @@ public class FontCodePointsTests
     [Fact]
     public void WoffTest()
     {
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.SimpleFontFileWoff);
         Font font = family.CreateFont(12);
 

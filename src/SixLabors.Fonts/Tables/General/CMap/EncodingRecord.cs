@@ -22,7 +22,7 @@ internal readonly struct EncodingRecord
 
     public static EncodingRecord Read(BigEndianBinaryReader reader)
     {
-        var platform = (PlatformIDs)reader.ReadUInt16();
+        PlatformIDs platform = (PlatformIDs)reader.ReadUInt16();
         ushort encoding = reader.ReadUInt16();
         uint offset = reader.ReadOffset32();
 

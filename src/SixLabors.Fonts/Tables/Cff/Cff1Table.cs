@@ -53,7 +53,7 @@ internal sealed class Cff1Table : Table, ICffTable
         {
             case 1:
                 CffParser parser = new();
-                return new(parser.Load(reader, position));
+                return new Cff1Table(parser.Load(reader, position));
 
             default:
                 throw new NotSupportedException();

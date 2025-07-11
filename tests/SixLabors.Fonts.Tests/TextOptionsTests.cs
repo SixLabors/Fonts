@@ -23,7 +23,7 @@ public class TextOptionsTests
     public void ConstructorTest_FontOnly()
     {
         Font font = FakeFont.CreateFont("ABC");
-        var options = new TextOptions(font);
+        TextOptions options = new(font);
 
         Assert.Equal(72, options.Dpi);
         Assert.Empty(options.FallbackFontFamilies);
@@ -37,7 +37,7 @@ public class TextOptionsTests
     {
         Font font = FakeFont.CreateFont("ABC");
         const float dpi = 123;
-        var options = new TextOptions(font) { Dpi = dpi };
+        TextOptions options = new(font) { Dpi = dpi };
 
         Assert.Equal(dpi, options.Dpi);
         Assert.Empty(options.FallbackFontFamilies);
@@ -50,7 +50,7 @@ public class TextOptionsTests
     public void ConstructorTest_FontWithOrigin()
     {
         Font font = FakeFont.CreateFont("ABC");
-        var origin = new Vector2(123, 345);
+        Vector2 origin = new(123, 345);
         TextOptions options = new(font) { Origin = origin };
 
         Assert.Equal(72, options.Dpi);
@@ -64,7 +64,7 @@ public class TextOptionsTests
     public void ConstructorTest_FontWithSingleDpiWithOrigin()
     {
         Font font = FakeFont.CreateFont("ABC");
-        var origin = new Vector2(123, 345);
+        Vector2 origin = new(123, 345);
         const float dpi = 123;
         TextOptions options = new(font) { Dpi = dpi, Origin = origin };
 
@@ -85,7 +85,7 @@ public class TextOptionsTests
             FakeFont.CreateFont("GHI").Family
         };
 
-        var options = new TextOptions(font)
+        TextOptions options = new(font)
         {
             FallbackFontFamilies = fontFamilies
         };
@@ -108,7 +108,7 @@ public class TextOptionsTests
         };
 
         const float dpi = 123;
-        var options = new TextOptions(font)
+        TextOptions options = new(font)
         {
             Dpi = dpi,
             FallbackFontFamilies = fontFamilies
@@ -131,7 +131,7 @@ public class TextOptionsTests
             FakeFont.CreateFont("GHI").Family
         };
 
-        var origin = new Vector2(123, 345);
+        Vector2 origin = new(123, 345);
         TextOptions options = new(font)
         {
             FallbackFontFamilies = fontFamilies,
@@ -155,7 +155,7 @@ public class TextOptionsTests
             FakeFont.CreateFont("GHI").Family
         };
 
-        var origin = new Vector2(123, 345);
+        Vector2 origin = new(123, 345);
         const float dpi = 123;
         TextOptions options = new(font)
         {
@@ -181,14 +181,14 @@ public class TextOptionsTests
             FakeFont.CreateFontWithInstance("GHI", "GHI", out Fakes.FakeFontInstance ghiFontInstance).Family
         };
 
-        var options = new TextOptions(font)
+        TextOptions options = new(font)
         {
             FallbackFontFamilies = fontFamilies,
             ColorFontSupport = ColorFontSupport.None
         };
 
         ReadOnlySpan<char> text = "Z".AsSpan();
-        var renderer = new GlyphRenderer();
+        GlyphRenderer renderer = new();
         TextRenderer.RenderTextTo(renderer, text, options);
 
         GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
@@ -209,14 +209,14 @@ public class TextOptionsTests
             FakeFont.CreateFontWithInstance("EFGHI", "EFGHI", out Fakes.FakeFontInstance efghiFontInstance).Family
         };
 
-        var options = new TextOptions(font)
+        TextOptions options = new(font)
         {
             FallbackFontFamilies = fontFamilies,
             ColorFontSupport = ColorFontSupport.None
         };
 
         ReadOnlySpan<char> text = new[] { character };
-        var renderer = new GlyphRenderer();
+        GlyphRenderer renderer = new();
         TextRenderer.RenderTextTo(renderer, text, options);
         GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
         Assert.Equal(GlyphType.Standard, glyph.GlyphType);
@@ -328,7 +328,7 @@ public class TextOptionsTests
     [Fact]
     public void CloneIsDeep()
     {
-        var expected = new TextOptions(this.fakeFont);
+        TextOptions expected = new(this.fakeFont);
         TextOptions actual = new(expected)
         {
             KerningMode = KerningMode.None,

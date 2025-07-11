@@ -182,7 +182,7 @@ internal sealed class BidiAlgorithm
     /// Gets a per-thread instance that can be re-used as often
     /// as necessary.
     /// </summary>
-    public static ThreadLocal<BidiAlgorithm> Instance { get; } = new ThreadLocal<BidiAlgorithm>(() => new BidiAlgorithm());
+    public static ThreadLocal<BidiAlgorithm> Instance { get; } = new(() => new BidiAlgorithm());
 
     /// <summary>
     /// Gets the resolved levels.

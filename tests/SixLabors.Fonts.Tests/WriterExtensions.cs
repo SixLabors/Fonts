@@ -139,7 +139,7 @@ internal static class WriterExtensions
         // Offset16 | offset     | String offset from start of storage area(in bytes).
         Encoding encoding = Encoding.BigEndianUnicode; // this is Unicode2
         int stringOffset = 0;
-        var offsets = new List<int>();
+        List<int> offsets = new();
         foreach ((KnownNameIds name, string value, CultureInfo culture) in names)
         {
             writer.WriteUInt16((ushort)PlatformIDs.Windows); // hard code platform
@@ -477,7 +477,7 @@ internal static class WriterExtensions
         writer.WriteUInt16((ushort)table.Flags);
         writer.WriteUInt16(table.UnitsPerEm);
 
-        var startDate = new DateTime(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
+        DateTime startDate = new(1904, 01, 01, 0, 0, 0, DateTimeKind.Utc);
         writer.WriteInt64((long)table.Created.Subtract(startDate).TotalSeconds);
         writer.WriteInt64((long)table.Modified.Subtract(startDate).TotalSeconds);
         writer.WriteInt16((short)table.Bounds.Min.X);
@@ -565,7 +565,7 @@ internal static class WriterExtensions
 
     public static void WriteColrTable(this BigEndianBinaryWriter writer, ColrGlyphRecord[] data)
     {
-        var formatted = data.ToList();
+        List<ColrGlyphRecord> formatted = data.ToList();
 
         // Type      | Name                   | Description
         // ----------|------------------------|----------------------------------------------------------------------------------------------------
@@ -609,7 +609,7 @@ internal static class WriterExtensions
     {
         public ushort Glyph { get; set; }
 
-        public List<ColrLayerRecord> Layers { get; set; } = new List<ColrLayerRecord>();
+        public List<ColrLayerRecord> Layers { get; set; } = new();
 
         public int HeaderSize => 6;
 

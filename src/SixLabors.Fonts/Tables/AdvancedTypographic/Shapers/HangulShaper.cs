@@ -219,9 +219,9 @@ internal sealed class HangulShaper : DefaultShaper
         FontMetrics metrics = data.TextRun.Font!.FontMetrics;
 
         // Don't decompose if all of the components are not available
-        if (!metrics.TryGetGlyphId(new(l), out ushort ljmo) ||
-            !metrics.TryGetGlyphId(new(v), out ushort vjmo) ||
-            (!metrics.TryGetGlyphId(new(t), out ushort tjmo) && t != TBase))
+        if (!metrics.TryGetGlyphId(new CodePoint(l), out ushort ljmo) ||
+            !metrics.TryGetGlyphId(new CodePoint(v), out ushort vjmo) ||
+            (!metrics.TryGetGlyphId(new CodePoint(t), out ushort tjmo) && t != TBase))
         {
             return index;
         }
@@ -381,7 +381,7 @@ internal sealed class HangulShaper : DefaultShaper
         bool after = false;
         FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
 
-        if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
+        if (fontMetrics.TryGetGlyphId(new CodePoint(DottedCircle), out ushort id))
         {
             TextAttributes textAttributes = data.TextRun.TextAttributes;
             TextDecorations textDecorations = data.TextRun.TextDecorations;

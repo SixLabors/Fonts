@@ -85,11 +85,11 @@ internal class GSubTable : Table
         uint featureVariationsOffset = (minorVersion == 1) ? reader.ReadOffset32() : 0;
 
         // TODO: Optimization. Allow only reading the scriptList.
-        var scriptList = ScriptList.Load(reader, scriptListOffset);
+        ScriptList? scriptList = ScriptList.Load(reader, scriptListOffset);
 
-        var featureList = FeatureListTable.Load(reader, featureListOffset);
+        FeatureListTable featureList = FeatureListTable.Load(reader, featureListOffset);
 
-        var lookupList = LookupListTable.Load(reader, lookupListOffset);
+        LookupListTable lookupList = LookupListTable.Load(reader, lookupListOffset);
 
         // TODO: Feature Variations.
         return new GSubTable(scriptList, featureList, lookupList);
@@ -310,7 +310,7 @@ internal class GSubTable : Table
                 {
                     ushort lookupIndex = lookupListIndices[k];
                     LookupTable lookupTable = this.LookupList.LookupTables[lookupIndex];
-                    lookups.Add(new(feature, lookupIndex, lookupTable));
+                    lookups.Add((feature, lookupIndex, lookupTable));
                 }
             }
         }

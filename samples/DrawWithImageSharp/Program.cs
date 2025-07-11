@@ -19,8 +19,8 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        var fonts = new FontCollection();
-        var woffFonts = new FontCollection();
+        FontCollection fonts = new();
+        FontCollection woffFonts = new();
         FontFamily font = fonts.Add(IOPath.Combine("Fonts", "SixLaborsSampleAB.ttf"));
         FontFamily fontWoff = woffFonts.Add(IOPath.Combine("Fonts", "SixLaborsSampleAB.woff"));
         FontFamily fontWoff2 = woffFonts.Add(IOPath.Combine("Fonts", "OpenSans-Regular.woff2"));
@@ -186,7 +186,7 @@ public static class Program
         RenderText(jhengHei, " ，；：！￥（）？｛｝－＝＋＼｜～！＠＃％＆", 16);
         RenderText(arial, "ìíîï", 72);
 #endif
-        var sb = new StringBuilder();
+        StringBuilder sb = new();
         for (char c = 'a'; c <= 'z'; c++)
         {
             sb.Append(c);
@@ -215,7 +215,7 @@ public static class Program
         string path = IOPath.GetInvalidFileNameChars().Aggregate(text, (x, c) => x.Replace($"{c}", "-"));
         string fullPath = IOPath.GetFullPath(IOPath.Combine("Output", IOPath.Combine(path)));
 
-        using var img = new Image<Rgba32>(width, height);
+        using Image<Rgba32> img = new(width, height);
         img.Mutate(x => x.Fill(Color.White));
 
         IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new RichTextOptions(font) { Origin = new Vector2(50f, 4f) });
@@ -274,7 +274,7 @@ public static class Program
         FontRectangle textSize = TextMeasurer.MeasureAdvance(text, textOptions);
         textOptions.Origin = new PointF(5, 5);
 
-        using var img = new Image<Rgba32>((int)Math.Ceiling(textSize.Width) + 20, (int)Math.Ceiling(textSize.Height) + 20);
+        using Image<Rgba32> img = new((int)Math.Ceiling(textSize.Width) + 20, (int)Math.Ceiling(textSize.Height) + 20);
         img.Mutate(x => x.Fill(Color.White).ApplyProcessor(new DrawTextProcessor(x.GetDrawingOptions(), textOptions, text, new SolidBrush(Color.Black), null)));
 
         string fullPath = CreatePath(font.Name, text + ".caching.png");
@@ -306,7 +306,7 @@ public static class Program
                 }
 
                 FontRectangle textSize = TextMeasurer.MeasureSize(text, textOptions);
-                using var img = new Image<Rgba32>(((int)textSize.Width * 2) + 20, ((int)textSize.Height * 2) + 20);
+                using Image<Rgba32> img = new(((int)textSize.Width * 2) + 20, ((int)textSize.Height * 2) + 20);
                 Size size = img.Size;
                 textOptions.Origin = new PointF(size.Width / 2F, size.Height / 2F);
 
@@ -345,7 +345,7 @@ public static class Program
     {
         string fullPath = CreatePath(path);
 
-        using var img = new Image<Rgba32>(width, height);
+        using Image<Rgba32> img = new(width, height);
         img.Mutate(x => x.Fill(Color.Black));
 
         img.Mutate(x => x.DrawText(options, text, Color.White));
@@ -363,7 +363,7 @@ public static class Program
         shape = shape.Translate(shape.Bounds.Location * -1) // touch top left
                 .Translate(new Vector2(10)); // move in from top left
 
-        var sb = new StringBuilder();
+        StringBuilder sb = new();
         IEnumerable<ISimplePath> converted = shape.Flatten();
         converted.Aggregate(sb, (s, p) =>
         {
@@ -399,7 +399,7 @@ public static class Program
             height = 1;
         }
 
-        using var img = new Image<Rgba32>(width, height);
+        using Image<Rgba32> img = new(width, height);
         img.Mutate(x => x.Fill(Color.DarkBlue));
         img.Mutate(x => x.Fill(Color.HotPink, shape));
 

@@ -181,7 +181,7 @@ internal sealed class Format4SubTable : CMapSubTable
         public static Segment[] Create(ReadOnlySpan<ushort> endCounts, ReadOnlySpan<ushort> startCode, ReadOnlySpan<short> idDelta, ReadOnlySpan<ushort> idRangeOffset)
         {
             int count = endCounts.Length;
-            var segments = new Segment[count];
+            Segment[] segments = new Segment[count];
             for (ushort i = 0; i < count; i++)
             {
                 ushort start = startCode[i];

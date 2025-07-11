@@ -10,13 +10,13 @@ public class KerningTableTests
     [Fact]
     public void ShouldReturnDefaultValueWhenTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader();
 
         using (MemoryStream stream = writer.GetStream())
         {
-            using var reader = new FontReader(stream);
-            var table = KerningTable.Load(reader);
+            using FontReader reader = new(stream);
+            KerningTable table = KerningTable.Load(reader);
             Assert.NotNull(table);
         }
     }

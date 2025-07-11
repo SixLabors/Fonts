@@ -202,7 +202,7 @@ public static partial class Generator
     {
         SetBlocks(codePoints);
 
-        var symbols = ((Categories[])Enum.GetValues(typeof(Categories))).ToDictionary(c => c.ToString(), c => (int)Math.Log((int)c, 2));
+        Dictionary<string, int> symbols = ((Categories[])Enum.GetValues(typeof(Categories))).ToDictionary(c => c.ToString(), c => (int)Math.Log((int)c, 2));
 
         UnicodeTrieBuilder builder = new();
         for (int i = 0; i < codePoints.Length; i++)
@@ -224,7 +224,7 @@ public static partial class Generator
 
     private static void SetBlocks(Codepoint[] codePoints)
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*([\w\s-]+)");
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*([\w\s-]+)");
 
         using StreamReader sr = GetStreamReader("Blocks.txt");
         string? line;

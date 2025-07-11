@@ -56,9 +56,9 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
         // +-------------+----------------+-----------------------------------------------+
         ushort coverageOffset = reader.ReadOffset16();
         ValueFormat valueFormat = reader.ReadUInt16<ValueFormat>();
-        var valueRecord = new ValueRecord(reader, valueFormat);
+        ValueRecord valueRecord = new(reader, valueFormat);
 
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
         return new LookupType1Format1SubTable(valueRecord, coverageTable, lookupFlags);
     }
@@ -123,13 +123,13 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         ushort coverageOffset = reader.ReadOffset16();
         ValueFormat valueFormat = reader.ReadUInt16<ValueFormat>();
         ushort valueCount = reader.ReadUInt16();
-        var valueRecords = new ValueRecord[valueCount];
+        ValueRecord[] valueRecords = new ValueRecord[valueCount];
         for (int i = 0; i < valueCount; i++)
         {
             valueRecords[i] = new ValueRecord(reader, valueFormat);
         }
 
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
         return new LookupType1Format2SubTable(valueRecords, coverageTable, lookupFlags);
     }

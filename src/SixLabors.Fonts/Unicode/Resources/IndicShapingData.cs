@@ -105,7 +105,7 @@ internal static partial class IndicShapingData
     {
         {
             ScriptClass.Devanagari,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x094D,
@@ -117,7 +117,7 @@ internal static partial class IndicShapingData
         },
         {
             ScriptClass.Bengali,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x09CD,
@@ -129,7 +129,7 @@ internal static partial class IndicShapingData
         },
         {
             ScriptClass.Gurmukhi,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x0A4D,
@@ -141,7 +141,7 @@ internal static partial class IndicShapingData
         },
         {
             ScriptClass.Gujarati,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x0ACD,
@@ -153,7 +153,7 @@ internal static partial class IndicShapingData
         },
         {
             ScriptClass.Oriya,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x0B4D,
@@ -165,7 +165,7 @@ internal static partial class IndicShapingData
         },
         {
             ScriptClass.Tamil,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x0BCD,
@@ -177,7 +177,7 @@ internal static partial class IndicShapingData
         },
         {
             ScriptClass.Telugu,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x0C4D,
@@ -189,7 +189,7 @@ internal static partial class IndicShapingData
         },
         {
             ScriptClass.Kannada,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x0CCD,
@@ -201,7 +201,7 @@ internal static partial class IndicShapingData
         },
         {
             ScriptClass.Malayalam,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x0D4D,
@@ -213,7 +213,7 @@ internal static partial class IndicShapingData
         },
         {
             ScriptClass.Khmer,
-            new()
+            new ShapingConfiguration
             {
                 HasOldSpec = true,
                 Virama = 0x17D2,

@@ -18,7 +18,7 @@ public static class TextAlignmentWrapped
         const int wrappingWidth = 400;
         const int size = (wrappingWidth + (wrappingWidth / 3)) * 3;
 
-        using var img = new Image<Rgba32>(size, size);
+        using Image<Rgba32> img = new(size, size);
         img.Mutate(x => x.Fill(Color.White));
 
         foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
@@ -66,9 +66,9 @@ public static class TextAlignmentWrapped
                 break;
         }
 
-        var glyphBuilder = new CustomGlyphBuilder();
+        CustomGlyphBuilder glyphBuilder = new();
 
-        var renderer = new TextRenderer(glyphBuilder);
+        TextRenderer renderer = new(glyphBuilder);
 
         TextOptions textOptions = new(font)
         {

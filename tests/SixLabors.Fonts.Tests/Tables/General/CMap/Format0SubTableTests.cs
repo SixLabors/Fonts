@@ -12,7 +12,7 @@ public class Format0SubTableTests
     [Fact]
     public void LoadFormat0()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
 
         // int subtableCount = 1;
         writer.WriteCMapSubTable(
@@ -39,7 +39,7 @@ public class Format0SubTableTests
     [Fact]
     public void GetCharacter()
     {
-        var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        Format0SubTable format = new(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
         bool found = format.TryGetGlyphId(new CodePoint(4), out ushort id);
 
@@ -50,7 +50,7 @@ public class Format0SubTableTests
     [Fact]
     public void GetCharacter_missing()
     {
-        var format = new Format0SubTable(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        Format0SubTable format = new(0, PlatformIDs.Windows, 2, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
         bool found = format.TryGetGlyphId(new CodePoint(99), out ushort id);
 

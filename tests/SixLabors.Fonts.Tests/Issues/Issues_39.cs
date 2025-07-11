@@ -13,14 +13,14 @@ public class Issues_39
     {
         Font font = CreateFont("\t x");
 
-        var r = new GlyphRenderer();
+        GlyphRenderer r = new();
 
         new TextRenderer(r).RenderText(string.Empty, new TextOptions(new Font(font, 30)));
     }
 
     public static Font CreateFont(string text)
     {
-        var fc = (IFontMetricsCollection)new FontCollection();
+        IFontMetricsCollection fc = (IFontMetricsCollection)new FontCollection();
         Font d = fc.AddMetrics(new FakeFontInstance(text), CultureInfo.InvariantCulture).CreateFont(12);
         return new Font(d, 1F);
     }

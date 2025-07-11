@@ -204,7 +204,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                             maxAdvancedHeight = Math.Max(maxAdvancedHeight, metrics[k].AdvanceHeight);
                         }
 
-                        this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = new(0, 0, maxAdvancedWidth, maxAdvancedHeight) }, pointSize, metrics.ToArray()));
+                        this.glyphs.Insert(i += replacementCount, new GlyphPositioningData(offset, new GlyphShapingData(shape, true) { Bounds = new GlyphShapingBounds(0, 0, maxAdvancedWidth, maxAdvancedHeight) }, pointSize, metrics.ToArray()));
                         replacementCount++;
                     }
                 }
@@ -279,11 +279,11 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                 GlyphMetrics[] gm = metrics.ToArray();
                 if (isVertical)
                 {
-                    this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) }, font.Size, gm));
+                    this.glyphs.Add(new GlyphPositioningData(offset, new GlyphShapingData(data, true) { Bounds = new GlyphShapingBounds(0, 0, 0, gm[0].AdvanceHeight) }, font.Size, gm));
                 }
                 else
                 {
-                    this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, 0) }, font.Size, gm));
+                    this.glyphs.Add(new GlyphPositioningData(offset, new GlyphShapingData(data, true) { Bounds = new GlyphShapingBounds(0, 0, gm[0].AdvanceWidth, 0) }, font.Size, gm));
                 }
             }
         }

@@ -316,7 +316,7 @@ internal sealed class OS2Table : Table
         ushort winAscent = reader.ReadUInt16();
         ushort winDescent = reader.ReadUInt16();
 
-        var version0Table = new OS2Table(
+        OS2Table version0Table = new(
                 averageCharWidth,
                 weightClass,
                 widthClass,
@@ -372,7 +372,7 @@ internal sealed class OS2Table : Table
             maxContext = reader.ReadUInt16();
         }
 
-        var versionLessThan5Table = new OS2Table(
+        OS2Table versionLessThan5Table = new(
                 version0Table,
                 codePageRange1,
                 codePageRange2,

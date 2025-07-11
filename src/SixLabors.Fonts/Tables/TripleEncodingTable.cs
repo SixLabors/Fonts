@@ -7,8 +7,8 @@ namespace SixLabors.Fonts.Tables;
 // see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
 internal class TripleEncodingTable
 {
-    public static readonly TripleEncodingTable EncTable = new TripleEncodingTable();
-    private readonly List<TripleEncodingRecord> records = new List<TripleEncodingRecord>();
+    public static readonly TripleEncodingTable EncTable = new();
+    private readonly List<TripleEncodingRecord> records = new();
 
     private TripleEncodingTable() => this.BuildTable();
 
@@ -245,7 +245,7 @@ internal class TripleEncodingTable
 
     private void AddRecord(byte byteCount, byte xbits, byte ybits, ushort deltaX, ushort deltaY, sbyte xsign, sbyte ysign)
     {
-        var rec = new TripleEncodingRecord(byteCount, xbits, ybits, deltaX, deltaY, xsign, ysign);
+        TripleEncodingRecord rec = new(byteCount, xbits, ybits, deltaX, deltaY, xsign, ysign);
         this.records.Add(rec);
     }
 }

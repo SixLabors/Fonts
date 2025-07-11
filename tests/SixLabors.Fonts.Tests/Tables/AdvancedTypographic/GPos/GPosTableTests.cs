@@ -14,7 +14,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType1Format1;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0012\u0014"; // XPlacement should be adjusted by minus 200 for both glyphs.
         int[] expectedGlyphIndices = { 20, 22 };
         FontRectangle[] expectedFontRectangles =
@@ -49,7 +49,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType1Format2;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0015\u0014"; // second character XPlacement should be adjusted by minus 200
         int[] expectedGlyphIndices = { 23, 22 };
         FontRectangle[] expectedFontRectangles =
@@ -84,7 +84,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType2Format1;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0017\u0012\u0014"; // "\u0012\u0014" first XPlacement minus 300 and second YPlacement minus 400.
         int[] expectedGlyphIndices = { 25, 20, 22 };
         FontRectangle[] expectedFontRectangles =
@@ -120,7 +120,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType3Format1;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0012\u0012"; // "\u0012\u0012" characters should overlap.
         int[] expectedGlyphIndices = { 20, 20 };
         FontRectangle[] expectedFontRectangles =
@@ -155,7 +155,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType4Format1;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0012\u0013"; // "\u0012\u0013" characters should overlap.
         int[] expectedGlyphIndices = { 20, 21 };
         FontRectangle[] expectedFontRectangles =
@@ -190,7 +190,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType5Format1;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0012\u0013"; // "\u0012\u0013" characters should overlap.
         int[] expectedGlyphIndices = { 20, 21 };
         FontRectangle[] expectedFontRectangles =
@@ -225,7 +225,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType6Format1;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0012\u0013"; // "\u0012\u0013" characters should overlap.
         int[] expectedGlyphIndices = { 20, 21 };
         FontRectangle[] expectedFontRectangles =
@@ -260,7 +260,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType7Format1;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0014\u0015\u0016"; // "\u0014\u0015\u0016" XPlacement plus 20.
         int[] expectedGlyphIndices = { 22, 23, 24 };
         FontRectangle[] expectedFontRectangles =
@@ -296,7 +296,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType7Format2;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0014\u0015\u0016"; // "\u0014\u0015\u0016" XPlacement plus 20.
         int[] expectedGlyphIndices = { 22, 23, 24 };
         FontRectangle[] expectedFontRectangles =
@@ -332,7 +332,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType7Format3;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0014\u0015\u0016"; // "\u0014\u0015\u0016" XPlacement plus 20.
         int[] expectedGlyphIndices = { 22, 23, 24 };
 
@@ -369,7 +369,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType8Format1;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
 
         // "\u0014\u0015\u0016\u0017" backtrack:\u0014, input:\u0015\u0016, lookahead:u0017 -> XPlacement plus 200.
         string testStr = "\u0014\u0015\u0016\u0017";
@@ -408,7 +408,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType8Format2;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
 
         // "\u0014\u0015\u0016\u0017" backtrack:\u0014, input:\u0015\u0016, lookahead:u0017 -> XPlacement plus 200.
         string testStr = "\u0014\u0015\u0016\u0017";
@@ -447,7 +447,7 @@ public class GPosTableTests
         string fontFile = TestFonts.GposLookupType8Format3;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
 
         // "\u0014\u0015\u0016\u0017" backtrack:\u0014, input:\u0015\u0016, lookahead:u0017 -> XPlacement plus 200.
         string testStr = "\u0014\u0015\u0016\u0017";
@@ -484,7 +484,7 @@ public class GPosTableTests
         string fontFile = TestFonts.TimesNewRomanFile;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
 
         string testStr = "\u0644\u0651"; // /lam-arab/arabicshaddacomb
         int[] expectedGlyphIndices = { 759, 989 };
@@ -519,7 +519,7 @@ public class GPosTableTests
         string fontFile = TestFonts.MeQuranFile;
         ushort upem = ReadFontUpem(fontFile);
         Font font = new FontCollection().Add(fontFile).CreateFont(upem);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
 
         string testStr = "\u0631\u0651\u064E";
         int[] expectedGlyphIndices = { 47, 50, 23 };

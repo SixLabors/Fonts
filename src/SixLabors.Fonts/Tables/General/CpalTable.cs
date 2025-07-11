@@ -67,7 +67,7 @@ internal class CpalTable : Table
         }
 
         reader.Seek(offsetFirstColorRecord, System.IO.SeekOrigin.Begin);
-        var palettes = new GlyphColor[numColorRecords];
+        GlyphColor[] palettes = new GlyphColor[numColorRecords];
         for (int n = 0; n < numColorRecords; n++)
         {
             byte blue = reader.ReadByte();

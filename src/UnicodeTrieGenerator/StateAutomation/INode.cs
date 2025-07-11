@@ -110,10 +110,10 @@ internal class Variable : Node, ILogicalNode
     public string Name { get; }
 
     /// <inheritdoc/>
-    HashSet<INode> ILogicalNode.FirstPos { get; } = new HashSet<INode>();
+    HashSet<INode> ILogicalNode.FirstPos { get; } = new();
 
     /// <inheritdoc/>
-    HashSet<INode> ILogicalNode.LastPos { get; } = new HashSet<INode>();
+    HashSet<INode> ILogicalNode.LastPos { get; } = new();
 
     /// <inheritdoc/>
     public override INode Copy() => new Variable(this.Name);
@@ -396,7 +396,7 @@ internal static class NodeUtilities
     /// <returns>The <see cref="HashSet{INode}"/>.</returns>
     public static HashSet<INode> Union(HashSet<INode> a, HashSet<INode> b)
     {
-        var s = new HashSet<INode>(a);
+        HashSet<INode> s = new(a);
         AddAll(s, b);
         return s;
     }

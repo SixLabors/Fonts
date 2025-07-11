@@ -25,7 +25,7 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
         for (int i = 0; i < this.composites.Length; i++)
         {
             Composite composite = this.composites[i];
-            var clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
+            GlyphVector clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
             GlyphVector.TransformInPlace(ref clone, composite.Transformation);
             ushort endPointOffset = (ushort)controlPoints.Count;
 
@@ -36,7 +36,7 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
             }
         }
 
-        return new(controlPoints, endPoints, this.bounds, this.instructions, true);
+        return new GlyphVector(controlPoints, endPoints, this.bounds, this.instructions, true);
     }
 
     public static CompositeGlyphLoader LoadCompositeGlyph(BigEndianBinaryReader reader, in Bounds bounds)

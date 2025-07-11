@@ -44,11 +44,11 @@ internal static class TextLayoutTestUtilities
         {
             if (!options.LayoutMode.IsHorizontal())
             {
-                img.Mutate(x => x.DrawLine(Color.Red, 1, new(0, wrappingLength), new(width, wrappingLength)));
+                img.Mutate(x => x.DrawLine(Color.Red, 1, new PointF(0, wrappingLength), new PointF(width, wrappingLength)));
             }
             else
             {
-                img.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
+                img.Mutate(x => x.DrawLine(Color.Red, 1, new PointF(wrappingLength, 0), new PointF(wrappingLength, height)));
             }
 
             if (properties.Any())

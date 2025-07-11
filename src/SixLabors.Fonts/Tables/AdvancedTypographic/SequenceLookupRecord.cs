@@ -33,7 +33,7 @@ internal readonly struct SequenceLookupRecord
         // +--------+-----------------+---------------------------------------------------+
         // | uint16 | LookupListIndex | Lookup to apply to that position-zero-based.      |
         // +--------+-----------------+---------------------------------------------------+
-        var records = new SequenceLookupRecord[count];
+        SequenceLookupRecord[] records = new SequenceLookupRecord[count];
         for (int i = 0; i < records.Length; i++)
         {
             records[i] = new SequenceLookupRecord(reader.ReadUInt16(), reader.ReadUInt16());

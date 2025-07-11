@@ -35,7 +35,7 @@ internal sealed class ClassSequenceRuleSetTable
         Span<ushort> seqRuleOffsets = seqRuleOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(seqRuleOffsets);
 
-        var subRules = new ClassSequenceRuleTable[seqRuleCount];
+        ClassSequenceRuleTable[] subRules = new ClassSequenceRuleTable[seqRuleCount];
         for (int i = 0; i < subRules.Length; i++)
         {
             subRules[i] = ClassSequenceRuleTable.Load(reader, offset + seqRuleOffsets[i]);

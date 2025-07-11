@@ -36,7 +36,7 @@ internal class GlyphTable : Table
         EmptyGlyphLoader empty = new(fallbackEmptyBounds);
         int entryCount = locations.Length;
         int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
-        var glyphs = new GlyphLoader[glyphCount];
+        GlyphLoader[] glyphs = new GlyphLoader[glyphCount];
 
         // Special case for WOFF2 format where all glyphs need to be read in one go.
         if (format is TableFormat.Woff2)

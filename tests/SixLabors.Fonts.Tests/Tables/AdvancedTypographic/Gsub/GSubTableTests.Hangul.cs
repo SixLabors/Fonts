@@ -13,7 +13,7 @@ public partial class GSubTableTests
 
     private static Font CreateHangulFont()
     {
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.NotoSansKRRegular);
         return family.CreateFont(12);
     }

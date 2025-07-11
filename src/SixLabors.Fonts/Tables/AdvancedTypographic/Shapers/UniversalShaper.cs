@@ -107,7 +107,7 @@ internal sealed class UniversalShaper : DefaultShaper
                 substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
                 for (int j = 0; j < decompositions.Length; j++)
                 {
-                    substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    substitutionCollection[i + j].CodePoint = new CodePoint(decompositions[j]);
                 }
             }
         }
@@ -139,7 +139,7 @@ internal sealed class UniversalShaper : DefaultShaper
                 CodePoint codePoint = data.CodePoint;
                 string category = UniversalShapingData.Categories[UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value)];
 
-                data.UniversalShapingEngineInfo = new(category, match.Tags[0], syllable);
+                data.UniversalShapingEngineInfo = new UniversalShapingEngineInfo(category, match.Tags[0], syllable);
             }
 
             // Assign rphf feature
@@ -238,7 +238,7 @@ internal sealed class UniversalShaper : DefaultShaper
             }
 
             FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
-            if (type == "broken_cluster" && fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
+            if (type == "broken_cluster" && fontMetrics.TryGetGlyphId(new CodePoint(DottedCircle), out ushort id))
             {
                 // Insert after possible Repha.
                 int i = start;

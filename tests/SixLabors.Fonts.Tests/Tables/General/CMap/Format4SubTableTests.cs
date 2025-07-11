@@ -12,7 +12,7 @@ public class Format4SubTableTests
     [Fact]
     public void LoadFormat4()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
 
         // int subtableCount = 1;
         writer.WriteCMapSubTable(
@@ -71,7 +71,7 @@ public class Format4SubTableTests
             new Format4SubTable.Segment(2, 480, 153, -27, 0),
         };
 
-        var table = new Format4SubTable(
+        Format4SubTable table = new(
             0,
             PlatformIDs.Windows,
             0,

@@ -76,8 +76,8 @@ internal class ColrTable : Table
 
         reader.Seek(baseGlyphRecordsOffset, System.IO.SeekOrigin.Begin);
 
-        var glyphs = new BaseGlyphRecord[numBaseGlyphRecords];
-        var layers = new LayerRecord[numLayerRecords];
+        BaseGlyphRecord[] glyphs = new BaseGlyphRecord[numBaseGlyphRecords];
+        LayerRecord[] layers = new LayerRecord[numLayerRecords];
         for (int i = 0; i < numBaseGlyphRecords; i++)
         {
             ushort gi = reader.ReadUInt16();

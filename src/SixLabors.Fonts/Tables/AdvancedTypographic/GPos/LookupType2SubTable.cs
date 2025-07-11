@@ -73,14 +73,14 @@ internal static class LookupType2SubTable
             Span<ushort> pairSetOffsets = pairSetOffsetsBuffer.GetSpan();
             reader.ReadUInt16Array(pairSetOffsets);
 
-            var pairSets = new PairSetTable[pairSetCount];
+            PairSetTable[] pairSets = new PairSetTable[pairSetCount];
             for (int i = 0; i < pairSetCount; i++)
             {
                 reader.Seek(offset + pairSetOffsets[i], SeekOrigin.Begin);
                 pairSets[i] = PairSetTable.Load(reader, offset + pairSetOffsets[i], valueFormat1, valueFormat2);
             }
 
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
             return new LookupType2Format1SubTable(coverageTable, pairSets, lookupFlags);
         }
@@ -148,7 +148,7 @@ internal static class LookupType2SubTable
                 // +-----------------+----------------------------------+---------------------------------------+
                 reader.Seek(offset, SeekOrigin.Begin);
                 ushort pairValueCount = reader.ReadUInt16();
-                var pairValueRecords = new PairValueRecord[pairValueCount];
+                PairValueRecord[] pairValueRecords = new PairValueRecord[pairValueCount];
                 for (int i = 0; i < pairValueRecords.Length; i++)
                 {
                     pairValueRecords[i] = new PairValueRecord(reader, valueFormat1, valueFormat2);
@@ -237,15 +237,15 @@ internal static class LookupType2SubTable
             ushort class1Count = reader.ReadUInt16();
             ushort class2Count = reader.ReadUInt16();
 
-            var class1Records = new Class1Record[class1Count];
+            Class1Record[] class1Records = new Class1Record[class1Count];
             for (int i = 0; i < class1Records.Length; i++)
             {
                 class1Records[i] = Class1Record.Load(reader, class2Count, valueFormat1, valueFormat2);
             }
 
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
-            var classDefTable1 = ClassDefinitionTable.Load(reader, offset + classDef1Offset);
-            var classDefTable2 = ClassDefinitionTable.Load(reader, offset + classDef2Offset);
+            CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            ClassDefinitionTable classDefTable1 = ClassDefinitionTable.Load(reader, offset + classDef1Offset);
+            ClassDefinitionTable classDefTable2 = ClassDefinitionTable.Load(reader, offset + classDef2Offset);
 
             return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2, lookupFlags);
         }

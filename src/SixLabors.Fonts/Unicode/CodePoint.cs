@@ -179,7 +179,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// <summary>
     /// Gets a <see cref="CodePoint"/> instance that represents the Unicode replacement character U+FFFD.
     /// </summary>
-    public static CodePoint ReplacementChar { get; } = new CodePoint(0xFFFD);
+    public static CodePoint ReplacementChar { get; } = new(0xFFFD);
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
@@ -460,7 +460,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
         }
 
         int count = 0;
-        var enumerator = new SpanCodePointEnumerator(source);
+        SpanCodePointEnumerator enumerator = new(source);
         while (enumerator.MoveNext())
         {
             count++;

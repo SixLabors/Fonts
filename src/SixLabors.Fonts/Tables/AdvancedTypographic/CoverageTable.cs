@@ -29,7 +29,7 @@ internal abstract class CoverageTable
 
     public static CoverageTable[] LoadArray(BigEndianBinaryReader reader, long offset, ReadOnlySpan<ushort> coverageOffsets)
     {
-        var tables = new CoverageTable[coverageOffsets.Length];
+        CoverageTable[] tables = new CoverageTable[coverageOffsets.Length];
         for (int i = 0; i < tables.Length; i++)
         {
             tables[i] = Load(reader, offset + coverageOffsets[i]);
@@ -103,7 +103,7 @@ internal sealed class CoverageFormat2Table : CoverageTable
         // | RangeRecord | rangeRecords[rangeCount] | Array of glyph ranges — ordered by startGlyphID. |
         // +-------------+--------------------------+--------------------------------------------------+
         ushort rangeCount = reader.ReadUInt16();
-        var records = new CoverageRangeRecord[rangeCount];
+        CoverageRangeRecord[] records = new CoverageRangeRecord[rangeCount];
 
         for (int i = 0; i < records.Length; i++)
         {

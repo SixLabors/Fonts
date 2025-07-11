@@ -241,7 +241,7 @@ public sealed class Font
             List<Glyph> g = new();
             foreach (GlyphMetrics metric in metrics)
             {
-                g.Add(new(metric.CloneForRendering(textRun), this.Size));
+                g.Add(new Glyph(metric.CloneForRendering(textRun), this.Size));
             }
 
             glyphs = g;

@@ -88,7 +88,7 @@ internal sealed class LookupType8Format1SubTable : LookupSubTable
         ushort glyphCount = reader.ReadUInt16();
         ushort[] substituteGlyphIds = reader.ReadUInt16Array(glyphCount);
 
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
         CoverageTable[] backtrackCoverageTables = CoverageTable.LoadArray(reader, offset, backtrackCoverageOffsets);
         CoverageTable[] lookaheadCoverageTables = CoverageTable.LoadArray(reader, offset, lookaheadCoverageOffsets);
 

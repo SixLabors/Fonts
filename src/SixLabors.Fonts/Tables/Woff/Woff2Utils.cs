@@ -32,7 +32,7 @@ internal static class Woff2Utils
     public static ReadOnlyDictionary<string, TableHeader> ReadWoff2Headers(BigEndianBinaryReader reader, int tableCount)
     {
         uint expectedTableStartAt = 0;
-        var headers = new Dictionary<string, TableHeader>(tableCount);
+        Dictionary<string, TableHeader> headers = new(tableCount);
         for (int i = 0; i < tableCount; i++)
         {
             Woff2TableHeader woffTableHeader = Read(reader, expectedTableStartAt, out uint nextExpectedTableStartAt);
@@ -162,10 +162,10 @@ internal static class Woff2Utils
         long bboxStreamOffset = compositeStreamOffset + compositeStreamSize;
         long instructionStreamOffset = bboxStreamOffset + bboxStreamSize;
 
-        var glyphs = new GlyphVector[numGlyphs];
-        var allGlyphs = new GlyphData[numGlyphs];
-        var glyphLoaders = new GlyphLoader[numGlyphs];
-        var compositeGlyphs = new List<ushort>();
+        GlyphVector[] glyphs = new GlyphVector[numGlyphs];
+        GlyphData[] allGlyphs = new GlyphData[numGlyphs];
+        GlyphLoader[] glyphLoaders = new GlyphLoader[numGlyphs];
+        List<ushort> compositeGlyphs = new();
         int contourCount = 0;
         for (ushort i = 0; i < numGlyphs; i++)
         {
@@ -323,7 +323,7 @@ internal static class Woff2Utils
             endPoints[i] = (ushort)(pointCount - 1);
         }
 
-        var controlPoints = new ControlPoint[pointCount];
+        ControlPoint[] controlPoints = new ControlPoint[pointCount];
         int n = 0;
         for (int i = 0; i < numContour; i++)
         {
@@ -370,7 +370,7 @@ internal static class Woff2Utils
                 }
 
                 // Most significant 1 bit -> on/off curve.
-                controlPoints[n] = new(new Vector2(curX += x, curY += y), f >> 7 == 0);
+                controlPoints[n] = new ControlPoint(new Vector2(curX += x, curY += y), f >> 7 == 0);
             }
         }
 
@@ -459,7 +459,7 @@ internal static class Woff2Utils
                 transform.M22 = reader.ReadF2dot14();
             }
 
-            var clone = GlyphVector.DeepClone(createdGlyphs[glyphIndex]);
+            GlyphVector clone = GlyphVector.DeepClone(createdGlyphs[glyphIndex]);
             GlyphVector.TransformInPlace(ref clone, transform);
             ushort endPointOffset = (ushort)controlPoints.Count;
 

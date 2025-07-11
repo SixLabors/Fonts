@@ -25,7 +25,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFontMetadata()
     {
-        var description = FontDescription.LoadDescription(TestFonts.SimpleFontFileData());
+        FontDescription description = FontDescription.LoadDescription(TestFonts.SimpleFontFileData());
 
         Assert.Equal("SixLaborsSampleAB regular", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
@@ -34,7 +34,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFontMetadataWoff()
     {
-        var description = FontDescription.LoadDescription(TestFonts.SimpleFontFileWoffData());
+        FontDescription description = FontDescription.LoadDescription(TestFonts.SimpleFontFileWoffData());
 
         Assert.Equal("SixLaborsSampleAB regular", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
@@ -74,7 +74,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFontMetadata_WithWoff1Format()
     {
-        var description = FontDescription.LoadDescription(TestFonts.OpensSansWoff1Data());
+        FontDescription description = FontDescription.LoadDescription(TestFonts.OpensSansWoff1Data());
 
         Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
@@ -83,7 +83,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFontMetadata_WithWoff2Format()
     {
-        var description = FontDescription.LoadDescription(TestFonts.OpensSansWoff2Data());
+        FontDescription description = FontDescription.LoadDescription(TestFonts.OpensSansWoff2Data());
 
         Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
@@ -145,7 +145,7 @@ public class FontLoaderTests
         // See https://forum.stimulsoft.com/viewtopic.php?t=60972
         Font font = new FontCollection().Add(TestFonts.THSarabunFile).CreateFont(12);
 
-        FontRectangle advance = TextMeasurer.MeasureAdvance("เราใช้คุกกี้เพื่อพัฒนาประสิทธิภาพ และประสบการณ์ที่ดีในการใช้เว็บไซต์ของคุณ คุณสามารถศึกษารายละเอียดได้ที่", new(font));
+        FontRectangle advance = TextMeasurer.MeasureAdvance("เราใช้คุกกี้เพื่อพัฒนาประสิทธิภาพ และประสบการณ์ที่ดีในการใช้เว็บไซต์ของคุณ คุณสามารถศึกษารายละเอียดได้ที่", new TextOptions(font));
 
         Assert.NotEqual(default, advance);
     }

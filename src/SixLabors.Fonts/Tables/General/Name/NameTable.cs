@@ -107,12 +107,12 @@ internal class NameTable : Table
 
     public static NameTable Load(BigEndianBinaryReader reader)
     {
-        var strings = new List<StringLoader>();
+        List<StringLoader> strings = new();
         ushort format = reader.ReadUInt16();
         ushort nameCount = reader.ReadUInt16();
         ushort stringOffset = reader.ReadUInt16();
 
-        var names = new NameRecord[nameCount];
+        NameRecord[] names = new NameRecord[nameCount];
 
         for (int i = 0; i < nameCount; i++)
         {

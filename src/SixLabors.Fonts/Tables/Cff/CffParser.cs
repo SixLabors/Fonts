@@ -48,7 +48,7 @@ internal class CffParser
         this.ReadCharsets(reader, stringIndex, glyphs);
         this.ReadEncodings(reader);
 
-        return new(fontName, topDictionary, glyphs);
+        return new CffFont(fontName, topDictionary, glyphs);
     }
 
     private static string ReadNameIndex(BigEndianBinaryReader reader)
@@ -101,7 +101,7 @@ internal class CffParser
         string[] stringIndex = new string[offsets.Length];
 
         // Allow reusing the same buffer for shorter reads.
-        using Buffer<byte> buffer = new Buffer<byte>(512);
+        using Buffer<byte> buffer = new(512);
         Span<byte> bufferSpan = buffer.GetSpan();
 
         for (int i = 0; i < offsets.Length; ++i)

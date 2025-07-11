@@ -33,9 +33,9 @@ internal class FakeFontInstance : StreamFontMetrics
         NameTable name = GenerateNameTable(fontName);
         MaximumProfileTable maxp = GenerateMaxpTable(glyphs);
         CMapTable cmap = GenerateCMapTable(glyphs);
-        var glyf = new FakeGlyphTable(glyphs);
+        FakeGlyphTable glyf = new(glyphs);
         PostTable post = GeneratePostTable();
-        var kern = new KerningTable(Array.Empty<KerningSubTable>());
+        KerningTable kern = new(Array.Empty<KerningSubTable>());
         OS2Table os2 = GenerateOS2TableWithVaryingVerticalFontMetrics();
         HorizontalMetricsTable htmx = GenerateHorizontalMetricsTable(glyphs);
         VerticalHeadTable vhea = GenerateVerticalHeadTable();
@@ -60,16 +60,16 @@ internal class FakeFontInstance : StreamFontMetrics
         NameTable name = GenerateNameTable(fontName);
         MaximumProfileTable maxp = GenerateMaxpTable(glyphs);
         CMapTable cmap = GenerateCMapTable(glyphs);
-        var glyf = new FakeGlyphTable(glyphs);
+        FakeGlyphTable glyf = new(glyphs);
         PostTable post = GeneratePostTable();
-        var kern = new KerningTable(Array.Empty<KerningSubTable>());
+        KerningTable kern = new(Array.Empty<KerningSubTable>());
         OS2Table os2 = GenerateOS2Table();
         HorizontalMetricsTable htmx = GenerateHorizontalMetricsTable(glyphs);
         VerticalHeadTable vhea = GenerateVerticalHeadTable();
         VerticalMetricsTable vmtx = GenerateVerticalMetricsTable(glyphs);
         IndexLocationTable loca = GenerateIndexLocationTable(glyphs);
 
-        return new(cmap, head, hhea, htmx, maxp, name, os2, post, glyf, loca)
+        return new TrueTypeFontTables(cmap, head, hhea, htmx, maxp, name, os2, post, glyf, loca)
         {
             Kern = kern,
             Vhea = vhea,

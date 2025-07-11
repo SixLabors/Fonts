@@ -123,14 +123,14 @@ internal sealed class CMapTable : Table
         ushort version = reader.ReadUInt16();
         ushort numTables = reader.ReadUInt16();
 
-        var encodings = new EncodingRecord[numTables];
+        EncodingRecord[] encodings = new EncodingRecord[numTables];
         for (int i = 0; i < numTables; i++)
         {
             encodings[i] = EncodingRecord.Read(reader);
         }
 
         // foreach encoding we move forward looking for the subtables
-        var tables = new List<CMapSubTable>(numTables);
+        List<CMapSubTable> tables = new(numTables);
         foreach (IGrouping<uint, EncodingRecord> encoding in encodings.GroupBy(x => x.Offset))
         {
             long offset = encoding.Key;

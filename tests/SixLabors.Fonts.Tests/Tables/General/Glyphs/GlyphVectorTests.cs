@@ -14,11 +14,11 @@ public class GlyphVectorTests
         // arrange
         ControlPoint[] controlPoints = { new(new Vector2(1.0f), true), new(new Vector2(2.0f), false) };
         ushort[] endPoints = { 1, 2, 3 };
-        var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
-        var outline = new GlyphVector(controlPoints, endPoints, bounds, Array.Empty<byte>(), false);
+        Bounds bounds = new(1.0f, 2.0f, 3.0f, 4.0f);
+        GlyphVector outline = new(controlPoints, endPoints, bounds, Array.Empty<byte>(), false);
 
         // act
-        var clone = GlyphVector.DeepClone(outline);
+        GlyphVector clone = GlyphVector.DeepClone(outline);
 
         // assert
         Assert.False(outline.ControlPoints.Equals(clone.ControlPoints));
@@ -33,9 +33,9 @@ public class GlyphVectorTests
         // arrange
         ControlPoint[] controlPoints = { new(new Vector2(1.0f), true), new(new Vector2(2.0f), false) };
         ushort[] endPoints = { 1, 2, 3 };
-        var bounds = new Bounds(1.0f, 2.0f, 3.0f, 4.0f);
-        var expectedBounds = new Bounds(11.0f, 12.0f, 13.0f, 14.0f);
-        var glyphVector = new GlyphVector(controlPoints, endPoints, bounds, Array.Empty<byte>(), false);
+        Bounds bounds = new(1.0f, 2.0f, 3.0f, 4.0f);
+        Bounds expectedBounds = new(11.0f, 12.0f, 13.0f, 14.0f);
+        GlyphVector glyphVector = new(controlPoints, endPoints, bounds, Array.Empty<byte>(), false);
 
         // act
         Matrix3x2 matrix = Matrix3x2.Identity;
@@ -72,9 +72,9 @@ public class GlyphVectorTests
         };
 
         ushort[] endPoints = { 1, 2, 3 };
-        var bounds = new Bounds(16130.0f, 260.0f, 26624.0f, 28928.0f);
-        var expectedBounds = new Bounds(19876f, 013684f, 89804.8f, 108083.2f);
-        var glyphVector = new GlyphVector(controlPoints, endPoints, bounds, Array.Empty<byte>(), false);
+        Bounds bounds = new(16130.0f, 260.0f, 26624.0f, 28928.0f);
+        Bounds expectedBounds = new(19876f, 013684f, 89804.8f, 108083.2f);
+        GlyphVector glyphVector = new(controlPoints, endPoints, bounds, Array.Empty<byte>(), false);
 
         // act
         Matrix3x2 matrix = Matrix3x2.Identity;

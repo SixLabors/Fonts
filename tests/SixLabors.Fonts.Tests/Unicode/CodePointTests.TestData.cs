@@ -170,12 +170,12 @@ namespace SixLabors.Fonts.Tests.Unicode
 
         public static IEnumerable<object[]> IsValidTestData()
         {
-            foreach (var obj in GeneralTestData_BmpCodePoints_NoSurrogates().Concat(GeneralTestData_SupplementaryCodePoints_ValidOnly()))
+            foreach (object[] obj in GeneralTestData_BmpCodePoints_NoSurrogates().Concat(GeneralTestData_SupplementaryCodePoints_ValidOnly()))
             {
                 yield return new object[] { ((GeneralTestData)obj[0]).ScalarValue /* value */, true /* isValid */ };
             }
 
-            foreach (var obj in BmpCodePoints_SurrogatesOnly().Concat(SupplementaryCodePoints_InvalidOnly()))
+            foreach (object[] obj in BmpCodePoints_SurrogatesOnly().Concat(SupplementaryCodePoints_InvalidOnly()))
             {
                 yield return new object[] { Convert.ToInt32(obj[0], CultureInfo.InvariantCulture) /* value */, false /* isValid */ };
             }
