@@ -317,7 +317,7 @@ internal sealed class UniversalShaper : DefaultShaper
         }
     }
 
-    private static int NextSyllable(IGlyphShapingCollection collection, int index, int count)
+    private static int NextSyllable(GlyphSubstitutionCollection collection, int index, int count)
     {
         if (index >= count)
         {

@@ -122,10 +122,7 @@ internal sealed class ZlibInflateStream : Stream
     /// <inheritdoc/>
     public override int Read(byte[] buffer, int offset, int count)
     {
-        if (this.deflateStream is null)
-        {
-            throw new ObjectDisposedException("inner stream");
-        }
+        ObjectDisposedException.ThrowIf(this.deflateStream is null, this.deflateStream);
 
         // We don't check CRC on reading
         int read = this.deflateStream.Read(buffer, offset, count);

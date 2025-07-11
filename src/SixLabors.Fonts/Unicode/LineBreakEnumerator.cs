@@ -97,7 +97,7 @@ internal ref struct LineBreakEnumerator
                     return true;
             }
 
-            bool? shouldBreak = this.GetSimpleBreak() ?? (bool?)this.GetPairTableBreak(lastClass);
+            bool? shouldBreak = this.GetSimpleBreak() ?? this.GetPairTableBreak(lastClass);
 
             // Rule LB8a
             this.lb8a = this.nextClass == LineBreakClass.ZWJ;

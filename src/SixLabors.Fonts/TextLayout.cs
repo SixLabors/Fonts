@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -188,7 +189,7 @@ internal static class TextLayout
         return BreakLines(text, options, bidiRuns, bidiMap, positionings, layoutMode);
     }
 
-    private static IReadOnlyList<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
+    private static ReadOnlyCollection<GlyphLayout> LayoutText(TextBox textBox, TextOptions options)
     {
         LayoutMode layoutMode = options.LayoutMode;
         List<GlyphLayout> glyphs = new();
@@ -300,10 +301,10 @@ internal static class TextLayout
             }
         }
 
-        return glyphs;
+        return glyphs.AsReadOnly();
     }
 
-    private static IEnumerable<GlyphLayout> LayoutLineHorizontal(
+    private static List<GlyphLayout> LayoutLineHorizontal(
         TextBox textBox,
         TextLine textLine,
         TextDirection direction,
@@ -444,7 +445,7 @@ internal static class TextLayout
         return glyphs;
     }
 
-    private static IEnumerable<GlyphLayout> LayoutLineVertical(
+    private static List<GlyphLayout> LayoutLineVertical(
         TextBox textBox,
         TextLine textLine,
         TextDirection direction,
@@ -602,7 +603,7 @@ internal static class TextLayout
         return glyphs;
     }
 
-    private static IEnumerable<GlyphLayout> LayoutLineVerticalMixed(
+    private static List<GlyphLayout> LayoutLineVerticalMixed(
         TextBox textBox,
         TextLine textLine,
         TextDirection direction,

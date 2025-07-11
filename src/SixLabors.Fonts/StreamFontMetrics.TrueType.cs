@@ -114,7 +114,7 @@ internal partial class StreamFontMetrics
         return new StreamFontMetrics(tables);
     }
 
-    private GlyphMetrics CreateTrueTypeGlyphMetrics(
+    private TrueTypeGlyphMetrics CreateTrueTypeGlyphMetrics(
         in CodePoint codePoint,
         ushort glyphId,
         GlyphType glyphType,

@@ -836,7 +836,7 @@ internal sealed class IndicShaper : DefaultShaper
     private static bool IsHalantOrCoeng(GlyphShapingData data)
         => data.IndicShapingEngineInfo != null && (data.IndicShapingEngineInfo.Category & HalantOrCoengFlags) != 0;
 
-    private static int NextSyllable(IGlyphShapingCollection collection, int index, int count)
+    private static int NextSyllable(GlyphSubstitutionCollection collection, int index, int count)
     {
         if (index >= count)
         {

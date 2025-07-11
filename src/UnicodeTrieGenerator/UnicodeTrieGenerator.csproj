@@ -9,16 +9,16 @@
   <Choose>
     <When Condition="$(SIXLABORS_TESTING_PREVIEW) == true">
       <PropertyGroup>
-        <TargetFrameworks>net7.0;net6.0</TargetFrameworks>
+        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <TargetFrameworks>net6.0</TargetFrameworks>
+        <TargetFrameworks>net8.0</TargetFrameworks>
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  
+
   <ItemGroup>
     <Compile Include="..\..\tests\SixLabors.Fonts.Tests\Unicode\UnicodeTypeMaps.cs" Link="UnicodeTypeMaps.cs" />
     <Compile Include="..\SixLabors.Fonts\Unicode\BidiCharacterType.cs" Link="BidiCharacterType.cs" />

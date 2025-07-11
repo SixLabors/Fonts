@@ -208,7 +208,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         return ((IFontMetricsCollection)this).AddMetrics(metrics, culture);
     }
 
-    private IEnumerable<FontFamily> AddCollectionImpl(
+    private HashSet<FontFamily> AddCollectionImpl(
         string path,
         CultureInfo culture,
         out IEnumerable<FontDescription> descriptions)
@@ -228,7 +228,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         return families;
     }
 
-    private IEnumerable<FontFamily> AddCollectionImpl(
+    private HashSet<FontFamily> AddCollectionImpl(
         Stream stream,
         CultureInfo culture,
         out IEnumerable<FontDescription> descriptions)
@@ -251,7 +251,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         return installedFamilies;
     }
 
-    private IEnumerable<FontFamily> FamiliesByCultureImpl(CultureInfo culture)
+    private FontFamily[] FamiliesByCultureImpl(CultureInfo culture)
         => this.metricsCollection
         .Select(x => x.Description.FontFamily(culture))
         .Distinct()
