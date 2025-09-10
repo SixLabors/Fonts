@@ -377,6 +377,7 @@ internal sealed class BigEndianBinaryReader : IDisposable
     /// </summary>
     /// <param name="data">Buffer to read into.</param>
     /// <param name="size">Number of bytes to read.</param>
+    /// <exception cref="EndOfStreamException">The end of the stream was reached before reading could complete.</exception>
     private void ReadInternal(byte[] data, int size)
     {
         int index = 0;

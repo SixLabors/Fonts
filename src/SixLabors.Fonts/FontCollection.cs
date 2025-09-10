@@ -12,8 +12,8 @@ namespace SixLabors.Fonts;
 /// </summary>
 public sealed class FontCollection : IFontCollection, IFontMetricsCollection
 {
-    private readonly HashSet<string> searchDirectories = new();
-    private readonly HashSet<FontMetrics> metricsCollection = new();
+    private readonly HashSet<string> searchDirectories = [];
+    private readonly HashSet<FontMetrics> metricsCollection = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FontCollection"/> class.
@@ -208,7 +208,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         return ((IFontMetricsCollection)this).AddMetrics(metrics, culture);
     }
 
-    private IEnumerable<FontFamily> AddCollectionImpl(
+    private HashSet<FontFamily> AddCollectionImpl(
         string path,
         CultureInfo culture,
         out IEnumerable<FontDescription> descriptions)
@@ -216,7 +216,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         FileFontMetrics[] fonts = FileFontMetrics.LoadFontCollection(path);
 
         FontDescription[] description = new FontDescription[fonts.Length];
-        HashSet<FontFamily> families = new();
+        HashSet<FontFamily> families = [];
         for (int i = 0; i < fonts.Length; i++)
         {
             description[i] = fonts[i].Description;
@@ -228,7 +228,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         return families;
     }
 
-    private IEnumerable<FontFamily> AddCollectionImpl(
+    private HashSet<FontFamily> AddCollectionImpl(
         Stream stream,
         CultureInfo culture,
         out IEnumerable<FontDescription> descriptions)
@@ -237,7 +237,7 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         using BigEndianBinaryReader reader = new(stream, true);
         TtcHeader ttcHeader = TtcHeader.Read(reader);
         List<FontDescription> result = new((int)ttcHeader.NumFonts);
-        HashSet<FontFamily> installedFamilies = new();
+        HashSet<FontFamily> installedFamilies = [];
         for (int i = 0; i < ttcHeader.NumFonts; ++i)
         {
             stream.Position = startPos + ttcHeader.OffsetTable[i];
@@ -251,12 +251,11 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         return installedFamilies;
     }
 
-    private IEnumerable<FontFamily> FamiliesByCultureImpl(CultureInfo culture)
-        => this.metricsCollection
+    private FontFamily[] FamiliesByCultureImpl(CultureInfo culture)
+        => [.. this.metricsCollection
         .Select(x => x.Description.FontFamily(culture))
         .Distinct()
-        .Select(x => new FontFamily(x, this, culture))
-        .ToArray();
+        .Select(x => new FontFamily(x, this, culture))];
 
     private bool TryGetImpl(string name, CultureInfo culture, out FontFamily family)
     {

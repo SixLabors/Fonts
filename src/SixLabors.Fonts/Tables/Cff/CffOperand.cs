@@ -1,6 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+#if DEBUG
+using System.Globalization;
+#endif
+
 namespace SixLabors.Fonts.Tables.Cff;
 
 internal readonly struct CffOperand
@@ -19,8 +23,8 @@ internal readonly struct CffOperand
     public override string ToString()
         => this.Kind switch
         {
-            OperandKind.IntNumber => ((int)this.RealNumValue).ToString(),
-            _ => this.RealNumValue.ToString(),
+            OperandKind.IntNumber => ((int)this.RealNumValue).ToString(CultureInfo.InvariantCulture),
+            _ => this.RealNumValue.ToString(CultureInfo.InvariantCulture),
         };
 #endif
 
