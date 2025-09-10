@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+#pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
 using System.Globalization;
 using System.Text.RegularExpressions;
 using SixLabors.Fonts.Unicode;
@@ -483,7 +484,7 @@ public static partial class Generator
             return type;
         }
 
-        List<Codepoint> codePoints = new();
+        List<Codepoint> codePoints = [];
         using StreamReader sr = GetStreamReader("UnicodeData.txt");
         string? line;
         while ((line = sr.ReadLine()) != null)
@@ -518,9 +519,9 @@ public static partial class Generator
         // OverrideIndicSyllabicCategory(codePoints);
         // OverrideIndicPositionalCategory(codePoints);
         UnicodeTrieBuilder builder = new();
-        Dictionary<string, int> symbols = new();
+        Dictionary<string, int> symbols = [];
         int numSymbols = 0;
-        Dictionary<int, List<int>> decompositions = new();
+        Dictionary<int, List<int>> decompositions = [];
         for (int i = 0; i < codePoints.Count; i++)
         {
             Codepoint codePoint = codePoints[i];
@@ -631,12 +632,12 @@ public static partial class Generator
 
     private static List<int> Decompose(int code, List<Codepoint> codepoints)
     {
-        List<int> decomposition = new();
+        List<int> decomposition = [];
         Codepoint codePoint = codepoints.First(x => x.Code == code);
         foreach (int c in codePoint.Decomposition)
         {
             List<int> codes = Decompose(c, codepoints);
-            codes = codes.Count > 0 ? codes : new List<int> { c };
+            codes = codes.Count > 0 ? codes : [c];
             decomposition.AddRange(codes);
         }
 

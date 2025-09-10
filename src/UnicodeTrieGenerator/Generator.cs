@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+#pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
 using System.Globalization;
 using System.Text.RegularExpressions;
 using SixLabors.Fonts.Tests.Unicode;
@@ -444,7 +445,7 @@ public static partial class Generator
     private const string OutputResourcesRelativePath = @"src\SixLabors.Fonts\Unicode\Resources";
 
     private static readonly Lazy<string> SolutionDirectoryFullPathLazy = new(GetSolutionDirectoryFullPathImpl);
-    private static readonly Dictionary<int, int> Bidi = new();
+    private static readonly Dictionary<int, int> Bidi = [];
 
     private static string SolutionDirectoryFullPath => SolutionDirectoryFullPathLazy.Value;
 
@@ -466,7 +467,7 @@ public static partial class Generator
         GenerateVerticalOrientationTrie();
 
         List<Codepoint> codePoints = GenerateUniversalShapingDataTrie(ugc, uisc, uipc, uajt);
-        GenerateIndicShapingDataTrie(codePoints.ToArray());
+        GenerateIndicShapingDataTrie([.. codePoints]);
     }
 
     private static void ProcessUnicodeData()
@@ -945,7 +946,7 @@ public static partial class Generator
 
     private static string GetSolutionDirectoryFullPathImpl()
     {
-        string assemblyLocation = typeof(Generator).Assembly.Location;
+        string assemblyLocation = AppContext.BaseDirectory;
 
         FileInfo assemblyFile = new(assemblyLocation);
 
