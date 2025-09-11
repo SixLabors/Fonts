@@ -142,6 +142,19 @@ public abstract class FontMetrics
     internal abstract bool TryGetGlyphId(CodePoint codePoint, CodePoint? nextCodePoint, out ushort glyphId, out bool skipNextCodePoint);
 
     /// <summary>
+    /// Gets the specified glyph id matching the codepoint.
+    /// </summary>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <param name="codePoint">
+    /// When this method returns, contains the codepoint associated with the specified glyph id,
+    /// if the glyph id is found; otherwise, <value>default</value>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the face contains a codepoint for the specified glyph id; otherwise, <see langword="false"/>.
+    /// </returns>
+    internal abstract bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint);
+
+    /// <summary>
     /// Tries to get the glyph class for a given glyph id.
     /// The font needs to have a GDEF table defined.
     /// </summary>

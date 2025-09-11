@@ -32,6 +32,7 @@ internal partial class StreamFontMetrics : FontMetrics
     private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]> glyphCache;
     private readonly ConcurrentDictionary<(int CodePoint, ushort Id, TextAttributes Attributes, bool IsVerticalLayout), GlyphMetrics[]>? colorGlyphCache;
     private readonly ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)> glyphIdCache;
+    private readonly ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> codePointCache;
     private readonly FontDescription description;
     private readonly HorizontalMetrics horizontalMetrics;
     private readonly VerticalMetrics verticalMetrics;
@@ -61,6 +62,7 @@ internal partial class StreamFontMetrics : FontMetrics
         this.outlineType = OutlineType.TrueType;
         this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
         this.glyphIdCache = new();
+        this.codePointCache = new();
         this.glyphCache = new();
         if (tables.Colr is not null)
         {
@@ -82,6 +84,7 @@ internal partial class StreamFontMetrics : FontMetrics
         this.outlineType = OutlineType.CFF;
         this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
         this.glyphIdCache = new();
+        this.codePointCache = new();
         this.glyphCache = new();
         if (tables.Colr is not null)
         {
@@ -171,6 +174,26 @@ internal partial class StreamFontMetrics : FontMetrics
 
         glyphId = id;
         skipNextCodePoint = skip;
+        return success;
+    }
+
+    /// <inheritdoc/>
+    internal override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
+    {
+        CMapTable cmap = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.Cmap
+            : this.compactFontTables!.Cmap;
+
+        (bool success, CodePoint value) = this.codePointCache.GetOrAdd(
+            glyphId,
+            static (glyphId, arg) =>
+            {
+                bool success = arg.TryGetCodePoint(glyphId, out CodePoint codePoint);
+                return (success, codePoint);
+            },
+            cmap);
+
+        codePoint = value;
         return success;
     }
 
@@ -423,7 +446,7 @@ internal partial class StreamFontMetrics : FontMetrics
         // 3.If they are zero and the OS/ 2 table exists,
         //    - Use the OS/ 2 table's sTypo* metrics if they are non-zero.
         //    - Otherwise, use the OS / 2 table's usWin* metrics.
-        bool useTypoMetrics = os2.FontStyle.HasFlag(OS2Table.FontStyleSelection.USE_TYPO_METRICS);
+        bool useTypoMetrics = (os2.FontStyle & OS2Table.FontStyleSelection.USE_TYPO_METRICS) == OS2Table.FontStyleSelection.USE_TYPO_METRICS;
         if (useTypoMetrics)
         {
             ascender = os2.TypoAscender;

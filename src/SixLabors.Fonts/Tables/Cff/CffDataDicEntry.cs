@@ -1,7 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+#if DEBUG
 using System.Text;
+#endif
 
 namespace SixLabors.Fonts.Tables.Cff;
 
@@ -26,14 +28,14 @@ internal class CffDataDicEntry
         {
             if (i > 0)
             {
-                builder.Append(" ");
+                builder.Append(' ');
             }
 
             builder.Append(this.Operands[i].ToString());
         }
 
-        builder.Append(" ");
-        builder.Append(this.Operator?.ToString() ?? string.Empty);
+        builder.Append(' ')
+               .Append(this.Operator?.ToString() ?? string.Empty);
         return builder.ToString();
     }
 #endif

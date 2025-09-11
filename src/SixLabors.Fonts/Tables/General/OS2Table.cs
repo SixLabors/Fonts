@@ -156,8 +156,11 @@ internal sealed class OS2Table : Table
         this.upperOpticalPointSize = upperOpticalPointSize;
     }
 
+    [Flags]
     internal enum FontStyleSelection : ushort
     {
+        NONE = 0,
+
         // 0    bit 1   ITALIC  Font contains italic or oblique characters, otherwise they are upright.
         ITALIC = 1,
 

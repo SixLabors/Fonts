@@ -3,27 +3,40 @@
   <PropertyGroup>
     <DebugSymbols>True</DebugSymbols>
     <Platforms>AnyCPU;x64;x86</Platforms>
-    <LangVersion>11</LangVersion>
+    <LangVersion>10</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
     <!--Avoid culture analysis in FontCollection overloads-->
     <NoWarn>CA1304</NoWarn>
   </PropertyGroup>
-  
+
   <Choose>
     <When Condition="$(SIXLABORS_TESTING_PREVIEW) == true">
       <PropertyGroup>
-        <TargetFrameworks>net7.0;net6.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <TargetFrameworks>net6.0</TargetFrameworks>
+        <TargetFrameworks>net8.0</TargetFrameworks>
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  
+
+  <PropertyGroup>
+    <!--
+    Comment out this constant declaration to disable all tests based upon image generation.
+    This allows us to make breaking changes to the Fonts API without breaking the tests.
+    -->
+    <DefineConstants>$(DefineConstants);SUPPORTS_DRAWING</DefineConstants>
+    <HasSupportForDrawing Condition="$(DefineConstants.Contains('SUPPORTS_DRAWING'))">true</HasSupportForDrawing>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$(HasSupportForDrawing) == false">
+    <Compile Remove="ImageComparison\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Moq" />
   </ItemGroup>
@@ -35,7 +48,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all" />    
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" Condition="$(HasSupportForDrawing)" />
+    <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all" />
     <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\DeterministicFiniteAutomata.cs" Link="Unicode\StateAutomation\DeterministicFiniteAutomata.cs" />
     <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\Compile.cs" Link="Unicode\StateAutomation\Compile.cs" />
     <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\State.cs" Link="Unicode\StateAutomation\State.cs" />

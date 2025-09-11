@@ -117,10 +117,10 @@ internal static class LookupType2SubTable
                 if (pairSet.TryGetPairValueRecord(glyphId2, out PairValueRecord pairValueRecord))
                 {
                     ValueRecord record1 = pairValueRecord.ValueRecord1;
-                    AdvancedTypographicUtils.ApplyPosition(collection, index, record1);
+                    AdvancedTypographicUtils.ApplyPosition(collection, index, record1, feature);
 
                     ValueRecord record2 = pairValueRecord.ValueRecord2;
-                    AdvancedTypographicUtils.ApplyPosition(collection, index + 1, record2);
+                    AdvancedTypographicUtils.ApplyPosition(collection, index + 1, record2, feature);
 
                     return true;
                 }
@@ -285,10 +285,10 @@ internal static class LookupType2SubTable
                 Class2Record class2Record = class1Record.Class2Records[classDef2];
 
                 ValueRecord record1 = class2Record.ValueRecord1;
-                AdvancedTypographicUtils.ApplyPosition(collection, index, record1);
+                AdvancedTypographicUtils.ApplyPosition(collection, index, record1, feature);
 
                 ValueRecord record2 = class2Record.ValueRecord2;
-                AdvancedTypographicUtils.ApplyPosition(collection, index + 1, record2);
+                AdvancedTypographicUtils.ApplyPosition(collection, index + 1, record2, feature);
 
                 return true;
             }

@@ -51,7 +51,6 @@ internal static class AdvancedTypographicUtils
         int index,
         int count)
     {
-        bool hasChanged = false;
         SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
         int currentCount = collection.Count;
 
@@ -62,7 +61,7 @@ internal static class AdvancedTypographicUtils
             iterator.Index = index;
             iterator.Increment(sequenceIndex);
             GSub.LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-            hasChanged |= lookup.TrySubstitution(fontMetrics, table, collection, feature, iterator.Index, count - (iterator.Index - index));
+            _ = lookup.TrySubstitution(fontMetrics, table, collection, feature, iterator.Index, count - (iterator.Index - index));
 
             // Account for substitutions changing the length of the collection.
             if (collection.Count != currentCount)
@@ -72,7 +71,7 @@ internal static class AdvancedTypographicUtils
             }
         }
 
-        return hasChanged;
+        return true;
     }
 
     public static bool ApplyLookupList(
@@ -85,7 +84,6 @@ internal static class AdvancedTypographicUtils
         int index,
         int count)
     {
-        bool hasChanged = false;
         SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
         foreach (SequenceLookupRecord lookupRecord in records)
         {
@@ -94,10 +92,10 @@ internal static class AdvancedTypographicUtils
             iterator.Index = index;
             iterator.Increment(sequenceIndex);
             LookupTable lookup = table.LookupList.LookupTables[lookupIndex];
-            hasChanged |= lookup.TryUpdatePosition(fontMetrics, table, collection, feature, iterator.Index, count - (iterator.Index - index));
+            _ = lookup.TryUpdatePosition(fontMetrics, table, collection, feature, iterator.Index, count - (iterator.Index - index));
         }
 
-        return hasChanged;
+        return true;
     }
 
     public static bool MatchInputSequence(SkippingGlyphIterator iterator, Tag feature, ushort increment, ushort[] sequence, Span<int> matches)
@@ -222,7 +220,7 @@ internal static class AdvancedTypographicUtils
         CoverageTable[] lookahead)
     {
         // Check that there are enough context glyphs.
-        if (index - backtrack.Length < 0 || input.Length + lookahead.Length > count)
+        if (index < backtrack.Length || input.Length + lookahead.Length > count)
         {
             return false;
         }
@@ -253,7 +251,8 @@ internal static class AdvancedTypographicUtils
         int index,
         AnchorTable baseAnchor,
         MarkRecord markRecord,
-        int baseGlyphIndex)
+        int baseGlyphIndex,
+        Tag feature)
     {
         GlyphShapingData baseData = collection[baseGlyphIndex];
         AnchorXY baseXY = baseAnchor.GetAnchor(fontMetrics, baseData, collection);
@@ -264,18 +263,21 @@ internal static class AdvancedTypographicUtils
         markData.Bounds.X = baseXY.XCoordinate - markXY.XCoordinate;
         markData.Bounds.Y = baseXY.YCoordinate - markXY.YCoordinate;
         markData.MarkAttachment = baseGlyphIndex;
+        markData.AppliedFeatures.Add(feature);
     }
 
     public static void ApplyPosition(
         GlyphPositioningCollection collection,
         int index,
-        ValueRecord record)
+        ValueRecord record,
+        Tag feature)
     {
         GlyphShapingData current = collection[index];
         current.Bounds.Width += record.XAdvance;
         current.Bounds.Height += record.YAdvance;
         current.Bounds.X += record.XPlacement;
         current.Bounds.Y += record.YPlacement;
+        current.AppliedFeatures.Add(feature);
     }
 
     public static bool IsMarkGlyph(FontMetrics fontMetrics, ushort glyphId, GlyphShapingData shapingData)

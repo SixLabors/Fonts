@@ -138,7 +138,7 @@ internal sealed class LookupType8Format1SubTable : LookupSubTable
         bool hasChanged = false;
         for (int i = 0; i < this.substituteGlyphIds.Length; i++)
         {
-            collection.Replace(index + i, this.substituteGlyphIds[i]);
+            collection.Replace(index + i, this.substituteGlyphIds[i], feature);
             hasChanged = true;
         }
 

@@ -27,5 +27,7 @@ internal abstract class CMapSubTable
 
     public abstract bool TryGetGlyphId(CodePoint codePoint, out ushort glyphId);
 
+    public abstract bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint);
+
     public abstract IEnumerable<int> GetAvailableCodePoints();
 }

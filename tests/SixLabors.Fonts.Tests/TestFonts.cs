@@ -259,6 +259,10 @@ public static class TestFonts
 
     public static string NotoSansRegular => GetFullPath("NotoSans-Regular.ttf");
 
+    public static string CharisSILRegular => GetFullPath("CharisSIL-Regular.ttf");
+
+    public static string VeryBerryProRegular => GetFullPath("VeryBerryProRegular.ttf");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);

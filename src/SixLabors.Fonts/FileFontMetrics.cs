@@ -108,6 +108,10 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.TryGetGlyphId(codePoint, nextCodePoint, out glyphId, out skipNextCodePoint);
 
     /// <inheritdoc/>
+    internal override bool TryGetCodePoint(ushort glyphId, out CodePoint codePoint)
+        => this.fontMetrics.Value.TryGetCodePoint(glyphId, out codePoint);
+
+    /// <inheritdoc/>
     internal override bool TryGetGlyphClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? glyphClass)
         => this.fontMetrics.Value.TryGetGlyphClass(glyphId, out glyphClass);
 
