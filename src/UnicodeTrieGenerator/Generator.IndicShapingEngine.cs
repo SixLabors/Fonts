@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+#pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
 using System.Text.RegularExpressions;
 using SixLabors.Fonts.Unicode;
 using SixLabors.Fonts.Unicode.Resources;
@@ -202,7 +203,7 @@ public static partial class Generator
     {
         SetBlocks(codePoints);
 
-        var symbols = ((Categories[])Enum.GetValues(typeof(Categories))).ToDictionary(c => c.ToString(), c => (int)Math.Log((int)c, 2));
+        Dictionary<string, int> symbols = Enum.GetValues<Categories>().ToDictionary(c => c.ToString(), c => (int)Math.Log((int)c, 2));
 
         UnicodeTrieBuilder builder = new();
         for (int i = 0; i < codePoints.Length; i++)
@@ -224,7 +225,7 @@ public static partial class Generator
 
     private static void SetBlocks(Codepoint[] codePoints)
     {
-        var regex = new Regex(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*([\w\s-]+)");
+        Regex regex = new(@"^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*([\w\s-]+)");
 
         using StreamReader sr = GetStreamReader("Blocks.txt");
         string? line;

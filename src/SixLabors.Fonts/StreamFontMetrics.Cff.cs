@@ -83,7 +83,7 @@ internal partial class StreamFontMetrics
         return new StreamFontMetrics(tables, glyphVariationProcessor);
     }
 
-    private GlyphMetrics CreateCffGlyphMetrics(
+    private CffGlyphMetrics CreateCffGlyphMetrics(
         in CodePoint codePoint,
         ushort glyphId,
         GlyphType glyphType,
