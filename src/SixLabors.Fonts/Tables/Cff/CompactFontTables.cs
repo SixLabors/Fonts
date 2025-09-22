@@ -7,6 +7,7 @@ using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Tables.General.Post;
+using SixLabors.Fonts.Tables.Svg;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
@@ -65,6 +66,8 @@ internal sealed class CompactFontTables : IFontTables
     public VerticalHeadTable? Vhea { get; set; }
 
     public VerticalMetricsTable? Vmtx { get; set; }
+
+    public SvgTable? Svg { get; set; }
 
     // Tables Related to CFF Outlines
     // +------+----------------------------------+

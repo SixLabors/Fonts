@@ -2,12 +2,14 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Tables.General.Post;
+using SixLabors.Fonts.Tables.Svg;
 using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Tables.TrueType.Hinting;
@@ -96,6 +98,8 @@ internal partial class StreamFontMetrics
         ColrTable? colr = reader.TryGetTable<ColrTable>();
         CpalTable? cpal = reader.TryGetTable<CpalTable>();
 
+        SvgTable? svg = reader.TryGetTable<SvgTable>();
+
         TrueTypeFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, glyf, loca)
         {
             Fpgm = fpgm,
@@ -109,12 +113,13 @@ internal partial class StreamFontMetrics
             GPos = gPos,
             Colr = colr,
             Cpal = cpal,
+            Svg = svg
         };
 
         return new StreamFontMetrics(tables);
     }
 
-    private TrueTypeGlyphMetrics CreateTrueTypeGlyphMetrics(
+    private GlyphMetrics CreateTrueTypeGlyphMetrics(
         in CodePoint codePoint,
         ushort glyphId,
         GlyphType glyphType,
@@ -129,6 +134,7 @@ internal partial class StreamFontMetrics
         VerticalMetricsTable? vtmx = tables.Vmtx;
 
         GlyphVector vector = glyf.GetGlyph(glyphId);
+
         Bounds bounds = vector.Bounds;
         ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
         short lsb = htmx.GetLeftSideBearing(glyphId);
@@ -140,6 +146,27 @@ internal partial class StreamFontMetrics
         {
             advancedHeight = vtmx.GetAdvancedHeight(glyphId);
             tsb = vtmx.GetTopSideBearing(glyphId);
+        }
+
+        if (!vector.HasValue())
+        {
+            SvgTable? svg = tables.Svg;
+            if (svg is not null && svg.ContainsGlyph(glyphId))
+            {
+                return new PaintedGlyphMetrics(
+                    this,
+                    glyphId,
+                    codePoint,
+                    new SvgGlyphSource(svg),
+                    bounds,
+                    advanceWidth,
+                    advancedHeight,
+                    lsb,
+                    tsb,
+                    this.UnitsPerEm,
+                    textAttributes,
+                    textDecorations);
+            }
         }
 
         GlyphColor? color = null;

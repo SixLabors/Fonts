@@ -21,31 +21,31 @@ public class Issues_383
         };
 
         // OK
-        TextRenderer.RenderTextTo(new DummyGlyphRenderer(), "i", textOption);
+        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "i", textOption);
 
         // OK
-        TextRenderer.RenderTextTo(new DummyGlyphRenderer(), "v", textOption);
+        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "v", textOption);
 
         // raise ArgumentOutOfRangeException
-        TextRenderer.RenderTextTo(new DummyGlyphRenderer(), "a", textOption);
+        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "a", textOption);
 
         textOption.WrappingLength = 9.0F;
 
         // OK
-        TextRenderer.RenderTextTo(new DummyGlyphRenderer(), "i", textOption);
+        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "i", textOption);
 
         // raise ArgumentOutOfRangeException
-        TextRenderer.RenderTextTo(new DummyGlyphRenderer(), "v", textOption);
+        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "v", textOption);
 
         // OK
-        TextRenderer.RenderTextTo(new DummyGlyphRenderer(), "i\r\nv", textOption);
+        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "i\r\nv", textOption);
 
         // raise ArgumentOutOfRangeException
-        TextRenderer.RenderTextTo(new DummyGlyphRenderer(), "v\r\ni", textOption);
+        TextRenderer.RenderTextTo(new NoOpGlyphRenderer(), "v\r\ni", textOption);
     }
 }
 
-internal class DummyGlyphRenderer : IGlyphRenderer
+internal class NoOpGlyphRenderer : IGlyphRenderer
 {
     public void BeginFigure()
     {
@@ -80,6 +80,10 @@ internal class DummyGlyphRenderer : IGlyphRenderer
     }
 
     public void MoveTo(Vector2 point)
+    {
+    }
+
+    public void ArcTo(float radiusX, float radiusY, float rotation, bool largeArc, bool sweep, Vector2 point)
     {
     }
 

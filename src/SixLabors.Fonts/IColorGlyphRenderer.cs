@@ -1,6 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+
 namespace SixLabors.Fonts;
 
 /// <summary>
@@ -12,7 +15,7 @@ public interface IColorGlyphRenderer : IGlyphRenderer
     /// Sets the color to use for the current glyph.
     /// </summary>
     /// <param name="color">The color to override the renders brush with.</param>
-    void SetColor(GlyphColor color);
+    public void SetColor(GlyphColor color);
 }
 
 /// <summary>
@@ -20,18 +23,18 @@ public interface IColorGlyphRenderer : IGlyphRenderer
 /// </summary>
 public readonly struct GlyphColor
 {
-    internal GlyphColor(byte blue, byte green, byte red, byte alpha)
+    internal GlyphColor(byte red, byte green, byte blue, byte alpha)
     {
-        this.Blue = blue;
-        this.Green = green;
         this.Red = red;
+        this.Green = green;
+        this.Blue = blue;
         this.Alpha = alpha;
     }
 
     /// <summary>
-    /// Gets the blue component
+    /// Gets the red component
     /// </summary>
-    public readonly byte Blue { get; }
+    public readonly byte Red { get; }
 
     /// <summary>
     /// Gets the green component
@@ -39,9 +42,9 @@ public readonly struct GlyphColor
     public readonly byte Green { get; }
 
     /// <summary>
-    /// Gets the red component
+    /// Gets the blue component
     /// </summary>
-    public readonly byte Red { get; }
+    public readonly byte Blue { get; }
 
     /// <summary>
     /// Gets the alpha component
@@ -103,4 +106,137 @@ public readonly struct GlyphColor
             this.Green,
             this.Blue,
             this.Alpha);
+
+    /// <summary>
+    /// Gets the hexadecimal string representation of the color instance in the format RRGGBBAA.
+    /// </summary>
+    /// <param name="value">
+    /// The hexadecimal representation of the combined color components.
+    /// </param>
+    /// <param name="result">
+    /// When this method returns, contains the <see cref="GlyphColor"/> equivalent of the hexadecimal input.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the parsing was successful; otherwise, <see langword="false"/>.
+    /// </returns>
+    public static bool TryParseHex(string? value, [NotNullWhen(true)] out GlyphColor? result)
+    {
+        result = default;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        ReadOnlySpan<char> hex = value.AsSpan();
+
+        if (hex[0] != '#')
+        {
+            return false;
+        }
+        else
+        {
+            hex = hex[1..];
+        }
+
+        byte a = 255, r, g, b;
+
+        switch (hex.Length)
+        {
+            case 8:
+                if (!TryParseByte(hex[0], hex[1], out r) ||
+                    !TryParseByte(hex[2], hex[3], out g) ||
+                    !TryParseByte(hex[4], hex[5], out b) ||
+                    !TryParseByte(hex[6], hex[7], out a))
+                {
+                    return false;
+                }
+
+                break;
+
+            case 6:
+                if (!TryParseByte(hex[0], hex[1], out r) ||
+                    !TryParseByte(hex[2], hex[3], out g) ||
+                    !TryParseByte(hex[4], hex[5], out b))
+                {
+                    return false;
+                }
+
+                break;
+
+            case 4:
+                if (!TryExpand(hex[0], out r) ||
+                    !TryExpand(hex[1], out g) ||
+                    !TryExpand(hex[2], out b) ||
+                    !TryExpand(hex[3], out a))
+                {
+                    return false;
+                }
+
+                break;
+
+            case 3:
+                if (!TryExpand(hex[0], out r) ||
+                    !TryExpand(hex[1], out g) ||
+                    !TryExpand(hex[2], out b))
+                {
+                    return false;
+                }
+
+                break;
+
+            default:
+                return false;
+        }
+
+        result = new GlyphColor(r, g, b, a);
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool TryParseByte(char hi, char lo, out byte value)
+    {
+        if (TryConvertHexCharToByte(hi, out byte high) && TryConvertHexCharToByte(lo, out byte low))
+        {
+            value = (byte)((high << 4) | low);
+            return true;
+        }
+
+        value = 0;
+        return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool TryExpand(char c, out byte value)
+    {
+        if (TryConvertHexCharToByte(c, out byte nibble))
+        {
+            value = (byte)((nibble << 4) | nibble);
+            return true;
+        }
+
+        value = 0;
+        return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool TryConvertHexCharToByte(char c, out byte value)
+    {
+        if ((uint)(c - '0') <= 9)
+        {
+            value = (byte)(c - '0');
+            return true;
+        }
+
+        char lower = (char)(c | 0x20); // Normalize to lowercase
+
+        if ((uint)(lower - 'a') <= 5)
+        {
+            value = (byte)(lower - 'a' + 10);
+            return true;
+        }
+
+        value = 0;
+        return false;
+    }
 }

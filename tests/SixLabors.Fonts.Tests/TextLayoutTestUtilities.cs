@@ -36,7 +36,7 @@ internal static class TextLayoutTestUtilities
         int imageWidth = isVertical ? width : Math.Max(width, wrappingLength + 1);
         int imageHeight = isVertical ? Math.Max(height, wrappingLength + 1) : height;
 
-        using Image<Rgba32> img = new(imageWidth, imageHeight, Color.White);
+        using Image<Rgba32> img = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
 
         img.Mutate(ctx => ctx.DrawText(FromTextOptions(options), text, Color.Black));
 
@@ -51,7 +51,7 @@ internal static class TextLayoutTestUtilities
                 img.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
             }
 
-            if (properties.Any())
+            if (properties.Length != 0)
             {
                 List<object> extended = properties.ToList();
                 extended.Insert(0, options.WrappingLength);

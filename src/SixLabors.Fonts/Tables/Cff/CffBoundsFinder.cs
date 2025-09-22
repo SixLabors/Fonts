@@ -81,6 +81,14 @@ internal class CffBoundsFinder : IGlyphRenderer
         this.UpdateMinMax(point.X, point.Y);
     }
 
+    public void ArcTo(float radiusX, float radiusY, float xAxisRotation, bool largeArc, bool sweep, Vector2 point)
+    {
+        // TODO: check this. I feel like we should have to implement it.
+        this.currentXY = point;
+        this.UpdateMinMax(point.X, point.Y);
+        this.open = true;
+    }
+
     public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
     {
         float eachstep = 1F / this.nsteps;

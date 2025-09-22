@@ -55,6 +55,12 @@ public class GlyphRenderer : IGlyphRenderer
         this.ControlPointsOnCurve.Add(point);
     }
 
+    public void ArcTo(float radiusX, float radiusY, float rotation, bool largeArc, bool sweep, Vector2 point)
+    {
+        this.ControlPoints.Add(point);
+        this.ControlPointsOnCurve.Add(point);
+    }
+
     public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
     {
         this.ControlPoints.Add(secondControlPoint);

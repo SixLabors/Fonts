@@ -84,6 +84,12 @@ internal struct TransformingGlyphRenderer : IGlyphRenderer
         this.IsOpen = true;
     }
 
+    public void ArcTo(float radiusX, float radiusY, float rotationDegrees, bool largeArc, bool sweep, Vector2 point)
+    {
+        this.IsOpen = true;
+        this.renderer.ArcTo(radiusX * this.scale.X, radiusY * this.scale.Y, rotationDegrees, largeArc, sweep, this.Transform(point));
+    }
+
     public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
     {
         this.IsOpen = true;
@@ -99,7 +105,7 @@ internal struct TransformingGlyphRenderer : IGlyphRenderer
     public readonly TextDecorations EnabledDecorations()
         => this.renderer.EnabledDecorations();
 
-    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+    public readonly void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
         => this.renderer.SetDecoration(textDecorations, this.Transform(start), this.Transform(end), thickness);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

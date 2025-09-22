@@ -8,6 +8,7 @@ using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Tables.General.Post;
+using SixLabors.Fonts.Tables.Svg;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -50,6 +51,8 @@ internal partial class StreamFontMetrics
         ColrTable? colr = reader.TryGetTable<ColrTable>();
         CpalTable? cpal = reader.TryGetTable<CpalTable>();
 
+        SvgTable? svg = reader.TryGetTable<SvgTable>();
+
         CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff!)
         {
             Kern = kern,
@@ -60,6 +63,7 @@ internal partial class StreamFontMetrics
             GPos = gPos,
             Colr = colr,
             Cpal = cpal,
+            Svg = svg
         };
 
         return new StreamFontMetrics(tables);

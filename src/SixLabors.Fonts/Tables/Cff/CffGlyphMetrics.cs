@@ -135,8 +135,8 @@ internal class CffGlyphMetrics : GlyphMetrics
             }
 
             this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM);
-        }
 
-        renderer.EndGlyph();
+            renderer.EndGlyph();
+        }
     }
 }

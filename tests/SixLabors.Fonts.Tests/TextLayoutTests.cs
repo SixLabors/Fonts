@@ -3,7 +3,6 @@
 
 using System.Globalization;
 using System.Numerics;
-using System.Text;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -1233,24 +1232,64 @@ public class TextLayoutTests
             renderer.RenderText(text, options);
             return glyphBuilder.GlyphBounds;
         }
+
         public readonly List<FontRectangle> GlyphBounds = new();
-        public CaptureGlyphBoundBuilder() { }
+
+        public CaptureGlyphBoundBuilder()
+        {
+        }
+
         bool IGlyphRenderer.BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
         {
             this.GlyphBounds.Add(bounds);
             return true;
         }
-        public void BeginFigure() { }
-        public void MoveTo(Vector2 point) { }
-        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point) { }
-        public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point) { }
-        public void LineTo(Vector2 point) { }
-        public void EndFigure() { }
-        public void EndGlyph() { }
-        public void EndText() { }
-        void IGlyphRenderer.BeginText(in FontRectangle bounds) { }
+
+        public void BeginFigure()
+        {
+        }
+
+        public void MoveTo(Vector2 point)
+        {
+        }
+
+        public void ArcTo(float radiusX, float radiusY, float rotation, bool largeArc, bool sweep, Vector2 point)
+        {
+        }
+
+        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
+        {
+        }
+
+        public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
+        {
+        }
+
+        public void LineTo(Vector2 point)
+        {
+        }
+
+        public void EndFigure()
+        {
+        }
+
+        public void EndGlyph()
+        {
+        }
+
+        public void EndText()
+        {
+        }
+
+        void IGlyphRenderer.BeginText(in FontRectangle bounds)
+        {
+        }
+
         public TextDecorations EnabledDecorations() => TextDecorations.None;
-        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness) { }
+
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+        {
+        }
     }
 
     private static readonly Font OpenSansTTF = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);
