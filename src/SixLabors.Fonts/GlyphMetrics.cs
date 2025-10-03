@@ -291,8 +291,32 @@ public abstract class GlyphMetrics
     /// <param name="options">The options used to influence the rendering of this glyph.</param>
     internal abstract void RenderTo(IGlyphRenderer renderer, int graphemeIndex, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options);
 
-    internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, GlyphLayoutMode mode, Matrix3x2 transform, float scaledPPEM)
+    /// <summary>
+    /// Renders text decorations, such as underline, strikeout, and overline, for the current glyph to the specified
+    /// glyph renderer at the given location and layout mode.
+    /// </summary>
+    /// <remarks>When rendering in vertical layout modes, decoration positions are synthesized to match common
+    /// typographic conventions. The renderer may override which decorations are enabled. Overline thickness is derived
+    /// from underline metrics if not explicitly specified.</remarks>
+    /// <param name="renderer">The glyph renderer that receives the decoration drawing commands.</param>
+    /// <param name="location">The position, in device-independent coordinates, where the decorations should be rendered relative to the glyph.</param>
+    /// <param name="mode">The layout mode that determines the orientation and positioning of the decorations (e.g., horizontal, vertical,
+    /// or vertical rotated).</param>
+    /// <param name="transform">The transformation matrix applied to the decoration coordinates before rendering.</param>
+    /// <param name="scaledPPEM">The scaled pixels-per-em value used to adjust decoration size and positioning for the current rendering context.</param>
+    /// <param name="options">Additional text rendering options that may influence decoration appearance or behavior.</param>
+    protected void RenderDecorationsTo(
+        IGlyphRenderer renderer,
+        Vector2 location,
+        GlyphLayoutMode mode,
+        Matrix3x2 transform,
+        float scaledPPEM,
+        TextOptions options)
     {
+        FontMetrics fontMetrics = options.DecorationPositioningMode == DecorationPositioningMode.PerGlyphFromFont
+            ? this.FontMetrics
+            : options.Font.FontMetrics;
+
         bool isVerticalLayout = mode is GlyphLayoutMode.Vertical or GlyphLayoutMode.VerticalRotated;
         (Vector2 Start, Vector2 End, float Thickness) GetEnds(TextDecorations decorations, float thickness, float decoratorPosition)
         {
@@ -380,18 +404,18 @@ public abstract class GlyphMetrics
         bool synthesized = mode == GlyphLayoutMode.Vertical;
         if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
         {
-            SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, synthesized ? Math.Abs(this.FontMetrics.UnderlinePosition) : this.FontMetrics.UnderlinePosition);
+            SetDecoration(TextDecorations.Underline, fontMetrics.UnderlineThickness, synthesized ? Math.Abs(fontMetrics.UnderlinePosition) : fontMetrics.UnderlinePosition);
         }
 
         if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
         {
-            SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, synthesized ? this.FontMetrics.UnitsPerEm * .5F : this.FontMetrics.StrikeoutPosition);
+            SetDecoration(TextDecorations.Strikeout, fontMetrics.StrikeoutSize, synthesized ? fontMetrics.UnitsPerEm * .5F : fontMetrics.StrikeoutPosition);
         }
 
         if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
         {
             // There's no built in metrics for overline thickness so use underline.
-            SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, this.UnitsPerEm - this.FontMetrics.UnderlinePosition);
+            SetDecoration(TextDecorations.Overline, fontMetrics.UnderlineThickness, this.UnitsPerEm - fontMetrics.UnderlinePosition);
         }
     }
 

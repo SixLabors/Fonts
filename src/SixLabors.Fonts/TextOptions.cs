@@ -171,6 +171,11 @@ public class TextOptions
     public KerningMode KerningMode { get; set; }
 
     /// <summary>
+    /// Gets or sets the positioning mode used for rendering decorations.
+    /// </summary>
+    public DecorationPositioningMode DecorationPositioningMode { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether to enable various color font formats.
     /// </summary>
     public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.MicrosoftColrFormat;

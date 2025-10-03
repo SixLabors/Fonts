@@ -170,7 +170,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             }
 
             renderer.EndGlyph();
-            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPpem);
+            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPpem, options);
         }
     }
 

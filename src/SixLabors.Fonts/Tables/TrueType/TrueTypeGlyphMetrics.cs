@@ -242,7 +242,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
             }
 
             renderer.EndGlyph();
-            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM);
+            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM, options);
         }
     }
 }
