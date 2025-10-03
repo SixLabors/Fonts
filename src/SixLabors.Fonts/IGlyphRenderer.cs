@@ -121,7 +121,9 @@ public interface IGlyphRenderer
     public TextDecorations EnabledDecorations();
 
     /// <summary>
-    /// Provides the positions required for drawing text decorations onto the <see cref="IGlyphRenderer"/>
+    /// Sets the details of a text decoration to be rendered.
+    /// This only gets called if the decoration type was requested via <see cref="EnabledDecorations"/>
+    /// and after the glyph has been rendered via <see cref="BeginGlyph"/> and <see cref="EndGlyph"/>.
     /// </summary>
     /// <param name="textDecorations">The type of decoration these details correspond to.</param>
     /// <param name="start">The start position from where to draw the decorations from.</param>

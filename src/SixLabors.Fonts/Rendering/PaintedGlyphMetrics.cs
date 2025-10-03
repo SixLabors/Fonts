@@ -154,13 +154,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPpem);
         GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
-        if (!renderer.BeginGlyph(in box, in parameters))
-        {
-            renderer.EndGlyph();
-            return;
-        }
-
-        try
+        if (renderer.BeginGlyph(in box, in parameters))
         {
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint)
                 && this.source.TryGetPaintedGlyph(this.GlyphId, out PaintedGlyph glyph, out PaintedCanvas canvas))
@@ -175,11 +169,8 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                 StreamPaintedGlyph(glyph, in box, renderer, total);
             }
 
-            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPpem);
-        }
-        finally
-        {
             renderer.EndGlyph();
+            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPpem);
         }
     }
 
