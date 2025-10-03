@@ -991,6 +991,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             int r = s.IndexOf(')');
             if (l >= 0 && r > l)
             {
+                // TODO: Investigate spans to avoid allocations.
                 string[] comps = s.Substring(l + 1, r - l - 1).Split(',');
                 if (comps.Length >= 3)
                 {
@@ -1011,10 +1012,15 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
         return false;
 
-        static byte ParseByte(string x)
+        static byte ParseByte(ReadOnlySpan<char> x)
         {
-            string t = x.Trim();
-            if (t.EndsWith('%'))
+            if (x.IsEmpty)
+            {
+                return 0;
+            }
+
+            ReadOnlySpan<char> t = x.Trim();
+            if (t[^1] == '%')
             {
                 if (float.TryParse(t[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out float p))
                 {
