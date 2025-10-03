@@ -18,7 +18,7 @@ internal readonly struct PaintedLayer
     /// <param name="fillRule">The fill rule.</param>
     /// <param name="transform">The transform applied to all path coordinates.</param>
     /// <param name="path">The path command stream for this layer.</param>
-    public PaintedLayer(Paint? paint, FillRule fillRule, Matrix3x2 transform, ReadOnlyMemory<PathCommand> path)
+    public PaintedLayer(Paint? paint, FillRule fillRule, Matrix3x2 transform, IReadOnlyList<PathCommand> path)
     {
         this.Paint = paint;
         this.FillRule = fillRule;
@@ -44,16 +44,5 @@ internal readonly struct PaintedLayer
     /// <summary>
     /// Gets the path stream for this layer.
     /// </summary>
-    public ReadOnlyMemory<PathCommand> Path { get; }
-
-    /// <summary>
-    /// Creates a layer from an array of commands.
-    /// </summary>
-    /// <param name="paint">The paint.</param>
-    /// <param name="fillRule">The fill rule.</param>
-    /// <param name="transform">The transform applied to all path coordinates.</param>
-    /// <param name="commands">The commands.</param>
-    /// <returns>The layer.</returns>
-    public static PaintedLayer FromArray(Paint? paint, FillRule fillRule, Matrix3x2 transform, PathCommand[] commands)
-        => new(paint, fillRule, transform, new ReadOnlyMemory<PathCommand>(commands));
+    public IReadOnlyList<PathCommand> Path { get; }
 }

@@ -1,12 +1,12 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts;
+namespace SixLabors.Fonts.Rendering;
 
 /// <summary>
 /// A surface that can have a glyph rendered to it as a series of actions.
 /// </summary>
-public static class IGlyphRendererExtensions
+public static class GlyphRendererExtensions
 {
     /// <summary>
     /// Renders the text.

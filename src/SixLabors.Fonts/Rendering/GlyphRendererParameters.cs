@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using SixLabors.Fonts.Unicode;
 
-namespace SixLabors.Fonts;
+namespace SixLabors.Fonts.Rendering;
 
 /// <summary>
 /// The combined set of properties that uniquely identify the glyph that is to be rendered

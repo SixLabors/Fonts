@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts.Tables.Cff;
 

@@ -2,9 +2,8 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
-using SixLabors.Fonts.Rendering;
 
-namespace SixLabors.Fonts;
+namespace SixLabors.Fonts.Rendering;
 
 /// <summary>
 /// A surface that can have a glyph rendered to it as a series of actions.

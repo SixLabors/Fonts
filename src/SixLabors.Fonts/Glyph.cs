@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts;
 

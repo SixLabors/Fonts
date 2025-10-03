@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Unicode;
 

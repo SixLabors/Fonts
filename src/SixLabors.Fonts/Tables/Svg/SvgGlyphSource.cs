@@ -221,11 +221,11 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     break;
                 }
 
-                PathCommand[] cmds = BuildCommandsFromPathData(d);
-                if (cmds.Length > 0)
+                List<PathCommand> cmds = BuildCommandsFromPathData(d);
+                if (cmds.Count > 0)
                 {
                     Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                    outputLayers.Add(PaintedLayer.FromArray(layerPaint, fillRule, localTransform, cmds));
+                    outputLayers.Add(new(layerPaint, fillRule, localTransform, cmds));
                 }
 
                 break;
@@ -244,11 +244,11 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 if (coords.Length >= 4)
                 {
                     bool close = string.Equals(node.Name.LocalName, "polygon", StringComparison.Ordinal);
-                    PathCommand[] cmds = BuildCommandsFromPoly(coords, close);
-                    if (cmds.Length > 0)
+                    List<PathCommand> cmds = BuildCommandsFromPoly(coords, close);
+                    if (cmds.Count > 0)
                     {
                         Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                        outputLayers.Add(PaintedLayer.FromArray(layerPaint, fillRule, localTransform, cmds));
+                        outputLayers.Add(new(layerPaint, fillRule, localTransform, cmds));
                     }
                 }
 
@@ -278,11 +278,11 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                         x, y + h
                     ];
 
-                    PathCommand[] cmds = BuildCommandsFromPoly(coords, close: true);
-                    if (cmds.Length > 0)
+                    List<PathCommand> cmds = BuildCommandsFromPoly(coords, close: true);
+                    if (cmds.Count > 0)
                     {
                         Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                        outputLayers.Add(PaintedLayer.FromArray(layerPaint, fillRule, localTransform, cmds));
+                        outputLayers.Add(new(layerPaint, fillRule, localTransform, cmds));
                     }
                 }
 
@@ -301,11 +301,11 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 float r = ParseFloat(node.Attribute("r")?.Value);
                 if (r > 0f)
                 {
-                    PathCommand[] cmds = BuildCommandsForEllipse(cx, cy, r, r);
-                    if (cmds.Length > 0)
+                    List<PathCommand> cmds = BuildCommandsForEllipse(cx, cy, r, r);
+                    if (cmds.Count > 0)
                     {
                         Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                        outputLayers.Add(PaintedLayer.FromArray(layerPaint, fillRule, localTransform, cmds));
+                        outputLayers.Add(new(layerPaint, fillRule, localTransform, cmds));
                     }
                 }
 
@@ -325,11 +325,11 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 float ry = ParseFloat(node.Attribute("ry")?.Value);
                 if (rx > 0f && ry > 0f)
                 {
-                    PathCommand[] cmds = BuildCommandsForEllipse(cx, cy, rx, ry);
-                    if (cmds.Length > 0)
+                    List<PathCommand> cmds = BuildCommandsForEllipse(cx, cy, rx, ry);
+                    if (cmds.Count > 0)
                     {
                         Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                        outputLayers.Add(PaintedLayer.FromArray(layerPaint, fillRule, localTransform, cmds));
+                        outputLayers.Add(new(layerPaint, fillRule, localTransform, cmds));
                     }
                 }
 
@@ -659,15 +659,29 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         }
 
         if (!cx.HasValue)
-        { cx = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f; }
+        {
+            cx = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
+        }
+
         if (!cy.HasValue)
-        { cy = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f; }
+        {
+            cy = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
+        }
+
         if (!r.HasValue)
-        { r = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f; }
+        {
+            r = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
+        }
+
         if (!fx.HasValue)
-        { fx = cx.Value; }
+        {
+            fx = cx.Value;
+        }
+
         if (!fy.HasValue)
-        { fy = cy.Value; }
+        {
+            fy = cy.Value;
+        }
 
         GradientStop[] gs = BuildStopsArray(stops);
 
@@ -1064,7 +1078,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     // ---------------------------------------------------------------------
     // Geometry builders (no transforms applied to points)
     // ---------------------------------------------------------------------
-    private static PathCommand[] BuildCommandsFromPoly(float[] coords, bool close)
+    private static List<PathCommand> BuildCommandsFromPoly(float[] coords, bool close)
     {
         List<PathCommand> cmds = [];
 
@@ -1088,10 +1102,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             cmds.Add(PathCommand.Close());
         }
 
-        return [.. cmds];
+        return cmds;
     }
 
-    private static PathCommand[] BuildCommandsForEllipse(float cx, float cy, float rx, float ry)
+    private static List<PathCommand> BuildCommandsForEllipse(float cx, float cy, float rx, float ry)
     {
         List<PathCommand> cmds = [];
 
@@ -1108,10 +1122,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         cmds.Add(PathCommand.ArcTo(rx, ry, 0f, true, true, p2));
 
         cmds.Add(PathCommand.Close());
-        return [.. cmds];
+        return cmds;
     }
 
-    private static PathCommand[] BuildCommandsFromPathData(string d)
+    private static List<PathCommand> BuildCommandsFromPathData(string d)
     {
         List<PathCommand> cmds = [];
 
@@ -1170,7 +1184,6 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     if (figureOpen)
                     {
                         cmds.Add(PathCommand.Close());
-                        figureOpen = false;
                     }
 
                     cmds.Add(PathCommand.MoveTo(p1));
@@ -1346,7 +1359,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             }
         }
 
-        return [.. cmds];
+        return cmds;
     }
 
     // ---------------------------------------------------------------------

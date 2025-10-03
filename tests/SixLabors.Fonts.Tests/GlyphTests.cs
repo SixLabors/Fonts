@@ -4,6 +4,7 @@
 using System.Globalization;
 using System.Numerics;
 using Moq;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Tests.Fakes;

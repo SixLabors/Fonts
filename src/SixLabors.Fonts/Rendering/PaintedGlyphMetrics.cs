@@ -235,9 +235,9 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             renderer.BeginLayer(paint, layer.FillRule);
 
             bool open = false;
-            ReadOnlySpan<PathCommand> cmds = layer.Path.Span;
+            IReadOnlyList<PathCommand> cmds = layer.Path;
 
-            for (int j = 0; j < cmds.Length; j++)
+            for (int j = 0; j < cmds.Count; j++)
             {
                 PathCommand c = cmds[j];
                 switch (c.Verb)

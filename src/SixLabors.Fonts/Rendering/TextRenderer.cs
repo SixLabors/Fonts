@@ -1,7 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts;
+namespace SixLabors.Fonts.Rendering;
 
 /// <summary>
 /// Encapsulated logic for laying out and then rendering text to a <see cref="IGlyphRenderer"/> surface.
