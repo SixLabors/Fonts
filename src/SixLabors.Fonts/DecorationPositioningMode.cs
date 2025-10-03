@@ -9,14 +9,14 @@ namespace SixLabors.Fonts;
 public enum DecorationPositioningMode
 {
     /// <summary>
-    /// Word-like: position each decoration using the active glyph's own font metrics
-    /// Varies across glyphs/fallback faces within the same line.
-    /// </summary>
-    PerGlyphFromFont = 0,
-
-    /// <summary>
     /// Browser-like: Use the primary (base) font's metrics for the entire run/line, producing a single,
     /// consistent decoration position across mixed fonts and scripts.
     /// </summary>
-    FromPrimaryFont = 1,
+    FromPrimaryFont = 0,
+
+    /// <summary>
+    /// Word-like: position each decoration using the active glyph's own font metrics
+    /// Varies across glyphs/fallback faces within the same line.
+    /// </summary>
+    PerGlyphFromFont = 1,
 }
