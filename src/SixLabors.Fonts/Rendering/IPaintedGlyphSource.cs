@@ -16,5 +16,5 @@ internal interface IPaintedGlyphSource
     /// <param name="glyph">The painted glyph.</param>
     /// <param name="canvas">The canvas metadata.</param>
     /// <returns><see langword="true"/> if the glyph is available; otherwise <see langword="false"/>.</returns>
-    bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas);
+    public bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas);
 }

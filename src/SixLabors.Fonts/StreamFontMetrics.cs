@@ -243,6 +243,7 @@ internal partial class StreamFontMetrics : FontMetrics
         LayoutMode layoutMode,
         ColorFontSupport support)
     {
+        // TODO: How do we expand the support here?
         if (support == ColorFontSupport.MicrosoftColrFormat
             && this.TryGetColoredMetrics(codePoint, glyphId, textAttributes, textDecorations, layoutMode, out GlyphMetrics[]? metrics))
         {
@@ -252,16 +253,16 @@ internal partial class StreamFontMetrics : FontMetrics
         // We overwrite the cache entry for this type should the attributes change.
         return this.glyphCache.GetOrAdd(
             CreateCacheKey(in codePoint, glyphId, textAttributes, layoutMode),
-            static (key, arg) => new[]
-            {
+            static (key, arg) =>
+            [
                 arg.Item3.CreateGlyphMetrics(
-                    in arg.codePoint,
-                    key.Id,
-                    key.Id == 0 ? GlyphType.Fallback : GlyphType.Standard,
-                    key.Attributes,
-                    arg.textDecorations,
-                    key.IsVerticalLayout)
-            },
+                            in arg.codePoint,
+                            key.Id,
+                            key.Id == 0 ? GlyphType.Fallback : GlyphType.Standard,
+                            key.Attributes,
+                            arg.textDecorations,
+                            key.IsVerticalLayout)
+            ],
             (textDecorations, codePoint, this));
     }
 
@@ -356,7 +357,7 @@ internal partial class StreamFontMetrics : FontMetrics
     public static StreamFontMetrics LoadFont(string path)
     {
         using FileStream fs = File.OpenRead(path);
-        using var reader = new FontReader(fs);
+        using FontReader reader = new(fs);
         return LoadFont(reader);
     }
 
@@ -380,7 +381,7 @@ internal partial class StreamFontMetrics : FontMetrics
     /// <returns>a <see cref="StreamFontMetrics"/>.</returns>
     public static StreamFontMetrics LoadFont(Stream stream)
     {
-        using var reader = new FontReader(stream);
+        using FontReader reader = new(stream);
         return LoadFont(reader);
     }
 
@@ -546,9 +547,9 @@ internal partial class StreamFontMetrics : FontMetrics
     public static StreamFontMetrics[] LoadFontCollection(Stream stream)
     {
         long startPos = stream.Position;
-        var reader = new BigEndianBinaryReader(stream, true);
-        var ttcHeader = TtcHeader.Read(reader);
-        var fonts = new StreamFontMetrics[(int)ttcHeader.NumFonts];
+        BigEndianBinaryReader reader = new(stream, true);
+        TtcHeader ttcHeader = TtcHeader.Read(reader);
+        StreamFontMetrics[] fonts = new StreamFontMetrics[(int)ttcHeader.NumFonts];
 
         for (int i = 0; i < ttcHeader.NumFonts; ++i)
         {
@@ -589,7 +590,7 @@ internal partial class StreamFontMetrics : FontMetrics
             CreateCacheKey(in codePoint, glyphId, textAttributes, layoutMode),
             (key, args) =>
             {
-                GlyphMetrics[] m = Array.Empty<GlyphMetrics>();
+                GlyphMetrics[] m = [];
                 Span<LayerRecord> indexes = colr.GetLayers(key.Id);
                 if (indexes.Length > 0)
                 {
@@ -597,7 +598,14 @@ internal partial class StreamFontMetrics : FontMetrics
                     for (int i = 0; i < indexes.Length; i++)
                     {
                         LayerRecord layer = indexes[i];
-                        m[i] = args.Item2.CreateGlyphMetrics(in args.codePoint, layer.GlyphId, GlyphType.ColrLayer, key.Attributes, textDecorations, key.IsVerticalLayout, layer.PaletteIndex);
+                        m[i] = args.Item2.CreateGlyphMetrics(
+                                            in args.codePoint,
+                                            layer.GlyphId,
+                                            GlyphType.Layer,
+                                            key.Attributes,
+                                            textDecorations,
+                                            key.IsVerticalLayout,
+                                            layer.PaletteIndex);
                     }
                 }
 

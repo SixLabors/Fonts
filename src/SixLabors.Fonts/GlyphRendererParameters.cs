@@ -19,11 +19,13 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
         TextRun textRun,
         float pointSize,
         float dpi,
-        GlyphLayoutMode layoutMode)
+        GlyphLayoutMode layoutMode,
+        int graphemeIndex)
     {
         this.Font = metrics.FontMetrics.Description.FontNameInvariantCulture?.ToUpper(CultureInfo.InvariantCulture) ?? string.Empty;
         this.FontStyle = metrics.FontMetrics.Description.Style;
         this.GlyphId = metrics.GlyphId;
+        this.GraphemeIndex = graphemeIndex;
         this.PointSize = pointSize;
         this.Dpi = dpi;
         this.GlyphType = metrics.GlyphType;
@@ -57,6 +59,16 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
     /// Gets the id of the glyph within the font tables.
     /// </summary>
     public ushort GlyphId { get; }
+
+    /// <summary>
+    /// Gets the id of the composite glyph if the <see cref="GlyphType"/> is <see cref="GlyphType.Layer"/>;
+    /// </summary>
+    public ushort CompositeGlyphId { get; }
+
+    /// <summary>
+    /// Gets the index of the grapheme this glyph belongs to.
+    /// </summary>
+    public int GraphemeIndex { get; }
 
     /// <summary>
     /// Gets the codepoint represented by this glyph.
@@ -119,6 +131,8 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
         && other.FontStyle == this.FontStyle
         && other.Dpi == this.Dpi
         && other.GlyphId == this.GlyphId
+        && other.CompositeGlyphId == this.CompositeGlyphId
+        && this.GraphemeIndex == other.GraphemeIndex
         && other.GlyphType == this.GlyphType
         && other.TextRun.TextAttributes == this.TextRun.TextAttributes
         && other.TextRun.TextDecorations == this.TextRun.TextDecorations
@@ -148,6 +162,10 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
             this.TextRun.TextDecorations,
             this.LayoutMode);
 
-        return HashCode.Combine(a, b);
+        int c = HashCode.Combine(
+            this.CompositeGlyphId,
+            this.GraphemeIndex);
+
+        return HashCode.Combine(a, b, c);
     }
 }

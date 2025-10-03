@@ -3,6 +3,7 @@
 
 #if OS_WINDOWS
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts.Tests.Issues;
 
@@ -92,6 +93,14 @@ internal class NoOpGlyphRenderer : IGlyphRenderer
     }
 
     public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+    {
+    }
+
+    public void BeginLayer(Paint paint, FillRule fillRule)
+    {
+    }
+
+    public void EndLayer()
     {
     }
 }

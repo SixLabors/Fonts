@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.Cff;
@@ -97,7 +98,13 @@ internal class CffGlyphMetrics : GlyphMetrics
             this.GlyphColor);
 
     /// <inheritdoc/>
-    internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
+    internal override void RenderTo(
+        IGlyphRenderer renderer,
+        int graphemeIndex,
+        Vector2 location,
+        Vector2 offset,
+        GlyphLayoutMode mode,
+        TextOptions options)
     {
         // https://www.unicode.org/faq/unsup_char.html
         if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -118,20 +125,27 @@ internal class CffGlyphMetrics : GlyphMetrics
 
         Matrix3x2 rotation = GetRotationMatrix(mode);
         FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
-        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode);
+        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
+        bool hasColrV0 = this.GlyphColor != null;
 
         if (renderer.BeginGlyph(in box, in parameters))
         {
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
             {
-                if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)
+                if (hasColrV0)
                 {
-                    colorSurface.SetColor(this.GlyphColor.Value);
+                    GlyphColor color = this.GlyphColor!.Value;
+                    renderer.BeginLayer(new SolidPaint { Color = color, Opacity = 1 }, FillRule.NonZero);
                 }
 
                 Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
                 Vector2 scaledOffset = this.Offset * scale;
                 this.glyphData.RenderTo(renderer, renderLocation, scale, scaledOffset, rotation);
+
+                if (hasColrV0)
+                {
+                    renderer.EndLayer();
+                }
             }
 
             this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM);

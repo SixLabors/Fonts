@@ -21,5 +21,5 @@ public enum GlyphType
     /// <summary>
     /// This is a single layer of the multi-layer colored glyph (emoji).
     /// </summary>
-    ColrLayer
+    Layer
 }

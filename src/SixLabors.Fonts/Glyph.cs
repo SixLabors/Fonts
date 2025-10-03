@@ -37,10 +37,11 @@ public readonly struct Glyph
     /// Renders the glyph to the render surface relative to a top left origin.
     /// </summary>
     /// <param name="surface">The surface.</param>
+    /// <param name="graphemeIndex">The index of the grapheme this glyph is part of.</param>
     /// <param name="location">The location to render the glyph at.</param>
     /// <param name="offset">The offset of the glyph vector relative to the top-left position of the glyph advance.</param>
     /// <param name="mode">The glyph layout mode to render using.</param>
     /// <param name="options">The options to render using.</param>
-    internal void RenderTo(IGlyphRenderer surface, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
-        => this.GlyphMetrics.RenderTo(surface, location, offset, mode, options);
+    internal void RenderTo(IGlyphRenderer surface, int graphemeIndex, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
+        => this.GlyphMetrics.RenderTo(surface, graphemeIndex, location, offset, mode, options);
 }

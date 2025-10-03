@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
@@ -111,4 +112,8 @@ internal struct TransformingGlyphRenderer : IGlyphRenderer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private readonly Vector2 Transform(Vector2 point)
         => (Vector2.Transform((point * this.scale) + this.offset, this.transform) * YInverter) + this.origin;
+
+    public readonly void BeginLayer(Paint? paint, FillRule fillRule) => this.renderer.BeginLayer(paint, fillRule);
+
+    public readonly void EndLayer() => this.renderer.EndLayer();
 }

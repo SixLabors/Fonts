@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts;
 
@@ -10,6 +11,45 @@ namespace SixLabors.Fonts;
 /// </summary>
 public interface IGlyphRenderer
 {
+    /// <summary>
+    /// Called before any glyphs have been rendered.
+    /// </summary>
+    /// <param name="bounds">The rectangle within the text will be rendered.</param>
+    public void BeginText(in FontRectangle bounds);
+
+    /// <summary>
+    /// Called once all glyphs have completed rendering.
+    /// </summary>
+    public void EndText();
+
+    /// <summary>
+    /// Begins the glyph.
+    /// </summary>
+    /// <param name="bounds">The bounds the glyph will be rendered at and at what size.</param>
+    /// <param name="parameters">
+    /// The set of parameters that uniquely represents a version of a glyph in at particular font size, font family, font style and DPI.
+    /// </param>
+    /// <returns>Returns true if the glyph should be rendered otherwise it returns false.</returns>
+    public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters);
+
+    /// <summary>
+    /// Ends the glyph.
+    /// </summary>
+    public void EndGlyph();
+
+    /// <summary>
+    /// Begins a new painted layer with the specified paint and fill rule.
+    /// All geometry commands issued after this call belong to the layer until <see cref="EndLayer"/> is called.
+    /// </summary>
+    /// <param name="paint">The paint definition.</param>
+    /// <param name="fillRule">The fill rule.</param>
+    public void BeginLayer(Paint? paint, FillRule fillRule);
+
+    /// <summary>
+    /// Ends the current painted layer.
+    /// </summary>
+    public void EndLayer();
+
     /// <summary>
     /// Begins the figure.
     /// </summary>
@@ -20,6 +60,27 @@ public interface IGlyphRenderer
     /// </summary>
     /// <param name="point">The point.</param>
     public void MoveTo(Vector2 point);
+
+    /// <summary>
+    /// Draw a straight line connecting the previous point to <paramref name="point"/>.
+    /// </summary>
+    /// <param name="point">The point.</param>
+    public void LineTo(Vector2 point);
+
+    /// <summary>
+    /// Draw a quadratic bezier curve connecting the previous point to <paramref name="point"/>.
+    /// </summary>
+    /// <param name="secondControlPoint">The second control point.</param>
+    /// <param name="point">The point.</param>
+    public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point);
+
+    /// <summary>
+    /// Draw a cubic bezier curve connecting the previous point to <paramref name="point"/>.
+    /// </summary>
+    /// <param name="secondControlPoint">The second control point.</param>
+    /// <param name="thirdControlPoint">The third control point.</param>
+    /// <param name="point">The point.</param>
+    public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point);
 
     /// <summary>
     /// <para>
@@ -48,56 +109,9 @@ public interface IGlyphRenderer
     public void ArcTo(float radiusX, float radiusY, float rotation, bool largeArc, bool sweep, Vector2 point);
 
     /// <summary>
-    /// Draw a quadratic bezier curve connecting the previous point to <paramref name="point"/>.
-    /// </summary>
-    /// <param name="secondControlPoint">The second control point.</param>
-    /// <param name="point">The point.</param>
-    public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point);
-
-    /// <summary>
-    /// Draw a cubic bezier curve connecting the previous point to <paramref name="point"/>.
-    /// </summary>
-    /// <param name="secondControlPoint">The second control point.</param>
-    /// <param name="thirdControlPoint">The third control point.</param>
-    /// <param name="point">The point.</param>
-    public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point);
-
-    /// <summary>
-    /// Draw a straight line connecting the previous point to <paramref name="point"/>.
-    /// </summary>
-    /// <param name="point">The point.</param>
-    public void LineTo(Vector2 point);
-
-    /// <summary>
     /// Ends the figure.
     /// </summary>
     public void EndFigure();
-
-    /// <summary>
-    /// Ends the glyph.
-    /// </summary>
-    public void EndGlyph();
-
-    /// <summary>
-    /// Begins the glyph.
-    /// </summary>
-    /// <param name="bounds">The bounds the glyph will be rendered at and at what size.</param>
-    /// <param name="parameters">
-    /// The set of parameters that uniquely represents a version of a glyph in at particular font size, font family, font style and DPI.
-    /// </param>
-    /// <returns>Returns true if the glyph should be rendered otherwise it returns false.</returns>
-    public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters);
-
-    /// <summary>
-    /// Called once all glyphs have completed rendering.
-    /// </summary>
-    public void EndText();
-
-    /// <summary>
-    /// Called before any glyphs have been rendered.
-    /// </summary>
-    /// <param name="bounds">The rectangle within the text will be rendered.</param>
-    public void BeginText(in FontRectangle bounds);
 
     /// <summary>
     /// Provides a callback to enable custom logic to request decoration details.

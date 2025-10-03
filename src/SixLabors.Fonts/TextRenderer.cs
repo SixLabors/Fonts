@@ -56,7 +56,7 @@ public class TextRenderer
 
         foreach (GlyphLayout g in glyphsToRender)
         {
-            g.Glyph.RenderTo(this.renderer, g.PenLocation, g.Offset, g.LayoutMode, options);
+            g.Glyph.RenderTo(this.renderer, g.GraphemeIndex, g.PenLocation, g.Offset, g.LayoutMode, options);
         }
 
         this.renderer.EndText();

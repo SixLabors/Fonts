@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
@@ -61,6 +62,16 @@ internal class CffBoundsFinder : IGlyphRenderer
         {
             this.EndFigure();
         }
+    }
+
+    public void BeginLayer(Paint? paint, FillRule fillRule)
+    {
+        // Do nothing.
+    }
+
+    public void EndLayer()
+    {
+        // Do nothing.
     }
 
     public void LineTo(Vector2 point)

@@ -7,18 +7,6 @@ using System.Runtime.CompilerServices;
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// A surface that can have a glyph rendered to it as a series of actions, where the engine support colored glyphs (emoji).
-/// </summary>
-public interface IColorGlyphRenderer : IGlyphRenderer
-{
-    /// <summary>
-    /// Sets the color to use for the current glyph.
-    /// </summary>
-    /// <param name="color">The color to override the renders brush with.</param>
-    public void SetColor(GlyphColor color);
-}
-
-/// <summary>
 /// Provides access to the color details for the current glyph.
 /// </summary>
 public readonly struct GlyphColor

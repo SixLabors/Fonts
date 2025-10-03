@@ -45,7 +45,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         ushort unitsPerEM,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
-        GlyphType glyphType = GlyphType.Standard,
+        GlyphType glyphType = GlyphType.Layer,
         GlyphColor? glyphColor = null)
         : base(
               font,
@@ -80,7 +80,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         Vector2 offset,
         Vector2 scaleFactor,
         TextRun textRun,
-        GlyphType glyphType = GlyphType.Standard,
+        GlyphType glyphType = GlyphType.Layer,
         GlyphColor? glyphColor = null)
         : base(
               font,
@@ -119,7 +119,13 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             this.GlyphColor);
 
     /// <inheritdoc/>
-    internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
+    internal override void RenderTo(
+        IGlyphRenderer renderer,
+        int graphemeIndex,
+        Vector2 location,
+        Vector2 offset,
+        GlyphLayoutMode mode,
+        TextOptions options)
     {
         if (ShouldSkipGlyphRendering(this.CodePoint))
         {
@@ -146,7 +152,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
         // Bounds in device space for BeginGlyph.
         FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPpem);
-        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode);
+        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
         if (!renderer.BeginGlyph(in box, in parameters))
         {
@@ -159,12 +165,6 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint)
                 && this.source.TryGetPaintedGlyph(this.GlyphId, out PaintedGlyph glyph, out PaintedCanvas canvas))
             {
-                // Optional solid color hint for geometry-only pipelines (COLR v0 etc.).
-                if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer color)
-                {
-                    // color.SetColor(this.GlyphColor.Value);
-                }
-
                 // Source-to-UPEM: viewBox mapping (uniform "meet"), optional y-flip, optional root transform.
                 Matrix3x2 s2u = ComputeSourceToUpem(canvas, this.UnitsPerEm);
 
@@ -227,8 +227,6 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
     /// </summary>
     private static void StreamPaintedGlyph(in PaintedGlyph glyph, in FontRectangle bounds, IGlyphRenderer renderer, Matrix3x2 xform)
     {
-        ILayeredGlyphRenderer? pr = renderer as ILayeredGlyphRenderer ?? new PathOnlyPaintAdapter(renderer);
-
         ReadOnlySpan<PaintedLayer> layers = glyph.Layers.Span;
         for (int i = 0; i < layers.Length; i++)
         {
@@ -243,7 +241,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             // Transform userSpaceOnUse paints into device space; keep ObjectBoundingBox normalized.
             Paint? paint = TransformPaint(layer.Paint, in bounds, layerXform, in sim);
 
-            pr.BeginLayer(paint, layer.FillRule);
+            renderer.BeginLayer(paint, layer.FillRule);
 
             bool open = false;
             ReadOnlySpan<PathCommand> cmds = layer.Path.Span;
@@ -257,23 +255,23 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                     {
                         if (!open)
                         {
-                            pr.BeginFigure();
+                            renderer.BeginFigure();
                             open = true;
                         }
 
-                        pr.MoveTo(Vector2.Transform(c.EndPoint, layerXform));
+                        renderer.MoveTo(Vector2.Transform(c.EndPoint, layerXform));
                         break;
                     }
 
                     case PathVerb.LineTo:
                     {
-                        pr.LineTo(Vector2.Transform(c.EndPoint, layerXform));
+                        renderer.LineTo(Vector2.Transform(c.EndPoint, layerXform));
                         break;
                     }
 
                     case PathVerb.QuadraticTo:
                     {
-                        pr.QuadraticBezierTo(
+                        renderer.QuadraticBezierTo(
                             Vector2.Transform(c.ControlPoint1, layerXform),
                             Vector2.Transform(c.EndPoint, layerXform));
                         break;
@@ -281,7 +279,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
                     case PathVerb.CubicTo:
                     {
-                        pr.CubicBezierTo(
+                        renderer.CubicBezierTo(
                             Vector2.Transform(c.ControlPoint1, layerXform),
                             Vector2.Transform(c.ControlPoint2, layerXform),
                             Vector2.Transform(c.EndPoint, layerXform));
@@ -296,7 +294,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                         float ang = c.RotationDegrees + sim.RotationDegrees;
                         bool sweep = sim.Reflection ? !c.Sweep : c.Sweep;
 
-                        pr.ArcTo(rx, ry, ang, c.LargeArc, sweep, Vector2.Transform(c.EndPoint, layerXform));
+                        renderer.ArcTo(rx, ry, ang, c.LargeArc, sweep, Vector2.Transform(c.EndPoint, layerXform));
                         break;
                     }
 
@@ -304,7 +302,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                     {
                         if (open)
                         {
-                            pr.EndFigure();
+                            renderer.EndFigure();
                             open = false;
                         }
 
@@ -315,10 +313,10 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
             if (open)
             {
-                pr.EndFigure();
+                renderer.EndFigure();
             }
 
-            pr.EndLayer();
+            renderer.EndLayer();
         }
     }
 
@@ -389,7 +387,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
                 if (lg.Units == GradientUnits.UserSpaceOnUse)
                 {
-                    // USO: user → paint.Transform → layerXform → device
+                    // USO: user -> paint.Transform -> layerXform -> device
                     Vector2 u0 = Vector2.Transform(lg.P0, lg.Transform);
                     Vector2 u1 = Vector2.Transform(lg.P1, lg.Transform);
 
@@ -398,7 +396,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                 }
                 else
                 {
-                    // OBB: normalized → paint.Transform (normalized) → denormalize via layer bounds → device
+                    // OBB: normalized -> paint.Transform (normalized) -> denormalize via layer bounds -> device
                     Vector2 n0 = Vector2.Transform(lg.P0, lg.Transform);
                     Vector2 n1 = Vector2.Transform(lg.P1, lg.Transform);
 
@@ -429,7 +427,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
                 if (rg.Units == GradientUnits.UserSpaceOnUse)
                 {
-                    // USO center/focal in user → paint.Transform → layerXform → device
+                    // USO center/focal in user -> paint.Transform -> layerXform -> device
                     Vector2 uc = Vector2.Transform(rg.Center, rg.Transform);
                     Vector2 uf = Vector2.Transform(rg.Focal ?? rg.Center, rg.Transform);
 
@@ -443,7 +441,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                 }
                 else
                 {
-                    // OBB center/focal in normalized → paint.Transform (normalized) → denormalize → device
+                    // OBB center/focal in normalized -> paint.Transform (normalized) -> denormalize -> device
                     Vector2 nc = Vector2.Transform(rg.Center, rg.Transform);
                     Vector2 nf = Vector2.Transform(rg.Focal ?? rg.Center, rg.Transform);
 
@@ -494,7 +492,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                 }
                 else
                 {
-                    // OBB: center in normalized → paint.Transform (normalized) → denormalize; angles by paint.Transform only.
+                    // OBB: center in normalized -> paint.Transform (normalized) -> denormalize; angles by paint.Transform only.
                     Vector2 nc = Vector2.Transform(sg.Center, sg.Transform);
                     center = DenormalizePoint(nc, left, top, width, height);
 

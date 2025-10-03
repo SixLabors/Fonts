@@ -98,7 +98,7 @@ internal partial class StreamFontMetrics
         }
 
         GlyphColor? color = null;
-        if (glyphType == GlyphType.ColrLayer)
+        if (glyphType == GlyphType.Layer)
         {
             // 0xFFFF is special index meaning use foreground color and thus leave unset
             if (paletteIndex != 0xFFFF)

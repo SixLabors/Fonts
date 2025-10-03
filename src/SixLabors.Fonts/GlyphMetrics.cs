@@ -167,7 +167,7 @@ public abstract class GlyphMetrics
     public GlyphType GlyphType { get; }
 
     /// <summary>
-    /// Gets the color of this glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
+    /// Gets the color of this glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.Layer"/>
     /// </summary>
     public GlyphColor? GlyphColor { get; }
 
@@ -284,11 +284,12 @@ public abstract class GlyphMetrics
     /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
     /// </summary>
     /// <param name="renderer">The surface renderer.</param>
+    /// <param name="graphemeIndex">The index of the grapheme this glyph is part of.</param>
     /// <param name="location">The location representing offset of the glyph outer bounds relative to the origin.</param>
     /// <param name="offset">The offset of the glyph vector relative to the top-left position of the glyph advance.</param>
     /// <param name="mode">The glyph layout mode to render using.</param>
     /// <param name="options">The options used to influence the rendering of this glyph.</param>
-    internal abstract void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options);
+    internal abstract void RenderTo(IGlyphRenderer renderer, int graphemeIndex, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options);
 
     internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, GlyphLayoutMode mode, Matrix3x2 transform, float scaledPPEM)
     {
