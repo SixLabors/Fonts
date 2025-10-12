@@ -982,8 +982,8 @@ internal sealed class IndicShaper : DefaultShaper
             // If a pre-base matra character had been reordered before applying basic
             // features, the glyph can be moved closer to the main consonant based on
             // whether half-forms had been formed. Actual position for the matra is
-            // defined as “after last standalone halant glyph, after initial matra
-            // position and before the main consonant”. If ZWJ or ZWNJ follow this
+            // defined as "after last standalone halant glyph, after initial matra
+            // position and before the main consonant". If ZWJ or ZWNJ follow this
             // halant, position is moved after it.
             //
             // Otherwise there can't be any pre-base matra characters.

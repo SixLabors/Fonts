@@ -151,6 +151,7 @@ internal class SvgTable : Table
             int b1 = ms.ReadByte();
             ms.Position = pos;
 
+            // Start of GZIP (RFC1952)
             if (b0 == 0x1F && b1 == 0x8B)
             {
                 stream = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: false);

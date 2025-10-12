@@ -73,7 +73,7 @@ internal sealed class Format12SubTable : CMapSubTable
         // uint16             | format            | Subtable format; set to 12.
         // uint16             | reserved          | Reserved; set to 0
         // uint32             | length            | Byte length of this subtable(including the header)
-        // uint32             | language          | For requirements on use of the language field, see “Use of the language field in 'cmap' subtables” in this document.
+        // uint32             | language          | For requirements on use of the language field, see "Use of the language field in 'cmap' subtables" in this document.
         // uint32             | numGroups         | Number of groupings which follow
         // SequentialMapGroup | groups[numGroups] | Array of SequentialMapGroup records.
 
