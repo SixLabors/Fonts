@@ -23,6 +23,11 @@ public abstract class Paint
     /// Used to pre-apply gradientTransform in SVG or equivalent.
     /// </summary>
     internal Matrix3x2 Transform { get; set; }
+
+    /// <summary>
+    /// Gets the composite mode to use when applying this paint over existing content.
+    /// </summary>
+    public CompositeMode CompositeMode { get; init; }
 }
 
 /// <summary>
