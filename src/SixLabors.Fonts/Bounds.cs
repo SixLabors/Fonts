@@ -83,6 +83,9 @@ internal readonly struct Bounds : IEquatable<Bounds>
     public static Bounds Transform(in Bounds bounds, Matrix3x2 matrix)
         => new(Vector2.Transform(bounds.Min, matrix), Vector2.Transform(bounds.Max, matrix));
 
+    public static Bounds Union(in Bounds a, in Bounds b)
+        => new(Vector2.Min(a.Min, b.Min), Vector2.Max(a.Max, b.Max));
+
     public override bool Equals(object? obj) => obj is Bounds bounds && this.Equals(bounds);
 
     public bool Equals(Bounds other) => this.Min.Equals(other.Min) && this.Max.Equals(other.Max);

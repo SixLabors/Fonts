@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace SixLabors.Fonts.Tables.General.Colr;
 
 internal class ColrTable : Table
@@ -41,7 +43,10 @@ internal class ColrTable : Table
         this.layerList = layerList;
         this.clipList = clipList;
         this.paintCache = paintCache;
+        this.Version = version;
     }
+
+    public int Version { get; }
 
     public static ColrTable? Load(FontReader fontReader)
     {
@@ -69,7 +74,58 @@ internal class ColrTable : Table
         return [];
     }
 
-    internal bool TryGetRootPaintOffset(ushort glyphId, out uint paintOffset)
+    internal bool TryGetResolvedLayers(ushort glyphId, [NotNullWhen(true)] out List<ResolvedGlyphLayer>? layers)
+    {
+        layers = null;
+        if (this.baseGlyphList is null || this.layerList is null || this.paintCache is null)
+        {
+            return false; // no COLR v1 data
+        }
+
+        // 1) Find the root paint offset for this glyph
+        if (!this.TryGetRootPaintOffset(glyphId, out uint rootOff) || rootOff == 0)
+        {
+            return false;
+        }
+
+        // 2) Look up the materialized root paint
+        if (!this.paintCache.TryGetValue(rootOff, out Paint? root))
+        {
+            return false;
+        }
+
+        layers = [];
+
+        // 3) Resolve layers
+        if (root is PaintColrLayers pcl)
+        {
+            // Layer indices are into LayerList -> offsets -> cached paints
+            ReadOnlySpan<uint> offs = this.GetLayerPaintOffsets((int)pcl.FirstLayerIndex, pcl.NumLayers);
+            for (int i = 0; i < offs.Length; i++)
+            {
+                if (offs[i] != 0 && this.paintCache.TryGetValue(offs[i], out Paint? p))
+                {
+                    _ = this.TryGetClipBox(glyphId, out Bounds? b);
+                    layers.Add(new ResolvedGlyphLayer(glyphId, p, b));
+                }
+            }
+
+            return layers.Count > 0;
+        }
+
+        if (root is PaintColrGlyph pcg)
+        {
+            // Indirection to another glyph's root
+            return this.TryGetResolvedLayers(pcg.GlyphId, out layers);
+        }
+
+        // Not a "layers" root—treat the root as a single layer
+        _ = this.TryGetClipBox(glyphId, out Bounds? clipBox);
+        layers.Add(new(glyphId, root, clipBox));
+        return true;
+    }
+
+    private bool TryGetRootPaintOffset(ushort glyphId, out uint paintOffset)
     {
         if (this.baseGlyphList is null)
         {
@@ -105,7 +161,7 @@ internal class ColrTable : Table
         return false;
     }
 
-    internal ReadOnlySpan<uint> GetLayerPaintOffsets(int first, int count)
+    private ReadOnlySpan<uint> GetLayerPaintOffsets(int first, int count)
     {
         if (this.layerList is null || count <= 0)
         {
@@ -122,7 +178,7 @@ internal class ColrTable : Table
         return offsets.Slice(first, len);
     }
 
-    internal bool TryGetClipBox(ushort glyphId, out Bounds bounds)
+    internal bool TryGetClipBox(ushort glyphId, out Bounds? bounds)
     {
         if (this.clipList is null)
         {
@@ -810,4 +866,22 @@ internal sealed class PaintCaches
     public Dictionary<uint, Affine2x3> AffineCache { get; } = [];
 
     public Dictionary<uint, VarAffine2x3> VarAffineCache { get; } = [];
+}
+
+#pragma warning disable SA1201 // Elements should appear in the correct order
+internal readonly struct ResolvedGlyphLayer
+#pragma warning restore SA1201 // Elements should appear in the correct order
+{
+    public ResolvedGlyphLayer(ushort id, Paint paint, Bounds? clipBox)
+    {
+        this.GlyphId = id;
+        this.Paint = paint;
+        this.ClipBox = clipBox;
+    }
+
+    public ushort GlyphId { get; }
+
+    public Paint Paint { get; }
+
+    public Bounds? ClipBox { get; }
 }

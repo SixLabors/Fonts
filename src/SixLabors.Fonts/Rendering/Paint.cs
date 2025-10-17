@@ -38,13 +38,7 @@ public sealed class SolidPaint : Paint
 }
 
 /// <summary>
-/// Linear gradient paint. Compatible with OT-SVG &lt;linearGradient&gt; and COLR v1 PaintLinearGradient
-/// once normalized. Interpreters must:
-/// <list type="bullet">
-/// <item><description>Resolve all palette colors to RGBA in <see cref="Stops"/>.</description></item>
-/// <item><description>Pre-apply <c>gradientTransform</c> and element/group transforms.</description></item>
-/// <item><description>Provide <see cref="P0"/> and <see cref="P1"/> in the coordinate system defined by <see cref="Units"/>.</description></item>
-/// </list>
+/// Linear gradient paint.
 /// </summary>
 public sealed class LinearGradientPaint : Paint
 {
@@ -64,6 +58,11 @@ public sealed class LinearGradientPaint : Paint
     public Vector2 P1 { get; init; }
 
     /// <summary>
+    /// Gets the rotation point for the gradient. Normalized if <see cref="Units"/> is <see cref="GradientUnits.ObjectBoundingBox"/>.
+    /// </summary>
+    public Vector2? P2 { get; init; }
+
+    /// <summary>
     /// Gets the spread method applied when sampling outside the [0, 1] range.
     /// </summary>
     public SpreadMethod Spread { get; init; } = SpreadMethod.Pad;
@@ -75,32 +74,43 @@ public sealed class LinearGradientPaint : Paint
 }
 
 /// <summary>
-/// Radial gradient paint. Compatible with OT-SVG &lt;radialGradient&gt; and COLR v1 PaintRadialGradient
-/// once normalized. Interpreters should represent elliptical cases by pre-applying transforms so the
-/// renderer receives final coordinates in either user space or normalized bbox space.
+/// Represents a radial gradient paint defined by two circles.
+/// The first circle is centered at <see cref="Center0"/> with radius <see cref="Radius0"/>.
+/// The second circle is centered at <see cref="Center1"/> with radius <see cref="Radius1"/>.
+/// The color transition is computed between these two circles.
+/// Compatible with two-circle radial gradients used by HTML Canvas and OpenType COLR v1.
 /// </summary>
 public sealed class RadialGradientPaint : Paint
 {
     /// <summary>
-    /// Gets the coordinate system for <see cref="Center"/>, <see cref="Focal"/>, and <see cref="Radius"/>.
+    /// Gets the coordinate system for <see cref="Center0"/>, <see cref="Center1"/>,
+    /// <see cref="Radius0"/>, and <see cref="Radius1"/>.
     /// </summary>
     public GradientUnits Units { get; init; }
 
     /// <summary>
-    /// Gets the center of the gradient.
+    /// Gets the center of the starting circle of the gradient.
     /// </summary>
-    public Vector2 Center { get; init; }
+    public Vector2 Center0 { get; init; }
 
     /// <summary>
-    /// Gets the gradient radius. If <see cref="Units"/> is <see cref="GradientUnits.ObjectBoundingBox"/>,
+    /// Gets the radius of the starting circle of the gradient.
+    /// If <see cref="Units"/> is <see cref="GradientUnits.ObjectBoundingBox"/>,
     /// the radius is normalized to the bounds.
     /// </summary>
-    public float Radius { get; init; }
+    public float Radius0 { get; init; }
 
     /// <summary>
-    /// Gets the optional focal point. If <see langword="null"/>, the focal equals <see cref="Center"/>.
+    /// Gets the center of the ending circle of the gradient.
     /// </summary>
-    public Vector2? Focal { get; init; }
+    public Vector2 Center1 { get; init; }
+
+    /// <summary>
+    /// Gets the radius of the ending circle of the gradient.
+    /// If <see cref="Units"/> is <see cref="GradientUnits.ObjectBoundingBox"/>,
+    /// the radius is normalized to the bounds.
+    /// </summary>
+    public float Radius1 { get; init; }
 
     /// <summary>
     /// Gets the spread method applied when sampling outside the [0, 1] range.
@@ -108,15 +118,13 @@ public sealed class RadialGradientPaint : Paint
     public SpreadMethod Spread { get; init; } = SpreadMethod.Pad;
 
     /// <summary>
-    /// Gets the ordered gradient stops (ascending by <see cref="GradientStop.Offset"/>).
+    /// Gets the ordered gradient stops, ascending by <see cref="GradientStop.Offset"/>.
     /// </summary>
     public GradientStop[] Stops { get; init; } = [];
 }
 
 /// <summary>
-/// Sweep (conic) gradient paint. There is no OT-SVG sweep gradient in 1.1, but this
-/// form is useful to normalize COLR v1 PaintSweepGradient for a format-agnostic renderer.
-/// Angles are expressed in degrees in the renderer's y-down space.
+/// Sweep (conic) gradient paint. Angles are expressed in degrees in the renderer's y-down space.
 /// </summary>
 public sealed class SweepGradientPaint : Paint
 {

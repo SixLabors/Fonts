@@ -356,8 +356,6 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             return null;
         }
 
-        _ = layerSim; // not used here
-
         float left = layerBounds.X;
         float top = layerBounds.Y;
         float width = MathF.Max(layerBounds.Width, 1e-6f);
@@ -367,40 +365,42 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         {
             case SolidPaint s:
             {
-                // Solids have no geometry to resolve.
                 return s;
             }
 
             case LinearGradientPaint lg:
             {
-                Vector2 p0;
-                Vector2 p1;
+                Vector2 p0, p1;
+                Vector2? p2;
 
                 if (lg.Units == GradientUnits.UserSpaceOnUse)
                 {
-                    // USO: user -> paint.Transform -> layerXform -> device
+                    // Points translate/rotate/scale with the layer.
                     Vector2 u0 = Vector2.Transform(lg.P0, lg.Transform);
                     Vector2 u1 = Vector2.Transform(lg.P1, lg.Transform);
+                    Vector2 u2 = lg.P2.HasValue ? Vector2.Transform(lg.P2.Value, lg.Transform) : default;
 
                     p0 = Vector2.Transform(u0, layerXform);
                     p1 = Vector2.Transform(u1, layerXform);
+                    p2 = lg.P2.HasValue ? Vector2.Transform(u2, layerXform) : null;
                 }
                 else
                 {
-                    // OBB: normalized -> paint.Transform (normalized) -> denormalize via layer bounds -> device
                     Vector2 n0 = Vector2.Transform(lg.P0, lg.Transform);
                     Vector2 n1 = Vector2.Transform(lg.P1, lg.Transform);
+                    Vector2 n2 = lg.P2.HasValue ? Vector2.Transform(lg.P2.Value, lg.Transform) : default;
 
                     p0 = DenormalizePoint(n0, left, top, width, height);
                     p1 = DenormalizePoint(n1, left, top, width, height);
+                    p2 = lg.P2.HasValue ? DenormalizePoint(n2, left, top, width, height) : null;
                 }
 
                 return new LinearGradientPaint
                 {
-                    // Emit device-space paint with identity transform.
                     Units = GradientUnits.UserSpaceOnUse,
                     P0 = p0,
                     P1 = p1,
+                    P2 = p2,
                     Spread = lg.Spread,
                     Stops = lg.Stops,
                     Opacity = lg.Opacity,
@@ -410,47 +410,41 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
             case RadialGradientPaint rg:
             {
-                // Compute center/focal and radius by transforming two points and measuring distance.
-                // This captures uniform/non-uniform scale and rotation without guessing.
-                Vector2 center;
-                Vector2 focal;
-                float radius;
+                Vector2 c0, c1;
+                float r0, r1;
 
                 if (rg.Units == GradientUnits.UserSpaceOnUse)
                 {
-                    // USO center/focal in user -> paint.Transform -> layerXform -> device
-                    Vector2 uc = Vector2.Transform(rg.Center, rg.Transform);
-                    Vector2 uf = Vector2.Transform(rg.Focal ?? rg.Center, rg.Transform);
+                    // Centers get full layer transform.
+                    c0 = Vector2.Transform(rg.Center0, layerXform);
+                    c1 = Vector2.Transform(rg.Center1, layerXform);
 
-                    center = Vector2.Transform(uc, layerXform);
-                    focal = Vector2.Transform(uf, layerXform);
-
-                    // Radius: transform a point offset by (radius, 0) from center through both matrices.
-                    Vector2 uEdge = Vector2.Transform(rg.Center + new Vector2(rg.Radius, 0f), rg.Transform);
-                    Vector2 dEdge = Vector2.Transform(uEdge, layerXform);
-                    radius = Vector2.Distance(dEdge, center);
+                    // Radii scale by uniform similarity only.
+                    r0 = rg.Radius0 * layerSim.Scale;
+                    r1 = rg.Radius1 * layerSim.Scale;
                 }
                 else
                 {
-                    // OBB center/focal in normalized -> paint.Transform (normalized) -> denormalize -> device
-                    Vector2 nc = Vector2.Transform(rg.Center, rg.Transform);
-                    Vector2 nf = Vector2.Transform(rg.Focal ?? rg.Center, rg.Transform);
+                    Vector2 nc0 = rg.Center0;
+                    Vector2 nc1 = rg.Center1;
 
-                    center = DenormalizePoint(nc, left, top, width, height);
-                    focal = DenormalizePoint(nf, left, top, width, height);
+                    c0 = DenormalizePoint(nc0, left, top, width, height);
+                    c1 = DenormalizePoint(nc1, left, top, width, height);
 
-                    // Radius: same two-point trick in normalized space, then denormalize both and measure.
-                    Vector2 nEdge = Vector2.Transform(rg.Center + new Vector2(rg.Radius, 0f), rg.Transform);
-                    Vector2 dEdge = DenormalizePoint(nEdge, left, top, width, height);
-                    radius = Vector2.Distance(dEdge, center);
+                    // OBB: denormalize a unit offset to measure radius in device space.
+                    Vector2 d0e = DenormalizePoint(new Vector2(nc0.X + rg.Radius0, nc0.Y), left, top, width, height);
+                    Vector2 d1e = DenormalizePoint(new Vector2(nc1.X + rg.Radius1, nc1.Y), left, top, width, height);
+                    r0 = Vector2.Distance(d0e, c0);
+                    r1 = Vector2.Distance(d1e, c1);
                 }
 
                 return new RadialGradientPaint
                 {
                     Units = GradientUnits.UserSpaceOnUse,
-                    Center = center,
-                    Focal = focal,
-                    Radius = radius,
+                    Center0 = c0,
+                    Radius0 = r0,
+                    Center1 = c1,
+                    Radius1 = r1,
                     Spread = rg.Spread,
                     Stops = rg.Stops,
                     Opacity = rg.Opacity,
@@ -460,20 +454,17 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
             case SweepGradientPaint sg:
             {
-                // Center to device; angles adjusted by rotation/reflection from appropriate composite.
                 Vector2 center;
                 float start = sg.StartAngle;
                 float end = sg.EndAngle;
 
                 if (sg.Units == GradientUnits.UserSpaceOnUse)
                 {
-                    // Composite: paint.Transform then layerXform.
-                    Matrix3x2 comp = sg.Transform * layerXform;
-                    Similarity compSim = Similarity.FromMatrix(comp);
+                    // Center gets full layer transform.
+                    center = Vector2.Transform(Vector2.Transform(sg.Center, sg.Transform), layerXform);
 
-                    Vector2 uc = Vector2.Transform(sg.Center, sg.Transform);
-                    center = Vector2.Transform(uc, layerXform);
-
+                    // Angles adjust by similarity rotation and reflection only.
+                    Similarity compSim = Similarity.FromMatrix(sg.Transform * layerXform);
                     start += compSim.RotationDegrees;
                     end += compSim.RotationDegrees;
                     if (compSim.Reflection)
@@ -483,7 +474,6 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                 }
                 else
                 {
-                    // OBB: center in normalized -> paint.Transform (normalized) -> denormalize; angles by paint.Transform only.
                     Vector2 nc = Vector2.Transform(sg.Center, sg.Transform);
                     center = DenormalizePoint(nc, left, top, width, height);
 
@@ -511,17 +501,12 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
             default:
             {
-                // Unknown paint: return as-is (defensive).
                 return paint;
             }
         }
 
         static Vector2 DenormalizePoint(in Vector2 p, float left, float top, float width, float height)
-        {
-            float x = left + (p.X * width);
-            float y = top + (p.Y * height);
-            return new Vector2(x, y);
-        }
+            => new(left + (p.X * width), top + (p.Y * height));
     }
 
     /// <summary>

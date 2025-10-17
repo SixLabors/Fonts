@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace SixLabors.Fonts.Tables.General.Colr;
 
 internal sealed class ClipList
@@ -72,7 +74,7 @@ internal sealed class ClipList
         return new ClipList(records, boxes);
     }
 
-    public bool TryGetClipBox(ushort glyphId, IVariationResolver? varResolver, out Bounds bounds)
+    public bool TryGetClipBox(ushort glyphId, IVariationResolver? varResolver, [NotNullWhen(true)] out Bounds? bounds)
     {
         int lo = 0;
         int hi = this.Records.Length - 1;
@@ -97,7 +99,7 @@ internal sealed class ClipList
             ClipBox? box = this.Boxes[mid];
             if (box is null)
             {
-                bounds = default;
+                bounds = null;
                 return false;
             }
 
@@ -105,7 +107,7 @@ internal sealed class ClipList
             return true;
         }
 
-        bounds = default;
+        bounds = null;
         return false;
     }
 }

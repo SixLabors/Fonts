@@ -9,15 +9,32 @@ internal class GlyphTable : Table
 {
     internal const string TableName = "glyf";
     private readonly GlyphLoader[] loaders;
+    private readonly Dictionary<int, GlyphVector> glyphCache;
 
     public GlyphTable(GlyphLoader[] glyphLoaders)
-        => this.loaders = glyphLoaders;
+    {
+        this.loaders = glyphLoaders;
+        this.glyphCache = new(glyphLoaders.Length);
+    }
 
     public int GlyphCount => this.loaders.Length;
 
     // TODO: Make this non-virtual
     internal virtual GlyphVector GetGlyph(int index)
-        => this.loaders[index].CreateGlyph(this);
+    {
+        if (index < 0 || index >= this.loaders.Length)
+        {
+            return default;
+        }
+
+        if (!this.glyphCache.TryGetValue(index, out GlyphVector glyph))
+        {
+            glyph = this.loaders[index].CreateGlyph(this);
+            this.glyphCache[index] = glyph;
+        }
+
+        return glyph;
+    }
 
     public static GlyphTable Load(FontReader reader)
     {
@@ -36,7 +53,7 @@ internal class GlyphTable : Table
         EmptyGlyphLoader empty = new(fallbackEmptyBounds);
         int entryCount = locations.Length;
         int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
-        var glyphs = new GlyphLoader[glyphCount];
+        GlyphLoader[] glyphs = new GlyphLoader[glyphCount];
 
         // Special case for WOFF2 format where all glyphs need to be read in one go.
         if (format is TableFormat.Woff2)

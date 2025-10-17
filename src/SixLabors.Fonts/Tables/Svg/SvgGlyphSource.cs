@@ -376,9 +376,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             RadialGradientPaint rg => new RadialGradientPaint
             {
                 Units = rg.Units,
-                Center = rg.Center,
-                Radius = rg.Radius,
-                Focal = rg.Focal,
+                Center0 = rg.Center0,
+                Radius0 = rg.Radius0,
+                Center1 = rg.Center1,
+                Radius1 = rg.Radius1,
                 Spread = rg.Spread,
                 Stops = rg.Stops,
                 Transform = rg.Transform,
@@ -597,7 +598,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         SpreadMethod spread = SpreadMethod.Pad;
         Matrix3x2 gxf = Matrix3x2.Identity;
 
-        float? cx = null, cy = null, r = null, fx = null, fy = null;
+        float? cx = null, cy = null, r = null, fx = null, fy = null, fr = null;
         List<(float Offset, GlyphColor Color)> stops = [];
 
         HashSet<string> visited = new(StringComparer.Ordinal);
@@ -624,6 +625,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             r ??= ParseRadiusNullable(cur.Attribute("r")?.Value, units);
             fx ??= ParseCoordNullable(cur.Attribute("fx")?.Value, units);
             fy ??= ParseCoordNullable(cur.Attribute("fy")?.Value, units);
+            fr ??= ParseRadiusNullable(cur.Attribute("fr")?.Value, units);
 
             bool hadStops = false;
             foreach (XElement s in cur.Elements())
@@ -683,14 +685,21 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             fy = cy.Value;
         }
 
+        if (!fr.HasValue)
+        {
+            fr = 0f;
+        }
+
         GradientStop[] gs = BuildStopsArray(stops);
 
+        // Center0=(fx,fy), Radius0=fr; Center1=(cx,cy), Radius1=r
         return new RadialGradientPaint
         {
             Units = units,
-            Center = new Vector2(cx.Value, cy.Value),
-            Radius = r.Value,
-            Focal = new Vector2(fx.Value, fy.Value),
+            Center0 = new Vector2(fx.Value, fy.Value),
+            Radius0 = fr.Value,
+            Center1 = new Vector2(cx.Value, cy.Value),
+            Radius1 = r.Value,
             Spread = spread,
             Stops = gs,
             Transform = gxf

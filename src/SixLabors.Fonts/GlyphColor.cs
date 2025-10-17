@@ -11,6 +11,11 @@ namespace SixLabors.Fonts;
 /// </summary>
 public readonly struct GlyphColor
 {
+    /// <summary>
+    /// Gets a <see cref="GlyphColor"/> instance representing transparent (0,0,0,0).
+    /// </summary>
+    internal static readonly GlyphColor Transparent = new(0, 0, 0, 0);
+
     internal GlyphColor(byte red, byte green, byte blue, byte alpha)
     {
         this.Red = red;
