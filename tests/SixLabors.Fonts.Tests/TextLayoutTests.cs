@@ -1292,7 +1292,7 @@ public class TextLayoutTests
         {
         }
 
-        public void BeginLayer(Paint paint, FillRule fillRule)
+        public void BeginLayer(Paint paint, FillRule fillRule, in FontRectangle? clipBounds)
         {
         }
 

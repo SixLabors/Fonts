@@ -8,18 +8,18 @@ using SixLabors.Fonts.Tables.TrueType.Glyphs;
 namespace SixLabors.Fonts.Tables.General.Colr;
 
 /// <summary>
-/// Supplies painted glyphs for COLR v1 fonts.
+/// Supplies painted glyphs for COLR v0 fonts.
 /// Flattens paint graphs into a linear <see cref="PaintedLayer"/> stream and emits a <see cref="PaintedCanvas"/>.
 /// </summary>
-internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
+internal sealed class ColrV0GlyphSource : ColrGlyphSourceBase
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="ColrV1GlyphSource"/> class.
+    /// Initializes a new instance of the <see cref="ColrV0GlyphSource"/> class.
     /// </summary>
     /// <param name="colr">The COLR table.</param>
     /// <param name="cpal">The CPAL table, or null if not present.</param>
     /// <param name="glyphLoader">Delegate that loads a glyph outline for the given glyph id.</param>
-    public ColrV1GlyphSource(ColrTable colr, CpalTable? cpal, Func<ushort, GlyphVector?> glyphLoader)
+    public ColrV0GlyphSource(ColrTable colr, CpalTable? cpal, Func<ushort, GlyphVector?> glyphLoader)
         : base(colr, cpal, glyphLoader)
     {
     }
@@ -30,16 +30,16 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
         glyph = default;
         canvas = default;
 
-        if (!this.Colr.TryGetColrV1Layers(glyphId, out List<ResolvedGlyphLayer>? resolved))
+        if (!this.Colr.TryGetColrV0Layers(glyphId, out Span<LayerRecord> resolved))
         {
             return false;
         }
 
-        List<PaintedLayer> layers = new(resolved.Count);
+        List<PaintedLayer> layers = new(resolved.Length);
 
-        for (int i = 0; i < resolved.Count; i++)
+        for (int i = 0; i < resolved.Length; i++)
         {
-            ResolvedGlyphLayer rl = resolved[i];
+            LayerRecord rl = resolved[i];
 
             GlyphVector? gv = this.GlyphLoader(rl.GlyphId);
             if (gv is null || !gv.Value.HasValue())
@@ -52,14 +52,14 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
 
             // Flatten paint graph: accumulate wrapper transforms; attach composite mode to leaves.
             List<Rendering.Paint> leafPaints = [];
-            FlattenPaint(rl.Paint, rl.Transform, rl.CompositeMode, this.Cpal, leafPaints);
+            PaintSolid paint = new() { PaletteIndex = rl.PaletteIndex, Alpha = 1, Format = 2 };
+            FlattenPaint(paint, Matrix3x2.Identity, CompositeMode.SrcOver, this.Cpal, leafPaints);
 
             // Emit one layer per leaf paint.
-            Bounds? clip = rl.ClipBox;
             for (int p = 0; p < leafPaints.Count; p++)
             {
                 Rendering.Paint leaf = leafPaints[p];
-                layers.Add(new PaintedLayer(leaf, FillRule.NonZero, leaf.Transform, clip, path));
+                layers.Add(new PaintedLayer(leaf, FillRule.NonZero, leaf.Transform, null, path));
             }
         }
 

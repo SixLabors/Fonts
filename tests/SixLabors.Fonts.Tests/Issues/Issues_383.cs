@@ -96,7 +96,7 @@ internal class NoOpGlyphRenderer : IGlyphRenderer
     {
     }
 
-    public void BeginLayer(Paint paint, FillRule fillRule)
+    public void BeginLayer(Paint paint, FillRule fillRule, in FontRectangle? clipBounds)
     {
     }
 

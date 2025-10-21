@@ -64,7 +64,7 @@ internal class CffBoundsFinder : IGlyphRenderer
         }
     }
 
-    public void BeginLayer(Paint? paint, FillRule fillRule)
+    public void BeginLayer(Paint? paint, FillRule fillRule, in FontRectangle? clipBounds)
     {
         // Do nothing.
     }

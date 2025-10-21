@@ -26,9 +26,11 @@ public interface IGlyphRenderer
     /// </summary>
     /// <param name="bounds">The bounds the glyph will be rendered at and at what size.</param>
     /// <param name="parameters">
-    /// The set of parameters that uniquely represents a version of a glyph in at particular font size, font family, font style and DPI.
+    /// The set of parameters that uniquely represents a version of a glyph at particular font size, font family, font style and DPI.
     /// </param>
-    /// <returns>Returns true if the glyph should be rendered otherwise it returns false.</returns>
+    /// <returns>
+    /// Returns <see langword="true"/> if the glyph should be rendered otherwise it returns <see langword="false"/>.
+    /// </returns>
     public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters);
 
     /// <summary>
@@ -41,9 +43,9 @@ public interface IGlyphRenderer
     /// All geometry commands issued after this call belong to the layer until <see cref="EndLayer"/> is called.
     /// </summary>
     /// <param name="paint">The paint definition.</param>
-    /// <param name="fillRule">The fill rule.</param>
+    /// <param name="fillRule">The fill rule to use when rasterizing this layer.</param>
     /// <param name="clipBounds">The optional clip bounds to apply when rasterizing this layer.</param>
-    public void BeginLayer(Paint? paint, FillRule fillRule, FontRectangle? clipBounds);
+    public void BeginLayer(Paint? paint, FillRule fillRule, in FontRectangle? clipBounds);
 
     /// <summary>
     /// Ends the current painted layer.

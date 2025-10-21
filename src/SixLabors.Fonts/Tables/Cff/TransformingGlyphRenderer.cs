@@ -113,7 +113,8 @@ internal struct TransformingGlyphRenderer : IGlyphRenderer
     private readonly Vector2 Transform(Vector2 point)
         => (Vector2.Transform((point * this.scale) + this.offset, this.transform) * YInverter) + this.origin;
 
-    public readonly void BeginLayer(Paint? paint, FillRule fillRule) => this.renderer.BeginLayer(paint, fillRule);
+    public readonly void BeginLayer(Paint? paint, FillRule fillRule, in FontRectangle? clipBounds)
+        => this.renderer.BeginLayer(paint, fillRule, clipBounds);
 
     public readonly void EndLayer() => this.renderer.EndLayer();
 }

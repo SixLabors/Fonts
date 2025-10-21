@@ -87,8 +87,9 @@ internal class ColrTable : Table
     /// </returns>
     public bool ContainsColorV0Glyph(ushort glyphId)
     {
-        foreach (BaseGlyphRecord g in this.glyphRecords)
+        for (int i = 0; i < this.glyphRecords.Length; i++)
         {
+            BaseGlyphRecord g = this.glyphRecords[i];
             if (g.GlyphId == glyphId)
             {
                 return true;
@@ -115,7 +116,45 @@ internal class ColrTable : Table
         return this.TryGetRootPaintOffset(glyphId, out uint _);
     }
 
-    internal bool TryGetResolvedLayers(ushort glyphId, [NotNullWhen(true)] out List<ResolvedGlyphLayer>? layers)
+    /// <summary>
+    /// Attempts to retrieve the set of color layer records associated with the specified glyph.
+    /// </summary>
+    /// <param name="glyph">The glyph ID for which to retrieve color layer records.</param>
+    /// <param name="records">
+    /// When this method returns, contains a span of <see cref="LayerRecord"/> structures
+    /// representing the color layers for the specified glyph, if found; otherwise, an empty span.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if color layer records are found for the specified glyph; otherwise,
+    /// <see langword="false"/>.
+    /// </returns>
+    internal bool TryGetColrV0Layers(ushort glyph, out Span<LayerRecord> records)
+    {
+        for (int i = 0; i < this.glyphRecords.Length; i++)
+        {
+            BaseGlyphRecord g = this.glyphRecords[i];
+            if (g.GlyphId == glyph)
+            {
+                records = this.layers.AsSpan().Slice(g.FirstLayerIndex, g.LayerCount);
+                return true;
+            }
+        }
+
+        records = [];
+        return false;
+    }
+
+    /// <summary>
+    /// Attempts to resolve and retrieve the list of color glyph layers for the specified glyph ID.
+    /// </summary>
+    /// <param name="glyphId">The identifier of the glyph for which to resolve color layers.</param>
+    /// <param name="layers">
+    /// When this method returns, contains a list of resolved glyph layers if the operation succeeds; otherwise,
+    /// <see langword="null"/>. This parameter is passed uninitialized.</param>
+    /// <returns>
+    /// <see langword="true"/> if the color glyph layers were successfully resolved; otherwise, <see langword="false"/>.
+    /// </returns>
+    internal bool TryGetColrV1Layers(ushort glyphId, [NotNullWhen(true)] out List<ResolvedGlyphLayer>? layers)
     {
         layers = null;
 
@@ -479,6 +518,17 @@ internal class ColrTable : Table
             _ => CompositeMode.SrcOver,
         };
 
+    /// <summary>
+    /// Attempts to retrieve the paint table offset associated with the specified glyph ID.
+    /// </summary>
+    /// <param name="glyphId">The glyph ID for which to look up the paint table offset.</param>
+    /// <param name="paintOffset">
+    /// When this method returns, contains the paint table offset for the specified glyph ID, if found; otherwise, zero.
+    /// This parameter is passed uninitialized.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the paint table offset was found for the specified glyph ID; otherwise, <see langword="false"/>.
+    /// </returns>
     private bool TryGetRootPaintOffset(ushort glyphId, out uint paintOffset)
     {
         if (this.baseGlyphList is null)

@@ -149,9 +149,29 @@ internal partial class StreamFontMetrics
             tsb = vtmx.GetTopSideBearing(glyphId);
         }
 
+        ColrTable? colr = tables.Colr;
+        if (colr?.ContainsColorV0Glyph(glyphId) == true)
+        {
+            CpalTable? cpal = tables.Cpal;
+            ColrV0GlyphSource glyphSource = new(colr, cpal, i => glyf.GetGlyph(i));
+
+            return new PaintedGlyphMetrics(
+                this,
+                glyphId,
+                codePoint,
+                glyphSource,
+                bounds,
+                advanceWidth,
+                advancedHeight,
+                lsb,
+                tsb,
+                this.UnitsPerEm,
+                textAttributes,
+                textDecorations);
+        }
+
         if (!vector.HasValue())
         {
-            ColrTable? colr = tables.Colr;
             if (colr?.ContainsColorV1Glyph(glyphId) == true)
             {
                 CpalTable? cpal = tables.Cpal;
