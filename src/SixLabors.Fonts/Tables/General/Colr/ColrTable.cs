@@ -1,7 +1,11 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts.Tables.General.Colr;
 
@@ -74,56 +78,406 @@ internal class ColrTable : Table
         return [];
     }
 
+    /// <summary>
+    /// Determines whether the specified glyph has an associated COLR v0 color glyph definition.
+    /// </summary>
+    /// <param name="glyphId">The identifier of the glyph to check for a COLR v0 color glyph definition.</param>
+    /// <returns>
+    /// <see langword="true"/> if the specified glyph has a COLR v0 color glyph definition; otherwise, <see langword="false"/>.
+    /// </returns>
+    public bool ContainsColorV0Glyph(ushort glyphId)
+    {
+        foreach (BaseGlyphRecord g in this.glyphRecords)
+        {
+            if (g.GlyphId == glyphId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Determines whether the specified glyph has an associated COLR v1 color glyph definition.
+    /// </summary>
+    /// <param name="glyphId">The identifier of the glyph to check for a COLR v1 color glyph definition.</param>
+    /// <returns>
+    /// <see langword="true"/> if the specified glyph has a COLR v1 color glyph definition; otherwise, <see langword="false"/>.
+    /// </returns>
+    public bool ContainsColorV1Glyph(ushort glyphId)
+    {
+        if (this.baseGlyphList is null || this.layerList is null || this.paintCache is null)
+        {
+            return false; // No COLR v1 data
+        }
+
+        return this.TryGetRootPaintOffset(glyphId, out uint _);
+    }
+
     internal bool TryGetResolvedLayers(ushort glyphId, [NotNullWhen(true)] out List<ResolvedGlyphLayer>? layers)
     {
         layers = null;
+
         if (this.baseGlyphList is null || this.layerList is null || this.paintCache is null)
         {
-            return false; // no COLR v1 data
+            return false; // No COLR v1 data
         }
 
-        // 1) Find the root paint offset for this glyph
+        // 1) Resolve root paint for the requested base glyph
         if (!this.TryGetRootPaintOffset(glyphId, out uint rootOff) || rootOff == 0)
         {
             return false;
         }
 
-        // 2) Look up the materialized root paint
-        if (!this.paintCache.TryGetValue(rootOff, out Paint? root))
+        if (!this.paintCache.TryGetValue(rootOff, out Paint? root) || root is null)
         {
             return false;
         }
 
-        layers = [];
+        // 2) Flatten paint graph to layers. Start with no current glyph id.
+        List<ResolvedGlyphLayer> acc = [];
+        this.FlattenPaintToLayers(root, null, Matrix3x2.Identity, CompositeMode.SrcOver, acc);
 
-        // 3) Resolve layers
-        if (root is PaintColrLayers pcl)
+        // 3) If nothing emitted, the graph did not bind any geometry (no PaintGlyph/ColrGlyph reached).
+        if (acc.Count == 0)
         {
-            // Layer indices are into LayerList -> offsets -> cached paints
-            ReadOnlySpan<uint> offs = this.GetLayerPaintOffsets((int)pcl.FirstLayerIndex, pcl.NumLayers);
-            for (int i = 0; i < offs.Length; i++)
-            {
-                if (offs[i] != 0 && this.paintCache.TryGetValue(offs[i], out Paint? p))
-                {
-                    _ = this.TryGetClipBox(glyphId, out Bounds? b);
-                    layers.Add(new ResolvedGlyphLayer(glyphId, p, b));
-                }
-            }
-
-            return layers.Count > 0;
+            layers = null;
+            return false;
         }
 
-        if (root is PaintColrGlyph pcg)
-        {
-            // Indirection to another glyph's root
-            return this.TryGetResolvedLayers(pcg.GlyphId, out layers);
-        }
-
-        // Not a "layers" root—treat the root as a single layer
-        _ = this.TryGetClipBox(glyphId, out Bounds? clipBox);
-        layers.Add(new(glyphId, root, clipBox));
+        layers = acc;
         return true;
     }
+
+    /// <summary>
+    /// Recursively flattens a COLR v1 paint subtree into <see cref="ResolvedGlyphLayer"/>s.
+    /// A layer is emitted only when a leaf paint is reached under an active glyph-binding node:
+    /// <list type="bullet">
+    /// <item><description><b>PaintGlyph</b> sets the current glyph id to its <c>GlyphId</c> and recurses into its child paint.</description></item>
+    /// <item><description><b>PaintColrGlyph</b> resolves that glyph's root paint, sets the current glyph id, and recurses.</description></item>
+    /// <item><description>Wrapper nodes (transform/translate/scale/rotate/skew, var forms) forward the current glyph id unchanged.</description></item>
+    /// <item><description><b>PaintComposite</b> flattens both branches independently, forwarding the current glyph id to each.</description></item>
+    /// <item><description>Leaf paints (solid/linear/radial/sweep, var forms) emit a layer only if <paramref name="currentGlyphId"/> has a value.</description></item>
+    /// </list>
+    /// </summary>
+    /// <param name="node">The paint node to flatten.</param>
+    /// <param name="currentGlyphId">
+    /// The glyph id whose outline will receive the paint. Set by <c>PaintGlyph</c>/<c>PaintColrGlyph</c>.
+    /// </param>
+    /// <param name="transform">Accumulated transform.</param>
+    /// <param name="compositeMode">Accumulated composite mode.</param>
+    /// <param name="outLayers">Accumulator for resolved layers.</param>
+    private void FlattenPaintToLayers(
+        Paint node,
+        ushort? currentGlyphId,
+        Matrix3x2 transform,
+        CompositeMode compositeMode,
+        List<ResolvedGlyphLayer> outLayers)
+    {
+        switch (node)
+        {
+            // ---------------------------
+            // Containers and indirections
+            // ---------------------------
+            case PaintColrLayers pcl:
+            {
+                // Iterates layer indices and flattens each addressed paint subtree.
+                // No glyph id is implied here; child subtrees must bind via PaintGlyph/ColrGlyph.
+                int first = (int)pcl.FirstLayerIndex;
+                int count = pcl.NumLayers;
+                ReadOnlySpan<uint> offs = this.GetLayerPaintOffsets(first, count);
+
+                for (int i = 0; i < offs.Length; i++)
+                {
+                    uint off = offs[i];
+                    if (off == 0)
+                    {
+                        continue;
+                    }
+
+                    if (this.paintCache!.TryGetValue(off, out Paint? child) && child is not null)
+                    {
+                        this.FlattenPaintToLayers(child, currentGlyphId, transform, compositeMode, outLayers);
+                    }
+                }
+
+                return;
+            }
+
+            case PaintColrGlyph pcg:
+            {
+                // Resolve the referenced glyph's root paint and recurse under that glyph id.
+                if (this.TryGetRootPaintOffset(pcg.GlyphId, out uint off) && off != 0
+                    && this.paintCache!.TryGetValue(off, out Paint? colrRoot) && colrRoot is not null)
+                {
+                    this.FlattenPaintToLayers(colrRoot, pcg.GlyphId, transform, compositeMode, outLayers);
+                }
+
+                return;
+            }
+
+            case PaintGlyph pg:
+            {
+                // Bind geometry to the specified glyph id and recurse into its child paint.
+                this.FlattenPaintToLayers(pg.Child, pg.GlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            // ---------------------------
+            // Wrappers: forward glyph id
+            // ---------------------------
+            case PaintTransform pt:
+            {
+                transform *= ToMatrix(pt.Transform);
+                this.FlattenPaintToLayers(pt.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintVarTransform pvt:
+            {
+                transform *= ToMatrix(pvt.Transform);
+                this.FlattenPaintToLayers(pvt.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintTranslate t:
+            {
+                transform *= Matrix3x2.CreateTranslation(t.Dx, t.Dy);
+                this.FlattenPaintToLayers(t.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintVarTranslate vt:
+            {
+                transform *= Matrix3x2.CreateTranslation(vt.Dx, vt.Dy);
+                this.FlattenPaintToLayers(vt.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintScale s:
+            {
+                transform *= BuildScale(s.ScaleX, s.ScaleY, s.AroundCenter, s.CenterX, s.CenterY);
+                this.FlattenPaintToLayers(s.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintVarScale vs:
+            {
+                transform *= BuildScale(vs.ScaleX, vs.ScaleY, vs.AroundCenter, vs.CenterX, vs.CenterY);
+                this.FlattenPaintToLayers(vs.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintRotate r:
+            {
+                transform *= BuildRotate(r.Angle, r.AroundCenter, r.CenterX, r.CenterY);
+                this.FlattenPaintToLayers(r.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintVarRotate vr:
+            {
+                transform *= BuildRotate(vr.Angle, vr.AroundCenter, vr.CenterX, vr.CenterY);
+                this.FlattenPaintToLayers(vr.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintSkew k:
+            {
+                transform *= BuildSkew(k.XSkew, k.YSkew, k.AroundCenter, k.CenterX, k.CenterY);
+                this.FlattenPaintToLayers(k.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintVarSkew vk:
+            {
+                transform *= BuildSkew(vk.XSkew, vk.YSkew, vk.AroundCenter, vk.CenterX, vk.CenterY);
+                this.FlattenPaintToLayers(vk.Child, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            case PaintComposite comp:
+            {
+                compositeMode = MapCompositeMode(comp.CompositeMode);
+
+                // Backdrop first, then Source. Both inherit the current glyph id.
+                this.FlattenPaintToLayers(comp.Backdrop, currentGlyphId, transform, compositeMode, outLayers);
+                this.FlattenPaintToLayers(comp.Source, currentGlyphId, transform, compositeMode, outLayers);
+                return;
+            }
+
+            // ---------------------------
+            // Leaves: emit only if bound
+            // ---------------------------
+            case PaintSolid:
+            case PaintLinearGradient:
+            case PaintVarLinearGradient:
+            case PaintRadialGradient:
+            case PaintVarRadialGradient:
+            case PaintSweepGradient:
+            case PaintVarSweepGradient:
+            {
+                // Only emit if we have an active glyph id (i.e., we are inside a PaintGlyph/ColrGlyph branch).
+                if (currentGlyphId.HasValue)
+                {
+                    _ = this.TryGetClipBox(currentGlyphId.Value, out Bounds? clip);
+                    outLayers.Add(new ResolvedGlyphLayer(currentGlyphId.Value, node, transform, compositeMode, clip));
+                }
+
+                return;
+            }
+
+            default:
+            {
+                // Unknown or unsupported node: do not emit and do not stop traversal.
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Maps an optional fixed 2×3 affine to <see cref="Matrix3x2"/>.
+    /// Layout:
+    ///   [ xx  xy  dx ]
+    ///   [ yx  yy  dy ]
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Matrix3x2 ToMatrix(Affine2x3? affine)
+    {
+        if (affine.HasValue)
+        {
+            Affine2x3 a = affine.Value;
+            return new Matrix3x2(a.Xx, a.Yx, a.Xy, a.Yy, a.Dx, a.Dy); // (M11, M12, M21, M22, M31, M32)
+        }
+
+        return Matrix3x2.Identity;
+    }
+
+    /// <summary>
+    /// Maps an optional variable 2×3 affine to <see cref="Matrix3x2"/>.
+    /// Layout:
+    ///   [ xx  xy  dx ]
+    ///   [ yx  yy  dy ]
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Matrix3x2 ToMatrix(VarAffine2x3? varAffine)
+    {
+        if (varAffine.HasValue)
+        {
+            VarAffine2x3 v = varAffine.Value;
+            return new Matrix3x2(v.Xx, v.Yx, v.Xy, v.Yy, v.Dx, v.Dy);
+        }
+
+        return Matrix3x2.Identity;
+    }
+
+    /// <summary>
+    /// Builds a scale matrix, optionally around a center.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Matrix3x2 BuildScale(float sx, float sy, bool aroundCenter, float cx, float cy)
+    {
+        if (!aroundCenter)
+        {
+            return Matrix3x2.CreateScale(sx, sy);
+        }
+
+        // T(c) * S * T(-c)
+        Matrix3x2 t0 = Matrix3x2.CreateTranslation(-cx, -cy);
+        Matrix3x2 s = Matrix3x2.CreateScale(sx, sy);
+        Matrix3x2 t1 = Matrix3x2.CreateTranslation(cx, cy);
+        return t0 * s * t1;
+    }
+
+    /// <summary>
+    /// Builds a rotation matrix in radians-degrees as provided, optionally around a center.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Matrix3x2 BuildRotate(float angleRadiansOrDegrees, bool aroundCenter, float cx, float cy)
+    {
+        // Input is already bias-adjusted per your loader; assume radians if that’s how you parsed it.
+        Matrix3x2 r = Matrix3x2.CreateRotation(angleRadiansOrDegrees);
+        if (!aroundCenter)
+        {
+            return r;
+        }
+
+        Matrix3x2 t0 = Matrix3x2.CreateTranslation(-cx, -cy);
+        Matrix3x2 t1 = Matrix3x2.CreateTranslation(cx, cy);
+        return t0 * r * t1;
+    }
+
+    /// <summary>
+    /// Builds a skew matrix, optionally around a center. Angles are in radians.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Matrix3x2 BuildSkew(float xSkew, float ySkew, bool aroundCenter, float cx, float cy)
+    {
+        float tx = MathF.Tan(xSkew);
+        float ty = MathF.Tan(ySkew);
+
+        // Skew X then Y: Ky * Kx
+        Matrix3x2 kx = new(1, 0, tx, 1, 0, 0); // x' = x + y*tx
+        Matrix3x2 ky = new(1, ty, 0, 1, 0, 0); // y' = y + x*ty
+        Matrix3x2 k = kx * ky;
+
+        if (!aroundCenter)
+        {
+            return k;
+        }
+
+        Matrix3x2 t0 = Matrix3x2.CreateTranslation(-cx, -cy);
+        Matrix3x2 t1 = Matrix3x2.CreateTranslation(cx, cy);
+        return t0 * k * t1;
+    }
+
+    /// <summary>
+    /// Maps a COLR composite mode to the internal <see cref="CompositeMode"/>.
+    /// <para>
+    /// Returns <see cref="CompositeMode.SrcOver"/> when <paramref name="mode"/> is null
+    /// or when the value is not recognized.
+    /// </para>
+    /// </summary>
+    /// <param name="mode">The optional COLR composite mode.</param>
+    /// <returns>The mapped <see cref="CompositeMode"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static CompositeMode MapCompositeMode(ColrCompositeMode? mode)
+        => mode switch
+        {
+            // Porter–Duff
+            ColrCompositeMode.Clear => CompositeMode.Clear,
+            ColrCompositeMode.Src => CompositeMode.Src,
+            ColrCompositeMode.Dst => CompositeMode.Dst,
+            ColrCompositeMode.SrcOver => CompositeMode.SrcOver,
+            ColrCompositeMode.DstOver => CompositeMode.DstOver,
+            ColrCompositeMode.SrcIn => CompositeMode.SrcIn,
+            ColrCompositeMode.DstIn => CompositeMode.DstIn,
+            ColrCompositeMode.SrcOut => CompositeMode.SrcOut,
+            ColrCompositeMode.DstOut => CompositeMode.DstOut,
+            ColrCompositeMode.SrcAtop => CompositeMode.SrcAtop,
+            ColrCompositeMode.DstAtop => CompositeMode.DstAtop,
+            ColrCompositeMode.Xor => CompositeMode.Xor,
+            ColrCompositeMode.Plus => CompositeMode.Plus,
+
+            // Blend modes
+            ColrCompositeMode.Screen => CompositeMode.Screen,
+            ColrCompositeMode.Overlay => CompositeMode.Overlay,
+            ColrCompositeMode.Darken => CompositeMode.Darken,
+            ColrCompositeMode.Lighten => CompositeMode.Lighten,
+            ColrCompositeMode.ColorDodge => CompositeMode.ColorDodge,
+            ColrCompositeMode.ColorBurn => CompositeMode.ColorBurn,
+            ColrCompositeMode.HardLight => CompositeMode.HardLight,
+            ColrCompositeMode.SoftLight => CompositeMode.SoftLight,
+            ColrCompositeMode.Difference => CompositeMode.Difference,
+            ColrCompositeMode.Exclusion => CompositeMode.Exclusion,
+            ColrCompositeMode.Multiply => CompositeMode.Multiply,
+            ColrCompositeMode.Hue => CompositeMode.Hue,
+            ColrCompositeMode.Saturation => CompositeMode.Saturation,
+            ColrCompositeMode.Color => CompositeMode.Color,
+            ColrCompositeMode.Luminosity => CompositeMode.Luminosity,
+            _ => CompositeMode.SrcOver,
+        };
 
     private bool TryGetRootPaintOffset(ushort glyphId, out uint paintOffset)
     {
@@ -178,7 +532,7 @@ internal class ColrTable : Table
         return offsets.Slice(first, len);
     }
 
-    internal bool TryGetClipBox(ushort glyphId, out Bounds? bounds)
+    private bool TryGetClipBox(ushort glyphId, out Bounds? bounds)
     {
         if (this.clipList is null)
         {
@@ -548,7 +902,7 @@ internal class ColrTable : Table
                 uint childOff = reader.ReadOffset24();
                 uint transformOff = reader.ReadOffset24();
 
-                Affine2x3 m = ReadAffine2x3At(reader, transformOff, caches);
+                Affine2x3 m = ReadAffine2x3At(reader, paintOffset + transformOff, caches);
                 Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
                 result = new PaintTransform { Format = format, Child = child, Transform = m };
                 break;
@@ -559,7 +913,7 @@ internal class ColrTable : Table
                 uint childOff = reader.ReadOffset24();
                 uint transformOff = reader.ReadOffset24();
 
-                VarAffine2x3 vm = ReadVarAffine2x3At(reader, transformOff, caches);
+                VarAffine2x3 vm = ReadVarAffine2x3At(reader, paintOffset + transformOff, caches);
                 Paint child = LoadPaintAt(reader, paintOffset + childOff, layerList, caches);
                 result = new PaintVarTransform { Format = format, Child = child, Transform = vm };
                 break;
@@ -785,9 +1139,14 @@ internal class ColrTable : Table
             return line;
         }
 
+        long restore = reader.BaseStream.Position;
         reader.Seek(offset, SeekOrigin.Begin);
+
         line = ColorLine.Load(reader);
         caches.ColorLineCache[offset] = line;
+
+        reader.BaseStream.Position = restore;
+
         return line;
     }
 
@@ -798,9 +1157,13 @@ internal class ColrTable : Table
             return line;
         }
 
+        long restore = reader.BaseStream.Position;
         reader.Seek(offset, SeekOrigin.Begin);
+
         line = VarColorLine.Load(reader);
         caches.VarColorLineCache[offset] = line;
+
+        reader.BaseStream.Position = restore;
         return line;
     }
 
@@ -869,19 +1232,26 @@ internal sealed class PaintCaches
 }
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
+[DebuggerDisplay("Id: {GlyphId}")]
 internal readonly struct ResolvedGlyphLayer
 #pragma warning restore SA1201 // Elements should appear in the correct order
 {
-    public ResolvedGlyphLayer(ushort id, Paint paint, Bounds? clipBox)
+    public ResolvedGlyphLayer(ushort id, Paint paint, Matrix3x2 transform, CompositeMode mode, Bounds? clipBox)
     {
         this.GlyphId = id;
         this.Paint = paint;
+        this.Transform = transform;
+        this.CompositeMode = mode;
         this.ClipBox = clipBox;
     }
 
     public ushort GlyphId { get; }
 
     public Paint Paint { get; }
+
+    public Matrix3x2 Transform { get; }
+
+    public CompositeMode CompositeMode { get; }
 
     public Bounds? ClipBox { get; }
 }

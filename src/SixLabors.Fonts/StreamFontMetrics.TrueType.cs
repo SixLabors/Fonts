@@ -151,8 +151,29 @@ internal partial class StreamFontMetrics
 
         if (!vector.HasValue())
         {
+            ColrTable? colr = tables.Colr;
+            if (colr?.ContainsColorV1Glyph(glyphId) == true)
+            {
+                CpalTable? cpal = tables.Cpal;
+                ColrV1GlyphSource glyphSource = new(colr, cpal, i => glyf.GetGlyph(i));
+
+                return new PaintedGlyphMetrics(
+                    this,
+                    glyphId,
+                    codePoint,
+                    glyphSource,
+                    bounds,
+                    advanceWidth,
+                    advancedHeight,
+                    lsb,
+                    tsb,
+                    this.UnitsPerEm,
+                    textAttributes,
+                    textDecorations);
+            }
+
             SvgTable? svg = tables.Svg;
-            if (svg is not null && svg.ContainsGlyph(glyphId))
+            if (svg?.ContainsGlyph(glyphId) == true)
             {
                 return new PaintedGlyphMetrics(
                     this,

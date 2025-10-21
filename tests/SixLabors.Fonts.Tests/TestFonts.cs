@@ -263,7 +263,7 @@ public static class TestFonts
 
     public static string VeryBerryProRegular => GetFullPath("VeryBerryProRegular.ttf");
 
-    public static string NotoColorEmojiRegular=> GetFullPath("NotoColorEmoji-Regular.ttf");
+    public static string NotoColorEmojiRegular => GetFullPath("NotoColorEmoji-Regular.ttf");
 
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 

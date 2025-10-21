@@ -42,7 +42,8 @@ public interface IGlyphRenderer
     /// </summary>
     /// <param name="paint">The paint definition.</param>
     /// <param name="fillRule">The fill rule.</param>
-    public void BeginLayer(Paint? paint, FillRule fillRule);
+    /// <param name="clipBounds">The optional clip bounds to apply when rasterizing this layer.</param>
+    public void BeginLayer(Paint? paint, FillRule fillRule, FontRectangle? clipBounds);
 
     /// <summary>
     /// Ends the current painted layer.

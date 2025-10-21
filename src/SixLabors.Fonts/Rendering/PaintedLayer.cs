@@ -17,12 +17,19 @@ internal readonly struct PaintedLayer
     /// <param name="paint">The paint definition.</param>
     /// <param name="fillRule">The fill rule.</param>
     /// <param name="transform">The transform applied to all path coordinates.</param>
+    /// <param name="clipBounds">An optional clip bounds to apply when rasterizing this layer.</param>
     /// <param name="path">The path command stream for this layer.</param>
-    public PaintedLayer(Paint? paint, FillRule fillRule, Matrix3x2 transform, IReadOnlyList<PathCommand> path)
+    public PaintedLayer(
+        Paint? paint,
+        FillRule fillRule,
+        Matrix3x2 transform,
+        Bounds? clipBounds,
+        IReadOnlyList<PathCommand> path)
     {
         this.Paint = paint;
         this.FillRule = fillRule;
         this.Transform = transform;
+        this.ClipBounds = clipBounds;
         this.Path = path;
     }
 
@@ -40,6 +47,8 @@ internal readonly struct PaintedLayer
     /// Gets the transform applied to all path coordinates.
     /// </summary>
     public Matrix3x2 Transform { get; }
+
+    public Bounds? ClipBounds { get; }
 
     /// <summary>
     /// Gets the path stream for this layer.

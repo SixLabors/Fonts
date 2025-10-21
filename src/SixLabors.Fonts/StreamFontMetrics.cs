@@ -592,7 +592,6 @@ internal partial class StreamFontMetrics : FontMetrics
             {
                 GlyphMetrics[] m = [];
                 Span<LayerRecord> indexes = colr.GetLayers(key.Id);
-                var lv1 = colr.TryGetResolvedLayers(key.Id, out var l);
 
                 if (indexes.Length > 0)
                 {

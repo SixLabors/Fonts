@@ -12,20 +12,20 @@ internal readonly struct PaintedGlyph
     /// Initializes a new instance of the <see cref="PaintedGlyph"/> struct.
     /// </summary>
     /// <param name="layers">The painted layers.</param>
-    public PaintedGlyph(ReadOnlyMemory<PaintedLayer> layers) => this.Layers = layers;
+    public PaintedGlyph(List<PaintedLayer> layers) => this.Layers = layers;
 
     /// <summary>
     /// Gets the layers for this glyph.
     /// </summary>
-    public ReadOnlyMemory<PaintedLayer> Layers { get; }
+    public IReadOnlyList<PaintedLayer> Layers { get; }
 
     /// <summary>
     /// Gets a value indicating whether this glyph has no layers.
     /// </summary>
-    public bool IsEmpty => this.Layers.Length == 0;
+    public bool IsEmpty => this.Layers.Count == 0;
 
     /// <summary>
     /// Gets an empty glyph instance.
     /// </summary>
-    public static PaintedGlyph Empty => new(ReadOnlyMemory<PaintedLayer>.Empty);
+    public static PaintedGlyph Empty => new([]);
 }

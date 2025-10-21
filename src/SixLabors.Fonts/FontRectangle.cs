@@ -47,6 +47,19 @@ public readonly struct FontRectangle : IEquatable<FontRectangle>
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="FontRectangle"/> structure using the specified bounding box.
+    /// </summary>
+    /// <param name="bound">The bounding box that defines the position and size of the rectangle.</param>
+    internal FontRectangle(in Bounds bound)
+    {
+        this.X = bound.Min.X;
+        this.Y = bound.Min.Y;
+        Vector2 size = bound.Max - bound.Min;
+        this.Width = size.X;
+        this.Height = size.Y;
+    }
+
+    /// <summary>
     /// Gets the x-coordinate of this <see cref="FontRectangle"/>.
     /// </summary>
     public float X { get; }

@@ -135,7 +135,7 @@ internal class CffGlyphMetrics : GlyphMetrics
                 if (hasColrV0)
                 {
                     GlyphColor color = this.GlyphColor!.Value;
-                    renderer.BeginLayer(new SolidPaint { Color = color, Opacity = 1 }, FillRule.NonZero);
+                    renderer.BeginLayer(new SolidPaint { Color = color, Opacity = 1 }, FillRule.NonZero, null);
                 }
 
                 Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;

@@ -48,7 +48,12 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             return false;
         }
 
-        XElement root = parsed.Doc.Root!;
+        XElement? root = parsed.Doc.Root;
+        if (root is null)
+        {
+            return false;
+        }
+
         FontRectangle viewBox = GetViewBox(root);
         Matrix3x2 rootTransform = ParseTransform(root.Attribute("transform")?.Value);
 
@@ -69,8 +74,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             return false;
         }
 
-        // TODO: Use IEnumerable.
-        glyph = new PaintedGlyph(layers.ToArray());
+        glyph = new PaintedGlyph(layers);
         canvas = new PaintedCanvas(viewBox, true, rootTransform);
         return true;
     }

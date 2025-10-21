@@ -216,15 +216,28 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
     /// <summary>
     /// Streams the painted glyph to the renderer, transforming geometry and userSpaceOnUse paints.
     /// </summary>
-    private static void StreamPaintedGlyph(in PaintedGlyph glyph, in FontRectangle bounds, IGlyphRenderer renderer, Matrix3x2 xform)
+    /// <param name="glyph">The painted glyph.</param>
+    /// <param name="bounds">The device-space bounds of the glyph.</param>
+    /// <param name="renderer">The glyph renderer.</param>
+    /// <param name="xform">The full device-space transform to apply.</param>
+    private static void StreamPaintedGlyph(
+        in PaintedGlyph glyph,
+        in FontRectangle bounds,
+        IGlyphRenderer renderer,
+        Matrix3x2 xform)
     {
-        ReadOnlySpan<PaintedLayer> layers = glyph.Layers.Span;
-        for (int i = 0; i < layers.Length; i++)
+        IReadOnlyList<PaintedLayer> layers = glyph.Layers;
+        for (int i = 0; i < layers.Count; i++)
         {
             PaintedLayer layer = layers[i];
 
             // pre-applied transforms (element/group)
             Matrix3x2 layerXform = layer.Transform * xform;
+
+            // Clip bounds in device space (if any).
+            FontRectangle? clipBounds = layer.ClipBounds.HasValue
+                ? new FontRectangle(Bounds.Transform(layer.ClipBounds.Value, layerXform))
+                : null;
 
             // Similarity decomposition for arc radii/angle/sweep adjustment (from layer).
             Similarity sim = Similarity.FromMatrix(layerXform);
@@ -232,7 +245,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             // Transform userSpaceOnUse paints into device space; keep ObjectBoundingBox normalized.
             Paint? paint = TransformPaint(layer.Paint, in bounds, layerXform, in sim);
 
-            renderer.BeginLayer(paint, layer.FillRule);
+            renderer.BeginLayer(paint, layer.FillRule, clipBounds);
 
             bool open = false;
             IReadOnlyList<PathCommand> cmds = layer.Path;
@@ -551,7 +564,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                 return new Similarity(false, 1f, 0f, false);
             }
 
-            float rotDeg = MathF.Atan2(b, a) * (180f / (float)Math.PI);
+            float rotDeg = MathF.Atan2(b, a) * (180f / MathF.PI);
             bool refl = ((a * d) - (b * c)) < 0f;
 
             return new Similarity(true, len0, rotDeg, refl);

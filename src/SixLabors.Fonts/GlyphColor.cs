@@ -16,7 +16,7 @@ public readonly struct GlyphColor
     /// </summary>
     internal static readonly GlyphColor Transparent = new(0, 0, 0, 0);
 
-    internal GlyphColor(byte red, byte green, byte blue, byte alpha)
+    public GlyphColor(byte red, byte green, byte blue, byte alpha)
     {
         this.Red = red;
         this.Green = green;
