@@ -19,13 +19,13 @@ public class FontLoaderTests
             TextDecorations.None,
             LayoutMode.HorizontalTopBottom,
             ColorFontSupport.None,
-            out IReadOnlyList<GlyphMetrics> _));
+            out GlyphMetrics _));
     }
 
     [Fact]
     public void LoadFontMetadata()
     {
-        var description = FontDescription.LoadDescription(TestFonts.SimpleFontFileData());
+        FontDescription description = FontDescription.LoadDescription(TestFonts.SimpleFontFileData());
 
         Assert.Equal("SixLaborsSampleAB regular", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
@@ -34,7 +34,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFontMetadataWoff()
     {
-        var description = FontDescription.LoadDescription(TestFonts.SimpleFontFileWoffData());
+        FontDescription description = FontDescription.LoadDescription(TestFonts.SimpleFontFileWoffData());
 
         Assert.Equal("SixLaborsSampleAB regular", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
@@ -45,11 +45,10 @@ public class FontLoaderTests
     {
         Font font = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(12);
 
-        Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
+        Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out Glyph? glyph));
 
-        Glyph glyph = glyphs[0];
         GlyphRenderer r = new();
-        glyph.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         Assert.Equal(37, r.ControlPoints.Count);
         Assert.Single(r.GlyphKeys);
@@ -61,10 +60,9 @@ public class FontLoaderTests
     {
         Font font = new FontCollection().Add(TestFonts.OpenSansFileWoff1).CreateFont(12);
 
-        Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
-        Glyph glyph = glyphs[0];
+        Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
-        glyph.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         Assert.Equal(37, r.ControlPoints.Count);
         Assert.Single(r.GlyphKeys);
@@ -74,7 +72,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFontMetadata_WithWoff1Format()
     {
-        var description = FontDescription.LoadDescription(TestFonts.OpensSansWoff1Data());
+        FontDescription description = FontDescription.LoadDescription(TestFonts.OpensSansWoff1Data());
 
         Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
@@ -83,7 +81,7 @@ public class FontLoaderTests
     [Fact]
     public void LoadFontMetadata_WithWoff2Format()
     {
-        var description = FontDescription.LoadDescription(TestFonts.OpensSansWoff2Data());
+        FontDescription description = FontDescription.LoadDescription(TestFonts.OpensSansWoff2Data());
 
         Assert.Equal("Open Sans Regular", description.FontNameInvariantCulture);
         Assert.Equal("Regular", description.FontSubFamilyNameInvariantCulture);
@@ -94,10 +92,9 @@ public class FontLoaderTests
     {
         Font font = new FontCollection().Add(TestFonts.OpensSansWoff2Data()).CreateFont(12);
 
-        Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
-        Glyph glyph = glyphs[0];
+        Assert.True(font.TryGetGlyphs(new CodePoint('A'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
-        glyph.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         Assert.Equal(37, r.ControlPoints.Count);
         Assert.Single(r.GlyphKeys);
@@ -112,10 +109,9 @@ public class FontLoaderTests
         Assert.Equal("SixLaborsSampleAB regular", font.FontMetrics.Description.FontNameInvariantCulture);
         Assert.Equal("Regular", font.FontMetrics.Description.FontSubFamilyNameInvariantCulture);
 
-        Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
-        Glyph glyph = glyphs[0];
+        Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
-        glyph.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         // the test font only has characters .notdef, 'a' & 'b' defined
         Assert.Equal(6, r.ControlPoints.Distinct().Count());
@@ -129,10 +125,9 @@ public class FontLoaderTests
         Assert.Equal("SixLaborsSampleAB regular", font.FontMetrics.Description.FontNameInvariantCulture);
         Assert.Equal("Regular", font.FontMetrics.Description.FontSubFamilyNameInvariantCulture);
 
-        Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
-        Glyph glyph = glyphs[0];
+        Assert.True(font.TryGetGlyphs(new CodePoint('a'), ColorFontSupport.None, out Glyph? glyph));
         GlyphRenderer r = new();
-        glyph.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
+        glyph.Value.RenderTo(r, 0, Vector2.Zero, Vector2.Zero, GlyphLayoutMode.Horizontal, new TextOptions(font));
 
         // the test font only has characters .notdef, 'a' & 'b' defined
         Assert.Equal(6, r.ControlPoints.Distinct().Count());

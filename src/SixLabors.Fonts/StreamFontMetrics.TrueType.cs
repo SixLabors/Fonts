@@ -125,9 +125,11 @@ internal partial class StreamFontMetrics
         GlyphType glyphType,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
+        ColorFontSupport colorSupport,
         bool isVerticalLayout,
         ushort paletteIndex = 0)
     {
+        // TODO: When do we require and how do we use the palette index?
         TrueTypeFontTables tables = this.trueTypeFontTables!;
         GlyphTable glyf = tables.Glyf;
         HorizontalMetricsTable htmx = tables.Htmx;
@@ -150,7 +152,27 @@ internal partial class StreamFontMetrics
         }
 
         ColrTable? colr = tables.Colr;
-        if (colr?.ContainsColorV0Glyph(glyphId) == true)
+        if ((colorSupport & ColorFontSupport.ColrV1) == ColorFontSupport.ColrV1 && colr?.ContainsColorV1Glyph(glyphId) == true)
+        {
+            CpalTable? cpal = tables.Cpal;
+            ColrV1GlyphSource glyphSource = new(colr, cpal, i => glyf.GetGlyph(i));
+
+            return new PaintedGlyphMetrics(
+                this,
+                glyphId,
+                codePoint,
+                glyphSource,
+                bounds,
+                advanceWidth,
+                advancedHeight,
+                lsb,
+                tsb,
+                this.UnitsPerEm,
+                textAttributes,
+                textDecorations);
+        }
+
+        if ((colorSupport & ColorFontSupport.ColrV0) == ColorFontSupport.ColrV0 && colr?.ContainsColorV0Glyph(glyphId) == true)
         {
             CpalTable? cpal = tables.Cpal;
             ColrV0GlyphSource glyphSource = new(colr, cpal, i => glyf.GetGlyph(i));
@@ -170,56 +192,22 @@ internal partial class StreamFontMetrics
                 textDecorations);
         }
 
-        if (!vector.HasValue())
+        SvgTable? svg = tables.Svg;
+        if ((colorSupport & ColorFontSupport.Svg) == ColorFontSupport.Svg && svg?.ContainsGlyph(glyphId) == true)
         {
-            if (colr?.ContainsColorV1Glyph(glyphId) == true)
-            {
-                CpalTable? cpal = tables.Cpal;
-                ColrV1GlyphSource glyphSource = new(colr, cpal, i => glyf.GetGlyph(i));
-
-                return new PaintedGlyphMetrics(
-                    this,
-                    glyphId,
-                    codePoint,
-                    glyphSource,
-                    bounds,
-                    advanceWidth,
-                    advancedHeight,
-                    lsb,
-                    tsb,
-                    this.UnitsPerEm,
-                    textAttributes,
-                    textDecorations);
-            }
-
-            SvgTable? svg = tables.Svg;
-            if (svg?.ContainsGlyph(glyphId) == true)
-            {
-                return new PaintedGlyphMetrics(
-                    this,
-                    glyphId,
-                    codePoint,
-                    new SvgGlyphSource(svg),
-                    bounds,
-                    advanceWidth,
-                    advancedHeight,
-                    lsb,
-                    tsb,
-                    this.UnitsPerEm,
-                    textAttributes,
-                    textDecorations);
-            }
-        }
-
-        GlyphColor? color = null;
-        if (glyphType == GlyphType.Layer)
-        {
-            // 0xFFFF is special index meaning use foreground color and thus leave unset
-            if (paletteIndex != 0xFFFF)
-            {
-                CpalTable? cpal = tables.Cpal;
-                color = cpal?.GetGlyphColor(0, paletteIndex);
-            }
+            return new PaintedGlyphMetrics(
+                this,
+                glyphId,
+                codePoint,
+                new SvgGlyphSource(svg),
+                bounds,
+                advanceWidth,
+                advancedHeight,
+                lsb,
+                tsb,
+                this.UnitsPerEm,
+                textAttributes,
+                textDecorations);
         }
 
         return new TrueTypeGlyphMetrics(
@@ -234,7 +222,6 @@ internal partial class StreamFontMetrics
             this.UnitsPerEm,
             textAttributes,
             textDecorations,
-            glyphType,
-            color);
+            glyphType);
     }
 }

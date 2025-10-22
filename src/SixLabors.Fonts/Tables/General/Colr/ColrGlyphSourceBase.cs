@@ -301,6 +301,7 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
     /// <summary>
     /// Maps COLR Extend to renderer SpreadMethod.
     /// </summary>
+    /// <param name="extend">The COLR extend mode.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static SpreadMethod MapSpread(Extend extend)
         => extend switch
@@ -315,6 +316,9 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
     /// Resolves a color line into concrete gradient stops. Offsets are clamped to [0,1].
     /// 0xFFFF palette indices are treated as transparent here (foreground color handled by text color elsewhere).
     /// </summary>
+    /// <param name="line">The color line.</param>
+    /// <param name="cpal">The CPAL table, or null if not present.</param>
+    /// <returns>The resolved gradient stops.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static GradientStop[] ResolveStops(ColorLine line, CpalTable? cpal)
     {
@@ -341,6 +345,9 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
     /// Resolves a color line into concrete gradient stops. Offsets are clamped to [0,1].
     /// 0xFFFF palette indices are treated as transparent here (foreground color handled by text color elsewhere).
     /// </summary>
+    /// <param name="line">The color line.</param>
+    /// <param name="cpal">The CPAL table, or null if not present.</param>
+    /// <returns>The resolved gradient stops.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static GradientStop[] ResolveStops(VarColorLine line, CpalTable? cpal)
     {
@@ -366,6 +373,10 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
     /// <summary>
     /// Resolves a CPAL palette entry with an alpha multiplier.
     /// </summary>
+    /// <param name="cpal">The CPAL table, or null if not present.</param>
+    /// <param name="paletteEntryIndex">The palette entry index.</param>
+    /// <param name="alphaMul">The alpha multiplier.</param>
+    /// <returns>The resolved color.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static GlyphColor ResolveColor(CpalTable? cpal, int paletteEntryIndex, float alphaMul)
     {
@@ -376,7 +387,13 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
         return new GlyphColor(baseColor.Red, baseColor.Green, baseColor.Blue, a);
     }
 
+    /// <summary>
+    /// Calculates the midpoint between two vectors.
+    /// </summary>
+    /// <param name="a">The first vector to use in the midpoint calculation.</param>
+    /// <param name="b">The second vector to use in the midpoint calculation.</param>
+    /// <returns>A <see cref="Vector2"/> representing the point exactly halfway between the two input vectors.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector2 Mid(in Vector2 a, in Vector2 b)
+    private static Vector2 Mid(Vector2 a, Vector2 b)
         => (a + b) * .5F;
 }

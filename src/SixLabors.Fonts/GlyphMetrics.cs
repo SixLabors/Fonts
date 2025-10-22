@@ -248,36 +248,68 @@ public abstract class GlyphMetrics
     /// <param name="y">The y-advance.</param>
     internal void SetAdvanceHeight(ushort y) => this.AdvanceHeight = y;
 
+    /// <summary>
+    /// Calculates the glyph bounding box in device-space (Y-down) coordinates,
+    /// given the layout mode, render origin, and scaled point size.
+    /// </summary>
+    /// <remarks>
+    /// Steps:
+    /// 1) Select glyph bounds (or synthesize from advances if empty).
+    /// 2) Apply rotation if the layout mode is vertical-rotated.
+    /// 3) Convert from Y-up to Y-down coordinates.
+    /// 4) Scale and translate to device space using the specified origin.
+    /// </remarks>
+    /// <param name="mode">The glyph layout mode (horizontal, vertical, or vertical rotated).</param>
+    /// <param name="origin">The render-space origin in pixels.</param>
+    /// <param name="scaledPointSize">The scaled point size, mapped to pixels by the caller.</param>
+    /// <returns>
+    /// A <see cref="FontRectangle"/> representing the glyph bounds in device space.
+    /// </returns>
     internal FontRectangle GetBoundingBox(GlyphLayoutMode mode, Vector2 origin, float scaledPointSize)
     {
-        Vector2 scale = new Vector2(scaledPointSize) / this.ScaleFactor;
-        Bounds bounds = this.Bounds;
+        Vector2 scale = new(scaledPointSize / this.ScaleFactor.X, scaledPointSize / this.ScaleFactor.Y);
+        Bounds b = this.Bounds;
 
-        if (bounds.Equals(Bounds.Empty))
+        // 1) Substitute fallback bounds if the glyph has no outline.
+        if (b.Equals(Bounds.Empty))
         {
-            // For non-vertical layout, the advance width only is used to compute the bounding box
-            // as the advance height represents the maximum possible advance.
-            if (mode != GlyphLayoutMode.Vertical)
+            if (mode == GlyphLayoutMode.Vertical)
             {
-                bounds = new Bounds(0, 0, this.AdvanceWidth, 0);
+                // For vertical layout, set Y-up min = -AdvanceHeight to 0 so Y-down is 0..+AdvanceHeight.
+                b = new Bounds(0f, -this.AdvanceHeight, 0f, 0f);
             }
             else
             {
-                bounds = new Bounds(0, 0, 0, this.AdvanceHeight);
+                // For horizontal layout, just use advance width.
+                b = new Bounds(0f, 0f, this.AdvanceWidth, 0f);
             }
         }
 
-        // Rotate if required.
+        // 2) Rotate for vertical rotated layout.
+        Vector2 offsetUp = this.Offset;
         if (mode == GlyphLayoutMode.VerticalRotated)
         {
-            bounds = Bounds.Transform(in bounds, Matrix3x2.CreateRotation(-MathF.PI / 2F));
+            Matrix3x2 rot = Matrix3x2.CreateRotation(-MathF.PI / 2F);
+            b = Bounds.Transform(in b, rot);
+            offsetUp = Vector2.Transform(offsetUp, rot);
         }
 
-        Vector2 size = bounds.Size() * scale;
-        Vector2 location = (new Vector2(bounds.Min.X, bounds.Min.Y) + this.Offset) * scale * YInverter;
+        // 3) Flip Y to convert to device-space (Y-down).
+        Vector2 minDown = b.Min * YInverter;
+        Vector2 maxDown = b.Max * YInverter;
+        Vector2 offsetDown = offsetUp * YInverter;
 
-        location -= new Vector2(0, size.Y);
-        location += origin;
+        // Normalize bounds after flipping.
+        float minX = MathF.Min(minDown.X, maxDown.X);
+        float maxX = MathF.Max(minDown.X, maxDown.X);
+        float minY = MathF.Min(minDown.Y, maxDown.Y);
+        float maxY = MathF.Max(minDown.Y, maxDown.Y);
+
+        // 4) Apply scaling and origin translation.
+        Vector2 size = new(maxX - minX, maxY - minY);
+        size *= scale;
+        Vector2 location = origin + ((new Vector2(minX, minY) + offsetDown) * scale);
+
         return new FontRectangle(location.X, location.Y, size.X, size.Y);
     }
 

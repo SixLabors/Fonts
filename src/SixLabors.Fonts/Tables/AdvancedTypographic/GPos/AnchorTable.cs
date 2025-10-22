@@ -120,15 +120,10 @@ internal abstract class AnchorTable
                 TextDecorations textDecorations = data.TextRun.TextDecorations;
                 LayoutMode layoutMode = collection.TextOptions.LayoutMode;
                 ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
-                if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
+                if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out GlyphMetrics? metrics))
                 {
-                    foreach (GlyphMetrics metric in metrics)
+                    if (metrics is TrueTypeGlyphMetrics ttmetric)
                     {
-                        if (metric is not TrueTypeGlyphMetrics ttmetric)
-                        {
-                            break;
-                        }
-
                         IList<ControlPoint> points = ttmetric.GetOutline().ControlPoints;
                         if (this.anchorPointIndex < points.Count)
                         {

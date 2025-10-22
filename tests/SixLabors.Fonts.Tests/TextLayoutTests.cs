@@ -48,10 +48,8 @@ public class TextLayoutTests
     public void FakeFontGetGlyph()
     {
         Font font = CreateFont("hello world");
-
-        Assert.True(font.TryGetGlyphs(new CodePoint('h'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
-        Glyph glyph = glyphs[0];
-        Assert.NotEqual(default, glyph);
+        Assert.True(font.TryGetGlyphs(new CodePoint('h'), ColorFontSupport.None, out Glyph? glyph));
+        Assert.NotNull(glyph);
     }
 
     [Theory]

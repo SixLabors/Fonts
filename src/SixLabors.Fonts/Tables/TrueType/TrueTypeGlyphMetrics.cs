@@ -30,8 +30,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
         ushort unitsPerEM,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType = GlyphType.Standard)
         : base(
               font,
               glyphId,
@@ -45,7 +44,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
               textAttributes,
               textDecorations,
               glyphType,
-              glyphColor)
+              null)
         => this.vector = vector;
 
     internal TrueTypeGlyphMetrics(
@@ -61,8 +60,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
         Vector2 offset,
         Vector2 scaleFactor,
         TextRun textRun,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType = GlyphType.Standard)
         : base(
               font,
               glyphId,
@@ -77,7 +75,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
               scaleFactor,
               textRun,
               glyphType,
-              glyphColor)
+              null)
         => this.vector = vector;
 
     /// <inheritdoc/>
@@ -95,8 +93,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
             this.Offset,
             this.ScaleFactor,
             textRun,
-            this.GlyphType,
-            this.GlyphColor);
+            this.GlyphType);
 
     /// <summary>
     /// Gets the outline for the current glyph.
@@ -133,18 +130,11 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
         Matrix3x2 rotation = GetRotationMatrix(mode);
         FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
         GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
-        bool hasColrV0 = this.GlyphColor != null;
 
         if (renderer.BeginGlyph(in box, in parameters))
         {
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
             {
-                if (hasColrV0)
-                {
-                    GlyphColor color = this.GlyphColor!.Value;
-                    renderer.BeginLayer(new SolidPaint { Color = color, Opacity = 1 }, FillRule.NonZero, null);
-                }
-
                 GlyphVector scaledVector = this.scaledVectorCache.GetOrAdd(scaledPPEM, _ =>
                 {
                     // Create a scaled deep copy of the vector so that we do not alter
@@ -233,11 +223,6 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
                     }
 
                     renderer.EndFigure();
-                }
-
-                if (hasColrV0)
-                {
-                    renderer.EndLayer();
                 }
             }
 
