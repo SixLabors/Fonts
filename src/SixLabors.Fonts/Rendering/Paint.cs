@@ -7,7 +7,7 @@ namespace SixLabors.Fonts.Rendering;
 
 /// <summary>
 /// Base type for normalized paint definitions that can be used by any renderer.
-/// Interpreters must pre-apply all relevant transforms and resolve any palette
+/// Glyph sources must pre-apply all relevant transforms and resolve any palette
 /// or format-specific constructs before creating a paint instance.
 /// </summary>
 public abstract class Paint
@@ -50,7 +50,7 @@ public sealed class LinearGradientPaint : Paint
     /// <summary>
     /// Gets the coordinate system for <see cref="P0"/> and <see cref="P1"/>.
     /// </summary>
-    public GradientUnits Units { get; init; }
+    internal GradientUnits Units { get; init; }
 
     /// <summary>
     /// Gets the gradient start point. Normalized if <see cref="Units"/> is <see cref="GradientUnits.ObjectBoundingBox"/>.
@@ -91,7 +91,7 @@ public sealed class RadialGradientPaint : Paint
     /// Gets the coordinate system for <see cref="Center0"/>, <see cref="Center1"/>,
     /// <see cref="Radius0"/>, and <see cref="Radius1"/>.
     /// </summary>
-    public GradientUnits Units { get; init; }
+    internal GradientUnits Units { get; init; }
 
     /// <summary>
     /// Gets the center of the starting circle of the gradient.
@@ -136,7 +136,7 @@ public sealed class SweepGradientPaint : Paint
     /// <summary>
     /// Gets the coordinate system for <see cref="Center"/>. Sweep gradients are typically user-space.
     /// </summary>
-    public GradientUnits Units { get; init; } = GradientUnits.UserSpaceOnUse;
+    internal GradientUnits Units { get; init; } = GradientUnits.UserSpaceOnUse;
 
     /// <summary>
     /// Gets the center of the sweep gradient.
