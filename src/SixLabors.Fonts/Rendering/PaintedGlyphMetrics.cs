@@ -243,7 +243,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             Similarity sim = Similarity.FromMatrix(layerXform);
 
             // Transform userSpaceOnUse paints into device space; keep ObjectBoundingBox normalized.
-            Paint? paint = TransformPaint(layer.Paint, in bounds, layerXform, in sim);
+            Paint? paint = TransformPaint(layer.Paint, in bounds, layerXform);
 
             renderer.BeginLayer(paint, layer.FillRule, clipBounds);
 
@@ -292,9 +292,11 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
                     case PathVerb.ArcTo:
                     {
-                        // Adjust radii/angle/sweep by the similarity component; endpoint is fully transformed.
-                        float rx = c.RadiusX * sim.Scale;
-                        float ry = c.RadiusY * sim.Scale;
+                        // Adjust radii by the scale component of the transform;
+                        // angle/sweep by the similarity component;
+                        // endpoint is fully transformed.
+                        float rx = c.RadiusX * layerXform.M11;
+                        float ry = c.RadiusY * layerXform.M12;
                         float ang = c.RotationDegrees + sim.RotationDegrees;
                         bool sweep = sim.Reflection ? !c.Sweep : c.Sweep;
 
@@ -349,11 +351,6 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
     /// Used to push UserSpaceOnUse paints into device space. ObjectBoundingBox paints are denormalized
     /// using <paramref name="layerBounds"/> instead.
     /// </param>
-    /// <param name="layerSim">
-    /// Similarity component (uniform scale, rotation, reflection) of <paramref name="layerXform"/>.
-    /// Not required by this implementation (angles/radii use the composite matrices directly),
-    /// but kept for parity with geometry handling.
-    /// </param>
     /// <returns>
     /// A paint expressed in <b>device-space</b> with identity transform, or <see langword="null"/>
     /// if the input was <see langword="null"/>.
@@ -361,18 +358,12 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
     private static Paint? TransformPaint(
         Paint? paint,
         in FontRectangle layerBounds,
-        Matrix3x2 layerXform,
-        in Similarity layerSim)
+        Matrix3x2 layerXform)
     {
         if (paint is null)
         {
             return null;
         }
-
-        float left = layerBounds.X;
-        float top = layerBounds.Y;
-        float width = MathF.Max(layerBounds.Width, 1e-6f);
-        float height = MathF.Max(layerBounds.Height, 1e-6f);
 
         switch (paint)
         {
@@ -383,29 +374,28 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
             case LinearGradientPaint lg:
             {
-                Vector2 p0, p1;
+                Vector2 p0;
+                Vector2 p1;
                 Vector2? p2;
 
                 if (lg.Units == GradientUnits.UserSpaceOnUse)
                 {
-                    // Points translate/rotate/scale with the layer.
-                    Vector2 u0 = Vector2.Transform(lg.P0, lg.Transform);
-                    Vector2 u1 = Vector2.Transform(lg.P1, lg.Transform);
-                    Vector2 u2 = lg.P2.HasValue ? Vector2.Transform(lg.P2.Value, lg.Transform) : default;
-
-                    p0 = Vector2.Transform(u0, layerXform);
-                    p1 = Vector2.Transform(u1, layerXform);
-                    p2 = lg.P2.HasValue ? Vector2.Transform(u2, layerXform) : null;
+                    // USOU: transform directly to device space.
+                    Matrix3x2 paintXForm = lg.Transform * layerXform;
+                    p0 = Vector2.Transform(lg.P0, paintXForm);
+                    p1 = Vector2.Transform(lg.P1, paintXForm);
+                    p2 = lg.P2.HasValue ? Vector2.Transform(lg.P2.Value, paintXForm) : null;
                 }
                 else
                 {
+                    // OBB: transform in normalized [0..1] space, then denormalize to device via layer bounds.
                     Vector2 n0 = Vector2.Transform(lg.P0, lg.Transform);
                     Vector2 n1 = Vector2.Transform(lg.P1, lg.Transform);
-                    Vector2 n2 = lg.P2.HasValue ? Vector2.Transform(lg.P2.Value, lg.Transform) : default;
+                    Vector2? n2 = lg.P2.HasValue ? Vector2.Transform(lg.P2.Value, lg.Transform) : null;
 
-                    p0 = DenormalizePoint(n0, left, top, width, height);
-                    p1 = DenormalizePoint(n1, left, top, width, height);
-                    p2 = lg.P2.HasValue ? DenormalizePoint(n2, left, top, width, height) : null;
+                    p0 = Vector2.Transform(DenormalizePoint(n0, layerBounds), layerXform);
+                    p1 = Vector2.Transform(DenormalizePoint(n1, layerBounds), layerXform);
+                    p2 = n2.HasValue ? Vector2.Transform(DenormalizePoint(n2.Value, layerBounds), layerXform) : null;
                 }
 
                 return new LinearGradientPaint
@@ -423,32 +413,39 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
             case RadialGradientPaint rg:
             {
-                Vector2 c0, c1;
-                float r0, r1;
+                Vector2 c0;
+                Vector2 c1;
+                float r0;
+                float r1;
 
                 if (rg.Units == GradientUnits.UserSpaceOnUse)
                 {
+                    // USOU: transform directly to device space.
+                    Matrix3x2 paintXForm = rg.Transform * layerXform;
+
                     // Centers get full layer transform.
-                    c0 = Vector2.Transform(rg.Center0, layerXform);
-                    c1 = Vector2.Transform(rg.Center1, layerXform);
+                    c0 = Vector2.Transform(rg.Center0, paintXForm);
+                    c1 = Vector2.Transform(rg.Center1, paintXForm);
 
                     // Radii scale by uniform similarity only.
-                    r0 = rg.Radius0 * layerSim.Scale;
-                    r1 = rg.Radius1 * layerSim.Scale;
+                    Similarity compSim = Similarity.FromMatrix(paintXForm);
+                    r0 = rg.Radius0 * compSim.Scale;
+                    r1 = rg.Radius1 * compSim.Scale;
                 }
                 else
                 {
-                    Vector2 nc0 = rg.Center0;
-                    Vector2 nc1 = rg.Center1;
+                    // OBB: transform in normalized [0..1] space, then denormalize to device via layer bounds.
+                    Vector2 nc0 = Vector2.Transform(rg.Center0, rg.Transform);
+                    Vector2 nc1 = Vector2.Transform(rg.Center1, rg.Transform);
 
-                    c0 = DenormalizePoint(nc0, left, top, width, height);
-                    c1 = DenormalizePoint(nc1, left, top, width, height);
+                    c0 = Vector2.Transform(DenormalizePoint(nc0, layerBounds), layerXform);
+                    c1 = Vector2.Transform(DenormalizePoint(nc1, layerBounds), layerXform);
 
-                    // OBB: denormalize a unit offset to measure radius in device space.
-                    Vector2 d0e = DenormalizePoint(new Vector2(nc0.X + rg.Radius0, nc0.Y), left, top, width, height);
-                    Vector2 d1e = DenormalizePoint(new Vector2(nc1.X + rg.Radius1, nc1.Y), left, top, width, height);
-                    r0 = Vector2.Distance(d0e, c0);
-                    r1 = Vector2.Distance(d1e, c1);
+                    // Radii scale by total similarity (paint * layer).
+                    Matrix3x2 paintXForm = rg.Transform * layerXform;
+                    Similarity compSim = Similarity.FromMatrix(paintXForm);
+                    r0 = rg.Radius0 * compSim.Scale;
+                    r1 = rg.Radius1 * compSim.Scale;
                 }
 
                 return new RadialGradientPaint
@@ -473,11 +470,14 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
 
                 if (sg.Units == GradientUnits.UserSpaceOnUse)
                 {
+                    // USOU: transform directly to device space.
+                    Matrix3x2 paintXForm = sg.Transform * layerXform;
+
                     // Center gets full layer transform.
-                    center = Vector2.Transform(Vector2.Transform(sg.Center, sg.Transform), layerXform);
+                    center = Vector2.Transform(sg.Center, paintXForm);
 
                     // Angles adjust by similarity rotation and reflection only.
-                    Similarity compSim = Similarity.FromMatrix(sg.Transform * layerXform);
+                    Similarity compSim = Similarity.FromMatrix(paintXForm);
                     start += compSim.RotationDegrees;
                     end += compSim.RotationDegrees;
                     if (compSim.Reflection)
@@ -487,13 +487,16 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
                 }
                 else
                 {
+                    // OBB: transform in normalized [0..1] space, then denormalize to device via layer bounds.
                     Vector2 nc = Vector2.Transform(sg.Center, sg.Transform);
-                    center = DenormalizePoint(nc, left, top, width, height);
+                    center = Vector2.Transform(DenormalizePoint(nc, layerBounds), layerXform);
 
-                    Similarity paintSim = Similarity.FromMatrix(sg.Transform);
-                    start += paintSim.RotationDegrees;
-                    end += paintSim.RotationDegrees;
-                    if (paintSim.Reflection)
+                    // Angles adjust by total similarity (paint * layer).
+                    Matrix3x2 paintXForm = sg.Transform * layerXform;
+                    Similarity compSim = Similarity.FromMatrix(paintXForm);
+                    start += compSim.RotationDegrees;
+                    end += compSim.RotationDegrees;
+                    if (compSim.Reflection)
                     {
                         (start, end) = (end, start);
                     }
@@ -518,56 +521,70 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             }
         }
 
-        static Vector2 DenormalizePoint(in Vector2 p, float left, float top, float width, float height)
-            => new(left + (p.X * width), top + (p.Y * height));
+        static Vector2 DenormalizePoint(Vector2 p, in FontRectangle bounds)
+            => new(bounds.X + (p.X * bounds.Width), bounds.Y + (p.Y * bounds.Height));
     }
 
     /// <summary>
-    /// Captures the similarity component of a 2D affine transform (uniform scale, rotation, reflection).
+    /// Represents the similarity component of a 2D affine transformation.
     /// </summary>
+    /// <remarks>
+    /// A similarity transformation is an affine transform that preserves an object's shape and angles,
+    /// allowing only uniform scaling, rotation, and optional reflection. This structure isolates those
+    /// properties from a general <see cref="Matrix3x2"/> so that dependent operations such as arc or
+    /// gradient adjustment can apply proportional transformations correctly.
+    /// </remarks>
     private readonly struct Similarity
     {
-        public Similarity(bool isSimilarity, float scale, float rotationDeg, bool reflection)
+        private Similarity(float scale, float rotationDeg, bool reflection, bool isSimilarity)
         {
-            this.IsSimilarity = isSimilarity;
             this.Scale = scale;
             this.RotationDegrees = rotationDeg;
             this.Reflection = reflection;
+            this.IsSimilarity = isSimilarity;
         }
 
-        public bool IsSimilarity { get; }
-
+        /// <summary>
+        /// Gets the length of the first column.
+        /// </summary>
         public float Scale { get; }
 
+        /// <summary>
+        /// Gets the rotation in degrees.
+        /// </summary>
         public float RotationDegrees { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether this matrix includes a reflection.</summary>
         public bool Reflection { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether this matrix is a similarity transform.
+        /// True if columns are orthogonal and equal length within tolerance.
+        /// </summary>
+        public bool IsSimilarity { get; }
 
         public static Similarity FromMatrix(in Matrix3x2 m)
         {
-            // Columns: [a b; c d]
-            float a = m.M11;
-            float b = m.M12;
-            float c = m.M21;
-            float d = m.M22;
+            float a = m.M11, b = m.M12, c = m.M21, d = m.M22;
 
-            float dot = (a * c) + (b * d);
-            float len0 = MathF.Sqrt((a * a) + (b * b));
-            float len1 = MathF.Sqrt((c * c) + (d * d));
+            // scale = |X column|
+            float sx = MathF.Sqrt((a * a) + (b * b));
 
-            bool ortho = MathF.Abs(dot) < 1e-4f;
-            bool equal = MathF.Abs(len0 - len1) < 1e-4f;
-
-            if (!ortho || !equal || len0 == 0f)
-            {
-                // Fallback: treat as no-op for arc param adjustment; endpoints are still fully transformed.
-                return new Similarity(false, 1f, 0f, false);
-            }
-
+            // rotation from X column
             float rotDeg = MathF.Atan2(b, a) * (180f / MathF.PI);
+
+            // reflection from determinant
             bool refl = ((a * d) - (b * c)) < 0f;
 
-            return new Similarity(true, len0, rotDeg, refl);
+            // similarity test: columns orthogonal and same length
+            float dot = (a * c) + (b * d);
+            float sy = MathF.Sqrt((c * c) + (d * d));
+            const float eps = 1e-4f;
+            bool ortho = MathF.Abs(dot) <= eps;
+            bool equal = MathF.Abs(sx - sy) <= eps;
+
+            return new Similarity(sx, rotDeg, refl, ortho && equal && sx > 0f);
         }
     }
 }

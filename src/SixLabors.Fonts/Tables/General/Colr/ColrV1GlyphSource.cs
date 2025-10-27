@@ -52,6 +52,7 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
 
             // Flatten paint graph: accumulate wrapper transforms; attach composite mode to leaves.
             List<Rendering.Paint> leafPaints = [];
+
             FlattenPaint(rl.Paint, rl.Transform, rl.CompositeMode, this.Cpal, leafPaints);
 
             // Emit one layer per leaf paint.
@@ -59,7 +60,7 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
             for (int p = 0; p < leafPaints.Count; p++)
             {
                 Rendering.Paint leaf = leafPaints[p];
-                layers.Add(new PaintedLayer(leaf, FillRule.NonZero, leaf.Transform, clip, path));
+                layers.Add(new PaintedLayer(leaf, FillRule.NonZero, Matrix3x2.Identity, clip, path));
             }
         }
 

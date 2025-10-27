@@ -422,53 +422,42 @@ internal class ColrTable : Table
             return Matrix3x2.CreateScale(sx, sy);
         }
 
-        // T(c) * S * T(-c)
-        Matrix3x2 t0 = Matrix3x2.CreateTranslation(-cx, -cy);
-        Matrix3x2 s = Matrix3x2.CreateScale(sx, sy);
-        Matrix3x2 t1 = Matrix3x2.CreateTranslation(cx, cy);
-        return t0 * s * t1;
+        return Matrix3x2.CreateScale(sx, sy, new Vector2(cx, cy));
     }
 
     /// <summary>
-    /// Builds a rotation matrix in radians-degrees as provided, optionally around a center.
+    /// Builds a rotation matrix, optionally around a center.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Matrix3x2 BuildRotate(float angleRadiansOrDegrees, bool aroundCenter, float cx, float cy)
+    private static Matrix3x2 BuildRotate(float angleColrUnits, bool aroundCenter, float cx, float cy)
     {
-        // Input is already bias-adjusted per your loader; assume radians if that’s how you parsed it.
-        Matrix3x2 r = Matrix3x2.CreateRotation(angleRadiansOrDegrees);
+        // COLR: 1.0 == 180° => radians = angle * π
+        float radians = angleColrUnits * MathF.PI;
+
         if (!aroundCenter)
         {
-            return r;
+            return Matrix3x2.CreateRotation(radians);
         }
 
-        Matrix3x2 t0 = Matrix3x2.CreateTranslation(-cx, -cy);
-        Matrix3x2 t1 = Matrix3x2.CreateTranslation(cx, cy);
-        return t0 * r * t1;
+        return Matrix3x2.CreateRotation(radians, new Vector2(cx, cy));
     }
 
     /// <summary>
-    /// Builds a skew matrix, optionally around a center. Angles are in radians.
+    /// Builds a skew matrix, optionally around a center.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Matrix3x2 BuildSkew(float xSkew, float ySkew, bool aroundCenter, float cx, float cy)
     {
-        float tx = MathF.Tan(xSkew);
-        float ty = MathF.Tan(ySkew);
-
-        // Skew X then Y: Ky * Kx
-        Matrix3x2 kx = new(1, 0, tx, 1, 0, 0); // x' = x + y*tx
-        Matrix3x2 ky = new(1, ty, 0, 1, 0, 0); // y' = y + x*ty
-        Matrix3x2 k = kx * ky;
+        // COLR: 1.0 == 180° => radians = angle * π
+        float rx = xSkew * MathF.PI;
+        float ry = ySkew * MathF.PI;
 
         if (!aroundCenter)
         {
-            return k;
+            return Matrix3x2.CreateSkew(rx, ry);
         }
 
-        Matrix3x2 t0 = Matrix3x2.CreateTranslation(-cx, -cy);
-        Matrix3x2 t1 = Matrix3x2.CreateTranslation(cx, cy);
-        return t0 * k * t1;
+        return Matrix3x2.CreateSkew(rx, ry, new Vector2(cx, cy));
     }
 
     /// <summary>
@@ -992,16 +981,16 @@ internal class ColrTable : Table
             }
 
             // 16/17/18/19/20/21/22/23: Scale variants
-            case 16: // ScaleAroundCenter
-            case 17: // VarScaleAroundCenter
-            case 18: // Scale
-            case 19: // VarScale
-            case 20: // ScaleUniformAroundCenter
-            case 21: // VarScaleUniformAroundCenter
-            case 22: // ScaleUniform
-            case 23: // VarScaleUniform
+            case 16: // PaintScale
+            case 17: // PaintVarScale
+            case 18: // PaintScaleAroundCenter
+            case 19: // PaintVarScaleAroundCenter
+            case 20: // PaintScaleUniform
+            case 21: // PaintVarScaleUniform
+            case 22: // PaintScaleUniformAroundCenter
+            case 23: // PaintVarScaleUniformAroundCenter
             {
-                bool aroundCenter = format is 16 or 17 or 20 or 21;
+                bool aroundCenter = format is 18 or 19 or 22 or 23;
                 bool uniform = format is 20 or 21 or 22 or 23;
                 bool isVar = (format % 2) == 1;
 
@@ -1053,12 +1042,12 @@ internal class ColrTable : Table
             }
 
             // 24/25/26/27: Rotate variants
-            case 24: // RotateAroundCenter
-            case 25: // VarRotateAroundCenter
-            case 26: // Rotate
-            case 27: // VarRotate
+            case 24: // PaintRotate
+            case 25: // PaintVarRotate
+            case 26: // PaintRotateAroundCenter
+            case 27: // PaintVarRotateAroundCenter
             {
-                bool aroundCenter = format is 24 or 25;
+                bool aroundCenter = format is 26 or 27;
                 bool isVar = (format % 2) == 1;
 
                 uint childOff = reader.ReadOffset24();
@@ -1104,12 +1093,12 @@ internal class ColrTable : Table
             }
 
             // 28/29/30/31: Skew variants
-            case 28: // SkewAroundCenter
-            case 29: // VarSkewAroundCenter
-            case 30: // Skew
-            case 31: // VarSkew
+            case 28: // PaintSkew
+            case 29: // PaintVarSkew
+            case 30: // PaintSkewAroundCenter
+            case 31: // PaintVarSkewAroundCenter
             {
-                bool aroundCenter = format is 28 or 29;
+                bool aroundCenter = format is 30 or 31;
                 bool isVar = (format % 2) == 1;
 
                 uint childOff = reader.ReadOffset24();

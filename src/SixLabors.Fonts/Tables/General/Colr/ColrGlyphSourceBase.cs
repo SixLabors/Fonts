@@ -176,8 +176,10 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
                 {
                     Units = GradientUnits.UserSpaceOnUse,
                     Center = new Vector2(sw.CenterX, sw.CenterY),
-                    StartAngle = sw.StartAngle,
-                    EndAngle = sw.EndAngle,
+
+                    // Spec says: add 1.0 and multiply by 180° to retrieve counter-clockwise degrees.
+                    StartAngle = (sw.StartAngle + 1F) * 180F,
+                    EndAngle = (sw.EndAngle + 1F) * 180F,
                     Spread = MapSpread(sw.ColorLine.Extend),
                     Stops = stops,
                     Opacity = 1F,
@@ -194,8 +196,8 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
                 {
                     Units = GradientUnits.UserSpaceOnUse,
                     Center = new Vector2(vsw.CenterX, vsw.CenterY),
-                    StartAngle = vsw.StartAngle,
-                    EndAngle = vsw.EndAngle,
+                    StartAngle = (vsw.StartAngle + 1F) * 180F,
+                    EndAngle = (vsw.EndAngle + 1F) * 180F,
                     Spread = MapSpread(vsw.ColorLine.Extend),
                     Stops = stops,
                     Opacity = 1F,
