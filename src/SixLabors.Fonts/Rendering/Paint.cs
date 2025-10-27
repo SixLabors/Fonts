@@ -27,7 +27,7 @@ public abstract class Paint
     /// <summary>
     /// Gets the composite mode to use when applying this paint over existing content.
     /// </summary>
-    public CompositeMode CompositeMode { get; init; }
+    public CompositeMode CompositeMode { get; init; } = CompositeMode.SrcOver;
 }
 
 /// <summary>

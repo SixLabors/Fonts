@@ -9,40 +9,35 @@ namespace SixLabors.Fonts;
 /// <summary>
 /// Provides access to the color details for the current glyph.
 /// </summary>
-public readonly struct GlyphColor
+public readonly partial struct GlyphColor
 {
-    /// <summary>
-    /// Gets a <see cref="GlyphColor"/> instance representing transparent (0,0,0,0).
-    /// </summary>
-    internal static readonly GlyphColor Transparent = new(0, 0, 0, 0);
-
     internal GlyphColor(byte red, byte green, byte blue, byte alpha)
     {
-        this.Red = red;
-        this.Green = green;
-        this.Blue = blue;
-        this.Alpha = alpha;
+        this.R = red;
+        this.G = green;
+        this.B = blue;
+        this.A = alpha;
     }
 
     /// <summary>
     /// Gets the red component
     /// </summary>
-    public readonly byte Red { get; }
+    public readonly byte R { get; }
 
     /// <summary>
     /// Gets the green component
     /// </summary>
-    public readonly byte Green { get; }
+    public readonly byte G { get; }
 
     /// <summary>
     /// Gets the blue component
     /// </summary>
-    public readonly byte Blue { get; }
+    public readonly byte B { get; }
 
     /// <summary>
     /// Gets the alpha component
     /// </summary>
-    public readonly byte Alpha { get; }
+    public readonly byte A { get; }
 
     /// <summary>
     /// Compares two <see cref="GlyphColor"/> objects for equality.
@@ -87,18 +82,18 @@ public readonly struct GlyphColor
     /// True if the current color is equal to the <paramref name="other"/> parameter; otherwise, false.
     /// </returns>
     public bool Equals(GlyphColor other)
-        => other.Red == this.Red
-        && other.Green == this.Green
-        && other.Blue == this.Blue
-        && other.Alpha == this.Alpha;
+        => other.R == this.R
+        && other.G == this.G
+        && other.B == this.B
+        && other.A == this.A;
 
     /// <inheritdoc/>
     public override int GetHashCode()
         => HashCode.Combine(
-            this.Red,
-            this.Green,
-            this.Blue,
-            this.Alpha);
+            this.R,
+            this.G,
+            this.B,
+            this.A);
 
     /// <summary>
     /// Gets the hexadecimal string representation of the color instance in the format RRGGBBAA.
@@ -112,7 +107,7 @@ public readonly struct GlyphColor
     /// <returns>
     /// <see langword="true"/> if the parsing was successful; otherwise, <see langword="false"/>.
     /// </returns>
-    public static bool TryParseHex(string? value, [NotNullWhen(true)] out GlyphColor? result)
+    public static bool TryParseHex(string? value, [NotNullWhen(true)] out GlyphColor result)
     {
         result = default;
 
@@ -184,6 +179,33 @@ public readonly struct GlyphColor
 
         result = new GlyphColor(r, g, b, a);
         return true;
+    }
+
+    /// <summary>
+    /// Attempts to parse the specified name into a corresponding named glyph color.
+    /// </summary>
+    /// <param name="name">The name of the glyph color to parse.</param>
+    /// <param name="result">
+    /// When this method returns, contains the parsed <see cref="GlyphColor"/> value if the parse operation succeeded;
+    /// otherwise, contains the default value.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the parsing was successful; otherwise, <see langword="false"/>.
+    /// </returns>
+    public static bool TryParseNamed(string? name, [NotNullWhen(true)] out GlyphColor result)
+    {
+        result = default;
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return false;
+        }
+
+        if (NamedGlyphColorsLookupLazy.Value.TryGetValue(name, out result))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

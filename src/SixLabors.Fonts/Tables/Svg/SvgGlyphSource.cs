@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Xml;
 using System.Xml.Linq;
 using SixLabors.Fonts.Rendering;
@@ -20,9 +21,8 @@ namespace SixLabors.Fonts.Tables.Svg;
 internal sealed class SvgGlyphSource : IPaintedGlyphSource
 {
     private readonly SvgTable svgTable;
-
-    // Cache parsed docs by (start, length) slice.
-    private static readonly Dictionary<(int Start, int Length), ParsedDoc> DocCache = [];
+    private static readonly Dictionary<ushort, ParsedDoc> DocCache = [];
+    private static readonly Dictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
 
     private sealed class ParsedDoc
     {
@@ -40,6 +40,13 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     /// <inheritdoc/>
     public bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas)
     {
+        if (CachedGlyphs.TryGetValue(glyphId, out (PaintedGlyph Glyph, PaintedCanvas Canvas) cached))
+        {
+            glyph = cached.Glyph;
+            canvas = cached.Canvas;
+            return true;
+        }
+
         glyph = default;
         canvas = default;
 
@@ -76,12 +83,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
         glyph = new PaintedGlyph(layers);
         canvas = new PaintedCanvas(viewBox, true, rootTransform);
+        CachedGlyphs[glyphId] = (glyph, canvas);
         return true;
     }
 
-    // ---------------------------------------------------------------------
-    // Parse & cache
-    // ---------------------------------------------------------------------
     private bool TryGetParsedDoc(ushort glyphId, [NotNullWhen(true)] out ParsedDoc? parsed)
     {
         parsed = default;
@@ -91,8 +96,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             return false;
         }
 
-        (int Start, int Length) key = (start, length);
-        if (DocCache.TryGetValue(key, out parsed))
+        if (DocCache.TryGetValue(glyphId, out parsed))
         {
             return true;
         }
@@ -111,7 +115,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             }
 
             // TODO: How large is this likely to get? If large, consider a more memory-efficient structure.
-            ConcurrentDictionary<string, XElement> idMap = new(Environment.ProcessorCount, capacity: 65536, comparer: StringComparer.Ordinal);
+            ConcurrentDictionary<string, XElement> idMap = new(Environment.ProcessorCount, capacity: 1024, comparer: StringComparer.Ordinal);
 
             foreach (XElement e in doc.Root.DescendantsAndSelf())
             {
@@ -128,7 +132,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 IdMap = idMap
             };
 
-            DocCache[key] = parsed;
+            DocCache[glyphId] = parsed;
             return true;
         }
     }
@@ -159,9 +163,6 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         return FontRectangle.Empty;
     }
 
-    // ---------------------------------------------------------------------
-    // Traversal (no point transforms; carry matrices)
-    // ---------------------------------------------------------------------
     private static void Walk(
         XElement node,
         Matrix3x2 parentLocalTransform,
@@ -271,7 +272,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 float w = ParseFloat(node.Attribute("width")?.Value);
                 float h = ParseFloat(node.Attribute("height")?.Value);
 
-                // Rounded corners (rx/ry) not handled here (could be approximated later if needed).
+                // TODO: Rounded corners (rx/ry) not handled here (could be approximated later if needed).
                 if (w > 0f && h > 0f)
                 {
                     float[] coords =
@@ -348,9 +349,6 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Paint resolution (solid + linear/radial/sweep). No transforms applied.
-    // ---------------------------------------------------------------------
     private static Paint? ApplyOpacityToPaint(Paint? basePaint, float opacityMul)
     {
         if (basePaint is null)
@@ -387,17 +385,6 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 Spread = rg.Spread,
                 Stops = rg.Stops,
                 Transform = rg.Transform,
-                Opacity = effective
-            },
-            SweepGradientPaint sg => new SweepGradientPaint
-            {
-                Units = sg.Units,
-                Center = sg.Center,
-                StartAngle = sg.StartAngle,
-                EndAngle = sg.EndAngle,
-                Spread = sg.Spread,
-                Stops = sg.Stops,
-                Transform = sg.Transform,
                 Opacity = effective
             },
             _ => null,
@@ -490,9 +477,9 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         string tag = server.Name.LocalName;
         return tag switch
         {
+            // SVG only has linearGradient and radialGradient.
             "linearGradient" => BuildLinearGradient(server, idMap),
             "radialGradient" => BuildRadialGradient(server, idMap),
-            "sweepGradient" => BuildSweepGradient(server, idMap),
             _ => null
         };
     }
@@ -525,10 +512,10 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
             gxf = ParseTransform(cur.Attribute("gradientTransform")?.Value) * gxf;
 
-            x1 ??= ParseCoordNullable(cur.Attribute("x1")?.Value, units);
-            y1 ??= ParseCoordNullable(cur.Attribute("y1")?.Value, units);
-            x2 ??= ParseCoordNullable(cur.Attribute("x2")?.Value, units);
-            y2 ??= ParseCoordNullable(cur.Attribute("y2")?.Value, units);
+            x1 ??= ParseCoordNullable(cur.Attribute("x1")?.Value);
+            y1 ??= ParseCoordNullable(cur.Attribute("y1")?.Value);
+            x2 ??= ParseCoordNullable(cur.Attribute("x2")?.Value);
+            y2 ??= ParseCoordNullable(cur.Attribute("y2")?.Value);
 
             bool hadStops = false;
             foreach (XElement s in cur.Elements())
@@ -624,12 +611,12 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
             gxf = ParseTransform(cur.Attribute("gradientTransform")?.Value) * gxf;
 
-            cx ??= ParseCoordNullable(cur.Attribute("cx")?.Value, units);
-            cy ??= ParseCoordNullable(cur.Attribute("cy")?.Value, units);
-            r ??= ParseRadiusNullable(cur.Attribute("r")?.Value, units);
-            fx ??= ParseCoordNullable(cur.Attribute("fx")?.Value, units);
-            fy ??= ParseCoordNullable(cur.Attribute("fy")?.Value, units);
-            fr ??= ParseRadiusNullable(cur.Attribute("fr")?.Value, units);
+            cx ??= ParseCoordNullable(cur.Attribute("cx")?.Value);
+            cy ??= ParseCoordNullable(cur.Attribute("cy")?.Value);
+            r ??= ParseRadiusNullable(cur.Attribute("r")?.Value);
+            fx ??= ParseCoordNullable(cur.Attribute("fx")?.Value);
+            fy ??= ParseCoordNullable(cur.Attribute("fy")?.Value);
+            fr ??= ParseRadiusNullable(cur.Attribute("fr")?.Value);
 
             bool hadStops = false;
             foreach (XElement s in cur.Elements())
@@ -710,106 +697,6 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         };
     }
 
-    private static SweepGradientPaint? BuildSweepGradient(XElement grad, ConcurrentDictionary<string, XElement> idMap)
-    {
-        GradientUnits units = GradientUnits.ObjectBoundingBox;
-        SpreadMethod spread = SpreadMethod.Pad;
-        Matrix3x2 gxf = Matrix3x2.Identity;
-
-        float? cx = null, cy = null, startDeg = null, endDeg = null;
-        List<(float Offset, GlyphColor Color)> stops = [];
-
-        HashSet<string> visited = new(StringComparer.Ordinal);
-        XElement? cur = grad;
-
-        while (cur is not null)
-        {
-            string? u = cur.Attribute("gradientUnits")?.Value;
-            if (u is not null)
-            {
-                units = ParseGradientUnits(u);
-            }
-
-            string? sm = cur.Attribute("spreadMethod")?.Value;
-            if (sm is not null)
-            {
-                spread = ParseSpreadMethod(sm);
-            }
-
-            gxf = ParseTransform(cur.Attribute("gradientTransform")?.Value) * gxf;
-
-            cx ??= ParseCoordNullable(cur.Attribute("cx")?.Value, units);
-            cy ??= ParseCoordNullable(cur.Attribute("cy")?.Value, units);
-            startDeg ??= ParseAngleNullable(cur.Attribute("startAngle")?.Value);
-            endDeg ??= ParseAngleNullable(cur.Attribute("endAngle")?.Value);
-
-            bool hadStops = false;
-            foreach (XElement s in cur.Elements())
-            {
-                if (s.Name.LocalName != "stop")
-                {
-                    continue;
-                }
-
-                if (TryParseStop(s, out float off, out GlyphColor c))
-                {
-                    stops.Add((off, c));
-                    hadStops = true;
-                }
-            }
-
-            if (hadStops)
-            {
-                break;
-            }
-
-            string? href = GetHref(cur);
-            if (href is null || href.Length <= 1 || href[0] != '#')
-            {
-                break;
-            }
-
-            string refId = href[1..];
-            if (!visited.Add(refId) || !idMap.TryGetValue(refId, out cur))
-            {
-                break;
-            }
-        }
-
-        if (!cx.HasValue)
-        {
-            cx = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
-        }
-
-        if (!cy.HasValue)
-        {
-            cy = units == GradientUnits.ObjectBoundingBox ? 0.5f : 0f;
-        }
-
-        if (!startDeg.HasValue)
-        {
-            startDeg = 0f;
-        }
-
-        if (!endDeg.HasValue)
-        {
-            endDeg = 360f;
-        }
-
-        GradientStop[] gs = BuildStopsArray(stops);
-
-        return new SweepGradientPaint
-        {
-            Units = units,
-            Center = new Vector2(cx.Value, cy.Value),
-            StartAngle = startDeg.Value,
-            EndAngle = endDeg.Value,
-            Spread = spread,
-            Stops = gs,
-            Transform = gxf
-        };
-    }
-
     private static SpreadMethod ParseSpreadMethod(string value)
     {
         if (string.Equals(value, "reflect", StringComparison.OrdinalIgnoreCase))
@@ -830,7 +717,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             ? GradientUnits.UserSpaceOnUse
             : GradientUnits.ObjectBoundingBox;
 
-    private static float? ParseCoordNullable(string? s, GradientUnits units)
+    private static float? ParseCoordNullable(string? s)
     {
         if (string.IsNullOrEmpty(s))
         {
@@ -855,46 +742,9 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         return null;
     }
 
-    private static float? ParseRadiusNullable(string? s, GradientUnits units)
-        => ParseCoordNullable(s, units);
-
-    private static float? ParseAngleNullable(string? s)
-    {
-        if (string.IsNullOrEmpty(s))
-        {
-            return null;
-        }
-
-        ReadOnlySpan<char> span = s.AsSpan().Trim();
-
-        if (span.EndsWith("deg".AsSpan(), StringComparison.OrdinalIgnoreCase))
-        {
-            return float.TryParse(span[..^3], NumberStyles.Float, CultureInfo.InvariantCulture, out float vDeg) ? vDeg : null;
-        }
-
-        if (span.EndsWith("rad".AsSpan(), StringComparison.OrdinalIgnoreCase))
-        {
-            return float.TryParse(span[..^3], NumberStyles.Float, CultureInfo.InvariantCulture, out float vRad)
-                ? vRad * (180f / (float)Math.PI)
-                : null;
-        }
-
-        if (span.EndsWith("grad".AsSpan(), StringComparison.OrdinalIgnoreCase))
-        {
-            return float.TryParse(span[..^4], NumberStyles.Float, CultureInfo.InvariantCulture, out float vGrad)
-                ? vGrad * 0.9f
-                : null;
-        }
-
-        if (span.EndsWith("turn".AsSpan(), StringComparison.OrdinalIgnoreCase))
-        {
-            return float.TryParse(span[..^4], NumberStyles.Float, CultureInfo.InvariantCulture, out float vTurn)
-                ? vTurn * 360f
-                : null;
-        }
-
-        return float.TryParse(span, NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : null;
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float? ParseRadiusNullable(string? s)
+        => ParseCoordNullable(s);
 
     private static bool TryParseStop(XElement stop, out float offset, out GlyphColor color)
     {
@@ -934,8 +784,8 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             aMul = Math.Clamp(soVal, 0f, 1f);
         }
 
-        byte a = (byte)Math.Clamp((int)Math.Round(baseColor.Alpha * aMul), 0, 255);
-        color = new GlyphColor(baseColor.Red, baseColor.Green, baseColor.Blue, a);
+        byte a = (byte)Math.Clamp((int)Math.Round(baseColor.A * aMul), 0, 255);
+        color = new GlyphColor(baseColor.R, baseColor.G, baseColor.B, a);
         return true;
     }
 
@@ -968,6 +818,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             return null;
         }
 
+        // TODO: Rewrite this using Span.Split to avoid allocations.
         string[] parts = style.Split(';', StringSplitOptions.RemoveEmptyEntries);
         for (int i = 0; i < parts.Length; i++)
         {
@@ -990,11 +841,14 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 
     private static bool TryParseColor(string s, out GlyphColor color)
     {
-        color = default;
-
-        if (GlyphColor.TryParseHex(s, out GlyphColor? hex))
+        if (GlyphColor.TryParseNamed(s, out color))
         {
-            color = hex.Value;
+            return true;
+        }
+
+        if (GlyphColor.TryParseHex(s, out GlyphColor hex))
+        {
+            color = hex;
             return true;
         }
 
@@ -1004,7 +858,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             int r = s.IndexOf(')');
             if (l >= 0 && r > l)
             {
-                // TODO: Investigate spans to avoid allocations.
+                // TODO: Rewrite this using Span.Split to avoid allocations.
                 string[] comps = s.Substring(l + 1, r - l - 1).Split(',');
                 if (comps.Length >= 3)
                 {
@@ -1094,9 +948,6 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         return e.Attribute(xlink + "href")?.Value ?? e.Attribute("href")?.Value;
     }
 
-    // ---------------------------------------------------------------------
-    // Geometry builders (no transforms applied to points)
-    // ---------------------------------------------------------------------
     private static List<PathCommand> BuildCommandsFromPoly(float[] coords, bool close)
     {
         List<PathCommand> cmds = [];
@@ -1381,9 +1232,6 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         return cmds;
     }
 
-    // ---------------------------------------------------------------------
-    // Root + common helpers
-    // ---------------------------------------------------------------------
     private static bool TryParseViewBox(string? s, out float x, out float y, out float w, out float h)
     {
         x = 0f;
