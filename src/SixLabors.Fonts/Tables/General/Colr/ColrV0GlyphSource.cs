@@ -13,6 +13,8 @@ namespace SixLabors.Fonts.Tables.General.Colr;
 /// </summary>
 internal sealed class ColrV0GlyphSource : ColrGlyphSourceBase
 {
+    private static readonly Dictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ColrV0GlyphSource"/> class.
     /// </summary>
@@ -27,6 +29,13 @@ internal sealed class ColrV0GlyphSource : ColrGlyphSourceBase
     /// <inheritdoc/>
     public override bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas)
     {
+        if (CachedGlyphs.TryGetValue(glyphId, out (PaintedGlyph Glyph, PaintedCanvas Canvas) cached))
+        {
+            glyph = cached.Glyph;
+            canvas = cached.Canvas;
+            return true;
+        }
+
         glyph = default;
         canvas = default;
 
@@ -50,7 +59,7 @@ internal sealed class ColrV0GlyphSource : ColrGlyphSourceBase
             // Build geometry once for this layer.
             List<PathCommand> path = BuildPath(gv.Value);
 
-            // Flatten paint graph: accumulate wrapper transforms; attach composite mode to leaves.
+            // Flatten paint graph: attach composite mode to leaves.
             List<Rendering.Paint> leafPaints = [];
             PaintSolid paint = new() { PaletteIndex = rl.PaletteIndex, Alpha = 1, Format = 2 };
             FlattenPaint(paint, Matrix3x2.Identity, CompositeMode.SrcOver, this.Cpal, leafPaints);
@@ -58,6 +67,7 @@ internal sealed class ColrV0GlyphSource : ColrGlyphSourceBase
             // Emit one layer per leaf paint.
             for (int p = 0; p < leafPaints.Count; p++)
             {
+                // Unlike COLR v1, COLR v0 leaves have no transform so we can reuse the same path.
                 Rendering.Paint leaf = leafPaints[p];
                 layers.Add(new PaintedLayer(leaf, FillRule.NonZero, leaf.Transform, null, path));
             }
@@ -71,6 +81,7 @@ internal sealed class ColrV0GlyphSource : ColrGlyphSourceBase
         // Canvas viewBox in Y-up; renderer downstream decides orientation via flag.
         glyph = new PaintedGlyph(layers);
         canvas = new PaintedCanvas(FontRectangle.Empty, isYDown: false, rootTransform: Matrix3x2.Identity);
+        CachedGlyphs[glyphId] = (glyph, canvas);
         return true;
     }
 }

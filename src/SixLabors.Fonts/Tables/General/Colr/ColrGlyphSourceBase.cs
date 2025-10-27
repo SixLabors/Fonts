@@ -385,8 +385,8 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
         // Palette index 0 selection. If you later expose palette selection, thread it here.
         GlyphColor baseColor = cpal is null ? new GlyphColor(0, 0, 0, 0) : cpal.GetGlyphColor(0, paletteEntryIndex);
 
-        byte a = (byte)Math.Clamp((int)MathF.Round(baseColor.Alpha * alphaMul), 0, 255);
-        return new GlyphColor(baseColor.Red, baseColor.Green, baseColor.Blue, a);
+        byte a = (byte)Math.Clamp((int)MathF.Round(baseColor.A * alphaMul), 0, 255);
+        return new GlyphColor(baseColor.R, baseColor.G, baseColor.B, a);
     }
 
     /// <summary>

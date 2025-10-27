@@ -13,6 +13,8 @@ namespace SixLabors.Fonts.Tables.General.Colr;
 /// </summary>
 internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
 {
+    private static readonly Dictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ColrV1GlyphSource"/> class.
     /// </summary>
@@ -27,6 +29,13 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
     /// <inheritdoc/>
     public override bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas)
     {
+        if (CachedGlyphs.TryGetValue(glyphId, out (PaintedGlyph Glyph, PaintedCanvas Canvas) cached))
+        {
+            glyph = cached.Glyph;
+            canvas = cached.Canvas;
+            return true;
+        }
+
         glyph = default;
         canvas = default;
 
@@ -60,7 +69,18 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
             for (int p = 0; p < leafPaints.Count; p++)
             {
                 Rendering.Paint leaf = leafPaints[p];
-                layers.Add(new PaintedLayer(leaf, FillRule.NonZero, Matrix3x2.Identity, clip, path));
+
+                Matrix3x2 xForm = Matrix3x2.Identity;
+                if (leaf is SolidPaint solid)
+                {
+                    // Move the transform from the paint to the layer.
+                    // We do this so that solid paints are also transformed correctly as
+                    // their location is defined in the local space of the layer.
+                    xForm = solid.Transform;
+                    solid.Transform = Matrix3x2.Identity;
+                }
+
+                layers.Add(new PaintedLayer(leaf, FillRule.NonZero, xForm, clip, path));
             }
         }
 
@@ -72,6 +92,7 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
         // Canvas viewBox in Y-up; renderer downstream decides orientation via flag.
         glyph = new PaintedGlyph(layers);
         canvas = new PaintedCanvas(FontRectangle.Empty, isYDown: false, rootTransform: Matrix3x2.Identity);
+        CachedGlyphs[glyphId] = (glyph, canvas);
         return true;
     }
 }
