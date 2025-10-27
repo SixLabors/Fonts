@@ -51,6 +51,7 @@ public abstract class GlyphMetrics
 
         Vector2 offset = Vector2.Zero;
         Vector2 scaleFactor = new(unitsPerEM * 72F);
+
         if ((textAttributes & TextAttributes.Subscript) == TextAttributes.Subscript)
         {
             float units = this.UnitsPerEm;
@@ -102,8 +103,8 @@ public abstract class GlyphMetrics
         this.TextDecorations = textRun.TextDecorations;
         this.GlyphType = glyphType;
         this.GlyphColor = glyphColor;
-        this.ScaleFactor = new Vector2(scaleFactor.X, scaleFactor.Y);
-        this.Offset = new Vector2(offset.X, offset.Y);
+        this.ScaleFactor = scaleFactor;
+        this.Offset = offset;
         this.TextRun = textRun;
     }
 
@@ -346,9 +347,38 @@ public abstract class GlyphMetrics
         float scaledPPEM,
         TextOptions options)
     {
-        FontMetrics fontMetrics = options.DecorationPositioningMode == DecorationPositioningMode.PerGlyphFromFont
+        bool perGlyph = options.DecorationPositioningMode == DecorationPositioningMode.PerGlyphFromFont;
+        FontMetrics fontMetrics = perGlyph
             ? this.FontMetrics
             : options.Font.FontMetrics;
+
+        Vector2 scaleFactor;
+        Vector2 offset;
+        if (perGlyph)
+        {
+            // Use the pre-calculated values from this glyph.
+            scaleFactor = this.ScaleFactor;
+            offset = this.Offset;
+        }
+        else
+        {
+            // To ensure that we share the scaling when sharing font metrics we need to
+            // recalculate the offset and scale factor here using the common font metrics.
+            scaleFactor = new(fontMetrics.UnitsPerEm * 72F);
+            offset = Vector2.Zero;
+            if ((this.TextAttributes & TextAttributes.Subscript) == TextAttributes.Subscript)
+            {
+                float units = this.UnitsPerEm;
+                scaleFactor /= new Vector2(fontMetrics.SubscriptXSize / units, fontMetrics.SubscriptYSize / units);
+                offset = new(fontMetrics.SubscriptXOffset, fontMetrics.SubscriptYOffset < 0 ? fontMetrics.SubscriptYOffset : -fontMetrics.SubscriptYOffset);
+            }
+            else if ((this.TextAttributes & TextAttributes.Superscript) == TextAttributes.Superscript)
+            {
+                float units = this.UnitsPerEm;
+                scaleFactor /= new Vector2(fontMetrics.SuperscriptXSize / units, fontMetrics.SuperscriptYSize / units);
+                offset = new(fontMetrics.SuperscriptXOffset, fontMetrics.SuperscriptYOffset < 0 ? -fontMetrics.SuperscriptYOffset : fontMetrics.SuperscriptYOffset);
+            }
+        }
 
         bool isVerticalLayout = mode is GlyphLayoutMode.Vertical or GlyphLayoutMode.VerticalRotated;
         (Vector2 Start, Vector2 End, float Thickness) GetEnds(TextDecorations decorations, float thickness, float decoratorPosition)
@@ -362,10 +392,10 @@ public abstract class GlyphMetrics
                     return (Vector2.Zero, Vector2.Zero, 0);
                 }
 
-                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+                Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
 
                 // Undo the vertical offset applied when laying out the text.
-                Vector2 scaledOffset = (this.Offset + new Vector2(decoratorPosition, 0)) * scale;
+                Vector2 scaledOffset = (offset + new Vector2(decoratorPosition, 0)) * scale;
 
                 length *= scale.Y;
                 thickness *= scale.X;
@@ -400,8 +430,8 @@ public abstract class GlyphMetrics
                     return (Vector2.Zero, Vector2.Zero, 0);
                 }
 
-                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-                Vector2 scaledOffset = (this.Offset + new Vector2(0, decoratorPosition)) * scale;
+                Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
+                Vector2 scaledOffset = (offset + new Vector2(0, decoratorPosition)) * scale;
 
                 length *= scale.X;
                 thickness *= scale.Y;
@@ -448,7 +478,7 @@ public abstract class GlyphMetrics
         if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
         {
             // There's no built in metrics for overline thickness so use underline.
-            SetDecoration(TextDecorations.Overline, fontMetrics.UnderlineThickness, this.UnitsPerEm - fontMetrics.UnderlinePosition);
+            SetDecoration(TextDecorations.Overline, fontMetrics.UnderlineThickness, fontMetrics.UnitsPerEm - fontMetrics.UnderlinePosition);
         }
     }
 
