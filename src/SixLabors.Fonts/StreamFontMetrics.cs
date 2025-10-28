@@ -562,7 +562,7 @@ internal partial class StreamFontMetrics : FontMetrics
         => this.outlineType switch
         {
             OutlineType.TrueType => this.CreateTrueTypeGlyphMetrics(in codePoint, glyphId, glyphType, textAttributes, textDecorations, colorSupport, isVerticalLayout, paletteIndex),
-            OutlineType.CFF => this.CreateCffGlyphMetrics(in codePoint, glyphId, glyphType, textAttributes, textDecorations, isVerticalLayout, paletteIndex),
+            OutlineType.CFF => this.CreateCffGlyphMetrics(in codePoint, glyphId, glyphType, textAttributes, textDecorations, colorSupport, isVerticalLayout, paletteIndex),
             _ => throw new NotSupportedException(),
         };
 }

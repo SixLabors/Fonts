@@ -31,7 +31,7 @@ public enum CompositeMode
     /// Keeps the destination as-is and ignores the source.
     /// Equivalent to no drawing operation.
     /// </summary>
-    Dst = 2,
+    Dest = 2,
 
     /// <summary>
     /// Draws the source over the destination using standard alpha compositing.
@@ -43,7 +43,7 @@ public enum CompositeMode
     /// Draws the destination over the source.
     /// The destination appears on top and the source shows through transparent areas.
     /// </summary>
-    DstOver = 4,
+    DestOver = 4,
 
     /// <summary>
     /// Shows the source only where it overlaps the destination.
@@ -55,7 +55,7 @@ public enum CompositeMode
     /// Shows the destination only where it overlaps the source.
     /// The source’s alpha acts as a mask for the destination.
     /// </summary>
-    DstIn = 6,
+    DestIn = 6,
 
     /// <summary>
     /// Shows the source only where it does not overlap the destination.
@@ -65,9 +65,9 @@ public enum CompositeMode
 
     /// <summary>
     /// Shows the destination only where it does not overlap the source.
-    /// Produces the inverse of <see cref="DstIn"/>.
+    /// Produces the inverse of <see cref="DestIn"/>.
     /// </summary>
-    DstOut = 8,
+    DestOut = 8,
 
     /// <summary>
     /// Draws the source over the destination but only within the destination’s alpha region.
@@ -79,7 +79,7 @@ public enum CompositeMode
     /// Draws the destination over the source but only within the source’s alpha region.
     /// Outside that region, the source is visible.
     /// </summary>
-    DstAtop = 10,
+    DestAtop = 10,
 
     /// <summary>
     /// Exclusive OR.

@@ -14,7 +14,7 @@ namespace DrawWithImageSharp;
 /// </summary>
 internal class CustomGlyphBuilder : GlyphBuilder
 {
-    private readonly List<FontRectangle> glyphBounds = new();
+    private readonly List<FontRectangle> glyphBounds = [];
 
     public CustomGlyphBuilder()
     {

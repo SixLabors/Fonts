@@ -30,7 +30,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
         ushort unitsPerEM,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
-        GlyphType glyphType = GlyphType.Standard)
+        GlyphType glyphType)
         : base(
               font,
               glyphId,
@@ -43,8 +43,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
               unitsPerEM,
               textAttributes,
               textDecorations,
-              glyphType,
-              null)
+              glyphType)
         => this.vector = vector;
 
     internal TrueTypeGlyphMetrics(
@@ -60,7 +59,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
         Vector2 offset,
         Vector2 scaleFactor,
         TextRun textRun,
-        GlyphType glyphType = GlyphType.Standard)
+        GlyphType glyphType)
         : base(
               font,
               glyphId,
@@ -74,8 +73,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
               offset,
               scaleFactor,
               textRun,
-              glyphType,
-              null)
+              glyphType)
         => this.vector = vector;
 
     /// <inheritdoc/>

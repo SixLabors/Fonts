@@ -5,12 +5,13 @@ using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts.Tests;
 
-// TODO: We don't actually need this type.We should refactor tests to remove it.
+// TODO: We massively overuse this type.
+// We should refactor tests to remove it where possible.
 public class ColorGlyphRenderer : GlyphRenderer
 {
     public List<GlyphColor> Colors { get; } = new List<GlyphColor>();
 
-    public override void BeginLayer(Paint paint, FillRule fillRule, in FontRectangle? clipBounds)
+    public override void BeginLayer(Paint paint, FillRule fillRule, in ClipQuad? clipBounds)
     {
         if (paint is SolidPaint solidPaint)
         {

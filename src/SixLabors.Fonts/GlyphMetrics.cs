@@ -28,8 +28,7 @@ public abstract class GlyphMetrics
         ushort unitsPerEM,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType)
     {
         this.FontMetrics = font;
         this.GlyphId = glyphId;
@@ -47,7 +46,6 @@ public abstract class GlyphMetrics
         this.TextAttributes = textAttributes;
         this.TextDecorations = textDecorations;
         this.GlyphType = glyphType;
-        this.GlyphColor = glyphColor;
 
         Vector2 offset = Vector2.Zero;
         Vector2 scaleFactor = new(unitsPerEM * 72F);
@@ -82,8 +80,7 @@ public abstract class GlyphMetrics
         Vector2 offset,
         Vector2 scaleFactor,
         TextRun textRun,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType)
     {
         // This is used during cloning. Ensure anything that could be changed is copied.
         this.FontMetrics = font;
@@ -102,7 +99,6 @@ public abstract class GlyphMetrics
         this.TextAttributes = textRun.TextAttributes;
         this.TextDecorations = textRun.TextDecorations;
         this.GlyphType = glyphType;
-        this.GlyphColor = glyphColor;
         this.ScaleFactor = scaleFactor;
         this.Offset = offset;
         this.TextRun = textRun;
@@ -167,11 +163,6 @@ public abstract class GlyphMetrics
     /// Gets the glyph type.
     /// </summary>
     public GlyphType GlyphType { get; }
-
-    /// <summary>
-    /// Gets the color of this glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.Layer"/>
-    /// </summary>
-    public GlyphColor? GlyphColor { get; }
 
     /// <inheritdoc cref="FontMetrics.UnitsPerEm"/>
     public ushort UnitsPerEm { get; }

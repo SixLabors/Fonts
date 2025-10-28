@@ -30,8 +30,6 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
     /// <param name="unitsPerEM">Units per EM.</param>
     /// <param name="textAttributes">Text attributes.</param>
     /// <param name="textDecorations">Text decorations.</param>
-    /// <param name="glyphType">The glyph type.</param>
-    /// <param name="glyphColor">Optional solid color (used by outline/legacy paths).</param>
     internal PaintedGlyphMetrics(
         StreamFontMetrics font,
         ushort glyphId,
@@ -44,9 +42,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         short topSideBearing,
         ushort unitsPerEM,
         TextAttributes textAttributes,
-        TextDecorations textDecorations,
-        GlyphType glyphType = GlyphType.Layer,
-        GlyphColor? glyphColor = null)
+        TextDecorations textDecorations)
         : base(
               font,
               glyphId,
@@ -59,8 +55,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
               unitsPerEM,
               textAttributes,
               textDecorations,
-              glyphType,
-              glyphColor)
+              GlyphType.Painted)
         => this.source = source;
 
     /// <summary>
@@ -79,9 +74,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         ushort unitsPerEM,
         Vector2 offset,
         Vector2 scaleFactor,
-        TextRun textRun,
-        GlyphType glyphType = GlyphType.Layer,
-        GlyphColor? glyphColor = null)
+        TextRun textRun)
         : base(
               font,
               glyphId,
@@ -95,8 +88,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
               offset,
               scaleFactor,
               textRun,
-              glyphType,
-              glyphColor)
+              GlyphType.Painted)
         => this.source = source;
 
     /// <inheritdoc/>
@@ -114,9 +106,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             this.UnitsPerEm,
             this.Offset,
             this.ScaleFactor,
-            textRun,
-            this.GlyphType,
-            this.GlyphColor);
+            textRun);
 
     /// <inheritdoc/>
     internal override void RenderTo(
@@ -235,8 +225,8 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
             Matrix3x2 layerXform = layer.Transform * xform;
 
             // Clip bounds in device space (if any).
-            FontRectangle? clipBounds = layer.ClipBounds.HasValue
-                ? new FontRectangle(Bounds.Transform(layer.ClipBounds.Value, layerXform))
+            ClipQuad? clipBounds = layer.ClipBounds.HasValue
+                ? ClipQuad.FromBounds(layer.ClipBounds.Value, layerXform)
                 : null;
 
             // Similarity decomposition for arc radii/angle/sweep adjustment (from layer).

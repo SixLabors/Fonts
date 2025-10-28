@@ -19,7 +19,7 @@ public enum GlyphType
     Standard,
 
     /// <summary>
-    /// This is a single layer of the multi-layer colored glyph (emoji).
+    /// This is a multi-layer colored glyph (emoji).
     /// </summary>
-    Layer
+    Painted
 }

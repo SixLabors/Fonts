@@ -42,7 +42,8 @@ public class GlyphTests
             0,
             metrics.UnitsPerEm,
             textRun.TextAttributes,
-            textRun.TextDecorations);
+            textRun.TextDecorations,
+            GlyphType.Standard);
 
         Glyph glyph = new(glyphMetrics.CloneForRendering(textRun), font.Size);
 

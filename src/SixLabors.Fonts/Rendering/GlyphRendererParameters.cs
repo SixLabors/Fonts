@@ -29,7 +29,6 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
         this.PointSize = pointSize;
         this.Dpi = dpi;
         this.GlyphType = metrics.GlyphType;
-        this.GlyphColor = metrics.GlyphColor ?? default;
         this.TextRun = textRun;
         this.CodePoint = metrics.CodePoint;
         this.LayoutMode = layoutMode;
@@ -39,11 +38,6 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
     /// Gets the name of the Font this glyph belongs to.
     /// </summary>
     public string Font { get; }
-
-    /// <summary>
-    /// Gets the color details of this glyph.
-    /// </summary>
-    public GlyphColor GlyphColor { get; }
 
     /// <summary>
     /// Gets the type of this glyph.
@@ -61,7 +55,7 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
     public ushort GlyphId { get; }
 
     /// <summary>
-    /// Gets the id of the composite glyph if the <see cref="GlyphType"/> is <see cref="GlyphType.Layer"/>;
+    /// Gets the id of the composite glyph if the <see cref="GlyphType"/> is <see cref="GlyphType.Painted"/>;
     /// </summary>
     public ushort CompositeGlyphId { get; }
 
@@ -137,7 +131,6 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
         && other.TextRun.TextAttributes == this.TextRun.TextAttributes
         && other.TextRun.TextDecorations == this.TextRun.TextDecorations
         && other.LayoutMode == this.LayoutMode
-        && other.GlyphColor.Equals(this.GlyphColor)
         && ((other.Font is null && this.Font is null)
         || (other.Font?.Equals(this.Font, StringComparison.OrdinalIgnoreCase) == true));
 
@@ -153,10 +146,9 @@ public readonly struct GlyphRendererParameters : IEquatable<GlyphRendererParamet
             this.PointSize,
             this.GlyphId,
             this.GlyphType,
-            this.GlyphColor);
+            this.FontStyle);
 
         int b = HashCode.Combine(
-            this.FontStyle,
             this.Dpi,
             this.TextRun.TextAttributes,
             this.TextRun.TextDecorations,

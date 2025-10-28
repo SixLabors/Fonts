@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
@@ -69,15 +70,17 @@ internal partial class StreamFontMetrics
         return new StreamFontMetrics(tables);
     }
 
-    private CffGlyphMetrics CreateCffGlyphMetrics(
+    private GlyphMetrics CreateCffGlyphMetrics(
         in CodePoint codePoint,
         ushort glyphId,
         GlyphType glyphType,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
+        ColorFontSupport colorSupport,
         bool isVerticalLayout,
         ushort paletteIndex = 0)
     {
+        // TODO: When do we require and how do we use the palette index?
         CompactFontTables tables = this.compactFontTables!;
         ICffTable cff = tables.Cff;
         HorizontalMetricsTable htmx = tables.Htmx;
@@ -97,15 +100,24 @@ internal partial class StreamFontMetrics
             tsb = vtmx.GetTopSideBearing(glyphId);
         }
 
-        GlyphColor? color = null;
-        if (glyphType == GlyphType.Layer)
+        // TODO: Support CFF based COLR glyphs.
+        // This requires parsing the CFF charstrings to extract the glyph vectors.
+        SvgTable? svg = tables.Svg;
+        if ((colorSupport & ColorFontSupport.Svg) == ColorFontSupport.Svg && svg?.ContainsGlyph(glyphId) == true)
         {
-            // 0xFFFF is special index meaning use foreground color and thus leave unset
-            if (paletteIndex != 0xFFFF)
-            {
-                CpalTable? cpal = tables.Cpal;
-                color = cpal?.GetGlyphColor(0, paletteIndex);
-            }
+            return new PaintedGlyphMetrics(
+                this,
+                glyphId,
+                codePoint,
+                new SvgGlyphSource(svg),
+                bounds,
+                advanceWidth,
+                advancedHeight,
+                lsb,
+                tsb,
+                this.UnitsPerEm,
+                textAttributes,
+                textDecorations);
         }
 
         return new CffGlyphMetrics(
@@ -121,7 +133,6 @@ internal partial class StreamFontMetrics
             this.UnitsPerEm,
             textAttributes,
             textDecorations,
-            glyphType,
-            color);
+            glyphType);
     }
 }
