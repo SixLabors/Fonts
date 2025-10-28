@@ -14,7 +14,7 @@ internal class GlyphTable : Table
     public GlyphTable(GlyphLoader[] glyphLoaders)
     {
         this.loaders = glyphLoaders;
-        this.glyphCache = new(glyphLoaders.Length);
+        this.glyphCache = new Dictionary<int, GlyphVector>(glyphLoaders.Length);
     }
 
     public int GlyphCount => this.loaders.Length;

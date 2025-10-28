@@ -51,7 +51,7 @@ public ref struct SpanGraphemeEnumerator
         }
 
         // Algorithm given at https://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules.
-        var processor = new Processor(this.source);
+        Processor processor = new(this.source);
 
         processor.MoveNext();
 
@@ -220,7 +220,7 @@ public ref struct SpanGraphemeEnumerator
         public void MoveNext()
         {
             this.CharsConsumed += this.charsConsumed;
-            var codePoint = CodePoint.DecodeFromUtf16At(this.source, this.CharsConsumed, out this.charsConsumed);
+            CodePoint codePoint = CodePoint.DecodeFromUtf16At(this.source, this.CharsConsumed, out this.charsConsumed);
             this.CurrentType = CodePoint.GetGraphemeClusterClass(codePoint);
         }
     }

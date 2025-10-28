@@ -21,7 +21,7 @@ internal class TableHeader
 
     public uint Length { get; }
 
-    public static TableHeader Read(BigEndianBinaryReader reader) => new TableHeader(
+    public static TableHeader Read(BigEndianBinaryReader reader) => new(
             reader.ReadTag(),
             reader.ReadUInt32(),
             reader.ReadOffset32(),

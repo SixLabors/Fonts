@@ -35,7 +35,7 @@ internal struct CffGlyphData
 
     public readonly Bounds GetBounds()
     {
-        using var engine = new CffEvaluationEngine(
+        using CffEvaluationEngine engine = new(
             this.charStrings,
             this.globalSubrBuffers,
             this.localSubrBuffers,
@@ -46,7 +46,7 @@ internal struct CffGlyphData
 
     public readonly void RenderTo(IGlyphRenderer renderer, Vector2 origin, Vector2 scale, Vector2 offset, Matrix3x2 transform)
     {
-        using var engine = new CffEvaluationEngine(
+        using CffEvaluationEngine engine = new(
              this.charStrings,
              this.globalSubrBuffers,
              this.localSubrBuffers,

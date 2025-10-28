@@ -7,8 +7,8 @@ namespace SixLabors.Fonts.Tables;
 // see https://github.com/LayoutFarm/Typography/blob/master/Typography.OpenFont/WebFont/Woff2Reader.cs
 internal class TripleEncodingTable
 {
-    public static readonly TripleEncodingTable EncTable = new TripleEncodingTable();
-    private readonly List<TripleEncodingRecord> records = new List<TripleEncodingRecord>();
+    public static readonly TripleEncodingTable EncTable = new();
+    private readonly List<TripleEncodingRecord> records = [];
 
     private TripleEncodingTable() => this.BuildTable();
 
@@ -42,7 +42,7 @@ internal class TripleEncodingTable
         // 7                                           768            +
         // 8                                           1024           -
         // 9                                           1024           +
-        this.BuildRecords(2, 0, 8, Array.Empty<ushort>(), new ushort[] { 0, 256, 512, 768, 1024 });
+        this.BuildRecords(2, 0, 8, [], [0, 256, 512, 768, 1024]);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 1.2)
@@ -56,7 +56,7 @@ internal class TripleEncodingTable
         // 17                                768               +
         // 18                                1024              -
         // 19                                1024              +
-        this.BuildRecords(2, 8, 0, new ushort[] { 0, 256, 512, 768, 1024 }, Array.Empty<ushort>());
+        this.BuildRecords(2, 8, 0, [0, 256, 512, 768, 1024], []);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 2.1)
@@ -76,7 +76,7 @@ internal class TripleEncodingTable
         // 33                                          49      +      -
         // 34                                          49      -      +
         // 35                                          49      +      +
-        this.BuildRecords(2, 4, 4, new ushort[] { 1 }, new ushort[] { 1, 17, 33, 49 });
+        this.BuildRecords(2, 4, 4, [1], [1, 17, 33, 49]);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 2.2)
@@ -96,7 +96,7 @@ internal class TripleEncodingTable
         // 49                                          49      +      -
         // 50                                          49      -      +
         // 51                                          49      +      +
-        this.BuildRecords(2, 4, 4, new ushort[] { 17 }, new ushort[] { 1, 17, 33, 49 });
+        this.BuildRecords(2, 4, 4, [17], [1, 17, 33, 49]);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 2.3)
@@ -116,7 +116,7 @@ internal class TripleEncodingTable
         // 65                                          49      +      -
         // 66                                          49      -      +
         // 67                                          49      +      +
-        this.BuildRecords(2, 4, 4, new ushort[] { 33 }, new ushort[] { 1, 17, 33, 49 });
+        this.BuildRecords(2, 4, 4, [33], [1, 17, 33, 49]);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 2.4)
@@ -136,7 +136,7 @@ internal class TripleEncodingTable
         // 81                                          49      +     -
         // 82                                          49      -     +
         // 83                                          49      +     +
-        this.BuildRecords(2, 4, 4, new ushort[] { 49 }, new ushort[] { 1, 17, 33, 49 });
+        this.BuildRecords(2, 4, 4, [49], [1, 17, 33, 49]);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 3.1)
@@ -152,7 +152,7 @@ internal class TripleEncodingTable
         // 93                                         513      +     -
         // 94                                         513      -     +
         // 95                                         513      +     +
-        this.BuildRecords(3, 8, 8, new ushort[] { 1 }, new ushort[] { 1, 257, 513 });
+        this.BuildRecords(3, 8, 8, [1], [1, 257, 513]);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 3.2)
@@ -168,7 +168,7 @@ internal class TripleEncodingTable
         // 105                                         513     +      -
         // 106                                         513     -      +
         // 107                                         513     +      +
-        this.BuildRecords(3, 8, 8, new ushort[] { 257 }, new ushort[] { 1, 257, 513 });
+        this.BuildRecords(3, 8, 8, [257], [1, 257, 513]);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 3.3)
@@ -184,7 +184,7 @@ internal class TripleEncodingTable
         // 117                                         513     +      -
         // 118                                         513     -      +
         // 119                                         513     +      +
-        this.BuildRecords(3, 8, 8, new ushort[] { 513 }, new ushort[] { 1, 257, 513 });
+        this.BuildRecords(3, 8, 8, [513], [1, 257, 513]);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 4)
@@ -192,7 +192,7 @@ internal class TripleEncodingTable
         // 121                                                 +      -
         // 122                                                 -      +
         // 123                                                 +      +
-        this.BuildRecords(4, 12, 12, new ushort[] { 0 }, new ushort[] { 0 });
+        this.BuildRecords(4, 12, 12, [0], [0]);
 
         // Index ByteCount   Xbits   Ybits   DeltaX  DeltaY  Xsign   Ysign
         // (set 5)
@@ -200,7 +200,7 @@ internal class TripleEncodingTable
         // 125                                                 +      -
         // 126                                                 -      +
         // 127                                                 +      +
-        this.BuildRecords(5, 16, 16, new ushort[] { 0 }, new ushort[] { 0 });
+        this.BuildRecords(5, 16, 16, [0], [0]);
     }
 
     private void BuildRecords(byte byteCount, byte xbits, byte ybits, ushort[] deltaXs, ushort[] deltaYs)
@@ -245,7 +245,7 @@ internal class TripleEncodingTable
 
     private void AddRecord(byte byteCount, byte xbits, byte ybits, ushort deltaX, ushort deltaY, sbyte xsign, sbyte ysign)
     {
-        var rec = new TripleEncodingRecord(byteCount, xbits, ybits, deltaX, deltaY, xsign, ysign);
+        TripleEncodingRecord rec = new(byteCount, xbits, ybits, deltaX, deltaY, xsign, ysign);
         this.records.Add(rec);
     }
 }

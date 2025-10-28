@@ -10,7 +10,7 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        var pairings = new List<Pairing>();
+        List<Pairing> pairings = [];
         IOrderedEnumerable<FontFamily> ordered = SystemFonts.Families.OrderBy(x => x.Name);
         foreach (FontFamily family in ordered)
         {

@@ -74,7 +74,7 @@ internal ref struct RefStack<T>
                 capacity = MaxLength;
             }
 
-            var newBuffer = new Buffer<T>(capacity);
+            Buffer<T> newBuffer = new(capacity);
             Span<T> newStack = newBuffer.GetSpan();
 
             this.stack.CopyTo(newStack);

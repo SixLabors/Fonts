@@ -3,7 +3,6 @@
   <PropertyGroup>
     <DebugSymbols>True</DebugSymbols>
     <Platforms>AnyCPU;x64;x86</Platforms>
-    <LangVersion>10</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>

@@ -17,7 +17,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <summary>
     /// Contains a map the index of a map within the collection, non-sequential codepoint offsets, and their glyph ids.
     /// </summary>
-    private readonly List<OffsetGlyphDataPair> glyphs = new();
+    private readonly List<OffsetGlyphDataPair> glyphs = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphSubstitutionCollection"/> class.
@@ -101,7 +101,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <param name="data">The data.</param>
     /// <param name="offset">The zero-based index within the input codepoint collection.</param>
     public void AddGlyph(GlyphShapingData data, int offset)
-        => this.glyphs.Add(new(offset, new(data, false)));
+        => this.glyphs.Add(new OffsetGlyphDataPair(offset, new GlyphShapingData(data, false)));
 
     /// <summary>
     /// Adds the glyph id and the codepoint it represents to the collection.
@@ -112,7 +112,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <param name="textRun">The text run this glyph belongs to.</param>
     /// <param name="offset">The zero-based index within the input codepoint collection.</param>
     public void AddGlyph(ushort glyphId, CodePoint codePoint, TextDirection direction, TextRun textRun, int offset)
-        => this.glyphs.Add(new(offset, new(textRun)
+        => this.glyphs.Add(new OffsetGlyphDataPair(offset, new GlyphShapingData(textRun)
         {
             CodePoint = codePoint,
             Direction = direction,
@@ -363,7 +363,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
 
                     data.AppliedFeatures.Add(feature);
 
-                    this.glyphs.Insert(++index, new(pair.Offset, data));
+                    this.glyphs.Insert(++index, new OffsetGlyphDataPair(pair.Offset, data));
                 }
             }
         }

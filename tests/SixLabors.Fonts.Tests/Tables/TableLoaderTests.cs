@@ -27,7 +27,7 @@ public class TableLoaderTests
     [MemberData(nameof(RegisterableTableTypes))]
     public void AllNamedTablesAreRegistered(Type type, string name)
     {
-        var tl = new TableLoader();
+        TableLoader tl = new();
         Assert.Contains(type, tl.RegisteredTypes());
         Assert.Equal(name, tl.GetTag(type));
     }
@@ -38,7 +38,7 @@ public class TableLoaderTests
     [Fact]
     public void TryingToLoadUnregisteredTagReturnsUnknownTable()
     {
-        var loader = new TableLoader();
+        TableLoader loader = new();
 
         string tag = Guid.NewGuid().ToString();
         Table result = loader.Load(tag, null);
@@ -50,7 +50,7 @@ public class TableLoaderTests
     [Fact]
     public void NullForUnknownTypes()
     {
-        var loader = new TableLoader();
+        TableLoader loader = new();
         string tag = loader.GetTag(typeof(TableLoaderTests));
         Assert.Null(tag);
     }

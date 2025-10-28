@@ -124,7 +124,7 @@ internal sealed class IndicShaper : DefaultShaper
                 substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
                 for (int j = 0; j < decompositions.Length; j++)
                 {
-                    substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    substitutionCollection[i + j].CodePoint = new CodePoint(decompositions[j]);
                 }
             }
         }
@@ -155,7 +155,7 @@ internal sealed class IndicShaper : DefaultShaper
                 for (int i = last; i < match.StartIndex; i++)
                 {
                     GlyphShapingData data = substitutionCollection[i + index];
-                    data.IndicShapingEngineInfo = new(Categories.X, Positions.End, "non_indic_cluster", syllable);
+                    data.IndicShapingEngineInfo = new IndicShapingEngineInfo(Categories.X, Positions.End, "non_indic_cluster", syllable);
                 }
             }
 
@@ -167,7 +167,7 @@ internal sealed class IndicShaper : DefaultShaper
                 GlyphShapingData data = substitutionCollection[i + index];
                 CodePoint codePoint = data.CodePoint;
 
-                data.IndicShapingEngineInfo = new(
+                data.IndicShapingEngineInfo = new IndicShapingEngineInfo(
                     (Categories)(1 << IndicShapingCategory(codePoint)),
                     (Positions)IndicShapingPosition(codePoint),
                     match.Tags[0],
@@ -183,7 +183,7 @@ internal sealed class IndicShaper : DefaultShaper
             for (int i = last; i < count; i++)
             {
                 GlyphShapingData data = substitutionCollection[i + index];
-                data.IndicShapingEngineInfo = new(Categories.X, Positions.End, "non_indic_cluster", syllable);
+                data.IndicShapingEngineInfo = new IndicShapingEngineInfo(Categories.X, Positions.End, "non_indic_cluster", syllable);
             }
         }
     }
@@ -212,7 +212,7 @@ internal sealed class IndicShaper : DefaultShaper
             GlyphShapingData data = substitutionCollection[i + index];
             FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
 
-            fontMetrics.TryGetGlyphId(new(0x0020), out ushort spc);
+            fontMetrics.TryGetGlyphId(new CodePoint(0x0020), out ushort spc);
 
             IndicShapingEngineInfo? info = data.IndicShapingEngineInfo;
             if (info?.Position == Positions.Base_C)
@@ -256,7 +256,7 @@ internal sealed class IndicShaper : DefaultShaper
                 break;
             }
 
-            if (dataInfo != null && type == "broken_cluster" && fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
+            if (dataInfo != null && type == "broken_cluster" && fontMetrics.TryGetGlyphId(new CodePoint(DottedCircle), out ushort id))
             {
                 // Insert after possible Repha.
                 int i = start;
@@ -280,7 +280,7 @@ internal sealed class IndicShaper : DefaultShaper
                 GlyphShapingData dotted = substitutionCollection[i + 1];
                 Categories dottedCategory = (Categories)(1 << IndicShapingCategory(dotted.CodePoint));
                 Positions dottedPosition = (Positions)IndicShapingPosition(dotted.CodePoint);
-                dotted.IndicShapingEngineInfo = new(dottedCategory, dottedPosition, dataInfo.SyllableType, dataInfo.Syllable);
+                dotted.IndicShapingEngineInfo = new IndicShapingEngineInfo(dottedCategory, dottedPosition, dataInfo.SyllableType, dataInfo.Syllable);
 
                 end++;
                 max++;

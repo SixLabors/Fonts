@@ -44,9 +44,9 @@ public class FontTests
     [Fact]
     public void FontClassWithPath_SetProperties()
     {
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.CarterOneFile);
-        var font = new Font(family, 12);
+        Font font = new(family, 12);
 
         Assert.Equal("Carter One", font.Name);
         Assert.Equal(12, font.Size);
@@ -60,10 +60,10 @@ public class FontTests
     [Fact]
     public void FontClassNoPath_SetProperties()
     {
-        var collection = new FontCollection();
+        FontCollection collection = new();
         using Stream stream = TestFonts.CarterOneFileData();
         FontFamily family = collection.Add(stream);
-        var font = new Font(family, 12);
+        Font font = new(family, 12);
 
         Assert.Equal("Carter One", font.Name);
         Assert.Equal(12, font.Size);

@@ -53,7 +53,7 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
         // +----------+----------------+----------------------------------------------------------+
         ushort coverageOffset = reader.ReadOffset16();
         ushort deltaGlyphId = reader.ReadUInt16();
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
         return new LookupType1Format1SubTable(deltaGlyphId, coverageTable, lookupFlags);
     }
@@ -112,7 +112,7 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         ushort coverageOffset = reader.ReadOffset16();
         ushort glyphCount = reader.ReadUInt16();
         ushort[] substituteGlyphIds = reader.ReadUInt16Array(glyphCount);
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
         return new LookupType1Format2SubTable(substituteGlyphIds, coverageTable, lookupFlags);
     }

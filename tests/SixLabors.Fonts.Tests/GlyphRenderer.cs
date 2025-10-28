@@ -11,13 +11,13 @@ public class GlyphRenderer : IGlyphRenderer
     private int figuresCount;
     private GlyphRendererParameters parameters;
 
-    public List<Vector2> ControlPoints { get; } = new();
+    public List<Vector2> ControlPoints { get; } = [];
 
-    public List<Vector2> ControlPointsOnCurve { get; } = new();
+    public List<Vector2> ControlPointsOnCurve { get; } = [];
 
-    public List<FontRectangle> GlyphRects { get; } = new();
+    public List<FontRectangle> GlyphRects { get; } = [];
 
-    public List<GlyphRendererParameters> GlyphKeys { get; } = new();
+    public List<GlyphRendererParameters> GlyphKeys { get; } = [];
 
     public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
     {

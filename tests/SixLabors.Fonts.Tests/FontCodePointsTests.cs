@@ -10,7 +10,7 @@ public class FontCodePointsTests
     [Fact]
     public void TtfTest()
     {
-        FontCollection collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.SimpleFontFile);
         Font font = family.CreateFont(12);
 
@@ -30,7 +30,7 @@ public class FontCodePointsTests
         Assert.Contains(0x0062, codePointValues);
         Assert.Contains(0xFFFF, codePointValues);
 
-        HashSet<int> glyphIds = new();
+        HashSet<int> glyphIds = [];
         foreach (CodePoint codePoint in codePoints)
         {
             Assert.True(font.TryGetGlyphs(codePoint, out Glyph? glyph));
@@ -64,7 +64,7 @@ public class FontCodePointsTests
         Assert.Contains(0x0062, codePointValues);
         Assert.Contains(0xFFFF, codePointValues);
 
-        HashSet<int> glyphIds = new();
+        HashSet<int> glyphIds = [];
         foreach (CodePoint codePoint in codePoints)
         {
             Assert.True(font.TryGetGlyphs(codePoint, out Glyph? glyph));

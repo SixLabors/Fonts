@@ -11,7 +11,7 @@ internal sealed class CMapTable : Table
 {
     internal const string TableName = "cmap";
 
-    private readonly Format14SubTable[] format14SubTables = Array.Empty<Format14SubTable>();
+    private readonly Format14SubTable[] format14SubTables = [];
     private CodePoint[]? codepoints;
 
     public CMapTable(IEnumerable<CMapSubTable> tables)
@@ -102,7 +102,7 @@ internal sealed class CMapTable : Table
             return this.codepoints;
         }
 
-        HashSet<int> values = new();
+        HashSet<int> values = [];
 
         foreach (int v in this.Tables.SelectMany(subtable => subtable.GetAvailableCodePoints()))
         {
@@ -123,14 +123,14 @@ internal sealed class CMapTable : Table
         ushort version = reader.ReadUInt16();
         ushort numTables = reader.ReadUInt16();
 
-        var encodings = new EncodingRecord[numTables];
+        EncodingRecord[] encodings = new EncodingRecord[numTables];
         for (int i = 0; i < numTables; i++)
         {
             encodings[i] = EncodingRecord.Read(reader);
         }
 
         // foreach encoding we move forward looking for the subtables
-        var tables = new List<CMapSubTable>(numTables);
+        List<CMapSubTable> tables = new(numTables);
         foreach (IGrouping<uint, EncodingRecord> encoding in encodings.GroupBy(x => x.Offset))
         {
             long offset = encoding.Key;

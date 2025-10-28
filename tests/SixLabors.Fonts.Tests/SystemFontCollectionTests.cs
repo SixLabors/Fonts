@@ -99,7 +99,7 @@ public class SystemFontCollectionTests
     [Fact]
     public void CanGetAllMetricsByCulture()
     {
-        var collection = (IReadOnlyFontMetricsCollection)SysFontCollection;
+        IReadOnlyFontMetricsCollection collection = (IReadOnlyFontMetricsCollection)SysFontCollection;
         FontFamily family = SysFontCollection.Families.First();
         IEnumerable<FontMetrics> metrics = collection.GetAllMetrics(family.Name, family.Culture);
 

@@ -24,7 +24,7 @@ internal sealed class Format0SubTable : KerningSubTable
         ushort entrySelector = reader.ReadUInt16();
         ushort rangeShift = reader.ReadUInt16();
 
-        var pairs = new KerningPair[pairCount];
+        KerningPair[] pairs = new KerningPair[pairCount];
         for (int i = 0; i < pairCount; i++)
         {
             pairs[i] = KerningPair.Read(reader);

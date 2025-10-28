@@ -45,7 +45,7 @@ internal class TrueTypeInterpreter
     private const int MaxCallStack = 128;
     private const float Epsilon = 0.000001F;
 
-    private readonly List<OpCode> debugList = new();
+    private readonly List<OpCode> debugList = [];
 
     public TrueTypeInterpreter(int maxStack, int maxStorage, int maxFunctions, int maxInstructionDefs, int maxTwilightPoints)
     {
@@ -56,7 +56,7 @@ internal class TrueTypeInterpreter
         this.state = default;
         this.cvtState = default;
         this.twilight = new Zone(maxTwilightPoints, isTwilight: true);
-        this.controlValueTable = Array.Empty<float>();
+        this.controlValueTable = [];
         this.contours = Array.Empty<ushort>();
     }
 
@@ -294,7 +294,7 @@ internal class TrueTypeInterpreter
                 {
                     int y = this.stack.Pop();
                     int x = this.stack.Pop();
-                    var vec = Vector2.Normalize(new Vector2(F2Dot14ToFloat(x), F2Dot14ToFloat(y)));
+                    Vector2 vec = Vector2.Normalize(new Vector2(F2Dot14ToFloat(x), F2Dot14ToFloat(y)));
                     if (opcode == OpCode.SFVFS)
                     {
                         this.state.Freedom = vec;
@@ -2321,7 +2321,7 @@ internal class TrueTypeInterpreter
             this.IsTwilight = isTwilight;
             this.Current = controlPoints;
 
-            var original = new ControlPoint[controlPoints.Length];
+            ControlPoint[] original = new ControlPoint[controlPoints.Length];
             controlPoints.AsSpan().CopyTo(original);
             this.Original = original;
             this.TouchState = new TouchState[controlPoints.Length];

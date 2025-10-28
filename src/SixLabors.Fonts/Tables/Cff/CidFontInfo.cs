@@ -21,7 +21,7 @@ internal class CidFontInfo
 
     public int FdSelectFormat { get; set; }
 
-    public FDRange3[] FdRanges { get; set; } = Array.Empty<FDRange3>();
+    public FDRange3[] FdRanges { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the fd select map, which maps glyph # to font #.

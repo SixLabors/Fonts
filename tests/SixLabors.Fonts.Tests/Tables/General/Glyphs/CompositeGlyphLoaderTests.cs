@@ -11,7 +11,7 @@ public class CompositeGlyphLoaderTests
     [Fact]
     public void LoadSingleGlyphWithUInt16Offset_unsigned_short()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteUInt16((ushort)CompositeGlyphFlags.Args1And2AreWords); // 16bit unsigned
         writer.WriteUInt16(1); // glyph id
 
@@ -19,14 +19,13 @@ public class CompositeGlyphLoaderTests
         writer.WriteUInt16(short.MaxValue + 2); // dy
         writer.GetReader();
 
-        var bounds = new Bounds(0, 0, 100, 100);
-        var glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
+        Bounds bounds = new(0, 0, 100, 100);
+        CompositeGlyphLoader glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-        var tbl = new GlyphTable(new[]
-        {
+        GlyphTable tbl = new([
             new SimpleGlyphLoader(bounds), // padding
-            new SimpleGlyphLoader(new ControlPoint[] { new(new Vector2(20, 21), true) }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
-        });
+            new SimpleGlyphLoader([new ControlPoint(new Vector2(20, 21), true)], [1], bounds, [])
+        ]);
 
         GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
@@ -37,7 +36,7 @@ public class CompositeGlyphLoaderTests
     [Fact]
     public void LoadSingleGlyphWithInt16Offset_signed_short()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteUInt16((ushort)(CompositeGlyphFlags.Args1And2AreWords /* 16bit */ | CompositeGlyphFlags.ArgsAreXYValues /* signed */)); // flags
         writer.WriteUInt16(1); // glyph id
 
@@ -45,14 +44,13 @@ public class CompositeGlyphLoaderTests
         writer.WriteInt16(short.MinValue + 2); // dy
         writer.GetReader();
 
-        var bounds = new Bounds(0, 0, 100, 100);
-        var glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
+        Bounds bounds = new(0, 0, 100, 100);
+        CompositeGlyphLoader glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-        var tbl = new GlyphTable(new[]
-        {
+        GlyphTable tbl = new([
             new SimpleGlyphLoader(bounds), // padding
-            new SimpleGlyphLoader(new ControlPoint[] { new(new Vector2(20, 21), true) }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
-        });
+            new SimpleGlyphLoader([new ControlPoint(new Vector2(20, 21), true)], [1], bounds, [])
+        ]);
 
         GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
@@ -63,7 +61,7 @@ public class CompositeGlyphLoaderTests
     [Fact]
     public void LoadSingleGlyphWithUInt8Offset_unsigned_byte()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteUInt16(0); // 8bit unsigned
         writer.WriteUInt16(1); // glyph id
 
@@ -71,14 +69,13 @@ public class CompositeGlyphLoaderTests
         writer.WriteUInt8(sbyte.MaxValue + 2); // dy
         writer.GetReader();
 
-        var bounds = new Bounds(0, 0, 100, 100);
-        var glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
+        Bounds bounds = new(0, 0, 100, 100);
+        CompositeGlyphLoader glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-        var tbl = new GlyphTable(new[]
-        {
+        GlyphTable tbl = new([
             new SimpleGlyphLoader(bounds), // padding
-            new SimpleGlyphLoader(new ControlPoint[] { new(new Vector2(20, 21), true) }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
-        });
+            new SimpleGlyphLoader([new ControlPoint(new Vector2(20, 21), true)], [1], bounds, [])
+        ]);
 
         GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 
@@ -89,7 +86,7 @@ public class CompositeGlyphLoaderTests
     [Fact]
     public void LoadSingleGlyphWithInt8Offset_signed_byte()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteUInt16((ushort)CompositeGlyphFlags.ArgsAreXYValues); // signed byte
         writer.WriteUInt16(1); // glyph id
 
@@ -97,14 +94,13 @@ public class CompositeGlyphLoaderTests
         writer.WriteInt8(sbyte.MinValue + 2); // dy
         writer.GetReader();
 
-        var bounds = new Bounds(0, 0, 100, 100);
-        var glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
+        Bounds bounds = new(0, 0, 100, 100);
+        CompositeGlyphLoader glyph = CompositeGlyphLoader.LoadCompositeGlyph(writer.GetReader(), in bounds);
 
-        var tbl = new GlyphTable(new[]
-        {
+        GlyphTable tbl = new([
             new SimpleGlyphLoader(bounds), // padding
-            new SimpleGlyphLoader(new ControlPoint[] { new(new Vector2(20, 21), true) }, new ushort[] { 1 }, bounds, Array.Empty<byte>())
-        });
+            new SimpleGlyphLoader([new ControlPoint(new Vector2(20, 21), true)], [1], bounds, [])
+        ]);
 
         GlyphVector finalGlyph = glyph.CreateGlyph(tbl);
 

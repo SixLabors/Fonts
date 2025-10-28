@@ -307,7 +307,7 @@ public static class TestFonts
 
     private static Stream Clone(this Stream src)
     {
-        var ms = new MemoryStream();
+        MemoryStream ms = new();
         src.Position = 0;
         src.CopyTo(ms);
         ms.Position = 0;
@@ -318,13 +318,13 @@ public static class TestFonts
     {
         string root = Path.GetDirectoryName(new Uri(typeof(TestFonts).GetTypeInfo().Assembly.CodeBase).LocalPath);
 
-        string[] paths = new[]
-        {
+        string[] paths =
+        [
             "Fonts",
             @"..\..\Fonts",
             @"..\..\..\..\Fonts",
             @"..\..\..\..\..\Fonts"
-        };
+        ];
 
         IEnumerable<string> fullPaths = paths.Select(x => Path.GetFullPath(Path.Combine(root, x)));
         string rootPath = fullPaths.FirstOrDefault(Directory.Exists);

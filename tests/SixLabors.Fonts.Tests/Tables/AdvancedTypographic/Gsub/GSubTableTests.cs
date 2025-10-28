@@ -42,7 +42,7 @@ public partial class GSubTableTests
     {
         // arrange
         Font arabicFont = new FontCollection().Add(TestFonts.ArabicFontFile).CreateFont(8);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(arabicFont));
@@ -59,7 +59,7 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "A";
         int expectedGlyphIndex = 38; // we expect A to be mapped to B.
 
@@ -76,9 +76,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.RobotoRegular).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "9⁄2";
-        int[] expectedGlyphIndices = { 580, 404, 453 };
+        int[] expectedGlyphIndices = [580, 404, 453];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { FeatureTags.Numerators, FeatureTags.Denominators } });
@@ -96,9 +96,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.RobotoRegular).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "9/2";
-        int[] expectedGlyphIndices = { 580, 404, 453 };
+        int[] expectedGlyphIndices = [580, 404, 453];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font) { FeatureTags = new Tag[] { FeatureTags.Fractions } });
@@ -118,7 +118,7 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "C";
         int expectedGlyphIndex = 40; // we expect C to be mapped to D.
 
@@ -137,7 +137,7 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "E";
         int expectedGlyphIndex = 42; // we expect E to be mapped to F.
 
@@ -156,7 +156,7 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubTestFontFile1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "ffi";
         int expectedGlyphIndex = 229;
 
@@ -175,9 +175,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubLookupType5Format1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0041\u0042"; // "6566" (\u0041\u0042) -> "6576"
-        int[] expectedGlyphIndices = { 3, 7 };
+        int[] expectedGlyphIndices = [3, 7];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -197,9 +197,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubLookupType5Format2).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0041\u0042"; // "6566" (\u0041\u0042) -> "6576"
-        int[] expectedGlyphIndices = { 3, 7 };
+        int[] expectedGlyphIndices = [3, 7];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -219,9 +219,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubLookupType5Format3).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0041\u0042\u0043\u0044"; // "65666768" -> "657678"
-        int[] expectedGlyphIndices = { 67, 78, 80 };
+        int[] expectedGlyphIndices = [67, 78, 80];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -241,9 +241,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubLookupType6Format1).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0014\u0015\u0016\u0017"; // "20212223" -> "20636423"
-        int[] expectedGlyphIndices = { 22, 63, 64, 25 };
+        int[] expectedGlyphIndices = [22, 63, 64, 25];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -263,9 +263,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubLookupType6Format2).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "\u0014\u0015\u0016\u0017"; // "20212223" -> "20216423"
-        int[] expectedGlyphIndices = { 22, 23, 64, 25 };
+        int[] expectedGlyphIndices = [22, 23, 64, 25];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -285,9 +285,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubTestFontFile2).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "x=y"; // This should be replaced with "x>y".
-        int[] expectedGlyphIndices = { 89, 31, 90 };
+        int[] expectedGlyphIndices = [89, 31, 90];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -307,9 +307,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.FormalScript).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "ba"; // Characters following b should have a special form and should be replaced.
-        int[] expectedGlyphIndices = { 69, 102 };
+        int[] expectedGlyphIndices = [69, 102];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -329,9 +329,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.GSubTestFontFile2).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "X89"; // X89 -> XYZ
-        int[] expectedGlyphIndices = { 57, 58, 59 };
+        int[] expectedGlyphIndices = [57, 58, 59];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font));
@@ -350,9 +350,9 @@ public partial class GSubTableTests
     {
         // arrange
         Font font = new FontCollection().Add(TestFonts.EbGaramond).CreateFont(12);
-        var renderer = new ColorGlyphRenderer();
+        ColorGlyphRenderer renderer = new();
         string testStr = "123456";
-        int[] expectedGlyphIndices = { 2242, 2243, 2244, 2245, 2246, 2247 };
+        int[] expectedGlyphIndices = [2242, 2243, 2244, 2245, 2246, 2247];
 
         // act
         TextRenderer.RenderTextTo(renderer, testStr, new TextOptions(font)

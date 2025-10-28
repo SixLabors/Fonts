@@ -54,13 +54,13 @@ public abstract class GlyphMetrics
         {
             float units = this.UnitsPerEm;
             scaleFactor /= new Vector2(font.SubscriptXSize / units, font.SubscriptYSize / units);
-            offset = new(font.SubscriptXOffset, font.SubscriptYOffset < 0 ? font.SubscriptYOffset : -font.SubscriptYOffset);
+            offset = new Vector2(font.SubscriptXOffset, font.SubscriptYOffset < 0 ? font.SubscriptYOffset : -font.SubscriptYOffset);
         }
         else if ((textAttributes & TextAttributes.Superscript) == TextAttributes.Superscript)
         {
             float units = this.UnitsPerEm;
             scaleFactor /= new Vector2(font.SuperscriptXSize / units, font.SuperscriptYSize / units);
-            offset = new(font.SuperscriptXOffset, font.SuperscriptYOffset < 0 ? -font.SuperscriptYOffset : font.SuperscriptYOffset);
+            offset = new Vector2(font.SuperscriptXOffset, font.SuperscriptYOffset < 0 ? -font.SuperscriptYOffset : font.SuperscriptYOffset);
         }
 
         this.ScaleFactor = scaleFactor;
@@ -355,19 +355,19 @@ public abstract class GlyphMetrics
         {
             // To ensure that we share the scaling when sharing font metrics we need to
             // recalculate the offset and scale factor here using the common font metrics.
-            scaleFactor = new(fontMetrics.UnitsPerEm * 72F);
+            scaleFactor = new Vector2(fontMetrics.UnitsPerEm * 72F);
             offset = Vector2.Zero;
             if ((this.TextAttributes & TextAttributes.Subscript) == TextAttributes.Subscript)
             {
                 float units = this.UnitsPerEm;
                 scaleFactor /= new Vector2(fontMetrics.SubscriptXSize / units, fontMetrics.SubscriptYSize / units);
-                offset = new(fontMetrics.SubscriptXOffset, fontMetrics.SubscriptYOffset < 0 ? fontMetrics.SubscriptYOffset : -fontMetrics.SubscriptYOffset);
+                offset = new Vector2(fontMetrics.SubscriptXOffset, fontMetrics.SubscriptYOffset < 0 ? fontMetrics.SubscriptYOffset : -fontMetrics.SubscriptYOffset);
             }
             else if ((this.TextAttributes & TextAttributes.Superscript) == TextAttributes.Superscript)
             {
                 float units = this.UnitsPerEm;
                 scaleFactor /= new Vector2(fontMetrics.SuperscriptXSize / units, fontMetrics.SuperscriptYSize / units);
-                offset = new(fontMetrics.SuperscriptXOffset, fontMetrics.SuperscriptYOffset < 0 ? -fontMetrics.SuperscriptYOffset : fontMetrics.SuperscriptYOffset);
+                offset = new Vector2(fontMetrics.SuperscriptXOffset, fontMetrics.SuperscriptYOffset < 0 ? -fontMetrics.SuperscriptYOffset : fontMetrics.SuperscriptYOffset);
             }
         }
 

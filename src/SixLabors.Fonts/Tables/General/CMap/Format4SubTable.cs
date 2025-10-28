@@ -148,7 +148,7 @@ internal sealed class Format4SubTable : CMapSubTable
 
         Segment[] segments = Segment.Create(endCounts, startCounts, idDelta, idRangeOffset);
 
-        List<Format4SubTable> table = new();
+        List<Format4SubTable> table = [];
         foreach (EncodingRecord encoding in encodings)
         {
             table.Add(new Format4SubTable(language, encoding.PlatformID, encoding.EncodingID, segments, glyphIds));
@@ -181,7 +181,7 @@ internal sealed class Format4SubTable : CMapSubTable
         public static Segment[] Create(ReadOnlySpan<ushort> endCounts, ReadOnlySpan<ushort> startCode, ReadOnlySpan<short> idDelta, ReadOnlySpan<ushort> idRangeOffset)
         {
             int count = endCounts.Length;
-            var segments = new Segment[count];
+            Segment[] segments = new Segment[count];
             for (ushort i = 0; i < count; i++)
             {
                 ushort start = startCode[i];

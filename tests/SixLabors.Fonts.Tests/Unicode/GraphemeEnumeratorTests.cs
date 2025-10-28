@@ -110,7 +110,7 @@ public class GraphemeEnumeratorTests
         string[] lines = File.ReadAllLines(Path.Combine(TestEnvironment.UnicodeTestDataFullPath, "GraphemeBreakTest.txt"));
 
         // Process each line
-        var tests = new List<Test>();
+        List<Test> tests = [];
         for (int lineNumber = 1; lineNumber < lines.Length + 1; lineNumber++)
         {
             // Get the line, remove comments
@@ -122,8 +122,8 @@ public class GraphemeEnumeratorTests
                 continue;
             }
 
-            var codePoints = new List<uint>();
-            var breakPoints = new List<int>();
+            List<uint> codePoints = [];
+            List<int> breakPoints = [];
 
             // Parse the test
             int p = 0;
@@ -164,7 +164,7 @@ public class GraphemeEnumeratorTests
             tests.Add(new Test(lineNumber, codePoints.ToArray(), breakPoints.ToArray()));
         }
 
-        var foundBreaks = new List<int>
+        List<int> foundBreaks = new()
         {
             Capacity = 100
         };

@@ -11,7 +11,7 @@ public class FontDescriptionTests
     [Fact]
     public void LoadFontDescription()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
         writer.WriteTableHeader("name", 0, 28, 999);
         writer.WriteNameTable(
@@ -22,7 +22,7 @@ public class FontDescriptionTests
                 { KnownNameIds.FontFamilyName, "fam" }
             });
 
-        var description = FontDescription.LoadDescription(writer.GetStream());
+        FontDescription description = FontDescription.LoadDescription(writer.GetStream());
         Assert.Equal("name", description.FontNameInvariantCulture);
         Assert.Equal("sub", description.FontSubFamilyNameInvariantCulture);
         Assert.Equal("fam", description.FontFamilyInvariantCulture);
@@ -31,11 +31,11 @@ public class FontDescriptionTests
     [Fact]
     public void LoadFontDescription_CultureNamePriority_FirstWindows()
     {
-        var usCulture = new CultureInfo(0x0409);
-        var c1 = new CultureInfo(1034); // spanish - international
-        var c2 = new CultureInfo(3082); // spanish - traditional
+        CultureInfo usCulture = new(0x0409);
+        CultureInfo c1 = new(1034); // spanish - international
+        CultureInfo c2 = new(3082); // spanish - traditional
 
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
         writer.WriteTableHeader("name", 0, 28, 999);
         writer.WriteNameTable(
@@ -46,7 +46,7 @@ public class FontDescriptionTests
             (KnownNameIds.FontSubfamilyName, "sub_c2", c2),
             (KnownNameIds.FontFamilyName, "fam_c2", c2));
 
-        var description = FontDescription.LoadDescription(writer.GetStream());
+        FontDescription description = FontDescription.LoadDescription(writer.GetStream());
 
         // unknown culture should prioritise US, but missing so will return first
         Assert.Equal("name_c1", description.FontNameInvariantCulture);
@@ -57,11 +57,11 @@ public class FontDescriptionTests
     [Fact]
     public void LoadFontDescription_CultureNamePriority_US()
     {
-        var usCulture = new CultureInfo(0x0409);
-        var c1 = new CultureInfo(1034); // spanish - international
-        var c2 = new CultureInfo(3082); // spanish - traditional
+        CultureInfo usCulture = new(0x0409);
+        CultureInfo c1 = new(1034); // spanish - international
+        CultureInfo c2 = new(3082); // spanish - traditional
 
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
         writer.WriteTableHeader("name", 0, 28, 999);
         writer.WriteNameTable(
@@ -75,7 +75,7 @@ public class FontDescriptionTests
             (KnownNameIds.FontSubfamilyName, "sub_us", usCulture),
             (KnownNameIds.FontFamilyName, "fam_us", usCulture));
 
-        var description = FontDescription.LoadDescription(writer.GetStream());
+        FontDescription description = FontDescription.LoadDescription(writer.GetStream());
 
         // unknown culture should prioritise US, but missing so will return first
         Assert.Equal("name_us", description.FontNameInvariantCulture);
@@ -86,11 +86,11 @@ public class FontDescriptionTests
     [Fact]
     public void LoadFontDescription_CultureNamePriority_ExactMatch()
     {
-        var usCulture = new CultureInfo(0x0409);
-        var c1 = new CultureInfo(1034); // spanish - international
-        var c2 = new CultureInfo(3082); // spanish - traditional
+        CultureInfo usCulture = new(0x0409);
+        CultureInfo c1 = new(1034); // spanish - international
+        CultureInfo c2 = new(3082); // spanish - traditional
 
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
         writer.WriteTableHeader("name", 0, 28, 999);
         writer.WriteNameTable(
@@ -104,7 +104,7 @@ public class FontDescriptionTests
             (KnownNameIds.FontSubfamilyName, "sub_us", usCulture),
             (KnownNameIds.FontFamilyName, "fam_us", usCulture));
 
-        var description = FontDescription.LoadDescription(writer.GetStream());
+        FontDescription description = FontDescription.LoadDescription(writer.GetStream());
 
         // unknown culture should prioritise US, but missing so will return first
         Assert.Equal("name_c2", description.FontName(c2));
@@ -135,10 +135,10 @@ public class FontDescriptionTests
     [Fact]
     public void LoadFontDescription_GetNameById()
     {
-        var c1 = new CultureInfo(1034); // spanish - international
-        var c2 = new CultureInfo(3082); // spanish - traditional
+        CultureInfo c1 = new(1034); // spanish - international
+        CultureInfo c2 = new(3082); // spanish - traditional
 
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader(1, 0, 0, 0);
         writer.WriteTableHeader("name", 0, 28, 999);
         writer.WriteNameTable(
@@ -149,7 +149,7 @@ public class FontDescriptionTests
             (KnownNameIds.FontSubfamilyName, "sub_c2", c2),
             (KnownNameIds.FontFamilyName, "fam_c2", c2));
 
-        var description = FontDescription.LoadDescription(writer.GetStream());
+        FontDescription description = FontDescription.LoadDescription(writer.GetStream());
 
         Assert.Equal("name_c1", description.GetNameById(c1, KnownNameIds.FullFontName));
         Assert.Equal("sub_c1", description.GetNameById(c1, KnownNameIds.FontSubfamilyName));

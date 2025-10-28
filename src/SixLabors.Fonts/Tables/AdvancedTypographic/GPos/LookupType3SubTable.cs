@@ -53,19 +53,19 @@ internal static class LookupType3SubTable
             // +--------------------+---------------------------------+------------------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
             ushort entryExitCount = reader.ReadUInt16();
-            var entryExitRecords = new EntryExitRecord[entryExitCount];
+            EntryExitRecord[] entryExitRecords = new EntryExitRecord[entryExitCount];
             for (int i = 0; i < entryExitCount; i++)
             {
                 entryExitRecords[i] = new EntryExitRecord(reader, offset);
             }
 
-            var entryExitAnchors = new EntryExitAnchors[entryExitCount];
+            EntryExitAnchors[] entryExitAnchors = new EntryExitAnchors[entryExitCount];
             for (int i = 0; i < entryExitCount; i++)
             {
                 entryExitAnchors[i] = new EntryExitAnchors(reader, offset, entryExitRecords[i]);
             }
 
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
             return new LookupType3Format1SubTable(coverageTable, entryExitAnchors, lookupFlags);
         }

@@ -49,25 +49,25 @@ internal sealed class ArabicShaper : DefaultShaper
     {
         // #           NonJoining,                    LeftJoining,                 RightJoining,                 DualJoining,                    ALAPH,                     DALATH RISH
         // State 0: prev was U,  not willing to join.
-        { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 6 } },
+        { [None, None, 0], [None, Isol, 2], [None, Isol, 1], [None, Isol, 2], [None, Isol, 1], [None, Isol, 6] },
 
         // State 1: prev was R or ISOL/ALAPH,  not willing to join.
-        { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 2 }, new byte[] { None, Fin2, 5 }, new byte[] { None, Isol, 6 } },
+        { [None, None, 0], [None, Isol, 2], [None, Isol, 1], [None, Isol, 2], [None, Fin2, 5], [None, Isol, 6] },
 
         // State 2: prev was D/L in ISOL form,  willing to join.
-        { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { Init, Fina, 1 }, new byte[] { Init, Fina, 3 }, new byte[] { Init, Fina, 4 }, new byte[] { Init, Fina, 6 } },
+        { [None, None, 0], [None, Isol, 2], [Init, Fina, 1], [Init, Fina, 3], [Init, Fina, 4], [Init, Fina, 6] },
 
         // State 3: prev was D in FINA form,  willing to join.
-        { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { Medi, Fina, 1 }, new byte[] { Medi, Fina, 3 }, new byte[] { Medi, Fina, 4 }, new byte[] { Medi, Fina, 6 } },
+        { [None, None, 0], [None, Isol, 2], [Medi, Fina, 1], [Medi, Fina, 3], [Medi, Fina, 4], [Medi, Fina, 6] },
 
         // State 4: prev was FINA ALAPH,  not willing to join.
-        { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { Med2, Isol, 1 }, new byte[] { Med2, Isol, 2 }, new byte[] { Med2, Fin2, 5 }, new byte[] { Med2, Isol, 6 } },
+        { [None, None, 0], [None, Isol, 2], [Med2, Isol, 1], [Med2, Isol, 2], [Med2, Fin2, 5], [Med2, Isol, 6] },
 
         // State 5: prev was FIN2/FIN3 ALAPH,  not willing to join.
-        { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { Isol, Isol, 1 }, new byte[] { Isol, Isol, 2 }, new byte[] { Isol, Fin2, 5 }, new byte[] { Isol, Isol, 6 } },
+        { [None, None, 0], [None, Isol, 2], [Isol, Isol, 1], [Isol, Isol, 2], [Isol, Fin2, 5], [Isol, Isol, 6] },
 
         // State 6: prev was DALATH/RISH,  not willing to join.
-        { new byte[] { None, None, 0 }, new byte[] { None, Isol, 2 }, new byte[] { None, Isol, 1 }, new byte[] { None, Isol, 2 }, new byte[] { None, Fin3, 5 }, new byte[] { None, Isol, 6 } },
+        { [None, None, 0], [None, Isol, 2], [None, Isol, 1], [None, Isol, 2], [None, Fin3, 5], [None, Isol, 6] },
     };
 
     public ArabicShaper(ScriptClass script, TextOptions textOptions)

@@ -17,7 +17,7 @@ internal sealed class Class1Record
         // | Class2Record | class2Records[class2Count] | Array of Class2 records, ordered by classes |
         // |              |                            | in classDef2.                               |
         // +--------------+----------------------------+---------------------------------------------+
-        var class2Records = new Class2Record[class2Count];
+        Class2Record[] class2Records = new Class2Record[class2Count];
         for (int i = 0; i < class2Records.Length; i++)
         {
             class2Records[i] = new Class2Record(reader, valueFormat1, valueFormat2);

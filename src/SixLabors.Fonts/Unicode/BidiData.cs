@@ -15,7 +15,7 @@ internal class BidiData
     private ArrayBuilder<BidiCharacterType> savedTypes;
     private ArrayBuilder<BidiPairedBracketType> savedPairedBracketTypes;
     private ArrayBuilder<sbyte> tempLevelBuffer;
-    private readonly List<int> paragraphPositions = new();
+    private readonly List<int> paragraphPositions = [];
 
     public sbyte ParagraphEmbeddingLevel { get; private set; }
 
@@ -76,7 +76,7 @@ internal class BidiData
         this.HasIsolates = false;
 
         int i = 0;
-        var codePointEnumerator = new SpanCodePointEnumerator(text);
+        SpanCodePointEnumerator codePointEnumerator = new(text);
         while (codePointEnumerator.MoveNext())
         {
             CodePoint codePoint = codePointEnumerator.Current;

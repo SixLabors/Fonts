@@ -144,7 +144,7 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
 
     private static FontCollection CreateSystemFontCollection(IEnumerable<string> paths, IReadOnlyCollection<string> searchDirectories)
     {
-        var collection = new FontCollection(searchDirectories);
+        FontCollection collection = new(searchDirectories);
 
         foreach (string path in paths)
         {

@@ -230,7 +230,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 if (cmds.Count > 0)
                 {
                     Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                    outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
+                    outputLayers.Add(new PaintedLayer(layerPaint, fillRule, localTransform, null, cmds));
                 }
 
                 break;
@@ -253,7 +253,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     if (cmds.Count > 0)
                     {
                         Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                        outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
+                        outputLayers.Add(new PaintedLayer(layerPaint, fillRule, localTransform, null, cmds));
                     }
                 }
 
@@ -287,7 +287,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     if (cmds.Count > 0)
                     {
                         Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                        outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
+                        outputLayers.Add(new PaintedLayer(layerPaint, fillRule, localTransform, null, cmds));
                     }
                 }
 
@@ -310,7 +310,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     if (cmds.Count > 0)
                     {
                         Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                        outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
+                        outputLayers.Add(new PaintedLayer(layerPaint, fillRule, localTransform, null, cmds));
                     }
                 }
 
@@ -334,7 +334,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     if (cmds.Count > 0)
                     {
                         Paint? layerPaint = ApplyOpacityToPaint(paint, opacityMul);
-                        outputLayers.Add(new(layerPaint, fillRule, localTransform, null, cmds));
+                        outputLayers.Add(new PaintedLayer(layerPaint, fillRule, localTransform, null, cmds));
                     }
                 }
 

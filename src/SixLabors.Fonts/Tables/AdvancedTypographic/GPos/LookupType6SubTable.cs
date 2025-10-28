@@ -73,10 +73,10 @@ internal static class LookupType6SubTable
             ushort mark1ArrayOffset = reader.ReadOffset16();
             ushort mark2ArrayOffset = reader.ReadOffset16();
 
-            var mark1Coverage = CoverageTable.Load(reader, offset + mark1CoverageOffset);
-            var mark2Coverage = CoverageTable.Load(reader, offset + mark2CoverageOffset);
-            var mark1ArrayTable = new MarkArrayTable(reader, offset + mark1ArrayOffset);
-            var mark2ArrayTable = new Mark2ArrayTable(reader, markClassCount, offset + mark2ArrayOffset);
+            CoverageTable mark1Coverage = CoverageTable.Load(reader, offset + mark1CoverageOffset);
+            CoverageTable mark2Coverage = CoverageTable.Load(reader, offset + mark2CoverageOffset);
+            MarkArrayTable mark1ArrayTable = new(reader, offset + mark1ArrayOffset);
+            Mark2ArrayTable mark2ArrayTable = new(reader, markClassCount, offset + mark2ArrayOffset);
 
             return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable, lookupFlags);
         }

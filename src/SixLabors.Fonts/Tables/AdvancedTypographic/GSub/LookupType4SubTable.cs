@@ -59,7 +59,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
         Span<ushort> ligatureSetOffsets = ligatureSetOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(ligatureSetOffsets);
 
-        var ligatureSetTables = new LigatureSetTable[ligatureSetCount];
+        LigatureSetTable[] ligatureSetTables = new LigatureSetTable[ligatureSetCount];
         for (int i = 0; i < ligatureSetTables.Length; i++)
         {
             // LigatureSet Table
@@ -79,7 +79,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
             Span<ushort> ligatureOffsets = ligatureOffsetsBuffer.GetSpan();
             reader.ReadUInt16Array(ligatureOffsets);
 
-            var ligatureTables = new LigatureTable[ligatureCount];
+            LigatureTable[] ligatureTables = new LigatureTable[ligatureCount];
 
             // Ligature Table
             // +--------+---------------------------------------+------------------------------------------------------+
@@ -104,7 +104,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
             ligatureSetTables[i] = new LigatureSetTable(ligatureTables);
         }
 
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
         return new LookupType4Format1SubTable(ligatureSetTables, coverageTable, lookupFlags);
     }

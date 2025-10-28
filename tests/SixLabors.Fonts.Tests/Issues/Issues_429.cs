@@ -24,7 +24,7 @@ public class Issues_429
 
             // Only the Latin glyph + space should be rotated.
             // Any other glyphs that appear rotated have actually been substituted by the font.
-            int[] rotatedGlyphs = new int[] { 20, 21, 22, 23, 24, 25, 26, 27 };
+            int[] rotatedGlyphs = [20, 21, 22, 23, 24, 25, 26, 27];
 
             for (int i = 0; i < glyphs.Count; i++)
             {

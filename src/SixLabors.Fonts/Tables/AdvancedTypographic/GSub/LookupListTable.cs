@@ -38,7 +38,7 @@ internal sealed class LookupListTable
         Span<ushort> lookupOffsets = lookupOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(lookupOffsets);
 
-        var lookupTables = new LookupTable[lookupCount];
+        LookupTable[] lookupTables = new LookupTable[lookupCount];
 
         for (int i = 0; i < lookupTables.Length; i++)
         {
@@ -111,7 +111,7 @@ internal sealed class LookupTable
             ? reader.ReadUInt16()
             : (ushort)0;
 
-        var lookupSubTables = new LookupSubTable[subTableCount];
+        LookupSubTable[] lookupSubTables = new LookupSubTable[subTableCount];
 
         for (int i = 0; i < lookupSubTables.Length; i++)
         {

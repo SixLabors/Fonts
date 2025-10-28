@@ -12,7 +12,7 @@ public class Format4SubTableTests
     [Fact]
     public void LoadFormat4()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
 
         // int subtableCount = 1;
         writer.WriteCMapSubTable(
@@ -20,8 +20,8 @@ public class Format4SubTableTests
                 0,
                 PlatformIDs.Windows,
                 2,
-                new[] { new Format4SubTable.Segment(0, 1, 2, 3, 4) },
-                new ushort[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
+                [new Format4SubTable.Segment(0, 1, 2, 3, 4)],
+                [1, 2, 3, 4, 5, 6, 7, 8]));
 
         BigEndianBinaryReader reader = writer.GetReader();
         ushort format = reader.ReadUInt16(); // read format before we pass along as that's what the cmap table does
@@ -64,14 +64,14 @@ public class Format4SubTableTests
         // idRangeOffset: 0   0   0    0
         ushort[] glyphs = Enumerable.Range(0, expected).Select(x => (ushort)x).ToArray();
 
-        Format4SubTable.Segment[] segments = new[]
-        {
-            new Format4SubTable.Segment(0, 20, 10, -9, 0),
-            new Format4SubTable.Segment(1, 90, 30, -18, 0),
-            new Format4SubTable.Segment(2, 480, 153, -27, 0),
-        };
+        Format4SubTable.Segment[] segments =
+        [
+            new(0, 20, 10, -9, 0),
+            new(1, 90, 30, -18, 0),
+            new(2, 480, 153, -27, 0)
+        ];
 
-        var table = new Format4SubTable(
+        Format4SubTable table = new(
             0,
             PlatformIDs.Windows,
             0,

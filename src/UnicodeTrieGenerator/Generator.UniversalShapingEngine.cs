@@ -20,8 +20,7 @@ public static partial class Generator
     private static readonly Dictionary<string, List<object>> UniversalCategories = new()
     {
         {
-            "B", new List<object>
-            {
+            "B", [
                 new Dictionary<string, object> { { "UISC", ISC.Number } },
                 new Dictionary<string, object> { { "UISC", ISC.Avagraha }, { "UGC", GC.OtherLetter } },
                 new Dictionary<string, object> { { "UISC", ISC.Bindu }, { "UGC", GC.OtherLetter } },
@@ -34,31 +33,32 @@ public static partial class Generator
                 new Dictionary<string, object> { { "UISC", ISC.Vowel }, { "UGC", GC.OtherLetter } },
                 new Dictionary<string, object> { { "UISC", ISC.VowelIndependent } },
                 new Dictionary<string, object> { { "UISC", ISC.VowelDependent }, { "UGC", GC.OtherLetter } }
-            }
+            ]
         },
         {
-            "CGJ", new List<object> { 0x034f }
+            "CGJ", [0x034f]
         },
         {
-            "CM", new List<object>
-            {
+            "CM", [
                 ISC.Nukta,
                 ISC.GeminationMark,
                 ISC.ConsonantKiller
-            }
+            ]
         },
-        { "CS", new List<object> { ISC.ConsonantWithStacker } },
+        { "CS", [ISC.ConsonantWithStacker] },
         {
-            "F", new List<object>
-            {
-                new Dictionary<string, object> { { "UISC", ISC.ConsonantFinal }, { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } } },
+            "F", [
+                new Dictionary<string, object>
+                {
+                    { "UISC", ISC.ConsonantFinal },
+                    { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } }
+                },
                 new Dictionary<string, object> { { "UISC", ISC.ConsonantSucceedingRepha } }
-            }
+            ]
         },
-        { "FM", new List<object> { ISC.SyllableModifier } },
+        { "FM", [ISC.SyllableModifier] },
         {
-            "GB", new List<object>
-            {
+            "GB", [
                 ISC.ConsonantPlaceholder,
                 0x2015,
                 0x2022,
@@ -66,50 +66,55 @@ public static partial class Generator
                 0x25fc,
                 0x25fd,
                 0x25fe
-            }
+            ]
         },
         {
-            "H", new List<object>
-            {
+            "H", [
                 ISC.Virama,
                 ISC.InvisibleStacker
-            }
+            ]
         },
-        { "HN", new List<object> { ISC.NumberJoiner } },
+        { "HN", [ISC.NumberJoiner] },
         {
-            "IND", new List<object>
-            {
+            "IND", [
                 ISC.ConsonantDead,
                 ISC.ModifyingLetter,
-                new Dictionary<string, object> { { "UGC", GC.OtherPunctuation }, { "U", new Dictionary<string, object> { { "not", new List<object> { 0x104e, 0x2022 } } } } }
-            }
+                new Dictionary<string, object>
+                {
+                    { "UGC", GC.OtherPunctuation },
+                    { "U", new Dictionary<string, object> { { "not", new List<object> { 0x104e, 0x2022 } } } }
+                }
+            ]
         },
         {
-            "M", new List<object>
-            {
-                new Dictionary<string, object> { { "UISC", ISC.ConsonantMedial }, { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } } },
+            "M", [
+                new Dictionary<string, object>
+                {
+                    { "UISC", ISC.ConsonantMedial },
+                    { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } }
+                },
                 ISC.ConsonantInitialPostfixed
-            }
+            ]
         },
-        { "N", new List<object> { ISC.BrahmiJoiningNumber } },
+        { "N", [ISC.BrahmiJoiningNumber] },
         {
-            "R", new List<object>
-            {
+            "R", [
                 ISC.ConsonantPrecedingRepha,
                 ISC.ConsonantPrefixed
-            }
+            ]
         },
-        { "Rsv", new List<object> { new Dictionary<string, object> { { "UGC", GC.OtherNotAssigned } } } },
+        { "Rsv", [new Dictionary<string, object> { { "UGC", GC.OtherNotAssigned } }] },
         {
-            "S", new List<object>
-            {
-                new Dictionary<string, object> { { "UGC", GC.OtherSymbol }, { "U", new Dictionary<string, object> { { "not", 0x25cc } } } },
+            "S", [
+                new Dictionary<string, object>
+                {
+                    { "UGC", GC.OtherSymbol }, { "U", new Dictionary<string, object> { { "not", 0x25cc } } }
+                },
                 new Dictionary<string, object> { { "UGC", GC.CurrencySymbol } }
-            }
+            ]
         },
         {
-            "SM", new List<object>
-            {
+            "SM", [
                 0x1b6b,
                 0x1b6c,
                 0x1b6d,
@@ -119,43 +124,54 @@ public static partial class Generator
                 0x1b71,
                 0x1b72,
                 0x1b73
-            }
+            ]
         },
         {
-            "SUB", new List<object>
-            {
-                new Dictionary<string, object> { { "UISC", ISC.ConsonantSubjoined }, { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } } }
-            }
+            "SUB",
+            [
+                new Dictionary<string, object>
+                {
+                    { "UISC", ISC.ConsonantSubjoined },
+                    { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } }
+                }
+            ]
         },
         {
-            "V", new List<object>
-            {
-                new Dictionary<string, object> { { "UISC", ISC.Vowel }, { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } } },
-                new Dictionary<string, object> { { "UISC", ISC.VowelDependent }, { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } } },
+            "V", [
+                new Dictionary<string, object>
+                {
+                    { "UISC", ISC.Vowel }, { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } }
+                },
+                new Dictionary<string, object>
+                {
+                    { "UISC", ISC.VowelDependent },
+                    { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } }
+                },
                 new Dictionary<string, object> { { "UISC", ISC.PureKiller } }
-            }
+            ]
         },
         {
-            "VM", new List<object>
-            {
-                new Dictionary<string, object> { { "UISC", ISC.Bindu }, { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } } },
+            "VM", [
+                new Dictionary<string, object>
+                {
+                    { "UISC", ISC.Bindu }, { "UGC", new Dictionary<string, object> { { "not", GC.OtherLetter } } }
+                },
                 ISC.ToneMark,
                 ISC.CantillationMark,
                 ISC.RegisterShifter,
                 ISC.Visarga
-            }
+            ]
         },
         {
-            "VS", new List<object>
-            {
+            "VS", [
                 0xfe00, 0xfe01, 0xfe02, 0xfe03, 0xfe04, 0xfe05, 0xfe06, 0xfe07,
                 0xfe08, 0xfe09, 0xfe0a, 0xfe0b, 0xfe0c, 0xfe0d, 0xfe0e, 0xfe0f
-            }
+            ]
         },
-        { "WJ", new List<object> { 0x2060 } },
-        { "ZWJ", new List<object> { ISC.Joiner } },
-        { "ZWNJ", new List<object> { ISC.NonJoiner } },
-        { "O", new List<object> { ISC.Other } }
+        { "WJ", [0x2060] },
+        { "ZWJ", [ISC.Joiner] },
+        { "ZWNJ", [ISC.NonJoiner] },
+        { "O", [ISC.Other] }
     };
 
     private static readonly Dictionary<string, Dictionary<string, List<IPC>>> UniversalPositions = new()
@@ -166,13 +182,13 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom }
+                    "Blw", [IPC.Bottom]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.Right }
+                    "Pst", [IPC.Right]
                 }
             }
         },
@@ -181,16 +197,16 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom, IPC.BottomAndLeft, IPC.BottomAndRight }
+                    "Blw", [IPC.Bottom, IPC.BottomAndLeft, IPC.BottomAndRight]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.Right }
+                    "Pst", [IPC.Right]
                 },
                 {
-                    "Pre", new List<IPC>() { IPC.Left, IPC.TopAndBottomAndLeft }
+                    "Pre", [IPC.Left, IPC.TopAndBottomAndLeft]
                 }
             }
         },
@@ -200,10 +216,10 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom, IPC.Overstruck }
+                    "Blw", [IPC.Bottom, IPC.Overstruck]
                 }
             }
         },
@@ -213,16 +229,16 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top, IPC.TopAndBottom, IPC.TopAndBottomAndRight, IPC.TopAndRight }
+                    "Abv", [IPC.Top, IPC.TopAndBottom, IPC.TopAndBottomAndRight, IPC.TopAndRight]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom, IPC.Overstruck, IPC.BottomAndRight }
+                    "Blw", [IPC.Bottom, IPC.Overstruck, IPC.BottomAndRight]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.Right }
+                    "Pst", [IPC.Right]
                 },
                 {
-                    "Pre", new List<IPC>() { IPC.Left, IPC.TopAndLeft, IPC.TopAndLeftAndRight, IPC.LeftAndRight }
+                    "Pre", [IPC.Left, IPC.TopAndLeft, IPC.TopAndLeftAndRight, IPC.LeftAndRight]
                 }
             }
         },
@@ -232,16 +248,16 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom, IPC.Overstruck }
+                    "Blw", [IPC.Bottom, IPC.Overstruck]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.Right }
+                    "Pst", [IPC.Right]
                 },
                 {
-                    "Pre", new List<IPC>() { IPC.Left }
+                    "Pre", [IPC.Left]
                 }
             }
         },
@@ -251,10 +267,10 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom }
+                    "Blw", [IPC.Bottom]
                 }
             }
         },
@@ -264,13 +280,13 @@ public static partial class Generator
             new Dictionary<string, List<IPC>>()
             {
                 {
-                    "Abv", new List<IPC>() { IPC.Top }
+                    "Abv", [IPC.Top]
                 },
                 {
-                    "Blw", new List<IPC>() { IPC.Bottom }
+                    "Blw", [IPC.Bottom]
                 },
                 {
-                    "Pst", new List<IPC>() { IPC.NA }
+                    "Pst", [IPC.NA]
                 }
             }
         }

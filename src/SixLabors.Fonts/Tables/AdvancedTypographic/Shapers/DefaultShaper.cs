@@ -57,7 +57,7 @@ internal class DefaultShaper : BaseShaper
 
     private static readonly CodePoint Slash = new(0x002F);
 
-    private readonly HashSet<ShapingStage> shapingStages = new();
+    private readonly HashSet<ShapingStage> shapingStages = [];
 
     private readonly KerningMode kerningMode;
 

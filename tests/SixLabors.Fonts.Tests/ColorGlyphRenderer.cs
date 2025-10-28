@@ -9,7 +9,7 @@ namespace SixLabors.Fonts.Tests;
 // We should refactor tests to remove it where possible.
 public class ColorGlyphRenderer : GlyphRenderer
 {
-    public List<GlyphColor> Colors { get; } = new List<GlyphColor>();
+    public List<GlyphColor> Colors { get; } = [];
 
     public override void BeginLayer(Paint paint, FillRule fillRule, in ClipQuad? clipBounds)
     {

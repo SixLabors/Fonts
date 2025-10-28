@@ -12,14 +12,14 @@ public class CMapTableTests
     [Fact]
     public void LoadFormat0()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
 
         writer.WriteCMapTable(new[]
         {
-            new Format0SubTable(0, PlatformIDs.Windows, 9, new byte[] { 0, 1, 2 })
+            new Format0SubTable(0, PlatformIDs.Windows, 9, [0, 1, 2])
         });
 
-        var table = CMapTable.Load(writer.GetReader());
+        CMapTable table = CMapTable.Load(writer.GetReader());
 
         Assert.Single(table.Tables.Where(x => x != null));
 
@@ -30,14 +30,14 @@ public class CMapTableTests
     [Fact]
     public void ShouldThrowExceptionWhenTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader();
 
         using (System.IO.MemoryStream stream = writer.GetStream())
         {
             InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() =>
             {
-                using var reader = new FontReader(stream);
+                using FontReader reader = new(stream);
                 CMapTable.Load(reader);
             });
 

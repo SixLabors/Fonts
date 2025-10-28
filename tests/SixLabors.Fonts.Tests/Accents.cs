@@ -17,7 +17,7 @@ public class Accents
     public void MeasuringAccentedCharacterDoesNotThrow(char c)
     {
         FontFamily sans = new FontCollection().Add(TestFonts.OpenSansFile);
-        var font = new Font(sans, 1f, FontStyle.Regular);
+        Font font = new(sans, 1f, FontStyle.Regular);
 
         FontRectangle size = TextMeasurer.MeasureSize(c.ToString(), new TextOptions(font));
     }
@@ -34,7 +34,7 @@ public class Accents
     public void MeasuringWordWithAccentedCharacterDoesNotThrow(char c)
     {
         FontFamily sans = new FontCollection().Add(TestFonts.OpenSansFile);
-        var font = new Font(sans, 1f, FontStyle.Regular);
+        Font font = new(sans, 1f, FontStyle.Regular);
 
         FontRectangle size = TextMeasurer.MeasureSize($"abc{c}def", new TextOptions(font));
     }

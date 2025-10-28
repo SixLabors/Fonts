@@ -17,7 +17,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <summary>
     /// Contains a map the index of a map within the collection, non-sequential codepoint offsets, and their glyph ids, point size, and mtrics.
     /// </summary>
-    private readonly List<GlyphPositioningData> glyphs = new();
+    private readonly List<GlyphPositioningData> glyphs = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
@@ -193,7 +193,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
 
                         // Track the number of inserted glyphs at the offset so we can correctly increment our position.
                         GlyphShapingBounds bounds = new(0, 0, metrics.AdvanceWidth, metrics.AdvanceHeight);
-                        this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = bounds }, pointSize, metrics.CloneForRendering(shape.TextRun)));
+                        this.glyphs.Insert(i += replacementCount, new GlyphPositioningData(offset, new GlyphShapingData(shape, true) { Bounds = bounds }, pointSize, metrics.CloneForRendering(shape.TextRun)));
                         replacementCount++;
                     }
                 }
@@ -260,10 +260,10 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             }
 
             GlyphShapingBounds bounds = isVertical
-                ? new(0, 0, 0, metrics.AdvanceHeight)
-                : new(0, 0, metrics.AdvanceWidth, 0);
+                ? new GlyphShapingBounds(0, 0, 0, metrics.AdvanceHeight)
+                : new GlyphShapingBounds(0, 0, metrics.AdvanceWidth, 0);
 
-            this.glyphs.Add(new(offset, new(data, true) { Bounds = bounds }, font.Size, metrics.CloneForRendering(data.TextRun)));
+            this.glyphs.Add(new GlyphPositioningData(offset, new GlyphShapingData(data, true) { Bounds = bounds }, font.Size, metrics.CloneForRendering(data.TextRun)));
         }
 
         return !hasFallBacks;

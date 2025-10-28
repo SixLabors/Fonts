@@ -58,7 +58,7 @@ internal class LookupType2Format1SubTable : LookupSubTable
         Span<ushort> sequenceOffsets = sequenceOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(sequenceOffsets);
 
-        var sequenceTables = new SequenceTable[sequenceCount];
+        SequenceTable[] sequenceTables = new SequenceTable[sequenceCount];
         for (int i = 0; i < sequenceTables.Length; i++)
         {
             // Sequence Table
@@ -75,7 +75,7 @@ internal class LookupType2Format1SubTable : LookupSubTable
             sequenceTables[i] = new SequenceTable(reader.ReadUInt16Array(glyphCount));
         }
 
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
         return new LookupType2Format1SubTable(sequenceTables, coverageTable, lookupFlags);
     }

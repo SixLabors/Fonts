@@ -58,7 +58,7 @@ internal sealed class LookupType3Format1SubTable : LookupSubTable
         Span<ushort> alternateSetOffsets = alternateSetOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(alternateSetOffsets);
 
-        var alternateTables = new AlternateSetTable[alternateSetCount];
+        AlternateSetTable[] alternateTables = new AlternateSetTable[alternateSetCount];
         for (int i = 0; i < alternateTables.Length; i++)
         {
             // AlternateSet Table
@@ -74,7 +74,7 @@ internal sealed class LookupType3Format1SubTable : LookupSubTable
             alternateTables[i] = new AlternateSetTable(reader.ReadUInt16Array(glyphCount));
         }
 
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
         return new LookupType3Format1SubTable(alternateTables, coverageTable, lookupFlags);
     }

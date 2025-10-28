@@ -29,7 +29,7 @@ internal sealed class LigatureCaretList
         Span<ushort> ligGlyphOffsets = ligGlyphOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(ligGlyphOffsets);
 
-        var ligatureCaretList = new LigatureCaretList()
+        LigatureCaretList ligatureCaretList = new()
         {
             CoverageTable = CoverageTable.Load(reader, offset + coverageOffset)
         };

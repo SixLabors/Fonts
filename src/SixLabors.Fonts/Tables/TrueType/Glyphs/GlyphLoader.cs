@@ -10,7 +10,7 @@ internal abstract class GlyphLoader
     public static GlyphLoader Load(BigEndianBinaryReader reader)
     {
         short contoursCount = reader.ReadInt16();
-        var bounds = Bounds.Load(reader);
+        Bounds bounds = Bounds.Load(reader);
 
         if (contoursCount >= 0)
         {

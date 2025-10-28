@@ -81,7 +81,7 @@ internal struct GlyphVector
             return;
         }
 
-        var controlPoints = new ControlPoint[glyph.ControlPoints.Count + 4];
+        ControlPoint[] controlPoints = new ControlPoint[glyph.ControlPoints.Count + 4];
         controlPoints[controlPoints.Length - 4].Point = pp1;
         controlPoints[controlPoints.Length - 3].Point = pp2;
         controlPoints[controlPoints.Length - 2].Point = pp3;
@@ -110,7 +110,7 @@ internal struct GlyphVector
         List<ControlPoint> controlPoints = new(src.ControlPoints);
         List<ushort> endPoints = new(src.EndPoints);
 
-        return new(controlPoints, endPoints, src.Bounds, src.Instructions, src.IsComposite);
+        return new GlyphVector(controlPoints, endPoints, src.Bounds, src.Instructions, src.IsComposite);
     }
 
     /// <summary>

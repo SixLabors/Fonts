@@ -140,7 +140,7 @@ public class FontLoaderTests
         // See https://forum.stimulsoft.com/viewtopic.php?t=60972
         Font font = new FontCollection().Add(TestFonts.THSarabunFile).CreateFont(12);
 
-        FontRectangle advance = TextMeasurer.MeasureAdvance("เราใช้คุกกี้เพื่อพัฒนาประสิทธิภาพ และประสบการณ์ที่ดีในการใช้เว็บไซต์ของคุณ คุณสามารถศึกษารายละเอียดได้ที่", new(font));
+        FontRectangle advance = TextMeasurer.MeasureAdvance("เราใช้คุกกี้เพื่อพัฒนาประสิทธิภาพ และประสบการณ์ที่ดีในการใช้เว็บไซต์ของคุณ คุณสามารถศึกษารายละเอียดได้ที่", new TextOptions(font));
 
         Assert.NotEqual(default, advance);
     }

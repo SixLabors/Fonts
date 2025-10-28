@@ -48,7 +48,7 @@ internal class CffParser
         this.ReadCharsets(reader, stringIndex, glyphs);
         this.ReadEncodings(reader);
 
-        return new(fontName, topDictionary, glyphs);
+        return new CffFont(fontName, topDictionary, glyphs);
     }
 
     private static string ReadNameIndex(BigEndianBinaryReader reader)
@@ -95,13 +95,13 @@ internal class CffParser
     {
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
-            return Array.Empty<string>();
+            return [];
         }
 
         string[] stringIndex = new string[offsets.Length];
 
         // Allow reusing the same buffer for shorter reads.
-        using Buffer<byte> buffer = new Buffer<byte>(512);
+        using Buffer<byte> buffer = new(512);
         Span<byte> bufferSpan = buffer.GetSpan();
 
         for (int i = 0; i < offsets.Length; ++i)
@@ -184,13 +184,13 @@ internal class CffParser
                     metrics.UnderlineThickness = entry.Operands[0].RealNumValue;
                     break;
                 case "FontBBox":
-                    metrics.FontBBox = new double[]
-                    {
+                    metrics.FontBBox =
+                    [
                         entry.Operands[0].RealNumValue,
                         entry.Operands[1].RealNumValue,
                         entry.Operands[2].RealNumValue,
                         entry.Operands[3].RealNumValue
-                    };
+                    ];
                     break;
                 case "CharStrings":
                     this.charStringsOffset = (int)entry.Operands[0].RealNumValue;
@@ -464,14 +464,14 @@ internal class CffParser
     {
         if (cidFontInfo.FDArray == 0)
         {
-            return Array.Empty<FontDict>();
+            return [];
         }
 
         reader.BaseStream.Position = this.offset + cidFontInfo.FDArray;
 
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
-            return Array.Empty<FontDict>();
+            return [];
         }
 
         FontDict[] fontDicts = new FontDict[offsets.Length];
@@ -601,7 +601,7 @@ internal class CffParser
             glyphs[i] = new CffGlyphData(
                 (ushort)i,
                 globalSubrBuffers,
-                localSubBuffer ?? Array.Empty<byte[]>(),
+                localSubBuffer ?? [],
                 privateDictionary?.NominalWidthX ?? 0,
                 charstringsBuffer);
         }
@@ -678,7 +678,7 @@ internal class CffParser
 
         reader.BaseStream.Position = this.offset + this.privateDICTOffset;
         List<CffDataDicEntry> dicData = this.ReadDICTData(reader, this.privateDICTLength);
-        byte[][] localSubrRawBuffers = Array.Empty<byte[]>();
+        byte[][] localSubrRawBuffers = [];
         int defaultWidthX = 0;
         int nominalWidthX = 0;
 
@@ -713,7 +713,7 @@ internal class CffParser
     {
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
-            return Array.Empty<byte[]>();
+            return [];
         }
 
         byte[][] rawBufferList = new byte[offsets.Length][];
@@ -743,7 +743,7 @@ internal class CffParser
         // A DICT is simply a sequence of
         // operand(s)/operator bytes concatenated together.
         int maxIndex = (int)(reader.BaseStream.Position + length);
-        List<CffDataDicEntry> dicData = new();
+        List<CffDataDicEntry> dicData = [];
         while (reader.BaseStream.Position < maxIndex)
         {
             CffDataDicEntry dicEntry = this.ReadEntry(reader);
@@ -755,7 +755,7 @@ internal class CffParser
 
     private CffDataDicEntry ReadEntry(BigEndianBinaryReader reader)
     {
-        List<CffOperand> operands = new();
+        List<CffOperand> operands = [];
 
         //-----------------------------
         // An operator is preceded by the operand(s) that

@@ -20,12 +20,12 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
 
     public override GlyphVector CreateGlyph(GlyphTable table)
     {
-        List<ControlPoint> controlPoints = new();
-        List<ushort> endPoints = new();
+        List<ControlPoint> controlPoints = [];
+        List<ushort> endPoints = [];
         for (int i = 0; i < this.composites.Length; i++)
         {
             Composite composite = this.composites[i];
-            var clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
+            GlyphVector clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
             GlyphVector.TransformInPlace(ref clone, composite.Transformation);
             ushort endPointOffset = (ushort)controlPoints.Count;
 
@@ -36,12 +36,12 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
             }
         }
 
-        return new(controlPoints, endPoints, this.bounds, this.instructions, true);
+        return new GlyphVector(controlPoints, endPoints, this.bounds, this.instructions, true);
     }
 
     public static CompositeGlyphLoader LoadCompositeGlyph(BigEndianBinaryReader reader, in Bounds bounds)
     {
-        List<Composite> composites = new();
+        List<Composite> composites = [];
         CompositeGlyphFlags flags;
         do
         {
@@ -76,7 +76,7 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
         }
         while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
-        byte[] instructions = Array.Empty<byte>();
+        byte[] instructions = [];
         if ((flags & CompositeGlyphFlags.WeHaveInstructions) != 0)
         {
             // Read the instructions if they exist.

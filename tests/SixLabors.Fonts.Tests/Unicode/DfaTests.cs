@@ -11,14 +11,14 @@ public class DfaTests
     public void CanCompileWithSingleLiteral()
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = a;");
-        StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 0 }).ToArray();
+        StateMatch[] matches = stateMachine.Match([0, 0, 1, 0]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 0, EndIndex = 0 },
-            new StateMatch() { StartIndex = 1, EndIndex = 1 },
-            new StateMatch() { StartIndex = 3, EndIndex = 3 }
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 0, EndIndex = 0 },
+            new() { StartIndex = 1, EndIndex = 1 },
+            new() { StartIndex = 3, EndIndex = 3 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }
@@ -27,13 +27,13 @@ public class DfaTests
     public void CanCompileWithConcatenation()
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = a b;");
-        StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 1, 0, 1, 0 }).ToArray();
+        StateMatch[] matches = stateMachine.Match([0, 0, 1, 1, 0, 1, 0]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 1, EndIndex = 2 },
-            new StateMatch() { StartIndex = 4, EndIndex = 5 }
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 1, EndIndex = 2 },
+            new() { StartIndex = 4, EndIndex = 5 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }
@@ -42,14 +42,14 @@ public class DfaTests
     public void CanCompileWithAlternation()
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = (a b) | (b a);");
-        StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 1, 0, 1, 0 }).ToArray();
+        StateMatch[] matches = stateMachine.Match([0, 0, 1, 1, 0, 1, 0]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 1, EndIndex = 2 },
-            new StateMatch() { StartIndex = 3, EndIndex = 4 },
-            new StateMatch() { StartIndex = 5, EndIndex = 6 }
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 1, EndIndex = 2 },
+            new() { StartIndex = 3, EndIndex = 4 },
+            new() { StartIndex = 5, EndIndex = 6 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }
@@ -58,13 +58,13 @@ public class DfaTests
     public void CanCompileWithRepeat()
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = (a b)+;");
-        StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 0, 1, 1, 0, 1 }).ToArray();
+        StateMatch[] matches = stateMachine.Match([0, 0, 1, 0, 1, 1, 0, 1]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 1, EndIndex = 4 },
-            new StateMatch() { StartIndex = 6, EndIndex = 7 }
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 1, EndIndex = 4 },
+            new() { StartIndex = 6, EndIndex = 7 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }
@@ -73,13 +73,13 @@ public class DfaTests
     public void CanCompileWithOptionalRepeat()
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = b a (a b)*;");
-        StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0 }).ToArray();
+        StateMatch[] matches = stateMachine.Match([0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 2, EndIndex = 7 },
-            new StateMatch() { StartIndex = 9, EndIndex = 10 }
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 2, EndIndex = 7 },
+            new() { StartIndex = 9, EndIndex = 10 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }
@@ -88,12 +88,12 @@ public class DfaTests
     public void CanCompileWithExactRepetition()
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = a{3} b;");
-        StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1 }).ToArray();
+        StateMatch[] matches = stateMachine.Match([0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 3, EndIndex = 6 }
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 3, EndIndex = 6 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }
@@ -102,13 +102,13 @@ public class DfaTests
     public void CanCompileWithMinimumRepetition()
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = a{3,} b;");
-        StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1 }).ToArray();
+        StateMatch[] matches = stateMachine.Match([0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 3, EndIndex = 6 },
-            new StateMatch() { StartIndex = 7, EndIndex = 11 }
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 3, EndIndex = 6 },
+            new() { StartIndex = 7, EndIndex = 11 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }
@@ -117,15 +117,15 @@ public class DfaTests
     public void CanCompileWithMaximumRepetition()
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = a{,3} b;");
-        StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1 }).ToArray();
+        StateMatch[] matches = stateMachine.Match([0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 0, EndIndex = 2 },
-            new StateMatch() { StartIndex = 3, EndIndex = 6 },
-            new StateMatch() { StartIndex = 10, EndIndex = 11 },
-            new StateMatch() { StartIndex = 12, EndIndex = 12 }
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 0, EndIndex = 2 },
+            new() { StartIndex = 3, EndIndex = 6 },
+            new() { StartIndex = 10, EndIndex = 11 },
+            new() { StartIndex = 12, EndIndex = 12 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }
@@ -134,13 +134,13 @@ public class DfaTests
     public void CanCompileWithMinimumAndMaximumRepetition()
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = a{3,5} b;");
-        StateMatch[] matches = stateMachine.Match(new[] { 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1 }).ToArray();
+        StateMatch[] matches = stateMachine.Match([0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 3, EndIndex = 6 },
-            new StateMatch() { StartIndex = 7, EndIndex = 11 }
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 3, EndIndex = 6 },
+            new() { StartIndex = 7, EndIndex = 11 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }
@@ -150,20 +150,20 @@ public class DfaTests
     {
         StateMachine stateMachine = Compile.Build("a = 0; b = 1; Main = x:(b a) | y:(a b);");
 
-        int[] input = { 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0 };
-        StateMatch[] matches = stateMachine.Match(new[] { 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0 }).ToArray();
+        int[] input = [1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0];
+        StateMatch[] matches = stateMachine.Match([1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0]).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 2, EndIndex = 3, Tags = new string[] { "x" } },
-            new StateMatch() { StartIndex = 4, EndIndex = 5, Tags = new string[] { "y" } },
-            new StateMatch() { StartIndex = 6, EndIndex = 7, Tags = new string[] { "y" } },
-            new StateMatch() { StartIndex = 9, EndIndex = 10, Tags = new string[] { "x" } },
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 2, EndIndex = 3, Tags = new string[] { "x" } },
+            new() { StartIndex = 4, EndIndex = 5, Tags = new string[] { "y" } },
+            new() { StartIndex = 6, EndIndex = 7, Tags = new string[] { "y" } },
+            new() { StartIndex = 9, EndIndex = 10, Tags = new string[] { "x" } }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
 
-        List<(string Tag, int Start, int End, ArraySlice<int> Slice)> applied = new();
+        List<(string Tag, int Start, int End, ArraySlice<int> Slice)> applied = [];
         Dictionary<string, Action<int, int, ArraySlice<int>>> actions = new()
         {
             { "x", (start, end, slice) => applied.Add(("x", start, end, slice)) },
@@ -174,13 +174,13 @@ public class DfaTests
 
         Assert.True(applied.Count == 4);
 
-        List<(string Tag, int Start, int End, ArraySlice<int> Slice)> expectedApply = new()
-        {
+        List<(string Tag, int Start, int End, ArraySlice<int> Slice)> expectedApply =
+        [
             ("x", 2, 3, new int[] { 1, 0 }),
             ("y", 4, 5, new int[] { 0, 1 }),
             ("y", 6, 7, new int[] { 0, 1 }),
-            ("x", 9, 10, new int[] { 1, 0 }),
-        };
+            ("x", 9, 10, new int[] { 1, 0 })
+        ];
 
         for (int i = 0; i < expectedApply.Count; i++)
         {
@@ -197,16 +197,16 @@ public class DfaTests
     [Fact]
     public void CanCompileWithExternalSymbols()
     {
-        var externalSymbols = new Dictionary<string, int>() { { "a", 0 }, { "b", 1 } };
+        Dictionary<string, int> externalSymbols = new() { { "a", 0 }, { "b", 1 } };
         StateMachine stateMachine = Compile.Build("Main = a b;", externalSymbols);
-        int[] input = { 0, 0, 1, 1, 0, 1, 0 };
+        int[] input = [0, 0, 1, 1, 0, 1, 0];
         StateMatch[] matches = stateMachine.Match(input).ToArray();
 
-        var expected = new StateMatch[]
-        {
-            new StateMatch() { StartIndex = 1, EndIndex = 2 },
-            new StateMatch() { StartIndex = 4, EndIndex = 5 },
-        };
+        StateMatch[] expected =
+        [
+            new() { StartIndex = 1, EndIndex = 2 },
+            new() { StartIndex = 4, EndIndex = 5 }
+        ];
 
         Assert.True(expected.SequenceEqual(matches));
     }

@@ -5,7 +5,7 @@ namespace SixLabors.Fonts.Tables.Cff;
 
 internal class CffTopDictionary
 {
-    public CffTopDictionary() => this.CidFontInfo = new();
+    public CffTopDictionary() => this.CidFontInfo = new CidFontInfo();
 
     public string? Version { get; set; }
 
@@ -23,7 +23,7 @@ internal class CffTopDictionary
 
     public double UnderlineThickness { get; set; }
 
-    public double[] FontBBox { get; set; } = Array.Empty<double>();
+    public double[] FontBBox { get; set; } = [];
 
     public CidFontInfo CidFontInfo { get; set; }
 }

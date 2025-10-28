@@ -128,13 +128,13 @@ internal abstract class AnchorTable
                         if (this.anchorPointIndex < points.Count)
                         {
                             Vector2 point = points[this.anchorPointIndex].Point;
-                            return new((short)point.X, (short)point.Y);
+                            return new AnchorXY((short)point.X, (short)point.Y);
                         }
                     }
                 }
             }
 
-            return new(this.XCoordinate, this.YCoordinate);
+            return new AnchorXY(this.XCoordinate, this.YCoordinate);
         }
     }
 

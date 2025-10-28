@@ -10,14 +10,14 @@ public class MaximumProfileTableTests
     [Fact]
     public void ShouldThrowExceptionWhenTableCouldNotBeFound()
     {
-        var writer = new BigEndianBinaryWriter();
+        BigEndianBinaryWriter writer = new();
         writer.WriteTrueTypeFileHeader();
 
         using (MemoryStream stream = writer.GetStream())
         {
             InvalidFontTableException exception = Assert.Throws<InvalidFontTableException>(() =>
             {
-                using var reader = new FontReader(stream);
+                using FontReader reader = new(stream);
                 MaximumProfileTable.Load(reader);
             });
 

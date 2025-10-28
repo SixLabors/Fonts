@@ -33,7 +33,7 @@ internal class FeatureListTable
         reader.Seek(offset, SeekOrigin.Begin);
 
         ushort featureCount = reader.ReadUInt16();
-        var featureRecords = new FeatureRecord[featureCount];
+        FeatureRecord[] featureRecords = new FeatureRecord[featureCount];
         for (int i = 0; i < featureRecords.Length; i++)
         {
             // FeatureRecord
@@ -51,7 +51,7 @@ internal class FeatureListTable
 
         // Load the other table features.
         // We do this last to avoid excessive seeking.
-        var featureTables = new FeatureTable[featureCount];
+        FeatureTable[] featureTables = new FeatureTable[featureCount];
         for (int i = 0; i < featureTables.Length; i++)
         {
             FeatureRecord featureRecord = featureRecords[i];

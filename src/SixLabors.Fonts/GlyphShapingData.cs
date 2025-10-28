@@ -41,7 +41,7 @@ internal class GlyphShapingData
         this.IsDecomposed = data.IsDecomposed;
         if (data.UniversalShapingEngineInfo != null)
         {
-            this.UniversalShapingEngineInfo = new(
+            this.UniversalShapingEngineInfo = new UniversalShapingEngineInfo(
                 data.UniversalShapingEngineInfo.Category,
                 data.UniversalShapingEngineInfo.SyllableType,
                 data.UniversalShapingEngineInfo.Syllable);
@@ -49,7 +49,7 @@ internal class GlyphShapingData
 
         if (data.IndicShapingEngineInfo != null)
         {
-            this.IndicShapingEngineInfo = new(
+            this.IndicShapingEngineInfo = new IndicShapingEngineInfo(
                 data.IndicShapingEngineInfo.Category,
                 data.IndicShapingEngineInfo.Position,
                 data.IndicShapingEngineInfo.SyllableType,

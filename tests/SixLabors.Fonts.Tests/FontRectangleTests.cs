@@ -19,10 +19,10 @@ public class FontRectangleTests
     [InlineData(0, float.MinValue, float.MaxValue, 0)]
     public void NonDefaultConstructorTest(float x, float y, float width, float height)
     {
-        var rect1 = new FontRectangle(x, y, width, height);
-        var p = new Vector2(x, y);
-        var s = new Vector2(width, height);
-        var rect2 = new FontRectangle(p, s);
+        FontRectangle rect1 = new(x, y, width, height);
+        Vector2 p = new(x, y);
+        Vector2 s = new(width, height);
+        FontRectangle rect2 = new(p, s);
 
         Assert.Equal(rect1, rect2);
     }
@@ -34,8 +34,8 @@ public class FontRectangleTests
     [InlineData(0, float.MinValue, float.MaxValue, 0)]
     public void FromLTRBTest(float left, float top, float right, float bottom)
     {
-        var expected = new FontRectangle(left, top, right - left, bottom - top);
-        var actual = FontRectangle.FromLTRB(left, top, right, bottom);
+        FontRectangle expected = new(left, top, right - left, bottom - top);
+        FontRectangle actual = FontRectangle.FromLTRB(left, top, right, bottom);
 
         Assert.Equal(expected, actual);
     }
@@ -47,9 +47,9 @@ public class FontRectangleTests
     [InlineData(0, float.MinValue, float.MaxValue, 0)]
     public void DimensionsTest(float x, float y, float width, float height)
     {
-        var rect = new FontRectangle(x, y, width, height);
-        var p = new Vector2(x, y);
-        var s = new Vector2(width, height);
+        FontRectangle rect = new(x, y, width, height);
+        Vector2 p = new(x, y);
+        Vector2 s = new(width, height);
 
         Assert.Equal(p, rect.Location);
         Assert.Equal(s, rect.Size);
@@ -80,8 +80,8 @@ public class FontRectangleTests
     [InlineData(float.MaxValue, float.MinValue)]
     public void LocationSetTest(float x, float y)
     {
-        var point = new Vector2(x, y);
-        var rect = new FontRectangle(point.X, point.Y, 10, 10);
+        Vector2 point = new(x, y);
+        FontRectangle rect = new(point.X, point.Y, 10, 10);
         Assert.Equal(point, rect.Location);
         Assert.Equal(point.X, rect.X);
         Assert.Equal(point.Y, rect.Y);
@@ -92,8 +92,8 @@ public class FontRectangleTests
     [InlineData(float.MaxValue, float.MinValue)]
     public void SizeSetTest(float x, float y)
     {
-        var size = new Vector2(x, y);
-        var rect = new FontRectangle(10, 10, size.X, size.Y);
+        Vector2 size = new(x, y);
+        FontRectangle rect = new(10, 10, size.X, size.Y);
         Assert.Equal(size, rect.Size);
         Assert.Equal(size.X, rect.Width);
         Assert.Equal(size.Y, rect.Height);
@@ -105,8 +105,8 @@ public class FontRectangleTests
     [InlineData(0, float.MinValue, float.MaxValue, 0)]
     public void EqualityTest(float x, float y, float width, float height)
     {
-        var rect1 = new FontRectangle(x, y, width, height);
-        var rect2 = new FontRectangle(width, height, x, y);
+        FontRectangle rect1 = new(x, y, width, height);
+        FontRectangle rect2 = new(width, height, x, y);
 
         Assert.True(rect1 != rect2);
         Assert.False(rect1 == rect2);
@@ -117,8 +117,8 @@ public class FontRectangleTests
     [Fact]
     public void GetHashCodeTest()
     {
-        var rect1 = new FontRectangle(10, 10, 10, 10);
-        var rect2 = new FontRectangle(10, 10, 10, 10);
+        FontRectangle rect1 = new(10, 10, 10, 10);
+        FontRectangle rect2 = new(10, 10, 10, 10);
         Assert.Equal(rect1.GetHashCode(), rect2.GetHashCode());
         Assert.NotEqual(rect1.GetHashCode(), new FontRectangle(20, 10, 10, 10).GetHashCode());
         Assert.NotEqual(rect1.GetHashCode(), new FontRectangle(10, 20, 10, 10).GetHashCode());
@@ -131,11 +131,11 @@ public class FontRectangleTests
     [InlineData(0, float.MinValue, float.MaxValue, 0)]
     public void ContainsTest(float x, float y, float width, float height)
     {
-        var rect = new FontRectangle(x, y, width, height);
+        FontRectangle rect = new(x, y, width, height);
         float x1 = (x + width) / 2;
         float y1 = (y + height) / 2;
-        var p = new Vector2(x1, y1);
-        var r = new FontRectangle(x1, y1, width / 2, height / 2);
+        Vector2 p = new(x1, y1);
+        FontRectangle r = new(x1, y1, width / 2, height / 2);
 
         Assert.False(rect.Contains(x1, y1));
         Assert.False(rect.Contains(p));
@@ -148,13 +148,13 @@ public class FontRectangleTests
     [InlineData(0, float.MinValue, float.MaxValue, 0)]
     public void InflateTest(float x, float y, float width, float height)
     {
-        var rect = new FontRectangle(x, y, width, height);
-        var inflatedRect = new FontRectangle(x - width, y - height, width + (2 * width), height + (2 * height));
+        FontRectangle rect = new(x, y, width, height);
+        FontRectangle inflatedRect = new(x - width, y - height, width + (2 * width), height + (2 * height));
 
         rect = rect.Inflate(width, height);
         Assert.Equal(inflatedRect, rect);
 
-        var s = new Vector2(x, y);
+        Vector2 s = new(x, y);
         inflatedRect = FontRectangle.Inflate(rect, x, y);
 
         rect = rect.Inflate(s);
@@ -166,9 +166,9 @@ public class FontRectangleTests
     [InlineData(0, float.MinValue, float.MaxValue, 0)]
     public void IntersectTest(float x, float y, float width, float height)
     {
-        var rect1 = new FontRectangle(x, y, width, height);
-        var rect2 = new FontRectangle(y, x, width, height);
-        var expectedRect = FontRectangle.Intersect(rect1, rect2);
+        FontRectangle rect1 = new(x, y, width, height);
+        FontRectangle rect2 = new(y, x, width, height);
+        FontRectangle expectedRect = FontRectangle.Intersect(rect1, rect2);
         rect1 = rect1.Intersect(rect2);
         Assert.Equal(expectedRect, rect1);
         Assert.False(rect1.IntersectsWith(expectedRect));
@@ -177,9 +177,9 @@ public class FontRectangleTests
     [Fact]
     public void IntersectIntersectingRectsTest()
     {
-        var rect1 = new FontRectangle(0, 0, 5, 5);
-        var rect2 = new FontRectangle(1, 1, 3, 3F);
-        var expected = new FontRectangle(1, 1, 3, 3F);
+        FontRectangle rect1 = new(0, 0, 5, 5);
+        FontRectangle rect2 = new(1, 1, 3, 3F);
+        FontRectangle expected = new(1, 1, 3, 3F);
 
         Assert.Equal(expected, FontRectangle.Intersect(rect1, rect2));
     }
@@ -191,15 +191,15 @@ public class FontRectangleTests
     [InlineData(0, float.MinValue, float.MaxValue, 0)]
     public void UnionTest(float x, float y, float width, float height)
     {
-        var a = new FontRectangle(x, y, width, height);
-        var b = new FontRectangle(width, height, x, y);
+        FontRectangle a = new(x, y, width, height);
+        FontRectangle b = new(width, height, x, y);
 
         float x1 = Math.Min(a.X, b.X);
         float x2 = Math.Max(a.X + a.Width, b.X + b.Width);
         float y1 = Math.Min(a.Y, b.Y);
         float y2 = Math.Max(a.Y + a.Height, b.Y + b.Height);
 
-        var expectedRectangle = new FontRectangle(x1, y1, x2 - x1, y2 - y1);
+        FontRectangle expectedRectangle = new(x1, y1, x2 - x1, y2 - y1);
 
         Assert.Equal(expectedRectangle, FontRectangle.Union(a, b));
     }
@@ -211,9 +211,9 @@ public class FontRectangleTests
     [InlineData(0, float.MinValue, float.MaxValue, 0)]
     public void OffsetTest(float x, float y, float width, float height)
     {
-        var r1 = new FontRectangle(x, y, width, height);
-        var expectedRect = new FontRectangle(x + width, y + height, width, height);
-        var p = new Vector2(width, height);
+        FontRectangle r1 = new(x, y, width, height);
+        FontRectangle expectedRect = new(x + width, y + height, width, height);
+        Vector2 p = new(width, height);
 
         r1 = r1.Offset(p);
         Assert.Equal(expectedRect, r1);
@@ -226,7 +226,7 @@ public class FontRectangleTests
     [Fact]
     public void ToStringTest()
     {
-        var r = new FontRectangle(5, 5.1F, 1.3F, 1F);
+        FontRectangle r = new(5, 5.1F, 1.3F, 1F);
         Assert.Equal(string.Format(CultureInfo.CurrentCulture, "FontRectangle [ X={0}, Y={1}, Width={2}, Height={3} ]", r.X, r.Y, r.Width, r.Height), r.ToString());
     }
 

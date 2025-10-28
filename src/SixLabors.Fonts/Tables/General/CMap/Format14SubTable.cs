@@ -38,7 +38,7 @@ internal sealed class Format14SubTable : CMapSubTable
         uint length = reader.ReadUInt32();
         uint numVarSelectorRecords = reader.ReadUInt32();
 
-        var variationSelectors = new Dictionary<uint, VariationSelector>();
+        Dictionary<uint, VariationSelector> variationSelectors = new();
         uint[] varSelectors = new uint[numVarSelectorRecords];
         uint[] defaultUVSOffsets = new uint[numVarSelectorRecords];
         uint[] nonDefaultUVSOffsets = new uint[numVarSelectorRecords];
@@ -62,7 +62,7 @@ internal sealed class Format14SubTable : CMapSubTable
 
         for (int i = 0; i < numVarSelectorRecords; ++i)
         {
-            var selector = new VariationSelector();
+            VariationSelector selector = new();
             if (defaultUVSOffsets[i] != 0)
             {
                 // Default UVS table

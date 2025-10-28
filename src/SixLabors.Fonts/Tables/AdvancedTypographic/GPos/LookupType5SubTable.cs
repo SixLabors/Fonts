@@ -74,10 +74,10 @@ internal static class LookupType5SubTable
             ushort markArrayOffset = reader.ReadOffset16();
             ushort ligatureArrayOffset = reader.ReadOffset16();
 
-            var markCoverage = CoverageTable.Load(reader, offset + markCoverageOffset);
-            var ligatureCoverage = CoverageTable.Load(reader, offset + ligatureCoverageOffset);
-            var markArrayTable = new MarkArrayTable(reader, offset + markArrayOffset);
-            var ligatureArrayTable = new LigatureArrayTable(reader, offset + ligatureArrayOffset, markClassCount);
+            CoverageTable markCoverage = CoverageTable.Load(reader, offset + markCoverageOffset);
+            CoverageTable ligatureCoverage = CoverageTable.Load(reader, offset + ligatureCoverageOffset);
+            MarkArrayTable markArrayTable = new(reader, offset + markArrayOffset);
+            LigatureArrayTable ligatureArrayTable = new(reader, offset + ligatureArrayOffset, markClassCount);
 
             return new LookupType5Format1SubTable(markCoverage, ligatureCoverage, markArrayTable, ligatureArrayTable, lookupFlags);
         }

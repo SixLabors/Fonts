@@ -20,7 +20,7 @@ internal sealed class KerningTable : Table
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
         {
             // this table is optional.
-            return new KerningTable(Array.Empty<KerningSubTable>());
+            return new KerningTable([]);
         }
 
         using (binaryReader)
