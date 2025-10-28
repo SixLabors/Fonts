@@ -1290,7 +1290,7 @@ public class TextLayoutTests
         {
         }
 
-        public void BeginLayer(Paint paint, FillRule fillRule, in FontRectangle? clipBounds)
+        public void BeginLayer(Paint paint, FillRule fillRule, in ClipQuad? clipBounds)
         {
         }
 

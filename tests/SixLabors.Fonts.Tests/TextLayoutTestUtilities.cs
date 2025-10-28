@@ -22,6 +22,7 @@ internal static class TextLayoutTestUtilities
         string text,
         TextOptions options,
         float percentageTolerance = 0.05F,
+        bool includeGeometry = false,
         [CallerMemberName] string test = "",
         params object[] properties)
     {
@@ -39,7 +40,7 @@ internal static class TextLayoutTestUtilities
         int imageHeight = isVertical ? Math.Max(height, wrappingLength + 1) : height;
 
         List<object> extended = properties?.ToList() ?? new();
-        if (wrappingLength > 0)
+        if (options.WrappingLength > 0)
         {
             extended.Insert(0, options.WrappingLength);
         }
@@ -49,7 +50,7 @@ internal static class TextLayoutTestUtilities
 
         img.Mutate(ctx => ctx.DrawText(FromTextOptions(options), text, Color.Black));
 
-        if (wrappingLength > 0)
+        if (options.WrappingLength > 0)
         {
             if (!options.LayoutMode.IsHorizontal())
             {
@@ -61,9 +62,13 @@ internal static class TextLayoutTestUtilities
             }
         }
 
-        // TODO: Re-enable comparison when we have fixed differences.
         img.DebugSave("png", test, properties: extended.ToArray());
-        // img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
+        img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
+
+        if (!includeGeometry)
+        {
+            return;
+        }
 
         // Now render the text using geometry-only renderer.
         extended.Insert(0, "G");
@@ -73,7 +78,7 @@ internal static class TextLayoutTestUtilities
 
         img2.Mutate(ctx => ctx.Fill(Color.Black, glyphs));
 
-        if (wrappingLength > 0)
+        if (options.WrappingLength > 0)
         {
             if (!options.LayoutMode.IsHorizontal())
             {
@@ -86,7 +91,7 @@ internal static class TextLayoutTestUtilities
         }
 
         img2.DebugSave("png", test, properties: extended.ToArray());
-        // img2.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
+        img2.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
 #endif
     }
 
@@ -110,6 +115,7 @@ internal static class TextLayoutTestUtilities
             VerticalAlignment = options.VerticalAlignment,
             LayoutMode = options.LayoutMode,
             KerningMode = options.KerningMode,
+            DecorationPositioningMode = options.DecorationPositioningMode,
             ColorFontSupport = options.ColorFontSupport,
             FeatureTags = new List<Tag>(options.FeatureTags),
         };
@@ -126,7 +132,9 @@ internal static class TextLayoutTestUtilities
                     End = run.End,
                     TextAttributes = run.TextAttributes,
                     TextDecorations = run.TextDecorations,
-                    Pen = new SolidPen(Color.HotPink, 3)
+                    StrikeoutPen = new SolidPen(Color.Green, 11.3334F),
+                    UnderlinePen = new SolidPen(Color.Blue, 15.5555F),
+                    OverlinePen = new SolidPen(Color.Purple, 13.7777F)
                 });
             }
 
