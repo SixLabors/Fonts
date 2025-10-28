@@ -41,13 +41,12 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\ImageSharp.Drawing\src\ImageSharp.Drawing\ImageSharp.Drawing.csproj" />
+  <ItemGroup>    
     <ProjectReference Include="..\..\src\SixLabors.Fonts\SixLabors.Fonts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <!--<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />-->
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 

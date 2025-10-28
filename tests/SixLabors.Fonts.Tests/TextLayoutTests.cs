@@ -6,7 +6,6 @@ using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
-using SixLabors.ImageSharp.Drawing.Processing;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -553,7 +552,7 @@ public class TextLayoutTests
     public void CountLinesWrappingLength(string text, int wrappingLength, int usedLines)
     {
         Font font = CreateRenderingFont();
-        RichTextOptions options = new(font)
+        TextOptions options = new(font)
         {
             WrappingLength = wrappingLength
         };

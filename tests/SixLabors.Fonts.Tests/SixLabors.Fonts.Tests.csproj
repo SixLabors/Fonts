@@ -29,11 +29,11 @@
     Comment out this constant declaration to disable all tests based upon image generation.
     This allows us to make breaking changes to the Fonts API without breaking the tests.
     -->
-    <DefineConstants>$(DefineConstants);SUPPORTS_DRAWING</DefineConstants>
-    <HasSupportForDrawing Condition="$(DefineConstants.Contains('SUPPORTS_DRAWING'))">true</HasSupportForDrawing>
+    <!--<DefineConstants>$(DefineConstants);SUPPORTS_DRAWING</DefineConstants>
+    <HasSupportForDrawing Condition="$(DefineConstants.Contains('SUPPORTS_DRAWING'))">true</HasSupportForDrawing>-->
   </PropertyGroup>
 
-  <ItemGroup Condition="$(HasSupportForDrawing) == false">
+  <ItemGroup Condition="$(HasSupportForDrawing) != true">
     <Compile Remove="ImageComparison\**" />
   </ItemGroup>
 
@@ -54,10 +54,6 @@
     <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\Compile.cs" Link="Unicode\StateAutomation\Compile.cs" />
     <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\State.cs" Link="Unicode\StateAutomation\State.cs" />
     <PegGrammar Include="..\..\src\UnicodeTrieGenerator\StateAutomation\Grammar.peg" Link="Unicode\StateAutomation\Grammar.peg" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\ImageSharp.Drawing\src\ImageSharp.Drawing\ImageSharp.Drawing.csproj" Condition="$(HasSupportForDrawing)"/>
   </ItemGroup>
 
 </Project>
