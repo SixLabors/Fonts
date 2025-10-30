@@ -30,70 +30,60 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
     /// <inheritdoc/>
     public override bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas)
     {
-        if (CachedGlyphs.TryGetValue(glyphId, out (PaintedGlyph Glyph, PaintedCanvas Canvas) cached))
+        (PaintedGlyph Glyph, PaintedCanvas Canvas) result = CachedGlyphs.GetOrAdd(glyphId, _ =>
         {
-            glyph = cached.Glyph;
-            canvas = cached.Canvas;
-            return true;
-        }
-
-        glyph = default;
-        canvas = default;
-
-        if (!this.Colr.TryGetColrV1Layers(glyphId, out List<ResolvedGlyphLayer>? resolved))
-        {
-            return false;
-        }
-
-        List<PaintedLayer> layers = new(resolved.Count);
-
-        for (int i = 0; i < resolved.Count; i++)
-        {
-            ResolvedGlyphLayer rl = resolved[i];
-
-            GlyphVector? gv = this.GlyphLoader(rl.GlyphId);
-            if (gv is null || !gv.Value.HasValue())
+            if (this.Colr.TryGetColrV1Layers(glyphId, out List<ResolvedGlyphLayer>? resolved))
             {
-                continue;
-            }
-
-            // Build geometry once for this layer.
-            List<PathCommand> path = BuildPath(gv.Value);
-
-            // Flatten paint graph: accumulate wrapper transforms; attach composite mode to leaves.
-            List<Rendering.Paint> leafPaints = [];
-
-            FlattenPaint(rl.Paint, rl.Transform, rl.CompositeMode, this.Cpal, leafPaints);
-
-            // Emit one layer per leaf paint.
-            Bounds? clip = rl.ClipBox;
-            for (int p = 0; p < leafPaints.Count; p++)
-            {
-                Rendering.Paint leaf = leafPaints[p];
-
-                Matrix3x2 xForm = Matrix3x2.Identity;
-                if (leaf is SolidPaint solid)
+                List<PaintedLayer> layers = new(resolved.Count);
+                for (int i = 0; i < resolved.Count; i++)
                 {
-                    // Move the transform from the paint to the layer.
-                    // We do this so that solid paints are also transformed correctly as
-                    // their location is defined in the local space of the layer.
-                    xForm = solid.Transform;
-                    solid.Transform = Matrix3x2.Identity;
+                    ResolvedGlyphLayer rl = resolved[i];
+                    GlyphVector? gv = this.GlyphLoader(rl.GlyphId);
+                    if (gv is null || !gv.Value.HasValue())
+                    {
+                        continue;
+                    }
+
+                    // Build geometry once for this layer.
+                    List<PathCommand> path = BuildPath(gv.Value);
+
+                    // Flatten paint graph: accumulate wrapper transforms; attach composite mode to leaves.
+                    List<Rendering.Paint> leafPaints = [];
+                    FlattenPaint(rl.Paint, rl.Transform, rl.CompositeMode, this.Cpal, leafPaints);
+
+                    // Emit one layer per leaf paint.
+                    Bounds? clip = rl.ClipBox;
+                    for (int p = 0; p < leafPaints.Count; p++)
+                    {
+                        Rendering.Paint leaf = leafPaints[p];
+                        Matrix3x2 xForm = Matrix3x2.Identity;
+                        if (leaf is SolidPaint solid)
+                        {
+                            // Move the transform from the paint to the layer.
+                            // We do this so that solid paints are also transformed correctly as
+                            // their location is defined in the local space of the layer.
+                            xForm = solid.Transform;
+                            solid.Transform = Matrix3x2.Identity;
+                        }
+
+                        layers.Add(new PaintedLayer(leaf, FillRule.NonZero, xForm, clip, path));
+                    }
                 }
 
-                layers.Add(new PaintedLayer(leaf, FillRule.NonZero, xForm, clip, path));
+                if (layers.Count > 0)
+                {
+                    // Canvas viewBox in Y-up; renderer downstream decides orientation via flag.
+                    PaintedGlyph glyph = new(layers);
+                    PaintedCanvas canvas = new(FontRectangle.Empty, isYDown: false, rootTransform: Matrix3x2.Identity);
+                    return (glyph, canvas);
+                }
             }
-        }
 
-        if (layers.Count == 0)
-        {
-            return false;
-        }
+            return (default, default);
+        });
 
-        // Canvas viewBox in Y-up; renderer downstream decides orientation via flag.
-        glyph = new PaintedGlyph(layers);
-        canvas = new PaintedCanvas(FontRectangle.Empty, isYDown: false, rootTransform: Matrix3x2.Identity);
-        CachedGlyphs[glyphId] = (glyph, canvas);
-        return true;
+        glyph = result.Glyph;
+        canvas = result.Canvas;
+        return result.Glyph.Layers.Count > 0;
     }
 }

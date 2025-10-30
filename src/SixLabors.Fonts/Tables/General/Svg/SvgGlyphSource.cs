@@ -21,14 +21,14 @@ namespace SixLabors.Fonts.Tables.General.Svg;
 internal sealed class SvgGlyphSource : IPaintedGlyphSource
 {
     private readonly SvgTable svgTable;
-    private static readonly ConcurrentDictionary<ushort, ParsedDoc> DocCache = [];
+    private static readonly Dictionary<ushort, ParsedDoc> DocCache = [];
     private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
 
     private sealed class ParsedDoc
     {
         public required XDocument Doc { get; init; }
 
-        public required ConcurrentDictionary<string, XElement> IdMap { get; init; }
+        public required Dictionary<string, XElement> IdMap { get; init; }
     }
 
     /// <summary>
@@ -40,58 +40,50 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     /// <inheritdoc/>
     public bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas)
     {
-        if (CachedGlyphs.TryGetValue(glyphId, out (PaintedGlyph Glyph, PaintedCanvas Canvas) cached))
+        (PaintedGlyph Glyph, PaintedCanvas Canvas) result = CachedGlyphs.GetOrAdd(glyphId, gid =>
         {
-            glyph = cached.Glyph;
-            canvas = cached.Canvas;
-            return true;
-        }
+            if (this.TryGetParsedDoc(gid, out ParsedDoc? parsed))
+            {
+                XElement? root = parsed.Doc.Root;
+                if (root is not null)
+                {
+                    FontRectangle viewBox = GetViewBox(root);
+                    Matrix3x2 rootTransform = ParseTransform(root.Attribute("transform")?.Value);
 
-        glyph = default;
-        canvas = default;
+                    // Prefer a dedicated group with id="glyph{gid}", else fall back to the root.
+                    string wantedId = "glyph" + gid.ToString(CultureInfo.InvariantCulture);
+                    XElement glyphRoot = parsed.IdMap.TryGetValue(wantedId, out XElement? ge) ? ge : root;
 
-        if (!this.TryGetParsedDoc(glyphId, out ParsedDoc? parsed))
-        {
-            return false;
-        }
+                    List<PaintedLayer> layers = [];
+                    Walk(
+                        glyphRoot,
+                        rootTransform,
+                        inheritedPaint: null,
+                        outputLayers: layers,
+                        idMap: parsed.IdMap);
 
-        XElement? root = parsed.Doc.Root;
-        if (root is null)
-        {
-            return false;
-        }
+                    if (layers.Count > 0)
+                    {
+                        PaintedGlyph glyph = new(layers);
+                        PaintedCanvas canvas = new(viewBox, true, rootTransform);
+                        return (glyph, canvas);
+                    }
+                }
+            }
 
-        FontRectangle viewBox = GetViewBox(root);
-        Matrix3x2 rootTransform = ParseTransform(root.Attribute("transform")?.Value);
+            return (default, default);
+        });
 
-        // Prefer a dedicated group with id="glyph{gid}", else fall back to the root.
-        string wantedId = "glyph" + glyphId.ToString(CultureInfo.InvariantCulture);
-        XElement glyphRoot = parsed.IdMap.TryGetValue(wantedId, out XElement? ge) ? ge : root;
-
-        List<PaintedLayer> layers = [];
-        Walk(
-            glyphRoot,
-            rootTransform,
-            inheritedPaint: null,
-            outputLayers: layers,
-            idMap: parsed.IdMap);
-
-        if (layers.Count == 0)
-        {
-            return false;
-        }
-
-        glyph = new PaintedGlyph(layers);
-        canvas = new PaintedCanvas(viewBox, true, rootTransform);
-        CachedGlyphs[glyphId] = (glyph, canvas);
-        return true;
+        glyph = result.Glyph;
+        canvas = result.Canvas;
+        return result.Glyph.Layers.Count > 0;
     }
 
     private bool TryGetParsedDoc(ushort glyphId, [NotNullWhen(true)] out ParsedDoc? parsed)
     {
         parsed = default;
 
-        if (!this.svgTable.TryGetDocumentSpan(glyphId, out int start, out int length))
+        if (!this.svgTable.TryGetDocumentSpan(glyphId, out int _, out int _))
         {
             return false;
         }
@@ -115,7 +107,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             }
 
             // TODO: How large is this likely to get? If large, consider a more memory-efficient structure.
-            ConcurrentDictionary<string, XElement> idMap = new(Environment.ProcessorCount, capacity: 1024, comparer: StringComparer.Ordinal);
+            Dictionary<string, XElement> idMap = new(1024, StringComparer.Ordinal);
 
             foreach (XElement e in doc.Root.DescendantsAndSelf())
             {
@@ -168,7 +160,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         Matrix3x2 parentLocalTransform,
         Paint? inheritedPaint,
         List<PaintedLayer> outputLayers,
-        ConcurrentDictionary<string, XElement> idMap)
+        Dictionary<string, XElement> idMap)
     {
         Matrix3x2 localTransform = parentLocalTransform * ParseTransform(node.Attribute("transform")?.Value);
 
@@ -413,7 +405,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     private static Paint? ResolvePaint(
         XElement e,
         Paint? inherited,
-        ConcurrentDictionary<string, XElement> idMap,
+        Dictionary<string, XElement> idMap,
         out bool fillNone,
         out float opacityMul)
     {
@@ -467,7 +459,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         return inherited;
     }
 
-    private static Paint? ResolvePaintServer(string id, ConcurrentDictionary<string, XElement> idMap)
+    private static Paint? ResolvePaintServer(string id, Dictionary<string, XElement> idMap)
     {
         if (!idMap.TryGetValue(id, out XElement? server))
         {
@@ -484,7 +476,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         };
     }
 
-    private static LinearGradientPaint? BuildLinearGradient(XElement grad, ConcurrentDictionary<string, XElement> idMap)
+    private static LinearGradientPaint? BuildLinearGradient(XElement grad, Dictionary<string, XElement> idMap)
     {
         GradientUnits units = GradientUnits.ObjectBoundingBox;
         SpreadMethod spread = SpreadMethod.Pad;
@@ -583,7 +575,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         };
     }
 
-    private static RadialGradientPaint? BuildRadialGradient(XElement grad, ConcurrentDictionary<string, XElement> idMap)
+    private static RadialGradientPaint? BuildRadialGradient(XElement grad, Dictionary<string, XElement> idMap)
     {
         GradientUnits units = GradientUnits.ObjectBoundingBox;
         SpreadMethod spread = SpreadMethod.Pad;
@@ -932,7 +924,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
         return false;
     }
 
-    private static XElement? LookupById(ConcurrentDictionary<string, XElement> idMap, string href)
+    private static XElement? LookupById(Dictionary<string, XElement> idMap, string href)
     {
         if (string.IsNullOrEmpty(href) || href[0] != '#')
         {

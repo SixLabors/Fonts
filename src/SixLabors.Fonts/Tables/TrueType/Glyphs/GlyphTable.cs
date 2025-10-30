@@ -28,13 +28,7 @@ internal class GlyphTable : Table
             return default;
         }
 
-        if (!this.glyphCache.TryGetValue(index, out GlyphVector glyph))
-        {
-            glyph = this.loaders[index].CreateGlyph(this);
-            this.glyphCache[index] = glyph;
-        }
-
-        return glyph;
+        return this.glyphCache.GetOrAdd(index, i => this.loaders[i].CreateGlyph(this));
     }
 
     public static GlyphTable Load(FontReader reader)
