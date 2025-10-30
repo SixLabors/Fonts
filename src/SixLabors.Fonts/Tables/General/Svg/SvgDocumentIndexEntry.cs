@@ -1,7 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-namespace SixLabors.Fonts.Tables.Svg;
+namespace SixLabors.Fonts.Tables.General.Svg;
 
 internal readonly struct SvgDocumentIndexEntry
 {

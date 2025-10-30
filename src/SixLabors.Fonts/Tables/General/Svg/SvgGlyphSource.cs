@@ -11,7 +11,7 @@ using System.Xml.Linq;
 using SixLabors.Fonts.Rendering;
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
-namespace SixLabors.Fonts.Tables.Svg;
+namespace SixLabors.Fonts.Tables.General.Svg;
 
 /// <summary>
 /// Supplies painted glyphs (layers + commands + paints) and canvas metadata for OT-SVG glyphs.
@@ -21,8 +21,8 @@ namespace SixLabors.Fonts.Tables.Svg;
 internal sealed class SvgGlyphSource : IPaintedGlyphSource
 {
     private readonly SvgTable svgTable;
-    private static readonly Dictionary<ushort, ParsedDoc> DocCache = [];
-    private static readonly Dictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
+    private static readonly ConcurrentDictionary<ushort, ParsedDoc> DocCache = [];
+    private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
 
     private sealed class ParsedDoc
     {

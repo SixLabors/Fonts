@@ -4,7 +4,7 @@
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
 
-namespace SixLabors.Fonts.Tables.Svg;
+namespace SixLabors.Fonts.Tables.General.Svg;
 
 internal class SvgTable : Table
 {

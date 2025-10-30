@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Collections.Concurrent;
 using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
@@ -9,12 +10,12 @@ internal class GlyphTable : Table
 {
     internal const string TableName = "glyf";
     private readonly GlyphLoader[] loaders;
-    private readonly Dictionary<int, GlyphVector> glyphCache;
+    private readonly ConcurrentDictionary<int, GlyphVector> glyphCache;
 
     public GlyphTable(GlyphLoader[] glyphLoaders)
     {
         this.loaders = glyphLoaders;
-        this.glyphCache = new(glyphLoaders.Length);
+        this.glyphCache = new(Environment.ProcessorCount, glyphLoaders.Length);
     }
 
     public int GlyphCount => this.loaders.Length;

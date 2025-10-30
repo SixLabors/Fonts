@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Collections.Concurrent;
 using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
@@ -13,7 +14,7 @@ namespace SixLabors.Fonts.Tables.General.Colr;
 /// </summary>
 internal sealed class ColrV0GlyphSource : ColrGlyphSourceBase
 {
-    private static readonly Dictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
+    private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ColrV0GlyphSource"/> class.

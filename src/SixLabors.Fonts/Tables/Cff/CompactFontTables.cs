@@ -7,7 +7,7 @@ using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Tables.General.Post;
-using SixLabors.Fonts.Tables.Svg;
+using SixLabors.Fonts.Tables.General.Svg;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
