@@ -84,6 +84,18 @@ This repository contains [git submodules](https://blog.github.com/2016-02-01-wor
 git submodule update --init --recursive
 ```
 
+### LFS
+
+This repository uses LFS Large File Storage. To configure it for the project, navigate to the repository root and type:
+
+``` bash
+git lfs install
+```
+
+``` bash
+git lfs pull
+```
+
 ### Features
 - Reading font description (name, family, subname etc plus other string metadata).
 - Loading OpenType fonts with with CFF1 and True Type outlines.
