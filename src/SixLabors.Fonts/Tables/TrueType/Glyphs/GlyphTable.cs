@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.IO;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
@@ -22,6 +24,12 @@ internal class GlyphTable : Table
     public static GlyphTable Load(FontReader reader)
     {
         uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
+
+        FVarTable? fvar = reader.TryGetTable<FVarTable>();
+        AVarTable? avar = reader.TryGetTable<AVarTable>();
+        GVarTable? gvar = reader.TryGetTable<GVarTable>();
+        HVarTable? hvar = reader.TryGetTable<HVarTable>();
+        GlyphVariationProcessor? glyphVariationProcessor = fvar is null || hvar is null ? null : new GlyphVariationProcessor(hvar!.ItemVariationStore, fvar, avar, gvar);
 
         // Use an empty bounds instance as the fallback.
         // We will substitute this with the advance width/height to determine bounds instead when rendering/measuring.
