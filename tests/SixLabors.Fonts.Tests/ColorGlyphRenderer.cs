@@ -11,7 +11,7 @@ public class ColorGlyphRenderer : GlyphRenderer
 {
     public List<GlyphColor> Colors { get; } = new List<GlyphColor>();
 
-    public override void BeginLayer(Paint paint, FillRule fillRule, in ClipQuad? clipBounds)
+    public override void BeginLayer(Paint paint, FillRule fillRule, ClipQuad? clipBounds)
     {
         if (paint is SolidPaint solidPaint)
         {

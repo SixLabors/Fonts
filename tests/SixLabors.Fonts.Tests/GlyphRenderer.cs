@@ -84,7 +84,7 @@ public class GlyphRenderer : IGlyphRenderer
     {
     }
 
-    public virtual void BeginLayer(Paint paint, FillRule fillRule, in ClipQuad? clipBounds)
+    public virtual void BeginLayer(Paint paint, FillRule fillRule, ClipQuad? clipBounds)
     {
     }
 
