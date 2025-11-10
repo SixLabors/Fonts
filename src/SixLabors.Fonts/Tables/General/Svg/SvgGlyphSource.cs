@@ -22,7 +22,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
 {
     private readonly SvgTable svgTable;
     private static readonly Dictionary<ushort, ParsedDoc> DocCache = [];
-    private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
+    private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas)> CachedGlyphs = [];
 
     private sealed class ParsedDoc
     {
@@ -38,9 +38,9 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     public SvgGlyphSource(SvgTable svgTable) => this.svgTable = svgTable;
 
     /// <inheritdoc/>
-    public bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas)
+    public bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvasMetadata canvas)
     {
-        (PaintedGlyph Glyph, PaintedCanvas Canvas) result = CachedGlyphs.GetOrAdd(glyphId, gid =>
+        (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas) result = CachedGlyphs.GetOrAdd(glyphId, gid =>
         {
             if (this.TryGetParsedDoc(gid, out ParsedDoc? parsed))
             {
@@ -65,7 +65,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                     if (layers.Count > 0)
                     {
                         PaintedGlyph glyph = new(layers);
-                        PaintedCanvas canvas = new(viewBox, true, rootTransform);
+                        PaintedCanvasMetadata canvas = new(viewBox, true, rootTransform);
                         return (glyph, canvas);
                     }
                 }

@@ -8,15 +8,15 @@ namespace SixLabors.Fonts.Rendering;
 /// <summary>
 /// Canvas metadata describing the document-space coordinate system for a painted glyph.
 /// </summary>
-internal readonly struct PaintedCanvas
+internal readonly struct PaintedCanvasMetadata
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="PaintedCanvas"/> struct.
+    /// Initializes a new instance of the <see cref="PaintedCanvasMetadata"/> struct.
     /// </summary>
     /// <param name="viewBox">The viewBox rectangle (minX, minY, width, height).</param>
     /// <param name="isYDown">True if the source coordinate system is y-down; false if y-up.</param>
     /// <param name="rootTransform">An optional root transform in document-space.</param>
-    public PaintedCanvas(FontRectangle viewBox, bool isYDown, Matrix3x2 rootTransform)
+    public PaintedCanvasMetadata(FontRectangle viewBox, bool isYDown, Matrix3x2 rootTransform)
     {
         this.HasViewBox = viewBox != FontRectangle.Empty;
         this.ViewBox = viewBox;

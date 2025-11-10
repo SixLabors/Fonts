@@ -147,7 +147,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
         if (renderer.BeginGlyph(in box, in parameters))
         {
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint)
-                && this.source.TryGetPaintedGlyph(this.GlyphId, out PaintedGlyph glyph, out PaintedCanvas canvas))
+                && this.source.TryGetPaintedGlyph(this.GlyphId, out PaintedGlyph glyph, out PaintedCanvasMetadata canvas))
             {
                 // Source-to-UPEM: viewBox mapping (uniform "meet"), optional y-flip, optional root transform.
                 Matrix3x2 s2u = ComputeSourceToUpem(canvas, this.UnitsPerEm);
@@ -169,7 +169,7 @@ public sealed class PaintedGlyphMetrics : GlyphMetrics
     /// Enforces a uniform 'meet' scale from the root viewBox (if present) and flips Y
     /// only if the source is y-up.
     /// </summary>
-    private static Matrix3x2 ComputeSourceToUpem(in PaintedCanvas canvas, ushort upem)
+    private static Matrix3x2 ComputeSourceToUpem(in PaintedCanvasMetadata canvas, ushort upem)
     {
         Matrix3x2 m = Matrix3x2.Identity;
 

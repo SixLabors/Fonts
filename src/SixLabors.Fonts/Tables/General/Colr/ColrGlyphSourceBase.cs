@@ -42,7 +42,7 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
     protected Func<ushort, GlyphVector?> GlyphLoader { get; }
 
     /// <inheritdoc/>
-    public abstract bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas);
+    public abstract bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvasMetadata canvas);
 
     /// <summary>
     /// Recursively flattens a COLR paint graph:

@@ -10,11 +10,11 @@ namespace SixLabors.Fonts.Tables.General.Colr;
 
 /// <summary>
 /// Supplies painted glyphs for COLR v1 fonts.
-/// Flattens paint graphs into a linear <see cref="PaintedLayer"/> stream and emits a <see cref="PaintedCanvas"/>.
+/// Flattens paint graphs into a linear <see cref="PaintedLayer"/> stream and emits a <see cref="PaintedCanvasMetadata"/>.
 /// </summary>
 internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
 {
-    private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvas Canvas)> CachedGlyphs = [];
+    private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas)> CachedGlyphs = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ColrV1GlyphSource"/> class.
@@ -28,9 +28,9 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
     }
 
     /// <inheritdoc/>
-    public override bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvas canvas)
+    public override bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvasMetadata canvas)
     {
-        (PaintedGlyph Glyph, PaintedCanvas Canvas) result = CachedGlyphs.GetOrAdd(glyphId, _ =>
+        (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas) result = CachedGlyphs.GetOrAdd(glyphId, _ =>
         {
             if (this.Colr.TryGetColrV1Layers(glyphId, out List<ResolvedGlyphLayer>? resolved))
             {
@@ -74,7 +74,7 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
                 {
                     // Canvas viewBox in Y-up; renderer downstream decides orientation via flag.
                     PaintedGlyph glyph = new(layers);
-                    PaintedCanvas canvas = new(FontRectangle.Empty, isYDown: false, rootTransform: Matrix3x2.Identity);
+                    PaintedCanvasMetadata canvas = new(FontRectangle.Empty, isYDown: false, rootTransform: Matrix3x2.Identity);
                     return (glyph, canvas);
                 }
             }
