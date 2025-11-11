@@ -9,7 +9,7 @@ namespace SixLabors.Fonts;
 /// <summary>
 /// Provides access to the color details for the current glyph.
 /// </summary>
-public readonly partial struct GlyphColor
+public readonly partial struct GlyphColor : IEquatable<GlyphColor>
 {
     internal GlyphColor(byte red, byte green, byte blue, byte alpha)
     {
@@ -70,7 +70,8 @@ public readonly partial struct GlyphColor
         => !left.Equals(right);
 
     /// <inheritdoc/>
-    public override bool Equals(object? obj) => obj is GlyphColor p && this.Equals(p);
+    public override bool Equals(object? obj)
+        => obj is GlyphColor p && this.Equals(p);
 
     /// <summary>
     /// Compares the <see cref="GlyphColor"/> for equality to this color.
@@ -122,10 +123,8 @@ public readonly partial struct GlyphColor
         {
             return false;
         }
-        else
-        {
-            hex = hex[1..];
-        }
+
+        hex = hex[1..];
 
         byte a = 255, r, g, b;
 
@@ -200,12 +199,7 @@ public readonly partial struct GlyphColor
             return false;
         }
 
-        if (NamedGlyphColorsLookupLazy.Value.TryGetValue(name, out result))
-        {
-            return true;
-        }
-
-        return false;
+        return NamedGlyphColorsLookupLazy.Value.TryGetValue(name, out result);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
