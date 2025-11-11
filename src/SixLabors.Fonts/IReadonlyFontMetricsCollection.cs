@@ -28,7 +28,7 @@ internal interface IReadOnlyFontMetricsCollection
     /// with the specified name; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
-    bool TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics);
+    public bool TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics);
 
     /// <summary>
     /// Gets the collection of available font metrics for a given culture and font family name.
@@ -37,7 +37,7 @@ internal interface IReadOnlyFontMetricsCollection
     /// <param name="culture">The culture to use when searching for a match.</param>
     /// <returns>The <see cref="IEnumerable{FontMetrics}"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
-    IEnumerable<FontMetrics> GetAllMetrics(string name, CultureInfo culture);
+    public IEnumerable<FontMetrics> GetAllMetrics(string name, CultureInfo culture);
 
     /// <summary>
     /// Gets the collection of available font styles for a given culture and font family name.
@@ -46,8 +46,8 @@ internal interface IReadOnlyFontMetricsCollection
     /// <param name="culture">The culture to use when searching for a match.</param>
     /// <returns>The <see cref="IEnumerable{FontStyle}"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
-    IEnumerable<FontStyle> GetAllStyles(string name, CultureInfo culture);
+    public IEnumerable<FontStyle> GetAllStyles(string name, CultureInfo culture);
 
     /// <inheritdoc cref="IEnumerable{T}.GetEnumerator"/>
-    IEnumerator<FontMetrics> GetEnumerator();
+    public IEnumerator<FontMetrics> GetEnumerator();
 }

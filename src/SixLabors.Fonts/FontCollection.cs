@@ -78,11 +78,11 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
 
     /// <inheritdoc/>
     public FontFamily Get(string name)
-        => this.Get(name, CultureInfo.InvariantCulture);
+        => this.GetByCulture(name, CultureInfo.InvariantCulture);
 
     /// <inheritdoc/>
     public bool TryGet(string name, out FontFamily family)
-        => this.TryGet(name, CultureInfo.InvariantCulture, out family);
+        => this.TryGetByCulture(name, CultureInfo.InvariantCulture, out family);
 
     /// <inheritdoc/>
     public FontFamily Add(string path, CultureInfo culture)
@@ -127,11 +127,11 @@ public sealed class FontCollection : IFontCollection, IFontMetricsCollection
         => this.FamiliesByCultureImpl(culture);
 
     /// <inheritdoc/>
-    public FontFamily Get(string name, CultureInfo culture)
+    public FontFamily GetByCulture(string name, CultureInfo culture)
         => this.GetImpl(name, culture);
 
     /// <inheritdoc/>
-    public bool TryGet(string name, CultureInfo culture, out FontFamily family)
+    public bool TryGetByCulture(string name, CultureInfo culture, out FontFamily family)
         => this.TryGetImpl(name, culture, out family);
 
     /// <inheritdoc/>
