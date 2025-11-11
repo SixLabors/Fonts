@@ -4,19 +4,21 @@
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// Controls how text decorations (underline/overline/strikethrough) are positioned.
+/// Defines how text decorations (underline, overline, strikethrough) are positioned relative to font metrics.
 /// </summary>
 public enum DecorationPositioningMode
 {
     /// <summary>
-    /// Browser-like: Use the primary (base) font's metrics for the entire run/line, producing a single,
-    /// consistent decoration position across mixed fonts and scripts.
+    /// Uses the primary (base) font's metrics for the entire run or line,
+    /// ensuring a consistent decoration position across mixed fonts and scripts.
+    /// Matches typical browser behavior.
     /// </summary>
-    FromPrimaryFont = 0,
+    PrimaryFont = 0,
 
     /// <summary>
-    /// Word-like: position each decoration using the active glyph's own font metrics
-    /// Varies across glyphs/fallback faces within the same line.
+    /// Uses each glyph's own font metrics to position its decoration.
+    /// Decoration positions may vary between glyphs and fallback fonts within the same line.
+    /// Matches typical Microsoft Word behavior.
     /// </summary>
-    PerGlyphFromFont = 1,
+    GlyphFont = 1,
 }

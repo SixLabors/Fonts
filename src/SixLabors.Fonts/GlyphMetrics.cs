@@ -338,11 +338,18 @@ public abstract class GlyphMetrics
         float scaledPPEM,
         TextOptions options)
     {
-        bool perGlyph = options.DecorationPositioningMode == DecorationPositioningMode.PerGlyphFromFont;
+        bool perGlyph = options.DecorationPositioningMode == DecorationPositioningMode.GlyphFont;
         FontMetrics fontMetrics = perGlyph
             ? this.FontMetrics
             : options.Font.FontMetrics;
 
+        // The scale factor for the decoration length is treated separately from other factors
+        // as it is used to scale the length of the decoration line.
+        // This must always be derived from the glyph's own scale factor to ensure correct length.
+        Vector2 lengthScaleFactor = this.ScaleFactor;
+
+        // These factors determine horizontal and vertical scaling and offset for the decorations.
+        // and are either per-glyph or derived from the common font metrics.
         Vector2 scaleFactor;
         Vector2 offset;
         if (perGlyph)
@@ -383,12 +390,13 @@ public abstract class GlyphMetrics
                     return (Vector2.Zero, Vector2.Zero, 0);
                 }
 
+                Vector2 lengthScale = new Vector2(scaledPPEM) / lengthScaleFactor;
                 Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
 
                 // Undo the vertical offset applied when laying out the text.
                 Vector2 scaledOffset = (offset + new Vector2(decoratorPosition, 0)) * scale;
 
-                length *= scale.Y;
+                length *= lengthScale.Y;
                 thickness *= scale.X;
 
                 Vector2 tl = new(scaledOffset.X, scaledOffset.Y);
@@ -421,10 +429,11 @@ public abstract class GlyphMetrics
                     return (Vector2.Zero, Vector2.Zero, 0);
                 }
 
+                Vector2 lengthScale = new Vector2(scaledPPEM) / lengthScaleFactor;
                 Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
                 Vector2 scaledOffset = (offset + new Vector2(0, decoratorPosition)) * scale;
 
-                length *= scale.X;
+                length *= lengthScale.X;
                 thickness *= scale.Y;
 
                 Vector2 tl = new(scaledOffset.X, scaledOffset.Y);
