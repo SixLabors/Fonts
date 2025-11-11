@@ -66,15 +66,15 @@ internal class CpalTable : Table
             offsetPaletteEntryLabelArray = reader.ReadOffset32();
         }
 
-        reader.Seek(offsetFirstColorRecord, System.IO.SeekOrigin.Begin);
-        var palettes = new GlyphColor[numColorRecords];
+        reader.Seek(offsetFirstColorRecord, SeekOrigin.Begin);
+        GlyphColor[] palettes = new GlyphColor[numColorRecords];
         for (int n = 0; n < numColorRecords; n++)
         {
             byte blue = reader.ReadByte();
             byte green = reader.ReadByte();
             byte red = reader.ReadByte();
             byte alpha = reader.ReadByte();
-            palettes[n] = new GlyphColor(blue, green, red, alpha);
+            palettes[n] = new GlyphColor(red, green, blue, alpha);
         }
 
         return new CpalTable(colorRecordIndices, palettes);

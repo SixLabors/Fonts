@@ -231,8 +231,8 @@ internal sealed class HangulShaper : DefaultShaper
         if (t <= TBase)
         {
             Span<ushort> ii = stackalloc ushort[2];
-            ii[0] = ljmo;
             ii[1] = vjmo;
+            ii[0] = ljmo;
 
             collection.Replace(index, ii, FeatureTags.GlyphCompositionDecomposition);
             collection.EnableShapingFeature(index, LjmoTag);
@@ -360,14 +360,11 @@ internal sealed class HangulShaper : DefaultShaper
         TextDecorations textDecorations = data.TextRun.TextDecorations;
         LayoutMode layoutMode = collection.TextOptions.LayoutMode;
         ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
-        if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
+        if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out GlyphMetrics? metrics))
         {
-            foreach (GlyphMetrics gm in metrics)
+            if (metrics.AdvanceWidth == 0)
             {
-                if (gm.AdvanceWidth == 0)
-                {
-                    return;
-                }
+                return;
             }
         }
 
@@ -387,15 +384,11 @@ internal sealed class HangulShaper : DefaultShaper
             TextDecorations textDecorations = data.TextRun.TextDecorations;
             LayoutMode layoutMode = collection.TextOptions.LayoutMode;
             ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
-            if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out IReadOnlyList<GlyphMetrics>? metrics))
+            if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out GlyphMetrics? metrics))
             {
-                foreach (GlyphMetrics gm in metrics)
+                if (metrics.AdvanceWidth != 0)
                 {
-                    if (gm.AdvanceWidth != 0)
-                    {
-                        after = true;
-                        break;
-                    }
+                    after = true;
                 }
             }
 

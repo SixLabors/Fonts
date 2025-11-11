@@ -255,7 +255,7 @@ public static class TextMeasurer
         bool hasSize = false;
         if (glyphLayouts.Count == 0)
         {
-            characterBounds = Array.Empty<GlyphBounds>();
+            characterBounds = [];
             return hasSize;
         }
 
@@ -277,7 +277,7 @@ public static class TextMeasurer
         bool hasSize = false;
         if (glyphLayouts.Count == 0)
         {
-            characterBounds = Array.Empty<GlyphBounds>();
+            characterBounds = [];
             return hasSize;
         }
 
@@ -302,7 +302,7 @@ public static class TextMeasurer
         bool hasSize = false;
         if (glyphLayouts.Count == 0)
         {
-            characterBounds = Array.Empty<GlyphBounds>();
+            characterBounds = [];
             return hasSize;
         }
 

@@ -26,7 +26,7 @@ internal class TripleEncodingTable
         // The sign of X coordinate value(X sign).
         // The sign of Y coordinate value(Y sign).
 
-        // Please note that “Byte Count” field reflects total size of the triplet(flag, xCoordinate, yCoordinate),
+        // Please note that "Byte Count" field reflects total size of the triplet(flag, xCoordinate, yCoordinate),
         // including ‘flag’ value that is encoded in a separate stream.
 
         // Triplet Encoding

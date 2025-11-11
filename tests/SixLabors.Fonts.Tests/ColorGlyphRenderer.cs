@@ -1,11 +1,23 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Rendering;
+
 namespace SixLabors.Fonts.Tests;
 
-public class ColorGlyphRenderer : GlyphRenderer, IColorGlyphRenderer
+// TODO: We massively overuse this type.
+// We should refactor tests to remove it where possible.
+public class ColorGlyphRenderer : GlyphRenderer
 {
     public List<GlyphColor> Colors { get; } = new List<GlyphColor>();
 
-    public void SetColor(GlyphColor color) => this.Colors.Add(color);
+    public override void BeginLayer(Paint paint, FillRule fillRule, ClipQuad? clipBounds)
+    {
+        if (paint is SolidPaint solidPaint)
+        {
+            this.Colors.Add(solidPaint.Color);
+        }
+
+        base.BeginLayer(paint, fillRule, clipBounds);
+    }
 }

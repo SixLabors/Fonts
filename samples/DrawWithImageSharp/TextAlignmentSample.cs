@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using SixLabors.Fonts;
+using SixLabors.Fonts.Rendering;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -15,7 +16,7 @@ public static class TextAlignmentSample
 {
     public static void Generate(Font font)
     {
-        using var img = new Image<Rgba32>(1000, 1000);
+        using Image<Rgba32> img = new(1000, 1000);
         img.Mutate(x => x.Fill(Color.White));
 
         foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
@@ -63,9 +64,9 @@ public static class TextAlignmentSample
                 break;
         }
 
-        var glyphBuilder = new CustomGlyphBuilder();
+        CustomGlyphBuilder glyphBuilder = new();
 
-        var renderer = new TextRenderer(glyphBuilder);
+        TextRenderer renderer = new(glyphBuilder);
 
         TextOptions textOptions = new(font)
         {
@@ -82,8 +83,7 @@ public static class TextAlignmentSample
         IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
         img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
 
-        Rgba32 f = Color.Fuchsia;
-        f.A = 128;
+        Color f = Color.Fuchsia.WithAlpha(.5F);
         img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
         img.Mutate(x => x.Draw(f, 1, glyphBuilder.Boxes));
         img.Mutate(x => x.Draw(Color.Lime, 1, glyphBuilder.TextBox));

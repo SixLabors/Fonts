@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Unicode;
 
@@ -27,8 +28,7 @@ public abstract class GlyphMetrics
         ushort unitsPerEM,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType)
     {
         this.FontMetrics = font;
         this.GlyphId = glyphId;
@@ -46,10 +46,10 @@ public abstract class GlyphMetrics
         this.TextAttributes = textAttributes;
         this.TextDecorations = textDecorations;
         this.GlyphType = glyphType;
-        this.GlyphColor = glyphColor;
 
         Vector2 offset = Vector2.Zero;
         Vector2 scaleFactor = new(unitsPerEM * 72F);
+
         if ((textAttributes & TextAttributes.Subscript) == TextAttributes.Subscript)
         {
             float units = this.UnitsPerEm;
@@ -80,8 +80,7 @@ public abstract class GlyphMetrics
         Vector2 offset,
         Vector2 scaleFactor,
         TextRun textRun,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType)
     {
         // This is used during cloning. Ensure anything that could be changed is copied.
         this.FontMetrics = font;
@@ -100,9 +99,8 @@ public abstract class GlyphMetrics
         this.TextAttributes = textRun.TextAttributes;
         this.TextDecorations = textRun.TextDecorations;
         this.GlyphType = glyphType;
-        this.GlyphColor = glyphColor;
-        this.ScaleFactor = new Vector2(scaleFactor.X, scaleFactor.Y);
-        this.Offset = new Vector2(offset.X, offset.Y);
+        this.ScaleFactor = scaleFactor;
+        this.Offset = offset;
         this.TextRun = textRun;
     }
 
@@ -165,11 +163,6 @@ public abstract class GlyphMetrics
     /// Gets the glyph type.
     /// </summary>
     public GlyphType GlyphType { get; }
-
-    /// <summary>
-    /// Gets the color of this glyph when the <see cref="GlyphType"/> is <see cref="GlyphType.ColrLayer"/>
-    /// </summary>
-    public GlyphColor? GlyphColor { get; }
 
     /// <inheritdoc cref="FontMetrics.UnitsPerEm"/>
     public ushort UnitsPerEm { get; }
@@ -247,36 +240,68 @@ public abstract class GlyphMetrics
     /// <param name="y">The y-advance.</param>
     internal void SetAdvanceHeight(ushort y) => this.AdvanceHeight = y;
 
+    /// <summary>
+    /// Calculates the glyph bounding box in device-space (Y-down) coordinates,
+    /// given the layout mode, render origin, and scaled point size.
+    /// </summary>
+    /// <remarks>
+    /// Steps:
+    /// 1) Select glyph bounds (or synthesize from advances if empty).
+    /// 2) Apply rotation if the layout mode is vertical-rotated.
+    /// 3) Convert from Y-up to Y-down coordinates.
+    /// 4) Scale and translate to device space using the specified origin.
+    /// </remarks>
+    /// <param name="mode">The glyph layout mode (horizontal, vertical, or vertical rotated).</param>
+    /// <param name="origin">The render-space origin in pixels.</param>
+    /// <param name="scaledPointSize">The scaled point size, mapped to pixels by the caller.</param>
+    /// <returns>
+    /// A <see cref="FontRectangle"/> representing the glyph bounds in device space.
+    /// </returns>
     internal FontRectangle GetBoundingBox(GlyphLayoutMode mode, Vector2 origin, float scaledPointSize)
     {
-        Vector2 scale = new Vector2(scaledPointSize) / this.ScaleFactor;
-        Bounds bounds = this.Bounds;
+        Vector2 scale = new(scaledPointSize / this.ScaleFactor.X, scaledPointSize / this.ScaleFactor.Y);
+        Bounds b = this.Bounds;
 
-        if (bounds.Equals(Bounds.Empty))
+        // 1) Substitute fallback bounds if the glyph has no outline.
+        if (b.Equals(Bounds.Empty))
         {
-            // For non-vertical layout, the advance width only is used to compute the bounding box
-            // as the advance height represents the maximum possible advance.
-            if (mode != GlyphLayoutMode.Vertical)
+            if (mode == GlyphLayoutMode.Vertical)
             {
-                bounds = new Bounds(0, 0, this.AdvanceWidth, 0);
+                // For vertical layout, set Y-up min = -AdvanceHeight to 0 so Y-down is 0..+AdvanceHeight.
+                b = new Bounds(0f, -this.AdvanceHeight, 0f, 0f);
             }
             else
             {
-                bounds = new Bounds(0, 0, 0, this.AdvanceHeight);
+                // For horizontal layout, just use advance width.
+                b = new Bounds(0f, 0f, this.AdvanceWidth, 0f);
             }
         }
 
-        // Rotate if required.
+        // 2) Rotate for vertical rotated layout.
+        Vector2 offsetUp = this.Offset;
         if (mode == GlyphLayoutMode.VerticalRotated)
         {
-            bounds = Bounds.Transform(in bounds, Matrix3x2.CreateRotation(-MathF.PI / 2F));
+            Matrix3x2 rot = Matrix3x2.CreateRotation(-MathF.PI / 2F);
+            b = Bounds.Transform(in b, rot);
+            offsetUp = Vector2.Transform(offsetUp, rot);
         }
 
-        Vector2 size = bounds.Size() * scale;
-        Vector2 location = (new Vector2(bounds.Min.X, bounds.Min.Y) + this.Offset) * scale * YInverter;
+        // 3) Flip Y to convert to device-space (Y-down).
+        Vector2 minDown = b.Min * YInverter;
+        Vector2 maxDown = b.Max * YInverter;
+        Vector2 offsetDown = offsetUp * YInverter;
 
-        location -= new Vector2(0, size.Y);
-        location += origin;
+        // Normalize bounds after flipping.
+        float minX = MathF.Min(minDown.X, maxDown.X);
+        float maxX = MathF.Max(minDown.X, maxDown.X);
+        float minY = MathF.Min(minDown.Y, maxDown.Y);
+        float maxY = MathF.Max(minDown.Y, maxDown.Y);
+
+        // 4) Apply scaling and origin translation.
+        Vector2 size = new(maxX - minX, maxY - minY);
+        size *= scale;
+        Vector2 location = origin + ((new Vector2(minX, minY) + offsetDown) * scale);
+
         return new FontRectangle(location.X, location.Y, size.X, size.Y);
     }
 
@@ -284,14 +309,75 @@ public abstract class GlyphMetrics
     /// Renders the glyph to the render surface in font units relative to a bottom left origin at (0,0)
     /// </summary>
     /// <param name="renderer">The surface renderer.</param>
+    /// <param name="graphemeIndex">The index of the grapheme this glyph is part of.</param>
     /// <param name="location">The location representing offset of the glyph outer bounds relative to the origin.</param>
     /// <param name="offset">The offset of the glyph vector relative to the top-left position of the glyph advance.</param>
     /// <param name="mode">The glyph layout mode to render using.</param>
     /// <param name="options">The options used to influence the rendering of this glyph.</param>
-    internal abstract void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options);
+    internal abstract void RenderTo(IGlyphRenderer renderer, int graphemeIndex, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options);
 
-    internal void RenderDecorationsTo(IGlyphRenderer renderer, Vector2 location, GlyphLayoutMode mode, Matrix3x2 transform, float scaledPPEM)
+    /// <summary>
+    /// Renders text decorations, such as underline, strikeout, and overline, for the current glyph to the specified
+    /// glyph renderer at the given location and layout mode.
+    /// </summary>
+    /// <remarks>When rendering in vertical layout modes, decoration positions are synthesized to match common
+    /// typographic conventions. The renderer may override which decorations are enabled. Overline thickness is derived
+    /// from underline metrics if not explicitly specified.</remarks>
+    /// <param name="renderer">The glyph renderer that receives the decoration drawing commands.</param>
+    /// <param name="location">The position, in device-independent coordinates, where the decorations should be rendered relative to the glyph.</param>
+    /// <param name="mode">The layout mode that determines the orientation and positioning of the decorations (e.g., horizontal, vertical,
+    /// or vertical rotated).</param>
+    /// <param name="transform">The transformation matrix applied to the decoration coordinates before rendering.</param>
+    /// <param name="scaledPPEM">The scaled pixels-per-em value used to adjust decoration size and positioning for the current rendering context.</param>
+    /// <param name="options">Additional text rendering options that may influence decoration appearance or behavior.</param>
+    protected void RenderDecorationsTo(
+        IGlyphRenderer renderer,
+        Vector2 location,
+        GlyphLayoutMode mode,
+        Matrix3x2 transform,
+        float scaledPPEM,
+        TextOptions options)
     {
+        bool perGlyph = options.DecorationPositioningMode == DecorationPositioningMode.GlyphFont;
+        FontMetrics fontMetrics = perGlyph
+            ? this.FontMetrics
+            : options.Font.FontMetrics;
+
+        // The scale factor for the decoration length is treated separately from other factors
+        // as it is used to scale the length of the decoration line.
+        // This must always be derived from the glyph's own scale factor to ensure correct length.
+        Vector2 lengthScaleFactor = this.ScaleFactor;
+
+        // These factors determine horizontal and vertical scaling and offset for the decorations.
+        // and are either per-glyph or derived from the common font metrics.
+        Vector2 scaleFactor;
+        Vector2 offset;
+        if (perGlyph)
+        {
+            // Use the pre-calculated values from this glyph.
+            scaleFactor = this.ScaleFactor;
+            offset = this.Offset;
+        }
+        else
+        {
+            // To ensure that we share the scaling when sharing font metrics we need to
+            // recalculate the offset and scale factor here using the common font metrics.
+            scaleFactor = new(fontMetrics.UnitsPerEm * 72F);
+            offset = Vector2.Zero;
+            if ((this.TextAttributes & TextAttributes.Subscript) == TextAttributes.Subscript)
+            {
+                float units = this.UnitsPerEm;
+                scaleFactor /= new Vector2(fontMetrics.SubscriptXSize / units, fontMetrics.SubscriptYSize / units);
+                offset = new(fontMetrics.SubscriptXOffset, fontMetrics.SubscriptYOffset < 0 ? fontMetrics.SubscriptYOffset : -fontMetrics.SubscriptYOffset);
+            }
+            else if ((this.TextAttributes & TextAttributes.Superscript) == TextAttributes.Superscript)
+            {
+                float units = this.UnitsPerEm;
+                scaleFactor /= new Vector2(fontMetrics.SuperscriptXSize / units, fontMetrics.SuperscriptYSize / units);
+                offset = new(fontMetrics.SuperscriptXOffset, fontMetrics.SuperscriptYOffset < 0 ? -fontMetrics.SuperscriptYOffset : fontMetrics.SuperscriptYOffset);
+            }
+        }
+
         bool isVerticalLayout = mode is GlyphLayoutMode.Vertical or GlyphLayoutMode.VerticalRotated;
         (Vector2 Start, Vector2 End, float Thickness) GetEnds(TextDecorations decorations, float thickness, float decoratorPosition)
         {
@@ -304,12 +390,13 @@ public abstract class GlyphMetrics
                     return (Vector2.Zero, Vector2.Zero, 0);
                 }
 
-                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+                Vector2 lengthScale = new Vector2(scaledPPEM) / lengthScaleFactor;
+                Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
 
                 // Undo the vertical offset applied when laying out the text.
-                Vector2 scaledOffset = (this.Offset + new Vector2(decoratorPosition, 0)) * scale;
+                Vector2 scaledOffset = (offset + new Vector2(decoratorPosition, 0)) * scale;
 
-                length *= scale.Y;
+                length *= lengthScale.Y;
                 thickness *= scale.X;
 
                 Vector2 tl = new(scaledOffset.X, scaledOffset.Y);
@@ -342,10 +429,11 @@ public abstract class GlyphMetrics
                     return (Vector2.Zero, Vector2.Zero, 0);
                 }
 
-                Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
-                Vector2 scaledOffset = (this.Offset + new Vector2(0, decoratorPosition)) * scale;
+                Vector2 lengthScale = new Vector2(scaledPPEM) / lengthScaleFactor;
+                Vector2 scale = new Vector2(scaledPPEM) / scaleFactor;
+                Vector2 scaledOffset = (offset + new Vector2(0, decoratorPosition)) * scale;
 
-                length *= scale.X;
+                length *= lengthScale.X;
                 thickness *= scale.Y;
 
                 Vector2 tl = new(scaledOffset.X, scaledOffset.Y);
@@ -379,18 +467,18 @@ public abstract class GlyphMetrics
         bool synthesized = mode == GlyphLayoutMode.Vertical;
         if ((decorations & TextDecorations.Underline) == TextDecorations.Underline)
         {
-            SetDecoration(TextDecorations.Underline, this.FontMetrics.UnderlineThickness, synthesized ? Math.Abs(this.FontMetrics.UnderlinePosition) : this.FontMetrics.UnderlinePosition);
+            SetDecoration(TextDecorations.Underline, fontMetrics.UnderlineThickness, synthesized ? Math.Abs(fontMetrics.UnderlinePosition) : fontMetrics.UnderlinePosition);
         }
 
         if ((decorations & TextDecorations.Strikeout) == TextDecorations.Strikeout)
         {
-            SetDecoration(TextDecorations.Strikeout, this.FontMetrics.StrikeoutSize, synthesized ? this.FontMetrics.UnitsPerEm * .5F : this.FontMetrics.StrikeoutPosition);
+            SetDecoration(TextDecorations.Strikeout, fontMetrics.StrikeoutSize, synthesized ? fontMetrics.UnitsPerEm * .5F : fontMetrics.StrikeoutPosition);
         }
 
         if ((decorations & TextDecorations.Overline) == TextDecorations.Overline)
         {
             // There's no built in metrics for overline thickness so use underline.
-            SetDecoration(TextDecorations.Overline, this.FontMetrics.UnderlineThickness, this.UnitsPerEm - this.FontMetrics.UnderlinePosition);
+            SetDecoration(TextDecorations.Overline, fontMetrics.UnderlineThickness, fontMetrics.UnitsPerEm - fontMetrics.UnderlinePosition);
         }
     }
 

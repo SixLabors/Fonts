@@ -1,21 +1,36 @@
-﻿// Copyright (c) Six Labors.
+// Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// Options for enabling color font support during layout and rendering.
+/// Specifies which color font formats are enabled for layout and rendering.
 /// </summary>
-[Flags] // flags is because in the future we might want to add support for additional color font storage formats and might want to support multiple at once.
+/// <remarks>
+/// This enumeration allows a renderer to select which OpenType color font
+/// technologies to honor when processing glyph runs. Multiple formats may be
+/// enabled simultaneously.
+/// </remarks>
+[Flags]
 public enum ColorFontSupport
 {
     /// <summary>
-    /// Don't try rendering color glyphs at all
+    /// Disable color font rendering entirely. All glyphs will be drawn as monochrome outlines.
     /// </summary>
     None = 0,
 
     /// <summary>
-    /// Render using glyphs accessed via Microsoft's COLR/CPAL table extensions to OpenType
+    /// Enable rendering of COLR version 0 color glyphs (layered solid colors defined by COLR/CPAL tables).
     /// </summary>
-    MicrosoftColrFormat = 1
+    ColrV0 = 1,
+
+    /// <summary>
+    /// Enable rendering of COLR version 1 color glyphs (paint graph-based color glyphs with gradients and transforms).
+    /// </summary>
+    ColrV1 = 2,
+
+    /// <summary>
+    /// Enable rendering of color glyphs stored as SVG documents in the OpenType SVG table.
+    /// </summary>
+    Svg = 4
 }

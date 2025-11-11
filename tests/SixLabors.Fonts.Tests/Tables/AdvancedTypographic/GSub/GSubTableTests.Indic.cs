@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Rendering;
+
 namespace SixLabors.Fonts.Tests.Tables.AdvancedTypographic.GSub;
 
 /// <content>

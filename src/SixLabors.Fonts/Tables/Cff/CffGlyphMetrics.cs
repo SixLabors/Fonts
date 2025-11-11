@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts.Tables.Cff;
@@ -26,8 +27,7 @@ internal class CffGlyphMetrics : GlyphMetrics
         ushort unitsPerEM,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType)
         : base(
               fontMetrics,
               glyphId,
@@ -40,8 +40,7 @@ internal class CffGlyphMetrics : GlyphMetrics
               unitsPerEM,
               textAttributes,
               textDecorations,
-              glyphType,
-              glyphColor)
+              glyphType)
         => this.glyphData = glyphData;
 
     internal CffGlyphMetrics(
@@ -58,8 +57,7 @@ internal class CffGlyphMetrics : GlyphMetrics
         Vector2 offset,
         Vector2 scaleFactor,
         TextRun textRun,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType)
         : base(
               fontMetrics,
               glyphId,
@@ -73,8 +71,7 @@ internal class CffGlyphMetrics : GlyphMetrics
               offset,
               scaleFactor,
               textRun,
-              glyphType,
-              glyphColor)
+              glyphType)
         => this.glyphData = glyphData;
 
     /// <inheritdoc/>
@@ -93,11 +90,16 @@ internal class CffGlyphMetrics : GlyphMetrics
             this.Offset,
             this.ScaleFactor,
             textRun,
-            this.GlyphType,
-            this.GlyphColor);
+            this.GlyphType);
 
     /// <inheritdoc/>
-    internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
+    internal override void RenderTo(
+        IGlyphRenderer renderer,
+        int graphemeIndex,
+        Vector2 location,
+        Vector2 offset,
+        GlyphLayoutMode mode,
+        TextOptions options)
     {
         // https://www.unicode.org/faq/unsup_char.html
         if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -118,25 +120,19 @@ internal class CffGlyphMetrics : GlyphMetrics
 
         Matrix3x2 rotation = GetRotationMatrix(mode);
         FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
-        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode);
+        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
         if (renderer.BeginGlyph(in box, in parameters))
         {
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
             {
-                if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)
-                {
-                    colorSurface.SetColor(this.GlyphColor.Value);
-                }
-
                 Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
                 Vector2 scaledOffset = this.Offset * scale;
                 this.glyphData.RenderTo(renderer, renderLocation, scale, scaledOffset, rotation);
             }
 
-            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM);
+            renderer.EndGlyph();
+            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM, options);
         }
-
-        renderer.EndGlyph();
     }
 }

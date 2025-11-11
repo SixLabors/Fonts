@@ -96,7 +96,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         out bool isDecomposed,
         [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics)
     {
-        List<GlyphMetrics> match = new();
+        List<GlyphMetrics> match = [];
         pointSize = 0;
         isSubstituted = false;
         isVerticalSubstitution = false;
@@ -122,7 +122,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                 }
 
                 pointSize = glyph.PointSize;
-                match.AddRange(glyph.Metrics);
+                match.Add(glyph.Metrics);
             }
             else if (match.Count > 0)
             {
@@ -148,11 +148,11 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         LayoutMode layoutMode = this.TextOptions.LayoutMode;
         ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
         bool hasFallBacks = false;
-        List<int> orphans = new();
+        List<int> orphans = [];
         for (int i = 0; i < this.glyphs.Count; i++)
         {
             GlyphPositioningData current = this.glyphs[i];
-            if (current.Metrics[0].GlyphType != GlyphType.Fallback)
+            if (current.Metrics.GlyphType != GlyphType.Fallback)
             {
                 // We've already got the correct glyph.
                 continue;
@@ -171,23 +171,19 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
 
                     // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
                     // cache the original in the font metrics and only update our collection.
-                    List<GlyphMetrics> metrics = new(data.Count);
                     TextAttributes textAttributes = shape.TextRun.TextAttributes;
                     TextDecorations textDecorations = shape.TextRun.TextDecorations;
-                    foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport))
+                    GlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport);
                     {
-                        if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
+                        // If the glyphs are fallbacks we don't want them as
+                        // we've already captured them on the first run.
+                        if (metrics.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
                         {
-                            // If the glyphs are fallbacks we don't want them as
-                            // we've already captured them on the first run.
                             hasFallBacks = true;
-                            break;
                         }
-
-                        metrics.Add(gm.CloneForRendering(shape.TextRun));
                     }
 
-                    if (metrics.Count > 0)
+                    if (!hasFallBacks)
                     {
                         if (j == 0)
                         {
@@ -196,15 +192,8 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                         }
 
                         // Track the number of inserted glyphs at the offset so we can correctly increment our position.
-                        ushort maxAdvancedWidth = 0;
-                        ushort maxAdvancedHeight = 0;
-                        for (int k = 0; k < metrics.Count; k++)
-                        {
-                            maxAdvancedWidth = Math.Max(maxAdvancedWidth, metrics[k].AdvanceWidth);
-                            maxAdvancedHeight = Math.Max(maxAdvancedHeight, metrics[k].AdvanceHeight);
-                        }
-
-                        this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = new(0, 0, maxAdvancedWidth, maxAdvancedHeight) }, pointSize, metrics.ToArray()));
+                        GlyphShapingBounds bounds = new(0, 0, metrics.AdvanceWidth, metrics.AdvanceHeight);
+                        this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = bounds }, pointSize, metrics.CloneForRendering(shape.TextRun)));
                         replacementCount++;
                     }
                 }
@@ -249,7 +238,6 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             GlyphShapingData data = collection.GetGlyphShapingData(i, out int offset);
             CodePoint codePoint = data.CodePoint;
             ushort id = data.GlyphId;
-            List<GlyphMetrics> metrics = new();
 
             // Perform a semi-deep clone (FontMetrics is not cloned) so we can continue to
             // cache the original in the font metrics and only update our collection.
@@ -264,28 +252,18 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                 isVertical |= feature == vrtr;
             }
 
-            foreach (GlyphMetrics gm in fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport))
-            {
-                if (gm.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
-                {
-                    hasFallBacks = true;
-                }
+            GlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport);
 
-                metrics.Add(gm.CloneForRendering(data.TextRun));
+            if (metrics.GlyphType == GlyphType.Fallback && !CodePoint.IsControl(codePoint))
+            {
+                hasFallBacks = true;
             }
 
-            if (metrics.Count > 0)
-            {
-                GlyphMetrics[] gm = metrics.ToArray();
-                if (isVertical)
-                {
-                    this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, 0, gm[0].AdvanceHeight) }, font.Size, gm));
-                }
-                else
-                {
-                    this.glyphs.Add(new(offset, new(data, true) { Bounds = new(0, 0, gm[0].AdvanceWidth, 0) }, font.Size, gm));
-                }
-            }
+            GlyphShapingBounds bounds = isVertical
+                ? new(0, 0, 0, metrics.AdvanceHeight)
+                : new(0, 0, metrics.AdvanceWidth, 0);
+
+            this.glyphs.Add(new(offset, new(data, true) { Bounds = bounds }, font.Size, metrics.CloneForRendering(data.TextRun)));
         }
 
         return !hasFallBacks;
@@ -307,20 +285,19 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         }
 
         ushort glyphId = data.GlyphId;
-        foreach (GlyphMetrics m in this.glyphs[index].Metrics)
-        {
-            if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
-            {
-                if (isDirtyXY)
-                {
-                    m.ApplyOffset((short)data.Bounds.X, (short)data.Bounds.Y);
-                }
+        GlyphMetrics m = this.glyphs[index].Metrics;
 
-                if (isDirtyWH)
-                {
-                    m.SetAdvanceWidth((ushort)data.Bounds.Width);
-                    m.SetAdvanceHeight((ushort)data.Bounds.Height);
-                }
+        if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
+        {
+            if (isDirtyXY)
+            {
+                m.ApplyOffset((short)data.Bounds.X, (short)data.Bounds.Y);
+            }
+
+            if (isDirtyWH)
+            {
+                m.SetAdvanceWidth((ushort)data.Bounds.Width);
+                m.SetAdvanceHeight((ushort)data.Bounds.Height);
             }
         }
     }
@@ -342,21 +319,20 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
 
         GlyphPositioningData glyph = this.glyphs[index];
-        foreach (GlyphMetrics m in glyph.Metrics)
+        GlyphMetrics m = glyph.Metrics;
+
+        if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
         {
-            if (m.GlyphId == glyphId && fontMetrics == m.FontMetrics)
+            bool isVertical = AdvancedTypographicUtils.IsVerticalGlyph(m.CodePoint, layoutMode);
+
+            foreach (Tag feature in glyph.Data.AppliedFeatures)
             {
-                bool isVertical = AdvancedTypographicUtils.IsVerticalGlyph(m.CodePoint, layoutMode);
-
-                foreach (Tag feature in glyph.Data.AppliedFeatures)
-                {
-                    isVertical |= feature == vert;
-                    isVertical |= feature == vrt2;
-                    isVertical |= feature == vrtr;
-                }
-
-                m.ApplyAdvance(dx, isVertical ? dy : (short)0);
+                isVertical |= feature == vert;
+                isVertical |= feature == vrt2;
+                isVertical |= feature == vrtr;
             }
+
+            m.ApplyAdvance(dx, isVertical ? dy : (short)0);
         }
     }
 
@@ -367,12 +343,12 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <param name="index">The zero-based index of the elements to position.</param>
     /// <returns><see langword="true"/> if the element should be processed; otherwise, <see langword="false"/>.</returns>
     public bool ShouldProcess(FontMetrics fontMetrics, int index)
-        => this.glyphs[index].Metrics[0].FontMetrics == fontMetrics;
+        => this.glyphs[index].Metrics.FontMetrics == fontMetrics;
 
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     private class GlyphPositioningData
     {
-        public GlyphPositioningData(int offset, GlyphShapingData data, float pointSize, GlyphMetrics[] metrics)
+        public GlyphPositioningData(int offset, GlyphShapingData data, float pointSize, GlyphMetrics metrics)
         {
             this.Offset = offset;
             this.Data = data;
@@ -386,7 +362,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
 
         public float PointSize { get; set; }
 
-        public GlyphMetrics[] Metrics { get; set; }
+        public GlyphMetrics Metrics { get; set; }
 
         private string DebuggerDisplay => FormattableString.Invariant($"Offset: {this.Offset}, Data: {this.Data.ToDebuggerDisplay()}");
     }

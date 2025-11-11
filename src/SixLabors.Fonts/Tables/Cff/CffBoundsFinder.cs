@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
@@ -63,6 +64,16 @@ internal class CffBoundsFinder : IGlyphRenderer
         }
     }
 
+    public void BeginLayer(Paint? paint, FillRule fillRule, ClipQuad? clipBounds)
+    {
+        // Do nothing.
+    }
+
+    public void EndLayer()
+    {
+        // Do nothing.
+    }
+
     public void LineTo(Vector2 point)
     {
         this.currentXY = point;
@@ -79,6 +90,14 @@ internal class CffBoundsFinder : IGlyphRenderer
 
         this.currentXY = point;
         this.UpdateMinMax(point.X, point.Y);
+    }
+
+    public void ArcTo(float radiusX, float radiusY, float xAxisRotation, bool largeArc, bool sweep, Vector2 point)
+    {
+        // TODO: check this. I feel like we should have to implement it.
+        this.currentXY = point;
+        this.UpdateMinMax(point.X, point.Y);
+        this.open = true;
     }
 
     public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)

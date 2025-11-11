@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <DebugSymbols>True</DebugSymbols>
@@ -29,11 +29,11 @@
     Comment out this constant declaration to disable all tests based upon image generation.
     This allows us to make breaking changes to the Fonts API without breaking the tests.
     -->
-    <DefineConstants>$(DefineConstants);SUPPORTS_DRAWING</DefineConstants>
-    <HasSupportForDrawing Condition="$(DefineConstants.Contains('SUPPORTS_DRAWING'))">true</HasSupportForDrawing>
+    <!--<DefineConstants>$(DefineConstants);SUPPORTS_DRAWING</DefineConstants>
+    <HasSupportForDrawing Condition="$(DefineConstants.Contains('SUPPORTS_DRAWING'))">true</HasSupportForDrawing>-->
   </PropertyGroup>
 
-  <ItemGroup Condition="$(HasSupportForDrawing) == false">
+  <ItemGroup Condition="$(HasSupportForDrawing) != true">
     <Compile Remove="ImageComparison\**" />
   </ItemGroup>
 
@@ -48,7 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" Condition="$(HasSupportForDrawing)" />
+    <!--<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" Condition="$(HasSupportForDrawing)" />-->
     <PackageReference Include="Pegasus" Version="4.1.0" PrivateAssets="all" />
     <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\DeterministicFiniteAutomata.cs" Link="Unicode\StateAutomation\DeterministicFiniteAutomata.cs" />
     <Compile Include="..\..\src\UnicodeTrieGenerator\StateAutomation\Compile.cs" Link="Unicode\StateAutomation\Compile.cs" />
