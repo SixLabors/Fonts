@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// <summary>
 /// This lookup provides a mechanism whereby any other lookup type’s subtables are stored at a 32-bit offset location in the GPOS table.
 /// This is needed if the total size of the subtables exceeds the 16-bit limits of the various other offsets in the GPOS table.
-/// In this specification, the subtable stored at the 32-bit offset location is termed the “extension” subtable.
+/// In this specification, the subtable stored at the 32-bit offset location is termed the "extension" subtable.
 /// <see href="https://docs.microsoft.com/en-us/typography/opentype/spec/gpos#lookuptype-9-extension-positioning"/>
 /// </summary>
 internal static class LookupType9SubTable

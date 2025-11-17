@@ -202,7 +202,7 @@ public abstract class FontMetrics
         TextDecorations textDecorations,
         LayoutMode layoutMode,
         ColorFontSupport support,
-        [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics);
+        [NotNullWhen(true)] out GlyphMetrics? metrics);
 
     /// <summary>
     /// Gets the unicode codepoints for which a glyph exists in the font.
@@ -221,15 +221,15 @@ public abstract class FontMetrics
     /// <param name="textAttributes">The text attributes applied to the glyph.</param>
     /// <param name="textDecorations">The text decorations applied to the glyph.</param>
     /// <param name="layoutMode">The layout mode applied to the glyph.</param>
-    /// <param name="support">Options for enabling color font support during layout and rendering.</param>
+    /// <param name="colorSupport">Options for enabling color font support during layout and rendering.</param>
     /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
-    internal abstract IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
+    internal abstract GlyphMetrics GetGlyphMetrics(
         CodePoint codePoint,
         ushort glyphId,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
         LayoutMode layoutMode,
-        ColorFontSupport support);
+        ColorFontSupport colorSupport);
 
     /// <summary>
     /// Tries to get the GSUB table.

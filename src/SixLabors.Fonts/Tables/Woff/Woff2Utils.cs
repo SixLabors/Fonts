@@ -442,21 +442,21 @@ internal static class Woff2Utils
 
             if ((flags & CompositeGlyphFlags.WeHaveAScale) != 0)
             {
-                float scale = reader.ReadF2dot14();
+                float scale = reader.ReadF2Dot14();
                 transform.M11 = scale;
                 transform.M22 = scale;
             }
             else if ((flags & CompositeGlyphFlags.WeHaveXAndYScale) != 0)
             {
-                transform.M11 = reader.ReadF2dot14();
-                transform.M22 = reader.ReadF2dot14();
+                transform.M11 = reader.ReadF2Dot14();
+                transform.M22 = reader.ReadF2Dot14();
             }
             else if ((flags & CompositeGlyphFlags.WeHaveATwoByTwo) != 0)
             {
-                transform.M11 = reader.ReadF2dot14();
-                transform.M12 = reader.ReadF2dot14();
-                transform.M21 = reader.ReadF2dot14();
-                transform.M22 = reader.ReadF2dot14();
+                transform.M11 = reader.ReadF2Dot14();
+                transform.M12 = reader.ReadF2Dot14();
+                transform.M21 = reader.ReadF2Dot14();
+                transform.M22 = reader.ReadF2Dot14();
             }
 
             var clone = GlyphVector.DeepClone(createdGlyphs[glyphIndex]);

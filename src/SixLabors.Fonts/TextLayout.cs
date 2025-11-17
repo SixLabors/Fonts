@@ -982,10 +982,9 @@ internal static class TextLayout
                 // Note: Not all glyphs in a font will have a codepoint associated with them. e.g. most compositions, ligatures, etc.
                 CodePoint codePoint = codePointEnumerator.Current;
                 if (isSubstituted &&
-                    metrics.Count == 1 &&
-                    glyph.FontMetrics.TryGetCodePoint(glyph.GlyphId, out CodePoint substitution))
+                    metrics.Count == 1)
                 {
-                    codePoint = substitution;
+                    codePoint = glyph.CodePoint;
                 }
 
                 // Determine whether the glyph advance should be calculated using vertical or horizontal metrics
@@ -1046,7 +1045,7 @@ internal static class TextLayout
                                   glyph.TextAttributes,
                                   glyph.TextDecorations,
                                   layoutMode,
-                                  options.ColorFontSupport)[0];
+                                  options.ColorFontSupport);
 
                             if (isHorizontalLayout || shouldRotate)
                             {
@@ -1135,17 +1134,33 @@ internal static class TextLayout
 
                     // Work out the scaled metrics for the glyph.
                     GlyphMetrics metric = metrics[i];
+
+                    // Convert design-space units to pixels based on the target point size.
+                    // ScaleFactor.Y represents the vertical UPEM scaling factor for this glyph.
                     float scaleY = pointSize / metric.ScaleFactor.Y;
+
+                    // Choose which metrics table to use based on layout orientation.
+                    // Horizontal is the default; vertical fonts use VMTX if available.
                     IMetricsHeader metricsHeader = isHorizontalLayout || shouldRotate
                         ? metric.FontMetrics.HorizontalMetrics
                         : metric.FontMetrics.VerticalMetrics;
+
+                    // Ascender and descender are stored in font design units, so scale them to pixels.
                     float ascender = metricsHeader.Ascender * scaleY;
 
-                    // Match how line height is calculated for browsers.
-                    // https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
+                    // Match browser line-height calculation logic.
+                    // Reference: https://www.w3.org/TR/CSS2/visudet.html#propdef-line-height
+                    // The line height in CSS is based on a multiple of the font-size (pointSize),
+                    // but fonts may define a custom LineHeight in their metrics that differs from UPEM.
                     float descender = Math.Abs(metricsHeader.Descender * scaleY);
                     float lineHeight = metric.UnitsPerEm * scaleY;
-                    float delta = ((metricsHeader.LineHeight * scaleY) - lineHeight) * .5F;
+
+                    // The delta centers the font's line box within the CSS line box when
+                    // LineHeight differs from the nominal font size.
+                    // This ensures vertical centering similar to browser rendering.
+                    float delta = ((metricsHeader.LineHeight * scaleY) - lineHeight) * 0.5F;
+
+                    // Adjust ascender and descender symmetrically by delta to preserve visual balance.
                     ascender -= delta;
                     descender -= delta;
 

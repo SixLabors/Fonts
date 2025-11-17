@@ -3,10 +3,9 @@
 
 using System.Globalization;
 using System.Numerics;
-using System.Text;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tests.Fakes;
 using SixLabors.Fonts.Unicode;
-using SixLabors.ImageSharp.Drawing.Processing;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -48,10 +47,8 @@ public class TextLayoutTests
     public void FakeFontGetGlyph()
     {
         Font font = CreateFont("hello world");
-
-        Assert.True(font.TryGetGlyphs(new CodePoint('h'), ColorFontSupport.None, out IReadOnlyList<Glyph> glyphs));
-        Glyph glyph = glyphs[0];
-        Assert.NotEqual(default, glyph);
+        Assert.True(font.TryGetGlyphs(new CodePoint('h'), ColorFontSupport.None, out Glyph? glyph));
+        Assert.NotNull(glyph);
     }
 
     [Theory]
@@ -555,7 +552,7 @@ public class TextLayoutTests
     public void CountLinesWrappingLength(string text, int wrappingLength, int usedLines)
     {
         Font font = CreateRenderingFont();
-        RichTextOptions options = new(font)
+        TextOptions options = new(font)
         {
             WrappingLength = wrappingLength
         };
@@ -1233,24 +1230,72 @@ public class TextLayoutTests
             renderer.RenderText(text, options);
             return glyphBuilder.GlyphBounds;
         }
+
         public readonly List<FontRectangle> GlyphBounds = new();
-        public CaptureGlyphBoundBuilder() { }
+
+        public CaptureGlyphBoundBuilder()
+        {
+        }
+
         bool IGlyphRenderer.BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
         {
             this.GlyphBounds.Add(bounds);
             return true;
         }
-        public void BeginFigure() { }
-        public void MoveTo(Vector2 point) { }
-        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point) { }
-        public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point) { }
-        public void LineTo(Vector2 point) { }
-        public void EndFigure() { }
-        public void EndGlyph() { }
-        public void EndText() { }
-        void IGlyphRenderer.BeginText(in FontRectangle bounds) { }
+
+        public void BeginFigure()
+        {
+        }
+
+        public void MoveTo(Vector2 point)
+        {
+        }
+
+        public void ArcTo(float radiusX, float radiusY, float rotation, bool largeArc, bool sweep, Vector2 point)
+        {
+        }
+
+        public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
+        {
+        }
+
+        public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
+        {
+        }
+
+        public void LineTo(Vector2 point)
+        {
+        }
+
+        public void EndFigure()
+        {
+        }
+
+        public void EndGlyph()
+        {
+        }
+
+        public void EndText()
+        {
+        }
+
+        void IGlyphRenderer.BeginText(in FontRectangle bounds)
+        {
+        }
+
         public TextDecorations EnabledDecorations() => TextDecorations.None;
-        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness) { }
+
+        public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+        {
+        }
+
+        public void BeginLayer(Paint paint, FillRule fillRule, ClipQuad? clipBounds)
+        {
+        }
+
+        public void EndLayer()
+        {
+        }
     }
 
     private static readonly Font OpenSansTTF = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(10);

@@ -318,7 +318,7 @@ public static class Program
                         new SolidBrush(Color.Yellow),
                         null)));
 
-                img[size.Width / 2, size.Height / 2] = Color.White;
+                img[size.Width / 2, size.Height / 2] = Color.White.ToPixel<Rgba32>();
 
                 string h = ha.ToString().Replace(nameof(HorizontalAlignment), string.Empty).ToLower();
                 string v = va.ToString().Replace(nameof(VerticalAlignment), string.Empty).ToLower();

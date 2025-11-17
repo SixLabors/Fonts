@@ -41,7 +41,7 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup>    
     <ProjectReference Include="..\..\src\SixLabors.Fonts\SixLabors.Fonts.csproj" />
   </ItemGroup>
 

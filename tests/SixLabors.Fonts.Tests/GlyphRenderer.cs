@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -18,9 +19,9 @@ public class GlyphRenderer : IGlyphRenderer
 
     public List<GlyphRendererParameters> GlyphKeys { get; } = new();
 
-    public bool BeginGlyph(in FontRectangle rect, in GlyphRendererParameters parameters)
+    public bool BeginGlyph(in FontRectangle bounds, in GlyphRendererParameters parameters)
     {
-        this.GlyphRects.Add(rect);
+        this.GlyphRects.Add(bounds);
         this.GlyphKeys.Add(this.parameters = parameters);
         return true;
     }
@@ -55,6 +56,12 @@ public class GlyphRenderer : IGlyphRenderer
         this.ControlPointsOnCurve.Add(point);
     }
 
+    public void ArcTo(float radiusX, float radiusY, float rotation, bool largeArc, bool sweep, Vector2 point)
+    {
+        this.ControlPoints.Add(point);
+        this.ControlPointsOnCurve.Add(point);
+    }
+
     public void QuadraticBezierTo(Vector2 secondControlPoint, Vector2 point)
     {
         this.ControlPoints.Add(secondControlPoint);
@@ -66,7 +73,7 @@ public class GlyphRenderer : IGlyphRenderer
     {
     }
 
-    public void BeginText(in FontRectangle rect)
+    public void BeginText(in FontRectangle bounds)
     {
     }
 
@@ -74,6 +81,14 @@ public class GlyphRenderer : IGlyphRenderer
         => this.parameters.TextRun.TextDecorations;
 
     public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+    {
+    }
+
+    public virtual void BeginLayer(Paint paint, FillRule fillRule, ClipQuad? clipBounds)
+    {
+    }
+
+    public void EndLayer()
     {
     }
 }

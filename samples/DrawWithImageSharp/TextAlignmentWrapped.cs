@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using SixLabors.Fonts;
+using SixLabors.Fonts.Rendering;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -18,7 +19,7 @@ public static class TextAlignmentWrapped
         const int wrappingWidth = 400;
         const int size = (wrappingWidth + (wrappingWidth / 3)) * 3;
 
-        using var img = new Image<Rgba32>(size, size);
+        using Image<Rgba32> img = new(size, size);
         img.Mutate(x => x.Fill(Color.White));
 
         foreach (VerticalAlignment v in Enum.GetValues(typeof(VerticalAlignment)))
@@ -66,9 +67,9 @@ public static class TextAlignmentWrapped
                 break;
         }
 
-        var glyphBuilder = new CustomGlyphBuilder();
+        CustomGlyphBuilder glyphBuilder = new();
 
-        var renderer = new TextRenderer(glyphBuilder);
+        TextRenderer renderer = new(glyphBuilder);
 
         TextOptions textOptions = new(font)
         {
@@ -85,8 +86,7 @@ public static class TextAlignmentWrapped
         IEnumerable<IPath> shapesToDraw = glyphBuilder.Paths;
         img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
 
-        Rgba32 f = Color.Fuchsia;
-        f.A = 128;
+        Color f = Color.Fuchsia.WithAlpha(.5F);
         img.Mutate(x => x.Fill(Color.Black, glyphBuilder.Paths));
         img.Mutate(x => x.Draw(f, 1, glyphBuilder.Boxes));
         img.Mutate(x => x.Draw(Color.Lime, 1, glyphBuilder.TextBox));

@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.2.32519.379
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11012.119
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_root", "_root", "{C317F1B1-D75E-4C6D-83EB-80367343E0D7}"
 	ProjectSection(SolutionItems) = preProject
@@ -73,8 +73,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnicodeTestData", "UnicodeT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SixLabors.Fonts.Benchmarks", "tests\SixLabors.Fonts.Benchmarks\SixLabors.Fonts.Benchmarks\SixLabors.Fonts.Benchmarks.csproj", "{FB8FDC5F-7FEB-4132-9133-C25E05C0B3D9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DrawWithImageSharp", "samples\DrawWithImageSharp\DrawWithImageSharp.csproj", "{3D3F6164-6DE9-433F-8B20-61A40F53F343}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,10 +99,6 @@ Global
 		{FB8FDC5F-7FEB-4132-9133-C25E05C0B3D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB8FDC5F-7FEB-4132-9133-C25E05C0B3D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB8FDC5F-7FEB-4132-9133-C25E05C0B3D9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3D3F6164-6DE9-433F-8B20-61A40F53F343}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3D3F6164-6DE9-433F-8B20-61A40F53F343}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3D3F6164-6DE9-433F-8B20-61A40F53F343}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3D3F6164-6DE9-433F-8B20-61A40F53F343}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -119,7 +113,6 @@ Global
 		{ABB6E111-672F-4846-88D6-C49C6CD01606} = {249327CF-1415-428B-8EEA-8C7705B1DE8F}
 		{654DD381-B93D-4459-B669-296F5D9172ED} = {56801022-D71A-4FBE-BC5B-CBA08E2284EC}
 		{FB8FDC5F-7FEB-4132-9133-C25E05C0B3D9} = {56801022-D71A-4FBE-BC5B-CBA08E2284EC}
-		{3D3F6164-6DE9-433F-8B20-61A40F53F343} = {71A3911C-D6B9-4EBE-9691-2FE28BDF462E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {38F4B47F-4F74-40F5-8707-C0EF1D0BDF92}

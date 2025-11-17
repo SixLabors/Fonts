@@ -202,7 +202,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// </returns>
     public bool TryGetGlyphShapingDataAtOffset(int offset, [NotNullWhen(true)] out IReadOnlyList<GlyphShapingData>? data)
     {
-        List<GlyphShapingData> match = new();
+        List<GlyphShapingData> match = [];
         for (int i = 0; i < this.glyphs.Count; i++)
         {
             if (this.glyphs[i].Offset == offset)
@@ -258,7 +258,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
             CodePoint currentCodePoint = this.glyphs[match].Data.CodePoint;
             if (!UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) || UnicodeUtility.ShouldRenderWhiteSpaceOnly(codePoint))
             {
-                if (!CodePoint.IsZeroWidthJoiner(currentCodePoint))
+                if (!CodePoint.IsZeroWidthJoiner(currentCodePoint) && !CodePoint.IsZeroWidthNonJoiner(currentCodePoint))
                 {
                     codePoint = currentCodePoint;
                 }
@@ -304,7 +304,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
             CodePoint currentCodePoint = this.glyphs[match].Data.CodePoint;
             if (!UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) || UnicodeUtility.ShouldRenderWhiteSpaceOnly(codePoint))
             {
-                if (!CodePoint.IsZeroWidthJoiner(currentCodePoint))
+                if (!CodePoint.IsZeroWidthJoiner(currentCodePoint) && !CodePoint.IsZeroWidthNonJoiner(currentCodePoint))
                 {
                     codePoint = currentCodePoint;
                 }

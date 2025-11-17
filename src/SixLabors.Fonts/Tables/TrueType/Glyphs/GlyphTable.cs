@@ -1,7 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.IO;
+using System.Collections.Concurrent;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Woff;
 
@@ -11,15 +11,26 @@ internal class GlyphTable : Table
 {
     internal const string TableName = "glyf";
     private readonly GlyphLoader[] loaders;
+    private readonly ConcurrentDictionary<int, GlyphVector> glyphCache;
 
     public GlyphTable(GlyphLoader[] glyphLoaders)
-        => this.loaders = glyphLoaders;
+    {
+        this.loaders = glyphLoaders;
+        this.glyphCache = new(Environment.ProcessorCount, glyphLoaders.Length);
+    }
 
     public int GlyphCount => this.loaders.Length;
 
     // TODO: Make this non-virtual
     internal virtual GlyphVector GetGlyph(int index)
-        => this.loaders[index].CreateGlyph(this);
+    {
+        if (index < 0 || index >= this.loaders.Length)
+        {
+            return default;
+        }
+
+        return this.glyphCache.GetOrAdd(index, i => this.loaders[i].CreateGlyph(this));
+    }
 
     public static GlyphTable Load(FontReader reader)
     {
@@ -44,7 +55,7 @@ internal class GlyphTable : Table
         EmptyGlyphLoader empty = new(fallbackEmptyBounds);
         int entryCount = locations.Length;
         int glyphCount = entryCount - 1; // last entry is a placeholder to the end of the table
-        var glyphs = new GlyphLoader[glyphCount];
+        GlyphLoader[] glyphs = new GlyphLoader[glyphCount];
 
         // Special case for WOFF2 format where all glyphs need to be read in one go.
         if (format is TableFormat.Woff2)

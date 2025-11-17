@@ -13,7 +13,7 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.OpenSansFile);
         Font font = family.CreateFont(12);
 
@@ -52,7 +52,7 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.NotoSansSCThinFile);
         Font font = family.CreateFont(12);
 
@@ -99,7 +99,7 @@ public class FontMetricsTests
     {
         // Compared to OpenTypeJS Font Inspector metrics
         // https://opentype.js.org/font-inspector.html
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.NotoSansKRRegular);
         Font font = family.CreateFont(12);
 
@@ -146,11 +146,11 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.OpenSansFile);
         Font font = family.CreateFont(12);
 
-        var codePoint = new CodePoint('A');
+        CodePoint codePoint = new('A');
 
         Assert.True(font.FontMetrics.TryGetGlyphMetrics(
             codePoint,
@@ -158,19 +158,18 @@ public class FontMetricsTests
             TextDecorations.None,
             LayoutMode.HorizontalTopBottom,
             ColorFontSupport.None,
-            out IReadOnlyList<GlyphMetrics> metrics));
-        GlyphMetrics glyphMetrics = metrics[0];
+            out GlyphMetrics metrics));
 
-        Assert.Equal(codePoint, glyphMetrics.CodePoint);
-        Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
-        Assert.Equal(new Vector2(glyphMetrics.UnitsPerEm * 72F), glyphMetrics.ScaleFactor);
-        Assert.Equal(1295, glyphMetrics.AdvanceWidth);
-        Assert.Equal(2789, glyphMetrics.AdvanceHeight);
-        Assert.Equal(1293, glyphMetrics.Width);
-        Assert.Equal(1468, glyphMetrics.Height);
-        Assert.Equal(0, glyphMetrics.LeftSideBearing);
-        Assert.Equal(721, glyphMetrics.TopSideBearing);
-        Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
+        Assert.Equal(codePoint, metrics.CodePoint);
+        Assert.Equal(font.FontMetrics.UnitsPerEm, metrics.UnitsPerEm);
+        Assert.Equal(new Vector2(metrics.UnitsPerEm * 72F), metrics.ScaleFactor);
+        Assert.Equal(1295, metrics.AdvanceWidth);
+        Assert.Equal(2789, metrics.AdvanceHeight);
+        Assert.Equal(1293, metrics.Width);
+        Assert.Equal(1468, metrics.Height);
+        Assert.Equal(0, metrics.LeftSideBearing);
+        Assert.Equal(721, metrics.TopSideBearing);
+        Assert.Equal(GlyphType.Standard, metrics.GlyphType);
     }
 
     [Fact]
@@ -178,11 +177,11 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.OpenSansFileWoff1);
         Font font = family.CreateFont(12);
 
-        var codePoint = new CodePoint('A');
+        CodePoint codePoint = new('A');
 
         Assert.True(font.FontMetrics.TryGetGlyphMetrics(
             codePoint,
@@ -190,19 +189,18 @@ public class FontMetricsTests
             TextDecorations.None,
             LayoutMode.HorizontalTopBottom,
             ColorFontSupport.None,
-            out IReadOnlyList<GlyphMetrics> metrics));
-        GlyphMetrics glyphMetrics = metrics[0];
+            out GlyphMetrics metrics));
 
-        Assert.Equal(codePoint, glyphMetrics.CodePoint);
-        Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
-        Assert.Equal(new Vector2(glyphMetrics.UnitsPerEm * 72F), glyphMetrics.ScaleFactor);
-        Assert.Equal(1295, glyphMetrics.AdvanceWidth);
-        Assert.Equal(2789, glyphMetrics.AdvanceHeight);
-        Assert.Equal(1293, glyphMetrics.Width);
-        Assert.Equal(1468, glyphMetrics.Height);
-        Assert.Equal(0, glyphMetrics.LeftSideBearing);
-        Assert.Equal(721, glyphMetrics.TopSideBearing);
-        Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
+        Assert.Equal(codePoint, metrics.CodePoint);
+        Assert.Equal(font.FontMetrics.UnitsPerEm, metrics.UnitsPerEm);
+        Assert.Equal(new Vector2(metrics.UnitsPerEm * 72F), metrics.ScaleFactor);
+        Assert.Equal(1295, metrics.AdvanceWidth);
+        Assert.Equal(2789, metrics.AdvanceHeight);
+        Assert.Equal(1293, metrics.Width);
+        Assert.Equal(1468, metrics.Height);
+        Assert.Equal(0, metrics.LeftSideBearing);
+        Assert.Equal(721, metrics.TopSideBearing);
+        Assert.Equal(GlyphType.Standard, metrics.GlyphType);
     }
 
     [Fact]
@@ -210,11 +208,11 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.OpenSansFileWoff2);
         Font font = family.CreateFont(12);
 
-        var codePoint = new CodePoint('A');
+        CodePoint codePoint = new('A');
 
         Assert.True(font.FontMetrics.TryGetGlyphMetrics(
             codePoint,
@@ -222,19 +220,18 @@ public class FontMetricsTests
             TextDecorations.None,
             LayoutMode.HorizontalTopBottom,
             ColorFontSupport.None,
-            out IReadOnlyList<GlyphMetrics> metrics));
-        GlyphMetrics glyphMetrics = metrics[0];
+            out GlyphMetrics metrics));
 
-        Assert.Equal(codePoint, glyphMetrics.CodePoint);
-        Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
-        Assert.Equal(new Vector2(glyphMetrics.UnitsPerEm * 72F), glyphMetrics.ScaleFactor);
-        Assert.Equal(1295, glyphMetrics.AdvanceWidth);
-        Assert.Equal(2789, glyphMetrics.AdvanceHeight);
-        Assert.Equal(1293, glyphMetrics.Width);
-        Assert.Equal(1468, glyphMetrics.Height);
-        Assert.Equal(0, glyphMetrics.LeftSideBearing);
-        Assert.Equal(721, glyphMetrics.TopSideBearing);
-        Assert.Equal(GlyphType.Standard, glyphMetrics.GlyphType);
+        Assert.Equal(codePoint, metrics.CodePoint);
+        Assert.Equal(font.FontMetrics.UnitsPerEm, metrics.UnitsPerEm);
+        Assert.Equal(new Vector2(metrics.UnitsPerEm * 72F), metrics.ScaleFactor);
+        Assert.Equal(1295, metrics.AdvanceWidth);
+        Assert.Equal(2789, metrics.AdvanceHeight);
+        Assert.Equal(1293, metrics.Width);
+        Assert.Equal(1468, metrics.Height);
+        Assert.Equal(0, metrics.LeftSideBearing);
+        Assert.Equal(721, metrics.TopSideBearing);
+        Assert.Equal(GlyphType.Standard, metrics.GlyphType);
     }
 
     [Fact]
@@ -242,11 +239,11 @@ public class FontMetricsTests
     {
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
-        var collection = new FontCollection();
+        FontCollection collection = new();
         FontFamily family = collection.Add(TestFonts.NotoSansSCThinFile);
         Font font = family.CreateFont(12);
 
-        var codePoint = new CodePoint('A');
+        CodePoint codePoint = new('A');
 
         Assert.True(font.FontMetrics.TryGetGlyphMetrics(
             codePoint,
@@ -254,19 +251,18 @@ public class FontMetricsTests
             TextDecorations.None,
             LayoutMode.HorizontalTopBottom,
             ColorFontSupport.None,
-            out IReadOnlyList<GlyphMetrics> metrics));
-        GlyphMetrics glyphMetrics = metrics[0];
+            out GlyphMetrics metrics));
 
         // Position 0.
-        Assert.Equal(codePoint, glyphMetrics.CodePoint);
-        Assert.Equal(font.FontMetrics.UnitsPerEm, glyphMetrics.UnitsPerEm);
-        Assert.Equal(new Vector2(glyphMetrics.UnitsPerEm * 72F), glyphMetrics.ScaleFactor);
-        Assert.Equal(364, glyphMetrics.AdvanceWidth);
-        Assert.Equal(1000, glyphMetrics.AdvanceHeight);
-        Assert.Equal(265, glyphMetrics.Width);
-        Assert.Equal(666, glyphMetrics.Height);
-        Assert.Equal(33, glyphMetrics.LeftSideBearing);
-        Assert.Equal(134, glyphMetrics.TopSideBearing);
-        Assert.Equal(GlyphType.Fallback, glyphMetrics.GlyphType);
+        Assert.Equal(codePoint, metrics.CodePoint);
+        Assert.Equal(font.FontMetrics.UnitsPerEm, metrics.UnitsPerEm);
+        Assert.Equal(new Vector2(metrics.UnitsPerEm * 72F), metrics.ScaleFactor);
+        Assert.Equal(364, metrics.AdvanceWidth);
+        Assert.Equal(1000, metrics.AdvanceHeight);
+        Assert.Equal(265, metrics.Width);
+        Assert.Equal(666, metrics.Height);
+        Assert.Equal(33, metrics.LeftSideBearing);
+        Assert.Equal(134, metrics.TopSideBearing);
+        Assert.Equal(GlyphType.Fallback, metrics.GlyphType);
     }
 }

@@ -142,43 +142,43 @@ public sealed class Font
     }
 
     /// <summary>
-    /// Gets the glyphs for the given codepoint.
+    /// Gets the glyph for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The code point of the character.</param>
-    /// <param name="glyphs">
-    /// When this method returns, contains the glyphs for the given codepoint if the glyphs
-    /// are found; otherwise the default value. This parameter is passed uninitialized.
+    /// <param name="glyph">
+    /// When this method returns, contains the glyph for the given codepoint if the glyph
+    /// is found; otherwise the default value. This parameter is passed uninitialized.
     /// </param>
     /// <returns>
     /// <see langword="true"/> if the face contains glyphs for the specified codepoint; otherwise, <see langword="false"/>.
     /// </returns>
-    public bool TryGetGlyphs(CodePoint codePoint, [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
-        => this.TryGetGlyphs(codePoint, TextAttributes.None, ColorFontSupport.None, out glyphs);
+    public bool TryGetGlyphs(CodePoint codePoint, [NotNullWhen(true)] out Glyph? glyph)
+        => this.TryGetGlyphs(codePoint, TextAttributes.None, ColorFontSupport.None, out glyph);
 
     /// <summary>
-    /// Gets the glyphs for the given codepoint.
+    /// Gets the glyph for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The code point of the character.</param>
     /// <param name="support">Options for enabling color font support during layout and rendering.</param>
-    /// <param name="glyphs">
-    /// When this method returns, contains the glyphs for the given codepoint and color support if the glyphs
-    /// are found; otherwise the default value. This parameter is passed uninitialized.
+    /// <param name="glyph">
+    /// When this method returns, contains the glyphs for the given codepoint and color support if the glyph
+    /// is found; otherwise the default value. This parameter is passed uninitialized.
     /// </param>
     /// <returns>
     /// <see langword="true"/> if the face contains glyphs for the specified codepoint; otherwise, <see langword="false"/>.
     /// </returns>
-    public bool TryGetGlyphs(CodePoint codePoint, ColorFontSupport support, [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
-        => this.TryGetGlyphs(codePoint, TextAttributes.None, support, out glyphs);
+    public bool TryGetGlyphs(CodePoint codePoint, ColorFontSupport support, [NotNullWhen(true)] out Glyph? glyph)
+        => this.TryGetGlyphs(codePoint, TextAttributes.None, support, out glyph);
 
     /// <summary>
-    /// Gets the glyphs for the given codepoint.
+    /// Gets the glyph for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The code point of the character.</param>
     /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
     /// <param name="support">Options for enabling color font support during layout and rendering.</param>
-    /// <param name="glyphs">
-    /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
-    /// are found; otherwise the default value. This parameter is passed uninitialized.
+    /// <param name="glyph">
+    /// When this method returns, contains the glyph for the given codepoint, attributes, and color support if the glyph
+    /// is found; otherwise the default value. This parameter is passed uninitialized.
     /// </param>
     /// <returns>
     /// <see langword="true"/> if the face contains glyphs for the specified codepoint; otherwise, <see langword="false"/>.
@@ -187,68 +187,62 @@ public sealed class Font
         CodePoint codePoint,
         TextAttributes textAttributes,
         ColorFontSupport support,
-        [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
-        => this.TryGetGlyphs(codePoint, textAttributes, TextDecorations.None, LayoutMode.HorizontalTopBottom, support, out glyphs);
+        [NotNullWhen(true)] out Glyph? glyph)
+        => this.TryGetGlyph(codePoint, textAttributes, TextDecorations.None, LayoutMode.HorizontalTopBottom, support, out glyph);
 
     /// <summary>
-    /// Gets the glyphs for the given codepoint.
+    /// Gets the glyph for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The code point of the character.</param>
     /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
     /// <param name="layoutMode">The layout mode to apply to the glyphs.</param>
     /// <param name="support">Options for enabling color font support during layout and rendering.</param>
-    /// <param name="glyphs">
-    /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
-    /// are found; otherwise the default value. This parameter is passed uninitialized.
+    /// <param name="glyph">
+    /// When this method returns, contains the glyph for the given codepoint, attributes, and color support if the glyph
+    /// is found; otherwise the default value. This parameter is passed uninitialized.
     /// </param>
     /// <returns>
     /// <see langword="true"/> if the face contains glyphs for the specified codepoint; otherwise, <see langword="false"/>.
     /// </returns>
-    public bool TryGetGlyphs(
+    public bool TryGetGlyph(
         CodePoint codePoint,
         TextAttributes textAttributes,
         LayoutMode layoutMode,
         ColorFontSupport support,
-        [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
-        => this.TryGetGlyphs(codePoint, textAttributes, TextDecorations.None, layoutMode, support, out glyphs);
+        [NotNullWhen(true)] out Glyph? glyph)
+        => this.TryGetGlyph(codePoint, textAttributes, TextDecorations.None, layoutMode, support, out glyph);
 
     /// <summary>
-    /// Gets the glyphs for the given codepoint.
+    /// Gets the glyph for the given codepoint.
     /// </summary>
     /// <param name="codePoint">The code point of the character.</param>
     /// <param name="textAttributes">The text attributes to apply to the glyphs.</param>
     /// <param name="textDecorations">The text decorations to apply to the glyphs.</param>
     /// <param name="layoutMode">The layout mode to apply to the glyphs.</param>
     /// <param name="support">Options for enabling color font support during layout and rendering.</param>
-    /// <param name="glyphs">
-    /// When this method returns, contains the glyphs for the given codepoint, attributes, and color support if the glyphs
-    /// are found; otherwise the default value. This parameter is passed uninitialized.
+    /// <param name="glyph">
+    /// When this method returns, contains the glyph for the given codepoint, attributes, and color support if the glyph
+    /// is found; otherwise the default value. This parameter is passed uninitialized.
     /// </param>
     /// <returns>
     /// <see langword="true"/> if the face contains glyphs for the specified codepoint; otherwise, <see langword="false"/>.
     /// </returns>
-    public bool TryGetGlyphs(
+    public bool TryGetGlyph(
         CodePoint codePoint,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
         LayoutMode layoutMode,
         ColorFontSupport support,
-        [NotNullWhen(true)] out IReadOnlyList<Glyph>? glyphs)
+        [NotNullWhen(true)] out Glyph? glyph)
     {
         TextRun textRun = new() { Start = 0, End = 1, Font = this, TextAttributes = textAttributes, TextDecorations = textDecorations };
-        if (this.FontMetrics.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out IReadOnlyList<GlyphMetrics>? metrics))
+        if (this.FontMetrics.TryGetGlyphMetrics(codePoint, textAttributes, textDecorations, layoutMode, support, out GlyphMetrics? metrics))
         {
-            List<Glyph> g = new();
-            foreach (GlyphMetrics metric in metrics)
-            {
-                g.Add(new(metric.CloneForRendering(textRun), this.Size));
-            }
-
-            glyphs = g;
+            glyph = new(metrics.CloneForRendering(textRun), this.Size);
             return true;
         }
 
-        glyphs = default;
+        glyph = null;
         return false;
     }
 

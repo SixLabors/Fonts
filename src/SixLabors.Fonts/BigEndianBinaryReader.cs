@@ -9,7 +9,7 @@ using System.Text;
 namespace SixLabors.Fonts;
 
 /// <summary>
-/// BinaryReader using big-endian encoding.
+/// A binary reader that reads in big-endian format.
 /// </summary>
 [DebuggerDisplay("Start: {StartOfStream}, Position: {BaseStream.Position}")]
 internal sealed class BigEndianBinaryReader : IDisposable
@@ -19,6 +19,7 @@ internal sealed class BigEndianBinaryReader : IDisposable
     /// </summary>
     private readonly byte[] buffer = new byte[16];
 
+    private readonly long startOfStream;
     private readonly bool leaveOpen;
 
     /// <summary>
@@ -31,11 +32,9 @@ internal sealed class BigEndianBinaryReader : IDisposable
     public BigEndianBinaryReader(Stream stream, bool leaveOpen)
     {
         this.BaseStream = stream;
-        this.StartOfStream = stream.Position;
+        this.startOfStream = stream.Position;
         this.leaveOpen = leaveOpen;
     }
-
-    private long StartOfStream { get; }
 
     /// <summary>
     /// Gets the underlying stream of the EndianBinaryReader.
@@ -52,7 +51,7 @@ internal sealed class BigEndianBinaryReader : IDisposable
         // If SeekOrigin.Begin, the offset will be set to the start of stream position.
         if (origin == SeekOrigin.Begin)
         {
-            offset += this.StartOfStream;
+            offset += this.startOfStream;
         }
 
         this.BaseStream.Seek(offset, origin);
@@ -68,6 +67,13 @@ internal sealed class BigEndianBinaryReader : IDisposable
         return this.buffer[0];
     }
 
+    public TEnum ReadByte<TEnum>()
+        where TEnum : struct, Enum
+    {
+        TryConvert(this.ReadByte(), out TEnum value);
+        return value;
+    }
+
     /// <summary>
     /// Reads a single signed byte from the stream.
     /// </summary>
@@ -78,9 +84,9 @@ internal sealed class BigEndianBinaryReader : IDisposable
         return unchecked((sbyte)this.buffer[0]);
     }
 
-    public float ReadF2dot14()
+    public float ReadF2Dot14()
     {
-        const float f2Dot14ToFloat = 16384.0f;
+        const float f2Dot14ToFloat = 16384F;
         return this.ReadInt16() / f2Dot14ToFloat;
     }
 
@@ -103,17 +109,25 @@ internal sealed class BigEndianBinaryReader : IDisposable
         return value;
     }
 
+    /// <summary>
+    /// Reads a signed 16-bit integer in big-endian order, representing an FWORD value from the current stream position.
+    /// </summary>
+    /// <returns>A 16-bit signed integer read from the stream, interpreted as an FWORD value.</returns>
     public short ReadFWORD() => this.ReadInt16();
 
     public short[] ReadFWORDArray(int length) => this.ReadInt16Array(length);
 
+    /// <summary>
+    /// Reads an unsigned 16-bit integer (UFWORD) from the current stream and advances the position by two bytes.
+    /// </summary>
+    /// <returns>An unsigned 16-bit integer read from the current stream.</returns>
     public ushort ReadUFWORD() => this.ReadUInt16();
 
     /// <summary>
-    /// Reads a fixed 32-bit value from the stream.
-    /// 4 bytes are read.
+    /// Reads a 32-bit fixed-point number from the underlying data source and returns it as a single-precision
+    /// floating-point value.
     /// </summary>
-    /// <returns>The 32-bit value read.</returns>
+    /// <returns>A <see cref="float"/> representing the fixed-point value read from the data source.</returns>
     public float ReadFixed()
     {
         this.ReadInternal(this.buffer, 4);
@@ -121,10 +135,9 @@ internal sealed class BigEndianBinaryReader : IDisposable
     }
 
     /// <summary>
-    /// Reads a 32-bit signed integer from the stream, using the bit converter
-    /// for this reader. 4 bytes are read.
+    /// Reads a 4-byte signed integer from the current stream.
     /// </summary>
-    /// <returns>The 32-bit integer read</returns>
+    /// <returns>The 32-bit signed integer read from the stream.</returns>
     public int ReadInt32()
     {
         this.ReadInternal(this.buffer, 4);
@@ -273,11 +286,13 @@ internal sealed class BigEndianBinaryReader : IDisposable
     /// for this reader. 3 bytes are read.
     /// </summary>
     /// <returns>The 24-bit unsigned integer read.</returns>
-    public int ReadUInt24()
+    public uint ReadUInt24()
     {
         byte highByte = this.ReadByte();
-        return (highByte << 16) | this.ReadUInt16();
+        return (uint)((highByte << 16) | this.ReadUInt16());
     }
+
+    public uint ReadOffset24() => this.ReadUInt24();
 
     /// <summary>
     /// Reads a 32-bit unsigned integer from the stream, using the bit converter

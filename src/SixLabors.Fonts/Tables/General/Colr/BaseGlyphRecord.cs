@@ -3,7 +3,7 @@
 
 namespace SixLabors.Fonts.Tables.General.Colr;
 
-internal sealed class BaseGlyphRecord
+internal readonly struct BaseGlyphRecord
 {
     public BaseGlyphRecord(ushort glyphId, ushort firstLayerIndex, ushort layerCount)
     {
@@ -17,17 +17,4 @@ internal sealed class BaseGlyphRecord
     public ushort FirstLayerIndex { get; }
 
     public ushort LayerCount { get; }
-}
-
-internal sealed class LayerRecord
-{
-    public LayerRecord(ushort glyphId, ushort paletteIndex)
-    {
-        this.GlyphId = glyphId;
-        this.PaletteIndex = paletteIndex;
-    }
-
-    public ushort GlyphId { get; }
-
-    public ushort PaletteIndex { get; }
 }

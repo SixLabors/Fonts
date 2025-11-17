@@ -7,7 +7,9 @@ using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tests.TestUtilities;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Drawing.Shapes.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 #endif
@@ -20,6 +22,7 @@ internal static class TextLayoutTestUtilities
         string text,
         TextOptions options,
         float percentageTolerance = 0.05F,
+        bool includeGeometry = false,
         [CallerMemberName] string test = "",
         params object[] properties)
     {
@@ -36,11 +39,18 @@ internal static class TextLayoutTestUtilities
         int imageWidth = isVertical ? width : Math.Max(width, wrappingLength + 1);
         int imageHeight = isVertical ? Math.Max(height, wrappingLength + 1) : height;
 
-        using Image<Rgba32> img = new(imageWidth, imageHeight, Color.White);
+        List<object> extended = properties?.ToList() ?? new();
+        if (options.WrappingLength > 0)
+        {
+            extended.Insert(0, options.WrappingLength);
+        }
+
+        // First render the text using the rich text renderer.
+        using Image<Rgba32> img = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
 
         img.Mutate(ctx => ctx.DrawText(FromTextOptions(options), text, Color.Black));
 
-        if (wrappingLength > 0)
+        if (options.WrappingLength > 0)
         {
             if (!options.LayoutMode.IsHorizontal())
             {
@@ -50,23 +60,38 @@ internal static class TextLayoutTestUtilities
             {
                 img.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
             }
+        }
 
-            if (properties.Any())
+        img.DebugSave("png", test, properties: extended.ToArray());
+        img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
+
+        if (!includeGeometry)
+        {
+            return;
+        }
+
+        // Now render the text using geometry-only renderer.
+        extended.Insert(0, "G");
+        using Image<Rgba32> img2 = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
+
+        IReadOnlyList<GlyphPathCollection> glyphs = TextBuilder.GenerateGlyphs2(text, options);
+
+        img2.Mutate(ctx => ctx.Fill(Color.Black, glyphs));
+
+        if (options.WrappingLength > 0)
+        {
+            if (!options.LayoutMode.IsHorizontal())
             {
-                List<object> extended = properties.ToList();
-                extended.Insert(0, options.WrappingLength);
-                img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
+                img2.Mutate(x => x.DrawLine(Color.Red, 1, new(0, wrappingLength), new(width, wrappingLength)));
             }
             else
             {
-                img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: new { options.WrappingLength });
+                img2.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
             }
         }
-        else
-        {
-            img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: properties);
-        }
 
+        img2.DebugSave("png", test, properties: extended.ToArray());
+        img2.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
 #endif
     }
 
@@ -90,6 +115,7 @@ internal static class TextLayoutTestUtilities
             VerticalAlignment = options.VerticalAlignment,
             LayoutMode = options.LayoutMode,
             KerningMode = options.KerningMode,
+            DecorationPositioningMode = options.DecorationPositioningMode,
             ColorFontSupport = options.ColorFontSupport,
             FeatureTags = new List<Tag>(options.FeatureTags),
         };
@@ -105,9 +131,14 @@ internal static class TextLayoutTestUtilities
                     Start = run.Start,
                     End = run.End,
                     TextAttributes = run.TextAttributes,
-                    TextDecorations = run.TextDecorations
+                    TextDecorations = run.TextDecorations,
+                    StrikeoutPen = new SolidPen(Color.Green, 11.3334F),
+                    UnderlinePen = new SolidPen(Color.Blue, 15.5555F),
+                    OverlinePen = new SolidPen(Color.Purple, 13.7777F)
                 });
             }
+
+            result.TextRuns = runs;
         }
 
         return result;

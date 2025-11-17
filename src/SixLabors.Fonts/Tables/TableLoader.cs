@@ -9,6 +9,7 @@ using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Tables.General.Post;
+using SixLabors.Fonts.Tables.General.Svg;
 using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Tables.TrueType.Hinting;
@@ -17,9 +18,9 @@ namespace SixLabors.Fonts.Tables;
 
 internal class TableLoader
 {
-    private readonly Dictionary<string, Func<FontReader, Table?>> loaders = new();
-    private readonly Dictionary<Type, string> types = new();
-    private readonly Dictionary<Type, Func<FontReader, Table?>> typesLoaders = new();
+    private readonly Dictionary<string, Func<FontReader, Table?>> loaders = [];
+    private readonly Dictionary<Type, string> types = [];
+    private readonly Dictionary<Type, Func<FontReader, Table?>> typesLoaders = [];
 
     public TableLoader()
     {
@@ -51,6 +52,7 @@ internal class TableLoader
         this.Register(GVarTable.TableName, GVarTable.Load);
         this.Register(FVarTable.TableName, FVarTable.Load);
         this.Register(HVarTable.TableName, HVarTable.Load);
+        this.Register(SvgTable.TableName, SvgTable.Load);
     }
 
     public static TableLoader Default { get; } = new();

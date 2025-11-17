@@ -3,7 +3,7 @@
 
 namespace UnicodeTrieGenerator.StateAutomation;
 
-internal class State
+internal sealed class State
 {
     public State(ICollection<INode> positions, int length)
     {

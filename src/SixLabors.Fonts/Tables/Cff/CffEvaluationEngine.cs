@@ -1,10 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.Cff;
@@ -57,7 +56,7 @@ internal ref struct CffEvaluationEngine
 
         this.globalBias = CalculateBias(this.globalSubrBuffers.Length);
         this.localBias = CalculateBias(this.localSubrBuffers.Length);
-        this.trans = new();
+        this.trans = [];
 
         this.x = 0;
         this.y = 0;
