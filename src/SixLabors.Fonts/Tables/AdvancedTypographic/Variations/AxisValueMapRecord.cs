@@ -25,8 +25,8 @@ internal class AxisValueMapRecord
         // +-----------------+----------------------------------------+-------------------------------------------------------------------------+
         // | F2DOT14         | toCoordinate                           | The modified, normalized coordinate value.                              |
         // +-----------------+----------------------------------------+-------------------------------------------------------------------------+
-        float fromCoordinate = reader.ReadF2dot14();
-        float toCoordinate = reader.ReadF2dot14();
+        float fromCoordinate = reader.ReadF2Dot14();
+        float toCoordinate = reader.ReadF2Dot14();
 
         return new AxisValueMapRecord(fromCoordinate, toCoordinate);
     }

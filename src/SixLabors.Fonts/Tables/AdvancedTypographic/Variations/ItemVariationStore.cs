@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.IO;
-
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 /// <summary>
@@ -53,7 +51,7 @@ internal class ItemVariationStore
             throw new InvalidFontFileException("Invalid variation region list offset");
         }
 
-        var itemVariations = new ItemVariationData[itemVariationDataCount];
+        ItemVariationData[] itemVariations = new ItemVariationData[itemVariationDataCount];
         long itemVariationsOffset = reader.BaseStream.Position;
         for (int i = 0; i < itemVariationDataCount; i++)
         {
@@ -64,13 +62,12 @@ internal class ItemVariationStore
                 throw new InvalidFontFileException("Bad offset to variation data subtable");
             }
 
-            var itemVariationData = ItemVariationData.Load(reader, offset + variationDataOffset);
-            itemVariations[i] = itemVariationData;
+            itemVariations[i] = ItemVariationData.Load(reader, offset + variationDataOffset);
 
             reader.BaseStream.Position = itemVariationsOffset;
         }
 
-        var variationRegionList = VariationRegionList.Load(reader, offset + variationRegionListOffset);
+        VariationRegionList variationRegionList = VariationRegionList.Load(reader, offset + variationRegionListOffset);
 
         return new ItemVariationStore(variationRegionList, itemVariations);
     }

@@ -95,7 +95,7 @@ internal class GVarTable : Table
         {
             for (int j = 0; j < axisCount; j++)
             {
-                sharedTuples[i, j] = reader.ReadF2dot14();
+                sharedTuples[i, j] = reader.ReadF2Dot14();
             }
         }
 

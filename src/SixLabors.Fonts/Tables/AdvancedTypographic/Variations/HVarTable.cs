@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 /// <summary>
@@ -78,7 +76,7 @@ internal class HVarTable : Table
             throw new NotSupportedException("Only version 1 of hvar table is supported");
         }
 
-        var itemVariationStore = ItemVariationStore.Load(reader, itemVariationStoreOffset);
+        ItemVariationStore itemVariationStore = ItemVariationStore.Load(reader, itemVariationStoreOffset);
 
         DeltaSetIndexMap[] advanceWidthMapping = DeltaSetIndexMap.Load(reader, advanceWidthMappingOffset);
         DeltaSetIndexMap[] lsbMapping = DeltaSetIndexMap.Load(reader, lsbMappingOffset);

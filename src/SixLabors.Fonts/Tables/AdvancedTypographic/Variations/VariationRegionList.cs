@@ -55,9 +55,9 @@ internal class VariationRegionList
             variationRegions[i] = new RegionAxisCoordinates[axisCount];
             for (int j = 0; j < axisCount; j++)
             {
-                float startCoord = reader.ReadF2dot14();
-                float peakCoord = reader.ReadF2dot14();
-                float endCoord = reader.ReadF2dot14();
+                float startCoord = reader.ReadF2Dot14();
+                float peakCoord = reader.ReadF2Dot14();
+                float endCoord = reader.ReadF2Dot14();
 
                 if (startCoord > peakCoord || peakCoord > endCoord)
                 {

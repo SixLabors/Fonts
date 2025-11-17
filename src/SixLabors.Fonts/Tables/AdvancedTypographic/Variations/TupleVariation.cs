@@ -82,7 +82,7 @@ internal class TupleVariation
             embeddedPeak = new float[axisCount];
             for (int i = 0; i < axisCount; i++)
             {
-                embeddedPeak[i] = reader.ReadF2dot14();
+                embeddedPeak[i] = reader.ReadF2Dot14();
                 bytesRead += 2;
             }
         }
@@ -94,14 +94,14 @@ internal class TupleVariation
             intermediateStartRegion = new float[axisCount];
             for (int i = 0; i < axisCount; i++)
             {
-                intermediateStartRegion[i] = reader.ReadF2dot14();
+                intermediateStartRegion[i] = reader.ReadF2Dot14();
                 bytesRead += 2;
             }
 
             intermediateEndRegion = new float[axisCount];
             for (int i = 0; i < axisCount; i++)
             {
-                intermediateEndRegion[i] = reader.ReadF2dot14();
+                intermediateEndRegion[i] = reader.ReadF2Dot14();
                 bytesRead += 2;
             }
         }

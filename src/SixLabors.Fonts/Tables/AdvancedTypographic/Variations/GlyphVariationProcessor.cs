@@ -48,7 +48,7 @@ internal class GlyphVariationProcessor
         this.gVar = gVar;
         this.hVar = hVar;
         this.normalizedCoords = this.NormalizeDefaultCoords();
-        this.blendVectors = new Dictionary<ItemVariationData, float[]>();
+        this.blendVectors = [];
     }
 
     public void TransformPoints(ushort glyphId, ref GlyphVector glyphPoints)
