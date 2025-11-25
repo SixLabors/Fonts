@@ -5,10 +5,10 @@ using System.Text;
 
 namespace SixLabors.Fonts.Tests.Issues;
 
-public class Issues_469
+public class Issues_470
 {
     [Fact]
-    public void Test_Issue_469()
+    public void Test_Issue_470()
     {
         StringBuilder stringBuilder = new();
         stringBuilder.AppendLine("Latin: The quick brown fox jumps over the lazy dog.")
@@ -26,14 +26,7 @@ public class Issues_469
 
         FontCollection fontCollection = new();
         string arial = fontCollection.Add(TestFonts.Arial).Name;
-        string cousine = fontCollection.Add(TestFonts.CousineRegular).Name;
-        string hind = fontCollection.Add(TestFonts.HindRegular).Name;
-        string nanumGothicCoding = fontCollection.Add(TestFonts.NanumGothicCodingRegular).Name;
-        string inconsolata = fontCollection.Add(TestFonts.InconsolataRegular).Name;
-        string notoNaskhArabic = fontCollection.Add(TestFonts.NotoNaskhArabicRegular).Name;
-        string notoSansJpThin = fontCollection.Add(TestFonts.NotoSansJPRegular).Name;
-        string notoSansScThin = fontCollection.Add(TestFonts.NotoSansSCRegular).Name;
-        string sarabun = fontCollection.Add(TestFonts.SarabunRegular).Name;
+        string sofia = fontCollection.Add(TestFonts.SofiaSansCondensedLight).Name;
 
         FontFamily mainFontFamily = fontCollection.Get(arial);
         Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
@@ -42,14 +35,7 @@ public class Issues_469
         {
             FallbackFontFamilies =
             [
-                fontCollection.Get(inconsolata),
-                fontCollection.Get(nanumGothicCoding),
-                fontCollection.Get(cousine),
-                fontCollection.Get(notoSansScThin),
-                fontCollection.Get(notoSansJpThin),
-                fontCollection.Get(notoNaskhArabic),
-                fontCollection.Get(sarabun),
-                fontCollection.Get(hind),
+                fontCollection.Get(sofia),
             ],
         };
 

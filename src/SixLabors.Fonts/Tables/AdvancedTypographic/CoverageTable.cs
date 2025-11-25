@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using static SixLabors.Fonts.Tables.AdvancedTypographic.CoverageFormat2Table;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
 /// <summary>
@@ -23,7 +25,10 @@ internal abstract class CoverageTable
         {
             1 => CoverageFormat1Table.Load(reader),
             2 => CoverageFormat2Table.Load(reader),
-            _ => throw new InvalidFontFileException($"Invalid value for 'coverageFormat' {coverageFormat}. Should be '1' or '2'.")
+
+            // Harfbuzz (Coverage.hh) treats this as an empty table and does not throw.
+            // SofiaSans Condensed can trigger this. See https://github.com/SixLabors/Fonts/issues/470
+            _ => new EmptyCoverageTable()
         };
     }
 
@@ -123,5 +128,10 @@ internal sealed class CoverageFormat2Table : CoverageTable
         }
 
         return new CoverageFormat2Table(records);
+    }
+
+    internal sealed class EmptyCoverageTable : CoverageTable
+    {
+        public override int CoverageIndexOf(ushort glyphId) => -1;
     }
 }

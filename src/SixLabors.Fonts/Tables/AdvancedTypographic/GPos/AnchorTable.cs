@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 [DebuggerDisplay("X: {XCoordinate}, Y: {YCoordinate}")]
 internal abstract class AnchorTable
 {
-    private static readonly AnchorTable Empty = new EmptyAnchor();
+    private static readonly AnchorTable EmptyAnchorTable = new EmptyAnchor();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AnchorTable"/> class.
@@ -53,9 +53,9 @@ internal abstract class AnchorTable
             2 => AnchorFormat2.Load(reader),
             3 => AnchorFormat3.Load(reader),
 
-            // Harfbuzz (Anchor.hh) and FontKit appear to treat this as a default anchor and do not throw.
+            // Harfbuzz (Anchor.hh) treats this as an empty table and does not throw..
             // NotoSans Regular can trigger this. See https://github.com/SixLabors/Fonts/issues/417
-            _ => Empty,
+            _ => EmptyAnchorTable,
         };
     }
 
