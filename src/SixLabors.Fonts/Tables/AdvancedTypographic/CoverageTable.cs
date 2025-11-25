@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using static SixLabors.Fonts.Tables.AdvancedTypographic.CoverageFormat2Table;
+
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
 /// <summary>
@@ -23,13 +25,16 @@ internal abstract class CoverageTable
         {
             1 => CoverageFormat1Table.Load(reader),
             2 => CoverageFormat2Table.Load(reader),
-            _ => throw new InvalidFontFileException($"Invalid value for 'coverageFormat' {coverageFormat}. Should be '1' or '2'.")
+
+            // Harfbuzz (Coverage.hh) treats this as an empty table and does not throw.
+            // SofiaSans Condensed can trigger this. See https://github.com/SixLabors/Fonts/issues/470
+            _ => EmptyCoverageTable.Instance
         };
     }
 
     public static CoverageTable[] LoadArray(BigEndianBinaryReader reader, long offset, ReadOnlySpan<ushort> coverageOffsets)
     {
-        var tables = new CoverageTable[coverageOffsets.Length];
+        CoverageTable[] tables = new CoverageTable[coverageOffsets.Length];
         for (int i = 0; i < tables.Length; i++)
         {
             tables[i] = Load(reader, offset + coverageOffsets[i]);
@@ -103,7 +108,7 @@ internal sealed class CoverageFormat2Table : CoverageTable
         // | RangeRecord | rangeRecords[rangeCount] | Array of glyph ranges — ordered by startGlyphID. |
         // +-------------+--------------------------+--------------------------------------------------+
         ushort rangeCount = reader.ReadUInt16();
-        var records = new CoverageRangeRecord[rangeCount];
+        CoverageRangeRecord[] records = new CoverageRangeRecord[rangeCount];
 
         for (int i = 0; i < records.Length; i++)
         {
@@ -123,5 +128,16 @@ internal sealed class CoverageFormat2Table : CoverageTable
         }
 
         return new CoverageFormat2Table(records);
+    }
+
+    internal sealed class EmptyCoverageTable : CoverageTable
+    {
+        private EmptyCoverageTable()
+        {
+        }
+
+        public static EmptyCoverageTable Instance { get; } = new();
+
+        public override int CoverageIndexOf(ushort glyphId) => -1;
     }
 }

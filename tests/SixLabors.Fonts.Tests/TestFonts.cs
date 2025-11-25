@@ -285,6 +285,12 @@ public static class TestFonts
 
     public static string SarabunRegular => GetFullPath("Sarabun-Regular.ttf");
 
+    public static string NotoSansArabicRegular => GetFullPath("NotoSansArabic-Regular.ttf");
+
+    public static string Consola => GetFullPath("consola.ttf");
+
+    public static string SofiaSansCondensedLight => GetFullPath("SofiaSansCondensed-ExtraLight-Regular.ttf");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);
