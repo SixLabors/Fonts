@@ -11,8 +11,6 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 [DebuggerDisplay("X: {XCoordinate}, Y: {YCoordinate}")]
 internal abstract class AnchorTable
 {
-    private static readonly AnchorTable EmptyAnchorTable = new EmptyAnchor();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AnchorTable"/> class.
     /// </summary>
@@ -55,7 +53,7 @@ internal abstract class AnchorTable
 
             // Harfbuzz (Anchor.hh) treats this as an empty table and does not throw..
             // NotoSans Regular can trigger this. See https://github.com/SixLabors/Fonts/issues/417
-            _ => EmptyAnchorTable,
+            _ => EmptyAnchorTable.Instance,
         };
     }
 
@@ -185,12 +183,14 @@ internal abstract class AnchorTable
             => new(this.XCoordinate, this.YCoordinate);
     }
 
-    internal sealed class EmptyAnchor : AnchorTable
+    internal sealed class EmptyAnchorTable : AnchorTable
     {
-        public EmptyAnchor()
+        private EmptyAnchorTable()
             : base(0, 0)
         {
         }
+
+        public static EmptyAnchorTable Instance { get; } = new();
 
         public override AnchorXY GetAnchor(
             FontMetrics fontMetrics,

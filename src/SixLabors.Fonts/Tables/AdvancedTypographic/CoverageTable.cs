@@ -28,13 +28,13 @@ internal abstract class CoverageTable
 
             // Harfbuzz (Coverage.hh) treats this as an empty table and does not throw.
             // SofiaSans Condensed can trigger this. See https://github.com/SixLabors/Fonts/issues/470
-            _ => new EmptyCoverageTable()
+            _ => EmptyCoverageTable.Instance
         };
     }
 
     public static CoverageTable[] LoadArray(BigEndianBinaryReader reader, long offset, ReadOnlySpan<ushort> coverageOffsets)
     {
-        var tables = new CoverageTable[coverageOffsets.Length];
+        CoverageTable[] tables = new CoverageTable[coverageOffsets.Length];
         for (int i = 0; i < tables.Length; i++)
         {
             tables[i] = Load(reader, offset + coverageOffsets[i]);
@@ -108,7 +108,7 @@ internal sealed class CoverageFormat2Table : CoverageTable
         // | RangeRecord | rangeRecords[rangeCount] | Array of glyph ranges — ordered by startGlyphID. |
         // +-------------+--------------------------+--------------------------------------------------+
         ushort rangeCount = reader.ReadUInt16();
-        var records = new CoverageRangeRecord[rangeCount];
+        CoverageRangeRecord[] records = new CoverageRangeRecord[rangeCount];
 
         for (int i = 0; i < records.Length; i++)
         {
@@ -132,6 +132,12 @@ internal sealed class CoverageFormat2Table : CoverageTable
 
     internal sealed class EmptyCoverageTable : CoverageTable
     {
+        private EmptyCoverageTable()
+        {
+        }
+
+        public static EmptyCoverageTable Instance { get; } = new();
+
         public override int CoverageIndexOf(ushort glyphId) => -1;
     }
 }
