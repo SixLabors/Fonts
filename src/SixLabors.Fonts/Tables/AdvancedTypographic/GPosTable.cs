@@ -125,7 +125,13 @@ internal class GPosTable : Table
                 // We want to assign the same feature lookups to individual sections of the text rather
                 // than the text as a whole to ensure that different language shapers do not interfere
                 // with each other when the text contains multiple languages.
-                GlyphShapingData nextData = collection[i + 1];
+                int ni = i + 1;
+                GlyphShapingData nextData = collection[ni];
+                if (!collection.ShouldProcess(fontMetrics, ni))
+                {
+                    break;
+                }
+
                 ScriptClass next = CodePoint.GetScriptClass(nextData.CodePoint);
                 if (next != current &&
                     current is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited &&

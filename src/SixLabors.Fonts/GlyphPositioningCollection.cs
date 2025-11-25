@@ -17,7 +17,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <summary>
     /// Contains a map the index of a map within the collection, non-sequential codepoint offsets, and their glyph ids, point size, and mtrics.
     /// </summary>
-    private readonly List<GlyphPositioningData> glyphs = new();
+    private readonly List<GlyphPositioningData> glyphs = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphPositioningCollection"/> class.
@@ -149,6 +149,11 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         ColorFontSupport colorFontSupport = this.TextOptions.ColorFontSupport;
         bool hasFallBacks = false;
         List<int> orphans = [];
+
+        Tag vert = FeatureTags.VerticalAlternates;
+        Tag vrt2 = FeatureTags.VerticalAlternatesAndRotation;
+        Tag vrtr = FeatureTags.VerticalAlternatesForRotation;
+
         for (int i = 0; i < this.glyphs.Count; i++)
         {
             GlyphPositioningData current = this.glyphs[i];
@@ -173,6 +178,15 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                     // cache the original in the font metrics and only update our collection.
                     TextAttributes textAttributes = shape.TextRun.TextAttributes;
                     TextDecorations textDecorations = shape.TextRun.TextDecorations;
+
+                    bool isVertical = AdvancedTypographicUtils.IsVerticalGlyph(codePoint, layoutMode);
+                    foreach (Tag feature in shape.AppliedFeatures)
+                    {
+                        isVertical |= feature == vert;
+                        isVertical |= feature == vrt2;
+                        isVertical |= feature == vrtr;
+                    }
+
                     GlyphMetrics metrics = fontMetrics.GetGlyphMetrics(codePoint, id, textAttributes, textDecorations, layoutMode, colorFontSupport);
                     {
                         // If the glyphs are fallbacks we don't want them as
@@ -183,7 +197,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                         }
                     }
 
-                    if (!hasFallBacks)
+                    if (metrics.GlyphType != GlyphType.Fallback)
                     {
                         if (j == 0)
                         {
@@ -191,8 +205,12 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                             this.glyphs.RemoveAt(i);
                         }
 
+                        // We only want a single dimensional advance for positioning.
+                        GlyphShapingBounds bounds = isVertical
+                            ? new(0, 0, 0, metrics.AdvanceHeight)
+                            : new(0, 0, metrics.AdvanceWidth, 0);
+
                         // Track the number of inserted glyphs at the offset so we can correctly increment our position.
-                        GlyphShapingBounds bounds = new(0, 0, metrics.AdvanceWidth, metrics.AdvanceHeight);
                         this.glyphs.Insert(i += replacementCount, new(offset, new(shape, true) { Bounds = bounds }, pointSize, metrics.CloneForRendering(shape.TextRun)));
                         replacementCount++;
                     }
@@ -259,6 +277,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
                 hasFallBacks = true;
             }
 
+            // We only want a single dimensional advance for positioning.
             GlyphShapingBounds bounds = isVertical
                 ? new(0, 0, 0, metrics.AdvanceHeight)
                 : new(0, 0, metrics.AdvanceWidth, 0);
