@@ -249,11 +249,19 @@ internal static class AdvancedTypographicUtils
         FontMetrics fontMetrics,
         GlyphPositioningCollection collection,
         int index,
-        AnchorTable baseAnchor,
+        AnchorTable? baseAnchor,
         MarkRecord markRecord,
         int baseGlyphIndex,
         Tag feature)
     {
+        // baseAnchor may be null because OpenType MarkToBase allows NULL anchor offsets
+        // in BaseArray/BaseRecord. A NULL offset means "this base glyph has no anchor
+        // for this mark class", and the lookup must be ignored for this mark–base pair.
+        if (baseAnchor is null)
+        {
+            return;
+        }
+
         GlyphShapingData baseData = collection[baseGlyphIndex];
         AnchorXY baseXY = baseAnchor.GetAnchor(fontMetrics, baseData, collection);
 
