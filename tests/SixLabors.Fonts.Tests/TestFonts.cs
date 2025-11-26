@@ -203,7 +203,7 @@ public static class TestFonts
 
     public static string Version1Font => GetFullPath("Font-Version1.ttf");
 
-    public static string NotoSansSCThinFile => GetFullPath("NotoSansSC-Thin.ttf");
+    public static string NotoSansSCThinBad => GetFullPath("NotoSansSC-Thin-Bad.ttf");
 
     public static string NotoSansKRRegular => GetFullPath("NotoSansKR-Regular.otf");
 
@@ -280,6 +280,8 @@ public static class TestFonts
     public static string NotoSansHKVariableFontWght => GetFullPath("NotoSansHK-VariableFont_wght.ttf");
 
     public static string NotoSansJPRegular => GetFullPath("NotoSansJP-Regular.ttf");
+
+    public static string NotoSansSCThin => GetFullPath("NotoSansSC-Thin.ttf");
 
     public static string NotoSansSCRegular => GetFullPath("NotoSansSC-Regular.ttf");
 

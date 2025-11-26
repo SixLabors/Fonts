@@ -32,7 +32,7 @@ public class Issues_469
         string inconsolata = fontCollection.Add(TestFonts.InconsolataRegular).Name;
         string notoNaskhArabic = fontCollection.Add(TestFonts.NotoNaskhArabicRegular).Name;
         string notoSansJpThin = fontCollection.Add(TestFonts.NotoSansJPRegular).Name;
-        string notoSansScThin = fontCollection.Add(TestFonts.NotoSansSCRegular).Name;
+        string notoSansScThin = fontCollection.Add(TestFonts.NotoSansSCThin).Name;
         string sarabun = fontCollection.Add(TestFonts.SarabunRegular).Name;
 
         FontFamily mainFontFamily = fontCollection.Get(arial);
