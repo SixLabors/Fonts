@@ -25,7 +25,7 @@ internal class GlyphTable : Table
     {
         if (index < 0 || index >= this.loaders.Length)
         {
-            return default;
+            return GlyphVector.Empty();
         }
 
         return this.glyphCache.GetOrAdd(index, i => this.loaders[i].CreateGlyph(this));
