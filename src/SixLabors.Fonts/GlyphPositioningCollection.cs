@@ -199,7 +199,7 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
 
                     if (metrics.GlyphType != GlyphType.Fallback)
                     {
-                        if (j == 0)
+                        if (replacementCount == 0)
                         {
                             // There should only be a single fallback glyph at this position from the previous collection.
                             this.glyphs.RemoveAt(i);

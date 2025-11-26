@@ -89,11 +89,11 @@ internal class GPosTable : Table
         uint featureVariationsOffset = (minorVersion == 1) ? reader.ReadOffset32() : 0;
 
         // TODO: Optimization. Allow only reading the scriptList.
-        var scriptList = ScriptList.Load(reader, scriptListOffset);
+        ScriptList? scriptList = ScriptList.Load(reader, scriptListOffset);
 
-        var featureList = FeatureListTable.Load(reader, featureListOffset);
+        FeatureListTable featureList = FeatureListTable.Load(reader, featureListOffset);
 
-        var lookupList = LookupListTable.Load(reader, lookupListOffset);
+        LookupListTable lookupList = LookupListTable.Load(reader, lookupListOffset);
 
         // TODO: Feature Variations.
         return new GPosTable(scriptList, featureList, lookupList);
@@ -116,7 +116,7 @@ internal class GPosTable : Table
                 continue;
             }
 
-            ScriptClass current = CodePoint.GetScriptClass(collection[i].CodePoint);
+            ScriptClass current = this.GetScriptClass(CodePoint.GetScriptClass(collection[i].CodePoint));
 
             int index = i;
             int count = 1;
@@ -132,7 +132,7 @@ internal class GPosTable : Table
                     break;
                 }
 
-                ScriptClass next = CodePoint.GetScriptClass(nextData.CodePoint);
+                ScriptClass next = this.GetScriptClass(CodePoint.GetScriptClass(nextData.CodePoint));
                 if (next != current &&
                     current is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited &&
                     next is not ScriptClass.Common and not ScriptClass.Unknown and not ScriptClass.Inherited)
@@ -278,7 +278,7 @@ internal class GPosTable : Table
 
     private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, params LangSysTable[] langSysTables)
     {
-        List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = new();
+        List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = [];
         for (int i = 0; i < langSysTables.Length; i++)
         {
             ushort[] featureIndices = langSysTables[i].FeatureIndices;
@@ -304,6 +304,32 @@ internal class GPosTable : Table
 
         lookups.Sort((x, y) => x.Index - y.Index);
         return lookups;
+    }
+
+    private ScriptClass GetScriptClass(ScriptClass current)
+    {
+        if (current is ScriptClass.Common or ScriptClass.Unknown or ScriptClass.Inherited)
+        {
+            return current;
+        }
+
+        if (this.ScriptList is null)
+        {
+            return ScriptClass.Default;
+        }
+
+        Tag[] tags = UnicodeScriptTagMap.Instance[current];
+
+        for (int i = 0; i < tags.Length; i++)
+        {
+            if (this.ScriptList.TryGetValue(tags[i].Value, out ScriptListTable? _))
+            {
+                return current;
+            }
+        }
+
+        // Script for `current` not present in the font: use default shaper.
+        return ScriptClass.Default;
     }
 
     private static bool HasFeature(List<TagEntry> glyphFeatures, in Tag feature)
