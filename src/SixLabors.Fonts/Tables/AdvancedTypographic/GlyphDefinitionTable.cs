@@ -125,8 +125,8 @@ internal sealed class GlyphDefinitionTable : Table
 
         ushort glyphClassDefOffset = reader.ReadUInt16();
         ushort attachListOffset = reader.ReadUInt16();
-        ushort ligatureCaretListOffset = reader.ReadUInt16();
-        ushort markAttachClassDefOffset = reader.ReadUInt16();
+        ushort ligatureCaretListOffset = reader.ReadOffset16();
+        ushort markAttachClassDefOffset = reader.ReadOffset16();
         ushort markGlyphSetsDefOffset = 0;
         uint itemVarStoreOffset = 0;
 

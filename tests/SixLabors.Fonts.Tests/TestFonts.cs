@@ -291,6 +291,8 @@ public static class TestFonts
 
     public static string SofiaSansCondensedLight => GetFullPath("SofiaSansCondensed-ExtraLight-Regular.ttf");
 
+    public static string ServiceNowWoff2 => GetFullPath("ServiceNow-Sans-Text-Bold-unmastered-1.1.woff");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);
