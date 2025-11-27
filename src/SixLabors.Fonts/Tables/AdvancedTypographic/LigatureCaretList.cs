@@ -22,22 +22,22 @@ internal sealed class LigatureCaretList
         // ----------|--------------------------------|--------------------------------------------------------------------------------------------------------
         reader.Seek(offset, SeekOrigin.Begin);
 
-        ushort coverageOffset = reader.ReadUInt16();
+        ushort coverageOffset = reader.ReadOffset16();
         ushort ligGlyphCount = reader.ReadUInt16();
 
         using Buffer<ushort> ligGlyphOffsetsBuffer = new(ligGlyphCount);
         Span<ushort> ligGlyphOffsets = ligGlyphOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(ligGlyphOffsets);
 
-        var ligatureCaretList = new LigatureCaretList()
+        LigatureCaretList ligatureCaretList = new()
         {
-            CoverageTable = CoverageTable.Load(reader, offset + coverageOffset)
+            CoverageTable = CoverageTable.Load(reader, offset + coverageOffset),
+            LigatureGlyphs = new LigatureGlyph[ligGlyphCount]
         };
 
-        ligatureCaretList.LigatureGlyphs = new LigatureGlyph[ligGlyphCount];
         for (int i = 0; i < ligatureCaretList.LigatureGlyphs.Length; i++)
         {
-            ligatureCaretList.LigatureGlyphs[i] = LigatureGlyph.Load(reader, ligGlyphOffsets[i]);
+            ligatureCaretList.LigatureGlyphs[i] = LigatureGlyph.Load(reader, offset + ligGlyphOffsets[i]);
         }
 
         return ligatureCaretList;

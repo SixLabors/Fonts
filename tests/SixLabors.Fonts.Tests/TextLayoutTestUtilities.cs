@@ -7,9 +7,8 @@ using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tests.TestUtilities;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.Drawing.Shapes.Text;
+using SixLabors.ImageSharp.Drawing.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 #endif
@@ -74,7 +73,7 @@ internal static class TextLayoutTestUtilities
         extended.Insert(0, "G");
         using Image<Rgba32> img2 = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
 
-        IReadOnlyList<GlyphPathCollection> glyphs = TextBuilder.GenerateGlyphs2(text, options);
+        IReadOnlyList<GlyphPathCollection> glyphs = TextBuilder.GenerateGlyphs(text, options);
 
         img2.Mutate(ctx => ctx.Fill(Color.Black, glyphs));
 

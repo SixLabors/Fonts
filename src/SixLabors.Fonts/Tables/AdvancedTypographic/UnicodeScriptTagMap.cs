@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 /// </summary>
 internal sealed class UnicodeScriptTagMap : Dictionary<ScriptClass, Tag[]>
 {
-    private static readonly Lazy<UnicodeScriptTagMap> Lazy = new(() => CreateMap(), true);
+    private static readonly Lazy<UnicodeScriptTagMap> Lazy = new(CreateMap, true);
 
     /// <summary>
     /// Prevents a default instance of the <see cref="UnicodeScriptTagMap"/> class from being created.
@@ -58,6 +58,7 @@ internal sealed class UnicodeScriptTagMap : Dictionary<ScriptClass, Tag[]>
             { ScriptClass.CyproMinoan, new[] { Tag.Parse("cpmn") } },
             { ScriptClass.Cypriot, new[] { Tag.Parse("cprt") } },
             { ScriptClass.Cyrillic, new[] { Tag.Parse("cyrl") } },
+            { ScriptClass.Default, new[] { Tag.Parse("DFLT"), Tag.Parse("dflt"), Tag.Parse("latn") } },
             { ScriptClass.Devanagari, new[] { Tag.Parse("dev2"), Tag.Parse("deva") } },
             { ScriptClass.DivesAkuru, new[] { Tag.Parse("diak") } },
             { ScriptClass.Dogra, new[] { Tag.Parse("dogr") } },

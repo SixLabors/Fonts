@@ -9,6 +9,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Drawing.Processing.Processors.Text;
+using SixLabors.ImageSharp.Drawing.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using IOPath = System.IO.Path;
@@ -218,7 +219,7 @@ public static class Program
         using var img = new Image<Rgba32>(width, height);
         img.Mutate(x => x.Fill(Color.White));
 
-        IPathCollection shapes = TextBuilder.GenerateGlyphs(text, new RichTextOptions(font) { Origin = new Vector2(50f, 4f) });
+        IPathCollection shapes = TextBuilder.GeneratePaths(text, new RichTextOptions(font) { Origin = new Vector2(50f, 4f) });
         img.Mutate(x => x.Fill(Color.Black, shapes));
 
         Directory.CreateDirectory(IOPath.GetDirectoryName(fullPath));

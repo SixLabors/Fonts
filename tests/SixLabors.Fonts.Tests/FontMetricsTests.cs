@@ -53,7 +53,7 @@ public class FontMetricsTests
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
         FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.NotoSansSCThinFile);
+        FontFamily family = collection.Add(TestFonts.NotoSansSCThinBad);
         Font font = family.CreateFont(12);
 
         Assert.Equal(1000, font.FontMetrics.UnitsPerEm);
@@ -240,7 +240,7 @@ public class FontMetricsTests
         // Compared to EveryFonts TTFDump metrics
         // https://everythingfonts.com/ttfdump
         FontCollection collection = new();
-        FontFamily family = collection.Add(TestFonts.NotoSansSCThinFile);
+        FontFamily family = collection.Add(TestFonts.NotoSansSCThinBad);
         Font font = family.CreateFont(12);
 
         CodePoint codePoint = new('A');

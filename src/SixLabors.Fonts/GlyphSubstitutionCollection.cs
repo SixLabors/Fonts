@@ -17,7 +17,7 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     /// <summary>
     /// Contains a map the index of a map within the collection, non-sequential codepoint offsets, and their glyph ids.
     /// </summary>
-    private readonly List<OffsetGlyphDataPair> glyphs = new();
+    private readonly List<OffsetGlyphDataPair> glyphs = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GlyphSubstitutionCollection"/> class.

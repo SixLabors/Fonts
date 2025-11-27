@@ -822,4 +822,9 @@ public enum ScriptClass
     /// Shortcode: Zanb
     /// </summary>
     ZanabazarSquare,
+
+    /// <summary>
+    /// Shortcode: DFLT
+    /// </summary>
+    Default = 999
 }
