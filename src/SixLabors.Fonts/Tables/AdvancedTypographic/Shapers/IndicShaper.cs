@@ -44,13 +44,15 @@ internal sealed class IndicShaper : DefaultShaper
     private const int DottedCircle = 0x25cc;
 
     private readonly TextOptions textOptions;
+    private readonly FontMetrics fontMetrics;
     private ShapingConfiguration indicConfiguration;
     private readonly bool isOldSpec;
 
-    public IndicShaper(ScriptClass script, Tag unicodeScriptTag, TextOptions textOptions)
+    public IndicShaper(ScriptClass script, Tag unicodeScriptTag, TextOptions textOptions, FontMetrics fontMetrics)
         : base(script, MarkZeroingMode.None, textOptions)
     {
         this.textOptions = textOptions;
+        this.fontMetrics = fontMetrics;
 
         if (IndicConfigurations.TryGetValue(script, out ShapingConfiguration value))
         {
@@ -101,14 +103,14 @@ internal sealed class IndicShaper : DefaultShaper
             return;
         }
 
+        FontMetrics fontMetrics = this.fontMetrics;
+
         // Decompose split matras
         Span<ushort> buffer = stackalloc ushort[16];
         int end = index + count;
         for (int i = end - 1; i >= 0; i--)
         {
             GlyphShapingData data = substitutionCollection[i];
-            FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
-
             if ((Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) ||
                 UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out decompositions)) &&
                 decompositions != null)
@@ -116,8 +118,9 @@ internal sealed class IndicShaper : DefaultShaper
                 Span<ushort> ids = buffer[..decompositions.Length];
                 for (int j = 0; j < decompositions.Length; j++)
                 {
-                    // Font should always contain the decomposed glyph.
-                    fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
+                    // Font should always contain the decomposed glyph since the shaper
+                    // is assigned based on features supported by the font.
+                    _ = fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
                     ids[j] = id;
                 }
 
@@ -207,23 +210,22 @@ internal sealed class IndicShaper : DefaultShaper
         Span<GlyphShapingData> tempBuffer = new GlyphShapingData[3];
 
         ShapingConfiguration indicConfiguration = this.indicConfiguration;
-        for (int i = 0; i < count; i++)
+        FontMetrics fontMetrics = this.fontMetrics;
+        CodePoint viramaPoint = new(indicConfiguration.Virama);
+
+        if (fontMetrics.TryGetGlyphId(viramaPoint, out ushort viramaId))
         {
-            GlyphShapingData data = substitutionCollection[i + index];
-            FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
-
-            fontMetrics.TryGetGlyphId(new(0x0020), out ushort spc);
-
-            IndicShapingEngineInfo? info = data.IndicShapingEngineInfo;
-            if (info?.Position == Positions.Base_C)
+            for (int i = 0; i < count; i++)
             {
-                CodePoint cp = new(indicConfiguration.Virama);
-                if (fontMetrics.TryGetGlyphId(cp, out ushort id))
+                GlyphShapingData data = substitutionCollection[i + index];
+                IndicShapingEngineInfo? info = data.IndicShapingEngineInfo;
+
+                if (info?.Position == Positions.Base_C)
                 {
                     GlyphShapingData virama = new(data, false)
                     {
-                        GlyphId = id,
-                        CodePoint = cp
+                        GlyphId = viramaId,
+                        CodePoint = viramaPoint
                     };
 
                     tempBuffer[2] = virama;
@@ -235,6 +237,8 @@ internal sealed class IndicShaper : DefaultShaper
             }
         }
 
+        bool hasDottedCircle = fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId);
+        _ = fontMetrics.TryGetGSubTable(out GSubTable? gSubTable);
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
@@ -250,13 +254,7 @@ internal sealed class IndicShaper : DefaultShaper
                 goto Increment;
             }
 
-            FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
-            if (!fontMetrics.TryGetGSubTable(out GSubTable? gSubTable))
-            {
-                break;
-            }
-
-            if (dataInfo != null && type == "broken_cluster" && fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
+            if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
             {
                 // Insert after possible Repha.
                 int i = start;
@@ -272,7 +270,7 @@ internal sealed class IndicShaper : DefaultShaper
                 }
 
                 glyphs[0] = current.GlyphId;
-                glyphs[1] = id;
+                glyphs[1] = circleId;
 
                 substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
 
@@ -303,7 +301,7 @@ internal sealed class IndicShaper : DefaultShaper
             // base consonants.
             if (start + 3 <= end &&
                 indicConfiguration.RephPosition != Positions.Ra_To_Become_Reph &&
-                gSubTable.TryGetFeatureLookups(in RphfTag, this.ScriptClass, out _) &&
+                gSubTable?.TryGetFeatureLookups(in RphfTag, this.ScriptClass, out _) == true &&
                 ((indicConfiguration.RephMode == RephMode.Implicit && !IsJoiner(substitutionCollection[start + 2])) ||
                  (indicConfiguration.RephMode == RephMode.Explicit && substitutionCollection[start + 2].IndicShapingEngineInfo?.Category == Categories.ZWJ)))
             {
@@ -692,7 +690,7 @@ internal sealed class IndicShaper : DefaultShaper
 
             const int prefLen = 2;
             if (basePosition + prefLen < end &&
-                gSubTable.TryGetFeatureLookups(in PrefTag, this.ScriptClass, out _))
+                gSubTable?.TryGetFeatureLookups(in PrefTag, this.ScriptClass, out _) == true)
             {
                 // Find a Halant,Ra sequence and mark it for pre-base reordering processing.
                 for (int i = basePosition + 1; i + prefLen - 1 < end; i++)
@@ -790,9 +788,7 @@ internal sealed class IndicShaper : DefaultShaper
             collection.EnableShapingFeature(i, featureTag);
         }
 
-        GlyphShapingData data = buffer[0];
-        FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
-
+        FontMetrics fontMetrics = this.fontMetrics;
         if (fontMetrics.TryGetGSubTable(out GSubTable? gSubTable))
         {
             const int index = 0;
@@ -865,6 +861,8 @@ internal sealed class IndicShaper : DefaultShaper
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
+        FontMetrics fontMetrics = this.fontMetrics;
+        _ = fontMetrics.TryGetGSubTable(out GSubTable? gSubTable);
         while (start < max)
         {
             // 4. Final reordering:
@@ -873,14 +871,7 @@ internal sealed class IndicShaper : DefaultShaper
             // applied (see below), the shaping engine performs some final glyph
             // reordering before applying all the remaining font features to the entire
             // cluster.
-            GlyphShapingData data = substitutionCollection[start];
-            FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
-            if (!fontMetrics.TryGetGSubTable(out GSubTable? gSubTable))
-            {
-                break;
-            }
-
-            bool tryPref = gSubTable.TryGetFeatureLookups(in PrefTag, this.ScriptClass, out _);
+            bool tryPref = gSubTable?.TryGetFeatureLookups(in PrefTag, this.ScriptClass, out _) == true;
 
             // Find base consonant again.
             int basePosition = start;

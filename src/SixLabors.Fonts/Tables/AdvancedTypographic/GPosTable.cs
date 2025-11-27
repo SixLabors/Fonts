@@ -155,7 +155,7 @@ internal class GPosTable : Table
             }
 
             Tag unicodeScriptTag = this.GetUnicodeScriptTag(current);
-            BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, collection.TextOptions);
+            BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, fontMetrics, collection.TextOptions);
 
             if (shaper.MarkZeroingMode == MarkZeroingMode.PreGPos)
             {

@@ -40,10 +40,11 @@ internal sealed class UniversalShaper : DefaultShaper
 
     private const int DottedCircle = 0x25cc;
 
-    public UniversalShaper(ScriptClass script, TextOptions textOptions)
+    private readonly FontMetrics fontMetrics;
+
+    public UniversalShaper(ScriptClass script, TextOptions textOptions, FontMetrics fontMetrics)
        : base(script, MarkZeroingMode.PreGPos, textOptions)
-    {
-    }
+        => this.fontMetrics = fontMetrics;
 
     /// <inheritdoc/>
     protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
@@ -65,7 +66,7 @@ internal sealed class UniversalShaper : DefaultShaper
         this.AddFeature(collection, index, count, HalfTag);
         this.AddFeature(collection, index, count, PstfTag);
         this.AddFeature(collection, index, count, VatuTag);
-        this.AddFeature(collection, index, count, CjctTag, postAction: Reorder);
+        this.AddFeature(collection, index, count, CjctTag, postAction: this.Reorder);
 
         // Standard topographic presentation and positional feature application
         this.AddFeature(collection, index, count, AbvsTag);
@@ -79,28 +80,29 @@ internal sealed class UniversalShaper : DefaultShaper
 
     /// <inheritdoc/>
     protected override void AssignFeatures(IGlyphShapingCollection collection, int index, int count)
-        => DecomposeSplitVowels(collection, index, count);
+        => this.DecomposeSplitVowels(collection, index, count);
 
-    private static void DecomposeSplitVowels(IGlyphShapingCollection collection, int index, int count)
+    private void DecomposeSplitVowels(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
         {
             return;
         }
 
+        FontMetrics fontMetrics = this.fontMetrics;
         Span<ushort> buffer = stackalloc ushort[16];
         int end = index + count;
         for (int i = end - 1; i >= 0; i--)
         {
             GlyphShapingData data = substitutionCollection[i];
-            FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
             if (UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) && decompositions != null)
             {
                 Span<ushort> ids = buffer[..decompositions.Length];
                 for (int j = 0; j < decompositions.Length; j++)
                 {
-                    // Font should always contain the decomposed glyph.
-                    fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
+                    // Font should always contain the decomposed glyph since the shaper
+                    // is assigned based on features supported by the font.
+                    _ = fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
                     ids[j] = id;
                 }
 
@@ -213,13 +215,15 @@ internal sealed class UniversalShaper : DefaultShaper
         }
     }
 
-    private static void Reorder(IGlyphShapingCollection collection, int index, int count)
+    private void Reorder(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
         {
             return;
         }
 
+        FontMetrics fontMetrics = this.fontMetrics;
+        bool hasDottedCircle = fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId);
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
@@ -237,8 +241,7 @@ internal sealed class UniversalShaper : DefaultShaper
                 goto Increment;
             }
 
-            FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
-            if (type == "broken_cluster" && fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
+            if (hasDottedCircle && type == "broken_cluster")
             {
                 // Insert after possible Repha.
                 int i = start;
@@ -254,7 +257,7 @@ internal sealed class UniversalShaper : DefaultShaper
                 }
 
                 glyphs[0] = current.GlyphId;
-                glyphs[1] = id;
+                glyphs[1] = circleId;
 
                 substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
                 end++;

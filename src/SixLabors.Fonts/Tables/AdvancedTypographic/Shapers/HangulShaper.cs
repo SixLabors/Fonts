@@ -64,10 +64,11 @@ internal sealed class HangulShaper : DefaultShaper
         { new byte[] { None, 0 }, new byte[] { None, 1 }, new byte[] { None, 0 }, new byte[] { None, 0 }, new byte[] { Decompose, 2 }, new byte[] { Decompose, 3 }, new byte[] { ToneMark, 0 } },
     };
 
-    public HangulShaper(ScriptClass script, TextOptions textOptions)
+    private readonly FontMetrics fontMetrics;
+
+    public HangulShaper(ScriptClass script, TextOptions textOptions, FontMetrics fontMetrics)
         : base(script, MarkZeroingMode.None, textOptions)
-    {
-    }
+        => this.fontMetrics = fontMetrics;
 
     /// <inheritdoc/>
     protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
@@ -121,13 +122,13 @@ internal sealed class HangulShaper : DefaultShaper
                     case Compose:
 
                         // Found a decomposed syllable. Try to compose if supported by the font.
-                        i = this.ComposeGlyph(substitutionCollection, data, i, type);
+                        i = this.ComposeGlyph(substitutionCollection, i, type);
                         break;
 
                     case ToneMark:
 
                         // Got a valid syllable, followed by a tone mark. Move the tone mark to the beginning of the syllable.
-                        ReOrderToneMark(substitutionCollection, data, i);
+                        this.ReOrderToneMark(substitutionCollection, data, i);
                         break;
 
                     case Invalid:
@@ -172,8 +173,6 @@ internal sealed class HangulShaper : DefaultShaper
                         collection.EnableShapingFeature(i, VjmoTag);
                         collection.EnableShapingFeature(i, TjmoTag);
                         break;
-                    default:
-                        break;
                 }
             }
         }
@@ -216,7 +215,7 @@ internal sealed class HangulShaper : DefaultShaper
         int l = (LBase + (s / VCount)) | 0;
         int v = VBase + (s % VCount);
 
-        FontMetrics metrics = data.TextRun.Font!.FontMetrics;
+        FontMetrics metrics = this.fontMetrics;
 
         // Don't decompose if all of the components are not available
         if (!metrics.TryGetGlyphId(new(l), out ushort ljmo) ||
@@ -252,7 +251,7 @@ internal sealed class HangulShaper : DefaultShaper
         return index + 2;
     }
 
-    private int ComposeGlyph(GlyphSubstitutionCollection collection, GlyphShapingData data, int index, int type)
+    private int ComposeGlyph(GlyphSubstitutionCollection collection, int index, int type)
     {
         if (index == 0)
         {
@@ -306,8 +305,7 @@ internal sealed class HangulShaper : DefaultShaper
 
             // Replace with a composed glyph if supported by the font,
             // otherwise apply the proper OpenType features to each component.
-            FontMetrics metrics = data.TextRun.Font!.FontMetrics;
-            if (metrics.TryGetGlyphId(s, out ushort id))
+            if (this.fontMetrics.TryGetGlyphId(s, out ushort id))
             {
                 int del = prevType == V ? 3 : 2;
                 int idx = index - del + 1;
@@ -338,15 +336,14 @@ internal sealed class HangulShaper : DefaultShaper
             // Sequence was originally <L,V>, which got combined earlier.
             // Either the T was non-combining, or the LVT glyph wasn't supported.
             // Decompose the glyph again and apply OT features.
-            data = collection[index - 1];
-            this.DecomposeGlyph(collection, data, index - 1);
+            this.DecomposeGlyph(collection, collection[index - 1], index - 1);
             return index + 1;
         }
 
         return index;
     }
 
-    private static void ReOrderToneMark(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
+    private void ReOrderToneMark(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
     {
         if (index == 0)
         {
@@ -355,17 +352,15 @@ internal sealed class HangulShaper : DefaultShaper
 
         // Move tone mark to the beginning of the previous syllable, unless it is zero width
         // We don't have access to the glyphs metrics as an array when substituting so we have to loop.
-        FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
+        FontMetrics fontMetrics = this.fontMetrics;
         TextAttributes textAttributes = data.TextRun.TextAttributes;
         TextDecorations textDecorations = data.TextRun.TextDecorations;
         LayoutMode layoutMode = collection.TextOptions.LayoutMode;
         ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
-        if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out GlyphMetrics? metrics))
+        if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out GlyphMetrics? metrics)
+            && metrics.AdvanceWidth == 0)
         {
-            if (metrics.AdvanceWidth == 0)
-            {
-                return;
-            }
+            return;
         }
 
         GlyphShapingData prev = collection[index - 1];
@@ -376,7 +371,7 @@ internal sealed class HangulShaper : DefaultShaper
     private int InsertDottedCircle(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
     {
         bool after = false;
-        FontMetrics fontMetrics = data.TextRun.Font!.FontMetrics;
+        FontMetrics fontMetrics = this.fontMetrics;
 
         if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort id))
         {
@@ -384,12 +379,10 @@ internal sealed class HangulShaper : DefaultShaper
             TextDecorations textDecorations = data.TextRun.TextDecorations;
             LayoutMode layoutMode = collection.TextOptions.LayoutMode;
             ColorFontSupport colorFontSupport = collection.TextOptions.ColorFontSupport;
-            if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out GlyphMetrics? metrics))
+            if (fontMetrics.TryGetGlyphMetrics(data.CodePoint, textAttributes, textDecorations, layoutMode, colorFontSupport, out GlyphMetrics? metrics)
+                && metrics.AdvanceWidth != 0)
             {
-                if (metrics.AdvanceWidth != 0)
-                {
-                    after = true;
-                }
+                after = true;
             }
 
             // If the tone mark is zero width, insert the dotted circle before, otherwise after
