@@ -138,7 +138,7 @@ internal class GSubTable : Table
             }
 
             Tag unicodeScriptTag = this.GetUnicodeScriptTag(current);
-            BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, collection.TextOptions);
+            BaseShaper shaper = ShaperFactory.Create(current, unicodeScriptTag, fontMetrics, collection.TextOptions);
 
             // Plan substitution features for each glyph.
             // Shapers can adjust the count during initialization and feature processing so we must capture
