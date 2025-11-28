@@ -22,7 +22,30 @@ namespace SixLabors.Fonts;
 /// </content>
 internal partial class StreamFontMetrics
 {
-    private TrueTypeInterpreter? interpreter;
+    // Bounded pool of interpreters shared across threads.
+    // Size tied to logical CPU count.
+    private readonly ObjectPool<TrueTypeInterpreter>? interpreterPool;
+
+    private TrueTypeInterpreter CreateInterpreter()
+    {
+        TrueTypeFontTables tables = this.trueTypeFontTables!;
+        MaximumProfileTable maxp = tables.Maxp;
+
+        TrueTypeInterpreter interpreter = new(
+            maxp.MaxStackElements,
+            maxp.MaxStorage,
+            maxp.MaxFunctionDefs,
+            maxp.MaxInstructionDefs,
+            maxp.MaxTwilightPoints);
+
+        FpgmTable? fpgm = tables.Fpgm;
+        if (fpgm is not null)
+        {
+            interpreter.InitializeFunctionDefs(fpgm.Instructions);
+        }
+
+        return interpreter;
+    }
 
     internal void ApplyTrueTypeHinting(HintingMode hintingMode, GlyphMetrics metrics, ref GlyphVector glyphVector, Vector2 scaleXY, float pixelSize)
     {
@@ -31,37 +54,34 @@ internal partial class StreamFontMetrics
             return;
         }
 
-        TrueTypeFontTables tables = this.trueTypeFontTables!;
-        if (this.interpreter == null)
+        if (this.trueTypeFontTables is null || this.interpreterPool is null)
         {
-            MaximumProfileTable maxp = tables.Maxp;
-            this.interpreter = new TrueTypeInterpreter(
-                maxp.MaxStackElements,
-                maxp.MaxStorage,
-                maxp.MaxFunctionDefs,
-                maxp.MaxInstructionDefs,
-                maxp.MaxTwilightPoints);
-
-            FpgmTable? fpgm = tables.Fpgm;
-            if (fpgm is not null)
-            {
-                this.interpreter.InitializeFunctionDefs(fpgm.Instructions);
-            }
+            return;
         }
 
-        CvtTable? cvt = tables.Cvt;
-        PrepTable? prep = tables.Prep;
-        float scaleFactor = pixelSize / this.UnitsPerEm;
-        this.interpreter.SetControlValueTable(cvt?.ControlValues, scaleFactor, pixelSize, prep?.Instructions);
+        TrueTypeFontTables tables = this.trueTypeFontTables;
+        TrueTypeInterpreter interpreter = this.interpreterPool.Get();
 
-        Bounds bounds = glyphVector.Bounds;
+        try
+        {
+            CvtTable? cvt = tables.Cvt;
+            PrepTable? prep = tables.Prep;
+            float hintingScaleFactor = pixelSize / this.UnitsPerEm;
+            interpreter.SetControlValueTable(cvt?.ControlValues, hintingScaleFactor, pixelSize, prep?.Instructions);
 
-        Vector2 pp1 = new(MathF.Round(bounds.Min.X - (metrics.LeftSideBearing * scaleXY.X)), 0);
-        Vector2 pp2 = new(MathF.Round(pp1.X + (metrics.AdvanceWidth * scaleXY.X)), 0);
-        Vector2 pp3 = new(0, MathF.Round(bounds.Max.Y + (metrics.TopSideBearing * scaleXY.Y)));
-        Vector2 pp4 = new(0, MathF.Round(pp3.Y - (metrics.AdvanceHeight * scaleXY.Y)));
+            Bounds bounds = glyphVector.Bounds;
 
-        GlyphVector.Hint(hintingMode, ref glyphVector, this.interpreter, pp1, pp2, pp3, pp4);
+            Vector2 pp1 = new(MathF.Round(bounds.Min.X - (metrics.LeftSideBearing * scaleXY.X)), 0);
+            Vector2 pp2 = new(MathF.Round(pp1.X + (metrics.AdvanceWidth * scaleXY.X)), 0);
+            Vector2 pp3 = new(0, MathF.Round(bounds.Max.Y + (metrics.TopSideBearing * scaleXY.Y)));
+            Vector2 pp4 = new(0, MathF.Round(pp3.Y - (metrics.AdvanceHeight * scaleXY.Y)));
+
+            GlyphVector.Hint(hintingMode, ref glyphVector, interpreter, pp1, pp2, pp3, pp4);
+        }
+        finally
+        {
+            this.interpreterPool.Return(interpreter);
+        }
     }
 
     private static StreamFontMetrics LoadTrueTypeFont(FontReader reader)
@@ -223,5 +243,20 @@ internal partial class StreamFontMetrics
             textAttributes,
             textDecorations,
             glyphType);
+    }
+
+    private sealed class TrueTypeInterpreterPooledObjectPolicy
+     : IPooledObjectPolicy<TrueTypeInterpreter>
+    {
+        private readonly StreamFontMetrics owner;
+
+        public TrueTypeInterpreterPooledObjectPolicy(StreamFontMetrics owner)
+            => this.owner = owner;
+
+        public TrueTypeInterpreter Create()
+            => this.owner.CreateInterpreter();
+
+        public bool Return(TrueTypeInterpreter interpreter)
+            => true; // Always accept returned instances.
     }
 }

@@ -76,6 +76,7 @@ internal class TrueTypeInterpreter
                 this.controlValueTable = new float[cvt.Length];
             }
 
+            // TODO: How about SIMD here? Will the JIT vectorize this?
             for (int i = 0; i < cvt.Length; i++)
             {
                 this.controlValueTable[i] = cvt[i] * scale;
