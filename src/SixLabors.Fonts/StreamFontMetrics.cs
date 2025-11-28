@@ -67,6 +67,8 @@ internal partial class StreamFontMetrics : FontMetrics
         (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
         this.horizontalMetrics = metrics.HorizontalMetrics;
         this.verticalMetrics = metrics.VerticalMetrics;
+
+        this.interpreterPool = new ObjectPool<TrueTypeInterpreter>(new TrueTypeInterpreterPooledObjectPolicy(this));
     }
 
     /// <summary>
@@ -85,8 +87,6 @@ internal partial class StreamFontMetrics : FontMetrics
         (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
         this.horizontalMetrics = metrics.HorizontalMetrics;
         this.verticalMetrics = metrics.VerticalMetrics;
-
-        this.interpreterPool = new ObjectPool<TrueTypeInterpreter>(new TrueTypeInterpreterPooledObjectPolicy(this));
     }
 
     public HeadTable.HeadFlags HeadFlags { get; private set; }

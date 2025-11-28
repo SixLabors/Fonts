@@ -66,8 +66,8 @@ internal partial class StreamFontMetrics
         {
             CvtTable? cvt = tables.Cvt;
             PrepTable? prep = tables.Prep;
-            float scaleFactor = pixelSize / this.UnitsPerEm;
-            interpreter.SetControlValueTable(cvt?.ControlValues, scaleFactor, pixelSize, prep?.Instructions);
+            float hintingScaleFactor = pixelSize / this.UnitsPerEm;
+            interpreter.SetControlValueTable(cvt?.ControlValues, hintingScaleFactor, pixelSize, prep?.Instructions);
 
             Bounds bounds = glyphVector.Bounds;
 

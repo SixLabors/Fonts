@@ -43,7 +43,7 @@ internal sealed class ObjectPool<T>
         // cache the target interface methods, to avoid interface lookup overhead
         this.createFunc = policy.Create;
         this.returnFunc = policy.Return;
-        this.maxCapacity = maximumRetained - 1;  // -1 to account for _fastItem
+        this.maxCapacity = maximumRetained - 1;  // -1 to account for fastItem
     }
 
     /// <summary>
