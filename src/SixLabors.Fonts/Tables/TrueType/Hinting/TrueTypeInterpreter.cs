@@ -7,11 +7,32 @@ using SixLabors.Fonts.Tables.TrueType.Glyphs;
 namespace SixLabors.Fonts.Tables.TrueType.Hinting;
 
 /// <summary>
-/// Code adapted from <see href="https://github.com/MikePopoloski/SharpFont/blob/b28555e8fae94c57f1b5ccd809cdd1260f0eb55f/SharpFont/FontFace.cs"/>
-/// For further information
-/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM05/Chap5.html"/>
-/// <see href="https://learn.microsoft.com/en-us/typography/cleartype/truetypecleartype"/>
-/// <see href="https://freetype.org/freetype2/docs/hinting/subpixel-hinting.html"/>
+/// Code adapted from
+/// <see href="https://github.com/MikePopoloski/SharpFont/blob/b28555e8fae94c57f1b5ccd809cdd1260f0eb55f/SharpFont/Internal/Interpreter.cs"/>.
+///
+/// Reference material:
+/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM05/Chap5.html"/> –
+/// the original TrueType instruction set and execution model.
+/// <see href="https://learn.microsoft.com/en-us/typography/cleartype/truetypecleartype"/> –
+/// details on how Microsoft's ClearType rasterizer interprets TrueType hints.
+/// <see href="https://freetype.org/freetype2/docs/hinting/subpixel-hinting.html"/> –
+/// documentation of FreeType's subpixel hinting engines, including the v40 "minimal" interpreter.
+///
+/// <para>
+/// This implementation matches the behavior of FreeType's v40 subpixel hinting interpreter,
+/// with horizontal hinting disabled and full vertical TrueType instruction processing preserved.
+/// It follows the v40 model in which outlines are adjusted primarily along the Y-axis and
+/// instructions operate without backward compatibility constraints. This corresponds to
+/// FreeType's configuration where <c>TT_CONFIG_OPTION_SUBPIXEL_HINTING</c> selects the
+/// minimal (v40) engine and <c>backward_compatibility</c> is forced to zero.
+/// </para>
+///
+/// <para>
+/// Modern ClearType-hinted fonts are designed for this style of processing and will render
+/// consistently under this interpreter. Legacy CRT-era fonts such as Arial or Times New Roman
+/// also render cleanly under v40 semantics, though without legacy bi-level horizontal snapping,
+/// which v40 intentionally omits.
+/// </para>
 /// </summary>
 internal class TrueTypeInterpreter
 {
@@ -567,7 +588,7 @@ internal class TrueTypeInterpreter
                             continue;
                         }
 
-                        this.points.Current[i].OnCurve ^= true;
+                        this.points.Current[index].OnCurve ^= true;
                     }
 
                     this.state.Loop = 1;
@@ -852,7 +873,7 @@ internal class TrueTypeInterpreter
                                 }
                                 else
                                 {
-                                    this.iupYCalled = true;
+                                    this.iupXCalled = true;
                                     touchMask = TouchState.X;
                                     current = (byte*)&currentPtr->Point.X;
                                     original = (byte*)&originalPtr->Point.X;
@@ -1565,7 +1586,7 @@ internal class TrueTypeInterpreter
         if (dual)
         {
             p1 = this.zp2.GetOriginal(index1);
-            p2 = this.zp2.GetOriginal(index2);
+            p2 = this.zp1.GetOriginal(index2);
             line = p2 - p1;
 
             if (line.LengthSquared() == 0)
@@ -1803,7 +1824,7 @@ internal class TrueTypeInterpreter
         bool postIUP = this.iupXCalled && this.iupYCalled;
         bool composite = this.isComposite;
         ControlPoint[] current = this.zp2.Current;
-        bool inTwilight = this.zp0.IsTwilight && this.zp1.IsTwilight && this.zp2.IsTwilight;
+        bool inTwilight = this.zp0.IsTwilight || this.zp1.IsTwilight || this.zp2.IsTwilight;
 
         for (int i = 0; i < this.state.Loop; i++)
         {
