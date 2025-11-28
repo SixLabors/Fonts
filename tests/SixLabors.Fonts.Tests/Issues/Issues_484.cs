@@ -7,7 +7,7 @@ public class Issues_484
 {
     [Fact]
     public void Test_Issue_484()
-        => Parallel.For(0, 2, static _ => Test_Issue_484_Core());
+        => Parallel.For(0, 10, static _ => Test_Issue_484_Core());
 
     private static void Test_Issue_484_Core()
     {
@@ -35,7 +35,7 @@ public class Issues_484
         FontFamily arialFamily = fontCollection.Get(arial);
         Font arialFont = arialFamily.CreateFont(12, FontStyle.Regular);
 
-        Parallel.For(0, 2, _ => Test_Issue_484_Core_B(arialFont));
+        Parallel.For(0, 10, _ => Test_Issue_484_Core_B(arialFont));
     }
 
     private static void Test_Issue_484_Core_B(Font font)
