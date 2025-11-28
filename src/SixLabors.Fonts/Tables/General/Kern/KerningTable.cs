@@ -20,7 +20,7 @@ internal sealed class KerningTable : Table
         if (!fontReader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
         {
             // this table is optional.
-            return new KerningTable(Array.Empty<KerningSubTable>());
+            return new KerningTable([]);
         }
 
         using (binaryReader)
@@ -52,7 +52,7 @@ internal sealed class KerningTable : Table
             }
         }
 
-        return new KerningTable(tables.ToArray());
+        return new KerningTable([.. tables]);
     }
 
     public void UpdatePositions(FontMetrics fontMetrics, GlyphPositioningCollection collection, int left, int right)
@@ -62,12 +62,20 @@ internal sealed class KerningTable : Table
             return;
         }
 
-        ushort current = collection[left].GlyphId;
-        ushort next = collection[right].GlyphId;
-
-        if (this.TryGetKerningOffset(current, next, out Vector2 result))
+        GlyphShapingData current = collection[left];
+        if (current.IsKerned)
         {
-            collection.Advance(fontMetrics, left, current, (short)result.X, (short)result.Y);
+            // Already kerned via previous processing.
+            return;
+        }
+
+        ushort currentId = current.GlyphId;
+        ushort nextId = collection[right].GlyphId;
+
+        if (this.TryGetKerningOffset(currentId, nextId, out Vector2 result))
+        {
+            collection.Advance(fontMetrics, left, currentId, (short)result.X, (short)result.Y);
+            current.IsKerned = true;
         }
     }
 
