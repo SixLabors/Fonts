@@ -42,7 +42,8 @@ public class Issues_462
         TextLayoutTestUtilities.TestLayout(
             text,
             options,
-            includeGeometry: true);
+            includeGeometry: true,
+            customDecorations: true);
     }
 
     [Fact]
@@ -74,6 +75,7 @@ public class Issues_462
         TextLayoutTestUtilities.TestLayout(
             text,
             options,
-            includeGeometry: true);
+            includeGeometry: true,
+            customDecorations: true);
     }
 }

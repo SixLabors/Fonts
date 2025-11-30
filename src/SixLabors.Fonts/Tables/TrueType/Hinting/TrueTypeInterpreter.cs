@@ -1872,41 +1872,172 @@ internal class TrueTypeInterpreter
     {
         switch (this.state.RoundState)
         {
+            case RoundMode.Off:
+                // FreeType's Round_None with compensation = 0.
+                return value;
+
             case RoundMode.ToGrid:
-                return value >= 0 ? (float)Math.Round(value) : -(float)Math.Round(-value);
-            case RoundMode.ToHalfGrid:
-                return value >= 0 ? (float)Math.Floor(value) + 0.5f : -((float)Math.Floor(-value) + 0.5f);
-            case RoundMode.ToDoubleGrid:
-                return value >= 0 ? (float)(Math.Round(value * 2, MidpointRounding.AwayFromZero) / 2) : -(float)(Math.Round(-value * 2, MidpointRounding.AwayFromZero) / 2);
-            case RoundMode.DownToGrid:
-                return value >= 0 ? (float)Math.Floor(value) : -(float)Math.Floor(-value);
-            case RoundMode.UpToGrid:
-                return value >= 0 ? (float)Math.Ceiling(value) : -(float)Math.Ceiling(-value);
-            case RoundMode.Super:
-            case RoundMode.Super45:
-                float result;
-                if (value >= 0)
+            {
+                // Round_To_Grid with compensation = 0.
+                if (value >= 0F)
                 {
-                    result = value - this.roundPhase + this.roundThreshold;
-                    result = (float)Math.Truncate(result / this.roundPeriod) * this.roundPeriod;
-                    result += this.roundPhase;
-                    if (result < 0)
+                    float val = (float)Math.Floor(value + 0.5F);
+                    if (val < 0F)
                     {
-                        result = this.roundPhase;
+                        val = 0F;
                     }
+
+                    return val;
                 }
                 else
                 {
-                    result = -value - this.roundPhase + this.roundThreshold;
-                    result = -(float)Math.Truncate(result / this.roundPeriod) * this.roundPeriod;
-                    result -= this.roundPhase;
-                    if (result > 0)
+                    float val = -(float)Math.Floor(-value + 0.5F);
+                    if (val > 0F)
                     {
-                        result = -this.roundPhase;
+                        val = 0F;
                     }
-                }
 
-                return result;
+                    return val;
+                }
+            }
+
+            case RoundMode.ToHalfGrid:
+            {
+                // Round_To_Half_Grid with compensation = 0.
+                if (value >= 0F)
+                {
+                    float val = (float)Math.Floor(value) + 0.5F;
+                    if (val < 0F)
+                    {
+                        val = 0.5F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -((float)Math.Floor(-value) + 0.5F);
+                    if (val > 0F)
+                    {
+                        val = -0.5F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.DownToGrid:
+            {
+                // Round_Down_To_Grid with compensation = 0.
+                if (value >= 0F)
+                {
+                    float val = (float)Math.Floor(value);
+                    if (val < 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -(float)Math.Floor(-value);
+                    if (val > 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.UpToGrid:
+            {
+                // Round_Up_To_Grid with compensation = 0.
+                if (value >= 0F)
+                {
+                    float val = (float)Math.Ceiling(value);
+                    if (val < 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -(float)Math.Ceiling(-value);
+                    if (val > 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.ToDoubleGrid:
+            {
+                // Round_To_Double_Grid: grid step is 0.5 pixels.
+                const float step = 0.5F;
+
+                if (value >= 0F)
+                {
+                    float val = step * (float)Math.Floor((value / step) + 0.5F);
+                    if (val < 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -step * (float)Math.Floor((-value / step) + 0.5F);
+                    if (val > 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.Super:
+            case RoundMode.Super45:
+            {
+                // Round_Super / Round_Super_45 with compensation = 0.
+                float period = this.roundPeriod;
+                float phase = this.roundPhase;
+                float threshold = this.roundThreshold;
+
+                if (value >= 0F)
+                {
+                    float val = value - phase + threshold;
+                    val = (float)Math.Floor(val / period) * period;
+                    val += phase;
+
+                    if (val < 0F)
+                    {
+                        val = phase;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -value - phase + threshold;
+                    val = (float)Math.Floor(val / period) * period;
+                    val = -val - phase;
+
+                    if (val > 0F)
+                    {
+                        val = -phase;
+                    }
+
+                    return val;
+                }
+            }
 
             default:
                 return value;

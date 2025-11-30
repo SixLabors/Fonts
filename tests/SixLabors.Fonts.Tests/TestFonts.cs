@@ -267,6 +267,8 @@ public static class TestFonts
 
     public static string Arial => GetFullPath("arial.ttf");
 
+    public static string Tahoma => GetFullPath("tahoma.ttf");
+
     public static string CousineRegular => GetFullPath("Cousine-Regular.ttf");
 
     public static string HindRegular => GetFullPath("Hind-Regular.ttf");
