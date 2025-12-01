@@ -31,8 +31,17 @@ public static class TestImageExtensions
             Directory.CreateDirectory(outputDirectory);
         }
 
-        string path = Path.Combine(outputDirectory, $"{test}{FormatTestDetails(properties)}.{extension ?? "png"}");
-        image.Save(path, Encoder);
+        string ext = extension ?? "png";
+        string path = Path.Combine(outputDirectory, $"{test}{FormatTestDetails(properties)}.{ext}");
+
+        if (ext == "png")
+        {
+            image.Save(path, Encoder);
+        }
+        else
+        {
+            image.Save(path);
+        }
 
         return path;
     }
