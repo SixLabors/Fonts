@@ -17,14 +17,15 @@ internal sealed class Format0SubTable : KerningSubTable
         // -------|---------------|--------------------------------------------------------
         // uint16 | nPairs        | This gives the number of kerning pairs in the table.
         // uint16 | searchRange   | The largest power of two less than or equal to the value of nPairs, multiplied by the size in bytes of an entry in the table.
-        // uint16 | entrySelector | This is calculated as log2 of the largest power of two less than or equal to the value of nPairs.This value indicates how many iterations of the search loop will have to be made. (For example, in a list of eight items, there would have to be three iterations of the loop).
+        // uint16 | entrySelector | This is calculated as log2 of the largest power of two less than or equal to the value of nPairs.
+        //        |               | This value indicates how many iterations of the search loop will have to be made. (For example, in a list of eight items, there would have to be three iterations of the loop).
         // uint16 | rangeShift    | The value of nPairs minus the largest power of two less than or equal to nPairs, and then multiplied by the size in bytes of an entry in the table.
         ushort pairCount = reader.ReadUInt16();
         ushort searchRange = reader.ReadUInt16();
         ushort entrySelector = reader.ReadUInt16();
         ushort rangeShift = reader.ReadUInt16();
 
-        var pairs = new KerningPair[pairCount];
+        KerningPair[] pairs = new KerningPair[pairCount];
         for (int i = 0; i < pairCount; i++)
         {
             pairs[i] = KerningPair.Read(reader);

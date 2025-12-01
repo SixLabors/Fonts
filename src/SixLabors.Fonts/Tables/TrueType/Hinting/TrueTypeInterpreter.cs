@@ -7,11 +7,32 @@ using SixLabors.Fonts.Tables.TrueType.Glyphs;
 namespace SixLabors.Fonts.Tables.TrueType.Hinting;
 
 /// <summary>
-/// Code adapted from <see href="https://github.com/MikePopoloski/SharpFont/blob/b28555e8fae94c57f1b5ccd809cdd1260f0eb55f/SharpFont/FontFace.cs"/>
-/// For further information
-/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM05/Chap5.html"/>
-/// <see href="https://learn.microsoft.com/en-us/typography/cleartype/truetypecleartype"/>
-/// <see href="https://freetype.org/freetype2/docs/hinting/subpixel-hinting.html"/>
+/// Code adapted from
+/// <see href="https://github.com/MikePopoloski/SharpFont/blob/b28555e8fae94c57f1b5ccd809cdd1260f0eb55f/SharpFont/Internal/Interpreter.cs"/>.
+///
+/// Reference material:
+/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM05/Chap5.html"/> –
+/// the original TrueType instruction set and execution model.
+/// <see href="https://learn.microsoft.com/en-us/typography/cleartype/truetypecleartype"/> –
+/// details on how Microsoft's ClearType rasterizer interprets TrueType hints.
+/// <see href="https://freetype.org/freetype2/docs/hinting/subpixel-hinting.html"/> –
+/// documentation of FreeType's subpixel hinting engines, including the v40 "minimal" interpreter.
+///
+/// <para>
+/// This implementation matches the behavior of FreeType's v40 subpixel hinting interpreter,
+/// with horizontal hinting disabled and full vertical TrueType instruction processing preserved.
+/// It follows the v40 model in which outlines are adjusted primarily along the Y-axis and
+/// instructions operate without backward compatibility constraints. This corresponds to
+/// FreeType's configuration where <c>TT_CONFIG_OPTION_SUBPIXEL_HINTING</c> selects the
+/// minimal (v40) engine and <c>backward_compatibility</c> is forced to zero.
+/// </para>
+///
+/// <para>
+/// Modern ClearType-hinted fonts are designed for this style of processing and will render
+/// consistently under this interpreter. Legacy CRT-era fonts such as Arial or Times New Roman
+/// also render cleanly under v40 semantics, though without legacy bi-level horizontal snapping,
+/// which v40 intentionally omits.
+/// </para>
 /// </summary>
 internal class TrueTypeInterpreter
 {
@@ -567,7 +588,7 @@ internal class TrueTypeInterpreter
                             continue;
                         }
 
-                        this.points.Current[i].OnCurve ^= true;
+                        this.points.Current[index].OnCurve ^= true;
                     }
 
                     this.state.Loop = 1;
@@ -852,7 +873,7 @@ internal class TrueTypeInterpreter
                                 }
                                 else
                                 {
-                                    this.iupYCalled = true;
+                                    this.iupXCalled = true;
                                     touchMask = TouchState.X;
                                     current = (byte*)&currentPtr->Point.X;
                                     original = (byte*)&originalPtr->Point.X;
@@ -1565,7 +1586,7 @@ internal class TrueTypeInterpreter
         if (dual)
         {
             p1 = this.zp2.GetOriginal(index1);
-            p2 = this.zp2.GetOriginal(index2);
+            p2 = this.zp1.GetOriginal(index2);
             line = p2 - p1;
 
             if (line.LengthSquared() == 0)
@@ -1803,7 +1824,7 @@ internal class TrueTypeInterpreter
         bool postIUP = this.iupXCalled && this.iupYCalled;
         bool composite = this.isComposite;
         ControlPoint[] current = this.zp2.Current;
-        bool inTwilight = this.zp0.IsTwilight && this.zp1.IsTwilight && this.zp2.IsTwilight;
+        bool inTwilight = this.zp0.IsTwilight || this.zp1.IsTwilight || this.zp2.IsTwilight;
 
         for (int i = 0; i < this.state.Loop; i++)
         {
@@ -1851,41 +1872,172 @@ internal class TrueTypeInterpreter
     {
         switch (this.state.RoundState)
         {
+            case RoundMode.Off:
+                // FreeType's Round_None with compensation = 0.
+                return value;
+
             case RoundMode.ToGrid:
-                return value >= 0 ? (float)Math.Round(value) : -(float)Math.Round(-value);
-            case RoundMode.ToHalfGrid:
-                return value >= 0 ? (float)Math.Floor(value) + 0.5f : -((float)Math.Floor(-value) + 0.5f);
-            case RoundMode.ToDoubleGrid:
-                return value >= 0 ? (float)(Math.Round(value * 2, MidpointRounding.AwayFromZero) / 2) : -(float)(Math.Round(-value * 2, MidpointRounding.AwayFromZero) / 2);
-            case RoundMode.DownToGrid:
-                return value >= 0 ? (float)Math.Floor(value) : -(float)Math.Floor(-value);
-            case RoundMode.UpToGrid:
-                return value >= 0 ? (float)Math.Ceiling(value) : -(float)Math.Ceiling(-value);
-            case RoundMode.Super:
-            case RoundMode.Super45:
-                float result;
-                if (value >= 0)
+            {
+                // Round_To_Grid with compensation = 0.
+                if (value >= 0F)
                 {
-                    result = value - this.roundPhase + this.roundThreshold;
-                    result = (float)Math.Truncate(result / this.roundPeriod) * this.roundPeriod;
-                    result += this.roundPhase;
-                    if (result < 0)
+                    float val = (float)Math.Floor(value + 0.5F);
+                    if (val < 0F)
                     {
-                        result = this.roundPhase;
+                        val = 0F;
                     }
+
+                    return val;
                 }
                 else
                 {
-                    result = -value - this.roundPhase + this.roundThreshold;
-                    result = -(float)Math.Truncate(result / this.roundPeriod) * this.roundPeriod;
-                    result -= this.roundPhase;
-                    if (result > 0)
+                    float val = -(float)Math.Floor(-value + 0.5F);
+                    if (val > 0F)
                     {
-                        result = -this.roundPhase;
+                        val = 0F;
                     }
-                }
 
-                return result;
+                    return val;
+                }
+            }
+
+            case RoundMode.ToHalfGrid:
+            {
+                // Round_To_Half_Grid with compensation = 0.
+                if (value >= 0F)
+                {
+                    float val = (float)Math.Floor(value) + 0.5F;
+                    if (val < 0F)
+                    {
+                        val = 0.5F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -((float)Math.Floor(-value) + 0.5F);
+                    if (val > 0F)
+                    {
+                        val = -0.5F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.DownToGrid:
+            {
+                // Round_Down_To_Grid with compensation = 0.
+                if (value >= 0F)
+                {
+                    float val = (float)Math.Floor(value);
+                    if (val < 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -(float)Math.Floor(-value);
+                    if (val > 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.UpToGrid:
+            {
+                // Round_Up_To_Grid with compensation = 0.
+                if (value >= 0F)
+                {
+                    float val = (float)Math.Ceiling(value);
+                    if (val < 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -(float)Math.Ceiling(-value);
+                    if (val > 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.ToDoubleGrid:
+            {
+                // Round_To_Double_Grid: grid step is 0.5 pixels.
+                const float step = 0.5F;
+
+                if (value >= 0F)
+                {
+                    float val = step * (float)Math.Floor((value / step) + 0.5F);
+                    if (val < 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -step * (float)Math.Floor((-value / step) + 0.5F);
+                    if (val > 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.Super:
+            case RoundMode.Super45:
+            {
+                // Round_Super / Round_Super_45 with compensation = 0.
+                float period = this.roundPeriod;
+                float phase = this.roundPhase;
+                float threshold = this.roundThreshold;
+
+                if (value >= 0F)
+                {
+                    float val = value - phase + threshold;
+                    val = (float)Math.Floor(val / period) * period;
+                    val += phase;
+
+                    if (val < 0F)
+                    {
+                        val = phase;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -value - phase + threshold;
+                    val = (float)Math.Floor(val / period) * period;
+                    val = -val - phase;
+
+                    if (val > 0F)
+                    {
+                        val = -phase;
+                    }
+
+                    return val;
+                }
+            }
 
             default:
                 return value;

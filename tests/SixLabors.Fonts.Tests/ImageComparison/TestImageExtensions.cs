@@ -6,12 +6,19 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using SixLabors.Fonts.Tests.ImageComparison;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace SixLabors.Fonts.Tests.TestUtilities;
 
 public static class TestImageExtensions
 {
+    private static readonly PngEncoder Encoder = new()
+    {
+        CompressionLevel = PngCompressionLevel.BestCompression,
+        FilterMethod = PngFilterMethod.Adaptive
+    };
+
     public static string DebugSave(
         this Image image,
         string extension = null,
@@ -24,8 +31,17 @@ public static class TestImageExtensions
             Directory.CreateDirectory(outputDirectory);
         }
 
-        string path = Path.Combine(outputDirectory, $"{test}{FormatTestDetails(properties)}.{extension ?? "png"}");
-        image.Save(path);
+        string ext = extension ?? "png";
+        string path = Path.Combine(outputDirectory, $"{test}{FormatTestDetails(properties)}.{ext}");
+
+        if (ext == "png")
+        {
+            image.Save(path, Encoder);
+        }
+        else
+        {
+            image.Save(path);
+        }
 
         return path;
     }

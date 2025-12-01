@@ -175,9 +175,18 @@ internal static class TextLayout
         // Update the positions of the glyphs in the completed collection.
         // Each set of metrics is associated with single font and will only be updated
         // by that font so it's safe to use a single collection.
-        foreach (TextRun textRun in textRuns)
+        Font? lastFont = null;
+        for (int i = 0; i < textRuns.Count; i++)
         {
+            TextRun textRun = textRuns[i];
+
+            if (textRun.Font == lastFont)
+            {
+                continue;
+            }
+
             textRun.Font!.FontMetrics.UpdatePositions(positionings);
+            lastFont = textRun.Font;
         }
 
         foreach (Font font in fallbackFonts)

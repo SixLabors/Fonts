@@ -39,6 +39,9 @@ internal class GlyphShapingData
         this.CursiveAttachment = data.CursiveAttachment;
         this.IsSubstituted = data.IsSubstituted;
         this.IsDecomposed = data.IsDecomposed;
+        this.IsPositioned = data.IsPositioned;
+        this.IsKerned = data.IsKerned;
+
         if (data.UniversalShapingEngineInfo != null)
         {
             this.UniversalShapingEngineInfo = new(
@@ -143,6 +146,16 @@ internal class GlyphShapingData
     /// Gets or sets a value indicating whether this glyph is the result of a decomposition substitution
     /// </summary>
     public bool IsDecomposed { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this glyph has been positioned.
+    /// </summary>
+    public bool IsPositioned { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this glyph has been kerned.
+    /// </summary>
+    public bool IsKerned { get; set; }
 
     /// <summary>
     /// Gets or sets the universal shaping information.
