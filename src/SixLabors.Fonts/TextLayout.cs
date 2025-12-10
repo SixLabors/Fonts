@@ -332,9 +332,24 @@ internal static class TextLayout
         float originX = penLocation.X;
         float offsetX = 0;
 
-        // Set the Y-Origin for the line.
+        // Set the Y origin for the first horizontal line and account for tall stacks.
         if (isFirstLine)
         {
+            // ScaledMinY is the minimum ink Y for this line in Y down (baseline at 0).
+            // -ScaledMinY is the actual ascent required to contain the ink.
+            // ScaledMaxAscender is the typographic ascent we already used to build the line box.
+            float requiredAscent = -textLine.ScaledMinY;
+            float extraAscent = requiredAscent - textLine.ScaledMaxAscender;
+
+            if (extraAscent > 0)
+            {
+                // Shift the baseline down only by the extra ascent needed so that
+                // stacked glyphs (Tibetan, etc) fit inside the bitmap. For Latin,
+                // requiredAscent ~= ScaledMaxAscender and extraAscent is zero.
+                offsetY += extraAscent;
+                advanceY += extraAscent;
+            }
+
             switch (options.VerticalAlignment)
             {
                 case VerticalAlignment.Center:
@@ -512,11 +527,25 @@ internal static class TextLayout
             }
         }
 
-        penLocation.Y += offsetY;
-
         bool isFirstLine = index == 0;
+        float yExtraAdvance = 0;
         if (isFirstLine)
         {
+            // First vertical line: add extra ascent if the actual ink extends above
+            // the typographic ascender. This mirrors the horizontal logic but along
+            // the vertical flow direction of the column.
+            float requiredAscent = -textLine.ScaledMinY;
+            float extraAscent = requiredAscent - textLine.ScaledMaxAscender;
+
+            if (extraAscent > 0)
+            {
+                // Move the column baseline down so that the tallest ink above the
+                // baseline fits inside the image, and increase the advance so the
+                // column height matches the new extent.
+                offsetY += extraAscent;
+                yExtraAdvance += extraAscent;
+            }
+
             // Set the X-Origin for horizontal alignment.
             switch (options.HorizontalAlignment)
             {
@@ -537,6 +566,7 @@ internal static class TextLayout
             }
         }
 
+        penLocation.Y += offsetY;
         penLocation.X += offsetX;
 
         List<GlyphLayout> glyphs = [];
@@ -581,14 +611,13 @@ internal static class TextLayout
                 }
 
                 Vector2 offset = new(alignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
-
                 glyphs.Add(new GlyphLayout(
                     new Glyph(metric, data.PointSize),
                     boxLocation,
                     penLocation + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
                     offset,
                     advanceX,
-                    data.ScaledAdvance,
+                    data.ScaledAdvance + yExtraAdvance,
                     GlyphLayoutMode.Vertical,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
@@ -597,7 +626,7 @@ internal static class TextLayout
                 j++;
             }
 
-            penLocation.Y += data.ScaledAdvance;
+            penLocation.Y += data.ScaledAdvance + yExtraAdvance;
         }
 
         boxLocation.Y = originY;
@@ -670,11 +699,25 @@ internal static class TextLayout
             }
         }
 
-        penLocation.Y += offsetY;
-
         bool isFirstLine = index == 0;
+        float extraAdvance = 0;
         if (isFirstLine)
         {
+            // First mixed vertical line: compute any extra ascent required for this line.
+            // As with horizontal layout, ScaledMinY captures the true ink top in Y down,
+            // and ScaledMaxAscender is the typographic ascent used for line metrics.
+            float requiredAscent = -textLine.ScaledMinY;
+            float extraAscent = requiredAscent - textLine.ScaledMaxAscender;
+
+            if (extraAscent > 0)
+            {
+                // Push the baseline for the first column down so that tall stacks are
+                // fully visible, and store the extra amount so we can also expand the
+                // advance along the flow direction for all glyphs in this column.
+                offsetY += extraAscent;
+                extraAdvance += extraAscent;
+            }
+
             // Set the X-Origin for horizontal alignment.
             switch (options.HorizontalAlignment)
             {
@@ -695,6 +738,7 @@ internal static class TextLayout
             }
         }
 
+        penLocation.Y += offsetY;
         penLocation.X += offsetX;
 
         List<GlyphLayout> glyphs = [];
@@ -727,7 +771,10 @@ internal static class TextLayout
                 int j = 0;
                 foreach (GlyphMetrics metric in data.Metrics)
                 {
-                    // Align the glyphs horizontally so the baseline is centered.
+                    // The glyph will be rotated 90 degrees for vertical mixed layout.
+                    // We still advance along Y, but the glyphs are laid out sideways in X.
+
+                    // Compute the scale that converts design units to pixels for this size.
                     Vector2 scale = new Vector2(data.PointSize) / metric.ScaleFactor;
 
                     // Calculate the initial horizontal offset to center the glyph baseline:
@@ -741,8 +788,12 @@ internal static class TextLayout
                     float descenderAbs = Math.Abs(data.ScaledDescender);
                     float descenderDelta = (Math.Abs(textLine.ScaledMaxDescender) - descenderAbs) * .5F;
 
-                    // Final horizontal center offset combines the baseline and descender adjustments.
+                    // For rotated glyphs, extraAdvance represents additional "height"
+                    // that we allocated to the column to fit tall stacks above the baseline.
+                    // Adding half of that to the horizontal center offset keeps sideways
+                    // glyphs visually centered within the now taller column.
                     float centerOffsetX = baselineDelta + descenderAbs + descenderDelta;
+                    centerOffsetX += extraAdvance * .5F;
 
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
@@ -750,7 +801,7 @@ internal static class TextLayout
                         penLocation + new Vector2(centerOffsetX, 0),
                         Vector2.Zero,
                         advanceX,
-                        data.ScaledAdvance,
+                        data.ScaledAdvance + extraAdvance,
                         GlyphLayoutMode.VerticalRotated,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
@@ -774,7 +825,7 @@ internal static class TextLayout
                         penLocation + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
                         offset,
                         advanceX,
-                        data.ScaledAdvance,
+                        data.ScaledAdvance + extraAdvance,
                         GlyphLayoutMode.Vertical,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
@@ -784,7 +835,7 @@ internal static class TextLayout
                 }
             }
 
-            penLocation.Y += data.ScaledAdvance;
+            penLocation.Y += data.ScaledAdvance + extraAdvance;
         }
 
         boxLocation.Y = originY;
@@ -1173,6 +1224,16 @@ internal static class TextLayout
                     ascender -= delta;
                     descender -= delta;
 
+                    GlyphLayoutMode mode = GlyphLayoutMode.Horizontal;
+                    if (isVerticalLayout)
+                    {
+                        mode = GlyphLayoutMode.Vertical;
+                    }
+                    else if (isVerticalMixedLayout)
+                    {
+                        mode = shouldRotate ? GlyphLayoutMode.VerticalRotated : GlyphLayoutMode.Vertical;
+                    }
+
                     // Add our metrics to the line.
                     textLine.Add(
                         isDecomposed ? new GlyphMetrics[] { metric } : metrics,
@@ -1187,7 +1248,8 @@ internal static class TextLayout
                         graphemeCodePointIndex,
                         shouldRotate || shouldOffset,
                         isDecomposed,
-                        stringIndex);
+                        stringIndex,
+                        mode);
                 }
 
                 codePointIndex++;
@@ -1350,6 +1412,8 @@ internal static class TextLayout
     {
         private float? scaledMaxAdvance;
 
+        private float? minY;
+
         public TextBox(IReadOnlyList<TextLine> textLines)
             => this.TextLines = textLines;
 
@@ -1357,6 +1421,9 @@ internal static class TextLayout
 
         public float ScaledMaxAdvance()
             => this.scaledMaxAdvance ??= this.TextLines.Max(x => x.ScaledLineAdvance);
+
+        public float ScaledMinY()
+            => this.minY ??= this.TextLines.Min(x => x.ScaledMinY);
 
         public TextDirection TextDirection() => this.TextLines[0][0].TextDirection;
     }
@@ -1380,6 +1447,8 @@ internal static class TextLayout
 
         public float ScaledMaxDescender { get; private set; } = -1;
 
+        public float ScaledMinY { get; private set; }
+
         public GlyphLayoutData this[int index] => this.data[index];
 
         public void Add(
@@ -1395,7 +1464,8 @@ internal static class TextLayout
             int graphemeCodePointIndex,
             bool isTransformed,
             bool isDecomposed,
-            int stringIndex)
+            int stringIndex,
+            GlyphLayoutMode layoutMode)
         {
             // Reset metrics.
             // We track the maximum metrics for each line to ensure glyphs can be aligned.
@@ -1408,6 +1478,33 @@ internal static class TextLayout
             this.ScaledMaxAscender = MathF.Max(this.ScaledMaxAscender, scaledAscender);
             this.ScaledMaxDescender = MathF.Max(this.ScaledMaxDescender, scaledDescender);
 
+            // Track the true top of the ink in device space (Y down, baseline at 0).
+            // For scripts with stacked marks (Tibetan, etc) this can be significantly
+            // above the typographic ascender, so we cannot trust ascender alone.
+            float scaledMinY = 0;
+            for (int i = 0; i < metrics.Count; i++)
+            {
+                GlyphMetrics metric = metrics[i];
+                if (GlyphMetrics.ShouldSkipGlyphRendering(metric.CodePoint))
+                {
+                    continue;
+                }
+
+                FontRectangle bbox = metric.GetBoundingBox(layoutMode, Vector2.Zero, pointSize);
+                scaledMinY = MathF.Min(scaledMinY, bbox.Y);
+            }
+
+            // ScaledMinY is the minimum ink Y over all glyphs in this line, in Y down.
+            // It is usually <= 0; more negative means more ink above the baseline.
+            if (this.data.Count == 0)
+            {
+                this.ScaledMinY = scaledMinY;
+            }
+            else
+            {
+                this.ScaledMinY = MathF.Min(this.ScaledMinY, scaledMinY);
+            }
+
             this.data.Add(new(
                 metrics,
                 pointSize,
@@ -1415,6 +1512,7 @@ internal static class TextLayout
                 scaledLineHeight,
                 scaledAscender,
                 scaledDescender,
+                scaledMinY,
                 bidiRun,
                 graphemeIndex,
                 codePointIndex,
@@ -1736,6 +1834,7 @@ internal static class TextLayout
             float ascender = 0;
             float descender = 0;
             float lineHeight = 0;
+            float minY = 0;
             for (int i = 0; i < textLine.Count; i++)
             {
                 GlyphLayoutData glyph = textLine[i];
@@ -1743,12 +1842,15 @@ internal static class TextLayout
                 ascender = MathF.Max(ascender, glyph.ScaledAscender);
                 descender = MathF.Max(descender, glyph.ScaledDescender);
                 lineHeight = MathF.Max(lineHeight, glyph.ScaledLineHeight);
+                minY = MathF.Min(minY, glyph.ScaledMinY);
             }
 
             textLine.ScaledLineAdvance = advance;
             textLine.ScaledMaxAscender = ascender;
             textLine.ScaledMaxDescender = descender;
             textLine.ScaledMaxLineHeight = lineHeight;
+            textLine.ScaledMinY = minY;
+
             textLine.advances.Clear();
         }
 
@@ -1823,6 +1925,7 @@ internal static class TextLayout
                 float scaledLineHeight,
                 float scaledAscender,
                 float scaledDescender,
+                float scaledMinY,
                 BidiRun bidiRun,
                 int graphemeIndex,
                 int codePointIndex,
@@ -1837,6 +1940,7 @@ internal static class TextLayout
                 this.ScaledLineHeight = scaledLineHeight;
                 this.ScaledAscender = scaledAscender;
                 this.ScaledDescender = scaledDescender;
+                this.ScaledMinY = scaledMinY;
                 this.BidiRun = bidiRun;
                 this.GraphemeIndex = graphemeIndex;
                 this.CodePointIndex = codePointIndex;
@@ -1859,6 +1963,8 @@ internal static class TextLayout
             public float ScaledAscender { get; }
 
             public float ScaledDescender { get; }
+
+            public float ScaledMinY { get; }
 
             public BidiRun BidiRun { get; }
 

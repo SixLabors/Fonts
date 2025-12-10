@@ -39,7 +39,7 @@ internal static class TextLayoutTestUtilities
         int imageWidth = isVertical ? width : Math.Max(width, wrappingLength + 1);
         int imageHeight = isVertical ? Math.Max(height, wrappingLength + 1) : height;
 
-        List<object> extended = properties?.ToList() ?? new();
+        List<object> extended = properties?.ToList() ?? [];
         if (options.WrappingLength > 0)
         {
             extended.Insert(0, options.WrappingLength);
