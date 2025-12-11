@@ -468,6 +468,7 @@ public static partial class Generator
 
         List<Codepoint> codePoints = GenerateUniversalShapingDataTrie(ugc, uisc, uipc, uajt);
         GenerateIndicShapingDataTrie([.. codePoints]);
+        GenerateMyanmarShapingData();
     }
 
     private static void ProcessUnicodeData()

@@ -171,7 +171,7 @@ internal sealed class IndicShaper : DefaultShaper
                 CodePoint codePoint = data.CodePoint;
 
                 data.IndicShapingEngineInfo = new(
-                    (Categories)(1 << IndicShapingCategory(codePoint)),
+                    (Categories)IndicShapingCategory(codePoint),
                     (Positions)IndicShapingPosition(codePoint),
                     match.Tags[0],
                     syllable);
@@ -276,7 +276,7 @@ internal sealed class IndicShaper : DefaultShaper
 
                 // Update shaping info for newly inserted data.
                 GlyphShapingData dotted = substitutionCollection[i + 1];
-                Categories dottedCategory = (Categories)(1 << IndicShapingCategory(dotted.CodePoint));
+                Categories dottedCategory = (Categories)IndicShapingCategory(dotted.CodePoint);
                 Positions dottedPosition = (Positions)IndicShapingPosition(dotted.CodePoint);
                 dotted.IndicShapingEngineInfo = new(dottedCategory, dottedPosition, dataInfo.SyllableType, dataInfo.Syllable);
 
@@ -548,7 +548,7 @@ internal sealed class IndicShaper : DefaultShaper
                 IndicShapingEngineInfo? info = substitutionCollection[i].IndicShapingEngineInfo;
                 if (info != null)
                 {
-                    if ((info.Category & (JoinerFlags | Categories.N | Categories.RS | Categories.CM | (HalantOrCoengFlags & info.Category))) != 0)
+                    if ((FlagUnsafe(info.Category) & (JoinerFlags | Flag(Categories.N) | Flag(Categories.RS) | Flag(Categories.CM) | (HalantOrCoengFlags & FlagUnsafe(info.Category)))) != 0)
                     {
                         info.Position = lastPosition;
                         if (info.Category == Categories.H && info.Position == Positions.Pre_M)
@@ -600,7 +600,7 @@ internal sealed class IndicShaper : DefaultShaper
 
                         last = i;
                     }
-                    else if (info.Category == Categories.M)
+                    else if ((FlagUnsafe(info.Category) & (Flag(Categories.M))) == 0)
                     {
                         last = i;
                     }
@@ -824,13 +824,13 @@ internal sealed class IndicShaper : DefaultShaper
     }
 
     private static bool IsConsonant(GlyphShapingData data)
-        => data.IndicShapingEngineInfo != null && (data.IndicShapingEngineInfo.Category & ConsonantFlags) != 0;
+        => data.IndicShapingEngineInfo != null && (FlagUnsafe(data.IndicShapingEngineInfo.Category) & ConsonantFlags) != 0;
 
     private static bool IsJoiner(GlyphShapingData data)
-        => data.IndicShapingEngineInfo != null && (data.IndicShapingEngineInfo.Category & JoinerFlags) != 0;
+        => data.IndicShapingEngineInfo != null && (FlagUnsafe(data.IndicShapingEngineInfo.Category) & JoinerFlags) != 0;
 
     private static bool IsHalantOrCoeng(GlyphShapingData data)
-        => data.IndicShapingEngineInfo != null && (data.IndicShapingEngineInfo.Category & HalantOrCoengFlags) != 0;
+        => data.IndicShapingEngineInfo != null && (FlagUnsafe(data.IndicShapingEngineInfo.Category) & HalantOrCoengFlags) != 0;
 
     private static int NextSyllable(GlyphSubstitutionCollection collection, int index, int count)
     {
@@ -962,7 +962,7 @@ internal sealed class IndicShaper : DefaultShaper
 
             if (basePosition < end)
             {
-                while (start < basePosition && (substitutionCollection[basePosition].IndicShapingEngineInfo?.Category & (Categories.N | HalantOrCoengFlags)) != 0)
+                while (start < basePosition && (FlagUnsafe(substitutionCollection[basePosition].IndicShapingEngineInfo?.Category) & (Flag(Categories.N) | HalantOrCoengFlags)) != 0)
                 {
                     basePosition--;
                 }
@@ -988,7 +988,7 @@ internal sealed class IndicShaper : DefaultShaper
                 // We want to position matra after them.
                 if (this.ScriptClass is not ScriptClass.Malayalam and not ScriptClass.Tamil)
                 {
-                    while (newPos > start && (substitutionCollection[newPos].IndicShapingEngineInfo?.Category & (Categories.M | HalantOrCoengFlags)) == 0)
+                    while (newPos > start && (FlagUnsafe(substitutionCollection[newPos].IndicShapingEngineInfo?.Category) & (Flag(Categories.M) | HalantOrCoengFlags)) == 0)
                     {
                         newPos--;
                     }
@@ -1165,7 +1165,7 @@ internal sealed class IndicShaper : DefaultShaper
                     {
                         for (int i = basePosition + 1; i < newRephPos; i++)
                         {
-                            if (substitutionCollection[i].IndicShapingEngineInfo?.Category == Categories.M)
+                            if ((FlagUnsafe(substitutionCollection[i].IndicShapingEngineInfo?.Category) & (Flag(Categories.M))) == 0)
                             {
                                 newRephPos--;
                             }
@@ -1217,11 +1217,12 @@ internal sealed class IndicShaper : DefaultShaper
                             // We want to position matra after them.
                             if (this.ScriptClass is not ScriptClass.Malayalam and not ScriptClass.Tamil)
                             {
-                                while (newPos > start && (substitutionCollection[newPos - 1].IndicShapingEngineInfo?.Category & (Categories.M | HalantOrCoengFlags)) == 0)
+                                while (newPos > start && (FlagUnsafe(substitutionCollection[newPos - 1].IndicShapingEngineInfo?.Category) & (Flag(Categories.M) | HalantOrCoengFlags)) == 0)
                                 {
                                     newPos--;
                                 }
 
+                                // TODO: Remove once we have Kmher shaper.
                                 // In Khmer coeng model, a H,Ra can go *after* matras.  If it goes after a
                                 // split matra, it should be reordered to *before* the left part of such matra.
                                 if (newPos > start && substitutionCollection[newPos - 1].IndicShapingEngineInfo?.Category == Categories.M)
