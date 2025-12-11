@@ -600,7 +600,7 @@ internal sealed class IndicShaper : DefaultShaper
 
                         last = i;
                     }
-                    else if ((FlagUnsafe(info.Category) & (Flag(Categories.M))) == 0)
+                    else if ((FlagUnsafe(info.Category) & Flag(Categories.M)) != 0)
                     {
                         last = i;
                     }
@@ -1165,7 +1165,7 @@ internal sealed class IndicShaper : DefaultShaper
                     {
                         for (int i = basePosition + 1; i < newRephPos; i++)
                         {
-                            if ((FlagUnsafe(substitutionCollection[i].IndicShapingEngineInfo?.Category) & (Flag(Categories.M))) == 0)
+                            if ((FlagUnsafe(substitutionCollection[i].IndicShapingEngineInfo?.Category) & Flag(Categories.M)) != 0)
                             {
                                 newRephPos--;
                             }

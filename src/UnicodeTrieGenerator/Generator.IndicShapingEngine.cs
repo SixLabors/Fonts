@@ -19,7 +19,7 @@ public static partial class Generator
 {
     private static readonly Dictionary<ISC, Categories> CategoryMap = new()
     {
-        { ISC.Other, Categories.X },
+        // { ISC.Other, Categories.X },
         { ISC.Avagraha, Categories.Symbol },
         { ISC.Bindu, Categories.SM },
         { ISC.BrahmiJoiningNumber, Categories.Placeholder },
@@ -37,7 +37,7 @@ public static partial class Generator
         { ISC.ConsonantSucceedingRepha, Categories.N },
         { ISC.ConsonantWithStacker, Categories.Repha },
         { ISC.GeminationMark, Categories.SM }, // https://github.com/harfbuzz/harfbuzz/issues/552
-        { ISC.InvisibleStacker, Categories.H },
+        { ISC.InvisibleStacker, Categories.Coeng }, // TODO: Use H once we add explicit Khmer shaper
         { ISC.Joiner, Categories.ZWJ },
         { ISC.ModifyingLetter, Categories.X },
         { ISC.NonJoiner, Categories.ZWNJ },
@@ -191,20 +191,22 @@ public static partial class Generator
         // Khmer overrides
         // --------------------------------------------------------------------
         { 0x179A, Categories.Ra },       // Khmer Ra
-        { 0x17CC, Categories.Robatic },
-        { 0x17C9, Categories.Robatic },
-        { 0x17CA, Categories.Robatic },
-        { 0x17C6, Categories.Xgroup },
-        { 0x17CB, Categories.Xgroup },
-        { 0x17CD, Categories.Xgroup },
-        { 0x17CE, Categories.Xgroup },
-        { 0x17CF, Categories.Xgroup },
-        { 0x17D0, Categories.Xgroup },
-        { 0x17D1, Categories.Xgroup },
-        { 0x17C7, Categories.Ygroup },
-        { 0x17C8, Categories.Ygroup },
-        { 0x17DD, Categories.Ygroup },
-        { 0x17D3, Categories.Ygroup },   // Just guessing. Uniscribe does not categorize it.
+        { 0x17C6, Categories.N }, // TODO: Replace with Xgroup as per below once we support it.
+
+        // { 0x17CC, Categories.Robatic },
+        // { 0x17C9, Categories.Robatic },
+        // { 0x17CA, Categories.Robatic },
+        // { 0x17C6, Categories.Xgroup },
+        // { 0x17CB, Categories.Xgroup },
+        // { 0x17CD, Categories.Xgroup },
+        // { 0x17CE, Categories.Xgroup },
+        // { 0x17CF, Categories.Xgroup },
+        // { 0x17D0, Categories.Xgroup },
+        // { 0x17D1, Categories.Xgroup },
+        // { 0x17C7, Categories.Ygroup },
+        // { 0x17C8, Categories.Ygroup },
+        // { 0x17DD, Categories.Ygroup },
+        // { 0x17D3, Categories.Ygroup },   // Just guessing. Uniscribe does not categorize it.
 
         // https://github.com/harfbuzz/harfbuzz/issues/2384
         { 0x17D9, Categories.Placeholder },
@@ -340,7 +342,7 @@ public static partial class Generator
         {
             position = MatraPosition(codepoint, position);
         }
-        else if (category is Categories.SM or Categories.VD or Categories.A or Categories.Symbol)
+        else if (category is Categories.SM or Categories.A or Categories.Symbol)
         {
             position = Positions.SMVD;
         }
@@ -359,41 +361,43 @@ public static partial class Generator
         SetBlocks(codePoints);
 
         // The categories enum contains duplicate values to we need to map them all.
-        Dictionary<string, int> symbols = [];
-        foreach (Categories c in Enum.GetValues<Categories>())
-        {
-            int value = (int)c;
-            if (c == Categories.H)
-            {
-                symbols[nameof(Categories.H)] = value;
-                symbols[nameof(Categories.Coeng)] = value;
-                continue;
-            }
+        //Dictionary<string, int> symbols = [];
+        //foreach (Categories c in Enum.GetValues<Categories>())
+        //{
+        //    int value = (int)c;
+        //    //if (c == Categories.H)
+        //    //{
+        //    //    symbols[nameof(Categories.H)] = value;
+        //    //    //symbols[nameof(Categories.Coeng)] = value;
+        //    //    continue;
+        //    //}
 
-            if (c == Categories.V)
-            {
-                symbols[nameof(Categories.IV)] = value;
-                symbols[nameof(Categories.V)] = value;
-                continue;
-            }
+        //    //if (c == Categories.V)
+        //    //{
+        //    //   // symbols[nameof(Categories.IV)] = value;
+        //    //    symbols[nameof(Categories.V)] = value;
+        //    //    continue;
+        //    //}
 
-            if (c == Categories.N)
-            {
-                symbols[nameof(Categories.DB)] = value;
-                symbols[nameof(Categories.N)] = value;
-                continue;
-            }
+        //    //if (c == Categories.N)
+        //    //{
+        //    //   // symbols[nameof(Categories.DB)] = value;
+        //    //    symbols[nameof(Categories.N)] = value;
+        //    //    continue;
+        //    //}
 
-            if (c == Categories.Placeholder)
-            {
-                symbols[nameof(Categories.GB)] = value;
-                symbols[nameof(Categories.Placeholder)] = value;
-                continue;
-            }
+        //    //if (c == Categories.Placeholder)
+        //    //{
+        //    //   // symbols[nameof(Categories.GB)] = value;
+        //    //    symbols[nameof(Categories.Placeholder)] = value;
+        //    //    continue;
+        //    //}
 
-            string name = c.ToString();
-            symbols[name] = value;
-        }
+        //    string name = c.ToString();
+        //    symbols[name] = value;
+        //}
+
+        Dictionary<string, int> symbols = Enum.GetValues<Categories>().ToDictionary(c => c.ToString(), c => (int)c);
 
         UnicodeTrieBuilder builder = new();
         for (int i = 0; i < codePoints.Length; i++)

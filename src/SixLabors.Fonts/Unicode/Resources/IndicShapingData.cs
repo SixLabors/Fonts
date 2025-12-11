@@ -53,14 +53,14 @@ internal static partial class IndicShapingData
         V = 2,   // Dependent vowel
         N = 3,   // Nukta
         H = 4,   // Halant (virama)
-        Coeng = H,   // Khmer Coeng, mapped to H in HarfBuzz
+        // Coeng = H,   // Khmer Coeng, mapped to H in HarfBuzz
 
         ZWNJ = 5,   // Zero width non-joiner
         ZWJ = 6,   // Zero width joiner
         M = 7,   // Generic matra / dependent vowel
         SM = 8,   // Syllable modifier / visarga / tone marks
         A = 9,   // Vowel sign A (and related)
-        VD = 9,   // Vowel-dependent sign (shares code with A)
+        // VD = 9,   // Vowel-dependent sign (shares code with A)
 
         Placeholder = 10,  // Placeholder (NBSP, etc.)
         Dotted_Circle = 11,  // Explicit dotted circle
@@ -85,11 +85,12 @@ internal static partial class IndicShapingData
         Robatic = 25,  // Khmer Robatic sign
         Xgroup = 26,  // Khmer X-group matra sequence
         Ygroup = 27,  // Khmer Y-group matra sequence
+        Coeng = 28, // Remove once we no longer need it for Khmer
 
         // Myanmar-specific categories
-        IV = V,   // Independent vowel (shares code 2 with V in HarfBuzz)
-        DB = N,   // Dot-below (shares code 3 with N)
-        GB = Placeholder, // Generic base / placeholder (shares code 10)
+        //IV = V,   // Independent vowel (shares code 2 with V in HarfBuzz)
+        //DB = N,   // Dot-below (shares code 3 with N)
+        //GB = Placeholder, // Generic base / placeholder (shares code 10)
 
         As = 32,  // Asat
         MH = 35,  // Medial Ha
@@ -114,9 +115,10 @@ internal static partial class IndicShapingData
     // Values must match the Categories enum and the Ragel `export` codes.
     public enum MyanmarCategories : int
     {
+
         C = Categories.C,
-        IV = Categories.IV,
-        DB = Categories.DB,
+        IV = Categories.V,
+        DB = Categories.N,
         H = Categories.H,
         ZWNJ = Categories.ZWNJ,
         ZWJ = Categories.ZWJ,
@@ -367,7 +369,7 @@ internal static partial class IndicShapingData
         Flag(Categories.Coeng);
 
     /// <summary>
-    /// Provides a flag value for the given category. Only valid for categories &lt;= 32.
+    /// Provides a flag value for the given category. Only valid for categories &lt; 32.
     /// </summary>
     /// <param name="categories">The category for which to generate a bit flag. If null, the default category is used.</param>
     /// <returns>A 32-bit unsigned integer with a single bit set corresponding to the specified category value.</returns>
