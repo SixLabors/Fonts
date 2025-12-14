@@ -403,7 +403,13 @@ public static partial class Generator
         for (int i = 0; i < codePoints.Length; i++)
         {
             Codepoint codePoint = codePoints[i];
-            Categories category = IndicShapingOverrides.GetValueOrDefault(codePoint.Code, CategoryMap.GetValueOrDefault(codePoint.IndicSyllabicCategory, Categories.X));
+            Categories rawCategory = IndicShapingOverrides.GetValueOrDefault(
+                codePoint.Code,
+                CategoryMap.GetValueOrDefault(codePoint.IndicSyllabicCategory, Categories.X));
+
+            // Apply HarfBuzz-style matra normalization for Khmer/Myanmar blocks.
+            Categories category = NormalizeCategoryForBlock(codePoint, rawCategory);
+
             int position = GetPosition(codePoint, category);
 
             builder.Set(codePoint.Code, (uint)((symbols[category.ToString()] << 8) | position));
@@ -415,6 +421,40 @@ public static partial class Generator
         StateMachine machine = GetStateMachine("indic", symbols);
 
         GenerateDataClass("IndicShaping", null, null, machine, true);
+    }
+
+    private static Categories NormalizeCategoryForBlock(Codepoint codepoint, Categories category)
+    {
+        // HarfBuzz: matra_categories = ('M', 'MPst')
+        // For Khmer and Myanmar blocks, convert generic matras (M/MPst)
+        // into positional vowel categories VPre/VAbv/VBlw/VPst based on
+        // the base positional category (PRE_C / ABOVE_C / BELOW_C / POST_C).
+        if (category is Categories.M or Categories.MPst)
+        {
+            string block = codepoint.Block;
+
+            // TODO: Once we implement the Khmer shaper, enable Khmer here too.
+            // if (block.StartsWith("Khmer", StringComparison.Ordinal) ||
+            //    block.StartsWith("Myanmar", StringComparison.Ordinal))
+            if (block.StartsWith("Myanmar", StringComparison.Ordinal))
+            {
+                // Base positional category from IndicPositionalCategory.txt
+                Positions basePos = PositionMap.GetValueOrDefault(
+                    codepoint.IndicPositionalCategory,
+                    Positions.End);
+
+                return basePos switch
+                {
+                    Positions.Pre_C => Categories.VPre,
+                    Positions.Above_C => Categories.VAbv,
+                    Positions.Below_C => Categories.VBlw,
+                    Positions.Post_C => Categories.VPst,
+                    _ => category
+                };
+            }
+        }
+
+        return category;
     }
 
     private static void SetBlocks(Codepoint[] codePoints)

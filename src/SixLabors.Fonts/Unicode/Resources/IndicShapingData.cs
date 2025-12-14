@@ -1,7 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System;
+using System.Drawing;
 using System.Runtime.CompilerServices;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SixLabors.Fonts.Unicode.Resources;
 
@@ -115,7 +118,6 @@ internal static partial class IndicShapingData
     // Values must match the Categories enum and the Ragel `export` codes.
     public enum MyanmarCategories : int
     {
-
         C = Categories.C,
         IV = Categories.V,
         DB = Categories.N,
@@ -360,6 +362,19 @@ internal static partial class IndicShapingData
         Flag(Categories.Placeholder) |
         Flag(Categories.Dotted_Circle);
 
+    // Note:
+    // We treat Vowels and placeholders as if they were consonants.This is safe because Vowels
+    // cannot happen in a consonant syllable.The plus side however is, we can call the
+    // consonant syllable logic from the vowel syllable function and get it all right!
+    // Keep in sync with the categories used in the Myanmar state machine generator.
+    public static uint MyanmarConsonantFlags { get; } =
+        Flag(MyanmarCategories.C) |
+        Flag(MyanmarCategories.CS) |
+        Flag(MyanmarCategories.Ra) |
+        Flag(MyanmarCategories.IV) |
+        Flag(MyanmarCategories.GB) |
+        Flag(MyanmarCategories.Dotted_Circle);
+
     public static uint JoinerFlags { get; } =
         Flag(Categories.ZWJ) |
         Flag(Categories.ZWNJ);
@@ -375,17 +390,29 @@ internal static partial class IndicShapingData
     /// <returns>A 32-bit unsigned integer with a single bit set corresponding to the specified category value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint Flag(Categories? categories)
-    {
-        categories ??= Categories.X;
+        => FlagCoreChecked((int)(categories ?? default));
 
+    /// <summary>
+    /// Provides a flag value for the given category. Only valid for categories &lt; 32.
+    /// </summary>
+    /// <param name="categories">The category for which to generate a bit flag. If null, the default category is used.</param>
+    /// <returns>A 32-bit unsigned integer with a single bit set corresponding to the specified category value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint Flag(MyanmarCategories? categories)
+        => FlagCoreChecked((int)(categories ?? default));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint FlagCoreChecked(int value)
+    {
 #if DEBUG
-        if ((int)categories > 31)
+        if ((uint)value >= 32u)
         {
-            throw new ArgumentOutOfRangeException(nameof(categories));
+            throw new ArgumentOutOfRangeException(
+                nameof(value),
+                "Flag() is only defined for enum values < 32.");
         }
 #endif
-
-        return 1u << (int)categories;
+        return 1u << value;
     }
 
     /// <summary>
@@ -398,10 +425,22 @@ internal static partial class IndicShapingData
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint FlagUnsafe(Categories? categories)
-    {
-        categories ??= Categories.X;
-        return (int)categories < 32 ? 1u << (int)categories : 0u;
-    }
+        => FlagUnsafeCore((int)(categories ?? default));
+
+    /// <summary>
+    /// Returns a bit flag corresponding to the specified category, or zero if the category value is out of range.
+    /// </summary>
+    /// <param name="categories">The category for which to generate a bit flag. If null, the default category is used.</param>
+    /// <returns>
+    /// A 32-bit unsigned integer with a single bit set corresponding to the specified category value; returns 0 if the
+    /// category value is not between 0 and 31, inclusive.
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint FlagUnsafe(MyanmarCategories? categories)
+        => FlagUnsafeCore((int)(categories ?? default));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint FlagUnsafeCore(int value) => value < 32 ? 1u << value : 0u;
 
     internal struct ShapingConfiguration
     {

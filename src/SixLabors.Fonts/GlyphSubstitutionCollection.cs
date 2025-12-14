@@ -153,6 +153,41 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
     }
 
     /// <summary>
+    /// Reverses the order of elements in the specified range of the collection.
+    /// </summary>
+    /// <remarks>
+    /// The range is interpreted as half-open, from <paramref name="startIndex"/> (inclusive)
+    /// to <paramref name="endIndex"/> (exclusive).
+    ///
+    /// Both indices are clamped to the valid range [0, <see cref="Count"/>].
+    /// If the resulting range contains fewer than two elements, the method performs no action.
+    /// The method does not throw if either index is equal to <see cref="Count"/>; in such
+    /// cases the range is considered valid but may be empty.
+    /// </remarks>
+    /// <param name="startIndex">
+    /// The zero-based index at which to start reversing (inclusive). This value should be
+    /// greater than or equal to 0. Values greater than <see cref="Count"/> are treated as
+    /// <see cref="Count"/>.
+    /// </param>
+    /// <param name="endIndex">
+    /// The zero-based index at which to stop reversing (exclusive). This value should be
+    /// greater than or equal to <paramref name="startIndex"/>. Values greater than
+    /// <see cref="Count"/> are treated as <see cref="Count"/>.
+    /// </param>
+    public void ReverseRange(int startIndex, int endIndex)
+    {
+        int s = Math.Min(startIndex, this.Count);
+        int e = Math.Min(endIndex, this.Count);
+
+        if (e < s + 2)
+        {
+            return;
+        }
+
+        this.glyphs.Reverse(s, e - s);
+    }
+
+    /// <summary>
     /// Performs a stable sort of the glyphs by the comparison delegate starting at the specified index.
     /// </summary>
     /// <param name="startIndex">The start index.</param>
