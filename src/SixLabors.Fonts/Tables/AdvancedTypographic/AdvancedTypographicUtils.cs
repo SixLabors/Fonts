@@ -298,20 +298,38 @@ internal static class AdvancedTypographicUtils
 
         SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
 
-        // Backtrack starts at i-1 (nearest) and walks backward.
-        if (!MatchBacktrackCoverageSequence(iterator, backtrack, index - 1, endExclusive))
+        // Compute backtrack start using skippy prev(), not index-1.
+        int backtrackStart = index;
+        if (backtrack.Length > 0)
+        {
+            SkippingGlyphIterator backIt = iterator;
+            backIt.Index = index;
+            backtrackStart = backIt.Prev(); // first backtrack glyph (i-1 in skippy space)
+        }
+
+        if (!MatchBacktrackCoverageSequence(iterator, backtrack, backtrackStart, endExclusive))
         {
             return false;
         }
 
-        // Input starts at i and walks forward.
+        // Input starts at the current glyph position.
         if (!MatchCoverageSequence(iterator, input, index, endExclusive))
         {
             return false;
         }
 
-        // Lookahead starts after input and walks forward.
-        if (!MatchCoverageSequence(iterator, lookahead, index + input.Length, endExclusive))
+        // Compute lookahead start by advancing through the input sequence using skippy Next(),
+        // not by raw index arithmetic.
+        int lookaheadStart = index;
+        if (lookahead.Length > 0)
+        {
+            SkippingGlyphIterator fwdIt = iterator;
+            fwdIt.Index = index;
+            fwdIt.Increment(input.Length); // advance input.Length steps in skippy space
+            lookaheadStart = fwdIt.Index;
+        }
+
+        if (!MatchCoverageSequence(iterator, lookahead, lookaheadStart, endExclusive))
         {
             return false;
         }
