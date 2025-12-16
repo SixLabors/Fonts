@@ -150,7 +150,7 @@ internal class GSubTable : Table
             count += delta;
 
             IEnumerable<ShapingStage> stages = shaper.GetShapingStages();
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default, 0);
             foreach (ShapingStage stage in stages)
             {
                 collectionCount = collection.Count;
@@ -207,8 +207,20 @@ internal class GSubTable : Table
             // Apply features in order.
             foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
             {
+                // DEBUG: identify which GSUB lookup index and type is being applied for this feature.
+                // lookupIndex here matches HarfBuzz/Crowbar "lookup N".
+                // Example expectation from Crowbar: feature 'blws' starts lookup 155.
+                // You need LookupType for 155 and whether it triggers recursion to 156.
+                System.Diagnostics.Debug.WriteLine($"GSUB feature '{featureTag}' applying lookup {featureLookup.Index} type {featureLookup.LookupTable.LookupType}");
+
+                if (featureTag == Tag.Parse("blws") && featureLookup.Index == 155)
+                {
+                    var dbg = 1;
+                }
+
                 Tag feature = featureLookup.Feature;
-                iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
+                LookupTable featureLookupTable = featureLookup.LookupTable;
+                iterator.Reset(index, featureLookupTable.LookupFlags, featureLookupTable.MarkFilteringSet);
 
                 while (iterator.Index < index + count)
                 {

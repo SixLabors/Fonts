@@ -6,7 +6,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 internal class NotImplementedSubTable : LookupSubTable
 {
     public NotImplementedSubTable()
-        : base(default)
+        : base(default, 0)
     {
     }
 

@@ -165,7 +165,7 @@ internal class GPosTable : Table
             // Plan positioning features for each glyph.
             shaper.Plan(collection, index, count);
             IEnumerable<ShapingStage> shapingStages = shaper.GetShapingStages();
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default, 0);
             foreach (ShapingStage stage in shapingStages)
             {
                 stage.PreProcessFeature(collection, index, count);
@@ -177,7 +177,8 @@ internal class GPosTable : Table
                     foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
                     {
                         Tag feature = featureLookup.Feature;
-                        iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
+                        LookupTable featureLookupTable = featureLookup.LookupTable;
+                        iterator.Reset(index, featureLookupTable.LookupFlags, featureLookupTable.MarkFilteringSet);
 
                         while (iterator.Index < index + count)
                         {

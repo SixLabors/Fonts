@@ -1,10 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-using System.Drawing;
 using System.Runtime.CompilerServices;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SixLabors.Fonts.Unicode.Resources;
 
@@ -56,15 +53,15 @@ internal static partial class IndicShapingData
         V = 2,   // Dependent vowel
         N = 3,   // Nukta
         H = 4,   // Halant (virama)
-        // Coeng = H,   // Khmer Coeng, mapped to H in HarfBuzz
 
+        // Coeng = H,   // Khmer Coeng, mapped to H in HarfBuzz
         ZWNJ = 5,   // Zero width non-joiner
         ZWJ = 6,   // Zero width joiner
         M = 7,   // Generic matra / dependent vowel
         SM = 8,   // Syllable modifier / visarga / tone marks
         A = 9,   // Vowel sign A (and related)
-        // VD = 9,   // Vowel-dependent sign (shares code with A)
 
+        // VD = 9,   // Vowel-dependent sign (shares code with A)
         Placeholder = 10,  // Placeholder (NBSP, etc.)
         Dotted_Circle = 11,  // Explicit dotted circle
 
@@ -91,10 +88,9 @@ internal static partial class IndicShapingData
         Coeng = 28, // Remove once we no longer need it for Khmer
 
         // Myanmar-specific categories
-        //IV = V,   // Independent vowel (shares code 2 with V in HarfBuzz)
-        //DB = N,   // Dot-below (shares code 3 with N)
-        //GB = Placeholder, // Generic base / placeholder (shares code 10)
-
+        // IV = V,   // Independent vowel (shares code 2 with V in HarfBuzz)
+        // DB = N,   // Dot-below (shares code 3 with N)
+        // GB = Placeholder, // Generic base / placeholder (shares code 10)
         As = 32,  // Asat
         MH = 35,  // Medial Ha
         MR = 36,  // Medial Ra

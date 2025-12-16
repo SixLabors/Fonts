@@ -11,14 +11,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 /// </summary>
 internal static class LookupType4SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort substFormat = reader.ReadUInt16();
 
         return substFormat switch
         {
-            1 => LookupType4Format1SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType4Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -29,14 +29,14 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
     private readonly LigatureSetTable[] ligatureSetTables;
     private readonly CoverageTable coverageTable;
 
-    private LookupType4Format1SubTable(LigatureSetTable[] ligatureSetTables, CoverageTable coverageTable, LookupFlags lookupFlags)
-        : base(lookupFlags)
+    private LookupType4Format1SubTable(LigatureSetTable[] ligatureSetTables, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
+        : base(lookupFlags, markFilteringSet)
     {
         this.ligatureSetTables = ligatureSetTables;
         this.coverageTable = coverageTable;
     }
 
-    public static LookupType4Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupType4Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // Ligature Substitution Format 1
         // +----------+--------------------------------------+--------------------------------------------------------------------+
@@ -59,7 +59,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
         Span<ushort> ligatureSetOffsets = ligatureSetOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(ligatureSetOffsets);
 
-        var ligatureSetTables = new LigatureSetTable[ligatureSetCount];
+        LigatureSetTable[] ligatureSetTables = new LigatureSetTable[ligatureSetCount];
         for (int i = 0; i < ligatureSetTables.Length; i++)
         {
             // LigatureSet Table
@@ -79,7 +79,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
             Span<ushort> ligatureOffsets = ligatureOffsetsBuffer.GetSpan();
             reader.ReadUInt16Array(ligatureOffsets);
 
-            var ligatureTables = new LigatureTable[ligatureCount];
+            LigatureTable[] ligatureTables = new LigatureTable[ligatureCount];
 
             // Ligature Table
             // +--------+---------------------------------------+------------------------------------------------------+
@@ -104,9 +104,9 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
             ligatureSetTables[i] = new LigatureSetTable(ligatureTables);
         }
 
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-        return new LookupType4Format1SubTable(ligatureSetTables, coverageTable, lookupFlags);
+        return new LookupType4Format1SubTable(ligatureSetTables, coverageTable, lookupFlags, markFilteringSet);
     }
 
     public override bool TrySubstitution(
@@ -130,7 +130,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
         }
 
         LigatureSetTable ligatureSetTable = this.ligatureSetTables[offset];
-        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
+        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags, this.MarkFilteringSet);
         Span<int> matchBuffer = stackalloc int[AdvancedTypographicUtils.MaxContextLength];
         for (int i = 0; i < ligatureSetTable.Ligatures.Length; i++)
         {
@@ -176,7 +176,7 @@ internal sealed class LookupType4Format1SubTable : LookupSubTable
             bool isBaseLigature = shapingClass.IsBase;
             bool isMarkLigature = shapingClass.IsMark;
 
-            Span<int> matches = matchBuffer.Slice(0, Math.Min(ligatureTable.ComponentGlyphs.Length, matchBuffer.Length));
+            Span<int> matches = matchBuffer[..Math.Min(ligatureTable.ComponentGlyphs.Length, matchBuffer.Length)];
             for (int j = 0; j < matches.Length && isMarkLigature; j++)
             {
                 GlyphShapingData match = collection[matches[j]];

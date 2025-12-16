@@ -16,15 +16,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType2SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort posFormat = reader.ReadUInt16();
 
         return posFormat switch
         {
-            1 => LookupType2Format1SubTable.Load(reader, offset, lookupFlags),
-            2 => LookupType2Format2SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType2Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            2 => LookupType2Format2SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -34,14 +34,14 @@ internal static class LookupType2SubTable
         private readonly CoverageTable coverageTable;
         private readonly PairSetTable[] pairSets;
 
-        public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets, LookupFlags lookupFlags)
-            : base(lookupFlags)
+        public LookupType2Format1SubTable(CoverageTable coverageTable, PairSetTable[] pairSets, LookupFlags lookupFlags, ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.coverageTable = coverageTable;
             this.pairSets = pairSets;
         }
 
-        public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // Pair Adjustment Positioning Subtable format 1.
             // +-------------+------------------------------+------------------------------------------------+
@@ -73,16 +73,16 @@ internal static class LookupType2SubTable
             Span<ushort> pairSetOffsets = pairSetOffsetsBuffer.GetSpan();
             reader.ReadUInt16Array(pairSetOffsets);
 
-            var pairSets = new PairSetTable[pairSetCount];
+            PairSetTable[] pairSets = new PairSetTable[pairSetCount];
             for (int i = 0; i < pairSetCount; i++)
             {
                 reader.Seek(offset + pairSetOffsets[i], SeekOrigin.Begin);
                 pairSets[i] = PairSetTable.Load(reader, offset + pairSetOffsets[i], valueFormat1, valueFormat2);
             }
 
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType2Format1SubTable(coverageTable, pairSets, lookupFlags);
+            return new LookupType2Format1SubTable(coverageTable, pairSets, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(
@@ -148,7 +148,7 @@ internal static class LookupType2SubTable
                 // +-----------------+----------------------------------+---------------------------------------+
                 reader.Seek(offset, SeekOrigin.Begin);
                 ushort pairValueCount = reader.ReadUInt16();
-                var pairValueRecords = new PairValueRecord[pairValueCount];
+                PairValueRecord[] pairValueRecords = new PairValueRecord[pairValueCount];
                 for (int i = 0; i < pairValueRecords.Length; i++)
                 {
                     pairValueRecords[i] = new PairValueRecord(reader, valueFormat1, valueFormat2);
@@ -186,8 +186,9 @@ internal static class LookupType2SubTable
             Class1Record[] class1Records,
             ClassDefinitionTable classDefinitionTable1,
             ClassDefinitionTable classDefinitionTable2,
-            LookupFlags lookupFlags)
-            : base(lookupFlags)
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.coverageTable = coverageTable;
             this.class1Records = class1Records;
@@ -195,7 +196,7 @@ internal static class LookupType2SubTable
             this.classDefinitionTable2 = classDefinitionTable2;
         }
 
-        public static LookupType2Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType2Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // Pair Adjustment Positioning Subtable format 2.
             // +-------------+------------------------------+------------------------------------------------+
@@ -237,17 +238,17 @@ internal static class LookupType2SubTable
             ushort class1Count = reader.ReadUInt16();
             ushort class2Count = reader.ReadUInt16();
 
-            var class1Records = new Class1Record[class1Count];
+            Class1Record[] class1Records = new Class1Record[class1Count];
             for (int i = 0; i < class1Records.Length; i++)
             {
                 class1Records[i] = Class1Record.Load(reader, class2Count, valueFormat1, valueFormat2);
             }
 
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
-            var classDefTable1 = ClassDefinitionTable.Load(reader, offset + classDef1Offset);
-            var classDefTable2 = ClassDefinitionTable.Load(reader, offset + classDef2Offset);
+            CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            ClassDefinitionTable classDefTable1 = ClassDefinitionTable.Load(reader, offset + classDef1Offset);
+            ClassDefinitionTable classDefTable2 = ClassDefinitionTable.Load(reader, offset + classDef2Offset);
 
-            return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2, lookupFlags);
+            return new LookupType2Format2SubTable(coverageTable, class1Records, classDefTable1, classDefTable2, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(

@@ -65,6 +65,9 @@ internal sealed class GlyphDefinitionTable : Table
         return true;
     }
 
+    public bool IsInMarkGlyphSet(ushort markGlyphSetIndex, ushort glyphId)
+        => this.MarkGlyphSetsTable?.Contains(markGlyphSetIndex, glyphId) == true;
+
     public static GlyphDefinitionTable Load(BigEndianBinaryReader reader)
     {
         // Header version 1.0

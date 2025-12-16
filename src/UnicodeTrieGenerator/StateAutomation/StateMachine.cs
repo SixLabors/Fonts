@@ -56,16 +56,7 @@ internal class StateMachine
             int c = input[i];
 
             int lastState = state;
-
-            try
-            {
-                state = this.StateTable[state][c];
-            }
-            catch (Exception e)
-            {
-
-                throw;
-            }
+            state = this.StateTable[state][c];
 
             if (state == FailState)
             {

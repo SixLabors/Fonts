@@ -12,16 +12,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType8SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort substFormat = reader.ReadUInt16();
 
         return substFormat switch
         {
-            1 => LookupType8Format1SubTable.Load(reader, offset, lookupFlags),
-            2 => LookupType8Format2SubTable.Load(reader, offset, lookupFlags),
-            3 => LookupType8Format3SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType8Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            2 => LookupType8Format2SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            3 => LookupType8Format3SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -34,17 +34,20 @@ internal static class LookupType8SubTable
         private LookupType8Format1SubTable(
             CoverageTable coverageTable,
             ChainedSequenceRuleSetTable[] seqRuleSetTables,
-            LookupFlags lookupFlags)
-            : base(lookupFlags)
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.coverageTable = coverageTable;
             this.seqRuleSetTables = seqRuleSetTables;
         }
 
-        public static LookupType8Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType8Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
-            ChainedSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
-            return new LookupType8Format1SubTable(coverageTable, seqRuleSets, lookupFlags);
+            ChainedSequenceRuleSetTable[] seqRuleSets =
+                TableLoadingUtils.LoadChainedSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
+
+            return new LookupType8Format1SubTable(coverageTable, seqRuleSets, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(
@@ -83,7 +86,7 @@ internal static class LookupType8SubTable
 
             // Apply ruleset for the given glyph id.
             ChainedSequenceRuleTable[] rules = seqRuleSet.SequenceRuleTables;
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags, this.MarkFilteringSet);
             for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
             {
                 ChainedSequenceRuleTable rule = rules[lookupIndex];
@@ -125,8 +128,9 @@ internal static class LookupType8SubTable
             ClassDefinitionTable inputClassDefinitionTable,
             ClassDefinitionTable lookaheadClassDefinitionTable,
             CoverageTable coverageTable,
-            LookupFlags lookupFlags)
-            : base(lookupFlags)
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.sequenceRuleSetTables = sequenceRuleSetTables;
             this.backtrackClassDefinitionTable = backtrackClassDefinitionTable;
@@ -135,7 +139,7 @@ internal static class LookupType8SubTable
             this.coverageTable = coverageTable;
         }
 
-        public static LookupType8Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType8Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             ChainedClassSequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadChainedSequenceContextFormat2(
                 reader,
@@ -145,7 +149,14 @@ internal static class LookupType8SubTable
                 out ClassDefinitionTable inputClassDefTable,
                 out ClassDefinitionTable lookaheadClassDefTable);
 
-            return new LookupType8Format2SubTable(seqRuleSets, backtrackClassDefTable, inputClassDefTable, lookaheadClassDefTable, coverageTable, lookupFlags);
+            return new LookupType8Format2SubTable(
+                seqRuleSets,
+                backtrackClassDefTable,
+                inputClassDefTable,
+                lookaheadClassDefTable,
+                coverageTable,
+                lookupFlags,
+                markFilteringSet);
         }
 
         public override bool TryUpdatePosition(
@@ -180,10 +191,14 @@ internal static class LookupType8SubTable
             }
 
             // Apply ruleset for the given glyph class id.
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags, this.MarkFilteringSet);
             for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
             {
                 ChainedClassSequenceRuleTable rule = rules[lookupIndex];
+                //if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, rule, index + count, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
+                //{
+                //    continue;
+                //}
                 if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, rule, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
                 {
                     continue;
@@ -221,8 +236,9 @@ internal static class LookupType8SubTable
             CoverageTable[] backtrackCoverageTables,
             CoverageTable[] inputCoverageTables,
             CoverageTable[] lookaheadCoverageTables,
-            LookupFlags lookupFlags)
-            : base(lookupFlags)
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.seqLookupRecords = seqLookupRecords;
             this.backtrackCoverageTables = backtrackCoverageTables;
@@ -230,7 +246,7 @@ internal static class LookupType8SubTable
             this.lookaheadCoverageTables = lookaheadCoverageTables;
         }
 
-        public static LookupType8Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType8Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             SequenceLookupRecord[] seqLookupRecords = TableLoadingUtils.LoadChainedSequenceContextFormat3(
                 reader,
@@ -239,7 +255,13 @@ internal static class LookupType8SubTable
                 out CoverageTable[] inputCoverageTables,
                 out CoverageTable[] lookaheadCoverageTables);
 
-            return new LookupType8Format3SubTable(seqLookupRecords, backtrackCoverageTables, inputCoverageTables, lookaheadCoverageTables, lookupFlags);
+            return new LookupType8Format3SubTable(
+                seqLookupRecords,
+                backtrackCoverageTables,
+                inputCoverageTables,
+                lookaheadCoverageTables,
+                lookupFlags,
+                markFilteringSet);
         }
 
         public override bool TryUpdatePosition(
@@ -256,7 +278,7 @@ internal static class LookupType8SubTable
                 return false;
             }
 
-            if (!AdvancedTypographicUtils.CheckAllCoverages(fontMetrics, this.LookupFlags, collection, index, count, this.inputCoverageTables, this.backtrackCoverageTables, this.lookaheadCoverageTables))
+            if (!AdvancedTypographicUtils.CheckAllCoverages(fontMetrics, this.LookupFlags, this.MarkFilteringSet, collection, index, count, this.inputCoverageTables, this.backtrackCoverageTables, this.lookaheadCoverageTables))
             {
                 return false;
             }

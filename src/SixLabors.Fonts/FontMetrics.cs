@@ -173,6 +173,17 @@ public abstract class FontMetrics
     internal abstract bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass);
 
     /// <summary>
+    /// Returns a value indicating whether the specified glyph is in the given mark filtering set.
+    /// The font needs to have a GDEF table defined.
+    /// </summary>
+    /// <param name="markGlyphSetIndex">The mark glyph set index.</param>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <returns>
+    /// true, if the glyph is in the mark filtering set.
+    /// </returns>
+    internal abstract bool IsInMarkFilteringSet(ushort markGlyphSetIndex, ushort glyphId);
+
+    /// <summary>
     /// Gets the glyph metrics for a given code point.
     /// </summary>
     /// <param name="codePoint">The Unicode code point to get the glyph for.</param>

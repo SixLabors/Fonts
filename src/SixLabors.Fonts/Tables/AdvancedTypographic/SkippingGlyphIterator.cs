@@ -10,12 +10,15 @@ internal struct SkippingGlyphIterator
     private bool ignoreBaseGlyphs;
     private bool ignoreLigatures;
     private ushort markAttachmentType;
+    private bool useMarkFilteringSet;
+    private ushort markFilteringSet;
 
     public SkippingGlyphIterator(
         FontMetrics fontMetrics,
         IGlyphShapingCollection collection,
         int index,
-        LookupFlags lookupFlags)
+        LookupFlags lookupFlags,
+        ushort markFilteringSet)
     {
         this.fontMetrics = fontMetrics;
         this.Collection = collection;
@@ -24,6 +27,8 @@ internal struct SkippingGlyphIterator
         this.ignoreBaseGlyphs = (lookupFlags & LookupFlags.IgnoreBaseGlyphs) != 0;
         this.ignoreLigatures = (lookupFlags & LookupFlags.IgnoreLigatures) != 0;
         this.markAttachmentType = (ushort)((int)(lookupFlags & LookupFlags.MarkAttachmentTypeMask) >> 8);
+        this.useMarkFilteringSet = (lookupFlags & LookupFlags.UseMarkFilteringSet) != 0;
+        this.markFilteringSet = markFilteringSet;
     }
 
     public IGlyphShapingCollection Collection { get; }
@@ -33,6 +38,12 @@ internal struct SkippingGlyphIterator
     public int Next()
     {
         this.Move(1);
+        return this.Index;
+    }
+
+    public int Prev()
+    {
+        this.Move(-1);
         return this.Index;
     }
 
@@ -48,13 +59,15 @@ internal struct SkippingGlyphIterator
         return this.Index;
     }
 
-    public void Reset(int index, LookupFlags lookupFlags)
+    public void Reset(int index, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         this.Index = index;
         this.ignoreMarks = (lookupFlags & LookupFlags.IgnoreMarks) != 0;
         this.ignoreBaseGlyphs = (lookupFlags & LookupFlags.IgnoreBaseGlyphs) != 0;
         this.ignoreLigatures = (lookupFlags & LookupFlags.IgnoreLigatures) != 0;
         this.markAttachmentType = (ushort)((int)(lookupFlags & LookupFlags.MarkAttachmentTypeMask) >> 8);
+        this.useMarkFilteringSet = (lookupFlags & LookupFlags.UseMarkFilteringSet) != 0;
+        this.markFilteringSet = markFilteringSet;
     }
 
     private void Move(int direction)
@@ -75,6 +88,17 @@ internal struct SkippingGlyphIterator
     {
         GlyphShapingData data = this.Collection[index];
         GlyphShapingClass shapingClass = AdvancedTypographicUtils.GetGlyphShapingClass(this.fontMetrics, data.GlyphId, data);
+
+        if (this.useMarkFilteringSet && shapingClass.IsMark)
+        {
+            // Skip marks not in the lookup's MarkFilteringSet.
+            // This requires GDEF MarkGlyphSetsDef support.
+            if (!AdvancedTypographicUtils.IsInMarkFilteringSet(this.fontMetrics, this.markFilteringSet, data.GlyphId))
+            {
+                return true;
+            }
+        }
+
         return (this.ignoreMarks && shapingClass.IsMark) ||
             (this.ignoreBaseGlyphs && shapingClass.IsBase) ||
             (this.ignoreLigatures && shapingClass.IsLigature) ||

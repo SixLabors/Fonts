@@ -11,16 +11,16 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType7SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort subTableFormat = reader.ReadUInt16();
 
         return subTableFormat switch
         {
-            1 => LookupType7Format1SubTable.Load(reader, offset, lookupFlags),
-            2 => LookupType7Format2SubTable.Load(reader, offset, lookupFlags),
-            3 => LookupType7Format3SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType7Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            2 => LookupType7Format2SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            3 => LookupType7Format3SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -30,18 +30,22 @@ internal static class LookupType7SubTable
         private readonly CoverageTable coverageTable;
         private readonly SequenceRuleSetTable[] seqRuleSetTables;
 
-        public LookupType7Format1SubTable(CoverageTable coverageTable, SequenceRuleSetTable[] seqRuleSetTables, LookupFlags lookupFlags)
-            : base(lookupFlags)
+        public LookupType7Format1SubTable(
+            CoverageTable coverageTable,
+            SequenceRuleSetTable[] seqRuleSetTables,
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.seqRuleSetTables = seqRuleSetTables;
             this.coverageTable = coverageTable;
         }
 
-        public static LookupType7Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType7Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             SequenceRuleSetTable[] seqRuleSets = TableLoadingUtils.LoadSequenceContextFormat1(reader, offset, out CoverageTable coverageTable);
 
-            return new LookupType7Format1SubTable(coverageTable, seqRuleSets, lookupFlags);
+            return new LookupType7Format1SubTable(coverageTable, seqRuleSets, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(
@@ -67,7 +71,7 @@ internal static class LookupType7SubTable
             // TODO: Check this.
             // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#example-7-contextual-substitution-format-1
             SequenceRuleSetTable ruleSetTable = this.seqRuleSetTables[offset];
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags, this.MarkFilteringSet);
             foreach (SequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
             {
                 int remaining = count - 1;
@@ -88,6 +92,7 @@ internal static class LookupType7SubTable
                     table,
                     feature,
                     this.LookupFlags,
+                    this.MarkFilteringSet,
                     ruleTable.SequenceLookupRecords,
                     collection,
                     index,
@@ -108,19 +113,25 @@ internal static class LookupType7SubTable
             CoverageTable coverageTable,
             ClassDefinitionTable classDefinitionTable,
             ClassSequenceRuleSetTable[] sequenceRuleSetTables,
-            LookupFlags lookupFlags)
-            : base(lookupFlags)
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.coverageTable = coverageTable;
             this.classDefinitionTable = classDefinitionTable;
             this.sequenceRuleSetTables = sequenceRuleSetTables;
         }
 
-        public static LookupType7Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType7Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
-            CoverageTable coverageTable = TableLoadingUtils.LoadSequenceContextFormat2(reader, offset, out ClassDefinitionTable classDefTable, out ClassSequenceRuleSetTable[] classSeqRuleSets);
+            CoverageTable coverageTable =
+                TableLoadingUtils.LoadSequenceContextFormat2(
+                    reader,
+                    offset,
+                    out ClassDefinitionTable classDefTable,
+                    out ClassSequenceRuleSetTable[] classSeqRuleSets);
 
-            return new LookupType7Format2SubTable(coverageTable, classDefTable, classSeqRuleSets, lookupFlags);
+            return new LookupType7Format2SubTable(coverageTable, classDefTable, classSeqRuleSets, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(
@@ -149,7 +160,7 @@ internal static class LookupType7SubTable
             }
 
             ClassSequenceRuleSetTable ruleSetTable = this.sequenceRuleSetTables[offset];
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags, this.MarkFilteringSet);
             foreach (ClassSequenceRuleTable ruleTable in ruleSetTable.SequenceRuleTables)
             {
                 int remaining = count - 1;
@@ -170,6 +181,7 @@ internal static class LookupType7SubTable
                     table,
                     feature,
                     this.LookupFlags,
+                    this.MarkFilteringSet,
                     ruleTable.SequenceLookupRecords,
                     collection,
                     index,
@@ -185,18 +197,23 @@ internal static class LookupType7SubTable
         private readonly CoverageTable[] coverageTables;
         private readonly SequenceLookupRecord[] sequenceLookupRecords;
 
-        public LookupType7Format3SubTable(CoverageTable[] coverageTables, SequenceLookupRecord[] sequenceLookupRecords, LookupFlags lookupFlags)
-            : base(lookupFlags)
+        public LookupType7Format3SubTable(
+            CoverageTable[] coverageTables,
+            SequenceLookupRecord[] sequenceLookupRecords,
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.coverageTables = coverageTables;
             this.sequenceLookupRecords = sequenceLookupRecords;
         }
 
-        public static LookupType7Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType7Format3SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
-            SequenceLookupRecord[] seqLookupRecords = TableLoadingUtils.LoadSequenceContextFormat3(reader, offset, out CoverageTable[] coverageTables);
+            SequenceLookupRecord[] seqLookupRecords =
+                TableLoadingUtils.LoadSequenceContextFormat3(reader, offset, out CoverageTable[] coverageTables);
 
-            return new LookupType7Format3SubTable(coverageTables, seqLookupRecords, lookupFlags);
+            return new LookupType7Format3SubTable(coverageTables, seqLookupRecords, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(
@@ -213,8 +230,8 @@ internal static class LookupType7SubTable
                 return false;
             }
 
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags);
-            if (!AdvancedTypographicUtils.MatchCoverageSequence(iterator, this.coverageTables, 0))
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags, this.MarkFilteringSet);
+            if (!AdvancedTypographicUtils.MatchCoverageSequence(iterator, this.coverageTables, index))
             {
                 return false;
             }
@@ -224,6 +241,7 @@ internal static class LookupType7SubTable
                 table,
                 feature,
                 this.LookupFlags,
+                this.MarkFilteringSet,
                 this.sequenceLookupRecords,
                 collection,
                 index,

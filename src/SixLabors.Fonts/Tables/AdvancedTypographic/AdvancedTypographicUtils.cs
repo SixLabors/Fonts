@@ -46,12 +46,13 @@ internal static class AdvancedTypographicUtils
         GSubTable table,
         Tag feature,
         LookupFlags lookupFlags,
+        ushort markFilteringSet,
         SequenceLookupRecord[] records,
         GlyphSubstitutionCollection collection,
         int index,
         int count)
     {
-        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
         int currentCount = collection.Count;
 
         foreach (SequenceLookupRecord lookupRecord in records)
@@ -79,12 +80,13 @@ internal static class AdvancedTypographicUtils
         GPosTable table,
         Tag feature,
         LookupFlags lookupFlags,
+        ushort markFilteringSet,
         SequenceLookupRecord[] records,
         GlyphPositioningCollection collection,
         int index,
         int count)
     {
-        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
         foreach (SequenceLookupRecord lookupRecord in records)
         {
             ushort sequenceIndex = lookupRecord.SequenceIndex;
@@ -212,6 +214,7 @@ internal static class AdvancedTypographicUtils
     public static bool CheckAllCoverages(
         FontMetrics fontMetrics,
         LookupFlags lookupFlags,
+        ushort markFilteringSet,
         IGlyphShapingCollection collection,
         int index,
         int count,
@@ -226,7 +229,7 @@ internal static class AdvancedTypographicUtils
         }
 
         // Check all coverages: if any of them does not match, abort update.
-        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
         if (!MatchCoverageSequence(iterator, backtrack, -backtrack.Length))
         {
             return false;
@@ -330,6 +333,9 @@ internal static class AdvancedTypographicUtils
 
         return new GlyphShapingClass(isMark, isBase, isLigature, markAttachmentType);
     }
+
+    public static bool IsInMarkFilteringSet(FontMetrics fontMetrics, ushort markFilteringSet, ushort glyphId)
+        => fontMetrics.IsInMarkFilteringSet(markFilteringSet, glyphId);
 
     private static bool Match<T>(
         int increment,

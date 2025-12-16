@@ -12,14 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType6SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort subTableFormat = reader.ReadUInt16();
 
         return subTableFormat switch
         {
-            1 => LookupType6Format1SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType6Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -36,8 +36,9 @@ internal static class LookupType6SubTable
             CoverageTable mark2Coverage,
             MarkArrayTable mark1ArrayTable,
             Mark2ArrayTable mark2ArrayTable,
-            LookupFlags lookupFlags)
-            : base(lookupFlags)
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.mark1Coverage = mark1Coverage;
             this.mark2Coverage = mark2Coverage;
@@ -45,7 +46,7 @@ internal static class LookupType6SubTable
             this.mark2ArrayTable = mark2ArrayTable;
         }
 
-        public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // MarkMarkPosFormat1 Subtable.
             // +--------------------+---------------------------------+------------------------------------------------------+
@@ -73,12 +74,12 @@ internal static class LookupType6SubTable
             ushort mark1ArrayOffset = reader.ReadOffset16();
             ushort mark2ArrayOffset = reader.ReadOffset16();
 
-            var mark1Coverage = CoverageTable.Load(reader, offset + mark1CoverageOffset);
-            var mark2Coverage = CoverageTable.Load(reader, offset + mark2CoverageOffset);
-            var mark1ArrayTable = new MarkArrayTable(reader, offset + mark1ArrayOffset);
-            var mark2ArrayTable = new Mark2ArrayTable(reader, markClassCount, offset + mark2ArrayOffset);
+            CoverageTable mark1Coverage = CoverageTable.Load(reader, offset + mark1CoverageOffset);
+            CoverageTable mark2Coverage = CoverageTable.Load(reader, offset + mark2CoverageOffset);
+            MarkArrayTable mark1ArrayTable = new(reader, offset + mark1ArrayOffset);
+            Mark2ArrayTable mark2ArrayTable = new(reader, markClassCount, offset + mark2ArrayOffset);
 
-            return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable, lookupFlags);
+            return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(

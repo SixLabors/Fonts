@@ -792,7 +792,7 @@ internal sealed class IndicShaper : DefaultShaper
         if (fontMetrics.TryGetGSubTable(out GSubTable? gSubTable))
         {
             const int index = 0;
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default, 0);
             int initialCount = collection.Count;
             int collectionCount = initialCount;
             int count = initialCount - index;
