@@ -18,6 +18,12 @@ internal static class AdvancedTypographicUtils
     private const int MaxOperationsMinimum = 16384;
     private const int MaxShapingCharsLength = 0x3FFFFFFF; // Half int max.
 
+    internal enum MatchDirection
+    {
+        Forward,
+        Backward
+    }
+
     /// <summary>
     /// Gets a value indicating whether the glyph represented by the codepoint should be interpreted vertically.
     /// </summary>
@@ -149,14 +155,43 @@ internal static class AdvancedTypographicUtils
             (component, data) => component == classDefinitionTable.ClassIndexOf(data.GlyphId),
             default);
 
+    //public static bool MatchCoverageSequence(
+    //    SkippingGlyphIterator iterator,
+    //    CoverageTable[] coverageTable,
+    //    int increment)
+    //    => Match(
+    //        increment,
+    //        coverageTable,
+    //        iterator,
+    //        (component, data) => component.CoverageIndexOf(data.GlyphId) >= 0,
+    //        default);
+
     public static bool MatchCoverageSequence(
         SkippingGlyphIterator iterator,
         CoverageTable[] coverageTable,
-        int increment)
+        int startIndex,
+        int endExclusive)
         => Match(
-            increment,
-            coverageTable,
             iterator,
+            startIndex,
+            coverageTable,
+            MatchDirection.Forward,
+            endExclusive,
+            (component, data) => component.CoverageIndexOf(data.GlyphId) >= 0,
+            default);
+
+    // Backtrack variant (spec: backtrack[0] matches i-1, then i-2...)
+    public static bool MatchBacktrackCoverageSequence(
+        SkippingGlyphIterator iterator,
+        CoverageTable[] backtrack,
+        int startIndex,
+        int endExclusive)
+        => Match(
+            iterator,
+            startIndex,
+            backtrack,
+            MatchDirection.Backward,
+            endExclusive,
             (component, data) => component.CoverageIndexOf(data.GlyphId) >= 0,
             default);
 
@@ -211,6 +246,43 @@ internal static class AdvancedTypographicUtils
         return true;
     }
 
+    //public static bool CheckAllCoverages(
+    //    FontMetrics fontMetrics,
+    //    LookupFlags lookupFlags,
+    //    ushort markFilteringSet,
+    //    IGlyphShapingCollection collection,
+    //    int index,
+    //    int count,
+    //    CoverageTable[] input,
+    //    CoverageTable[] backtrack,
+    //    CoverageTable[] lookahead)
+    //{
+    //    // Check that there are enough context glyphs.
+    //    if (index < backtrack.Length || input.Length + lookahead.Length > count)
+    //    {
+    //        return false;
+    //    }
+
+    //    // Check all coverages: if any of them does not match, abort update.
+    //    SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
+    //    if (!MatchCoverageSequence(iterator, backtrack, -backtrack.Length))
+    //    {
+    //        return false;
+    //    }
+
+    //    if (!MatchCoverageSequence(iterator, input, 0))
+    //    {
+    //        return false;
+    //    }
+
+    //    if (!MatchCoverageSequence(iterator, lookahead, input.Length))
+    //    {
+    //        return false;
+    //    }
+
+    //    return true;
+    //}
+
     public static bool CheckAllCoverages(
         FontMetrics fontMetrics,
         LookupFlags lookupFlags,
@@ -222,25 +294,24 @@ internal static class AdvancedTypographicUtils
         CoverageTable[] backtrack,
         CoverageTable[] lookahead)
     {
-        // Check that there are enough context glyphs.
-        if (index < backtrack.Length || input.Length + lookahead.Length > count)
-        {
-            return false;
-        }
+        int endExclusive = index + count;
 
-        // Check all coverages: if any of them does not match, abort update.
         SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
-        if (!MatchCoverageSequence(iterator, backtrack, -backtrack.Length))
+
+        // Backtrack starts at i-1 (nearest) and walks backward.
+        if (!MatchBacktrackCoverageSequence(iterator, backtrack, index - 1, endExclusive))
         {
             return false;
         }
 
-        if (!MatchCoverageSequence(iterator, input, 0))
+        // Input starts at i and walks forward.
+        if (!MatchCoverageSequence(iterator, input, index, endExclusive))
         {
             return false;
         }
 
-        if (!MatchCoverageSequence(iterator, lookahead, input.Length))
+        // Lookahead starts after input and walks forward.
+        if (!MatchCoverageSequence(iterator, lookahead, index + input.Length, endExclusive))
         {
             return false;
         }
@@ -372,5 +443,57 @@ internal static class AdvancedTypographicUtils
 
         iterator.Index = position;
         return i == sequence.Length;
+    }
+
+    private static bool Match<T>(
+        SkippingGlyphIterator iterator,
+        int startIndex,
+        T[] sequence,
+        MatchDirection direction,
+        int endExclusive,
+        Func<T, GlyphShapingData, bool> condition,
+        Span<int> matches)
+    {
+        if (sequence.Length == 0)
+        {
+            return true;
+        }
+
+        int saved = iterator.Index;
+        iterator.Index = startIndex;
+
+        IGlyphShapingCollection collection = iterator.Collection;
+        int limit = Math.Min(endExclusive, collection.Count);
+
+        for (int i = 0; i < sequence.Length && i < MaxContextLength; i++)
+        {
+            if (iterator.Index < 0 || iterator.Index >= limit)
+            {
+                iterator.Index = saved;
+                return false;
+            }
+
+            GlyphShapingData data = collection[iterator.Index];
+            if (!condition(sequence[i], data))
+            {
+                iterator.Index = saved;
+                return false;
+            }
+
+            if (matches.Length == MaxContextLength)
+            {
+                matches[i] = iterator.Index;
+            }
+
+            if (i + 1 < sequence.Length)
+            {
+                iterator.Index = direction == MatchDirection.Forward
+                    ? iterator.Next()
+                    : iterator.Prev();
+            }
+        }
+
+        iterator.Index = saved;
+        return true;
     }
 }

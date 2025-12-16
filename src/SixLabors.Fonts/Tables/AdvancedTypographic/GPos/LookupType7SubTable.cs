@@ -231,7 +231,7 @@ internal static class LookupType7SubTable
             }
 
             SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags, this.MarkFilteringSet);
-            if (!AdvancedTypographicUtils.MatchCoverageSequence(iterator, this.coverageTables, index))
+            if (!AdvancedTypographicUtils.MatchCoverageSequence(iterator, this.coverageTables, index, index + count))
             {
                 return false;
             }

@@ -233,7 +233,7 @@ internal sealed class LookupType5Format3SubTable : LookupSubTable
 
         // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#53-context-substitution-format-3-coverage-based-glyph-contexts
         SkippingGlyphIterator iterator = new(fontMetrics, collection, index, this.LookupFlags, this.MarkFilteringSet);
-        if (!AdvancedTypographicUtils.MatchCoverageSequence(iterator, this.coverageTables, index))
+        if (!AdvancedTypographicUtils.MatchCoverageSequence(iterator, this.coverageTables, index, index + count))
         {
             return false;
         }
