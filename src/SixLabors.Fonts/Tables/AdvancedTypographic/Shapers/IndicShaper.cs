@@ -48,6 +48,8 @@ internal sealed class IndicShaper : DefaultShaper
     private ShapingConfiguration indicConfiguration;
     private readonly bool isOldSpec;
 
+    private bool hasBrokenClusters;
+
     public IndicShaper(ScriptClass script, Tag unicodeScriptTag, TextOptions textOptions, FontMetrics fontMetrics)
         : base(script, MarkZeroingMode.None, textOptions)
     {
@@ -68,7 +70,7 @@ internal sealed class IndicShaper : DefaultShaper
 
     protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
     {
-        this.AddFeature(collection, index, count, LoclTag, preAction: SetupSyllables);
+        this.AddFeature(collection, index, count, LoclTag, preAction: this.SetupSyllables);
         this.AddFeature(collection, index, count, CcmpTag);
 
         this.AddFeature(collection, index, count, NuktTag, preAction: this.InitialReorder);
@@ -108,7 +110,7 @@ internal sealed class IndicShaper : DefaultShaper
         // Decompose split matras
         Span<ushort> buffer = stackalloc ushort[16];
         int end = index + count;
-        for (int i = end - 1; i >= 0; i--)
+        for (int i = end - 1; i >= index; i--)
         {
             GlyphShapingData data = substitutionCollection[i];
             if ((Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) ||
@@ -116,29 +118,38 @@ internal sealed class IndicShaper : DefaultShaper
                 decompositions != null)
             {
                 Span<ushort> ids = buffer[..decompositions.Length];
+                bool shouldDecompose = true;
                 for (int j = 0; j < decompositions.Length; j++)
                 {
-                    // Font should always contain the decomposed glyph since the shaper
-                    // is assigned based on features supported by the font.
-                    _ = fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
+                    if (!fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id))
+                    {
+                        shouldDecompose = false;
+                        break;
+                    }
+
                     ids[j] = id;
                 }
 
-                substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
-                for (int j = 0; j < decompositions.Length; j++)
+                if (shouldDecompose)
                 {
-                    substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
+                    for (int j = 0; j < decompositions.Length; j++)
+                    {
+                        substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    }
                 }
             }
         }
     }
 
-    private static void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
+    private void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
         {
             return;
         }
+
+        this.hasBrokenClusters = false;
 
         Span<int> values = count <= 64 ? stackalloc int[count] : new int[count];
 
@@ -170,10 +181,17 @@ internal sealed class IndicShaper : DefaultShaper
                 GlyphShapingData data = substitutionCollection[i + index];
                 CodePoint codePoint = data.CodePoint;
 
+                string syllableType = match.Tags[0];
+
+                if (syllableType == "broken_cluster")
+                {
+                    this.hasBrokenClusters = true;
+                }
+
                 data.IndicShapingEngineInfo = new(
                     (Categories)IndicShapingCategory(codePoint),
                     (Positions)IndicShapingPosition(codePoint),
-                    match.Tags[0],
+                    syllableType,
                     syllable);
             }
 
@@ -242,49 +260,53 @@ internal sealed class IndicShaper : DefaultShaper
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
-        Span<ushort> glyphs = stackalloc ushort[2];
 
-        while (start < max)
+        if (this.hasBrokenClusters)
         {
-            GlyphShapingData data = substitutionCollection[start];
-            IndicShapingEngineInfo? dataInfo = data.IndicShapingEngineInfo;
-            string? type = dataInfo?.SyllableType;
-
-            if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
+            Span<ushort> glyphs = stackalloc ushort[2];
+            while (start < max)
             {
-                // Insert after possible Repha.
-                int i = start;
-                for (i = start; i < end; i++)
+                GlyphShapingData data = substitutionCollection[start];
+                IndicShapingEngineInfo? dataInfo = data.IndicShapingEngineInfo;
+                string? type = dataInfo?.SyllableType;
+
+                if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
                 {
-                    if (substitutionCollection[i].IndicShapingEngineInfo?.Category != Categories.Repha)
+                    // Insert after possible Repha.
+                    int i = start;
+                    for (i = start; i < end; i++)
                     {
-                        break;
+                        if (substitutionCollection[i].IndicShapingEngineInfo?.Category != Categories.Repha)
+                        {
+                            break;
+                        }
                     }
+
+                    GlyphShapingData current = substitutionCollection[i];
+                    IndicShapingEngineInfo currentInfo = current.IndicShapingEngineInfo!;
+                    glyphs[0] = current.GlyphId;
+                    glyphs[1] = circleId;
+
+                    substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+
+                    // Update shaping info for newly inserted data.
+                    GlyphShapingData dotted = substitutionCollection[i + 1];
+                    dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
+                    dotted.IndicShapingEngineInfo.Position = Positions.End;
+                    dotted.IndicShapingEngineInfo.SyllableType = currentInfo.SyllableType;
+                    dotted.IndicShapingEngineInfo.Syllable = currentInfo.Syllable;
+
+                    end++;
+                    max++;
                 }
 
-                GlyphShapingData current = substitutionCollection[i];
-                glyphs[0] = current.GlyphId;
-                glyphs[1] = circleId;
-
-                substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
-
-                // Update shaping info for newly inserted data.
-                // Update shaping info for newly inserted data.
-                GlyphShapingData dotted = substitutionCollection[i + 1];
-                dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
-                dotted.IndicShapingEngineInfo.Position = Positions.End;
-
-                end++;
-                max++;
+                start = end;
+                end = NextSyllable(substitutionCollection, start, max);
             }
 
-            start = end;
-            end = NextSyllable(substitutionCollection, start, max);
+            start = index;
+            end = NextSyllable(substitutionCollection, index, max);
         }
-
-        max = index + count;
-        start = index;
-        end = NextSyllable(substitutionCollection, index, max);
 
         while (start < max)
         {

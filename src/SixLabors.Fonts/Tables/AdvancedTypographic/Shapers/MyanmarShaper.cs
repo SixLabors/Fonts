@@ -36,6 +36,8 @@ internal sealed class MyanmarShaper : DefaultShaper
     private readonly TextOptions textOptions;
     private readonly FontMetrics fontMetrics;
 
+    private bool hasBrokenClusters;
+
     public MyanmarShaper(ScriptClass script, TextOptions textOptions, FontMetrics fontMetrics)
        : base(script, MarkZeroingMode.PreGPos, textOptions)
     {
@@ -45,7 +47,7 @@ internal sealed class MyanmarShaper : DefaultShaper
 
     protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
     {
-        this.AddFeature(collection, index, count, LoclTag, preAction: SetupSyllables);
+        this.AddFeature(collection, index, count, LoclTag, preAction: this.SetupSyllables);
         this.AddFeature(collection, index, count, CcmpTag);
 
         this.AddFeature(collection, index, count, RphfTag, preAction: this.InitialReorder);
@@ -59,12 +61,14 @@ internal sealed class MyanmarShaper : DefaultShaper
         this.AddFeature(collection, index, count, PstsTag);
     }
 
-    private static void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
+    private void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
         {
             return;
         }
+
+        this.hasBrokenClusters = false;
 
         Span<int> values = count <= 64 ? stackalloc int[count] : new int[count];
 
@@ -108,10 +112,17 @@ internal sealed class MyanmarShaper : DefaultShaper
                 GlyphShapingData data = substitutionCollection[i + index];
                 CodePoint codePoint = data.CodePoint;
 
+                string syllableType = match.Tags[0];
+
+                if (syllableType == "broken_cluster")
+                {
+                    this.hasBrokenClusters = true;
+                }
+
                 data.IndicShapingEngineInfo = new(
                     (Categories)IndicShapingCategory(codePoint),
                     (Positions)IndicShapingPosition(codePoint),
-                    match.Tags[0],
+                    syllableType,
                     syllable);
             }
 
@@ -148,47 +159,49 @@ internal sealed class MyanmarShaper : DefaultShaper
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
-        Span<ushort> glyphs = stackalloc ushort[2];
 
-        while (start < max)
+        if (this.hasBrokenClusters)
         {
-            GlyphShapingData data = substitutionCollection[start];
-            IndicShapingEngineInfo? dataInfo = data.IndicShapingEngineInfo;
-            string? type = dataInfo?.SyllableType;
-
-            if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
+            Span<ushort> glyphs = stackalloc ushort[2];
+            while (start < max)
             {
-                // Insert after possible Repha.
-                int i = start;
-                for (i = start; i < end; i++)
+                GlyphShapingData data = substitutionCollection[start];
+                IndicShapingEngineInfo? dataInfo = data.IndicShapingEngineInfo;
+                string? type = dataInfo?.SyllableType;
+
+                if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
                 {
-                    if (substitutionCollection[i].IndicShapingEngineInfo?.Category != Categories.Repha)
+                    // Insert after possible Repha.
+                    int i = start;
+                    for (i = start; i < end; i++)
                     {
-                        break;
+                        if (substitutionCollection[i].IndicShapingEngineInfo?.Category != Categories.Repha)
+                        {
+                            break;
+                        }
                     }
+
+                    GlyphShapingData current = substitutionCollection[i];
+                    glyphs[0] = current.GlyphId;
+                    glyphs[1] = circleId;
+
+                    substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+
+                    // Update shaping info for newly inserted data.
+                    GlyphShapingData dotted = substitutionCollection[i + 1];
+                    dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
+
+                    end++;
+                    max++;
                 }
 
-                GlyphShapingData current = substitutionCollection[i];
-                glyphs[0] = current.GlyphId;
-                glyphs[1] = circleId;
-
-                substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
-
-                // Update shaping info for newly inserted data.
-                GlyphShapingData dotted = substitutionCollection[i + 1];
-                dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
-
-                end++;
-                max++;
+                start = end;
+                end = NextSyllable(substitutionCollection, start, max);
             }
 
-            start = end;
-            end = NextSyllable(substitutionCollection, start, max);
+            start = index;
+            end = NextSyllable(substitutionCollection, index, max);
         }
-
-        max = index + count;
-        start = index;
-        end = NextSyllable(substitutionCollection, index, max);
 
         while (start < max)
         {

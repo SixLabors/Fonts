@@ -410,6 +410,12 @@ internal sealed class GlyphSubstitutionCollection : IGlyphShapingCollection
         }
     }
 
+    public void Insert(int index, GlyphShapingData data)
+    {
+        OffsetGlyphDataPair pair = this.glyphs[index];
+        this.glyphs.Insert(index, new(pair.Offset, data));
+    }
+
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     private class OffsetGlyphDataPair
     {

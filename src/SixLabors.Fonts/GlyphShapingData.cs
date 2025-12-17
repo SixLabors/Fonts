@@ -188,9 +188,9 @@ internal class UniversalShapingEngineInfo
 
     public string Category { get; set; }
 
-    public string SyllableType { get; }
+    public string SyllableType { get; set; }
 
-    public int Syllable { get; }
+    public int Syllable { get; set; }
 }
 
 internal class IndicShapingEngineInfo
@@ -213,7 +213,7 @@ internal class IndicShapingEngineInfo
 
     public Positions Position { get; set; }
 
-    public string SyllableType { get; }
+    public string SyllableType { get; set; }
 
-    public int Syllable { get; }
+    public int Syllable { get; set; }
 }
