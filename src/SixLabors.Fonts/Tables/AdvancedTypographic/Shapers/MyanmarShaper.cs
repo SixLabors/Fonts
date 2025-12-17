@@ -156,26 +156,19 @@ internal sealed class MyanmarShaper : DefaultShaper
             IndicShapingEngineInfo? dataInfo = data.IndicShapingEngineInfo;
             string? type = dataInfo?.SyllableType;
 
-            if (type is "non_indic_cluster")
-            {
-                goto Increment;
-            }
-
             if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
             {
                 // Insert after possible Repha.
                 int i = start;
-                GlyphShapingData current = substitutionCollection[i];
                 for (i = start; i < end; i++)
                 {
-                    if (current.IndicShapingEngineInfo?.Category != Categories.Repha)
+                    if (substitutionCollection[i].IndicShapingEngineInfo?.Category != Categories.Repha)
                     {
                         break;
                     }
-
-                    current = substitutionCollection[i];
                 }
 
+                GlyphShapingData current = substitutionCollection[i];
                 glyphs[0] = current.GlyphId;
                 glyphs[1] = circleId;
 
@@ -183,15 +176,12 @@ internal sealed class MyanmarShaper : DefaultShaper
 
                 // Update shaping info for newly inserted data.
                 GlyphShapingData dotted = substitutionCollection[i + 1];
-                Categories dottedCategory = (Categories)IndicShapingCategory(dotted.CodePoint);
-                Positions dottedPosition = (Positions)IndicShapingPosition(dotted.CodePoint);
-                dotted.IndicShapingEngineInfo = new(dottedCategory, dottedPosition, dataInfo.SyllableType, dataInfo.Syllable);
+                dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
 
                 end++;
                 max++;
             }
 
-            Increment:
             start = end;
             end = NextSyllable(substitutionCollection, start, max);
         }

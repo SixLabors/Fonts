@@ -235,33 +235,51 @@ internal sealed class UniversalShaper : DefaultShaper
             UniversalShapingEngineInfo? info = data.UniversalShapingEngineInfo;
             string? type = info?.SyllableType;
 
-            // Only a few syllable types need reordering.
-            if (type is not "virama_terminated_cluster" and not "standard_cluster" and not "broken_cluster")
-            {
-                goto Increment;
-            }
-
             if (hasDottedCircle && type == "broken_cluster")
             {
                 // Insert after possible Repha.
                 int i = start;
-                GlyphShapingData current = substitutionCollection[i];
                 for (i = start; i < end; i++)
                 {
-                    if (current.UniversalShapingEngineInfo?.Category != "R")
+                    if (substitutionCollection[i].UniversalShapingEngineInfo?.Category != "R")
                     {
                         break;
                     }
-
-                    current = substitutionCollection[i];
                 }
 
+                GlyphShapingData current = substitutionCollection[i];
                 glyphs[0] = current.GlyphId;
                 glyphs[1] = circleId;
 
                 substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+
+                // Update shaping info for newly inserted data.
+                GlyphShapingData dotted = substitutionCollection[i + 1];
+                dotted.UniversalShapingEngineInfo!.Category = "B";
+
                 end++;
                 max++;
+            }
+
+            start = end;
+            end = NextSyllable(substitutionCollection, start, max);
+        }
+
+        max = index + count;
+        start = index;
+        end = NextSyllable(substitutionCollection, index, max);
+
+        while (start < max)
+        {
+            GlyphShapingData data = substitutionCollection[start];
+            UniversalShapingEngineInfo? info = data.UniversalShapingEngineInfo;
+            string? type = info?.SyllableType;
+
+            // Only a few syllable types need reordering.
+            if (type is not "virama_terminated_cluster" and not "standard_cluster" and not "broken_cluster")
+            {
+                // TODO: Check this. Harfbuzz seems to test more categories and returns.
+                goto Increment;
             }
 
             // Move things forward

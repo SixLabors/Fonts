@@ -243,6 +243,49 @@ internal sealed class IndicShaper : DefaultShaper
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
         Span<ushort> glyphs = stackalloc ushort[2];
+
+        while (start < max)
+        {
+            GlyphShapingData data = substitutionCollection[start];
+            IndicShapingEngineInfo? dataInfo = data.IndicShapingEngineInfo;
+            string? type = dataInfo?.SyllableType;
+
+            if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
+            {
+                // Insert after possible Repha.
+                int i = start;
+                for (i = start; i < end; i++)
+                {
+                    if (substitutionCollection[i].IndicShapingEngineInfo?.Category != Categories.Repha)
+                    {
+                        break;
+                    }
+                }
+
+                GlyphShapingData current = substitutionCollection[i];
+                glyphs[0] = current.GlyphId;
+                glyphs[1] = circleId;
+
+                substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+
+                // Update shaping info for newly inserted data.
+                // Update shaping info for newly inserted data.
+                GlyphShapingData dotted = substitutionCollection[i + 1];
+                dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
+                dotted.IndicShapingEngineInfo.Position = Positions.End;
+
+                end++;
+                max++;
+            }
+
+            start = end;
+            end = NextSyllable(substitutionCollection, start, max);
+        }
+
+        max = index + count;
+        start = index;
+        end = NextSyllable(substitutionCollection, index, max);
+
         while (start < max)
         {
             GlyphShapingData data = substitutionCollection[start];
@@ -252,36 +295,6 @@ internal sealed class IndicShaper : DefaultShaper
             if (type is "symbol_cluster" or "non_indic_cluster")
             {
                 goto Increment;
-            }
-
-            if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
-            {
-                // Insert after possible Repha.
-                int i = start;
-                GlyphShapingData current = substitutionCollection[i];
-                for (i = start; i < end; i++)
-                {
-                    if (current.IndicShapingEngineInfo?.Category != Categories.Repha)
-                    {
-                        break;
-                    }
-
-                    current = substitutionCollection[i];
-                }
-
-                glyphs[0] = current.GlyphId;
-                glyphs[1] = circleId;
-
-                substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
-
-                // Update shaping info for newly inserted data.
-                GlyphShapingData dotted = substitutionCollection[i + 1];
-                Categories dottedCategory = (Categories)IndicShapingCategory(dotted.CodePoint);
-                Positions dottedPosition = (Positions)IndicShapingPosition(dotted.CodePoint);
-                dotted.IndicShapingEngineInfo = new(dottedCategory, dottedPosition, dataInfo.SyllableType, dataInfo.Syllable);
-
-                end++;
-                max++;
             }
 
             // 1. Find base consonant:
