@@ -97,7 +97,6 @@ internal sealed class UniversalShaper : DefaultShaper
         for (int i = end - 1; i >= index; i--)
         {
             GlyphShapingData data = substitutionCollection[i];
-            UniversalShapingEngineInfo universalInfo = data.UniversalShapingEngineInfo!;
             if (UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) && decompositions != null)
             {
                 Span<ushort> ids = buffer[..decompositions.Length];
