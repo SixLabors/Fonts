@@ -171,6 +171,13 @@ public class TextOptions
     public KerningMode KerningMode { get; set; }
 
     /// <summary>
+    /// Gets or sets the tracking (letter-spacing) value.
+    /// Tracking adjusts the spacing between all characters uniformly and is measured in em.
+    /// Positive values increase spacing, negative values decrease spacing, and zero applies no adjustment.
+    /// </summary>
+    public float Tracking { get; set; }
+
+    /// <summary>
     /// Gets or sets the positioning mode used for rendering decorations.
     /// </summary>
     public DecorationPositioningMode DecorationPositioningMode { get; set; }

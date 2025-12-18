@@ -967,6 +967,57 @@ public class TextLayoutTests
         Assert.Equal(expected, actual, Comparer);
     }
 
+    [Theory]
+    [InlineData("aaaa", 0, 134.0)]
+    [InlineData("awwa", 0, 162.1)]
+    [InlineData("aaaa", 0.1, 153.3)]
+    [InlineData("awwa", 0.1, 181.4)]
+    [InlineData("aaaa", 1, 326.1)]
+    [InlineData("awwa", 1, 354.1)]
+    public void FontTracking_SpaceCharacters(string text, float tracking, float width)
+    {
+        Font font = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(64);
+        TextOptions options = new(font)
+        {
+            Tracking = tracking,
+        };
+
+        FontRectangle actual = TextMeasurer.MeasureSize(text, options);
+        Assert.Equal(new FontRectangle(0, 0, width, 35.4f), actual, Comparer);
+    }
+
+    [Theory]
+    [InlineData("\u1B3C", 1, 83.8)]
+    [InlineData("\u1B3C\u1B3C", 1, 83.8)]
+    public void FontTracking_DoNotAddSpacingAfterCharacterThatDidNotAdvance(string text, float tracking, float width)
+    {
+        Font font = new FontCollection().Add(TestFonts.NotoSansBalineseRegular).CreateFont(64);
+        TextOptions options = new(font)
+        {
+            Tracking = tracking,
+        };
+
+        FontRectangle actual = TextMeasurer.MeasureSize(text, options);
+        Assert.Equal(new FontRectangle(0, 0, width, 103.3f), actual, Comparer);
+    }
+
+    [Theory]
+    [InlineData("\u093f", 1, 48.4)]
+    [InlineData("\u0930\u094D\u0915\u093F", 1, 225.6)]
+    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1, 419)]
+    [InlineData("\u093fa", 1, 145.5f)]
+    public void FontTracking_CorrectlyAddSpacingForComposedCharacter(string text, float tracking, float width)
+    {
+        Font font = new FontCollection().Add(TestFonts.NotoSansDevanagariRegular).CreateFont(64);
+        TextOptions options = new(font)
+        {
+            Tracking = tracking,
+        };
+
+        FontRectangle actual = TextMeasurer.MeasureSize(text, options);
+        Assert.Equal(width, actual.Width, Comparer);
+    }
+
     [Fact]
     public void CanMeasureTextAdvance()
     {
