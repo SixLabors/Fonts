@@ -155,17 +155,6 @@ internal static class AdvancedTypographicUtils
             (component, data) => component == classDefinitionTable.ClassIndexOf(data.GlyphId),
             default);
 
-    //public static bool MatchCoverageSequence(
-    //    SkippingGlyphIterator iterator,
-    //    CoverageTable[] coverageTable,
-    //    int increment)
-    //    => Match(
-    //        increment,
-    //        coverageTable,
-    //        iterator,
-    //        (component, data) => component.CoverageIndexOf(data.GlyphId) >= 0,
-    //        default);
-
     public static bool MatchCoverageSequence(
         SkippingGlyphIterator iterator,
         CoverageTable[] coverageTable,
@@ -245,43 +234,6 @@ internal static class AdvancedTypographicUtils
 
         return true;
     }
-
-    //public static bool CheckAllCoverages(
-    //    FontMetrics fontMetrics,
-    //    LookupFlags lookupFlags,
-    //    ushort markFilteringSet,
-    //    IGlyphShapingCollection collection,
-    //    int index,
-    //    int count,
-    //    CoverageTable[] input,
-    //    CoverageTable[] backtrack,
-    //    CoverageTable[] lookahead)
-    //{
-    //    // Check that there are enough context glyphs.
-    //    if (index < backtrack.Length || input.Length + lookahead.Length > count)
-    //    {
-    //        return false;
-    //    }
-
-    //    // Check all coverages: if any of them does not match, abort update.
-    //    SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
-    //    if (!MatchCoverageSequence(iterator, backtrack, -backtrack.Length))
-    //    {
-    //        return false;
-    //    }
-
-    //    if (!MatchCoverageSequence(iterator, input, 0))
-    //    {
-    //        return false;
-    //    }
-
-    //    if (!MatchCoverageSequence(iterator, lookahead, input.Length))
-    //    {
-    //        return false;
-    //    }
-
-    //    return true;
-    //}
 
     public static bool CheckAllCoverages(
         FontMetrics fontMetrics,

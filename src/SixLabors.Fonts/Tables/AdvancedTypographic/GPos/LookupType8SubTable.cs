@@ -195,10 +195,7 @@ internal static class LookupType8SubTable
             for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
             {
                 ChainedClassSequenceRuleTable rule = rules[lookupIndex];
-                //if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, rule, index + count, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
-                //{
-                //    continue;
-                //}
+
                 if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, rule, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
                 {
                     continue;

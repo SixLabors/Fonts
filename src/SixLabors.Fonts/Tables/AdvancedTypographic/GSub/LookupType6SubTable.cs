@@ -184,10 +184,7 @@ internal sealed class LookupType6Format2SubTable : LookupSubTable
         for (int lookupIndex = 0; lookupIndex < rules.Length; lookupIndex++)
         {
             ChainedClassSequenceRuleTable ruleTable = rules[lookupIndex];
-            //if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, ruleTable, index + count, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
-            //{
-            //    continue;
-            //}
+
             if (!AdvancedTypographicUtils.ApplyChainedClassSequenceRule(iterator, ruleTable, this.inputClassDefinitionTable, this.backtrackClassDefinitionTable, this.lookaheadClassDefinitionTable))
             {
                 continue;

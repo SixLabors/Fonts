@@ -168,10 +168,6 @@ internal sealed class LookupType5Format2SubTable : LookupSubTable
                 continue;
             }
 
-            //if (!AdvancedTypographicUtils.MatchClassSequence(iterator, index, ruleTable.InputSequence, index + count, this.classDefinitionTable))
-            //{
-            //    continue;
-            //}
             if (!AdvancedTypographicUtils.MatchClassSequence(iterator, 1, ruleTable.InputSequence, this.classDefinitionTable))
             {
                 continue;

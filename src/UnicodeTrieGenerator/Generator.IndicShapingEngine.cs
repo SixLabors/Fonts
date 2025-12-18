@@ -360,43 +360,6 @@ public static partial class Generator
     {
         SetBlocks(codePoints);
 
-        // The categories enum contains duplicate values to we need to map them all.
-        //Dictionary<string, int> symbols = [];
-        //foreach (Categories c in Enum.GetValues<Categories>())
-        //{
-        //    int value = (int)c;
-        //    //if (c == Categories.H)
-        //    //{
-        //    //    symbols[nameof(Categories.H)] = value;
-        //    //    //symbols[nameof(Categories.Coeng)] = value;
-        //    //    continue;
-        //    //}
-
-        //    //if (c == Categories.V)
-        //    //{
-        //    //   // symbols[nameof(Categories.IV)] = value;
-        //    //    symbols[nameof(Categories.V)] = value;
-        //    //    continue;
-        //    //}
-
-        //    //if (c == Categories.N)
-        //    //{
-        //    //   // symbols[nameof(Categories.DB)] = value;
-        //    //    symbols[nameof(Categories.N)] = value;
-        //    //    continue;
-        //    //}
-
-        //    //if (c == Categories.Placeholder)
-        //    //{
-        //    //   // symbols[nameof(Categories.GB)] = value;
-        //    //    symbols[nameof(Categories.Placeholder)] = value;
-        //    //    continue;
-        //    //}
-
-        //    string name = c.ToString();
-        //    symbols[name] = value;
-        //}
-
         Dictionary<string, int> symbols = Enum.GetValues<Categories>().ToDictionary(c => c.ToString(), c => (int)c);
 
         UnicodeTrieBuilder builder = new();
