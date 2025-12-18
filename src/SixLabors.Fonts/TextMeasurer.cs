@@ -149,10 +149,17 @@ public static class TextMeasurer
             return FontRectangle.Empty;
         }
 
-        float left = float.MaxValue;
-        float top = float.MaxValue;
-        float bottom = float.MinValue;
-        float right = float.MinValue;
+        // Logical advance extents in layout units (before DPI scaling).
+        float logicalLeft = float.MaxValue;
+        float logicalTop = float.MaxValue;
+        float logicalRight = float.MinValue;
+        float logicalBottom = float.MinValue;
+
+        // Ink bounds in pixel units (BoundingBox already scales by DPI).
+        float inkLeft = float.MaxValue;
+        float inkTop = float.MaxValue;
+        float inkRight = float.MinValue;
+        float inkBottom = float.MinValue;
 
         for (int i = 0; i < glyphLayouts.Count; i++)
         {
@@ -168,42 +175,73 @@ public static class TextMeasurer
                 // Glyphs are always laid out from top-left to bottom-right so we can simply use the max.
                 if (glyph.LayoutMode == GlyphLayoutMode.Horizontal)
                 {
-                    y = MathF.Max(y, bottom);
+                    y = MathF.Max(y, logicalBottom);
                 }
                 else
                 {
-                    x = MathF.Max(x, right);
+                    x = MathF.Max(x, logicalRight);
                 }
             }
 
             float advanceX = x + glyph.AdvanceX;
             float advanceY = y + glyph.AdvanceY;
 
-            if (left > x)
+            if (logicalLeft > x)
             {
-                left = x;
+                logicalLeft = x;
             }
 
-            if (top > y)
+            if (logicalTop > y)
             {
-                top = y;
+                logicalTop = y;
             }
 
-            if (right < advanceX)
+            if (logicalRight < advanceX)
             {
-                right = advanceX;
+                logicalRight = advanceX;
             }
 
-            if (bottom < advanceY)
+            if (logicalBottom < advanceY)
             {
-                bottom = advanceY;
+                logicalBottom = advanceY;
+            }
+
+            // Ink bounds are in the same coordinate space as pen locations,
+            // but already scaled to pixels by BoundingBox(dpi).
+            FontRectangle box = glyph.BoundingBox(dpi);
+
+            if (inkLeft > box.Left)
+            {
+                inkLeft = box.Left;
+            }
+
+            if (inkTop > box.Top)
+            {
+                inkTop = box.Top;
+            }
+
+            if (inkRight < box.Right)
+            {
+                inkRight = box.Right;
+            }
+
+            if (inkBottom < box.Bottom)
+            {
+                inkBottom = box.Bottom;
             }
         }
 
-        Vector2 topLeft = new(left, top);
-        Vector2 bottomRight = new(right, bottom);
-        Vector2 size = (bottomRight - topLeft) * dpi;
-        return new FontRectangle(0, 0, size.X, size.Y);
+        // Logical advance rectangle, anchored at the origin in pixel space.
+        Vector2 logicalTopLeft = new(logicalLeft, logicalTop);
+        Vector2 logicalBottomRight = new(logicalRight, logicalBottom);
+        Vector2 logicalSize = (logicalBottomRight - logicalTopLeft) * dpi;
+        FontRectangle logicalRect = new(0, 0, logicalSize.X, logicalSize.Y);
+
+        // Ink bounds rectangle in pixel space.
+        FontRectangle inkRect = FontRectangle.FromLTRB(inkLeft, inkTop, inkRight, inkBottom);
+
+        // Final measurement is the union of logical advance and ink extents.
+        return FontRectangle.Union(inkRect, logicalRect);
     }
 
     internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)

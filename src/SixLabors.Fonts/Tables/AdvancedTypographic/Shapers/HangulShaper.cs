@@ -92,6 +92,9 @@ internal sealed class HangulShaper : DefaultShaper
         // Apply the state machine to map glyphs to features.
         if (collection is GlyphSubstitutionCollection substitutionCollection)
         {
+            // Allocate a small buffer for composition operations.
+            Span<ushort> compositionBuffer = stackalloc ushort[3];
+
             // GSub
             int state = 0;
             for (int i = 0; i < count; i++)
@@ -107,6 +110,8 @@ internal sealed class HangulShaper : DefaultShaper
                 byte[] actionsWithState = StateTable[state, type];
                 byte action = actionsWithState[0];
                 state = actionsWithState[1];
+
+                // TODO: Do not stackalloc in the loop.
                 switch (action)
                 {
                     case Decompose:
@@ -114,7 +119,7 @@ internal sealed class HangulShaper : DefaultShaper
                         // Decompose the composed syllable if it is not supported by the font.
                         if (data.GlyphId == 0)
                         {
-                            i = this.DecomposeGlyph(substitutionCollection, data, i);
+                            i = this.DecomposeGlyph(substitutionCollection, data, i, compositionBuffer);
                         }
 
                         break;
@@ -122,7 +127,7 @@ internal sealed class HangulShaper : DefaultShaper
                     case Compose:
 
                         // Found a decomposed syllable. Try to compose if supported by the font.
-                        i = this.ComposeGlyph(substitutionCollection, i, type);
+                        i = this.ComposeGlyph(substitutionCollection, i, type, compositionBuffer);
                         break;
 
                     case ToneMark:
@@ -134,7 +139,7 @@ internal sealed class HangulShaper : DefaultShaper
                     case Invalid:
 
                         // Tone mark has no valid syllable to attach to, so insert a dotted circle.
-                        i = this.InsertDottedCircle(substitutionCollection, data, i);
+                        i = this.InsertDottedCircle(substitutionCollection, data, i, compositionBuffer);
                         break;
                 }
             }
@@ -206,7 +211,7 @@ internal sealed class HangulShaper : DefaultShaper
             _ => 0,
         };
 
-    private int DecomposeGlyph(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
+    private int DecomposeGlyph(GlyphSubstitutionCollection collection, GlyphShapingData data, int index, Span<ushort> compositinoBuffer)
     {
         // Decompose the syllable into a sequence of glyphs.
         int s = data.CodePoint.Value - HangulBase;
@@ -229,7 +234,7 @@ internal sealed class HangulShaper : DefaultShaper
         // and apply the proper OpenType features to each component.
         if (t <= TBase)
         {
-            Span<ushort> ii = stackalloc ushort[2];
+            Span<ushort> ii = compositinoBuffer[..2];
             ii[1] = vjmo;
             ii[0] = ljmo;
 
@@ -239,7 +244,7 @@ internal sealed class HangulShaper : DefaultShaper
             return index + 1;
         }
 
-        Span<ushort> iii = stackalloc ushort[3];
+        Span<ushort> iii = compositinoBuffer[..3];
         iii[2] = tjmo;
         iii[1] = vjmo;
         iii[0] = ljmo;
@@ -251,7 +256,7 @@ internal sealed class HangulShaper : DefaultShaper
         return index + 2;
     }
 
-    private int ComposeGlyph(GlyphSubstitutionCollection collection, int index, int type)
+    private int ComposeGlyph(GlyphSubstitutionCollection collection, int index, int type, Span<ushort> compositionBuffer)
     {
         if (index == 0)
         {
@@ -336,7 +341,7 @@ internal sealed class HangulShaper : DefaultShaper
             // Sequence was originally <L,V>, which got combined earlier.
             // Either the T was non-combining, or the LVT glyph wasn't supported.
             // Decompose the glyph again and apply OT features.
-            this.DecomposeGlyph(collection, collection[index - 1], index - 1);
+            this.DecomposeGlyph(collection, collection[index - 1], index - 1, compositionBuffer);
             return index + 1;
         }
 
@@ -368,7 +373,7 @@ internal sealed class HangulShaper : DefaultShaper
         collection.MoveGlyph(index, index - len);
     }
 
-    private int InsertDottedCircle(GlyphSubstitutionCollection collection, GlyphShapingData data, int index)
+    private int InsertDottedCircle(GlyphSubstitutionCollection collection, GlyphShapingData data, int index, Span<ushort> compositionBuffer)
     {
         bool after = false;
         FontMetrics fontMetrics = this.fontMetrics;
@@ -386,7 +391,7 @@ internal sealed class HangulShaper : DefaultShaper
             }
 
             // If the tone mark is zero width, insert the dotted circle before, otherwise after
-            Span<ushort> glyphs = stackalloc ushort[2];
+            Span<ushort> glyphs = compositionBuffer[..2];
             if (after)
             {
                 glyphs[1] = id;

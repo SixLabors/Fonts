@@ -315,7 +315,6 @@ public class TextLayoutTests
 
             TextLayoutTestUtilities.TestLayout(text, options, properties: new { height, width });
 
-
             FontRectangle size = TextMeasurer.MeasureBounds(text, options);
             Assert.Equal(width, size.Width, 4F);
             Assert.Equal(height, size.Height, 4F);

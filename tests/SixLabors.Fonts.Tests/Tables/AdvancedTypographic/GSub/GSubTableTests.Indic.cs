@@ -35,7 +35,7 @@ public partial class GSubTableTests
     private static Font CreateFont(string testFont)
     {
         FontFamily family = TestFontCollection.Add(testFont);
-        return family.CreateFont(12);
+        return family.CreateFont(30);
     }
 
     [Theory]
@@ -124,7 +124,9 @@ public partial class GSubTableTests
     public void CanShapeKannadaText(KannadaFont font, string input, int[] expectedGlyphIndices)
     {
         ColorGlyphRenderer renderer = new();
-        TextRenderer.RenderTextTo(renderer, input, new TextOptions(font == KannadaFont.Serif ? KannadaNotoSerifTTF : KannadaNotoSansTTF));
+        TextOptions options = new(font == KannadaFont.Serif ? KannadaNotoSerifTTF : KannadaNotoSansTTF);
+       // TextLayoutTestUtilities.TestLayout(input, options);
+        TextRenderer.RenderTextTo(renderer, input, options);
 
         Assert.Equal(expectedGlyphIndices.Length, renderer.GlyphKeys.Count);
         for (int i = 0; i < expectedGlyphIndices.Length; i++)

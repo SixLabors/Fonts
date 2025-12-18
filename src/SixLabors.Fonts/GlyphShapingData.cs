@@ -4,7 +4,7 @@
 using System.Diagnostics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Unicode;
-using SixLabors.Fonts.Unicode.Resources;
+using static SixLabors.Fonts.Unicode.Resources.IndicShapingData;
 
 namespace SixLabors.Fonts;
 
@@ -188,16 +188,16 @@ internal class UniversalShapingEngineInfo
 
     public string Category { get; set; }
 
-    public string SyllableType { get; }
+    public string SyllableType { get; set; }
 
-    public int Syllable { get; }
+    public int Syllable { get; set; }
 }
 
 internal class IndicShapingEngineInfo
 {
     public IndicShapingEngineInfo(
-        IndicShapingData.Categories category,
-        IndicShapingData.Positions position,
+        Categories category,
+        Positions position,
         string syllableType,
         int syllable)
     {
@@ -207,11 +207,13 @@ internal class IndicShapingEngineInfo
         this.Syllable = syllable;
     }
 
-    public IndicShapingData.Categories Category { get; set; }
+    public Categories Category { get; set; }
 
-    public IndicShapingData.Positions Position { get; set; }
+    public MyanmarCategories MyanmarCategory => (MyanmarCategories)this.Category;
 
-    public string SyllableType { get; }
+    public Positions Position { get; set; }
 
-    public int Syllable { get; }
+    public string SyllableType { get; set; }
+
+    public int Syllable { get; set; }
 }

@@ -15,14 +15,15 @@ internal static class LookupType9SubTable
         BigEndianBinaryReader reader,
         long offset,
         LookupFlags lookupFlags,
-        Func<ushort, LookupFlags, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
+        ushort markFilteringSet,
+        Func<ushort, LookupFlags, ushort, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort substFormat = reader.ReadUInt16();
 
         return substFormat switch
         {
-            1 => LookupType9Format1SubTable.Load(reader, offset, lookupFlags, subTableLoader),
+            1 => LookupType9Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet, subTableLoader),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -34,7 +35,8 @@ internal static class LookupType9Format1SubTable
         BigEndianBinaryReader reader,
         long offset,
         LookupFlags lookupFlags,
-        Func<ushort, LookupFlags, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
+        ushort markFilteringSet,
+        Func<ushort, LookupFlags, ushort, BigEndianBinaryReader, long, LookupSubTable> subTableLoader)
     {
         // +----------+---------------------+------------------------------------------------------------------------------------------------------------------------------------+
         // | Type     | Name                | Description                                                                                                                        |
@@ -57,6 +59,6 @@ internal static class LookupType9Format1SubTable
         }
 
         // Read the lookup table again with the updated offset.
-        return subTableLoader(extensionLookupType, lookupFlags, reader, offset + extensionOffset);
+        return subTableLoader(extensionLookupType, lookupFlags, markFilteringSet, reader, offset + extensionOffset);
     }
 }

@@ -42,6 +42,8 @@ internal sealed class UniversalShaper : DefaultShaper
 
     private readonly FontMetrics fontMetrics;
 
+    private bool hasBrokenClusters;
+
     public UniversalShaper(ScriptClass script, TextOptions textOptions, FontMetrics fontMetrics)
        : base(script, MarkZeroingMode.PreGPos, textOptions)
         => this.fontMetrics = fontMetrics;
@@ -50,7 +52,7 @@ internal sealed class UniversalShaper : DefaultShaper
     protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
     {
         // Default glyph pre-processing group
-        this.AddFeature(collection, index, count, LoclTag, preAction: SetupSyllables);
+        this.AddFeature(collection, index, count, LoclTag, preAction: this.SetupSyllables);
         this.AddFeature(collection, index, count, CcmpTag);
         this.AddFeature(collection, index, count, NuktTag);
         this.AddFeature(collection, index, count, AkhnTag);
@@ -92,35 +94,44 @@ internal sealed class UniversalShaper : DefaultShaper
         FontMetrics fontMetrics = this.fontMetrics;
         Span<ushort> buffer = stackalloc ushort[16];
         int end = index + count;
-        for (int i = end - 1; i >= 0; i--)
+        for (int i = end - 1; i >= index; i--)
         {
             GlyphShapingData data = substitutionCollection[i];
             if (UniversalShapingData.Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) && decompositions != null)
             {
                 Span<ushort> ids = buffer[..decompositions.Length];
+                bool shouldDecompose = true;
                 for (int j = 0; j < decompositions.Length; j++)
                 {
-                    // Font should always contain the decomposed glyph since the shaper
-                    // is assigned based on features supported by the font.
-                    _ = fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
+                    if (!fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id))
+                    {
+                        shouldDecompose = false;
+                        break;
+                    }
+
                     ids[j] = id;
                 }
 
-                substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
-                for (int j = 0; j < decompositions.Length; j++)
+                if (shouldDecompose)
                 {
-                    substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
+                    for (int j = 0; j < decompositions.Length; j++)
+                    {
+                        substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    }
                 }
             }
         }
     }
 
-    private static void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
+    private void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
         {
             return;
         }
+
+        this.hasBrokenClusters = false;
 
         Span<int> values = count <= 64 ? stackalloc int[count] : new int[count];
         for (int i = index; i < index + count; i++)
@@ -141,7 +152,14 @@ internal sealed class UniversalShaper : DefaultShaper
                 CodePoint codePoint = data.CodePoint;
                 string category = UniversalShapingData.Categories[UnicodeData.GetUniversalShapingSymbolCount((uint)codePoint.Value)];
 
-                data.UniversalShapingEngineInfo = new(category, match.Tags[0], syllable);
+                string syllableType = match.Tags[0];
+
+                if (syllableType == "broken_cluster")
+                {
+                    this.hasBrokenClusters = true;
+                }
+
+                data.UniversalShapingEngineInfo = new(category, syllableType, syllable);
             }
 
             // Assign rphf feature
@@ -223,12 +241,59 @@ internal sealed class UniversalShaper : DefaultShaper
         }
 
         FontMetrics fontMetrics = this.fontMetrics;
-        bool hasDottedCircle = fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId);
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
 
-        Span<ushort> glyphs = stackalloc ushort[2];
+        if (this.hasBrokenClusters)
+        {
+            if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId))
+            {
+                Span<ushort> glyphs = stackalloc ushort[2];
+                while (start < max)
+                {
+                    GlyphShapingData data = substitutionCollection[start];
+                    UniversalShapingEngineInfo? info = data.UniversalShapingEngineInfo;
+                    string? type = info?.SyllableType;
+
+                    if (type == "broken_cluster")
+                    {
+                        // Insert after possible Repha.
+                        int i = start;
+                        for (i = start; i < end; i++)
+                        {
+                            if (substitutionCollection[i].UniversalShapingEngineInfo?.Category != "R")
+                            {
+                                break;
+                            }
+                        }
+
+                        GlyphShapingData current = substitutionCollection[i];
+                        UniversalShapingEngineInfo currentInfo = current.UniversalShapingEngineInfo!;
+                        glyphs[0] = current.GlyphId;
+                        glyphs[1] = circleId;
+
+                        substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+
+                        // Update shaping info for newly inserted data.
+                        GlyphShapingData dotted = substitutionCollection[i + 1];
+                        dotted.UniversalShapingEngineInfo!.Category = "B";
+                        dotted.UniversalShapingEngineInfo.SyllableType = currentInfo.SyllableType;
+                        dotted.UniversalShapingEngineInfo.Syllable = currentInfo.Syllable;
+
+                        end++;
+                        max++;
+                    }
+
+                    start = end;
+                    end = NextSyllable(substitutionCollection, start, max);
+                }
+
+                start = index;
+                end = NextSyllable(substitutionCollection, index, max);
+            }
+        }
+
         while (start < max)
         {
             GlyphShapingData data = substitutionCollection[start];
@@ -238,30 +303,8 @@ internal sealed class UniversalShaper : DefaultShaper
             // Only a few syllable types need reordering.
             if (type is not "virama_terminated_cluster" and not "standard_cluster" and not "broken_cluster")
             {
+                // TODO: Check this. Harfbuzz seems to test more categories and returns.
                 goto Increment;
-            }
-
-            if (hasDottedCircle && type == "broken_cluster")
-            {
-                // Insert after possible Repha.
-                int i = start;
-                GlyphShapingData current = substitutionCollection[i];
-                for (i = start; i < end; i++)
-                {
-                    if (current.UniversalShapingEngineInfo?.Category != "R")
-                    {
-                        break;
-                    }
-
-                    current = substitutionCollection[i];
-                }
-
-                glyphs[0] = current.GlyphId;
-                glyphs[1] = circleId;
-
-                substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
-                end++;
-                max++;
             }
 
             // Move things forward
@@ -288,7 +331,7 @@ internal sealed class UniversalShaper : DefaultShaper
             }
 
             // Move things back
-            for (int i = start, j = end; i < end; i++)
+            for (int i = start, j = start; i < end; i++)
             {
                 GlyphShapingData current = substitutionCollection[i];
                 info = current.UniversalShapingEngineInfo;

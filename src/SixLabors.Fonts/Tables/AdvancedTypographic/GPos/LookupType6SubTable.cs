@@ -12,14 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType6SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort subTableFormat = reader.ReadUInt16();
 
         return subTableFormat switch
         {
-            1 => LookupType6Format1SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType6Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -36,8 +36,9 @@ internal static class LookupType6SubTable
             CoverageTable mark2Coverage,
             MarkArrayTable mark1ArrayTable,
             Mark2ArrayTable mark2ArrayTable,
-            LookupFlags lookupFlags)
-            : base(lookupFlags)
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.mark1Coverage = mark1Coverage;
             this.mark2Coverage = mark2Coverage;
@@ -45,7 +46,7 @@ internal static class LookupType6SubTable
             this.mark2ArrayTable = mark2ArrayTable;
         }
 
-        public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType6Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // MarkMarkPosFormat1 Subtable.
             // +--------------------+---------------------------------+------------------------------------------------------+
@@ -73,12 +74,12 @@ internal static class LookupType6SubTable
             ushort mark1ArrayOffset = reader.ReadOffset16();
             ushort mark2ArrayOffset = reader.ReadOffset16();
 
-            var mark1Coverage = CoverageTable.Load(reader, offset + mark1CoverageOffset);
-            var mark2Coverage = CoverageTable.Load(reader, offset + mark2CoverageOffset);
-            var mark1ArrayTable = new MarkArrayTable(reader, offset + mark1ArrayOffset);
-            var mark2ArrayTable = new Mark2ArrayTable(reader, markClassCount, offset + mark2ArrayOffset);
+            CoverageTable mark1Coverage = CoverageTable.Load(reader, offset + mark1CoverageOffset);
+            CoverageTable mark2Coverage = CoverageTable.Load(reader, offset + mark2CoverageOffset);
+            MarkArrayTable mark1ArrayTable = new(reader, offset + mark1ArrayOffset);
+            Mark2ArrayTable mark2ArrayTable = new(reader, markClassCount, offset + mark2ArrayOffset);
 
-            return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable, lookupFlags);
+            return new LookupType6Format1SubTable(mark1Coverage, mark2Coverage, mark1ArrayTable, mark2ArrayTable, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(
@@ -98,51 +99,55 @@ internal static class LookupType6SubTable
             }
 
             int mark1Index = this.mark1Coverage.CoverageIndexOf(glyphId);
-            if (mark1Index == -1)
+            if (mark1Index < 0)
             {
                 return false;
             }
 
             // Get the previous mark to attach to.
-            if (index < 1)
+            // HarfBuzz: search backwards for a suitable mark glyph until a non-mark glyph.
+            // It clears ignore flags when searching, but keeps mark attachment / filtering behavior.
+            LookupFlags searchFlags = this.LookupFlags & ~(LookupFlags.IgnoreMarks | LookupFlags.IgnoreBaseGlyphs | LookupFlags.IgnoreLigatures);
+
+            SkippingGlyphIterator it = new(fontMetrics, collection, index, searchFlags, this.MarkFilteringSet);
+
+            int j = it.Prev();
+            if (j < 0)
             {
                 return false;
             }
 
-            int prevIdx = index - 1;
-            ushort prevGlyphId = collection[prevIdx].GlyphId;
-            GlyphShapingData prevGlyph = collection[prevIdx];
-            if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, prevGlyphId, prevGlyph))
+            GlyphShapingData prevGlyph = collection[j];
+            if (!AdvancedTypographicUtils.IsMarkGlyph(fontMetrics, prevGlyph.GlyphId, prevGlyph))
             {
                 return false;
             }
 
-            // The following logic was borrowed from Harfbuzz,
-            // see: https://github.com/harfbuzz/harfbuzz/blob/3e635cf5e26e33d6210d3092256a49291752deec/src/hb-ot-layout-gpos-table.hh#L2525
-            bool good = false;
             GlyphShapingData curGlyph = collection[index];
-            if (curGlyph.LigatureId == prevGlyph.LigatureId)
+
+            bool good;
+            int id1 = curGlyph.LigatureId;
+            int id2 = prevGlyph.LigatureId;
+            int comp1 = curGlyph.LigatureComponent;
+            int comp2 = prevGlyph.LigatureComponent;
+
+            if (id1 == id2)
             {
-                if (curGlyph.LigatureId > 0)
+                if (id1 == 0)
                 {
                     // Marks belonging to the same base.
                     good = true;
                 }
-                else if (curGlyph.LigatureComponent == prevGlyph.LigatureComponent)
+                else
                 {
                     // Marks belonging to the same ligature component.
-                    good = true;
+                    good = comp1 == comp2;
                 }
             }
             else
             {
-                // If ligature ids don't match, it may be the case that one of the marks
-                // itself is a ligature, in which case match.
-                if ((curGlyph.LigatureId > 0 && curGlyph.LigatureComponent <= 0)
-                    || (prevGlyph.LigatureId > 0 && prevGlyph.LigatureComponent <= 0))
-                {
-                    good = true;
-                }
+                // If ligature ids don't match, one of the marks itself may be a ligature.
+                good = (id1 > 0 && comp1 <= 0) || (id2 > 0 && comp2 <= 0);
             }
 
             if (!good)
@@ -150,15 +155,15 @@ internal static class LookupType6SubTable
                 return false;
             }
 
-            int mark2Index = this.mark2Coverage.CoverageIndexOf(prevGlyphId);
-            if (mark2Index == -1)
+            int mark2Index = this.mark2Coverage.CoverageIndexOf(prevGlyph.GlyphId);
+            if (mark2Index < 0)
             {
                 return false;
             }
 
             MarkRecord markRecord = this.mark1ArrayTable.MarkRecords[mark1Index];
-            AnchorTable baseAnchor = this.mark2ArrayTable.Mark2Records[mark2Index].MarkAnchorTable[markRecord.MarkClass];
-            AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, prevIdx, feature);
+            AnchorTable? baseAnchor = this.mark2ArrayTable.Mark2Records[mark2Index].MarkAnchorTable[markRecord.MarkClass];
+            AdvancedTypographicUtils.ApplyAnchor(fontMetrics, collection, index, baseAnchor, markRecord, j, feature);
 
             return true;
         }
