@@ -147,11 +147,6 @@ internal sealed class MyanmarShaper : DefaultShaper
             return;
         }
 
-        // Create a reusable temporary substitution collection and buffer to allow checking whether
-        // certain combinations will be substituted.
-        GlyphSubstitutionCollection tempCollection = new(this.textOptions);
-        Span<GlyphShapingData> tempBuffer = new GlyphShapingData[3];
-
         FontMetrics fontMetrics = this.fontMetrics;
         int max = index + count;
         int start = index;
