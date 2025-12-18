@@ -242,55 +242,57 @@ internal sealed class UniversalShaper : DefaultShaper
         }
 
         FontMetrics fontMetrics = this.fontMetrics;
-        bool hasDottedCircle = fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId);
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
 
         if (this.hasBrokenClusters)
         {
-            Span<ushort> glyphs = stackalloc ushort[2];
-            while (start < max)
+            if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId))
             {
-                GlyphShapingData data = substitutionCollection[start];
-                UniversalShapingEngineInfo? info = data.UniversalShapingEngineInfo;
-                string? type = info?.SyllableType;
-
-                if (hasDottedCircle && type == "broken_cluster")
+                Span<ushort> glyphs = stackalloc ushort[2];
+                while (start < max)
                 {
-                    // Insert after possible Repha.
-                    int i = start;
-                    for (i = start; i < end; i++)
+                    GlyphShapingData data = substitutionCollection[start];
+                    UniversalShapingEngineInfo? info = data.UniversalShapingEngineInfo;
+                    string? type = info?.SyllableType;
+
+                    if (type == "broken_cluster")
                     {
-                        if (substitutionCollection[i].UniversalShapingEngineInfo?.Category != "R")
+                        // Insert after possible Repha.
+                        int i = start;
+                        for (i = start; i < end; i++)
                         {
-                            break;
+                            if (substitutionCollection[i].UniversalShapingEngineInfo?.Category != "R")
+                            {
+                                break;
+                            }
                         }
+
+                        GlyphShapingData current = substitutionCollection[i];
+                        UniversalShapingEngineInfo currentInfo = current.UniversalShapingEngineInfo!;
+                        glyphs[0] = current.GlyphId;
+                        glyphs[1] = circleId;
+
+                        substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+
+                        // Update shaping info for newly inserted data.
+                        GlyphShapingData dotted = substitutionCollection[i + 1];
+                        dotted.UniversalShapingEngineInfo!.Category = "B";
+                        dotted.UniversalShapingEngineInfo.SyllableType = currentInfo.SyllableType;
+                        dotted.UniversalShapingEngineInfo.Syllable = currentInfo.Syllable;
+
+                        end++;
+                        max++;
                     }
 
-                    GlyphShapingData current = substitutionCollection[i];
-                    UniversalShapingEngineInfo currentInfo = current.UniversalShapingEngineInfo!;
-                    glyphs[0] = current.GlyphId;
-                    glyphs[1] = circleId;
-
-                    substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
-
-                    // Update shaping info for newly inserted data.
-                    GlyphShapingData dotted = substitutionCollection[i + 1];
-                    dotted.UniversalShapingEngineInfo!.Category = "B";
-                    dotted.UniversalShapingEngineInfo.SyllableType = currentInfo.SyllableType;
-                    dotted.UniversalShapingEngineInfo.Syllable = currentInfo.Syllable;
-
-                    end++;
-                    max++;
+                    start = end;
+                    end = NextSyllable(substitutionCollection, start, max);
                 }
 
-                start = end;
-                end = NextSyllable(substitutionCollection, start, max);
+                start = index;
+                end = NextSyllable(substitutionCollection, index, max);
             }
-
-            start = index;
-            end = NextSyllable(substitutionCollection, index, max);
         }
 
         while (start < max)

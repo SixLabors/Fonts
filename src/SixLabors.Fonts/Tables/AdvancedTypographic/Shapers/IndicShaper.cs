@@ -255,59 +255,61 @@ internal sealed class IndicShaper : DefaultShaper
             }
         }
 
-        bool hasDottedCircle = fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId);
-        _ = fontMetrics.TryGetGSubTable(out GSubTable? gSubTable);
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
 
         if (this.hasBrokenClusters)
         {
-            Span<ushort> glyphs = stackalloc ushort[2];
-            while (start < max)
+            if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId))
             {
-                GlyphShapingData data = substitutionCollection[start];
-                IndicShapingEngineInfo? dataInfo = data.IndicShapingEngineInfo;
-                string? type = dataInfo?.SyllableType;
-
-                if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
+                Span<ushort> glyphs = stackalloc ushort[2];
+                while (start < max)
                 {
-                    // Insert after possible Repha.
-                    int i = start;
-                    for (i = start; i < end; i++)
+                    GlyphShapingData data = substitutionCollection[start];
+                    IndicShapingEngineInfo? dataInfo = data.IndicShapingEngineInfo;
+                    string? type = dataInfo?.SyllableType;
+
+                    if (type == "broken_cluster")
                     {
-                        if (substitutionCollection[i].IndicShapingEngineInfo?.Category != Categories.Repha)
+                        // Insert after possible Repha.
+                        int i = start;
+                        for (i = start; i < end; i++)
                         {
-                            break;
+                            if (substitutionCollection[i].IndicShapingEngineInfo?.Category != Categories.Repha)
+                            {
+                                break;
+                            }
                         }
+
+                        GlyphShapingData current = substitutionCollection[i];
+                        IndicShapingEngineInfo currentInfo = current.IndicShapingEngineInfo!;
+                        glyphs[0] = current.GlyphId;
+                        glyphs[1] = circleId;
+
+                        substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+
+                        // Update shaping info for newly inserted data.
+                        GlyphShapingData dotted = substitutionCollection[i + 1];
+                        dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
+                        dotted.IndicShapingEngineInfo.Position = Positions.End;
+                        dotted.IndicShapingEngineInfo.SyllableType = currentInfo.SyllableType;
+                        dotted.IndicShapingEngineInfo.Syllable = currentInfo.Syllable;
+
+                        end++;
+                        max++;
                     }
 
-                    GlyphShapingData current = substitutionCollection[i];
-                    IndicShapingEngineInfo currentInfo = current.IndicShapingEngineInfo!;
-                    glyphs[0] = current.GlyphId;
-                    glyphs[1] = circleId;
-
-                    substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
-
-                    // Update shaping info for newly inserted data.
-                    GlyphShapingData dotted = substitutionCollection[i + 1];
-                    dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
-                    dotted.IndicShapingEngineInfo.Position = Positions.End;
-                    dotted.IndicShapingEngineInfo.SyllableType = currentInfo.SyllableType;
-                    dotted.IndicShapingEngineInfo.Syllable = currentInfo.Syllable;
-
-                    end++;
-                    max++;
+                    start = end;
+                    end = NextSyllable(substitutionCollection, start, max);
                 }
 
-                start = end;
-                end = NextSyllable(substitutionCollection, start, max);
+                start = index;
+                end = NextSyllable(substitutionCollection, index, max);
             }
-
-            start = index;
-            end = NextSyllable(substitutionCollection, index, max);
         }
 
+        _ = fontMetrics.TryGetGSubTable(out GSubTable? gSubTable);
         while (start < max)
         {
             GlyphShapingData data = substitutionCollection[start];
