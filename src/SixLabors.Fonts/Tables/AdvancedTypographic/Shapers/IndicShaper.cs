@@ -17,6 +17,8 @@ internal sealed class IndicShaper : DefaultShaper
     private static readonly StateMachine StateMachine =
         new(StateTable, AcceptingStates, Tags);
 
+    private static readonly int[] CategoryToSymbolId = BuildCategoryToSymbolId();
+
     private static readonly Tag RphfTag = Tag.Parse("rphf");
     private static readonly Tag NuktTag = Tag.Parse("nukt");
     private static readonly Tag AkhnTag = Tag.Parse("akhn");
@@ -155,8 +157,19 @@ internal sealed class IndicShaper : DefaultShaper
 
         for (int i = index; i < index + count; i++)
         {
+            // Convert HarfBuzz-style Indic shaping categories into the compact
+            // DFA symbol indices used by the generated state machine.
+            //
+            // HarfBuzz category codes (C=1, V=2, MR=36, VBlw=21, etc.) are sparse
+            // and can be larger than the alphabet size of the DFA. Our state
+            // machine expects its input alphabet to be dense 0..N-1, matching the
+            // sequential IDs assigned in GenerateIndicShapingDataTrie.
+            //
+            // CategoryToSymbolId[IndicShapingCategory(codePoint)] performs this mapping, ensuring that
+            // every codepoint is presented to the DFA using the correct compact
+            // symbol index.
             CodePoint codePoint = substitutionCollection[i].CodePoint;
-            values[i - index] = IndicShapingCategory(codePoint);
+            values[i - index] = CategoryToSymbolId[IndicShapingCategory(codePoint)];
         }
 
         int syllable = 0;
@@ -1308,5 +1321,35 @@ internal sealed class IndicShaper : DefaultShaper
             start = end;
             end = NextSyllable(substitutionCollection, start, max);
         }
+    }
+
+    private static int[] BuildCategoryToSymbolId()
+    {
+        // Get all enum values in declared order (important!)
+        Categories[] values = Enum.GetValues<Categories>();
+
+        // Determine maximum underlying numeric category so we can index safetly
+        int maxCategoryValue = 0;
+        foreach (Categories v in values)
+        {
+            int val = (int)v;
+            if (val > maxCategoryValue)
+            {
+                maxCategoryValue = val;
+            }
+        }
+
+        // Allocate mapping table indexed by Harfbuzz category code
+        int[] map = new int[maxCategoryValue + 1];
+
+        // Assign compact DFA symbol indices 0..N-1 in enum order
+        for (int symbolId = 0; symbolId < values.Length; symbolId++)
+        {
+            Categories cat = values[symbolId];
+            int categoryCode = (int)cat;    // Harfbuzz-style category code
+            map[categoryCode] = symbolId;   // DFA symbol id
+        }
+
+        return map;
     }
 }
