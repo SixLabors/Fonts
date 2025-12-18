@@ -297,6 +297,14 @@ public static class TestFonts
 
     public static string ServiceNowWoff2 => GetFullPath("ServiceNow-Sans-Text-Bold-unmastered-1.1.woff");
 
+    public static string SinhalaSansRegular => GetFullPath("NotoSansSinhala-Regular.ttf");
+
+    public static string BengaliSansRegular => GetFullPath("NotoSansBengali-Regular.ttf");
+
+    public static string TibetanSerifRegular => GetFullPath("NotoSerifTibetan-Regular.ttf");
+
+    public static string MyanmarSansRegular => GetFullPath("NotoSansMyanmar-Regular.ttf");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);
