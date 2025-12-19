@@ -1195,6 +1195,22 @@ internal static class TextLayout
                     // Work out the scaled metrics for the glyph.
                     GlyphMetrics metric = metrics[i];
 
+                    // Adjust the advance for the last decomposed glyph to add
+                    // tracking if applicable.
+                    if (options.Tracking != 0 && decomposedAdvance > 0 && i == decomposedAdvances.Length - 1)
+                    {
+                        if (isHorizontalLayout || shouldRotate)
+                        {
+                            float scaleAX = pointSize / glyph.ScaleFactor.X;
+                            decomposedAdvance += options.Tracking * metric.FontMetrics.UnitsPerEm * scaleAX;
+                        }
+                        else
+                        {
+                            float scaleAY = pointSize / glyph.ScaleFactor.Y;
+                            decomposedAdvance += options.Tracking * metric.FontMetrics.UnitsPerEm * scaleAY;
+                        }
+                    }
+
                     // Convert design-space units to pixels based on the target point size.
                     // ScaleFactor.Y represents the vertical UPEM scaling factor for this glyph.
                     float scaleY = pointSize / metric.ScaleFactor.Y;
