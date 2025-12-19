@@ -44,6 +44,7 @@ public class TextOptions
         this.VerticalAlignment = options.VerticalAlignment;
         this.LayoutMode = options.LayoutMode;
         this.KerningMode = options.KerningMode;
+        this.Tracking = options.Tracking;
         this.ColorFontSupport = options.ColorFontSupport;
         this.FeatureTags = new List<Tag>(options.FeatureTags);
         this.TextRuns = new List<TextRun>(options.TextRuns);

@@ -311,6 +311,7 @@ public class TextOptionsTests
             LineSpacing = -1F,
             VerticalAlignment = VerticalAlignment.Bottom,
             WrappingLength = 42F,
+            Tracking = 66F,
             FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures }
         };
 
@@ -324,12 +325,13 @@ public class TextOptionsTests
         Assert.Equal(expected.VerticalAlignment, actual.VerticalAlignment);
         Assert.Equal(expected.WrappingLength, actual.WrappingLength);
         Assert.Equal(expected.FeatureTags, actual.FeatureTags);
+        Assert.Equal(expected.Tracking, actual.Tracking);
     }
 
     [Fact]
     public void CloneIsDeep()
     {
-        var expected = new TextOptions(this.fakeFont);
+        TextOptions expected = new(this.fakeFont);
         TextOptions actual = new(expected)
         {
             KerningMode = KerningMode.None,
@@ -339,7 +341,8 @@ public class TextOptionsTests
             LineSpacing = 2F,
             VerticalAlignment = VerticalAlignment.Bottom,
             TextJustification = TextJustification.InterCharacter,
-            WrappingLength = 42F
+            WrappingLength = 42F,
+            Tracking = 66F,
         };
 
         Assert.NotEqual(expected.KerningMode, actual.KerningMode);
@@ -350,6 +353,7 @@ public class TextOptionsTests
         Assert.NotEqual(expected.VerticalAlignment, actual.VerticalAlignment);
         Assert.NotEqual(expected.WrappingLength, actual.WrappingLength);
         Assert.NotEqual(expected.TextJustification, actual.TextJustification);
+        Assert.NotEqual(expected.Tracking, actual.Tracking);
     }
 
     private static void VerifyPropertyDefault(TextOptions options)
@@ -364,5 +368,6 @@ public class TextOptionsTests
         Assert.Equal(TextDirection.Auto, options.TextDirection);
         Assert.Equal(LayoutMode.HorizontalTopBottom, options.LayoutMode);
         Assert.Equal(1, options.LineSpacing);
+        Assert.Equal(0, options.Tracking);
     }
 }
