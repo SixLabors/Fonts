@@ -47,6 +47,7 @@ public class TextOptions
         this.ColorFontSupport = options.ColorFontSupport;
         this.FeatureTags = new List<Tag>(options.FeatureTags);
         this.TextRuns = new List<TextRun>(options.TextRuns);
+        this.DecorationPositioningMode = options.DecorationPositioningMode;
     }
 
     /// <summary>

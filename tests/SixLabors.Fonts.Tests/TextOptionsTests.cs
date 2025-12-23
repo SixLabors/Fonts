@@ -310,8 +310,9 @@ public class TextOptionsTests
             TabWidth = 3F,
             LineSpacing = -1F,
             VerticalAlignment = VerticalAlignment.Bottom,
+            DecorationPositioningMode = DecorationPositioningMode.GlyphFont,
             WrappingLength = 42F,
-            FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures }
+            FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures },
         };
 
         TextOptions actual = new(expected);
@@ -323,6 +324,7 @@ public class TextOptionsTests
         Assert.Equal(expected.TabWidth, actual.TabWidth);
         Assert.Equal(expected.VerticalAlignment, actual.VerticalAlignment);
         Assert.Equal(expected.WrappingLength, actual.WrappingLength);
+        Assert.Equal(expected.DecorationPositioningMode, actual.DecorationPositioningMode);
         Assert.Equal(expected.FeatureTags, actual.FeatureTags);
     }
 
@@ -339,6 +341,7 @@ public class TextOptionsTests
             LineSpacing = 2F,
             VerticalAlignment = VerticalAlignment.Bottom,
             TextJustification = TextJustification.InterCharacter,
+            DecorationPositioningMode = DecorationPositioningMode.GlyphFont,
             WrappingLength = 42F
         };
 
@@ -349,6 +352,7 @@ public class TextOptionsTests
         Assert.NotEqual(expected.TabWidth, actual.TabWidth);
         Assert.NotEqual(expected.VerticalAlignment, actual.VerticalAlignment);
         Assert.NotEqual(expected.WrappingLength, actual.WrappingLength);
+        Assert.NotEqual(expected.DecorationPositioningMode, actual.DecorationPositioningMode);
         Assert.NotEqual(expected.TextJustification, actual.TextJustification);
     }
 
@@ -363,6 +367,7 @@ public class TextOptionsTests
         Assert.Equal(TextJustification.None, options.TextJustification);
         Assert.Equal(TextDirection.Auto, options.TextDirection);
         Assert.Equal(LayoutMode.HorizontalTopBottom, options.LayoutMode);
+        Assert.Equal(DecorationPositioningMode.PrimaryFont, options.DecorationPositioningMode);
         Assert.Equal(1, options.LineSpacing);
     }
 }
