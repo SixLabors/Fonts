@@ -344,7 +344,6 @@ public class TextOptionsTests
             VerticalAlignment = VerticalAlignment.Bottom,
             TextJustification = TextJustification.InterCharacter,
             DecorationPositioningMode = DecorationPositioningMode.GlyphFont,
-            WrappingLength = 42F
             WrappingLength = 42F,
             Tracking = 66F,
         };
