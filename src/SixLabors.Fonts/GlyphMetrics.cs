@@ -489,8 +489,7 @@ public abstract class GlyphMetrics
     /// <returns>The <see cref="bool"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected internal static bool ShouldSkipGlyphRendering(CodePoint codePoint)
-        => CodePoint.IsNewLine(codePoint) ||
-           (UnicodeUtility.IsDefaultIgnorableCodePoint((uint)codePoint.Value) && !UnicodeUtility.ShouldRenderWhiteSpaceOnly(codePoint));
+        => UnicodeUtility.ShouldNotBeRendered(codePoint);
 
     /// <summary>
     /// Returns the size to render/measure the glyph based on the given size and resolution in px units.
