@@ -628,14 +628,16 @@ internal static class TextLayout
 
                 for (int k = i; k < textLine.Count; k++)
                 {
-                    if (textLine[k].IsTransformed)
+                    TextLine.GlyphLayoutData g = textLine[k];
+
+                    if (g.GraphemeIndex != graphemeIndex)
                     {
-                        currentGraphemeIsTransformed = true;
                         break;
                     }
 
-                    if (textLine[k].IsLastInGrapheme)
+                    if (g.IsTransformed)
                     {
+                        currentGraphemeIsTransformed = true;
                         break;
                     }
                 }
@@ -654,9 +656,14 @@ internal static class TextLayout
                     float minX = float.PositiveInfinity;
                     float maxX = float.NegativeInfinity;
 
-                    for (int k = i; k < textLine.Count && textLine[k].GraphemeIndex == graphemeIndex; k++)
+                    for (int k = i; k < textLine.Count; k++)
                     {
                         TextLine.GlyphLayoutData g = textLine[k];
+
+                        if (g.GraphemeIndex != graphemeIndex)
+                        {
+                            break;
+                        }
 
                         foreach (GlyphMetrics m in g.Metrics)
                         {
@@ -674,11 +681,6 @@ internal static class TextLayout
                             {
                                 maxX = glyphMaxX;
                             }
-                        }
-
-                        if (g.IsLastInGrapheme)
-                        {
-                            break;
                         }
                     }
 
@@ -715,13 +717,22 @@ internal static class TextLayout
                 // Offset our in both directions to account for horizontal ink centering and vertical baseline centering.
                 Vector2 offset = new(alignX, (metric.Bounds.Max.Y + metric.TopSideBearing) * scale.Y);
 
-                // For transformed glyphs we advance horizontally using the horizontal advance not the line height.
+                float advanceW = advanceX;
+
+                if (currentGraphemeIsTransformed && !isFirstInGrapheme)
+                {
+                    // For transformed glyphs after the first in the grapheme we advance
+                    // horizontally using the horizontal advance not the line height.
+                    // This gives us the correct total advance across the grapheme.
+                    advanceW = scale.X * metric.AdvanceWidth;
+                }
+
                 glyphs.Add(new GlyphLayout(
                     new Glyph(metric, data.PointSize),
                     boxLocation,
                     penLocation + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
                     offset,
-                    currentGraphemeIsTransformed ? scale.X * metric.AdvanceWidth : advanceX,
+                    advanceW,
                     data.ScaledAdvance + yExtraAdvance,
                     GlyphLayoutMode.Vertical,
                     i == 0 && j == 0,
@@ -1024,7 +1035,7 @@ internal static class TextLayout
                 charIndex += charsConsumed;
 
                 // Get the glyph id for the codepoint and add to the collection.
-                font.FontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
+                _ = font.FontMetrics.TryGetGlyphId(current, next, out ushort glyphId, out skipNextCodePoint);
                 substitutions.AddGlyph(glyphId, current, (TextDirection)bidiRuns[bidiRunIndex].Direction, textRuns[textRunIndex], codePointIndex);
 
                 codePointIndex++;
@@ -1156,8 +1167,7 @@ internal static class TextLayout
                 //
                 // Note: Not all glyphs in a font will have a codepoint associated with them. e.g. most compositions, ligatures, etc.
                 CodePoint codePoint = codePointEnumerator.Current;
-                if (isSubstituted &&
-                    metrics.Count == 1)
+                if (isSubstituted && metrics.Count == 1)
                 {
                     codePoint = glyph.CodePoint;
                 }
@@ -1302,11 +1312,14 @@ internal static class TextLayout
                     }
                 }
 
-                bool isLastInGrapheme = graphemeCodePointIndex == CodePoint.GetCodePointCount(grapheme) - 1;
+                int graphemeCodePointMax = CodePoint.GetCodePointCount(grapheme) - 1;
 
                 // For non-decomposed glyphs the length is always 1.
                 for (int i = 0; i < decomposedAdvances.Length; i++)
                 {
+                    // Determine if this is the last codepoint in the grapheme.
+                    bool isLastInGrapheme = graphemeCodePointIndex == graphemeCodePointMax && i == decomposedAdvances.Length - 1;
+
                     float decomposedAdvance = decomposedAdvances[i];
 
                     // Work out the scaled metrics for the glyph.

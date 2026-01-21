@@ -1041,8 +1041,8 @@ public class TextLayoutTests
 
     [Theory]
     [InlineData("\u093f", 1, 48.4)]
-    [InlineData("\u0930\u094D\u0915\u093F", 1, 225.6)]
-    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1, 419)]
+    [InlineData("\u0930\u094D\u0915\u093F", 1, 97.65625)]
+    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1, 227)]
     [InlineData("\u093fa", 1, 145.5f)]
     public void FontTracking_CorrectlyAddSpacingForComposedCharacter(string text, float tracking, float width)
     {
@@ -1054,6 +1054,71 @@ public class TextLayoutTests
 
         FontRectangle actual = TextMeasurer.MeasureSize(text, options);
         Assert.Equal(width, actual.Width, Comparer);
+    }
+
+    [Theory]
+    [InlineData("\u093f", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u093fa", 1)]
+    public void FontTracking_CorrectlyAddSpacingForComposedCharacterHRef(string text, float tracking)
+    {
+        FontCollection fontCollection = new();
+        string name = fontCollection.Add(TestFonts.NotoSansDevanagariRegular).Name;
+
+        FontFamily mainFontFamily = fontCollection.Get(name);
+        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+
+        TextOptions options = new(mainFont)
+        {
+            Tracking = tracking,
+        };
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: text);
+    }
+
+    [Theory]
+    [InlineData("\u093f", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u093fa", 1)]
+    public void FontTracking_CorrectlyAddSpacingForComposedCharacterVRef(string text, float tracking)
+    {
+        FontCollection fontCollection = new();
+        string name = fontCollection.Add(TestFonts.NotoSansDevanagariRegular).Name;
+
+        FontFamily mainFontFamily = fontCollection.Get(name);
+        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+
+        TextOptions options = new(mainFont)
+        {
+            Tracking = tracking,
+            LayoutMode = LayoutMode.VerticalLeftRight,
+        };
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: text);
+    }
+
+    [Theory]
+    [InlineData("\u093f", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u093fa", 1)]
+    public void FontTracking_CorrectlyAddSpacingForComposedCharacterVMRef(string text, float tracking)
+    {
+        FontCollection fontCollection = new();
+        string name = fontCollection.Add(TestFonts.NotoSansDevanagariRegular).Name;
+
+        FontFamily mainFontFamily = fontCollection.Get(name);
+        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+
+        TextOptions options = new(mainFont)
+        {
+            Tracking = tracking,
+            LayoutMode = LayoutMode.VerticalMixedLeftRight,
+        };
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: text);
     }
 
     [Fact]
