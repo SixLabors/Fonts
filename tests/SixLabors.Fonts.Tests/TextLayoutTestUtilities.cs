@@ -116,6 +116,7 @@ internal static class TextLayoutTestUtilities
             LayoutMode = options.LayoutMode,
             KerningMode = options.KerningMode,
             DecorationPositioningMode = options.DecorationPositioningMode,
+            Tracking = options.Tracking,
             ColorFontSupport = options.ColorFontSupport,
             FeatureTags = new List<Tag>(options.FeatureTags),
         };

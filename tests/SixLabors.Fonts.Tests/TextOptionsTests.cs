@@ -24,7 +24,7 @@ public class TextOptionsTests
     public void ConstructorTest_FontOnly()
     {
         Font font = FakeFont.CreateFont("ABC");
-        var options = new TextOptions(font);
+        TextOptions options = new(font);
 
         Assert.Equal(72, options.Dpi);
         Assert.Empty(options.FallbackFontFamilies);
@@ -38,7 +38,7 @@ public class TextOptionsTests
     {
         Font font = FakeFont.CreateFont("ABC");
         const float dpi = 123;
-        var options = new TextOptions(font) { Dpi = dpi };
+        TextOptions options = new(font) { Dpi = dpi };
 
         Assert.Equal(dpi, options.Dpi);
         Assert.Empty(options.FallbackFontFamilies);
@@ -51,7 +51,7 @@ public class TextOptionsTests
     public void ConstructorTest_FontWithOrigin()
     {
         Font font = FakeFont.CreateFont("ABC");
-        var origin = new Vector2(123, 345);
+        Vector2 origin = new(123, 345);
         TextOptions options = new(font) { Origin = origin };
 
         Assert.Equal(72, options.Dpi);
@@ -65,7 +65,7 @@ public class TextOptionsTests
     public void ConstructorTest_FontWithSingleDpiWithOrigin()
     {
         Font font = FakeFont.CreateFont("ABC");
-        var origin = new Vector2(123, 345);
+        Vector2 origin = new(123, 345);
         const float dpi = 123;
         TextOptions options = new(font) { Dpi = dpi, Origin = origin };
 
@@ -80,13 +80,13 @@ public class TextOptionsTests
     public void ConstructorTest_FontOnly_WithFallbackFonts()
     {
         Font font = FakeFont.CreateFont("ABC");
-        FontFamily[] fontFamilies = new[]
-        {
+        FontFamily[] fontFamilies =
+        [
             FakeFont.CreateFont("DEF").Family,
-            FakeFont.CreateFont("GHI").Family
-        };
+            FakeFont.CreateFont("GHI").Family,
+        ];
 
-        var options = new TextOptions(font)
+        TextOptions options = new(font)
         {
             FallbackFontFamilies = fontFamilies
         };
@@ -102,14 +102,14 @@ public class TextOptionsTests
     public void ConstructorTest_FontWithSingleDpi_WithFallbackFonts()
     {
         Font font = FakeFont.CreateFont("ABC");
-        FontFamily[] fontFamilies = new[]
-        {
+        FontFamily[] fontFamilies =
+        [
             FakeFont.CreateFont("DEF").Family,
-            FakeFont.CreateFont("GHI").Family
-        };
+            FakeFont.CreateFont("GHI").Family,
+        ];
 
         const float dpi = 123;
-        var options = new TextOptions(font)
+        TextOptions options = new(font)
         {
             Dpi = dpi,
             FallbackFontFamilies = fontFamilies
@@ -126,13 +126,13 @@ public class TextOptionsTests
     public void ConstructorTest_FontWithOrigin_WithFallbackFonts()
     {
         Font font = FakeFont.CreateFont("ABC");
-        FontFamily[] fontFamilies = new[]
-        {
+        FontFamily[] fontFamilies =
+        [
             FakeFont.CreateFont("DEF").Family,
-            FakeFont.CreateFont("GHI").Family
-        };
+            FakeFont.CreateFont("GHI").Family,
+        ];
 
-        var origin = new Vector2(123, 345);
+        Vector2 origin = new(123, 345);
         TextOptions options = new(font)
         {
             FallbackFontFamilies = fontFamilies,
@@ -150,13 +150,13 @@ public class TextOptionsTests
     public void ConstructorTest_FontWithSingleDpiWithOrigin_WithFallbackFonts()
     {
         Font font = FakeFont.CreateFont("ABC");
-        FontFamily[] fontFamilies = new[]
-        {
+        FontFamily[] fontFamilies =
+        [
             FakeFont.CreateFont("DEF").Family,
-            FakeFont.CreateFont("GHI").Family
-        };
+            FakeFont.CreateFont("GHI").Family,
+        ];
 
-        var origin = new Vector2(123, 345);
+        Vector2 origin = new(123, 345);
         const float dpi = 123;
         TextOptions options = new(font)
         {
@@ -176,20 +176,20 @@ public class TextOptionsTests
     public void GetMissingGlyphFromMainFont()
     {
         Font font = FakeFont.CreateFontWithInstance("ABC", "ABC", out Fakes.FakeFontInstance abcFontInstance);
-        FontFamily[] fontFamilies = new[]
-        {
-            FakeFont.CreateFontWithInstance("DEF", "DEF", out Fakes.FakeFontInstance defFontInstance).Family,
-            FakeFont.CreateFontWithInstance("GHI", "GHI", out Fakes.FakeFontInstance ghiFontInstance).Family
-        };
+        FontFamily[] fontFamilies =
+        [
+            FakeFont.CreateFontWithInstance("DEF", "DEF", out Fakes.FakeFontInstance _).Family,
+            FakeFont.CreateFontWithInstance("GHI", "GHI", out Fakes.FakeFontInstance _).Family,
+        ];
 
-        var options = new TextOptions(font)
+        TextOptions options = new(font)
         {
             FallbackFontFamilies = fontFamilies,
             ColorFontSupport = ColorFontSupport.None
         };
 
         ReadOnlySpan<char> text = "Z".AsSpan();
-        var renderer = new GlyphRenderer();
+        GlyphRenderer renderer = new();
         TextRenderer.RenderTextTo(renderer, text, options);
 
         GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
@@ -204,20 +204,20 @@ public class TextOptionsTests
     public void GetGlyphFromFirstAvailableInstance(char character, string instance)
     {
         Font font = FakeFont.CreateFontWithInstance("ABC", "ABC", out Fakes.FakeFontInstance abcFontInstance);
-        FontFamily[] fontFamilies = new[]
-        {
+        FontFamily[] fontFamilies =
+        [
             FakeFont.CreateFontWithInstance("DEF", "DEF", out Fakes.FakeFontInstance defFontInstance).Family,
-            FakeFont.CreateFontWithInstance("EFGHI", "EFGHI", out Fakes.FakeFontInstance efghiFontInstance).Family
-        };
+            FakeFont.CreateFontWithInstance("EFGHI", "EFGHI", out Fakes.FakeFontInstance efghiFontInstance).Family,
+        ];
 
-        var options = new TextOptions(font)
+        TextOptions options = new(font)
         {
             FallbackFontFamilies = fontFamilies,
             ColorFontSupport = ColorFontSupport.None
         };
 
         ReadOnlySpan<char> text = new[] { character };
-        var renderer = new GlyphRenderer();
+        GlyphRenderer renderer = new();
         TextRenderer.RenderTextTo(renderer, text, options);
         GlyphRendererParameters glyph = Assert.Single(renderer.GlyphKeys);
         Assert.Equal(GlyphType.Standard, glyph.GlyphType);
@@ -233,7 +233,7 @@ public class TextOptionsTests
     }
 
     [Fact]
-    public void CloneTextOptionsIsNotNull() => Assert.True(this.clonedTextOptions != null);
+    public void CloneTextOptionsIsNotNull() => Assert.NotNull(this.clonedTextOptions);
 
     [Fact]
     public void DefaultTextOptionsApplyKerning()
@@ -312,7 +312,8 @@ public class TextOptionsTests
             VerticalAlignment = VerticalAlignment.Bottom,
             DecorationPositioningMode = DecorationPositioningMode.GlyphFont,
             WrappingLength = 42F,
-            FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures },
+            Tracking = 66F,
+            FeatureTags = new List<Tag> { FeatureTags.OldstyleFigures }
         };
 
         TextOptions actual = new(expected);
@@ -326,12 +327,13 @@ public class TextOptionsTests
         Assert.Equal(expected.WrappingLength, actual.WrappingLength);
         Assert.Equal(expected.DecorationPositioningMode, actual.DecorationPositioningMode);
         Assert.Equal(expected.FeatureTags, actual.FeatureTags);
+        Assert.Equal(expected.Tracking, actual.Tracking);
     }
 
     [Fact]
     public void CloneIsDeep()
     {
-        var expected = new TextOptions(this.fakeFont);
+        TextOptions expected = new(this.fakeFont);
         TextOptions actual = new(expected)
         {
             KerningMode = KerningMode.None,
@@ -342,7 +344,8 @@ public class TextOptionsTests
             VerticalAlignment = VerticalAlignment.Bottom,
             TextJustification = TextJustification.InterCharacter,
             DecorationPositioningMode = DecorationPositioningMode.GlyphFont,
-            WrappingLength = 42F
+            WrappingLength = 42F,
+            Tracking = 66F,
         };
 
         Assert.NotEqual(expected.KerningMode, actual.KerningMode);
@@ -354,6 +357,7 @@ public class TextOptionsTests
         Assert.NotEqual(expected.WrappingLength, actual.WrappingLength);
         Assert.NotEqual(expected.DecorationPositioningMode, actual.DecorationPositioningMode);
         Assert.NotEqual(expected.TextJustification, actual.TextJustification);
+        Assert.NotEqual(expected.Tracking, actual.Tracking);
     }
 
     private static void VerifyPropertyDefault(TextOptions options)
@@ -369,5 +373,6 @@ public class TextOptionsTests
         Assert.Equal(LayoutMode.HorizontalTopBottom, options.LayoutMode);
         Assert.Equal(DecorationPositioningMode.PrimaryFont, options.DecorationPositioningMode);
         Assert.Equal(1, options.LineSpacing);
+        Assert.Equal(0, options.Tracking);
     }
 }

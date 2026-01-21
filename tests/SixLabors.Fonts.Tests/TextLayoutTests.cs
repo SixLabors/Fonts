@@ -967,6 +967,160 @@ public class TextLayoutTests
         Assert.Equal(expected, actual, Comparer);
     }
 
+    public static TheoryData<string, float, float, float[]> FontTrackingHorizontalData
+        = new()
+        {
+            { "aaaa", 0.0f, 134.0f, [2.9f, 38.5f, 74.0f, 109.6f] },
+            { "aaaa", 0.1f, 153.3f, [2.9f, 44.9f, 86.8f, 128.8f] },
+            { "aaaa", 1.0f, 326.1f, [2.9f, 102.5f, 202.0f, 301.6f] },
+            { "awwa", 0.0f, 162.1f, [2.9f, 36.3f, 85.9f, 137.6f] },
+            { "awwa", 0.1f, 181.4f, [2.9f, 42.7f, 98.7f, 156.8f] },
+            { "awwa", 1.0f, 354.1f, [2.9f, 100.3f, 213.9f, 329.6f] },
+        };
+
+    [Theory]
+    [MemberData(nameof(FontTrackingHorizontalData))]
+    public void FontTracking_SpaceCharacters_WithHorizontalLayout(string text, float tracking, float width, float[] characterPosition)
+    {
+        Font font = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(64);
+        TextOptions options = new(font)
+        {
+            Tracking = tracking,
+        };
+
+        FontRectangle actual = TextMeasurer.MeasureSize(text, options);
+        Assert.Equal(width, actual.Width, Comparer);
+
+        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds));
+        Assert.Equal(characterPosition, bounds.ToArray().Select(x => x.Bounds.X), Comparer);
+    }
+
+    public static TheoryData<string, float, float, float[]> FontTrackingVerticalData
+        = new()
+        {
+            { "aaaa", 0.0f, 296.9f, [33.5f, 120.7f, 207.9f, 295.0f] },
+            { "aaaa", 0.1f, 316.1f, [33.5f, 127.1f, 220.7f, 314.2f] },
+            { "aaaa", 1.0f, 488.9f, [33.5f, 184.7f, 335.9f, 487.0f] },
+            { "awwa", 0.0f, 296.9f, [33.5f, 121.2f, 208.4f, 295.0f] },
+            { "awwa", 0.1f, 316.1f, [33.5f, 127.6f, 221.2f, 314.2f] },
+            { "awwa", 1.0f, 488.9f, [33.5f, 185.2f, 336.4f, 487.0f] },
+        };
+
+    [Theory]
+    [MemberData(nameof(FontTrackingVerticalData))]
+    public void FontTracking_SpaceCharacters_WithVerticalLayout(string text, float tracking, float width, float[] characterPosition)
+    {
+        Font font = new FontCollection().Add(TestFonts.OpenSansFile).CreateFont(64);
+        TextOptions options = new(font)
+        {
+            Tracking = tracking,
+            LayoutMode = LayoutMode.VerticalLeftRight,
+        };
+
+        FontRectangle actual = TextMeasurer.MeasureSize(text, options);
+        Assert.Equal(width, actual.Height, Comparer);
+
+        Assert.True(TextMeasurer.TryMeasureCharacterBounds(text, options, out ReadOnlySpan<GlyphBounds> bounds));
+        Assert.Equal(characterPosition, bounds.ToArray().Select(x => x.Bounds.Y), Comparer);
+    }
+
+    [Theory]
+    [InlineData("\u1B3C", 1, 83.8)]
+    [InlineData("\u1B3C\u1B3C", 1, 83.8)]
+    public void FontTracking_DoNotAddSpacingAfterCharacterThatDidNotAdvance(string text, float tracking, float width)
+    {
+        Font font = new FontCollection().Add(TestFonts.NotoSansBalineseRegular).CreateFont(64);
+        TextOptions options = new(font)
+        {
+            Tracking = tracking,
+        };
+
+        FontRectangle actual = TextMeasurer.MeasureSize(text, options);
+        Assert.Equal(width, actual.Width, Comparer);
+    }
+
+    [Theory]
+    [InlineData("\u093f", 1, 48.4)]
+    [InlineData("\u0930\u094D\u0915\u093F", 1, 97.65625)]
+    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1, 227)]
+    [InlineData("\u093fa", 1, 145.5f)]
+    public void FontTracking_CorrectlyAddSpacingForComposedCharacter(string text, float tracking, float width)
+    {
+        Font font = new FontCollection().Add(TestFonts.NotoSansDevanagariRegular).CreateFont(64);
+        TextOptions options = new(font)
+        {
+            Tracking = tracking,
+        };
+
+        FontRectangle actual = TextMeasurer.MeasureSize(text, options);
+        Assert.Equal(width, actual.Width, Comparer);
+    }
+
+    [Theory]
+    [InlineData("\u093f", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u093fa", 1)]
+    public void FontTracking_CorrectlyAddSpacingForComposedCharacterHRef(string text, float tracking)
+    {
+        FontCollection fontCollection = new();
+        string name = fontCollection.Add(TestFonts.NotoSansDevanagariRegular).Name;
+
+        FontFamily mainFontFamily = fontCollection.Get(name);
+        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+
+        TextOptions options = new(mainFont)
+        {
+            Tracking = tracking,
+        };
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: text);
+    }
+
+    [Theory]
+    [InlineData("\u093f", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u093fa", 1)]
+    public void FontTracking_CorrectlyAddSpacingForComposedCharacterVRef(string text, float tracking)
+    {
+        FontCollection fontCollection = new();
+        string name = fontCollection.Add(TestFonts.NotoSansDevanagariRegular).Name;
+
+        FontFamily mainFontFamily = fontCollection.Get(name);
+        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+
+        TextOptions options = new(mainFont)
+        {
+            Tracking = tracking,
+            LayoutMode = LayoutMode.VerticalLeftRight,
+        };
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: text);
+    }
+
+    [Theory]
+    [InlineData("\u093f", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u0930\u094D\u0915\u093F\u0930\u094D\u0915\u093F", 1)]
+    [InlineData("\u093fa", 1)]
+    public void FontTracking_CorrectlyAddSpacingForComposedCharacterVMRef(string text, float tracking)
+    {
+        FontCollection fontCollection = new();
+        string name = fontCollection.Add(TestFonts.NotoSansDevanagariRegular).Name;
+
+        FontFamily mainFontFamily = fontCollection.Get(name);
+        Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);
+
+        TextOptions options = new(mainFont)
+        {
+            Tracking = tracking,
+            LayoutMode = LayoutMode.VerticalMixedLeftRight,
+        };
+
+        TextLayoutTestUtilities.TestLayout(text, options, properties: text);
+    }
+
     [Fact]
     public void CanMeasureTextAdvance()
     {
