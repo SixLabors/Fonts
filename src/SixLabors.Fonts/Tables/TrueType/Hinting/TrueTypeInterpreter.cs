@@ -66,7 +66,7 @@ internal class TrueTypeInterpreter
     private const int MaxCallStack = 128;
     private const float Epsilon = 0.000001F;
 
-    private readonly List<OpCode> debugList = new();
+    private readonly List<OpCode> debugList = [];
 
     public TrueTypeInterpreter(int maxStack, int maxStorage, int maxFunctions, int maxInstructionDefs, int maxTwilightPoints)
     {
@@ -77,7 +77,7 @@ internal class TrueTypeInterpreter
         this.state = default;
         this.cvtState = default;
         this.twilight = new Zone(maxTwilightPoints, isTwilight: true);
-        this.controlValueTable = Array.Empty<float>();
+        this.controlValueTable = [];
         this.contours = Array.Empty<ushort>();
     }
 
@@ -97,7 +97,6 @@ internal class TrueTypeInterpreter
                 this.controlValueTable = new float[cvt.Length];
             }
 
-            // TODO: How about SIMD here? Will the JIT vectorize this?
             for (int i = 0; i < cvt.Length; i++)
             {
                 this.controlValueTable[i] = cvt[i] * scale;
@@ -227,7 +226,7 @@ internal class TrueTypeInterpreter
                 // ==== STORAGE MANAGEMENT ====
                 case OpCode.RS:
                 {
-                    int loc = CheckIndex(this.stack.Pop(), this.storage.Length);
+                    int loc = IndexOrZero(this.stack.Pop(), this.storage.Length);
                     this.stack.Push(this.storage[loc]);
                 }
 
@@ -235,7 +234,7 @@ internal class TrueTypeInterpreter
                 case OpCode.WS:
                 {
                     int value = this.stack.Pop();
-                    int loc = CheckIndex(this.stack.Pop(), this.storage.Length);
+                    int loc = IndexOrZero(this.stack.Pop(), this.storage.Length);
                     this.storage[loc] = value;
                 }
 
@@ -245,7 +244,7 @@ internal class TrueTypeInterpreter
                 case OpCode.WCVTP:
                 {
                     float value = this.stack.PopFloat();
-                    int loc = CheckIndex(this.stack.Pop(), this.controlValueTable.Length);
+                    int loc = IndexOrZero(this.stack.Pop(), this.controlValueTable.Length);
                     this.controlValueTable[loc] = value;
                 }
 
@@ -253,7 +252,7 @@ internal class TrueTypeInterpreter
                 case OpCode.WCVTF:
                 {
                     int value = this.stack.Pop();
-                    int loc = CheckIndex(this.stack.Pop(), this.controlValueTable.Length);
+                    int loc = IndexOrZero(this.stack.Pop(), this.controlValueTable.Length);
                     this.controlValueTable[loc] = value * this.scale;
                 }
 
@@ -316,7 +315,7 @@ internal class TrueTypeInterpreter
                 {
                     int y = this.stack.Pop();
                     int x = this.stack.Pop();
-                    var vec = Vector2.Normalize(new Vector2(F2Dot14ToFloat(x), F2Dot14ToFloat(y)));
+                    Vector2 vec = Vector2.Normalize(new Vector2(F2Dot14ToFloat(x), F2Dot14ToFloat(y)));
                     if (opcode == OpCode.SFVFS)
                     {
                         this.state.Freedom = vec;
@@ -1379,8 +1378,8 @@ internal class TrueTypeInterpreter
                             amount *= 1 << (6 - this.state.DeltaShift);
 
                             // update the CVT
-                            CheckIndex(cvtIndex, this.controlValueTable.Length);
-                            this.controlValueTable[cvtIndex] += F26Dot6ToFloat(amount);
+                            int loc = IndexOrZero(cvtIndex, this.controlValueTable.Length);
+                            this.controlValueTable[loc] += F26Dot6ToFloat(amount);
                         }
                     }
                 }
@@ -1504,13 +1503,9 @@ internal class TrueTypeInterpreter
         }
     }
 
-    private static int CheckIndex(int index, int length)
-    {
-        Guard.MustBeBetweenOrEqualTo(index, 0, length - 1, nameof(index));
-        return index;
-    }
+    private static int IndexOrZero(int index, int length) => (uint)index < (uint)length ? index : 0;
 
-    private float ReadCvt() => this.controlValueTable[CheckIndex(this.stack.Pop(), this.controlValueTable.Length)];
+    private float ReadCvt() => this.controlValueTable[IndexOrZero(this.stack.Pop(), this.controlValueTable.Length)];
 
     private void OnVectorsUpdated()
     {
@@ -2474,7 +2469,7 @@ internal class TrueTypeInterpreter
             this.IsTwilight = isTwilight;
             this.Current = controlPoints;
 
-            var original = new ControlPoint[controlPoints.Length];
+            ControlPoint[] original = new ControlPoint[controlPoints.Length];
             controlPoints.AsSpan().CopyTo(original);
             this.Original = original;
             this.TouchState = new TouchState[controlPoints.Length];
