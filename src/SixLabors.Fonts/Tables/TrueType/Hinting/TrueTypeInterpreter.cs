@@ -226,16 +226,19 @@ internal class TrueTypeInterpreter
                 // ==== STORAGE MANAGEMENT ====
                 case OpCode.RS:
                 {
-                    int loc = IndexOrZero(this.stack.Pop(), this.storage.Length);
-                    this.stack.Push(this.storage[loc]);
+                    int loc = this.stack.Pop();
+                    this.stack.Push((uint)loc < (uint)this.storage.Length ? this.storage[loc] : 0);
                 }
 
                 break;
                 case OpCode.WS:
                 {
                     int value = this.stack.Pop();
-                    int loc = IndexOrZero(this.stack.Pop(), this.storage.Length);
-                    this.storage[loc] = value;
+                    int loc = this.stack.Pop();
+                    if ((uint)loc < (uint)this.storage.Length)
+                    {
+                        this.storage[loc] = value;
+                    }
                 }
 
                 break;
@@ -244,16 +247,22 @@ internal class TrueTypeInterpreter
                 case OpCode.WCVTP:
                 {
                     float value = this.stack.PopFloat();
-                    int loc = IndexOrZero(this.stack.Pop(), this.controlValueTable.Length);
-                    this.controlValueTable[loc] = value;
+                    int loc = this.stack.Pop();
+                    if ((uint)loc < (uint)this.controlValueTable.Length)
+                    {
+                        this.controlValueTable[loc] = value;
+                    }
                 }
 
                 break;
                 case OpCode.WCVTF:
                 {
                     int value = this.stack.Pop();
-                    int loc = IndexOrZero(this.stack.Pop(), this.controlValueTable.Length);
-                    this.controlValueTable[loc] = value * this.scale;
+                    int loc = this.stack.Pop();
+                    if ((uint)loc < (uint)this.controlValueTable.Length)
+                    {
+                        this.controlValueTable[loc] = value * this.scale;
+                    }
                 }
 
                 break;
@@ -1378,8 +1387,10 @@ internal class TrueTypeInterpreter
                             amount *= 1 << (6 - this.state.DeltaShift);
 
                             // update the CVT
-                            int loc = IndexOrZero(cvtIndex, this.controlValueTable.Length);
-                            this.controlValueTable[loc] += F26Dot6ToFloat(amount);
+                            if ((uint)cvtIndex < (uint)this.controlValueTable.Length)
+                            {
+                                this.controlValueTable[cvtIndex] += F26Dot6ToFloat(amount);
+                            }
                         }
                     }
                 }
@@ -1503,9 +1514,13 @@ internal class TrueTypeInterpreter
         }
     }
 
-    private static int IndexOrZero(int index, int length) => (uint)index < (uint)length ? index : 0;
-
-    private float ReadCvt() => this.controlValueTable[IndexOrZero(this.stack.Pop(), this.controlValueTable.Length)];
+    private float ReadCvt()
+    {
+        int index = this.stack.Pop();
+        return (uint)index < (uint)this.controlValueTable.Length
+            ? this.controlValueTable[index]
+            : 0F;
+    }
 
     private void OnVectorsUpdated()
     {
