@@ -12,7 +12,7 @@ namespace SixLabors.Fonts.Tables.TrueType;
 /// <summary>
 /// Represents a glyph metric from a particular TrueType font face.
 /// </summary>
-public class TrueTypeGlyphMetrics : GlyphMetrics
+public partial class TrueTypeGlyphMetrics : GlyphMetrics
 {
     private static readonly Vector2 YInverter = new(1, -1);
     private readonly GlyphVector vector;
@@ -145,7 +145,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
                     GlyphVector.TransformInPlace(ref clone, matrix);
 
                     float pixelSize = scaledPPEM / 72F;
-                    this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref clone, scale, pixelSize);
+                    this.FontMetrics.ApplyTrueTypeHinting(this.GetHintingMode(options.HintingMode), this, ref clone, scale, pixelSize);
 
                     // Rotation must happen after hinting.
                     GlyphVector.TransformInPlace(ref clone, rotation);

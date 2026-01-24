@@ -51,7 +51,7 @@ public class Issues_493
         const string text = "the quick brown fox jumps over the lazy dog";
 
         FontCollection fontCollection = new();
-        string name = fontCollection.Add(TestFonts.NotoSansRunicRegular).Name;
+        string name = fontCollection.Add(TestFonts.MgOpenCanonicRegular).Name;
 
         FontFamily mainFontFamily = fontCollection.Get(name);
         Font mainFont = mainFontFamily.CreateFont(30, FontStyle.Regular);

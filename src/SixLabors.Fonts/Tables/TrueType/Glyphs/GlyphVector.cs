@@ -92,11 +92,12 @@ internal struct GlyphVector
             controlPoints[i] = glyph.ControlPoints[i];
         }
 
-        interpreter.HintGlyph(controlPoints, glyph.EndPoints, glyph.Instructions, glyph.IsComposite);
-
-        for (int i = 0; i < glyph.ControlPoints.Count; i++)
+        if (interpreter.TryHintGlyph(controlPoints, glyph.EndPoints, glyph.Instructions, glyph.IsComposite))
         {
-            glyph.ControlPoints[i] = controlPoints[i];
+            for (int i = 0; i < glyph.ControlPoints.Count; i++)
+            {
+                glyph.ControlPoints[i] = controlPoints[i];
+            }
         }
     }
 
