@@ -82,7 +82,7 @@ internal class TrueTypeInterpreter
         this.twilight = new Zone(maxTwilightPoints, isTwilight: true);
         this.controlValueTable = [];
         this.baseControlValueTable = [];
-        this.contours = Array.Empty<ushort>();
+        this.contours = [];
     }
 
     public void InitializeFunctionDefs(byte[] instructions)
@@ -191,7 +191,7 @@ internal class TrueTypeInterpreter
 
             // FreeType's interpreter treats the storage area and glyph-level CVT modifications as non-persistent.
             // Reset storage and restore the baseline CVT state for each glyph.
-            Array.Clear(this.storage);
+            Array.Clear(this.storage, 0, this.storage.Length);
 
             if (this.baseControlValueTable.Length > 0)
             {
@@ -235,14 +235,13 @@ internal class TrueTypeInterpreter
         }
         catch (Exception)
         {
-            // TODO: Is there a general Reset I can call?
             // The interpreter can fail for malformed instructions; in that case we skip hinting.
             Array.Clear(this.points.TouchState, 0, this.points.TouchState.Length);
 
             // Reset interpreter state so nothing leaks if the caller catches.
             this.stack.Clear();
             this.callStackSize = 0;
-            this.contours = Array.Empty<ushort>();
+            this.contours = [];
             this.zp0 = this.zp1 = this.zp2 = this.points = default;
 
             this.state = this.cvtState;
@@ -268,7 +267,7 @@ internal class TrueTypeInterpreter
             twOriginal[i].Point = default;
         }
 
-        Array.Clear(this.twilight.TouchState);
+        Array.Clear(this.twilight.TouchState, 0, this.twilight.TouchState.Length);
     }
 
     private void Execute(StackInstructionStream stream, bool inFunction, bool allowFunctionDefs)

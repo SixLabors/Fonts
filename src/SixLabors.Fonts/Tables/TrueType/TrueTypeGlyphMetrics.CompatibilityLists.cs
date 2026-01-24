@@ -10,7 +10,7 @@ public partial class TrueTypeGlyphMetrics
 {
     /// <summary>
     /// Represents a set of font family names that require font hinting to render correctly.
-    /// Base on the Freetype list in ttobjs.c
+    /// Based on the FreeType list in ttobjs.c
     /// </summary>
     private static readonly HashSet<string> MustHintFonts =
         new(StringComparer.Ordinal)
