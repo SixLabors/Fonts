@@ -41,6 +41,7 @@ internal class TrueTypeInterpreter
     private readonly ExecutionStack stack;
     private readonly InstructionStream[] functions;
     private readonly InstructionStream[] instructionDefs;
+    private float[] baseControlValueTable;
     private float[] controlValueTable;
     private readonly int[] storage;
     private IReadOnlyList<ushort> contours;
@@ -66,7 +67,9 @@ internal class TrueTypeInterpreter
     private const int MaxCallStack = 128;
     private const float Epsilon = 0.000001F;
 
-    private readonly List<OpCode> debugList = new();
+#if DEBUG
+    private readonly List<OpCode> debugList = [];
+#endif
 
     public TrueTypeInterpreter(int maxStack, int maxStorage, int maxFunctions, int maxInstructionDefs, int maxTwilightPoints)
     {
@@ -77,8 +80,9 @@ internal class TrueTypeInterpreter
         this.state = default;
         this.cvtState = default;
         this.twilight = new Zone(maxTwilightPoints, isTwilight: true);
-        this.controlValueTable = Array.Empty<float>();
-        this.contours = Array.Empty<ushort>();
+        this.controlValueTable = [];
+        this.baseControlValueTable = [];
+        this.contours = [];
     }
 
     public void InitializeFunctionDefs(byte[] instructions)
@@ -97,7 +101,6 @@ internal class TrueTypeInterpreter
                 this.controlValueTable = new float[cvt.Length];
             }
 
-            // TODO: How about SIMD here? Will the JIT vectorize this?
             for (int i = 0; i < cvt.Length; i++)
             {
                 this.controlValueTable[i] = cvt[i] * scale;
@@ -130,9 +133,36 @@ internal class TrueTypeInterpreter
                 this.cvtState.Loop = 1;
             }
         }
+
+        if (this.controlValueTable.Length > 0)
+        {
+            if (this.baseControlValueTable.Length != this.controlValueTable.Length)
+            {
+                this.baseControlValueTable = new float[this.controlValueTable.Length];
+            }
+
+            Array.Copy(this.controlValueTable, this.baseControlValueTable, this.controlValueTable.Length);
+        }
+        else
+        {
+            this.baseControlValueTable = [];
+        }
     }
 
-    public void HintGlyph(
+    /// <summary>
+    /// Attempts to apply TrueType hinting instructions to the specified glyph outline.
+    /// </summary>
+    /// <remarks>
+    /// Hinting will not be applied if the instructions buffer is empty or if grid fitting is
+    /// inhibited by the current interpreter state. If the instructions are malformed or an error occurs during
+    /// execution, the method returns <see langword="false"/> and the glyph outline remains unhinted.
+    /// </remarks>
+    /// <param name="controlPoints">An array of control points representing the glyph's outline to be hinted.</param>
+    /// <param name="endPoints">A read-only list of indices indicating the end points of each contour in the glyph.</param>
+    /// <param name="instructions">A read-only memory buffer containing the TrueType hinting instructions to execute.</param>
+    /// <param name="isComposite">Indicates whether the glyph is a composite glyph. Set to <see langword="true"/> for composite glyphs; otherwise, <see langword="false"/>.</param>
+    /// <returns><see langword="true"/> if hinting was successfully applied; otherwise, <see langword="false"/>.</returns>
+    public bool TryHintGlyph(
         ControlPoint[] controlPoints,
         IReadOnlyList<ushort> endPoints,
         ReadOnlyMemory<byte> instructions,
@@ -140,41 +170,104 @@ internal class TrueTypeInterpreter
     {
         if (instructions.Length == 0)
         {
-            return;
+            return false;
         }
 
-        // check if the CVT program disabled hinting
+        // Check if the CVT program disabled hinting
         if ((this.state.InstructionControl & InstructionControlFlags.InhibitGridFitting) != 0)
         {
-            return;
+            return false;
         }
 
-        // save contours and points
-        this.contours = endPoints;
-        this.zp0 = this.zp1 = this.zp2 = this.points = new Zone(controlPoints, isTwilight: false);
-
-        // reset all of our shared state
-        this.state = this.cvtState;
-        this.callStackSize = 0;
-        this.debugList.Clear();
-        this.stack.Clear();
-        this.OnVectorsUpdated();
-        this.iupXCalled = false;
-        this.iupYCalled = false;
-        this.isComposite = isComposite;
-
-        // normalize the round state settings
-        switch (this.state.RoundState)
+        try
         {
-            case RoundMode.Super:
-                this.SetSuperRound(1.0f);
-                break;
-            case RoundMode.Super45:
-                this.SetSuperRound(Sqrt2Over2);
-                break;
+            // Save contours and points
+            this.contours = endPoints;
+            this.zp0 = this.zp1 = this.zp2 = this.points = new Zone(controlPoints, isTwilight: false);
+
+            // reset all of our shared state
+            this.state = this.cvtState;
+            this.callStackSize = 0;
+
+            // FreeType's interpreter treats the storage area and glyph-level CVT modifications as non-persistent.
+            // Reset storage and restore the baseline CVT state for each glyph.
+            Array.Clear(this.storage, 0, this.storage.Length);
+
+            if (this.baseControlValueTable.Length > 0)
+            {
+                if (this.controlValueTable.Length != this.baseControlValueTable.Length)
+                {
+                    this.controlValueTable = new float[this.baseControlValueTable.Length];
+                }
+
+                Array.Copy(this.baseControlValueTable, this.controlValueTable, this.baseControlValueTable.Length);
+            }
+            else
+            {
+                this.controlValueTable = [];
+            }
+
+            this.ResetTwilightZone();
+
+#if DEBUG
+            this.debugList.Clear();
+#endif
+
+            this.stack.Clear();
+            this.OnVectorsUpdated();
+            this.iupXCalled = false;
+            this.iupYCalled = false;
+            this.isComposite = isComposite;
+
+            // normalize the round state settings
+            switch (this.state.RoundState)
+            {
+                case RoundMode.Super:
+                    this.SetSuperRound(1.0f);
+                    break;
+                case RoundMode.Super45:
+                    this.SetSuperRound(Sqrt2Over2);
+                    break;
+            }
+
+            this.Execute(new StackInstructionStream(instructions, 0), false, false);
+            return true;
+        }
+        catch (Exception)
+        {
+            // The interpreter can fail for malformed instructions; in that case we skip hinting.
+            Array.Clear(this.points.TouchState, 0, this.points.TouchState.Length);
+
+            // Reset interpreter state so nothing leaks if the caller catches.
+            this.stack.Clear();
+            this.callStackSize = 0;
+            this.contours = [];
+            this.zp0 = this.zp1 = this.zp2 = this.points = default;
+
+            this.state = this.cvtState;
+            this.OnVectorsUpdated();
+            this.iupXCalled = false;
+            this.iupYCalled = false;
+            this.isComposite = false;
+            return false;
+        }
+    }
+
+    private void ResetTwilightZone()
+    {
+        // In FreeType, twilight points are defined to have original coordinates at (0,0).
+        // Reset both original and current coordinates, and clear touch state, to avoid state leaking between glyphs.
+        ControlPoint[] twCurrent = this.twilight.Current;
+        ControlPoint[] twOriginal = this.twilight.Original;
+
+        int len = twCurrent.Length;
+        for (int i = 0; i < len; i++)
+        {
+            twCurrent[i].Point = default;
+            twOriginal[i].Point = default;
         }
 
-        this.Execute(new StackInstructionStream(instructions, 0), false, false);
+        Array.Clear(this.twilight.TouchState, 0, this.twilight.TouchState.Length);
     }
 
     private void Execute(StackInstructionStream stream, bool inFunction, bool allowFunctionDefs)
@@ -183,7 +276,10 @@ internal class TrueTypeInterpreter
         while (!stream.Done)
         {
             OpCode opcode = stream.NextOpCode();
+
+#if DEBUG
             this.debugList.Add(opcode);
+#endif
             switch (opcode)
             {
                 // ==== PUSH INSTRUCTIONS ====
@@ -316,7 +412,7 @@ internal class TrueTypeInterpreter
                 {
                     int y = this.stack.Pop();
                     int x = this.stack.Pop();
-                    var vec = Vector2.Normalize(new Vector2(F2Dot14ToFloat(x), F2Dot14ToFloat(y)));
+                    Vector2 vec = Vector2.Normalize(new Vector2(F2Dot14ToFloat(x), F2Dot14ToFloat(y)));
                     if (opcode == OpCode.SFVFS)
                     {
                         this.state.Freedom = vec;
@@ -653,7 +749,7 @@ internal class TrueTypeInterpreter
                 case OpCode.SHC1:
                 {
                     Vector2 displacement = this.ComputeDisplacement((int)opcode, out Zone zone, out int point);
-                    TouchState touch = this.GetTouchState();
+
                     int contour = this.stack.Pop();
                     int start = contour == 0 ? 0 : this.contours[contour - 1] + 1;
                     int count = this.zp2.IsTwilight ? this.zp2.Current.Length : this.contours[contour] + 1;
@@ -665,8 +761,8 @@ internal class TrueTypeInterpreter
                         // Don't move the reference point
                         if (zone.Current != current || point != i)
                         {
-                            current[i].Point += displacement;
-                            states[i] |= touch;
+                            current[i].Point.Y += displacement.Y;
+                            states[i] |= TouchState.Y;
                         }
                     }
                 }
@@ -692,7 +788,7 @@ internal class TrueTypeInterpreter
                         // Don't move the reference point
                         if (zone.Current != current || point != i)
                         {
-                            current[i].Point += displacement;
+                            current[i].Point.Y += displacement.Y;
                         }
                     }
                 }
@@ -1850,20 +1946,18 @@ internal class TrueTypeInterpreter
 
     private void MovePoint(Zone zone, int index, float distance)
     {
-        if (this.isComposite)
+        // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
+        // This increases resolution on the x-axis and prevents glyph explosions on legacy fonts.
+        // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
+        Vector2 cur = zone.GetCurrent(index);
+
+        // V40: ignore x movement, apply only the Y component.
+        float dy = distance * this.state.Freedom.Y / this.fdotp;
+
+        // Only mark Y as touched if Y actually changed.
+        if (dy != 0F)
         {
-            Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
-            TouchState touch = this.GetTouchState();
-            zone.Current[index].Point = point;
-            zone.TouchState[index] |= touch;
-        }
-        else
-        {
-            // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
-            // This increases resolution on the x-axis and prevents glyph explosions on legacy fonts.
-            // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-            Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
-            zone.Current[index].Point.Y = point.Y;
+            zone.Current[index].Point.Y = cur.Y + dy;
             zone.TouchState[index] |= TouchState.Y;
         }
     }
@@ -2474,7 +2568,7 @@ internal class TrueTypeInterpreter
             this.IsTwilight = isTwilight;
             this.Current = controlPoints;
 
-            var original = new ControlPoint[controlPoints.Length];
+            ControlPoint[] original = new ControlPoint[controlPoints.Length];
             controlPoints.AsSpan().CopyTo(original);
             this.Original = original;
             this.TouchState = new TouchState[controlPoints.Length];
