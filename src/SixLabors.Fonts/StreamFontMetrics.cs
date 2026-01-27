@@ -13,6 +13,7 @@ using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Post;
 using SixLabors.Fonts.Tables.TrueType;
+using SixLabors.Fonts.Tables.TrueType.Hinting;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -68,6 +69,8 @@ internal partial class StreamFontMetrics : FontMetrics
         (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
         this.horizontalMetrics = metrics.HorizontalMetrics;
         this.verticalMetrics = metrics.VerticalMetrics;
+
+        this.interpreterPool = new ObjectPool<TrueTypeInterpreter>(new TrueTypeInterpreterPooledObjectPolicy(this));
     }
 
     /// <summary>
@@ -220,7 +223,7 @@ internal partial class StreamFontMetrics : FontMetrics
     {
         if (this.trueTypeFontTables?.Fvar == null)
         {
-            variationAxes = Array.Empty<VariationAxis>();
+            variationAxes = [];
             return false;
         }
 
@@ -242,6 +245,16 @@ internal partial class StreamFontMetrics : FontMetrics
         }
 
         return true;
+    }
+
+    /// <inheritdoc/>
+    internal override bool IsInMarkFilteringSet(ushort markGlyphSetIndex, ushort glyphId)
+    {
+        GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.Gdef
+            : this.compactFontTables!.Gdef;
+
+        return gdef is not null && gdef.IsInMarkGlyphSet(markGlyphSetIndex, glyphId);
     }
 
     /// <inheritdoc/>

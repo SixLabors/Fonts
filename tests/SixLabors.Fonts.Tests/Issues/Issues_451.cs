@@ -15,10 +15,7 @@ public class Issues_451
         Font font = this.berry.CreateFont(85);
         TextLayoutTestUtilities.TestLayout(
             "The",
-            new TextOptions(font)
-            {
-                Origin = new Vector2(0, 50),
-            });
+            new TextOptions(font));
     }
 
     [Fact]
@@ -27,10 +24,7 @@ public class Issues_451
         Font font = this.berry.CreateFont(85);
         TextLayoutTestUtilities.TestLayout(
             "Th",
-            new TextOptions(font)
-            {
-                Origin = new Vector2(0, 50),
-            });
+            new TextOptions(font));
     }
 
     [Fact]
@@ -39,9 +33,6 @@ public class Issues_451
         Font font = this.berry.CreateFont(85);
         TextLayoutTestUtilities.TestLayout(
             "The quick brown fox jumps over the lazy dog",
-            new TextOptions(font)
-            {
-                Origin = new Vector2(0, 50),
-            });
+            new TextOptions(font));
     }
 }

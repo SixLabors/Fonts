@@ -274,6 +274,8 @@ public static class TestFonts
 
     public static string Arial => GetFullPath("arial.ttf");
 
+    public static string Tahoma => GetFullPath("tahoma.ttf");
+
     public static string CousineRegular => GetFullPath("Cousine-Regular.ttf");
 
     public static string HindRegular => GetFullPath("Hind-Regular.ttf");
@@ -301,6 +303,20 @@ public static class TestFonts
     public static string SofiaSansCondensedLight => GetFullPath("SofiaSansCondensed-ExtraLight-Regular.ttf");
 
     public static string ServiceNowWoff2 => GetFullPath("ServiceNow-Sans-Text-Bold-unmastered-1.1.woff");
+
+    public static string SinhalaSansRegular => GetFullPath("NotoSansSinhala-Regular.ttf");
+
+    public static string BengaliSansRegular => GetFullPath("NotoSansBengali-Regular.ttf");
+
+    public static string TibetanSerifRegular => GetFullPath("NotoSerifTibetan-Regular.ttf");
+
+    public static string MyanmarSansRegular => GetFullPath("NotoSansMyanmar-Regular.ttf");
+
+    public static string NotoSansOghamRegular => GetFullPath("NotoSansOgham-Regular.ttf");
+
+    public static string NotoSansRunicRegular => GetFullPath("NotoSansRunic-Regular.ttf");
+
+    public static string MgOpenCanonicRegular => GetFullPath("mgopencanonicaregular.ttf");
 
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 

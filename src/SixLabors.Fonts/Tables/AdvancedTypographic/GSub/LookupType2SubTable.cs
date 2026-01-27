@@ -10,14 +10,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 /// </summary>
 internal static class LookupType2SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort substFormat = reader.ReadUInt16();
 
         return substFormat switch
         {
-            1 => LookupType2Format1SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType2Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -28,14 +28,14 @@ internal sealed class LookupType2Format1SubTable : LookupSubTable
     private readonly SequenceTable[] sequenceTables;
     private readonly CoverageTable coverageTable;
 
-    private LookupType2Format1SubTable(SequenceTable[] sequenceTables, CoverageTable coverageTable, LookupFlags lookupFlags)
-        : base(lookupFlags)
+    private LookupType2Format1SubTable(SequenceTable[] sequenceTables, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
+        : base(lookupFlags, markFilteringSet)
     {
         this.sequenceTables = sequenceTables;
         this.coverageTable = coverageTable;
     }
 
-    public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupType2Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // Multiple Substitution Format 1
         // +----------+--------------------------------+-----------------------------------------------------------------+
@@ -77,7 +77,7 @@ internal sealed class LookupType2Format1SubTable : LookupSubTable
 
         CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-        return new LookupType2Format1SubTable(sequenceTables, coverageTable, lookupFlags);
+        return new LookupType2Format1SubTable(sequenceTables, coverageTable, lookupFlags, markFilteringSet);
     }
 
     public override bool TrySubstitution(

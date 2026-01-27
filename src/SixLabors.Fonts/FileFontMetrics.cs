@@ -124,6 +124,10 @@ internal sealed class FileFontMetrics : FontMetrics
     public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
         => this.fontMetrics.Value.TryGetVariationAxes(out variationAxes);
 
+    /// <inheritdoc/>
+    internal override bool IsInMarkFilteringSet(ushort markGlyphSetIndex, ushort glyphId)
+        => this.fontMetrics.Value.IsInMarkFilteringSet(markGlyphSetIndex, glyphId);
+
     /// <inheritdoc />
     public override bool TryGetGlyphMetrics(
         CodePoint codePoint,

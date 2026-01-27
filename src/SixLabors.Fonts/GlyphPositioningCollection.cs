@@ -300,6 +300,8 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
         bool isDirtyWH = data.Bounds.IsDirtyWH;
         if (!isDirtyXY && !isDirtyWH)
         {
+            // No change required but the glyph has been processed.
+            data.IsPositioned = true;
             return;
         }
 
@@ -311,12 +313,14 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
             if (isDirtyXY)
             {
                 m.ApplyOffset((short)data.Bounds.X, (short)data.Bounds.Y);
+                data.IsPositioned = true;
             }
 
             if (isDirtyWH)
             {
                 m.SetAdvanceWidth((ushort)data.Bounds.Width);
                 m.SetAdvanceHeight((ushort)data.Bounds.Height);
+                data.IsPositioned = true;
             }
         }
     }
@@ -362,7 +366,15 @@ internal sealed class GlyphPositioningCollection : IGlyphShapingCollection
     /// <param name="index">The zero-based index of the elements to position.</param>
     /// <returns><see langword="true"/> if the element should be processed; otherwise, <see langword="false"/>.</returns>
     public bool ShouldProcess(FontMetrics fontMetrics, int index)
-        => this.glyphs[index].Metrics.FontMetrics == fontMetrics;
+    {
+        GlyphPositioningData data = this.glyphs[index];
+        if (data.Data.IsPositioned)
+        {
+            return false;
+        }
+
+        return data.Metrics.FontMetrics == fontMetrics;
+    }
 
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     private class GlyphPositioningData

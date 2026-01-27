@@ -12,15 +12,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType1SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort posFormat = reader.ReadUInt16();
 
         return posFormat switch
         {
-            1 => LookupType1Format1SubTable.Load(reader, offset, lookupFlags),
-            2 => LookupType1Format2SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType1Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            2 => LookupType1Format2SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -31,14 +31,14 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
     private readonly ValueRecord valueRecord;
     private readonly CoverageTable coverageTable;
 
-    private LookupType1Format1SubTable(ValueRecord valueRecord, CoverageTable coverageTable, LookupFlags lookupFlags)
-        : base(lookupFlags)
+    private LookupType1Format1SubTable(ValueRecord valueRecord, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
+        : base(lookupFlags, markFilteringSet)
     {
         this.valueRecord = valueRecord;
         this.coverageTable = coverageTable;
     }
 
-    public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // SinglePosFormat1
         // +-------------+----------------+-----------------------------------------------+
@@ -56,11 +56,11 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
         // +-------------+----------------+-----------------------------------------------+
         ushort coverageOffset = reader.ReadOffset16();
         ValueFormat valueFormat = reader.ReadUInt16<ValueFormat>();
-        var valueRecord = new ValueRecord(reader, valueFormat);
+        ValueRecord valueRecord = new(reader, valueFormat);
 
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-        return new LookupType1Format1SubTable(valueRecord, coverageTable, lookupFlags);
+        return new LookupType1Format1SubTable(valueRecord, coverageTable, lookupFlags, markFilteringSet);
     }
 
     public override bool TryUpdatePosition(
@@ -95,14 +95,14 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
     private readonly CoverageTable coverageTable;
     private readonly ValueRecord[] valueRecords;
 
-    private LookupType1Format2SubTable(ValueRecord[] valueRecords, CoverageTable coverageTable, LookupFlags lookupFlags)
-        : base(lookupFlags)
+    private LookupType1Format2SubTable(ValueRecord[] valueRecords, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
+        : base(lookupFlags, markFilteringSet)
     {
         this.valueRecords = valueRecords;
         this.coverageTable = coverageTable;
     }
 
-    public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // SinglePosFormat2
         // +-------------+--------------------------+-----------------------------------------------+
@@ -123,15 +123,15 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         ushort coverageOffset = reader.ReadOffset16();
         ValueFormat valueFormat = reader.ReadUInt16<ValueFormat>();
         ushort valueCount = reader.ReadUInt16();
-        var valueRecords = new ValueRecord[valueCount];
+        ValueRecord[] valueRecords = new ValueRecord[valueCount];
         for (int i = 0; i < valueCount; i++)
         {
             valueRecords[i] = new ValueRecord(reader, valueFormat);
         }
 
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-        return new LookupType1Format2SubTable(valueRecords, coverageTable, lookupFlags);
+        return new LookupType1Format2SubTable(valueRecords, coverageTable, lookupFlags, markFilteringSet);
     }
 
     public override bool TryUpdatePosition(

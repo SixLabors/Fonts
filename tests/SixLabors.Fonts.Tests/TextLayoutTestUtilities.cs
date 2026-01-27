@@ -22,6 +22,7 @@ internal static class TextLayoutTestUtilities
         TextOptions options,
         float percentageTolerance = 0.05F,
         bool includeGeometry = false,
+        bool customDecorations = false,
         [CallerMemberName] string test = "",
         params object[] properties)
     {
@@ -38,7 +39,7 @@ internal static class TextLayoutTestUtilities
         int imageWidth = isVertical ? width : Math.Max(width, wrappingLength + 1);
         int imageHeight = isVertical ? Math.Max(height, wrappingLength + 1) : height;
 
-        List<object> extended = properties?.ToList() ?? new();
+        List<object> extended = properties?.ToList() ?? [];
         if (options.WrappingLength > 0)
         {
             extended.Insert(0, options.WrappingLength);
@@ -47,7 +48,7 @@ internal static class TextLayoutTestUtilities
         // First render the text using the rich text renderer.
         using Image<Rgba32> img = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
 
-        img.Mutate(ctx => ctx.DrawText(FromTextOptions(options), text, Color.Black));
+        img.Mutate(ctx => ctx.DrawText(FromTextOptions(options, customDecorations), text, Color.Black));
 
         if (options.WrappingLength > 0)
         {
@@ -61,8 +62,8 @@ internal static class TextLayoutTestUtilities
             }
         }
 
-        img.DebugSave("png", test, properties: extended.ToArray());
-        img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
+        img.DebugSave("png", test, properties: [.. extended]);
+        img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: [.. extended]);
 
         if (!includeGeometry)
         {
@@ -89,13 +90,13 @@ internal static class TextLayoutTestUtilities
             }
         }
 
-        img2.DebugSave("png", test, properties: extended.ToArray());
-        img2.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
+        img2.DebugSave("png", test, properties: [.. extended]);
+        img2.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: [.. extended]);
 #endif
     }
 
 #if SUPPORTS_DRAWING
-    private static RichTextOptions FromTextOptions(TextOptions options)
+    private static RichTextOptions FromTextOptions(TextOptions options, bool customDecorations)
     {
         RichTextOptions result = new(options.Font)
         {
@@ -115,6 +116,7 @@ internal static class TextLayoutTestUtilities
             LayoutMode = options.LayoutMode,
             KerningMode = options.KerningMode,
             DecorationPositioningMode = options.DecorationPositioningMode,
+            Tracking = options.Tracking,
             ColorFontSupport = options.ColorFontSupport,
             FeatureTags = new List<Tag>(options.FeatureTags),
         };
@@ -124,17 +126,23 @@ internal static class TextLayoutTestUtilities
             List<RichTextRun> runs = new(options.TextRuns.Count);
             foreach (TextRun run in options.TextRuns)
             {
-                runs.Add(new RichTextRun()
+                RichTextRun richRun = new()
                 {
                     Font = run.Font,
                     Start = run.Start,
                     End = run.End,
                     TextAttributes = run.TextAttributes,
                     TextDecorations = run.TextDecorations,
-                    StrikeoutPen = new SolidPen(Color.Green, 11.3334F),
-                    UnderlinePen = new SolidPen(Color.Blue, 15.5555F),
-                    OverlinePen = new SolidPen(Color.Purple, 13.7777F)
-                });
+                };
+
+                if (customDecorations && run.TextDecorations != TextDecorations.None)
+                {
+                    richRun.StrikeoutPen = new SolidPen(Color.Green, 11.3334F);
+                    richRun.UnderlinePen = new SolidPen(Color.Blue, 15.5555F);
+                    richRun.OverlinePen = new SolidPen(Color.Purple, 13.7777F);
+                }
+
+                runs.Add(richRun);
             }
 
             result.TextRuns = runs;

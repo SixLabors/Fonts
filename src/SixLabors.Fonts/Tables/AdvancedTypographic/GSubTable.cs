@@ -150,7 +150,7 @@ internal class GSubTable : Table
             count += delta;
 
             IEnumerable<ShapingStage> stages = shaper.GetShapingStages();
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default, 0);
             foreach (ShapingStage stage in stages)
             {
                 collectionCount = collection.Count;
@@ -208,7 +208,8 @@ internal class GSubTable : Table
             foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
             {
                 Tag feature = featureLookup.Feature;
-                iterator.Reset(index, featureLookup.LookupTable.LookupFlags);
+                LookupTable featureLookupTable = featureLookup.LookupTable;
+                iterator.Reset(index, featureLookupTable.LookupFlags, featureLookupTable.MarkFilteringSet);
 
                 while (iterator.Index < index + count)
                 {

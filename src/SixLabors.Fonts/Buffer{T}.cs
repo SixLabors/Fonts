@@ -27,7 +27,7 @@ internal ref struct Buffer<T>
         this.length = length;
 
         using ByteMemoryManager<T> manager = new(this.buffer);
-        this.Memory = manager.Memory.Slice(0, this.length);
+        this.Memory = manager.Memory[..this.length];
         this.span = this.Memory.Span;
 
         this.isDisposed = false;

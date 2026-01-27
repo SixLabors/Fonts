@@ -44,9 +44,11 @@ public class TextOptions
         this.VerticalAlignment = options.VerticalAlignment;
         this.LayoutMode = options.LayoutMode;
         this.KerningMode = options.KerningMode;
+        this.Tracking = options.Tracking;
         this.ColorFontSupport = options.ColorFontSupport;
         this.FeatureTags = new List<Tag>(options.FeatureTags);
         this.TextRuns = new List<TextRun>(options.TextRuns);
+        this.DecorationPositioningMode = options.DecorationPositioningMode;
     }
 
     /// <summary>
@@ -169,6 +171,13 @@ public class TextOptions
     /// to the glyph positions from information found within the font.
     /// </summary>
     public KerningMode KerningMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tracking (letter-spacing) value.
+    /// Tracking adjusts the spacing between all characters uniformly and is measured in em.
+    /// Positive values increase spacing, negative values decrease spacing, and zero applies no adjustment.
+    /// </summary>
+    public float Tracking { get; set; }
 
     /// <summary>
     /// Gets or sets the positioning mode used for rendering decorations.

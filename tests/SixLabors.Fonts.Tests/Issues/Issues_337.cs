@@ -22,27 +22,19 @@ public class Issues_337
         Assert.Equal(5, renderer.GlyphKeys.Count);
         Assert.Equal(5, renderer.GlyphRects.Count);
 
-        var expected = new FontRectangle[]
-        {
-            new FontRectangle(0, -254.99994F, 1024, 1024),
-            new FontRectangle(1024, -254.99994F, 1024, 1024),
-            new FontRectangle(2048, -254.99994F, 1024, 1024),
-            new FontRectangle(3072, -254.99994F, 1024, 1024),
-            new FontRectangle(4096, -254.99994F, 1024, 1024)
-        };
+        FontRectangle[] expected =
+        [
+            new(0, 0, 1024, 1024),
+            new(1024, 0, 1024, 1024),
+            new(2048, 0, 1024, 1024),
+            new(3072, 0, 1024, 1024),
+            new(4096, 0, 1024, 1024)
+        ];
 
         for (int i = 0; i < expected.Length; i++)
         {
             CompareRectangleExact(expected[i], renderer.GlyphRects[i]);
         }
-    }
-
-    private static void CompareRectangle(FontRectangle expected, FontRectangle actual, float precision = 4F)
-    {
-        Assert.Equal(expected.X, actual.X, precision);
-        Assert.Equal(expected.Y, actual.Y, precision);
-        Assert.Equal(expected.Width, actual.Width, precision);
-        Assert.Equal(expected.Height, actual.Height, precision);
     }
 
     private static void CompareRectangleExact(FontRectangle expected, FontRectangle actual)

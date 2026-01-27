@@ -7,6 +7,8 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 
 internal static class ShaperFactory
 {
+    private static readonly Tag Mym2Tag = Tag.Parse("mym2");
+
     /// <summary>
     /// Creates a shaper based on the given script language.
     /// </summary>
@@ -46,6 +48,20 @@ internal static class ShaperFactory
             or ScriptClass.Tamil
             or ScriptClass.Telugu
             or ScriptClass.Khmer => new IndicShaper(script, unicodeScriptTag, textOptions, fontMetrics),
+
+            // Myanmar
+            ScriptClass.Myanmar
+
+            // If the designer designed the font for the 'DFLT' script,
+            // (or we ended up arbitrarily pick 'latn'), use the default shaper.
+            // Otherwise, use the specific shaper.
+            //
+            // If designer designed for 'mymr' tag, also send to default
+            // shaper.  That's tag used from before Myanmar shaping spec
+            // was developed.  The shaping spec uses 'mym2' tag.
+            => unicodeScriptTag == Mym2Tag
+            ? new MyanmarShaper(script, textOptions, fontMetrics)
+            : new DefaultShaper(script, textOptions),
 
             // Universal
             ScriptClass.Balinese

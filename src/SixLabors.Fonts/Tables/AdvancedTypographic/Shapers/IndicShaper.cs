@@ -17,6 +17,8 @@ internal sealed class IndicShaper : DefaultShaper
     private static readonly StateMachine StateMachine =
         new(StateTable, AcceptingStates, Tags);
 
+    private static readonly int[] CategoryToSymbolId = BuildCategoryToSymbolId();
+
     private static readonly Tag RphfTag = Tag.Parse("rphf");
     private static readonly Tag NuktTag = Tag.Parse("nukt");
     private static readonly Tag AkhnTag = Tag.Parse("akhn");
@@ -48,6 +50,8 @@ internal sealed class IndicShaper : DefaultShaper
     private ShapingConfiguration indicConfiguration;
     private readonly bool isOldSpec;
 
+    private bool hasBrokenClusters;
+
     public IndicShaper(ScriptClass script, Tag unicodeScriptTag, TextOptions textOptions, FontMetrics fontMetrics)
         : base(script, MarkZeroingMode.None, textOptions)
     {
@@ -68,7 +72,7 @@ internal sealed class IndicShaper : DefaultShaper
 
     protected override void PlanFeatures(IGlyphShapingCollection collection, int index, int count)
     {
-        this.AddFeature(collection, index, count, LoclTag, preAction: SetupSyllables);
+        this.AddFeature(collection, index, count, LoclTag, preAction: this.SetupSyllables);
         this.AddFeature(collection, index, count, CcmpTag);
 
         this.AddFeature(collection, index, count, NuktTag, preAction: this.InitialReorder);
@@ -108,7 +112,7 @@ internal sealed class IndicShaper : DefaultShaper
         // Decompose split matras
         Span<ushort> buffer = stackalloc ushort[16];
         int end = index + count;
-        for (int i = end - 1; i >= 0; i--)
+        for (int i = end - 1; i >= index; i--)
         {
             GlyphShapingData data = substitutionCollection[i];
             if ((Decompositions.TryGetValue(data.CodePoint.Value, out int[]? decompositions) ||
@@ -116,36 +120,56 @@ internal sealed class IndicShaper : DefaultShaper
                 decompositions != null)
             {
                 Span<ushort> ids = buffer[..decompositions.Length];
+                bool shouldDecompose = true;
                 for (int j = 0; j < decompositions.Length; j++)
                 {
-                    // Font should always contain the decomposed glyph since the shaper
-                    // is assigned based on features supported by the font.
-                    _ = fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id);
+                    if (!fontMetrics.TryGetGlyphId(new CodePoint(decompositions[j]), out ushort id))
+                    {
+                        shouldDecompose = false;
+                        break;
+                    }
+
                     ids[j] = id;
                 }
 
-                substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
-                for (int j = 0; j < decompositions.Length; j++)
+                if (shouldDecompose)
                 {
-                    substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    substitutionCollection.Replace(i, ids, FeatureTags.GlyphCompositionDecomposition);
+                    for (int j = 0; j < decompositions.Length; j++)
+                    {
+                        substitutionCollection[i + j].CodePoint = new(decompositions[j]);
+                    }
                 }
             }
         }
     }
 
-    private static void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
+    private void SetupSyllables(IGlyphShapingCollection collection, int index, int count)
     {
         if (collection is not GlyphSubstitutionCollection substitutionCollection)
         {
             return;
         }
 
+        this.hasBrokenClusters = false;
+
         Span<int> values = count <= 64 ? stackalloc int[count] : new int[count];
 
         for (int i = index; i < index + count; i++)
         {
+            // Convert HarfBuzz-style Indic shaping categories into the compact
+            // DFA symbol indices used by the generated state machine.
+            //
+            // HarfBuzz category codes (C=1, V=2, MR=36, VBlw=21, etc.) are sparse
+            // and can be larger than the alphabet size of the DFA. Our state
+            // machine expects its input alphabet to be dense 0..N-1, matching the
+            // sequential IDs assigned in GenerateIndicShapingDataTrie.
+            //
+            // CategoryToSymbolId[IndicShapingCategory(codePoint)] performs this mapping, ensuring that
+            // every codepoint is presented to the DFA using the correct compact
+            // symbol index.
             CodePoint codePoint = substitutionCollection[i].CodePoint;
-            values[i - index] = IndicShapingCategory(codePoint);
+            values[i - index] = CategoryToSymbolId[IndicShapingCategory(codePoint)];
         }
 
         int syllable = 0;
@@ -170,10 +194,17 @@ internal sealed class IndicShaper : DefaultShaper
                 GlyphShapingData data = substitutionCollection[i + index];
                 CodePoint codePoint = data.CodePoint;
 
+                string syllableType = match.Tags[0];
+
+                if (syllableType == "broken_cluster")
+                {
+                    this.hasBrokenClusters = true;
+                }
+
                 data.IndicShapingEngineInfo = new(
-                    (Categories)(1 << IndicShapingCategory(codePoint)),
+                    (Categories)IndicShapingCategory(codePoint),
                     (Positions)IndicShapingPosition(codePoint),
-                    match.Tags[0],
+                    syllableType,
                     syllable);
             }
 
@@ -237,12 +268,61 @@ internal sealed class IndicShaper : DefaultShaper
             }
         }
 
-        bool hasDottedCircle = fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId);
-        _ = fontMetrics.TryGetGSubTable(out GSubTable? gSubTable);
         int max = index + count;
         int start = index;
         int end = NextSyllable(substitutionCollection, index, max);
-        Span<ushort> glyphs = stackalloc ushort[2];
+
+        if (this.hasBrokenClusters)
+        {
+            if (fontMetrics.TryGetGlyphId(new(DottedCircle), out ushort circleId))
+            {
+                Span<ushort> glyphs = stackalloc ushort[2];
+                while (start < max)
+                {
+                    GlyphShapingData data = substitutionCollection[start];
+                    IndicShapingEngineInfo? dataInfo = data.IndicShapingEngineInfo;
+                    string? type = dataInfo?.SyllableType;
+
+                    if (type == "broken_cluster")
+                    {
+                        // Insert after possible Repha.
+                        int i = start;
+                        for (i = start; i < end; i++)
+                        {
+                            if (substitutionCollection[i].IndicShapingEngineInfo?.Category != Categories.Repha)
+                            {
+                                break;
+                            }
+                        }
+
+                        GlyphShapingData current = substitutionCollection[i];
+                        IndicShapingEngineInfo currentInfo = current.IndicShapingEngineInfo!;
+                        glyphs[0] = current.GlyphId;
+                        glyphs[1] = circleId;
+
+                        substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
+
+                        // Update shaping info for newly inserted data.
+                        GlyphShapingData dotted = substitutionCollection[i + 1];
+                        dotted.IndicShapingEngineInfo!.Category = Categories.Dotted_Circle;
+                        dotted.IndicShapingEngineInfo.Position = Positions.End;
+                        dotted.IndicShapingEngineInfo.SyllableType = currentInfo.SyllableType;
+                        dotted.IndicShapingEngineInfo.Syllable = currentInfo.Syllable;
+
+                        end++;
+                        max++;
+                    }
+
+                    start = end;
+                    end = NextSyllable(substitutionCollection, start, max);
+                }
+
+                start = index;
+                end = NextSyllable(substitutionCollection, index, max);
+            }
+        }
+
+        _ = fontMetrics.TryGetGSubTable(out GSubTable? gSubTable);
         while (start < max)
         {
             GlyphShapingData data = substitutionCollection[start];
@@ -252,36 +332,6 @@ internal sealed class IndicShaper : DefaultShaper
             if (type is "symbol_cluster" or "non_indic_cluster")
             {
                 goto Increment;
-            }
-
-            if (dataInfo != null && hasDottedCircle && type == "broken_cluster")
-            {
-                // Insert after possible Repha.
-                int i = start;
-                GlyphShapingData current = substitutionCollection[i];
-                for (i = start; i < end; i++)
-                {
-                    if (current.IndicShapingEngineInfo?.Category != Categories.Repha)
-                    {
-                        break;
-                    }
-
-                    current = substitutionCollection[i];
-                }
-
-                glyphs[0] = current.GlyphId;
-                glyphs[1] = circleId;
-
-                substitutionCollection.Replace(i, glyphs, FeatureTags.GlyphCompositionDecomposition);
-
-                // Update shaping info for newly inserted data.
-                GlyphShapingData dotted = substitutionCollection[i + 1];
-                Categories dottedCategory = (Categories)(1 << IndicShapingCategory(dotted.CodePoint));
-                Positions dottedPosition = (Positions)IndicShapingPosition(dotted.CodePoint);
-                dotted.IndicShapingEngineInfo = new(dottedCategory, dottedPosition, dataInfo.SyllableType, dataInfo.Syllable);
-
-                end++;
-                max++;
             }
 
             // 1. Find base consonant:
@@ -548,7 +598,7 @@ internal sealed class IndicShaper : DefaultShaper
                 IndicShapingEngineInfo? info = substitutionCollection[i].IndicShapingEngineInfo;
                 if (info != null)
                 {
-                    if ((info.Category & (JoinerFlags | Categories.N | Categories.RS | Categories.CM | (HalantOrCoengFlags & info.Category))) != 0)
+                    if ((FlagUnsafe(info.Category) & (JoinerFlags | Flag(Categories.N) | Flag(Categories.RS) | Flag(Categories.CM) | (HalantOrCoengFlags & FlagUnsafe(info.Category)))) != 0)
                     {
                         info.Position = lastPosition;
                         if (info.Category == Categories.H && info.Position == Positions.Pre_M)
@@ -600,7 +650,7 @@ internal sealed class IndicShaper : DefaultShaper
 
                         last = i;
                     }
-                    else if (info.Category == Categories.M)
+                    else if ((FlagUnsafe(info.Category) & Flag(Categories.M)) != 0)
                     {
                         last = i;
                     }
@@ -792,7 +842,7 @@ internal sealed class IndicShaper : DefaultShaper
         if (fontMetrics.TryGetGSubTable(out GSubTable? gSubTable))
         {
             const int index = 0;
-            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default);
+            SkippingGlyphIterator iterator = new(fontMetrics, collection, index, default, 0);
             int initialCount = collection.Count;
             int collectionCount = initialCount;
             int count = initialCount - index;
@@ -824,13 +874,13 @@ internal sealed class IndicShaper : DefaultShaper
     }
 
     private static bool IsConsonant(GlyphShapingData data)
-        => data.IndicShapingEngineInfo != null && (data.IndicShapingEngineInfo.Category & ConsonantFlags) != 0;
+        => data.IndicShapingEngineInfo != null && (FlagUnsafe(data.IndicShapingEngineInfo.Category) & ConsonantFlags) != 0;
 
     private static bool IsJoiner(GlyphShapingData data)
-        => data.IndicShapingEngineInfo != null && (data.IndicShapingEngineInfo.Category & JoinerFlags) != 0;
+        => data.IndicShapingEngineInfo != null && (FlagUnsafe(data.IndicShapingEngineInfo.Category) & JoinerFlags) != 0;
 
     private static bool IsHalantOrCoeng(GlyphShapingData data)
-        => data.IndicShapingEngineInfo != null && (data.IndicShapingEngineInfo.Category & HalantOrCoengFlags) != 0;
+        => data.IndicShapingEngineInfo != null && (FlagUnsafe(data.IndicShapingEngineInfo.Category) & HalantOrCoengFlags) != 0;
 
     private static int NextSyllable(GlyphSubstitutionCollection collection, int index, int count)
     {
@@ -962,7 +1012,7 @@ internal sealed class IndicShaper : DefaultShaper
 
             if (basePosition < end)
             {
-                while (start < basePosition && (substitutionCollection[basePosition].IndicShapingEngineInfo?.Category & (Categories.N | HalantOrCoengFlags)) != 0)
+                while (start < basePosition && (FlagUnsafe(substitutionCollection[basePosition].IndicShapingEngineInfo?.Category) & (Flag(Categories.N) | HalantOrCoengFlags)) != 0)
                 {
                     basePosition--;
                 }
@@ -988,7 +1038,7 @@ internal sealed class IndicShaper : DefaultShaper
                 // We want to position matra after them.
                 if (this.ScriptClass is not ScriptClass.Malayalam and not ScriptClass.Tamil)
                 {
-                    while (newPos > start && (substitutionCollection[newPos].IndicShapingEngineInfo?.Category & (Categories.M | HalantOrCoengFlags)) == 0)
+                    while (newPos > start && (FlagUnsafe(substitutionCollection[newPos].IndicShapingEngineInfo?.Category) & (Flag(Categories.M) | HalantOrCoengFlags)) == 0)
                     {
                         newPos--;
                     }
@@ -1165,7 +1215,7 @@ internal sealed class IndicShaper : DefaultShaper
                     {
                         for (int i = basePosition + 1; i < newRephPos; i++)
                         {
-                            if (substitutionCollection[i].IndicShapingEngineInfo?.Category == Categories.M)
+                            if ((FlagUnsafe(substitutionCollection[i].IndicShapingEngineInfo?.Category) & Flag(Categories.M)) != 0)
                             {
                                 newRephPos--;
                             }
@@ -1217,11 +1267,12 @@ internal sealed class IndicShaper : DefaultShaper
                             // We want to position matra after them.
                             if (this.ScriptClass is not ScriptClass.Malayalam and not ScriptClass.Tamil)
                             {
-                                while (newPos > start && (substitutionCollection[newPos - 1].IndicShapingEngineInfo?.Category & (Categories.M | HalantOrCoengFlags)) == 0)
+                                while (newPos > start && (FlagUnsafe(substitutionCollection[newPos - 1].IndicShapingEngineInfo?.Category) & (Flag(Categories.M) | HalantOrCoengFlags)) == 0)
                                 {
                                     newPos--;
                                 }
 
+                                // TODO: Remove once we have Kmher shaper.
                                 // In Khmer coeng model, a H,Ra can go *after* matras.  If it goes after a
                                 // split matra, it should be reordered to *before* the left part of such matra.
                                 if (newPos > start && substitutionCollection[newPos - 1].IndicShapingEngineInfo?.Category == Categories.M)
@@ -1270,5 +1321,35 @@ internal sealed class IndicShaper : DefaultShaper
             start = end;
             end = NextSyllable(substitutionCollection, start, max);
         }
+    }
+
+    private static int[] BuildCategoryToSymbolId()
+    {
+        // Get all enum values in declared order (important!)
+        Categories[] values = Enum.GetValues<Categories>();
+
+        // Determine maximum underlying numeric category so we can index safetly
+        int maxCategoryValue = 0;
+        foreach (Categories v in values)
+        {
+            int val = (int)v;
+            if (val > maxCategoryValue)
+            {
+                maxCategoryValue = val;
+            }
+        }
+
+        // Allocate mapping table indexed by Harfbuzz category code
+        int[] map = new int[maxCategoryValue + 1];
+
+        // Assign compact DFA symbol indices 0..N-1 in enum order
+        for (int symbolId = 0; symbolId < values.Length; symbolId++)
+        {
+            Categories cat = values[symbolId];
+            int categoryCode = (int)cat;    // Harfbuzz-style category code
+            map[categoryCode] = symbolId;   // DFA symbol id
+        }
+
+        return map;
     }
 }

@@ -18,6 +18,12 @@ internal static class AdvancedTypographicUtils
     private const int MaxOperationsMinimum = 16384;
     private const int MaxShapingCharsLength = 0x3FFFFFFF; // Half int max.
 
+    internal enum MatchDirection
+    {
+        Forward,
+        Backward
+    }
+
     /// <summary>
     /// Gets a value indicating whether the glyph represented by the codepoint should be interpreted vertically.
     /// </summary>
@@ -46,12 +52,13 @@ internal static class AdvancedTypographicUtils
         GSubTable table,
         Tag feature,
         LookupFlags lookupFlags,
+        ushort markFilteringSet,
         SequenceLookupRecord[] records,
         GlyphSubstitutionCollection collection,
         int index,
         int count)
     {
-        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
         int currentCount = collection.Count;
 
         foreach (SequenceLookupRecord lookupRecord in records)
@@ -79,12 +86,13 @@ internal static class AdvancedTypographicUtils
         GPosTable table,
         Tag feature,
         LookupFlags lookupFlags,
+        ushort markFilteringSet,
         SequenceLookupRecord[] records,
         GlyphPositioningCollection collection,
         int index,
         int count)
     {
-        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
+        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
         foreach (SequenceLookupRecord lookupRecord in records)
         {
             ushort sequenceIndex = lookupRecord.SequenceIndex;
@@ -150,11 +158,29 @@ internal static class AdvancedTypographicUtils
     public static bool MatchCoverageSequence(
         SkippingGlyphIterator iterator,
         CoverageTable[] coverageTable,
-        int increment)
+        int startIndex,
+        int endExclusive)
         => Match(
-            increment,
-            coverageTable,
             iterator,
+            startIndex,
+            coverageTable,
+            MatchDirection.Forward,
+            endExclusive,
+            (component, data) => component.CoverageIndexOf(data.GlyphId) >= 0,
+            default);
+
+    // Backtrack variant (spec: backtrack[0] matches i-1, then i-2...)
+    public static bool MatchBacktrackCoverageSequence(
+        SkippingGlyphIterator iterator,
+        CoverageTable[] backtrack,
+        int startIndex,
+        int endExclusive)
+        => Match(
+            iterator,
+            startIndex,
+            backtrack,
+            MatchDirection.Backward,
+            endExclusive,
             (component, data) => component.CoverageIndexOf(data.GlyphId) >= 0,
             default);
 
@@ -212,6 +238,7 @@ internal static class AdvancedTypographicUtils
     public static bool CheckAllCoverages(
         FontMetrics fontMetrics,
         LookupFlags lookupFlags,
+        ushort markFilteringSet,
         IGlyphShapingCollection collection,
         int index,
         int count,
@@ -219,25 +246,42 @@ internal static class AdvancedTypographicUtils
         CoverageTable[] backtrack,
         CoverageTable[] lookahead)
     {
-        // Check that there are enough context glyphs.
-        if (index < backtrack.Length || input.Length + lookahead.Length > count)
+        int endExclusive = index + count;
+
+        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags, markFilteringSet);
+
+        // Compute backtrack start using skippy prev(), not index-1.
+        int backtrackStart = index;
+        if (backtrack.Length > 0)
+        {
+            SkippingGlyphIterator backIt = iterator;
+            backIt.Index = index;
+            backtrackStart = backIt.Prev(); // first backtrack glyph (i-1 in skippy space)
+        }
+
+        if (!MatchBacktrackCoverageSequence(iterator, backtrack, backtrackStart, endExclusive))
         {
             return false;
         }
 
-        // Check all coverages: if any of them does not match, abort update.
-        SkippingGlyphIterator iterator = new(fontMetrics, collection, index, lookupFlags);
-        if (!MatchCoverageSequence(iterator, backtrack, -backtrack.Length))
+        // Input starts at the current glyph position.
+        if (!MatchCoverageSequence(iterator, input, index, endExclusive))
         {
             return false;
         }
 
-        if (!MatchCoverageSequence(iterator, input, 0))
+        // Compute lookahead start by advancing through the input sequence using skippy Next(),
+        // not by raw index arithmetic.
+        int lookaheadStart = index;
+        if (lookahead.Length > 0)
         {
-            return false;
+            SkippingGlyphIterator fwdIt = iterator;
+            fwdIt.Index = index;
+            fwdIt.Increment(input.Length); // advance input.Length steps in skippy space
+            lookaheadStart = fwdIt.Index;
         }
 
-        if (!MatchCoverageSequence(iterator, lookahead, input.Length))
+        if (!MatchCoverageSequence(iterator, lookahead, lookaheadStart, endExclusive))
         {
             return false;
         }
@@ -331,6 +375,9 @@ internal static class AdvancedTypographicUtils
         return new GlyphShapingClass(isMark, isBase, isLigature, markAttachmentType);
     }
 
+    public static bool IsInMarkFilteringSet(FontMetrics fontMetrics, ushort markFilteringSet, ushort glyphId)
+        => fontMetrics.IsInMarkFilteringSet(markFilteringSet, glyphId);
+
     private static bool Match<T>(
         int increment,
         T[] sequence,
@@ -366,5 +413,57 @@ internal static class AdvancedTypographicUtils
 
         iterator.Index = position;
         return i == sequence.Length;
+    }
+
+    private static bool Match<T>(
+        SkippingGlyphIterator iterator,
+        int startIndex,
+        T[] sequence,
+        MatchDirection direction,
+        int endExclusive,
+        Func<T, GlyphShapingData, bool> condition,
+        Span<int> matches)
+    {
+        if (sequence.Length == 0)
+        {
+            return true;
+        }
+
+        int saved = iterator.Index;
+        iterator.Index = startIndex;
+
+        IGlyphShapingCollection collection = iterator.Collection;
+        int limit = Math.Min(endExclusive, collection.Count);
+
+        for (int i = 0; i < sequence.Length && i < MaxContextLength; i++)
+        {
+            if (iterator.Index < 0 || iterator.Index >= limit)
+            {
+                iterator.Index = saved;
+                return false;
+            }
+
+            GlyphShapingData data = collection[iterator.Index];
+            if (!condition(sequence[i], data))
+            {
+                iterator.Index = saved;
+                return false;
+            }
+
+            if (matches.Length == MaxContextLength)
+            {
+                matches[i] = iterator.Index;
+            }
+
+            if (i + 1 < sequence.Length)
+            {
+                iterator.Index = direction == MatchDirection.Forward
+                    ? iterator.Next()
+                    : iterator.Prev();
+            }
+        }
+
+        iterator.Index = saved;
+        return true;
     }
 }
