@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
+
 namespace SixLabors.Fonts.Tables.Cff;
 
 /// <summary>
@@ -11,7 +13,16 @@ internal interface ICffTable
     /// <summary>
     /// Gets the number of glyphs in the table.
     /// </summary>
-    int GlyphCount
+    public int GlyphCount
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Gets the item variation store.
+    /// </summary>
+    /// <returns>The item variation store. If CFF1, there is no variations and null will be returned instead.</returns>
+    public ItemVariationStore? ItemVariationStore
     {
         get;
     }
@@ -21,5 +32,5 @@ internal interface ICffTable
     /// </summary>
     /// <param name="index">The glyph index.</param>
     /// <returns>The <see cref="CffGlyphData"/>.</returns>
-    CffGlyphData GetGlyph(int index);
+    public CffGlyphData GetGlyph(int index);
 }
