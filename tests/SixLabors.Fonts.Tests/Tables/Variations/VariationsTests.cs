@@ -18,5 +18,8 @@ public class VariationsTests
 
     [Fact]
     public void CanLoadVariationTables()
-        => Assert.True(RobotoFlexTTF.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+    {
+        // TODO: Assert contents.
+        Assert.True(RobotoFlexTTF.FontMetrics.TryGetVariationAxes(out VariationAxis[] axes));
+    }
 }

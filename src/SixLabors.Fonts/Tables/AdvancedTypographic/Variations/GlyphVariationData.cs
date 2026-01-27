@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.IO;
-
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 /// <summary>
@@ -17,7 +15,7 @@ internal class GlyphVariationData
     internal const int CountMask = 0x0FFF;
 
     /// <summary>
-    /// Flag indicating that some or all tuple variation tables reference a shared set of “point” numbers.
+    /// Flag indicating that some or all tuple variation tables reference a shared set of "point" numbers.
     /// These shared numbers are represented as packed point number data at the start of the serialized data.
     /// </summary>
     internal const int SharedPointNumbersMask = 0x8000;
@@ -36,20 +34,28 @@ internal class GlyphVariationData
         // +----------------------+-------------------------------------------+------------------------------------------------------------------------------+
         // | TupleVariation       | tupleVariationHeaders[tupleVariationCount]| Array of tuple variation headers.                                            |
         // +----------------------+-------------------------------------------+------------------------------------------------------------------------------+
+        // NOTE: 'offset' is relative to the start of the gvar table.
         reader.Seek(offset, SeekOrigin.Begin);
         ushort tupleVariationCount = reader.ReadUInt16();
         bool sharedPointNumbers = (tupleVariationCount & SharedPointNumbersMask) == SharedPointNumbersMask;
 
-        int tupleVariationTables = tupleVariationCount & CountMask;
-        TupleVariation[] variationHeaders = new TupleVariation[tupleVariationTables];
-        for (int i = 0; i < tupleVariationTables; i++)
+        // Spec: dataOffset is Offset16 (always 16-bit), independent of the gvar offset array format.
+        // This offset is relative to the start of this GlyphVariationData table.
+        ushort serializedDataOffset = reader.ReadOffset16();
+
+        TupleVariation[] variationHeaders = new TupleVariation[tupleVariationCount & CountMask];
+        for (int i = 0; i < variationHeaders.Length; i++)
         {
             variationHeaders[i] = TupleVariation.Load(reader, axisCount);
         }
 
-        // TODO: parse serialized data
-        int serializedDataOffset = is32BitOffset ? reader.ReadInt32() : reader.ReadOffset16();
-        reader.Seek(offset + serializedDataOffset, SeekOrigin.Begin);
+        long serializedDataPos = offset + serializedDataOffset;
+        reader.Seek(serializedDataPos, SeekOrigin.Begin);
+
+        _ = sharedPointNumbers;
+        _ = is32BitOffset;
+        _ = axisCount;
+        _ = variationHeaders;
         return new GlyphVariationData();
     }
 }
