@@ -87,14 +87,13 @@ internal partial class StreamFontMetrics
 
     private static StreamFontMetrics LoadTrueTypeFont(FontReader reader)
     {
+        // TODO: This doesn't seem correct. The glyf table should only load the raw data.
+        // Transformations should probably be applied later when glyphs are requested.
         // Load glyph variations related tables first, because glyph table needs them.
-        FVarTable? fvar = reader.TryGetTable<FVarTable>();
-        AVarTable? avar = reader.TryGetTable<AVarTable>();
-        GVarTable? gvar = reader.TryGetTable<GVarTable>();
-        HVarTable? hvar = reader.TryGetTable<HVarTable>();
+
 
         // Load using recommended order for best performance.
-        // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
+        // https://learn.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
         // 'head', 'hhea', 'maxp', OS/2, 'hmtx', LTSH, VDMX, 'hdmx', 'cmap', 'fpgm', 'prep', 'cvt ', 'loca', 'glyf', 'kern', 'name', 'post', 'gasp', PCLT, DSIG
         HeadTable head = reader.GetTable<HeadTable>();
         HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>();
@@ -122,6 +121,12 @@ internal partial class StreamFontMetrics
         GSubTable? gSub = reader.TryGetTable<GSubTable>();
         GPosTable? gPos = reader.TryGetTable<GPosTable>();
 
+        FVarTable? fvar = reader.TryGetTable<FVarTable>();
+        AVarTable? avar = reader.TryGetTable<AVarTable>();
+        GVarTable? gvar = reader.TryGetTable<GVarTable>();
+        HVarTable? hvar = reader.TryGetTable<HVarTable>();
+        VVarTable? vvar = reader.TryGetTable<VVarTable>();
+
         ColrTable? colr = reader.TryGetTable<ColrTable>();
         CpalTable? cpal = reader.TryGetTable<CpalTable>();
 
@@ -143,9 +148,18 @@ internal partial class StreamFontMetrics
             Fvar = fvar,
             Gvar = gvar,
             Hvar = hvar,
+            Vvar = vvar,
             Avar = avar,
             Svg = svg
         };
+
+        GlyphVariationProcessor? glyphVariationProcessor = null;
+        if (fvar != null && (hvar != null || vvar != null))
+        {
+            // vvar can only be present if hvar is absent and vice versa.
+            ItemVariationStore itemVariationStore = hvar != null ? hvar.ItemVariationStore : vvar!.ItemVariationStore;
+            glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fvar, avar, gvar, hvar, vvar);
+        }
 
         return new StreamFontMetrics(tables);
     }

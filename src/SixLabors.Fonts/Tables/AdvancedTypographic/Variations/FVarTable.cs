@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 /// <summary>
@@ -82,13 +80,13 @@ internal class FVarTable : Table
             throw new NotSupportedException("Only version 1 of fvar table is supported");
         }
 
-        var axesArray = new VariationAxisRecord[axisCount];
+        VariationAxisRecord[] axesArray = new VariationAxisRecord[axisCount];
         for (int i = 0; i < axisCount; i++)
         {
             axesArray[i] = VariationAxisRecord.Load(reader, axesArrayOffset + (axisSize * i));
         }
 
-        var instances = new InstanceRecord[instanceCount];
+        InstanceRecord[] instances = new InstanceRecord[instanceCount];
         long instancesOffset = reader.BaseStream.Position - startOffset;
         for (int i = 0; i < instanceCount; i++)
         {

@@ -57,11 +57,13 @@ internal partial class StreamFontMetrics : FontMetrics
     /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
     /// </summary>
     /// <param name="tables">The True Type font tables.</param>
-    internal StreamFontMetrics(TrueTypeFontTables tables)
+    /// <param name="glyphVariationProcessor">An optional glyph variation processor for handling variable fonts.</param>
+    internal StreamFontMetrics(TrueTypeFontTables tables, GlyphVariationProcessor? glyphVariationProcessor = null)
     {
         this.trueTypeFontTables = tables;
         this.outlineType = OutlineType.TrueType;
         this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+        this.GlyphVariationProcessor = glyphVariationProcessor;
         this.glyphIdCache = new();
         this.codePointCache = new();
         this.glyphCache = new();
@@ -77,7 +79,7 @@ internal partial class StreamFontMetrics : FontMetrics
     /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
     /// </summary>
     /// <param name="tables">The Compact Font tables.</param>
-    /// <param name="glyphVariationProcessor">Processor which handles glyph variations.</param>
+    /// <param name="glyphVariationProcessor">An optional glyph variation processor for handling variable fonts.</param>
     internal StreamFontMetrics(CompactFontTables tables, GlyphVariationProcessor? glyphVariationProcessor = null)
     {
         this.compactFontTables = tables;

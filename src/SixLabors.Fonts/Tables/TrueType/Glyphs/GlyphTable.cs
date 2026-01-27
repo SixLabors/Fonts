@@ -2,7 +2,6 @@
 // Licensed under the Six Labors Split License.
 
 using System.Collections.Concurrent;
-using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Woff;
 
 namespace SixLabors.Fonts.Tables.TrueType.Glyphs;
@@ -36,12 +35,6 @@ internal class GlyphTable : Table
     {
         uint[] locations = reader.GetTable<IndexLocationTable>().GlyphOffsets;
 
-        FVarTable? fvar = reader.TryGetTable<FVarTable>();
-        AVarTable? avar = reader.TryGetTable<AVarTable>();
-        GVarTable? gvar = reader.TryGetTable<GVarTable>();
-        HVarTable? hvar = reader.TryGetTable<HVarTable>();
-        GlyphVariationProcessor? glyphVariationProcessor = fvar is null || hvar is null ? null : new GlyphVariationProcessor(hvar!.ItemVariationStore, fvar, avar, gvar);
-
         // Use an empty bounds instance as the fallback.
         // We will substitute this with the advance width/height to determine bounds instead when rendering/measuring.
         Bounds fallbackEmptyBounds = Bounds.Empty;
@@ -50,7 +43,11 @@ internal class GlyphTable : Table
         return Load(binaryReader, reader.TableFormat, locations, in fallbackEmptyBounds);
     }
 
-    public static GlyphTable Load(BigEndianBinaryReader reader, TableFormat format, uint[] locations, in Bounds fallbackEmptyBounds)
+    public static GlyphTable Load(
+        BigEndianBinaryReader reader,
+        TableFormat format,
+        uint[] locations,
+        in Bounds fallbackEmptyBounds)
     {
         EmptyGlyphLoader empty = new(fallbackEmptyBounds);
         int entryCount = locations.Length;

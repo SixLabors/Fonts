@@ -11,7 +11,7 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 internal class Cff2Parser : CffParserBase
 {
-    private static readonly ItemVariationStore EmptyItemVariationStoreTable = new(VariationRegionList.EmptyVariationRegionList, Array.Empty<ItemVariationData>());
+    private static readonly ItemVariationStore EmptyItemVariationStoreTable = new(VariationRegionList.EmptyVariationRegionList, []);
 
     private long offset;
 

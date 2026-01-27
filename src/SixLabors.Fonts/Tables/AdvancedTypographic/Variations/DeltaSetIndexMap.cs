@@ -1,9 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-using System.IO;
-
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 internal class DeltaSetIndexMap
@@ -22,8 +19,14 @@ internal class DeltaSetIndexMap
 
     public int InnerIndex { get; }
 
-    public static DeltaSetIndexMap[] Load(BigEndianBinaryReader reader, long offset)
+    public static DeltaSetIndexMap[]? Load(BigEndianBinaryReader reader, long offset)
     {
+        // This can be null if the offset is zero.
+        if (offset == 0)
+        {
+            return null;
+        }
+
         // DeltaSetIndexMap.
         // +-----------------+----------------------------------------+-----------------------------------------------------------------------------------+
         // | Type            | Name                                   | Description                                                                       |
@@ -50,28 +53,17 @@ internal class DeltaSetIndexMap
         int outerIndex = entrySize >> ((entryFormat & InnerIndexBitCountMask) + 1);
         int innerIndex = entrySize & ((1 << ((entryFormat & InnerIndexBitCountMask) + 1)) - 1);
 
-        var deltaSetIndexMaps = new DeltaSetIndexMap[mapCount];
+        DeltaSetIndexMap[] deltaSetIndexMaps = new DeltaSetIndexMap[mapCount];
         for (int i = 0; i < mapCount; i++)
         {
-            int entry;
-            switch (entrySize)
+            int entry = entrySize switch
             {
-                case 1:
-                    entry = reader.ReadByte();
-                    break;
-                case 2:
-                    entry = (reader.ReadByte() << 8) | reader.ReadByte();
-                    break;
-                case 3:
-                    entry = (reader.ReadByte() << 16) | (reader.ReadByte() << 8) | reader.ReadByte();
-                    break;
-                case 4:
-                    entry = (reader.ReadByte() << 24) | (reader.ReadByte() << 16) | (reader.ReadByte() << 8) | reader.ReadByte();
-                    break;
-                default:
-                    throw new NotSupportedException("unsupported delta set index map");
-            }
-
+                1 => reader.ReadByte(),
+                2 => (reader.ReadByte() << 8) | reader.ReadByte(),
+                3 => (reader.ReadByte() << 16) | (reader.ReadByte() << 8) | reader.ReadByte(),
+                4 => (reader.ReadByte() << 24) | (reader.ReadByte() << 16) | (reader.ReadByte() << 8) | reader.ReadByte(),
+                _ => throw new NotSupportedException("unsupported delta set index map"),
+            };
             deltaSetIndexMaps[i] = new DeltaSetIndexMap((ushort)(entry & innerIndex), (ushort)(entry >> outerIndex));
         }
 

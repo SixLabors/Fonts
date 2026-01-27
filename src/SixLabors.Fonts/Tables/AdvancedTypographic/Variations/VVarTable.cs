@@ -4,36 +4,40 @@
 namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 /// <summary>
-/// Implements reading the font variations table `HVAR`.
-/// The HVAR table is used in variable fonts to provide variations for horizontal glyph metrics values.
-/// This can be used to provide variation data for advance widths in the 'hmtx' table.
-/// <see href="https://docs.microsoft.com/en-gb/typography/opentype/spec/hvar"/>
+/// Implements reading the font variations table `VVAR`.
+/// The VVAR table is used in variable fonts to provide variations for vertical glyph metrics values.
+/// This can be used to provide variation data for advance heights in the 'vmtx' table.
+/// <see href="https://docs.microsoft.com/en-gb/typography/opentype/spec/vvar"/>
 /// </summary>
-internal class HVarTable : Table
+internal class VVarTable : Table
 {
-    internal const string TableName = "HVAR";
+    internal const string TableName = "VVAR";
 
-    public HVarTable(
+    public VVarTable(
         ItemVariationStore itemVariationStore,
         DeltaSetIndexMap[]? advanceWidthMapping,
-        DeltaSetIndexMap[]? lsbMapping,
-        DeltaSetIndexMap[]? rsbMapping)
+        DeltaSetIndexMap[]? tsbMapping,
+        DeltaSetIndexMap[]? bsbMapping,
+        DeltaSetIndexMap[]? vOrgMapping)
     {
         this.ItemVariationStore = itemVariationStore;
         this.AdvanceWidthMapping = advanceWidthMapping;
-        this.LsbMapping = lsbMapping;
-        this.RsbMapping = rsbMapping;
+        this.TsbMapping = tsbMapping;
+        this.BsbMapping = bsbMapping;
+        this.VOrgMapping = vOrgMapping;
     }
 
     public ItemVariationStore ItemVariationStore { get; }
 
     public DeltaSetIndexMap[]? AdvanceWidthMapping { get; }
 
-    public DeltaSetIndexMap[]? LsbMapping { get; }
+    public DeltaSetIndexMap[]? TsbMapping { get; }
 
-    public DeltaSetIndexMap[]? RsbMapping { get; }
+    public DeltaSetIndexMap[]? BsbMapping { get; }
 
-    public static HVarTable? Load(FontReader reader)
+    public DeltaSetIndexMap[]? VOrgMapping { get; }
+
+    public static VVarTable? Load(FontReader reader)
     {
         if (!reader.TryGetReaderAtTablePosition(TableName, out BigEndianBinaryReader? binaryReader))
         {
@@ -46,7 +50,7 @@ internal class HVarTable : Table
         }
     }
 
-    public static HVarTable Load(BigEndianBinaryReader reader)
+    public static VVarTable Load(BigEndianBinaryReader reader)
     {
         // Horizontal metrics variations table
         // +--------------------------+----------------------------------------+-------------------------------------------------------------------------+
@@ -59,21 +63,25 @@ internal class HVarTable : Table
         // | Offset32                 | itemVariationStoreOffset               | Offset in bytes from the start of this table to the                     |
         // |                          |                                        | item variation store table.                                             |
         // +--------------------------+----------------------------------------+-------------------------------------------------------------------------+
-        // | Offset32                 | advanceWidthMappingOffset              | Offset in bytes from the start of this table to the delta-set index     |
-        // |                          |                                        | mapping for advance widths (may be NULL).                               |
+        // | Offset32                 | advanceHeightMappingOffset             | Offset in bytes from the start of this table to the delta-set index     |
+        // |                          |                                        | mapping for advance heights (may be NULL).                              |
         // +--------------------------+----------------------------------------+-------------------------------------------------------------------------+
-        // | Offset32                 | lsbMappingOffset                       | Offset in bytes from the start of this table to the delta-set index     |
-        // |                          |                                        | mapping for left side bearings (may be NULL).                           |
+        // | Offset32                 | tsbMappingOffset                       | Offset in bytes from the start of this table to the delta-set index     |
+        // |                          |                                        | mapping for top side bearings (may be NULL).                            |
         // +--------------------------+----------------------------------------+-------------------------------------------------------------------------+
-        // | Offset32                 | rsbMappingOffset                       | Offset in bytes from the start of this table to the delta-set index     |
-        // |                          |                                        | mapping for right side bearings (may be NULL).                          |
+        // | Offset32                 | bsbMappingOffset                       | Offset in bytes from the start of this table to the delta-set index     |
+        // |                          |                                        | mapping for bottom side bearings (may be NULL).                         |
+        // +--------------------------+----------------------------------------+-------------------------------------------------------------------------+
+        // | Offset32                 | vOrgMappingOffset                      | Offset in bytes from the start of this table to the delta-set index     |
+        // |                          |                                        | mapping for Y coordinates of vertical origins (may be NULL).            |
         // +--------------------------+----------------------------------------+-------------------------------------------------------------------------+
         ushort major = reader.ReadUInt16();
         ushort minor = reader.ReadUInt16();
         uint itemVariationStoreOffset = reader.ReadOffset32();
-        uint advanceWidthMappingOffset = reader.ReadOffset32();
-        uint lsbMappingOffset = reader.ReadOffset32();
-        uint rsbMappingOffset = reader.ReadOffset32();
+        uint advanceHeightMappingOffset = reader.ReadOffset32();
+        uint tsbMappingOffset = reader.ReadOffset32();
+        uint bsbMappingOffset = reader.ReadOffset32();
+        uint vOrgMappingOffset = reader.ReadOffset32();
 
         if (major != 1)
         {
@@ -82,10 +90,11 @@ internal class HVarTable : Table
 
         ItemVariationStore itemVariationStore = ItemVariationStore.Load(reader, itemVariationStoreOffset);
 
-        DeltaSetIndexMap[]? advanceWidthMapping = DeltaSetIndexMap.Load(reader, advanceWidthMappingOffset);
-        DeltaSetIndexMap[]? lsbMapping = DeltaSetIndexMap.Load(reader, lsbMappingOffset);
-        DeltaSetIndexMap[]? rsbMapping = DeltaSetIndexMap.Load(reader, rsbMappingOffset);
+        DeltaSetIndexMap[]? advanceHeightMapping = DeltaSetIndexMap.Load(reader, advanceHeightMappingOffset);
+        DeltaSetIndexMap[]? tsbMapping = DeltaSetIndexMap.Load(reader, tsbMappingOffset);
+        DeltaSetIndexMap[]? bsbMapping = DeltaSetIndexMap.Load(reader, bsbMappingOffset);
+        DeltaSetIndexMap[]? vOrgMapping = DeltaSetIndexMap.Load(reader, vOrgMappingOffset);
 
-        return new HVarTable(itemVariationStore, advanceWidthMapping, lsbMapping, rsbMapping);
+        return new VVarTable(itemVariationStore, advanceHeightMapping, tsbMapping, bsbMapping, vOrgMapping);
     }
 }

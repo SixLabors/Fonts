@@ -107,4 +107,6 @@ internal sealed class TrueTypeFontTables : IFontTables
     public GVarTable? Gvar { get; set; }
 
     public HVarTable? Hvar { get; set; }
+
+    public VVarTable? Vvar { get; set; }
 }

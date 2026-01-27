@@ -27,6 +27,8 @@ internal class GlyphVariationProcessor
 
     private readonly HVarTable? hVar;
 
+    private readonly VVarTable? vVar;
+
     private readonly float[] normalizedCoords;
 
     private readonly Dictionary<ItemVariationData, float[]> blendVectors;
@@ -37,7 +39,13 @@ internal class GlyphVariationProcessor
     /// </summary>
     private const float Epsilon = 2.2204460492503130808472633361816E-16F;
 
-    public GlyphVariationProcessor(ItemVariationStore itemStore, FVarTable fVar, AVarTable? aVar = null, GVarTable? gVar = null, HVarTable? hVar = null)
+    public GlyphVariationProcessor(
+        ItemVariationStore itemStore,
+        FVarTable fVar,
+        AVarTable? aVar = null,
+        GVarTable? gVar = null,
+        HVarTable? hVar = null,
+        VVarTable? vVar = null)
     {
         DebugGuard.NotNull(itemStore, nameof(itemStore));
         DebugGuard.NotNull(fVar, nameof(fVar));
@@ -49,6 +57,7 @@ internal class GlyphVariationProcessor
         this.hVar = hVar;
         this.normalizedCoords = this.NormalizeDefaultCoords();
         this.blendVectors = [];
+        this.vVar = vVar;
     }
 
     public void TransformPoints(ushort glyphId, ref GlyphVector glyphPoints)
@@ -70,6 +79,8 @@ internal class GlyphVariationProcessor
 
     public float AdvanceAdjustment(int glyphId)
     {
+        // TODO: Support VVAR table for vertical adjustments.
+        // TOOD: Maybe return 0F if no HVAR/VVAR table is present?
         if (this.hVar is null)
         {
             throw new InvalidFontFileException("Missing HVAR table");
