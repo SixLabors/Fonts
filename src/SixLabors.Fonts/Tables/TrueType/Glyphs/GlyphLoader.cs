@@ -16,9 +16,7 @@ internal abstract class GlyphLoader
         {
             return SimpleGlyphLoader.LoadSimpleGlyph(reader, contoursCount, bounds);
         }
-        else
-        {
-            return CompositeGlyphLoader.LoadCompositeGlyph(reader, bounds);
-        }
+
+        return CompositeGlyphLoader.LoadCompositeGlyph(reader, bounds);
     }
 }

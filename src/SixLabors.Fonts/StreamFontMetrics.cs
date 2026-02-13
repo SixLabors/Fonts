@@ -3,9 +3,11 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Kern;
@@ -55,11 +57,13 @@ internal partial class StreamFontMetrics : FontMetrics
     /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
     /// </summary>
     /// <param name="tables">The True Type font tables.</param>
-    internal StreamFontMetrics(TrueTypeFontTables tables)
+    /// <param name="glyphVariationProcessor">An optional glyph variation processor for handling variable fonts.</param>
+    internal StreamFontMetrics(TrueTypeFontTables tables, GlyphVariationProcessor? glyphVariationProcessor = null)
     {
         this.trueTypeFontTables = tables;
         this.outlineType = OutlineType.TrueType;
         this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+        this.GlyphVariationProcessor = glyphVariationProcessor;
         this.glyphIdCache = new();
         this.codePointCache = new();
         this.glyphCache = new();
@@ -75,11 +79,13 @@ internal partial class StreamFontMetrics : FontMetrics
     /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class.
     /// </summary>
     /// <param name="tables">The Compact Font tables.</param>
-    internal StreamFontMetrics(CompactFontTables tables)
+    /// <param name="glyphVariationProcessor">An optional glyph variation processor for handling variable fonts.</param>
+    internal StreamFontMetrics(CompactFontTables tables, GlyphVariationProcessor? glyphVariationProcessor = null)
     {
         this.compactFontTables = tables;
         this.outlineType = OutlineType.CFF;
         this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+        this.GlyphVariationProcessor = glyphVariationProcessor;
         this.glyphIdCache = new();
         this.codePointCache = new();
         this.glyphCache = new();
@@ -90,6 +96,8 @@ internal partial class StreamFontMetrics : FontMetrics
     }
 
     public HeadTable.HeadFlags HeadFlags { get; private set; }
+
+    public GlyphVariationProcessor? GlyphVariationProcessor { get; private set; }
 
     /// <inheritdoc/>
     public override FontDescription Description => this.description;
@@ -210,6 +218,35 @@ internal partial class StreamFontMetrics : FontMetrics
 
         markAttachmentClass = null;
         return gdef is not null && gdef.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
+    }
+
+    /// <inheritdoc/>
+    public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
+    {
+        if (this.trueTypeFontTables?.Fvar == null)
+        {
+            variationAxes = [];
+            return false;
+        }
+
+        FVarTable? fvar = this.trueTypeFontTables?.Fvar;
+        Tables.General.Name.NameTable? names = this.trueTypeFontTables?.Name;
+        variationAxes = new VariationAxis[fvar!.Axes.Length];
+        for (int i = 0; i < fvar.Axes.Length; i++)
+        {
+            VariationAxisRecord axis = fvar.Axes[i];
+            string name = names != null ? names.GetNameById(CultureInfo.InvariantCulture, axis.AxisNameId) : string.Empty;
+            variationAxes[i] = new VariationAxis()
+            {
+                Tag = axis.Tag,
+                Min = axis.MinValue,
+                Max = axis.MaxValue,
+                Default = axis.DefaultValue,
+                Name = name
+            };
+        }
+
+        return true;
     }
 
     /// <inheritdoc/>
@@ -386,10 +423,8 @@ internal partial class StreamFontMetrics : FontMetrics
         {
             return LoadTrueTypeFont(reader);
         }
-        else
-        {
-            return LoadCompactFont(reader);
-        }
+
+        return LoadCompactFont(reader);
     }
 
     private (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) Initialize<T>(T tables)

@@ -43,7 +43,11 @@ internal class GlyphTable : Table
         return Load(binaryReader, reader.TableFormat, locations, in fallbackEmptyBounds);
     }
 
-    public static GlyphTable Load(BigEndianBinaryReader reader, TableFormat format, uint[] locations, in Bounds fallbackEmptyBounds)
+    public static GlyphTable Load(
+        BigEndianBinaryReader reader,
+        TableFormat format,
+        uint[] locations,
+        in Bounds fallbackEmptyBounds)
     {
         EmptyGlyphLoader empty = new(fallbackEmptyBounds);
         int entryCount = locations.Length;

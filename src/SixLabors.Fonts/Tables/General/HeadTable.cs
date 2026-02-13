@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System;
+
 namespace SixLabors.Fonts.Tables.General;
 
 internal class HeadTable : Table
@@ -149,7 +151,7 @@ internal class HeadTable : Table
         //                                       Bit 5: Condensed(if set to 1)
         //                                       Bit 6: Extended(if set to 1)
         //                                       Bits 7–15: Reserved(set to 0).
-        // uint16       |lowestRecPPEM       |  Smallest readable size in pixels.
+        // uint16       | lowestRecPPEM      |  Smallest readable size in pixels.
         // int16        | fontDirectionHint  |  Deprecated(Set to 2).
         //                                          0: Fully mixed directional glyphs;
         //                                          1: Only strongly left to right;

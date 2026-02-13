@@ -4,6 +4,7 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Rendering;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
@@ -14,7 +15,7 @@ namespace SixLabors.Fonts.Tables.Cff;
 /// </summary>
 /// <remarks>
 /// A Type 2 charstring program is a sequence of unsigned 8-bit bytes that encode numbers and operators.
-/// The byte value specifies a operator, a number, or subsequent bytes that are to be interpreted in a specific manner
+/// The byte value specifies a operator, a number, or subsequent bytes that are to be interpreted in a specific manner.
 /// </remarks>
 internal ref struct CffEvaluationEngine
 {
@@ -33,12 +34,19 @@ internal ref struct CffEvaluationEngine
     private readonly int localBias;
     private readonly Dictionary<int, float> trans;
     private bool isDisposed;
+    private readonly int version;
+    private readonly GlyphVariationProcessor? glyphVariationProcessor;
+    private int vsIndex;
 
     public CffEvaluationEngine(
         ReadOnlySpan<byte> charStrings,
         ReadOnlySpan<byte[]> globalSubrBuffers,
         ReadOnlySpan<byte[]> localSubrBuffers,
-        int nominalWidthX)
+        int nominalWidthX,
+        int version,
+        ItemVariationStore? itemVariationStore = null,
+        FVarTable? fVar = null,
+        AVarTable? aVar = null)
     {
         this.transforming = default;
         this.charStrings = charStrings;
@@ -48,7 +56,7 @@ internal ref struct CffEvaluationEngine
 
         this.globalBias = CalculateBias(this.globalSubrBuffers.Length);
         this.localBias = CalculateBias(this.localSubrBuffers.Length);
-        this.trans = new();
+        this.trans = [];
 
         this.x = 0;
         this.y = 0;
@@ -56,6 +64,21 @@ internal ref struct CffEvaluationEngine
         this.nStems = 0;
         this.stack = new(50);
         this.isDisposed = false;
+        this.version = version;
+        this.glyphVariationProcessor = null;
+
+        if (itemVariationStore != null)
+        {
+            if (fVar is null)
+            {
+                throw new InvalidFontFileException("missing fVar table required for glyph variations processing");
+            }
+
+            this.glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fVar, aVar);
+        }
+
+        // TODO: always 0 for now. Should be privateDict.vsindex
+        this.vsIndex = 0;
     }
 
     public Bounds GetBounds()
@@ -197,12 +220,20 @@ internal ref struct CffEvaluationEngine
 
                     case Type2Operator1.Return:
 
-                        // TODO: CFF2
+                        if (this.version >= 2)
+                        {
+                            break;
+                        }
+
                         return;
 
                     case Type2Operator1.Endchar:
 
-                        // TODO: CFF2
+                        if (this.version >= 2)
+                        {
+                            break;
+                        }
+
                         if (this.stack.Length > 0)
                         {
                             this.CheckWidth();
@@ -216,14 +247,49 @@ internal ref struct CffEvaluationEngine
                         endCharEncountered = true;
                         break;
 
-                    case Type2Operator1.Reserved15_:
+                    case Type2Operator1.VsIndex:
+                        if (this.version < 2)
+                        {
+                            throw new NotSupportedException("blend operator is not supported in CFF v1");
+                        }
 
-                        // TODO: CFF2
+                        this.vsIndex = (int)this.stack.Pop();
                         break;
-                    case Type2Operator1.Reserved16_:
+                    case Type2Operator1.Blend:
+                        if (this.version < 2)
+                        {
+                            throw new NotSupportedException("blend operator is not supported in CFF v1");
+                        }
 
-                        // TODO: CFF2
+                        if (this.glyphVariationProcessor is null)
+                        {
+                            throw new NotSupportedException("blend operator in non-variation font");
+                        }
+
+                        float[] blendVector = this.glyphVariationProcessor.BlendVector(this.vsIndex);
+                        float numBlends = this.stack.Pop();
+                        float numOperands = numBlends * blendVector.Length;
+                        int delta = this.stack.Length - (int)numOperands;
+                        int basis = delta - (int)numBlends;
+
+                        for (int i = 0; i < numBlends; i++)
+                        {
+                            float sum = this.stack[basis + i];
+                            for (int j = 0; j < blendVector.Length; j++)
+                            {
+                                sum += blendVector[j] * this.stack[delta++];
+                            }
+
+                            this.stack[basis + i] = sum;
+                        }
+
+                        while (numOperands-- > 0)
+                        {
+                            this.stack.Pop();
+                        }
+
                         break;
+
                     case Type2Operator1.Hintmask:
                     case Type2Operator1.Cntrmask:
 

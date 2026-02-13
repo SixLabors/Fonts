@@ -1,6 +1,9 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System;
+using System.Collections.Generic;
+
 namespace SixLabors.Fonts.Tables.Cff;
 
 internal sealed class CFFOperator
@@ -93,6 +96,10 @@ internal sealed class CFFOperator
         Register(dictionary, 19, "Subrs", OperatorOperandKind.Number);
         Register(dictionary, 20, "defaultWidthX", OperatorOperandKind.Number);
         Register(dictionary, 21, "nominalWidthX", OperatorOperandKind.Number);
+
+        Register(dictionary, 22, "vsindex", OperatorOperandKind.Number);
+        Register(dictionary, 23, "blend", OperatorOperandKind.Number);
+        Register(dictionary, 24, "vstore", OperatorOperandKind.Number);
 
         return dictionary;
     }

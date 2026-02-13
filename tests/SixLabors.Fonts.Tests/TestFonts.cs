@@ -1,8 +1,13 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using Xunit;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -196,6 +201,8 @@ public static class TestFonts
     public static string EbGaramond => GetFullPath("EBGaramond-Regular.ttf");
 
     public static string RobotoRegular => GetFullPath("Roboto-Regular.ttf");
+
+    public static string RobotoFlex => GetFullPath("RobotoFlex.ttf");
 
     public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 

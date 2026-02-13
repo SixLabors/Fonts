@@ -1,17 +1,20 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System;
+using System.Collections.Generic;
+
 namespace SixLabors.Fonts.Tables.Cff;
 
 internal struct FDRangeProvider
 {
     // helper class
     private readonly int format;
-    private readonly FDRange3[] ranges;
+    private readonly FDRange[] ranges;
     private readonly Dictionary<int, byte> fdSelectMap;
-    private ushort currentGlyphIndex;
-    private ushort endGlyphIndexMax;
-    private FDRange3 currentRange;
+    private uint currentGlyphIndex;
+    private uint endGlyphIndexMax;
+    private FDRange currentRange;
     private int currentSelectedRangeIndex;
 
     public FDRangeProvider(CidFontInfo cidFontInfo)
@@ -37,7 +40,7 @@ internal struct FDRangeProvider
         this.SelectedFDArray = 0;
     }
 
-    public byte SelectedFDArray { get; private set; }
+    public ushort SelectedFDArray { get; private set; }
 
     public void SetCurrentGlyphIndex(ushort index)
     {
@@ -48,6 +51,7 @@ internal struct FDRangeProvider
                 break;
 
             case 3:
+            case 4:
                 // Find proper range for selected index.
                 if (index >= this.currentRange.First && index < this.endGlyphIndexMax)
                 {
