@@ -160,7 +160,7 @@ internal partial class StreamFontMetrics
             glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fvar, avar, gvar, hvar, vvar);
         }
 
-        return new StreamFontMetrics(tables);
+        return new StreamFontMetrics(tables, glyphVariationProcessor);
     }
 
     private GlyphMetrics CreateTrueTypeGlyphMetrics(

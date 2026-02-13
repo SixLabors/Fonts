@@ -23,7 +23,7 @@ internal partial class StreamFontMetrics
     private static StreamFontMetrics LoadCompactFont(FontReader reader)
     {
         // Load using recommended order for best performance.
-        // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
+        // https://learn.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
         // 'head', 'hhea', 'maxp', OS/2, 'name', 'cmap', 'post', 'CFF ' / 'CFF2'
         HeadTable head = reader.GetTable<HeadTable>();
         HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>();

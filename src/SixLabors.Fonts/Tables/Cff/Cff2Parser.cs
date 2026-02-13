@@ -7,7 +7,7 @@ using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 namespace SixLabors.Fonts.Tables.Cff;
 
 /// <summary>
-/// Parses a Compact Font Format (CFF) version 2 described in https://docs.microsoft.com/de-de/typography/opentype/spec/cff2
+/// Parses a Compact Font Format (CFF) version 2 described in https://docs.microsoft.com/en-gb/typography/opentype/spec/cff2
 /// </summary>
 internal class Cff2Parser : CffParserBase
 {
