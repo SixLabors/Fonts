@@ -1416,7 +1416,7 @@ internal static class TextLayout
                         isDecomposed,
                         stringIndex,
                         mode,
-                        options);
+                        options.LineSpacing);
                 }
 
                 codePointIndex++;
@@ -1715,7 +1715,7 @@ internal static class TextLayout
 
         public float ScaledMaxDescender { get; private set; } = -1;
 
-        public float ScaledMaxDelta { get; private set; }
+        public float ScaledMaxDelta { get; private set; } = float.MinValue;
 
         public float ScaledMinY { get; private set; }
 
@@ -1738,10 +1738,10 @@ internal static class TextLayout
             bool isDecomposed,
             int stringIndex,
             GlyphLayoutMode layoutMode,
-            TextOptions options)
+            float lineSpacing)
         {
             // Apply LineSpacing to scaledLineHeight before storing
-            scaledLineHeight *= options.LineSpacing;
+            scaledLineHeight *= lineSpacing;
 
             // Reset metrics.
             // We track the maximum metrics for each line to ensure glyphs can be aligned.
