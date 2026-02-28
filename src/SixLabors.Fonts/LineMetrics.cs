@@ -18,7 +18,7 @@ public readonly struct LineMetrics
     /// <summary>
     /// Initializes a new instance of the <see cref="LineMetrics"/> struct.
     /// </summary>
-    /// <param name="ascender">Distance from the baseline to the ascender line.</param>
+    /// <param name="ascender">Ascender line position within the line box.</param>
     /// <param name="baseline">Baseline position within the line box.</param>
     /// <param name="descender">Descender line position within the line box.</param>
     /// <param name="lineHeight">Total line-box size (includes effective line spacing).</param>
@@ -41,8 +41,12 @@ public readonly struct LineMetrics
     }
 
     /// <summary>
-    /// Gets the distance from the baseline to the ascender line.
+    /// Gets the ascender line position within the line box.
     /// </summary>
+    /// <remarks>
+    /// This is a position value (not a baseline-relative distance).
+    /// Use this value to draw the ascender guide line relative to the current line origin.
+    /// </remarks>
     public float Ascender { get; }
 
     /// <summary>

@@ -29,7 +29,7 @@ public class Issues_353
 
         void DrawLines(Image<Rgba32> image)
         {
-            // Draw three separate lines for baseline (red), descender (blue),
+            // Draw four separate lines for acender(orange), baseline (red), descender (blue),
             // and line bottom (green).
             //
             // `offset` represents the Y coordinate of the top of the current line box.
@@ -39,10 +39,12 @@ public class Issues_353
             {
                 LineMetrics m = l[i];
 
+                float ascent = offset + m.Ascender;
                 float baseline = offset + m.Baseline;
                 float descender = offset + m.Descender;
                 float lineBottom = offset + m.LineHeight;
 
+                image.Mutate(x => x.DrawLine(Color.Orange, 1, new(m.Start, ascent), new(m.Extent, ascent)));
                 image.Mutate(x => x.DrawLine(Color.Red, 1, new(m.Start, baseline), new(m.Extent, baseline)));
                 image.Mutate(x => x.DrawLine(Color.Blue, 1, new(m.Start, descender), new(m.Extent, descender)));
                 image.Mutate(x => x.DrawLine(Color.Green, 1, new(m.Start, lineBottom), new(m.Extent, lineBottom)));

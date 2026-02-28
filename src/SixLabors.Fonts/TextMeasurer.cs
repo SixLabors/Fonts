@@ -163,8 +163,8 @@ public static class TextMeasurer
     /// in the primary flow direction for the active layout mode.
     /// </para>
     /// <para>
-    /// <see cref="LineMetrics.Baseline"/> and <see cref="LineMetrics.Descender"/> are line-box positions
-    /// relative to the current line origin and are suitable for drawing guide lines.
+    /// <see cref="LineMetrics.Ascender"/>, <see cref="LineMetrics.Baseline"/>, and <see cref="LineMetrics.Descender"/>
+    /// are line-box positions relative to the current line origin and are suitable for drawing guide lines.
     /// </para>
     /// <list type="bullet">
     /// <item><description>Horizontal layouts: Start = X position, Extent = width.</description></item>
@@ -188,8 +188,8 @@ public static class TextMeasurer
     /// in the primary flow direction for the active layout mode.
     /// </para>
     /// <para>
-    /// <see cref="LineMetrics.Baseline"/> and <see cref="LineMetrics.Descender"/> are line-box positions
-    /// relative to the current line origin and are suitable for drawing guide lines.
+    /// <see cref="LineMetrics.Ascender"/>, <see cref="LineMetrics.Baseline"/>, and <see cref="LineMetrics.Descender"/>
+    /// are line-box positions relative to the current line origin and are suitable for drawing guide lines.
     /// </para>
     /// <list type="bullet">
     /// <item><description>Horizontal layouts: Start = X position, Extent = width.</description></item>
@@ -251,11 +251,14 @@ public static class TextMeasurer
             // Baseline position within the line box.
             float baseline = (extra * 0.5f) + line.ScaledMaxAscender + delta;
 
+            // Ascender line position relative to the same origin.
+            float ascender = baseline - line.ScaledMaxAscender + delta;
+
             // Descender line position relative to the same origin.
             float descender = baseline + line.ScaledMaxDescender + delta;
 
             metrics[i] = new LineMetrics(
-                (line.ScaledMaxAscender + delta) * options.Dpi,
+                ascender * options.Dpi,
                 baseline * options.Dpi,
                 descender * options.Dpi,
                 line.ScaledMaxLineHeight * options.Dpi,
