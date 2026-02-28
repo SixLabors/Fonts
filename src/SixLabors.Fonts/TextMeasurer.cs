@@ -140,7 +140,131 @@ public static class TextMeasurer
     /// <param name="options">The text shaping options.</param>
     /// <returns>The line count.</returns>
     public static int CountLines(ReadOnlySpan<char> text, TextOptions options)
-        => TextLayout.GenerateLayout(text, options).Count(x => x.IsStartOfLine);
+    {
+        if (text.IsEmpty)
+        {
+            return 0;
+        }
+
+        return TextLayout.ProcessText(text, options).TextLines.Count;
+    }
+
+    /// <summary>
+    /// Gets per-line layout metrics for the supplied text.
+    /// </summary>
+    /// <param name="text">The text to measure.</param>
+    /// <param name="options">The text shaping and layout options.</param>
+    /// <returns>
+    /// An array of <see cref="LineMetrics"/> in pixel units, one entry per laid-out line.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// The returned <see cref="LineMetrics.Start"/> and <see cref="LineMetrics.Extent"/> are expressed
+    /// in the primary flow direction for the active layout mode.
+    /// </para>
+    /// <para>
+    /// <see cref="LineMetrics.Baseline"/> and <see cref="LineMetrics.Descender"/> are line-box positions
+    /// relative to the current line origin and are suitable for drawing guide lines.
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description>Horizontal layouts: Start = X position, Extent = width.</description></item>
+    /// <item><description>Vertical layouts: Start = Y position, Extent = height.</description></item>
+    /// </list>
+    /// </remarks>
+    public static LineMetrics[] GetLineMetrics(string text, TextOptions options)
+        => GetLineMetrics(text.AsSpan(), options);
+
+    /// <summary>
+    /// Gets per-line layout metrics for the supplied text.
+    /// </summary>
+    /// <param name="text">The text to measure.</param>
+    /// <param name="options">The text shaping and layout options.</param>
+    /// <returns>
+    /// An array of <see cref="LineMetrics"/> in pixel units, one entry per laid-out line.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// The returned <see cref="LineMetrics.Start"/> and <see cref="LineMetrics.Extent"/> are expressed
+    /// in the primary flow direction for the active layout mode.
+    /// </para>
+    /// <para>
+    /// <see cref="LineMetrics.Baseline"/> and <see cref="LineMetrics.Descender"/> are line-box positions
+    /// relative to the current line origin and are suitable for drawing guide lines.
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description>Horizontal layouts: Start = X position, Extent = width.</description></item>
+    /// <item><description>Vertical layouts: Start = Y position, Extent = height.</description></item>
+    /// </list>
+    /// </remarks>
+    public static LineMetrics[] GetLineMetrics(ReadOnlySpan<char> text, TextOptions options)
+    {
+        if (text.IsEmpty)
+        {
+            return [];
+        }
+
+        TextLayout.TextBox textBox = TextLayout.ProcessText(text, options);
+        LineMetrics[] metrics = new LineMetrics[textBox.TextLines.Count];
+
+        // Determine the line-box extent used for alignment within the flow direction.
+        float maxScaledAdvance = textBox.ScaledMaxAdvance();
+        if (options.TextAlignment != TextAlignment.Start && options.WrappingLength > 0)
+        {
+            maxScaledAdvance = MathF.Max(options.WrappingLength / options.Dpi, maxScaledAdvance);
+        }
+
+        TextDirection direction = textBox.TextDirection();
+        LayoutMode layoutMode = options.LayoutMode;
+        bool isHorizontalLayout = layoutMode.IsHorizontal();
+
+        for (int i = 0; i < textBox.TextLines.Count; i++)
+        {
+            TextLayout.TextLine line = textBox.TextLines[i];
+
+            // Calculate the line start position in the current flow direction.
+            float offset = isHorizontalLayout
+                ? TextLayout.CalculateLineOffsetX(
+                    line.ScaledLineAdvance,
+                    maxScaledAdvance,
+                    options.HorizontalAlignment,
+                    options.TextAlignment,
+                    direction)
+                : TextLayout.CalculateLineOffsetY(
+                    line.ScaledLineAdvance,
+                    maxScaledAdvance,
+                    options.VerticalAlignment,
+                    options.TextAlignment,
+                    direction);
+
+            // Delta captured during layout when ascender/descender were symmetrically
+            // adjusted to match browser-like line-box behavior.
+            float delta = line.ScaledMaxDelta;
+
+            // Core typographic region within the line box.
+            // We add back 2*delta to recover the pre-adjustment ascender+descender span
+            // used for deriving guide positions.
+            float coreHeight = line.ScaledMaxAscender + line.ScaledMaxDescender + (2 * delta);
+
+            // Additional leading in the line box (for example from line spacing).
+            float extra = line.ScaledMaxLineHeight - coreHeight;
+
+            // Baseline position within the line box.
+            float baseline = (extra * 0.5f) + line.ScaledMaxAscender + delta;
+
+            // Descender line position relative to the same origin.
+            float descender = baseline + line.ScaledMaxDescender + delta;
+
+            metrics[i] = new LineMetrics(
+                (line.ScaledMaxAscender + delta) * options.Dpi,
+                baseline * options.Dpi,
+                descender * options.Dpi,
+                line.ScaledMaxLineHeight * options.Dpi,
+                offset * options.Dpi,
+                line.ScaledLineAdvance * options.Dpi);
+        }
+
+        return metrics;
+    }
 
     internal static FontRectangle GetAdvance(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
     {
