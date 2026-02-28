@@ -22,11 +22,12 @@ internal static class Compile
     private static StateMachine Build(SymbolTable symbolTable)
     {
         ILogicalNode main = symbolTable.Main();
+
         IEnumerable<State> state = DeterministicFiniteAutomata.Build(main, symbolTable.Size);
 
-        int[][] stateTable = state.Select(x => x.Transitions).ToArray();
-        bool[] accepting = state.Select(x => x.Accepting).ToArray();
-        string[][] tags = state.Select(x => x.Tags.ToArray()).ToArray();
+        int[][] stateTable = [.. state.Select(x => x.Transitions)];
+        bool[] accepting = [.. state.Select(x => x.Accepting)];
+        string[][] tags = [.. state.Select(x => x.Tags.ToArray())];
         return new StateMachine(stateTable, accepting, tags);
     }
 }

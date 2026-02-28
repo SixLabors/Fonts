@@ -12,11 +12,9 @@ internal sealed class LigatureGlyph
         reader.Seek(offset, SeekOrigin.Begin);
 
         ushort caretCount = reader.ReadUInt16();
-        var ligatureGlyph = new LigatureGlyph()
+        return new LigatureGlyph()
         {
             CaretValueOffsets = reader.ReadUInt16Array(caretCount)
         };
-
-        return ligatureGlyph;
     }
 }

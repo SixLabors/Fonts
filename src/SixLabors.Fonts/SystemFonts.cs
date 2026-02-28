@@ -23,7 +23,7 @@ public static class SystemFonts
     public static IEnumerable<FontFamily> Families => Collection.Families;
 
     /// <inheritdoc cref="IReadOnlyFontCollection.Get(string)"/>
-    public static FontFamily Get(string name) => Get(name, CultureInfo.InvariantCulture);
+    public static FontFamily Get(string name) => GetByCulture(name, CultureInfo.InvariantCulture);
 
     /// <inheritdoc cref="IReadOnlyFontCollection.TryGet(string, out FontFamily)" />
     public static bool TryGet(string fontFamily, out FontFamily family)
@@ -52,13 +52,13 @@ public static class SystemFonts
     public static IEnumerable<FontFamily> GetByCulture(CultureInfo culture)
         => Collection.GetByCulture(culture);
 
-    /// <inheritdoc cref="IReadOnlyFontCollection.Get(string, CultureInfo)" />
-    public static FontFamily Get(string fontFamily, CultureInfo culture)
-        => Collection.Get(fontFamily, culture);
+    /// <inheritdoc cref="IReadOnlyFontCollection.GetByCulture(string, CultureInfo)" />
+    public static FontFamily GetByCulture(string fontFamily, CultureInfo culture)
+        => Collection.GetByCulture(fontFamily, culture);
 
-    /// <inheritdoc cref="IReadOnlyFontCollection.TryGet(string, CultureInfo, out FontFamily)" />
-    public static bool TryGet(string fontFamily, CultureInfo culture, out FontFamily family)
-        => Collection.TryGet(fontFamily, culture, out family);
+    /// <inheritdoc cref="IReadOnlyFontCollection.TryGetByCulture(string, CultureInfo, out FontFamily)" />
+    public static bool TryGetByCulture(string fontFamily, CultureInfo culture, out FontFamily family)
+        => Collection.TryGetByCulture(fontFamily, culture, out family);
 
     /// <summary>
     /// Create a new instance of the <see cref="Font"/> for the named font family with regular styling.
@@ -68,7 +68,7 @@ public static class SystemFonts
     /// <param name="size">The size of the font in PT units.</param>
     /// <returns>The new <see cref="Font"/>.</returns>
     public static Font CreateFont(string name, CultureInfo culture, float size)
-        => Collection.Get(name, culture).CreateFont(size);
+        => Collection.GetByCulture(name, culture).CreateFont(size);
 
     /// <summary>
     /// Create a new instance of the <see cref="Font"/> for the named font family.
@@ -79,5 +79,5 @@ public static class SystemFonts
     /// <param name="style">The font style.</param>
     /// <returns>The new <see cref="Font"/>.</returns>
     public static Font CreateFont(string name, CultureInfo culture, float size, FontStyle style)
-        => Collection.Get(name, culture).CreateFont(size, style);
+        => Collection.GetByCulture(name, culture).CreateFont(size, style);
 }

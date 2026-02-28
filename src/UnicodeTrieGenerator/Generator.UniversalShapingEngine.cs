@@ -69,6 +69,12 @@ public static partial class Generator
             }
         },
         {
+            "HVM", new List<object>
+            {
+                0x0DCA // Split off of HALANT
+            }
+        },
+        {
             "H", new List<object>
             {
                 ISC.Virama,

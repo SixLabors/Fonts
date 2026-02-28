@@ -108,7 +108,7 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
     public IEnumerable<string> SearchDirectories => this.searchDirectories;
 
     /// <inheritdoc/>
-    public FontFamily Get(string name) => this.Get(name, CultureInfo.InvariantCulture);
+    public FontFamily Get(string name) => this.GetByCulture(name, CultureInfo.InvariantCulture);
 
     /// <inheritdoc/>
     public bool TryGet(string name, out FontFamily family)
@@ -119,12 +119,12 @@ internal sealed class SystemFontCollection : IReadOnlySystemFontCollection, IRea
         => this.collection.GetByCulture(culture);
 
     /// <inheritdoc/>
-    public FontFamily Get(string name, CultureInfo culture)
-        => this.collection.Get(name, culture);
+    public FontFamily GetByCulture(string name, CultureInfo culture)
+        => this.collection.GetByCulture(name, culture);
 
     /// <inheritdoc/>
-    public bool TryGet(string name, CultureInfo culture, out FontFamily family)
-        => this.collection.TryGet(name, culture, out family);
+    public bool TryGetByCulture(string name, CultureInfo culture, out FontFamily family)
+        => this.collection.TryGetByCulture(name, culture, out family);
 
     /// <inheritdoc/>
     bool IReadOnlyFontMetricsCollection.TryGetMetrics(string name, CultureInfo culture, FontStyle style, [NotNullWhen(true)] out FontMetrics? metrics)

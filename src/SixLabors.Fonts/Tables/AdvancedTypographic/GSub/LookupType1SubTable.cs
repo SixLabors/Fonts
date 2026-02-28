@@ -12,15 +12,15 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GSub;
 /// </summary>
 internal static class LookupType1SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort substFormat = reader.ReadUInt16();
 
         return substFormat switch
         {
-            1 => LookupType1Format1SubTable.Load(reader, offset, lookupFlags),
-            2 => LookupType1Format2SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType1Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            2 => LookupType1Format2SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -31,14 +31,14 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
     private readonly ushort deltaGlyphId;
     private readonly CoverageTable coverageTable;
 
-    private LookupType1Format1SubTable(ushort deltaGlyphId, CoverageTable coverageTable, LookupFlags lookupFlags)
-        : base(lookupFlags)
+    private LookupType1Format1SubTable(ushort deltaGlyphId, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
+        : base(lookupFlags, markFilteringSet)
     {
         this.deltaGlyphId = deltaGlyphId;
         this.coverageTable = coverageTable;
     }
 
-    public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupType1Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // SingleSubstFormat1
         // +----------+----------------+----------------------------------------------------------+
@@ -53,9 +53,9 @@ internal sealed class LookupType1Format1SubTable : LookupSubTable
         // +----------+----------------+----------------------------------------------------------+
         ushort coverageOffset = reader.ReadOffset16();
         ushort deltaGlyphId = reader.ReadUInt16();
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-        return new LookupType1Format1SubTable(deltaGlyphId, coverageTable, lookupFlags);
+        return new LookupType1Format1SubTable(deltaGlyphId, coverageTable, lookupFlags, markFilteringSet);
     }
 
     public override bool TrySubstitution(
@@ -87,14 +87,14 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
     private readonly CoverageTable coverageTable;
     private readonly ushort[] substituteGlyphs;
 
-    private LookupType1Format2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable, LookupFlags lookupFlags)
-        : base(lookupFlags)
+    private LookupType1Format2SubTable(ushort[] substituteGlyphs, CoverageTable coverageTable, LookupFlags lookupFlags, ushort markFilteringSet)
+        : base(lookupFlags, markFilteringSet)
     {
         this.substituteGlyphs = substituteGlyphs;
         this.coverageTable = coverageTable;
     }
 
-    public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupType1Format2SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         // SingleSubstFormat2
         // +----------+--------------------------------+-----------------------------------------------------------+
@@ -112,9 +112,9 @@ internal sealed class LookupType1Format2SubTable : LookupSubTable
         ushort coverageOffset = reader.ReadOffset16();
         ushort glyphCount = reader.ReadUInt16();
         ushort[] substituteGlyphIds = reader.ReadUInt16Array(glyphCount);
-        var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+        CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-        return new LookupType1Format2SubTable(substituteGlyphIds, coverageTable, lookupFlags);
+        return new LookupType1Format2SubTable(substituteGlyphIds, coverageTable, lookupFlags, markFilteringSet);
     }
 
     public override bool TrySubstitution(

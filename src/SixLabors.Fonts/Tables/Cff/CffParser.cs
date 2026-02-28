@@ -566,10 +566,10 @@ internal class CffParser
         // in conjunction with CFF.
 
         // Type 1 charstrings are documented in
-        // the “Adobe Type 1 Font Format” published by Addison - Wesley.
+        // the "Adobe Type 1 Font Format" published by Addison - Wesley.
 
         // Type 2 charstrings are described in Adobe Technical Note #5177:
-        // “Type 2 Charstring Format.” Other charstring types may also be
+        // "Type 2 Charstring Format." Other charstring types may also be
         // supported by this method.
         reader.BaseStream.Position = this.offset + this.charStringsOffset;
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))

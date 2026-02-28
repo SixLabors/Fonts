@@ -95,7 +95,7 @@ internal sealed class MaximumProfileTable : Table
         // uint16 | maxInstructionDefs    | Number of IDEFs.
         // uint16 | maxStackElements      | Maximum stack depth2.
         // uint16 | maxSizeOfInstructions | Maximum byte count for glyph instructions.
-        // uint16 | maxComponentElements  | Maximum number of components referenced at “top level” for any composite glyph.
+        // uint16 | maxComponentElements  | Maximum number of components referenced at "top level" for any composite glyph.
         // uint16 | maxComponentDepth     | Maximum levels of recursion; 1 for simple components.
         ushort maxPoints = reader.ReadUInt16();
         ushort maxContours = reader.ReadUInt16();

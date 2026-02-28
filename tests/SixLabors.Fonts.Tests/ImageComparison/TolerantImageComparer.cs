@@ -58,7 +58,7 @@ public class TolerantImageComparer : ImageComparer
 
     public override ImageSimilarityReport<TPixelA, TPixelB> CompareImagesOrFrames<TPixelA, TPixelB>(int index, ImageFrame<TPixelA> expected, ImageFrame<TPixelB> actual)
     {
-        if (expected.Size() != actual.Size())
+        if (expected.Size != actual.Size)
         {
             throw new InvalidOperationException("Calling ImageComparer is invalid when dimensions mismatch!");
         }

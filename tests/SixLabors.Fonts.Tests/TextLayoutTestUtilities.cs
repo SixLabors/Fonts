@@ -8,6 +8,7 @@ using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tests.TestUtilities;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Drawing.Text;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 #endif
@@ -20,7 +21,13 @@ internal static class TextLayoutTestUtilities
         string text,
         TextOptions options,
         float percentageTolerance = 0.05F,
+        bool includeGeometry = false,
+        bool customDecorations = false,
         [CallerMemberName] string test = "",
+#if SUPPORTS_DRAWING
+        Action<Image<Rgba32>> beforeAction = null,
+        Action<Image<Rgba32>> afterAction = null,
+#endif
         params object[] properties)
     {
 #if SUPPORTS_DRAWING
@@ -36,11 +43,20 @@ internal static class TextLayoutTestUtilities
         int imageWidth = isVertical ? width : Math.Max(width, wrappingLength + 1);
         int imageHeight = isVertical ? Math.Max(height, wrappingLength + 1) : height;
 
-        using Image<Rgba32> img = new(imageWidth, imageHeight, Color.White);
+        List<object> extended = properties?.ToList() ?? [];
+        if (options.WrappingLength > 0)
+        {
+            extended.Insert(0, options.WrappingLength);
+        }
 
-        img.Mutate(ctx => ctx.DrawText(FromTextOptions(options), text, Color.Black));
+        // First render the text using the rich text renderer.
+        using Image<Rgba32> img = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
 
-        if (wrappingLength > 0)
+        beforeAction?.Invoke(img);
+
+        img.Mutate(ctx => ctx.DrawText(FromTextOptions(options, customDecorations), text, Color.Black));
+
+        if (options.WrappingLength > 0)
         {
             if (!options.LayoutMode.IsHorizontal())
             {
@@ -50,28 +66,45 @@ internal static class TextLayoutTestUtilities
             {
                 img.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
             }
+        }
 
-            if (properties.Any())
+        afterAction?.Invoke(img);
+
+        img.DebugSave("png", test, properties: [.. extended]);
+        img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: [.. extended]);
+
+        if (!includeGeometry)
+        {
+            return;
+        }
+
+        // Now render the text using geometry-only renderer.
+        extended.Insert(0, "G");
+        using Image<Rgba32> img2 = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
+
+        IReadOnlyList<GlyphPathCollection> glyphs = TextBuilder.GenerateGlyphs(text, options);
+
+        img2.Mutate(ctx => ctx.Fill(Color.Black, glyphs));
+
+        if (options.WrappingLength > 0)
+        {
+            if (!options.LayoutMode.IsHorizontal())
             {
-                List<object> extended = properties.ToList();
-                extended.Insert(0, options.WrappingLength);
-                img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: extended.ToArray());
+                img2.Mutate(x => x.DrawLine(Color.Red, 1, new(0, wrappingLength), new(width, wrappingLength)));
             }
             else
             {
-                img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: new { options.WrappingLength });
+                img2.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
             }
         }
-        else
-        {
-            img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: properties);
-        }
 
+        img2.DebugSave("png", test, properties: [.. extended]);
+        img2.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: [.. extended]);
 #endif
     }
 
 #if SUPPORTS_DRAWING
-    private static RichTextOptions FromTextOptions(TextOptions options)
+    private static RichTextOptions FromTextOptions(TextOptions options, bool customDecorations)
     {
         RichTextOptions result = new(options.Font)
         {
@@ -90,6 +123,8 @@ internal static class TextLayoutTestUtilities
             VerticalAlignment = options.VerticalAlignment,
             LayoutMode = options.LayoutMode,
             KerningMode = options.KerningMode,
+            DecorationPositioningMode = options.DecorationPositioningMode,
+            Tracking = options.Tracking,
             ColorFontSupport = options.ColorFontSupport,
             FeatureTags = new List<Tag>(options.FeatureTags),
         };
@@ -99,15 +134,26 @@ internal static class TextLayoutTestUtilities
             List<RichTextRun> runs = new(options.TextRuns.Count);
             foreach (TextRun run in options.TextRuns)
             {
-                runs.Add(new RichTextRun()
+                RichTextRun richRun = new()
                 {
                     Font = run.Font,
                     Start = run.Start,
                     End = run.End,
                     TextAttributes = run.TextAttributes,
-                    TextDecorations = run.TextDecorations
-                });
+                    TextDecorations = run.TextDecorations,
+                };
+
+                if (customDecorations && run.TextDecorations != TextDecorations.None)
+                {
+                    richRun.StrikeoutPen = new SolidPen(Color.Green, 11.3334F);
+                    richRun.UnderlinePen = new SolidPen(Color.Blue, 15.5555F);
+                    richRun.OverlinePen = new SolidPen(Color.Purple, 13.7777F);
+                }
+
+                runs.Add(richRun);
             }
+
+            result.TextRuns = runs;
         }
 
         return result;

@@ -27,7 +27,7 @@ internal abstract class KerningSubTable
         // +--------+----------+----------------------------------------------------------+
         ushort subVersion = reader.ReadUInt16();
         ushort length = reader.ReadUInt16();
-        var coverage = KerningCoverage.Read(reader);
+        KerningCoverage coverage = KerningCoverage.Read(reader);
         if (coverage.Format == 0)
         {
             return Format0SubTable.Load(reader, coverage);

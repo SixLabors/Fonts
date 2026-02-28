@@ -203,7 +203,7 @@ public static class TestFonts
 
     public static string Version1Font => GetFullPath("Font-Version1.ttf");
 
-    public static string NotoSansSCThinFile => GetFullPath("NotoSansSC-Thin.ttf");
+    public static string NotoSansSCThinBad => GetFullPath("NotoSansSC-Thin-Bad.ttf");
 
     public static string NotoSansKRRegular => GetFullPath("NotoSansKR-Regular.otf");
 
@@ -263,6 +263,54 @@ public static class TestFonts
 
     public static string VeryBerryProRegular => GetFullPath("VeryBerryProRegular.ttf");
 
+    public static string NotoColorEmojiRegular => GetFullPath("NotoColorEmoji-Regular.ttf");
+
+    public static string Arial => GetFullPath("arial.ttf");
+
+    public static string Tahoma => GetFullPath("tahoma.ttf");
+
+    public static string CousineRegular => GetFullPath("Cousine-Regular.ttf");
+
+    public static string HindRegular => GetFullPath("Hind-Regular.ttf");
+
+    public static string NanumGothicCodingRegular => GetFullPath("NanumGothicCoding-Regular.ttf");
+
+    public static string InconsolataRegular => GetFullPath("Inconsolata-Regular.ttf");
+
+    public static string NotoNaskhArabicRegular => GetFullPath("NotoNaskhArabic-Regular.ttf");
+
+    public static string NotoSansHKVariableFontWght => GetFullPath("NotoSansHK-VariableFont_wght.ttf");
+
+    public static string NotoSansJPRegular => GetFullPath("NotoSansJP-Regular.ttf");
+
+    public static string NotoSansSCThin => GetFullPath("NotoSansSC-Thin.ttf");
+
+    public static string NotoSansSCRegular => GetFullPath("NotoSansSC-Regular.ttf");
+
+    public static string SarabunRegular => GetFullPath("Sarabun-Regular.ttf");
+
+    public static string NotoSansArabicRegular => GetFullPath("NotoSansArabic-Regular.ttf");
+
+    public static string Consola => GetFullPath("consola.ttf");
+
+    public static string SofiaSansCondensedLight => GetFullPath("SofiaSansCondensed-ExtraLight-Regular.ttf");
+
+    public static string ServiceNowWoff2 => GetFullPath("ServiceNow-Sans-Text-Bold-unmastered-1.1.woff");
+
+    public static string SinhalaSansRegular => GetFullPath("NotoSansSinhala-Regular.ttf");
+
+    public static string BengaliSansRegular => GetFullPath("NotoSansBengali-Regular.ttf");
+
+    public static string TibetanSerifRegular => GetFullPath("NotoSerifTibetan-Regular.ttf");
+
+    public static string MyanmarSansRegular => GetFullPath("NotoSansMyanmar-Regular.ttf");
+
+    public static string NotoSansOghamRegular => GetFullPath("NotoSansOgham-Regular.ttf");
+
+    public static string NotoSansRunicRegular => GetFullPath("NotoSansRunic-Regular.ttf");
+
+    public static string MgOpenCanonicRegular => GetFullPath("mgopencanonicaregular.ttf");
+
     public static Stream TwemojiMozillaData() => OpenStream(TwemojiMozillaFile);
 
     public static Stream SegoeuiEmojiData() => OpenStream(SegoeuiEmojiFile);
@@ -312,7 +360,7 @@ public static class TestFonts
         return ms;
     }
 
-    private static string GetFullPath(string path)
+    public static string GetFullPath(string path)
     {
         string root = Path.GetDirectoryName(new Uri(typeof(TestFonts).GetTypeInfo().Assembly.CodeBase).LocalPath);
 

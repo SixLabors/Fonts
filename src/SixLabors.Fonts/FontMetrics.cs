@@ -173,6 +173,17 @@ public abstract class FontMetrics
     internal abstract bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass);
 
     /// <summary>
+    /// Returns a value indicating whether the specified glyph is in the given mark filtering set.
+    /// The font needs to have a GDEF table defined.
+    /// </summary>
+    /// <param name="markGlyphSetIndex">The mark glyph set index.</param>
+    /// <param name="glyphId">The glyph identifier.</param>
+    /// <returns>
+    /// true, if the glyph is in the mark filtering set.
+    /// </returns>
+    internal abstract bool IsInMarkFilteringSet(ushort markGlyphSetIndex, ushort glyphId);
+
+    /// <summary>
     /// Gets the glyph metrics for a given code point.
     /// </summary>
     /// <param name="codePoint">The Unicode code point to get the glyph for.</param>
@@ -193,7 +204,7 @@ public abstract class FontMetrics
         TextDecorations textDecorations,
         LayoutMode layoutMode,
         ColorFontSupport support,
-        [NotNullWhen(true)] out IReadOnlyList<GlyphMetrics>? metrics);
+        [NotNullWhen(true)] out GlyphMetrics? metrics);
 
     /// <summary>
     /// Gets the unicode codepoints for which a glyph exists in the font.
@@ -212,15 +223,15 @@ public abstract class FontMetrics
     /// <param name="textAttributes">The text attributes applied to the glyph.</param>
     /// <param name="textDecorations">The text decorations applied to the glyph.</param>
     /// <param name="layoutMode">The layout mode applied to the glyph.</param>
-    /// <param name="support">Options for enabling color font support during layout and rendering.</param>
+    /// <param name="colorSupport">Options for enabling color font support during layout and rendering.</param>
     /// <returns>The <see cref="IEnumerable{GlyphMetrics}"/>.</returns>
-    internal abstract IReadOnlyList<GlyphMetrics> GetGlyphMetrics(
+    internal abstract GlyphMetrics GetGlyphMetrics(
         CodePoint codePoint,
         ushort glyphId,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
         LayoutMode layoutMode,
-        ColorFontSupport support);
+        ColorFontSupport colorSupport);
 
     /// <summary>
     /// Tries to get the GSUB table.

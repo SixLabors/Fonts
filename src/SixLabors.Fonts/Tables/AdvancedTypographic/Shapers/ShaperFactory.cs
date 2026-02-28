@@ -7,14 +7,21 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Shapers;
 
 internal static class ShaperFactory
 {
+    private static readonly Tag Mym2Tag = Tag.Parse("mym2");
+
     /// <summary>
-    /// Creates a Shaper based on the given script language.
+    /// Creates a shaper based on the given script language.
     /// </summary>
     /// <param name="script">The script language.</param>
     /// <param name="unicodeScriptTag">The unicode script tag found in the font matching the script.</param>
-    /// <param name="textOptions">The text options.</param>
+    /// <param name="fontMetrics">The current font metrics.</param>
+    /// <param name="textOptions">The global text options.</param>
     /// <returns>A shaper for the given script.</returns>
-    public static BaseShaper Create(ScriptClass script, Tag unicodeScriptTag, TextOptions textOptions)
+    public static BaseShaper Create(
+        ScriptClass script,
+        Tag unicodeScriptTag,
+        FontMetrics fontMetrics,
+        TextOptions textOptions)
         => script switch
         {
             // Arabic
@@ -28,7 +35,7 @@ internal static class ShaperFactory
             or ScriptClass.PsalterPahlavi => new ArabicShaper(script, textOptions),
 
             // Hangul
-            ScriptClass.Hangul => new HangulShaper(script, textOptions),
+            ScriptClass.Hangul => new HangulShaper(script, textOptions, fontMetrics),
 
             // Indic
             ScriptClass.Bengali
@@ -40,7 +47,21 @@ internal static class ShaperFactory
             or ScriptClass.Oriya
             or ScriptClass.Tamil
             or ScriptClass.Telugu
-            or ScriptClass.Khmer => new IndicShaper(script, unicodeScriptTag, textOptions),
+            or ScriptClass.Khmer => new IndicShaper(script, unicodeScriptTag, textOptions, fontMetrics),
+
+            // Myanmar
+            ScriptClass.Myanmar
+
+            // If the designer designed the font for the 'DFLT' script,
+            // (or we ended up arbitrarily pick 'latn'), use the default shaper.
+            // Otherwise, use the specific shaper.
+            //
+            // If designer designed for 'mymr' tag, also send to default
+            // shaper.  That's tag used from before Myanmar shaping spec
+            // was developed.  The shaping spec uses 'mym2' tag.
+            => unicodeScriptTag == Mym2Tag
+            ? new MyanmarShaper(script, textOptions, fontMetrics)
+            : new DefaultShaper(script, textOptions),
 
             // Universal
             ScriptClass.Balinese
@@ -82,7 +103,7 @@ internal static class ShaperFactory
             or ScriptClass.Tibetan
             or ScriptClass.Tifinagh
             or ScriptClass.Tirhuta
-            => new UniversalShaper(script, textOptions),
+            => new UniversalShaper(script, textOptions, fontMetrics),
             _ => new DefaultShaper(script, textOptions),
         };
 }

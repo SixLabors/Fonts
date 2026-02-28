@@ -13,9 +13,9 @@ namespace SixLabors.Fonts.Tables.General.CMap;
 /// </summary>
 internal sealed class Format14SubTable : CMapSubTable
 {
-    private readonly Dictionary<int, VariationSelector> variationSelectors;
+    private readonly Dictionary<uint, VariationSelector> variationSelectors;
 
-    private Format14SubTable(Dictionary<int, VariationSelector> variationSelectors, PlatformIDs platform, ushort encoding)
+    private Format14SubTable(Dictionary<uint, VariationSelector> variationSelectors, PlatformIDs platform, ushort encoding)
         : base(platform, encoding, 5)
         => this.variationSelectors = variationSelectors;
 
@@ -38,8 +38,8 @@ internal sealed class Format14SubTable : CMapSubTable
         uint length = reader.ReadUInt32();
         uint numVarSelectorRecords = reader.ReadUInt32();
 
-        var variationSelectors = new Dictionary<int, VariationSelector>();
-        int[] varSelectors = new int[numVarSelectorRecords];
+        var variationSelectors = new Dictionary<uint, VariationSelector>();
+        uint[] varSelectors = new uint[numVarSelectorRecords];
         uint[] defaultUVSOffsets = new uint[numVarSelectorRecords];
         uint[] nonDefaultUVSOffsets = new uint[numVarSelectorRecords];
         for (int i = 0; i < numVarSelectorRecords; ++i)
@@ -86,7 +86,7 @@ internal sealed class Format14SubTable : CMapSubTable
                 uint numUnicodeValueRanges = reader.ReadUInt32();
                 for (int n = 0; n < numUnicodeValueRanges; n++)
                 {
-                    int startCode = reader.ReadUInt24();
+                    uint startCode = reader.ReadUInt24();
                     selector.DefaultStartCodes.Add(startCode);
                     selector.DefaultEndCodes.Add(startCode + reader.ReadByte());
                 }
@@ -115,7 +115,7 @@ internal sealed class Format14SubTable : CMapSubTable
                 uint numUVSMappings = reader.ReadUInt32();
                 for (int n = 0; n < numUVSMappings; n++)
                 {
-                    int unicodeValue = reader.ReadUInt24();
+                    uint unicodeValue = reader.ReadUInt24();
                     ushort glyphID = reader.ReadUInt16();
                     selector.UVSMappings.Add(unicodeValue, glyphID);
                 }
@@ -148,10 +148,10 @@ internal sealed class Format14SubTable : CMapSubTable
     public ushort CharacterPairToGlyphId(CodePoint codePoint, ushort defaultGlyphIndex, CodePoint nextCodePoint)
     {
         // Only check codepoint if nextCodepoint is a variation selector
-        if (this.variationSelectors.TryGetValue(nextCodePoint.Value, out VariationSelector? sel))
+        if (this.variationSelectors.TryGetValue((uint)nextCodePoint.Value, out VariationSelector? sel))
         {
             // If the sequence is a non-default UVS, return the mapped glyph
-            if (sel.UVSMappings.TryGetValue(codePoint.Value, out ushort ret))
+            if (sel.UVSMappings.TryGetValue((uint)codePoint.Value, out ushort ret))
             {
                 return ret;
             }
@@ -167,7 +167,7 @@ internal sealed class Format14SubTable : CMapSubTable
 
             // At this point we are neither a non-default UVS nor a default UVS,
             // but we know the nextCodepoint is a variation selector. Unicode says
-            // this glyph should be invisible: “no visible rendering for the VS”
+            // this glyph should be invisible: "no visible rendering for the VS"
             // (http://unicode.org/faq/unsup_char.html#4)
             return defaultGlyphIndex;
         }
@@ -178,10 +178,10 @@ internal sealed class Format14SubTable : CMapSubTable
 
     private class VariationSelector
     {
-        public List<int> DefaultStartCodes { get; } = new List<int>();
+        public List<uint> DefaultStartCodes { get; } = [];
 
-        public List<int> DefaultEndCodes { get; } = new List<int>();
+        public List<uint> DefaultEndCodes { get; } = [];
 
-        public Dictionary<int, ushort> UVSMappings { get; } = new Dictionary<int, ushort>();
+        public Dictionary<uint, ushort> UVSMappings { get; } = [];
     }
 }

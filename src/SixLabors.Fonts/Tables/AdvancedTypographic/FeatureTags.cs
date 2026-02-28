@@ -91,7 +91,7 @@ public enum FeatureTags : uint
 
     /// <summary>
     /// Conjunct Form After Ro. Shortcode: cfar.
-    /// Substitutes alternate below-base or post-base forms in Khmer script when occurring after conjoined Ro (“Coeng Ra”).
+    /// Substitutes alternate below-base or post-base forms in Khmer script when occurring after conjoined Ro ("Coeng Ra").
     /// </summary>
     ConjunctFormAfterRo = 0x63666172U,
 
@@ -217,13 +217,13 @@ public enum FeatureTags : uint
 
     /// <summary>
     /// Fractions. Shortcode: frac.
-    /// Replaces figures separated by a slash with “common” (diagonal) fractions.
+    /// Replaces figures separated by a slash with "common" (diagonal) fractions.
     /// </summary>
     Fractions = 0x66726163U,
 
     /// <summary>
     /// Full Widths. Shortcode: fwid.
-    /// Replaces glyphs set on other widths with glyphs set on full (usually em) widths. In a CJKV font, this may include “lower ASCII” Latin characters and various symbols.
+    /// Replaces glyphs set on other widths with glyphs set on full (usually em) widths. In a CJKV font, this may include "lower ASCII" Latin characters and various symbols.
     /// In a European font, this feature replaces proportionally-spaced glyphs with monospaced glyphs, which are generally set on widths of 0.6 em.
     /// </summary>
     FullWidths = 0x66776964U,
@@ -249,7 +249,7 @@ public enum FeatureTags : uint
     /// <summary>
     /// Historical Forms. Shortcode: hist.
     /// Some letterforms were in common use in the past, but appear anachronistic today. The best-known example is the long form of s; others would include the old Fraktur k.
-    /// Some fonts include the historical forms as alternates, so they can be used for a “period” effect. This feature replaces the default (current) forms with the historical alternates.
+    /// Some fonts include the historical forms as alternates, so they can be used for a "period" effect. This feature replaces the default (current) forms with the historical alternates.
     /// While some ligatures are also used for historical effect, this feature deals only with single characters.
     /// </summary>
     HistoricalForms = 0x68697374U,
@@ -262,7 +262,7 @@ public enum FeatureTags : uint
 
     /// <summary>
     /// Historical Ligatures. Shortcode: hlig.
-    /// Some ligatures were in common use in the past, but appear anachronistic today. Some fonts include the historical forms as alternates, so they can be used for a “period” effect.
+    /// Some ligatures were in common use in the past, but appear anachronistic today. Some fonts include the historical forms as alternates, so they can be used for a "period" effect.
     /// This feature replaces the default (current) forms with the historical alternates.
     /// </summary>
     HistoricalLigatures = 0x686C6967U,
@@ -277,7 +277,7 @@ public enum FeatureTags : uint
 
     /// <summary>
     /// Hojo Kanji Forms (JIS X 0212-1990 Kanji Forms). Shortcode: hojo.
-    /// The JIS X 0212-1990 (aka, “Hojo Kanji”) and JIS X 0213:2004 character sets overlap significantly.
+    /// The JIS X 0212-1990 (aka, "Hojo Kanji") and JIS X 0213:2004 character sets overlap significantly.
     /// In some cases their prototypical glyphs differ. When building fonts that support both JIS X 0212-1990 and JIS X 0213:2004 (such as those supporting the Adobe-Japan 1-6 character collection),
     /// it is recommended that JIS X 0213:2004 forms be preferred as the encoded form. The 'hojo' feature is used to access the JIS X 0212-1990 glyphs for the cases when the JIS X 0213:2004 form is encoded.
     /// </summary>
@@ -344,7 +344,7 @@ public enum FeatureTags : uint
     /// Kerning. Shortcode: kern.
     /// Adjusts amount of space between glyphs, generally to provide optically consistent spacing between glyphs.
     /// Although a well-designed typeface has consistent inter-glyph spacing overall, some glyph combinations require adjustment for improved legibility.
-    /// Besides standard adjustment in the horizontal direction, this feature can supply size-dependent kerning data via device tables, “cross-stream” kerning in the Y text direction,
+    /// Besides standard adjustment in the horizontal direction, this feature can supply size-dependent kerning data via device tables, "cross-stream" kerning in the Y text direction,
     /// and adjustment of glyph placement independent of the advance adjustment. Note that this feature may apply to runs of more than two glyphs, and would not be used in monospaced fonts.
     /// Also note that this feature does not apply to text set vertically.
     /// </summary>
@@ -379,7 +379,7 @@ public enum FeatureTags : uint
     /// Localized Forms. Shortcode: locl.
     /// Many scripts used to write multiple languages over wide geographical areas have developed localized variant forms of specific letters,
     /// which are used by individual literary communities. For example, a number of letters in the Bulgarian and Serbian alphabets have forms distinct from their Russian counterparts and from each other.
-    /// In some cases the localized form differs only subtly from the script “norm”, in others the forms are radically distinct. This feature enables localized forms of glyphs to be substituted for default forms.
+    /// In some cases the localized form differs only subtly from the script "norm", in others the forms are radically distinct. This feature enables localized forms of glyphs to be substituted for default forms.
     /// </summary>
     LocalizedForms = 0x6C6F636CU,
 
@@ -482,7 +482,7 @@ public enum FeatureTags : uint
     /// Ornaments. Shortcode: ornm.
     /// This is a dual-function feature, which uses two input methods to give the user access to ornament glyphs (e.g. fleurons, dingbats and border elements) in the font.
     /// One method replaces the bullet character with a selection from the full set of available ornaments;
-    /// the other replaces specific “lower ASCII” characters with ornaments assigned to them. The first approach supports the general or browsing user;
+    /// the other replaces specific "lower ASCII" characters with ornaments assigned to them. The first approach supports the general or browsing user;
     /// the second supports the power user.
     /// </summary>
     Ornaments = 0x6F726E6DU,
@@ -610,7 +610,7 @@ public enum FeatureTags : uint
     /// <summary>
     /// Ruby Notation Forms. Shortcode: ruby.
     /// Japanese typesetting often uses smaller kana glyphs, generally in superscripted form, to clarify the meaning of kanji which may be unfamiliar to the reader.
-    /// These are called “ruby”, from the old typesetting term for four-point-sized type. This feature identifies glyphs in the font which have been designed for this use,
+    /// These are called "ruby", from the old typesetting term for four-point-sized type. This feature identifies glyphs in the font which have been designed for this use,
     /// substituting them for the default designs.
     /// </summary>
     RubyNotationForms = 0x72756279U,
@@ -654,7 +654,7 @@ public enum FeatureTags : uint
 
     /// <summary>
     /// Simplified Forms. Shortcode: smpl.
-    /// Replaces “traditional” Chinese or Japanese forms with the corresponding “simplified” forms.
+    /// Replaces "traditional" Chinese or Japanese forms with the corresponding "simplified" forms.
     /// </summary>
     SimplifiedForms = 0x736D706CU,
 
@@ -708,7 +708,7 @@ public enum FeatureTags : uint
 
     /// <summary>
     /// Traditional Name Forms. Shortcode: tnam.
-    /// Replaces “simplified” Japanese kanji forms with the corresponding “traditional” forms. This is equivalent to the Traditional Forms feature,
+    /// Replaces "simplified" Japanese kanji forms with the corresponding "traditional" forms. This is equivalent to the Traditional Forms feature,
     /// but explicitly limited to the traditional forms considered proper for use in personal names (as many as 205 glyphs in some fonts).
     /// </summary>
     TraditionalNameForms = 0x746E616DU,
@@ -784,7 +784,7 @@ public enum FeatureTags : uint
     /// Adjusts amount of space between glyphs, generally to provide optically consistent spacing between glyphs.
     /// Although a well-designed typeface has consistent inter-glyph spacing overall, some glyph combinations require adjustment for improved legibility.
     /// Besides standard adjustment in the vertical direction, this feature can supply size-dependent kerning data via device tables,
-    /// “cross-stream” kerning in the X text direction, and adjustment of glyph placement independent of the advance adjustment.
+    /// "cross-stream" kerning in the X text direction, and adjustment of glyph placement independent of the advance adjustment.
     /// Note that this feature may apply to runs of more than two glyphs, and would not be used in monospaced fonts. Also note that this feature applies only to text set vertically.
     /// </summary>
     VerticalKerning = 0x766B726EU,

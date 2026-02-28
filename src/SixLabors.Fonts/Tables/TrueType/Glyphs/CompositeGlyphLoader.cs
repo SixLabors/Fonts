@@ -13,19 +13,19 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
 
     public CompositeGlyphLoader(IEnumerable<Composite> composites, Bounds bounds, ReadOnlyMemory<byte> instructions)
     {
-        this.composites = composites.ToArray();
+        this.composites = [.. composites];
         this.bounds = bounds;
         this.instructions = instructions;
     }
 
     public override GlyphVector CreateGlyph(GlyphTable table)
     {
-        List<ControlPoint> controlPoints = new();
-        List<ushort> endPoints = new();
+        List<ControlPoint> controlPoints = [];
+        List<ushort> endPoints = [];
         for (int i = 0; i < this.composites.Length; i++)
         {
             Composite composite = this.composites[i];
-            var clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
+            GlyphVector clone = GlyphVector.DeepClone(table.GetGlyph(composite.GlyphIndex));
             GlyphVector.TransformInPlace(ref clone, composite.Transformation);
             ushort endPointOffset = (ushort)controlPoints.Count;
 
@@ -41,7 +41,7 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
 
     public static CompositeGlyphLoader LoadCompositeGlyph(BigEndianBinaryReader reader, in Bounds bounds)
     {
-        List<Composite> composites = new();
+        List<Composite> composites = [];
         CompositeGlyphFlags flags;
         do
         {
@@ -55,28 +55,28 @@ internal sealed class CompositeGlyphLoader : GlyphLoader
 
             if ((flags & CompositeGlyphFlags.WeHaveAScale) != 0)
             {
-                float scale = reader.ReadF2dot14(); // Format 2.14
+                float scale = reader.ReadF2Dot14(); // Format 2.14
                 transform.M11 = scale;
                 transform.M22 = scale;
             }
             else if ((flags & CompositeGlyphFlags.WeHaveXAndYScale) != 0)
             {
-                transform.M11 = reader.ReadF2dot14();
-                transform.M22 = reader.ReadF2dot14();
+                transform.M11 = reader.ReadF2Dot14();
+                transform.M22 = reader.ReadF2Dot14();
             }
             else if ((flags & CompositeGlyphFlags.WeHaveATwoByTwo) != 0)
             {
-                transform.M11 = reader.ReadF2dot14();
-                transform.M12 = reader.ReadF2dot14();
-                transform.M21 = reader.ReadF2dot14();
-                transform.M22 = reader.ReadF2dot14();
+                transform.M11 = reader.ReadF2Dot14();
+                transform.M12 = reader.ReadF2Dot14();
+                transform.M21 = reader.ReadF2Dot14();
+                transform.M22 = reader.ReadF2Dot14();
             }
 
             composites.Add(new Composite(glyphIndex, flags, transform));
         }
         while ((flags & CompositeGlyphFlags.MoreComponents) != 0);
 
-        byte[] instructions = Array.Empty<byte>();
+        byte[] instructions = [];
         if ((flags & CompositeGlyphFlags.WeHaveInstructions) != 0)
         {
             // Read the instructions if they exist.

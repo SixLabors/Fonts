@@ -8,6 +8,7 @@ using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
 using SixLabors.Fonts.Tables.General.Name;
 using SixLabors.Fonts.Tables.General.Post;
+using SixLabors.Fonts.Tables.General.Svg;
 using SixLabors.Fonts.Tables.TrueType;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Tables.TrueType.Hinting;
@@ -46,6 +47,7 @@ internal class TableLoader
         this.Register(PostTable.TableName, PostTable.Load);
         this.Register(Cff1Table.TableName, Cff1Table.Load);
         this.Register(Cff2Table.TableName, Cff2Table.Load);
+        this.Register(SvgTable.TableName, SvgTable.Load);
     }
 
     public static TableLoader Default { get; } = new();

@@ -515,7 +515,7 @@ internal static class UnicodeUtility
     /// <param name="codePoint">The code point.</param>
     /// <returns>The <see cref="bool"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ShouldRenderWhiteSpaceOnly(CodePoint codePoint)
+    public static bool ShouldRenderWhiteSpaceOnly(in CodePoint codePoint)
     {
         if (CodePoint.IsWhiteSpace(codePoint))
         {
@@ -540,6 +540,15 @@ internal static class UnicodeUtility
 
         return false;
     }
+
+    /// <summary>
+    /// Gets a value indicating whether the specified code point should not be rendered.
+    /// </summary>
+    /// <param name="codePoint">The code point.</param>
+    /// <returns>The <see cref="bool"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool ShouldNotBeRendered(in CodePoint codePoint)
+        => CodePoint.IsNewLine(codePoint) || (IsDefaultIgnorableCodePoint((uint)codePoint.Value) && !ShouldRenderWhiteSpaceOnly(codePoint));
 
     /// <summary>
     /// Returns the Unicode plane (0 through 16, inclusive) which contains this code point.

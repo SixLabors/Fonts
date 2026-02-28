@@ -12,14 +12,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType3SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort posFormat = reader.ReadUInt16();
 
         return posFormat switch
         {
-            1 => LookupType3Format1SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType3Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -29,14 +29,18 @@ internal static class LookupType3SubTable
         private readonly CoverageTable coverageTable;
         private readonly EntryExitAnchors[] entryExitAnchors;
 
-        public LookupType3Format1SubTable(CoverageTable coverageTable, EntryExitAnchors[] entryExitAnchors, LookupFlags lookupFlags)
-            : base(lookupFlags)
+        public LookupType3Format1SubTable(
+            CoverageTable coverageTable,
+            EntryExitAnchors[] entryExitAnchors,
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.coverageTable = coverageTable;
             this.entryExitAnchors = entryExitAnchors;
         }
 
-        public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType3Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // Cursive Attachment Positioning Format1.
             // +--------------------+---------------------------------+------------------------------------------------------+
@@ -53,21 +57,21 @@ internal static class LookupType3SubTable
             // +--------------------+---------------------------------+------------------------------------------------------+
             ushort coverageOffset = reader.ReadOffset16();
             ushort entryExitCount = reader.ReadUInt16();
-            var entryExitRecords = new EntryExitRecord[entryExitCount];
+            EntryExitRecord[] entryExitRecords = new EntryExitRecord[entryExitCount];
             for (int i = 0; i < entryExitCount; i++)
             {
                 entryExitRecords[i] = new EntryExitRecord(reader, offset);
             }
 
-            var entryExitAnchors = new EntryExitAnchors[entryExitCount];
+            EntryExitAnchors[] entryExitAnchors = new EntryExitAnchors[entryExitCount];
             for (int i = 0; i < entryExitCount; i++)
             {
                 entryExitAnchors[i] = new EntryExitAnchors(reader, offset, entryExitRecords[i]);
             }
 
-            var coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
+            CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
 
-            return new LookupType3Format1SubTable(coverageTable, entryExitAnchors, lookupFlags);
+            return new LookupType3Format1SubTable(coverageTable, entryExitAnchors, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(

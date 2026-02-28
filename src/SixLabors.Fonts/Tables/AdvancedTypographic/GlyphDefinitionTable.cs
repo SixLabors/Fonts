@@ -65,6 +65,9 @@ internal sealed class GlyphDefinitionTable : Table
         return true;
     }
 
+    public bool IsInMarkGlyphSet(ushort markGlyphSetIndex, ushort glyphId)
+        => this.MarkGlyphSetsTable?.Contains(markGlyphSetIndex, glyphId) == true;
+
     public static GlyphDefinitionTable Load(BigEndianBinaryReader reader)
     {
         // Header version 1.0
@@ -125,8 +128,8 @@ internal sealed class GlyphDefinitionTable : Table
 
         ushort glyphClassDefOffset = reader.ReadUInt16();
         ushort attachListOffset = reader.ReadUInt16();
-        ushort ligatureCaretListOffset = reader.ReadUInt16();
-        ushort markAttachClassDefOffset = reader.ReadUInt16();
+        ushort ligatureCaretListOffset = reader.ReadOffset16();
+        ushort markAttachClassDefOffset = reader.ReadOffset16();
         ushort markGlyphSetsDefOffset = 0;
         uint itemVarStoreOffset = 0;
 

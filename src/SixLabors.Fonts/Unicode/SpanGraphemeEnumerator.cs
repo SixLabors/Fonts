@@ -45,20 +45,87 @@ public ref struct SpanGraphemeEnumerator
     /// </returns>
     public bool MoveNext()
     {
+        // GB9c (Indic conjuncts) requires some script-specific state.
+        // This implementation uses existing IndicSyllabicCategory data as a pragmatic approximation
+        // for the InCB tailoring required by UAX#29. It is sufficient to prevent the common
+        // "dead consonant" split for sequences like: RA   VIRAMA   KA   ... (eg: "\u0930\u094D\u0915\u093F").
+        bool indicLinkerJustConsumed;
+
+        static bool IsIndicLinker(in CodePoint cp)
+        {
+            // In practice, this is primarily VIRAMA (and in some scripts, "pure killer").
+            // We intentionally keep this tight to avoid accidental over-aggregation.
+            IndicSyllabicCategory isc = CodePoint.GetIndicSyllabicCategory(cp);
+            return isc is IndicSyllabicCategory.Virama or IndicSyllabicCategory.PureKiller;
+        }
+
+        static bool IsIndicConsonant(in CodePoint cp)
+        {
+            IndicSyllabicCategory isc = CodePoint.GetIndicSyllabicCategory(cp);
+            return isc is IndicSyllabicCategory.Consonant
+                or IndicSyllabicCategory.ConsonantDead
+                or IndicSyllabicCategory.ConsonantWithStacker
+                or IndicSyllabicCategory.ConsonantSubjoined
+                or IndicSyllabicCategory.ConsonantFinal
+                or IndicSyllabicCategory.ConsonantMedial
+                or IndicSyllabicCategory.ConsonantHeadLetter
+                or IndicSyllabicCategory.ConsonantPlaceholder
+                or IndicSyllabicCategory.ConsonantInitialPostfixed
+                or IndicSyllabicCategory.ConsonantKiller
+                or IndicSyllabicCategory.ConsonantPrefixed
+                or IndicSyllabicCategory.ConsonantPrecedingRepha
+                or IndicSyllabicCategory.ConsonantSucceedingRepha;
+        }
+
+        // Accept the current scalar into the cluster and advance to the next scalar.
+        // IMPORTANT: Processor.Current* represents the next scalar not yet included in CharsConsumed.
+        void ConsumeCurrentAndAdvance(ref Processor p)
+        {
+            // Update Indic state based on the scalar being consumed into the cluster.
+            indicLinkerJustConsumed = IsIndicLinker(p.CurrentCodePoint);
+            p.MoveNext();
+        }
+
+        // Drain trailers per GB9/GB9a, plus GB9c-style Indic conjunct tailoring:
+        // If we just consumed a Linker (eg Virama) and the next scalar is an Indic consonant,
+        // do not break, instead consume that consonant into the same grapheme cluster.
+        void DrainTrailersAndIndicConjuncts(ref Processor p)
+        {
+            while (true)
+            {
+                // rules GB9, GB9a
+                while (p.CurrentType is GraphemeClusterClass.Extend
+                    or GraphemeClusterClass.ZeroWidthJoiner
+                    or GraphemeClusterClass.SpacingMark)
+                {
+                    ConsumeCurrentAndAdvance(ref p);
+                }
+
+                // rule GB9c (tailoring): ... Linker x Consonant
+                if (indicLinkerJustConsumed && IsIndicConsonant(p.CurrentCodePoint))
+                {
+                    ConsumeCurrentAndAdvance(ref p);
+                    continue;
+                }
+
+                break;
+            }
+        }
+
         if (this.source.IsEmpty)
         {
             return false;
         }
 
         // Algorithm given at https://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules.
-        var processor = new Processor(this.source);
+        Processor processor = new(this.source);
 
         processor.MoveNext();
 
         // First, consume as many Prepend scalars as we can (rule GB9b).
         while (processor.CurrentType == GraphemeClusterClass.Prepend)
         {
-            processor.MoveNext();
+            ConsumeCurrentAndAdvance(ref processor);
         }
 
         // Next, make sure we're not about to violate control character restrictions.
@@ -75,7 +142,7 @@ public ref struct SpanGraphemeEnumerator
 
         // Now begin the main state machine.
         GraphemeClusterClass previousClusterBreakType = processor.CurrentType;
-        processor.MoveNext();
+        ConsumeCurrentAndAdvance(ref processor);
 
         switch (previousClusterBreakType)
         {
@@ -85,7 +152,7 @@ public ref struct SpanGraphemeEnumerator
                     goto Return; // rules GB3 & GB4 (only <LF> can follow <CR>)
                 }
 
-                processor.MoveNext();
+                ConsumeCurrentAndAdvance(ref processor);
                 goto case GraphemeClusterClass.LineFeed;
 
             case GraphemeClusterClass.Control:
@@ -95,22 +162,22 @@ public ref struct SpanGraphemeEnumerator
             case GraphemeClusterClass.HangulLead:
                 if (processor.CurrentType == GraphemeClusterClass.HangulLead)
                 {
-                    processor.MoveNext(); // rule GB6 (L x L)
+                    ConsumeCurrentAndAdvance(ref processor); // rule GB6 (L x L)
                     goto case GraphemeClusterClass.HangulLead;
                 }
                 else if (processor.CurrentType == GraphemeClusterClass.HangulVowel)
                 {
-                    processor.MoveNext(); // rule GB6 (L x V)
+                    ConsumeCurrentAndAdvance(ref processor); // rule GB6 (L x V)
                     goto case GraphemeClusterClass.HangulVowel;
                 }
                 else if (processor.CurrentType == GraphemeClusterClass.HangulLeadVowel)
                 {
-                    processor.MoveNext(); // rule GB6 (L x LV)
+                    ConsumeCurrentAndAdvance(ref processor); // rule GB6 (L x LV)
                     goto case GraphemeClusterClass.HangulLeadVowel;
                 }
                 else if (processor.CurrentType == GraphemeClusterClass.HangulLeadVowelTail)
                 {
-                    processor.MoveNext(); // rule GB6 (L x LVT)
+                    ConsumeCurrentAndAdvance(ref processor); // rule GB6 (L x LVT)
                     goto case GraphemeClusterClass.HangulLeadVowelTail;
                 }
                 else
@@ -122,12 +189,12 @@ public ref struct SpanGraphemeEnumerator
             case GraphemeClusterClass.HangulVowel:
                 if (processor.CurrentType == GraphemeClusterClass.HangulVowel)
                 {
-                    processor.MoveNext(); // rule GB7 (LV | V x V)
+                    ConsumeCurrentAndAdvance(ref processor); // rule GB7 (LV | V x V)
                     goto case GraphemeClusterClass.HangulVowel;
                 }
                 else if (processor.CurrentType == GraphemeClusterClass.HangulTail)
                 {
-                    processor.MoveNext(); // rule GB7 (LV | V x T)
+                    ConsumeCurrentAndAdvance(ref processor); // rule GB7 (LV | V x T)
                     goto case GraphemeClusterClass.HangulTail;
                 }
                 else
@@ -139,7 +206,7 @@ public ref struct SpanGraphemeEnumerator
             case GraphemeClusterClass.HangulTail:
                 if (processor.CurrentType == GraphemeClusterClass.HangulTail)
                 {
-                    processor.MoveNext(); // rule GB8 (LVT | T x T)
+                    ConsumeCurrentAndAdvance(ref processor); // rule GB8 (LVT | T x T)
                     goto case GraphemeClusterClass.HangulTail;
                 }
                 else
@@ -152,7 +219,7 @@ public ref struct SpanGraphemeEnumerator
                 // First, drain any Extend scalars that might exist
                 while (processor.CurrentType == GraphemeClusterClass.Extend)
                 {
-                    processor.MoveNext();
+                    ConsumeCurrentAndAdvance(ref processor);
                 }
 
                 // Now see if there's a ZWJ + extended pictograph again.
@@ -161,20 +228,20 @@ public ref struct SpanGraphemeEnumerator
                     break;
                 }
 
-                processor.MoveNext();
+                ConsumeCurrentAndAdvance(ref processor);
                 if (processor.CurrentType != GraphemeClusterClass.ExtendedPictographic)
                 {
                     break;
                 }
 
-                processor.MoveNext();
+                ConsumeCurrentAndAdvance(ref processor);
                 goto case GraphemeClusterClass.ExtendedPictographic;
 
             case GraphemeClusterClass.RegionalIndicator:
                 // We've consumed a single RI scalar. Try to consume another (to make it a pair).
                 if (processor.CurrentType == GraphemeClusterClass.RegionalIndicator)
                 {
-                    processor.MoveNext();
+                    ConsumeCurrentAndAdvance(ref processor);
                 }
 
                 // Standalone RI scalars (or a single pair of RI scalars) can only be followed by trailers.
@@ -184,18 +251,12 @@ public ref struct SpanGraphemeEnumerator
                 break;
         }
 
-        // rules GB9, GB9a
-        while (processor.CurrentType is GraphemeClusterClass.Extend
-            or GraphemeClusterClass.ZeroWidthJoiner
-            or GraphemeClusterClass.SpacingMark)
-        {
-            processor.MoveNext();
-        }
+        DrainTrailersAndIndicConjuncts(ref processor);
 
         Return:
 
-        this.Current = this.source.Slice(0, processor.CharsConsumed);
-        this.source = this.source.Slice(processor.CharsConsumed);
+        this.Current = this.source[..processor.CharsConsumed];
+        this.source = this.source[processor.CharsConsumed..];
 
         return true; // rules GB2, GB999
     }
@@ -209,18 +270,22 @@ public ref struct SpanGraphemeEnumerator
         {
             this.source = source;
             this.CurrentType = GraphemeClusterClass.Any;
+            this.CurrentCodePoint = CodePoint.ReplacementChar;
             this.charsConsumed = 0;
             this.CharsConsumed = 0;
         }
 
         public GraphemeClusterClass CurrentType { get; private set; }
 
+        public CodePoint CurrentCodePoint { get; private set; }
+
         public int CharsConsumed { get; private set; }
 
         public void MoveNext()
         {
             this.CharsConsumed += this.charsConsumed;
-            var codePoint = CodePoint.DecodeFromUtf16At(this.source, this.CharsConsumed, out this.charsConsumed);
+            CodePoint codePoint = CodePoint.DecodeFromUtf16At(this.source, this.CharsConsumed, out this.charsConsumed);
+            this.CurrentCodePoint = codePoint;
             this.CurrentType = CodePoint.GetGraphemeClusterClass(codePoint);
         }
     }

@@ -81,22 +81,23 @@ internal struct GlyphVector
             return;
         }
 
-        var controlPoints = new ControlPoint[glyph.ControlPoints.Count + 4];
-        controlPoints[controlPoints.Length - 4].Point = pp1;
-        controlPoints[controlPoints.Length - 3].Point = pp2;
-        controlPoints[controlPoints.Length - 2].Point = pp3;
-        controlPoints[controlPoints.Length - 1].Point = pp4;
+        ControlPoint[] controlPoints = new ControlPoint[glyph.ControlPoints.Count + 4];
+        controlPoints[^4].Point = pp1;
+        controlPoints[^3].Point = pp2;
+        controlPoints[^2].Point = pp3;
+        controlPoints[^1].Point = pp4;
 
         for (int i = 0; i < glyph.ControlPoints.Count; i++)
         {
             controlPoints[i] = glyph.ControlPoints[i];
         }
 
-        interpreter.HintGlyph(controlPoints, glyph.EndPoints, glyph.Instructions, glyph.IsComposite);
-
-        for (int i = 0; i < glyph.ControlPoints.Count; i++)
+        if (interpreter.TryHintGlyph(controlPoints, glyph.EndPoints, glyph.Instructions, glyph.IsComposite))
         {
-            glyph.ControlPoints[i] = controlPoints[i];
+            for (int i = 0; i < glyph.ControlPoints.Count; i++)
+            {
+                glyph.ControlPoints[i] = controlPoints[i];
+            }
         }
     }
 
@@ -107,8 +108,8 @@ internal struct GlyphVector
     /// <returns>The cloned <see cref="GlyphVector"/>.</returns>
     public static GlyphVector DeepClone(GlyphVector src)
     {
-        List<ControlPoint> controlPoints = new(src.ControlPoints);
-        List<ushort> endPoints = new(src.EndPoints);
+        List<ControlPoint> controlPoints = [.. src.ControlPoints];
+        List<ushort> endPoints = [.. src.EndPoints];
 
         return new(controlPoints, endPoints, src.Bounds, src.Instructions, src.IsComposite);
     }

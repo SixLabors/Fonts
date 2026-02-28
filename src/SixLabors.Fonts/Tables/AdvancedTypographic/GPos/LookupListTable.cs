@@ -38,7 +38,7 @@ internal sealed class LookupListTable
         Span<ushort> lookupOffsets = lookupOffsetsBuffer.GetSpan();
         reader.ReadUInt16Array(lookupOffsets);
 
-        var lookupTables = new LookupTable[lookupCount];
+        LookupTable[] lookupTables = new LookupTable[lookupCount];
 
         for (int i = 0; i < lookupTables.Length; i++)
         {
@@ -111,28 +111,28 @@ internal sealed class LookupTable
             ? reader.ReadUInt16()
             : (ushort)0;
 
-        var lookupSubTables = new LookupSubTable[subTableCount];
+        LookupSubTable[] lookupSubTables = new LookupSubTable[subTableCount];
 
         for (int i = 0; i < lookupSubTables.Length; i++)
         {
-            lookupSubTables[i] = LoadLookupSubTable(lookupType, lookupFlags, reader, offset + subTableOffsets[i]);
+            lookupSubTables[i] = LoadLookupSubTable(lookupType, lookupFlags, markFilteringSet, reader, offset + subTableOffsets[i]);
         }
 
         return new LookupTable(lookupType, lookupFlags, markFilteringSet, lookupSubTables);
     }
 
-    private static LookupSubTable LoadLookupSubTable(ushort lookupType, LookupFlags lookupFlags, BigEndianBinaryReader reader, long offset)
+    private static LookupSubTable LoadLookupSubTable(ushort lookupType, LookupFlags lookupFlags, ushort markFilteringSet, BigEndianBinaryReader reader, long offset)
         => lookupType switch
         {
-            1 => LookupType1SubTable.Load(reader, offset, lookupFlags),
-            2 => LookupType2SubTable.Load(reader, offset, lookupFlags),
-            3 => LookupType3SubTable.Load(reader, offset, lookupFlags),
-            4 => LookupType4SubTable.Load(reader, offset, lookupFlags),
-            5 => LookupType5SubTable.Load(reader, offset, lookupFlags),
-            6 => LookupType6SubTable.Load(reader, offset, lookupFlags),
-            7 => LookupType7SubTable.Load(reader, offset, lookupFlags),
-            8 => LookupType8SubTable.Load(reader, offset, lookupFlags),
-            9 => LookupType9SubTable.Load(reader, offset, lookupFlags, LoadLookupSubTable),
+            1 => LookupType1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            2 => LookupType2SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            3 => LookupType3SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            4 => LookupType4SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            5 => LookupType5SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            6 => LookupType6SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            7 => LookupType7SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            8 => LookupType8SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
+            9 => LookupType9SubTable.Load(reader, offset, lookupFlags, markFilteringSet, LoadLookupSubTable),
             _ => new NotImplementedSubTable()
         };
 
@@ -160,9 +160,15 @@ internal sealed class LookupTable
 
 internal abstract class LookupSubTable
 {
-    protected LookupSubTable(LookupFlags lookupFlags) => this.LookupFlags = lookupFlags;
+    protected LookupSubTable(LookupFlags lookupFlags, ushort markFilteringSet)
+    {
+        this.LookupFlags = lookupFlags;
+        this.MarkFilteringSet = markFilteringSet;
+    }
 
     public LookupFlags LookupFlags { get; }
+
+    public ushort MarkFilteringSet { get; }
 
     public abstract bool TryUpdatePosition(
         FontMetrics fontMetrics,

@@ -102,7 +102,7 @@ internal sealed class Format4SubTable : CMapSubTable
         // -------|----------------------------|------------------------------------------------------------------------
         // uint16 | format                     | Format number is set to 4.
         // uint16 | length                     | This is the length in bytes of the subtable.
-        // uint16 | language                   | Please see “Note on the language field in 'cmap' subtables“ in this document.
+        // uint16 | language                   | Please see "Note on the language field in 'cmap' subtables" in this document.
         // uint16 | segCountX2                 | 2 x segCount.
         // uint16 | searchRange                | 2 x (2**floor(log2(segCount)))
         // uint16 | entrySelector              | log2(searchRange/2)

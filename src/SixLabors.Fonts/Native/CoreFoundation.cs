@@ -45,7 +45,7 @@ internal static class CoreFoundation
     /// <returns>A value of type <c>CFTypeID</c> that identifies the opaque type of <paramref name="cf"/>.</returns>
     /// <remarks>
     /// This function returns a value that uniquely identifies the opaque type of any Core Foundation object.
-    /// You can compare this value with the known <c>CFTypeID</c> identifier obtained with a “GetTypeID” function specific to a type, for example CFDateGetTypeID.
+    /// You can compare this value with the known <c>CFTypeID</c> identifier obtained with a "GetTypeID" function specific to a type, for example CFDateGetTypeID.
     /// These values might change from release to release or platform to platform.
     /// </remarks>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
@@ -72,7 +72,7 @@ internal static class CoreFoundation
     /// <param name="bufferSize">The length of <paramref name="buffer"/> in bytes.</param>
     /// <param name="encoding">The string encoding to which the character contents of <paramref name="theString"/> should be converted. The encoding must specify an 8-bit encoding.</param>
     /// <returns><see langword="true"/> upon success or <see langword="false"/> if the conversion fails or the provided buffer is too small.</returns>
-    /// <remarks>This function is useful when you need your own copy of a string’s character data as a C string. You also typically call it as a “backup” when a prior call to the <see cref="CFStringGetCStringPtr"/> function fails.</remarks>
+    /// <remarks>This function is useful when you need your own copy of a string’s character data as a C string. You also typically call it as a "backup" when a prior call to the <see cref="CFStringGetCStringPtr"/> function fails.</remarks>
     [DllImport(CoreFoundationFramework, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "SYSLIB1054:Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time", Justification = ".NET7 Only")]
     public static extern bool CFStringGetCString(IntPtr theString, byte[] buffer, long bufferSize, CFStringEncoding encoding);

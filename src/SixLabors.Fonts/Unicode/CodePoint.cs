@@ -105,8 +105,8 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     // - 0x40 bit if set means 'is letter or digit'
     // - 0x20 bit is reserved for future use
     // - bottom 5 bits are the UnicodeCategory of the character
-    private static ReadOnlySpan<byte> AsciiCharInfo => new byte[]
-    {
+    private static ReadOnlySpan<byte> AsciiCharInfo =>
+    [
         0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x8E, 0x8E, 0x8E, 0x8E, 0x8E, 0x0E, 0x0E, // U+0000..U+000F
         0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, 0x0E, // U+0010..U+001F
         0x8B, 0x18, 0x18, 0x18, 0x1A, 0x18, 0x18, 0x18, 0x14, 0x15, 0x18, 0x19, 0x18, 0x13, 0x18, 0x18, // U+0020..U+002F
@@ -115,7 +115,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
         0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x14, 0x18, 0x15, 0x1B, 0x12, // U+0050..U+005F
         0x1B, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, // U+0060..U+006F
         0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x14, 0x19, 0x15, 0x19, 0x0E, // U+0070..U+007F
-    };
+    ];
 
     /// <summary>
     /// Gets a value indicating whether this value is ASCII ([ U+0000..U+007F ])
@@ -224,7 +224,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a whitespace character; otherwise, <see langword="false"/></returns>
-    public static bool IsWhiteSpace(CodePoint codePoint)
+    public static bool IsWhiteSpace(in CodePoint codePoint)
     {
         if (codePoint.IsAscii)
         {
@@ -241,7 +241,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a non-breaking space character; otherwise, <see langword="false"/></returns>
-    public static bool IsNonBreakingSpace(CodePoint codePoint)
+    public static bool IsNonBreakingSpace(in CodePoint codePoint)
         => codePoint.Value == 0x00A0;
 
     /// <summary>
@@ -249,7 +249,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a zero-width-non-joiner character; otherwise, <see langword="false"/></returns>
-    public static bool IsZeroWidthNonJoiner(CodePoint codePoint)
+    public static bool IsZeroWidthNonJoiner(in CodePoint codePoint)
         => codePoint.Value == 0x200C;
 
     /// <summary>
@@ -257,7 +257,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a zero-width-joiner character; otherwise, <see langword="false"/></returns>
-    public static bool IsZeroWidthJoiner(CodePoint codePoint)
+    public static bool IsZeroWidthJoiner(in CodePoint codePoint)
         => codePoint.Value == 0x200D;
 
     /// <summary>
@@ -266,7 +266,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a variation selector character; otherwise, <see langword="false"/></returns>
-    public static bool IsVariationSelector(CodePoint codePoint)
+    public static bool IsVariationSelector(in CodePoint codePoint)
         => (codePoint.Value & 0xFFF0) == 0xFE00;
 
     /// <summary>
@@ -274,7 +274,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a control character; otherwise, <see langword="false"/></returns>
-    public static bool IsControl(CodePoint codePoint) =>
+    public static bool IsControl(in CodePoint codePoint) =>
 
         // Per the Unicode stability policy, the set of control characters
         // is forever fixed at [ U+0000..U+001F ], [ U+007F..U+009F ]. No
@@ -291,7 +291,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a decimal digit; otherwise, <see langword="false"/></returns>
-    public static bool IsDigit(CodePoint codePoint)
+    public static bool IsDigit(in CodePoint codePoint)
     {
         if (codePoint.IsAscii)
         {
@@ -308,7 +308,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a letter; otherwise, <see langword="false"/></returns>
-    public static bool IsLetter(CodePoint codePoint)
+    public static bool IsLetter(in CodePoint codePoint)
     {
         if (codePoint.IsAscii)
         {
@@ -325,7 +325,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a letter or decimal digit; otherwise, <see langword="false"/></returns>
-    public static bool IsLetterOrDigit(CodePoint codePoint)
+    public static bool IsLetterOrDigit(in CodePoint codePoint)
     {
         if (codePoint.IsAscii)
         {
@@ -342,7 +342,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a lowercase letter; otherwise, <see langword="false"/></returns>
-    public static bool IsLower(CodePoint codePoint)
+    public static bool IsLower(in CodePoint codePoint)
     {
         if (codePoint.IsAscii)
         {
@@ -359,7 +359,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a number; otherwise, <see langword="false"/></returns>
-    public static bool IsNumber(CodePoint codePoint)
+    public static bool IsNumber(in CodePoint codePoint)
     {
         if (codePoint.IsAscii)
         {
@@ -376,7 +376,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is punctuation; otherwise, <see langword="false"/></returns>
-    public static bool IsPunctuation(CodePoint codePoint)
+    public static bool IsPunctuation(in CodePoint codePoint)
         => IsCategoryPunctuation(GetGeneralCategory(codePoint));
 
     /// <summary>
@@ -384,7 +384,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a separator; otherwise, <see langword="false"/></returns>
-    public static bool IsSeparator(CodePoint codePoint)
+    public static bool IsSeparator(in CodePoint codePoint)
         => IsCategorySeparator(GetGeneralCategory(codePoint));
 
     /// <summary>
@@ -392,7 +392,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a symbol; otherwise, <see langword="false"/></returns>
-    public static bool IsSymbol(CodePoint codePoint)
+    public static bool IsSymbol(in CodePoint codePoint)
         => IsCategorySymbol(GetGeneralCategory(codePoint));
 
     /// <summary>
@@ -400,7 +400,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a symbol; otherwise, <see langword="false"/></returns>
-    public static bool IsMark(CodePoint codePoint)
+    public static bool IsMark(in CodePoint codePoint)
         => IsCategoryMark(GetGeneralCategory(codePoint));
 
     /// <summary>
@@ -408,7 +408,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a uppercase letter; otherwise, <see langword="false"/></returns>
-    public static bool IsUpper(CodePoint codePoint)
+    public static bool IsUpper(in CodePoint codePoint)
     {
         if (codePoint.IsAscii)
         {
@@ -425,7 +425,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a tabulation indicator; otherwise, <see langword="false"/></returns>
-    public static bool IsTabulation(CodePoint codePoint)
+    public static bool IsTabulation(in CodePoint codePoint)
         => codePoint.value == 0x0009;
 
     /// <summary>
@@ -433,7 +433,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns><see langword="true"/> if <paramref name="codePoint"/> is a new line indicator; otherwise, <see langword="false"/></returns>
-    public static bool IsNewLine(CodePoint codePoint)
+    public static bool IsNewLine(in CodePoint codePoint)
        => codePoint.Value switch
        {
            // See https://www.unicode.org/standard/reports/tr13/tr13-5.html
@@ -460,7 +460,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
         }
 
         int count = 0;
-        var enumerator = new SpanCodePointEnumerator(source);
+        SpanCodePointEnumerator enumerator = new(source);
         while (enumerator.MoveNext())
         {
             count++;
@@ -476,7 +476,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// <param name="codePoint">The code point to be mapped.</param>
     /// <returns>The mapped canonical code point, or the passed <paramref name="codePoint"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static CodePoint GetCanonicalType(CodePoint codePoint)
+    internal static CodePoint GetCanonicalType(in CodePoint codePoint)
     {
         if (codePoint.Value == 0x3008)
         {
@@ -496,7 +496,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="BidiClass"/>.</returns>
-    public static BidiClass GetBidiClass(CodePoint codePoint)
+    public static BidiClass GetBidiClass(in CodePoint codePoint)
         => new(codePoint);
 
     /// <summary>
@@ -511,7 +511,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// .</param>
     /// <returns><see langword="true"/> if this instance has a mirror; otherwise, <see langword="false"/></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetBidiMirror(CodePoint codePoint, out CodePoint mirror)
+    public static bool TryGetBidiMirror(in CodePoint codePoint, out CodePoint mirror)
     {
         uint value = UnicodeData.GetBidiMirror(codePoint.value);
 
@@ -536,7 +536,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// This parameter is passed uninitialized.
     /// .</param>
     /// <returns><see langword="true"/> if this instance has a mirror; otherwise, <see langword="false"/></returns>
-    public static bool TryGetVerticalMirror(CodePoint codePoint, out CodePoint mirror)
+    public static bool TryGetVerticalMirror(in CodePoint codePoint, out CodePoint mirror)
     {
         uint value = UnicodeUtility.GetVerticalMirror((uint)codePoint.Value);
 
@@ -555,7 +555,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="LineBreakClass"/>.</returns>
-    public static LineBreakClass GetLineBreakClass(CodePoint codePoint)
+    public static LineBreakClass GetLineBreakClass(in CodePoint codePoint)
         => UnicodeData.GetLineBreakClass(codePoint.value);
 
     /// <summary>
@@ -563,7 +563,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="GraphemeClusterClass"/>.</returns>
-    public static GraphemeClusterClass GetGraphemeClusterClass(CodePoint codePoint)
+    public static GraphemeClusterClass GetGraphemeClusterClass(in CodePoint codePoint)
         => UnicodeData.GetGraphemeClusterClass(codePoint.value);
 
     /// <summary>
@@ -571,7 +571,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="VerticalOrientationType"/>.</returns>
-    public static VerticalOrientationType GetVerticalOrientationType(CodePoint codePoint)
+    public static VerticalOrientationType GetVerticalOrientationType(in CodePoint codePoint)
         => UnicodeData.GetVerticalOrientation(codePoint.value);
 
     /// <summary>
@@ -579,7 +579,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="BidiClass"/>.</returns>
-    internal static ArabicJoiningClass GetArabicJoiningClass(CodePoint codePoint)
+    internal static ArabicJoiningClass GetArabicJoiningClass(in CodePoint codePoint)
         => new(codePoint);
 
     /// <summary>
@@ -587,7 +587,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="ScriptClass"/>.</returns>
-    internal static ScriptClass GetScriptClass(CodePoint codePoint)
+    internal static ScriptClass GetScriptClass(in CodePoint codePoint)
         => UnicodeData.GetScriptClass(codePoint.value);
 
     /// <summary>
@@ -595,7 +595,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="IndicSyllabicCategory"/>.</returns>
-    internal static IndicSyllabicCategory GetIndicSyllabicCategory(CodePoint codePoint)
+    internal static IndicSyllabicCategory GetIndicSyllabicCategory(in CodePoint codePoint)
         => UnicodeData.GetIndicSyllabicCategory(codePoint.value);
 
     /// <summary>
@@ -603,7 +603,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="IndicPositionalCategory"/>.</returns>
-    internal static IndicPositionalCategory GetIndicPositionalCategory(CodePoint codePoint)
+    internal static IndicPositionalCategory GetIndicPositionalCategory(in CodePoint codePoint)
         => UnicodeData.GetIndicPositionalCategory(codePoint.value);
 
     /// <summary>
@@ -611,7 +611,7 @@ public readonly struct CodePoint : IComparable, IComparable<CodePoint>, IEquatab
     /// </summary>
     /// <param name="codePoint">The codepoint to evaluate.</param>
     /// <returns>The <see cref="UnicodeCategory"/>.</returns>
-    public static UnicodeCategory GetGeneralCategory(CodePoint codePoint)
+    public static UnicodeCategory GetGeneralCategory(in CodePoint codePoint)
     {
         if (codePoint.IsAscii)
         {

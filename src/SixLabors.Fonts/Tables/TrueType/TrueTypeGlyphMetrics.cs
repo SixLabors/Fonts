@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Numerics;
+using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 using SixLabors.Fonts.Unicode;
 
@@ -11,7 +12,7 @@ namespace SixLabors.Fonts.Tables.TrueType;
 /// <summary>
 /// Represents a glyph metric from a particular TrueType font face.
 /// </summary>
-public class TrueTypeGlyphMetrics : GlyphMetrics
+public partial class TrueTypeGlyphMetrics : GlyphMetrics
 {
     private static readonly Vector2 YInverter = new(1, -1);
     private readonly GlyphVector vector;
@@ -29,8 +30,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
         ushort unitsPerEM,
         TextAttributes textAttributes,
         TextDecorations textDecorations,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType)
         : base(
               font,
               glyphId,
@@ -43,8 +43,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
               unitsPerEM,
               textAttributes,
               textDecorations,
-              glyphType,
-              glyphColor)
+              glyphType)
         => this.vector = vector;
 
     internal TrueTypeGlyphMetrics(
@@ -60,8 +59,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
         Vector2 offset,
         Vector2 scaleFactor,
         TextRun textRun,
-        GlyphType glyphType = GlyphType.Standard,
-        GlyphColor? glyphColor = null)
+        GlyphType glyphType)
         : base(
               font,
               glyphId,
@@ -75,8 +73,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
               offset,
               scaleFactor,
               textRun,
-              glyphType,
-              glyphColor)
+              glyphType)
         => this.vector = vector;
 
     /// <inheritdoc/>
@@ -94,8 +91,7 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
             this.Offset,
             this.ScaleFactor,
             textRun,
-            this.GlyphType,
-            this.GlyphColor);
+            this.GlyphType);
 
     /// <summary>
     /// Gets the outline for the current glyph.
@@ -104,7 +100,13 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
     internal GlyphVector GetOutline() => this.vector;
 
     /// <inheritdoc/>
-    internal override void RenderTo(IGlyphRenderer renderer, Vector2 location, Vector2 offset, GlyphLayoutMode mode, TextOptions options)
+    internal override void RenderTo(
+        IGlyphRenderer renderer,
+        int graphemeIndex,
+        Vector2 location,
+        Vector2 offset,
+        GlyphLayoutMode mode,
+        TextOptions options)
     {
         // https://www.unicode.org/faq/unsup_char.html
         if (ShouldSkipGlyphRendering(this.CodePoint))
@@ -125,30 +127,25 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
 
         Matrix3x2 rotation = GetRotationMatrix(mode);
         FontRectangle box = this.GetBoundingBox(mode, renderLocation, scaledPPEM);
-        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode);
+        GlyphRendererParameters parameters = new(this, this.TextRun, pointSize, dpi, mode, graphemeIndex);
 
         if (renderer.BeginGlyph(in box, in parameters))
         {
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
             {
-                if (this.GlyphColor.HasValue && renderer is IColorGlyphRenderer colorSurface)
-                {
-                    colorSurface.SetColor(this.GlyphColor.Value);
-                }
-
                 GlyphVector scaledVector = this.scaledVectorCache.GetOrAdd(scaledPPEM, _ =>
                 {
                     // Create a scaled deep copy of the vector so that we do not alter
                     // the globally cached instance.
-                    var clone = GlyphVector.DeepClone(this.vector);
+                    GlyphVector clone = GlyphVector.DeepClone(this.vector);
                     Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
 
-                    var matrix = Matrix3x2.CreateScale(scale);
+                    Matrix3x2 matrix = Matrix3x2.CreateScale(scale);
                     matrix.Translation = this.Offset * scale;
                     GlyphVector.TransformInPlace(ref clone, matrix);
 
                     float pixelSize = scaledPPEM / 72F;
-                    this.FontMetrics.ApplyTrueTypeHinting(options.HintingMode, this, ref clone, scale, pixelSize);
+                    this.FontMetrics.ApplyTrueTypeHinting(this.GetHintingMode(options.HintingMode), this, ref clone, scale, pixelSize);
 
                     // Rotation must happen after hinting.
                     GlyphVector.TransformInPlace(ref clone, rotation);
@@ -227,9 +224,8 @@ public class TrueTypeGlyphMetrics : GlyphMetrics
                 }
             }
 
-            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM);
+            renderer.EndGlyph();
+            this.RenderDecorationsTo(renderer, location, mode, rotation, scaledPPEM, options);
         }
-
-        renderer.EndGlyph();
     }
 }

@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using SixLabors.Fonts.Rendering;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
@@ -84,6 +85,12 @@ internal struct TransformingGlyphRenderer : IGlyphRenderer
         this.IsOpen = true;
     }
 
+    public void ArcTo(float radiusX, float radiusY, float rotationDegrees, bool largeArc, bool sweep, Vector2 point)
+    {
+        this.IsOpen = true;
+        this.renderer.ArcTo(radiusX * this.scale.X, radiusY * this.scale.Y, rotationDegrees, largeArc, sweep, this.Transform(point));
+    }
+
     public void CubicBezierTo(Vector2 secondControlPoint, Vector2 thirdControlPoint, Vector2 point)
     {
         this.IsOpen = true;
@@ -99,10 +106,15 @@ internal struct TransformingGlyphRenderer : IGlyphRenderer
     public readonly TextDecorations EnabledDecorations()
         => this.renderer.EnabledDecorations();
 
-    public void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
+    public readonly void SetDecoration(TextDecorations textDecorations, Vector2 start, Vector2 end, float thickness)
         => this.renderer.SetDecoration(textDecorations, this.Transform(start), this.Transform(end), thickness);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private readonly Vector2 Transform(Vector2 point)
         => (Vector2.Transform((point * this.scale) + this.offset, this.transform) * YInverter) + this.origin;
+
+    public readonly void BeginLayer(Paint? paint, FillRule fillRule, ClipQuad? clipBounds)
+        => this.renderer.BeginLayer(paint, fillRule, clipBounds);
+
+    public readonly void EndLayer() => this.renderer.EndLayer();
 }

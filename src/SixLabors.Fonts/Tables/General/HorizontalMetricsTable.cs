@@ -19,7 +19,10 @@ internal sealed class HorizontalMetricsTable : Table
     {
         if (glyphIndex >= this.advancedWidths.Length)
         {
-            return this.advancedWidths[0];
+            // Records are indexed by glyph ID. As an optimization, the number of records can
+            // be less than the number of glyphs, in which case the advance width value of the
+            // last record applies to all remaining glyph IDs.
+            return this.advancedWidths[^1];
         }
 
         return this.advancedWidths[glyphIndex];
@@ -29,7 +32,7 @@ internal sealed class HorizontalMetricsTable : Table
     {
         if (glyphIndex >= this.leftSideBearings.Length)
         {
-            return this.leftSideBearings[0];
+            return this.leftSideBearings[^1];
         }
 
         return this.leftSideBearings[glyphIndex];

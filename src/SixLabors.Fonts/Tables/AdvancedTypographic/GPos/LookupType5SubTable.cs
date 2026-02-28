@@ -13,14 +13,14 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.GPos;
 /// </summary>
 internal static class LookupType5SubTable
 {
-    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+    public static LookupSubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
     {
         reader.Seek(offset, SeekOrigin.Begin);
         ushort subTableFormat = reader.ReadUInt16();
 
         return subTableFormat switch
         {
-            1 => LookupType5Format1SubTable.Load(reader, offset, lookupFlags),
+            1 => LookupType5Format1SubTable.Load(reader, offset, lookupFlags, markFilteringSet),
             _ => new NotImplementedSubTable(),
         };
     }
@@ -37,8 +37,9 @@ internal static class LookupType5SubTable
             CoverageTable ligatureCoverage,
             MarkArrayTable markArrayTable,
             LigatureArrayTable ligatureArrayTable,
-            LookupFlags lookupFlags)
-            : base(lookupFlags)
+            LookupFlags lookupFlags,
+            ushort markFilteringSet)
+            : base(lookupFlags, markFilteringSet)
         {
             this.markCoverage = markCoverage;
             this.ligatureCoverage = ligatureCoverage;
@@ -46,7 +47,7 @@ internal static class LookupType5SubTable
             this.ligatureArrayTable = ligatureArrayTable;
         }
 
-        public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags)
+        public static LookupType5Format1SubTable Load(BigEndianBinaryReader reader, long offset, LookupFlags lookupFlags, ushort markFilteringSet)
         {
             // MarkLigPosFormat1 Subtable.
             // +--------------------+---------------------------------+------------------------------------------------------+
@@ -74,12 +75,12 @@ internal static class LookupType5SubTable
             ushort markArrayOffset = reader.ReadOffset16();
             ushort ligatureArrayOffset = reader.ReadOffset16();
 
-            var markCoverage = CoverageTable.Load(reader, offset + markCoverageOffset);
-            var ligatureCoverage = CoverageTable.Load(reader, offset + ligatureCoverageOffset);
-            var markArrayTable = new MarkArrayTable(reader, offset + markArrayOffset);
-            var ligatureArrayTable = new LigatureArrayTable(reader, offset + ligatureArrayOffset, markClassCount);
+            CoverageTable markCoverage = CoverageTable.Load(reader, offset + markCoverageOffset);
+            CoverageTable ligatureCoverage = CoverageTable.Load(reader, offset + ligatureCoverageOffset);
+            MarkArrayTable markArrayTable = new(reader, offset + markArrayOffset);
+            LigatureArrayTable ligatureArrayTable = new(reader, offset + ligatureArrayOffset, markClassCount);
 
-            return new LookupType5Format1SubTable(markCoverage, ligatureCoverage, markArrayTable, ligatureArrayTable, lookupFlags);
+            return new LookupType5Format1SubTable(markCoverage, ligatureCoverage, markArrayTable, ligatureArrayTable, lookupFlags, markFilteringSet);
         }
 
         public override bool TryUpdatePosition(

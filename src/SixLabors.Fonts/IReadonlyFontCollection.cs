@@ -14,7 +14,7 @@ public interface IReadOnlyFontCollection
     /// Gets the collection of <see cref="FontFamily"/> in this <see cref="IReadOnlyFontCollection"/>
     /// using the invariant culture.
     /// </summary>
-    IEnumerable<FontFamily> Families { get; }
+    public IEnumerable<FontFamily> Families { get; }
 
     /// <summary>
     /// Gets the specified font family matching the invariant culture and font family name.
@@ -23,7 +23,7 @@ public interface IReadOnlyFontCollection
     /// <returns>The first <see cref="FontFamily"/> matching the given name.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
     /// <exception cref="FontFamilyNotFoundException">The collection contains no matches.</exception>
-    FontFamily Get(string name);
+    public FontFamily Get(string name);
 
     /// <summary>
     /// Gets the specified font family matching the invariant culture and font family name.
@@ -39,7 +39,7 @@ public interface IReadOnlyFontCollection
     /// with the specified name; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
-    bool TryGet(string name, out FontFamily family);
+    public bool TryGet(string name, out FontFamily family);
 
     /// <summary>
     /// Gets the collection of <see cref="FontFamily"/> in this <see cref="FontCollection"/>
@@ -47,7 +47,7 @@ public interface IReadOnlyFontCollection
     /// </summary>
     /// <param name="culture">The culture of the families to return.</param>
     /// <returns>The <see cref="IEnumerable{FontFamily}"/>.</returns>
-    IEnumerable<FontFamily> GetByCulture(CultureInfo culture);
+    public IEnumerable<FontFamily> GetByCulture(CultureInfo culture);
 
     /// <summary>
     /// Gets the specified font family matching the given culture and font family name.
@@ -57,7 +57,7 @@ public interface IReadOnlyFontCollection
     /// <returns>The first <see cref="FontFamily"/> matching the given name.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
     /// <exception cref="FontFamilyNotFoundException">The collection contains no matches.</exception>
-    FontFamily Get(string name, CultureInfo culture);
+    public FontFamily GetByCulture(string name, CultureInfo culture);
 
     /// <summary>
     /// Gets the specified font family matching the given culture and font family name.
@@ -74,5 +74,5 @@ public interface IReadOnlyFontCollection
     /// with the specified name; otherwise, <see langword="false"/>.
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/></exception>
-    bool TryGet(string name, CultureInfo culture, out FontFamily family);
+    public bool TryGetByCulture(string name, CultureInfo culture, out FontFamily family);
 }

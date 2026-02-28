@@ -7,11 +7,32 @@ using SixLabors.Fonts.Tables.TrueType.Glyphs;
 namespace SixLabors.Fonts.Tables.TrueType.Hinting;
 
 /// <summary>
-/// Code adapted from <see href="https://github.com/MikePopoloski/SharpFont/blob/b28555e8fae94c57f1b5ccd809cdd1260f0eb55f/SharpFont/FontFace.cs"/>
-/// For further information
-/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM05/Chap5.html"/>
-/// <see href="https://learn.microsoft.com/en-us/typography/cleartype/truetypecleartype"/>
-/// <see href="https://freetype.org/freetype2/docs/hinting/subpixel-hinting.html"/>
+/// Code adapted from
+/// <see href="https://github.com/MikePopoloski/SharpFont/blob/b28555e8fae94c57f1b5ccd809cdd1260f0eb55f/SharpFont/Internal/Interpreter.cs"/>.
+///
+/// Reference material:
+/// <see href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM05/Chap5.html"/> –
+/// the original TrueType instruction set and execution model.
+/// <see href="https://learn.microsoft.com/en-us/typography/cleartype/truetypecleartype"/> –
+/// details on how Microsoft's ClearType rasterizer interprets TrueType hints.
+/// <see href="https://freetype.org/freetype2/docs/hinting/subpixel-hinting.html"/> –
+/// documentation of FreeType's subpixel hinting engines, including the v40 "minimal" interpreter.
+///
+/// <para>
+/// This implementation matches the behavior of FreeType's v40 subpixel hinting interpreter,
+/// with horizontal hinting disabled and full vertical TrueType instruction processing preserved.
+/// It follows the v40 model in which outlines are adjusted primarily along the Y-axis and
+/// instructions operate without backward compatibility constraints. This corresponds to
+/// FreeType's configuration where <c>TT_CONFIG_OPTION_SUBPIXEL_HINTING</c> selects the
+/// minimal (v40) engine and <c>backward_compatibility</c> is forced to zero.
+/// </para>
+///
+/// <para>
+/// Modern ClearType-hinted fonts are designed for this style of processing and will render
+/// consistently under this interpreter. Legacy CRT-era fonts such as Arial or Times New Roman
+/// also render cleanly under v40 semantics, though without legacy bi-level horizontal snapping,
+/// which v40 intentionally omits.
+/// </para>
 /// </summary>
 internal class TrueTypeInterpreter
 {
@@ -20,6 +41,7 @@ internal class TrueTypeInterpreter
     private readonly ExecutionStack stack;
     private readonly InstructionStream[] functions;
     private readonly InstructionStream[] instructionDefs;
+    private float[] baseControlValueTable;
     private float[] controlValueTable;
     private readonly int[] storage;
     private IReadOnlyList<ushort> contours;
@@ -45,7 +67,9 @@ internal class TrueTypeInterpreter
     private const int MaxCallStack = 128;
     private const float Epsilon = 0.000001F;
 
-    private readonly List<OpCode> debugList = new();
+#if DEBUG
+    private readonly List<OpCode> debugList = [];
+#endif
 
     public TrueTypeInterpreter(int maxStack, int maxStorage, int maxFunctions, int maxInstructionDefs, int maxTwilightPoints)
     {
@@ -56,8 +80,9 @@ internal class TrueTypeInterpreter
         this.state = default;
         this.cvtState = default;
         this.twilight = new Zone(maxTwilightPoints, isTwilight: true);
-        this.controlValueTable = Array.Empty<float>();
-        this.contours = Array.Empty<ushort>();
+        this.controlValueTable = [];
+        this.baseControlValueTable = [];
+        this.contours = [];
     }
 
     public void InitializeFunctionDefs(byte[] instructions)
@@ -108,9 +133,36 @@ internal class TrueTypeInterpreter
                 this.cvtState.Loop = 1;
             }
         }
+
+        if (this.controlValueTable.Length > 0)
+        {
+            if (this.baseControlValueTable.Length != this.controlValueTable.Length)
+            {
+                this.baseControlValueTable = new float[this.controlValueTable.Length];
+            }
+
+            Array.Copy(this.controlValueTable, this.baseControlValueTable, this.controlValueTable.Length);
+        }
+        else
+        {
+            this.baseControlValueTable = [];
+        }
     }
 
-    public void HintGlyph(
+    /// <summary>
+    /// Attempts to apply TrueType hinting instructions to the specified glyph outline.
+    /// </summary>
+    /// <remarks>
+    /// Hinting will not be applied if the instructions buffer is empty or if grid fitting is
+    /// inhibited by the current interpreter state. If the instructions are malformed or an error occurs during
+    /// execution, the method returns <see langword="false"/> and the glyph outline remains unhinted.
+    /// </remarks>
+    /// <param name="controlPoints">An array of control points representing the glyph's outline to be hinted.</param>
+    /// <param name="endPoints">A read-only list of indices indicating the end points of each contour in the glyph.</param>
+    /// <param name="instructions">A read-only memory buffer containing the TrueType hinting instructions to execute.</param>
+    /// <param name="isComposite">Indicates whether the glyph is a composite glyph. Set to <see langword="true"/> for composite glyphs; otherwise, <see langword="false"/>.</param>
+    /// <returns><see langword="true"/> if hinting was successfully applied; otherwise, <see langword="false"/>.</returns>
+    public bool TryHintGlyph(
         ControlPoint[] controlPoints,
         IReadOnlyList<ushort> endPoints,
         ReadOnlyMemory<byte> instructions,
@@ -118,41 +170,104 @@ internal class TrueTypeInterpreter
     {
         if (instructions.Length == 0)
         {
-            return;
+            return false;
         }
 
-        // check if the CVT program disabled hinting
+        // Check if the CVT program disabled hinting
         if ((this.state.InstructionControl & InstructionControlFlags.InhibitGridFitting) != 0)
         {
-            return;
+            return false;
         }
 
-        // save contours and points
-        this.contours = endPoints;
-        this.zp0 = this.zp1 = this.zp2 = this.points = new Zone(controlPoints, isTwilight: false);
-
-        // reset all of our shared state
-        this.state = this.cvtState;
-        this.callStackSize = 0;
-        this.debugList.Clear();
-        this.stack.Clear();
-        this.OnVectorsUpdated();
-        this.iupXCalled = false;
-        this.iupYCalled = false;
-        this.isComposite = isComposite;
-
-        // normalize the round state settings
-        switch (this.state.RoundState)
+        try
         {
-            case RoundMode.Super:
-                this.SetSuperRound(1.0f);
-                break;
-            case RoundMode.Super45:
-                this.SetSuperRound(Sqrt2Over2);
-                break;
+            // Save contours and points
+            this.contours = endPoints;
+            this.zp0 = this.zp1 = this.zp2 = this.points = new Zone(controlPoints, isTwilight: false);
+
+            // reset all of our shared state
+            this.state = this.cvtState;
+            this.callStackSize = 0;
+
+            // FreeType's interpreter treats the storage area and glyph-level CVT modifications as non-persistent.
+            // Reset storage and restore the baseline CVT state for each glyph.
+            Array.Clear(this.storage, 0, this.storage.Length);
+
+            if (this.baseControlValueTable.Length > 0)
+            {
+                if (this.controlValueTable.Length != this.baseControlValueTable.Length)
+                {
+                    this.controlValueTable = new float[this.baseControlValueTable.Length];
+                }
+
+                Array.Copy(this.baseControlValueTable, this.controlValueTable, this.baseControlValueTable.Length);
+            }
+            else
+            {
+                this.controlValueTable = [];
+            }
+
+            this.ResetTwilightZone();
+
+#if DEBUG
+            this.debugList.Clear();
+#endif
+
+            this.stack.Clear();
+            this.OnVectorsUpdated();
+            this.iupXCalled = false;
+            this.iupYCalled = false;
+            this.isComposite = isComposite;
+
+            // normalize the round state settings
+            switch (this.state.RoundState)
+            {
+                case RoundMode.Super:
+                    this.SetSuperRound(1.0f);
+                    break;
+                case RoundMode.Super45:
+                    this.SetSuperRound(Sqrt2Over2);
+                    break;
+            }
+
+            this.Execute(new StackInstructionStream(instructions, 0), false, false);
+            return true;
+        }
+        catch (Exception)
+        {
+            // The interpreter can fail for malformed instructions; in that case we skip hinting.
+            Array.Clear(this.points.TouchState, 0, this.points.TouchState.Length);
+
+            // Reset interpreter state so nothing leaks if the caller catches.
+            this.stack.Clear();
+            this.callStackSize = 0;
+            this.contours = [];
+            this.zp0 = this.zp1 = this.zp2 = this.points = default;
+
+            this.state = this.cvtState;
+            this.OnVectorsUpdated();
+            this.iupXCalled = false;
+            this.iupYCalled = false;
+            this.isComposite = false;
+            return false;
+        }
+    }
+
+    private void ResetTwilightZone()
+    {
+        // In FreeType, twilight points are defined to have original coordinates at (0,0).
+        // Reset both original and current coordinates, and clear touch state, to avoid state leaking between glyphs.
+        ControlPoint[] twCurrent = this.twilight.Current;
+        ControlPoint[] twOriginal = this.twilight.Original;
+
+        int len = twCurrent.Length;
+        for (int i = 0; i < len; i++)
+        {
+            twCurrent[i].Point = default;
+            twOriginal[i].Point = default;
         }
 
-        this.Execute(new StackInstructionStream(instructions, 0), false, false);
+        Array.Clear(this.twilight.TouchState, 0, this.twilight.TouchState.Length);
     }
 
     private void Execute(StackInstructionStream stream, bool inFunction, bool allowFunctionDefs)
@@ -161,7 +276,10 @@ internal class TrueTypeInterpreter
         while (!stream.Done)
         {
             OpCode opcode = stream.NextOpCode();
+
+#if DEBUG
             this.debugList.Add(opcode);
+#endif
             switch (opcode)
             {
                 // ==== PUSH INSTRUCTIONS ====
@@ -294,7 +412,7 @@ internal class TrueTypeInterpreter
                 {
                     int y = this.stack.Pop();
                     int x = this.stack.Pop();
-                    var vec = Vector2.Normalize(new Vector2(F2Dot14ToFloat(x), F2Dot14ToFloat(y)));
+                    Vector2 vec = Vector2.Normalize(new Vector2(F2Dot14ToFloat(x), F2Dot14ToFloat(y)));
                     if (opcode == OpCode.SFVFS)
                     {
                         this.state.Freedom = vec;
@@ -566,7 +684,7 @@ internal class TrueTypeInterpreter
                             continue;
                         }
 
-                        this.points.Current[i].OnCurve ^= true;
+                        this.points.Current[index].OnCurve ^= true;
                     }
 
                     this.state.Loop = 1;
@@ -631,7 +749,7 @@ internal class TrueTypeInterpreter
                 case OpCode.SHC1:
                 {
                     Vector2 displacement = this.ComputeDisplacement((int)opcode, out Zone zone, out int point);
-                    TouchState touch = this.GetTouchState();
+
                     int contour = this.stack.Pop();
                     int start = contour == 0 ? 0 : this.contours[contour - 1] + 1;
                     int count = this.zp2.IsTwilight ? this.zp2.Current.Length : this.contours[contour] + 1;
@@ -643,8 +761,8 @@ internal class TrueTypeInterpreter
                         // Don't move the reference point
                         if (zone.Current != current || point != i)
                         {
-                            current[i].Point += displacement;
-                            states[i] |= touch;
+                            current[i].Point.Y += displacement.Y;
+                            states[i] |= TouchState.Y;
                         }
                     }
                 }
@@ -670,7 +788,7 @@ internal class TrueTypeInterpreter
                         // Don't move the reference point
                         if (zone.Current != current || point != i)
                         {
-                            current[i].Point += displacement;
+                            current[i].Point.Y += displacement.Y;
                         }
                     }
                 }
@@ -851,7 +969,7 @@ internal class TrueTypeInterpreter
                                 }
                                 else
                                 {
-                                    this.iupYCalled = true;
+                                    this.iupXCalled = true;
                                     touchMask = TouchState.X;
                                     current = (byte*)&currentPtr->Point.X;
                                     original = (byte*)&originalPtr->Point.X;
@@ -1564,7 +1682,7 @@ internal class TrueTypeInterpreter
         if (dual)
         {
             p1 = this.zp2.GetOriginal(index1);
-            p2 = this.zp2.GetOriginal(index2);
+            p2 = this.zp1.GetOriginal(index2);
             line = p2 - p1;
 
             if (line.LengthSquared() == 0)
@@ -1802,7 +1920,7 @@ internal class TrueTypeInterpreter
         bool postIUP = this.iupXCalled && this.iupYCalled;
         bool composite = this.isComposite;
         ControlPoint[] current = this.zp2.Current;
-        bool inTwilight = this.zp0.IsTwilight && this.zp1.IsTwilight && this.zp2.IsTwilight;
+        bool inTwilight = this.zp0.IsTwilight || this.zp1.IsTwilight || this.zp2.IsTwilight;
 
         for (int i = 0; i < this.state.Loop; i++)
         {
@@ -1828,20 +1946,18 @@ internal class TrueTypeInterpreter
 
     private void MovePoint(Zone zone, int index, float distance)
     {
-        if (this.isComposite)
+        // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
+        // This increases resolution on the x-axis and prevents glyph explosions on legacy fonts.
+        // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
+        Vector2 cur = zone.GetCurrent(index);
+
+        // V40: ignore x movement, apply only the Y component.
+        float dy = distance * this.state.Freedom.Y / this.fdotp;
+
+        // Only mark Y as touched if Y actually changed.
+        if (dy != 0F)
         {
-            Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
-            TouchState touch = this.GetTouchState();
-            zone.Current[index].Point = point;
-            zone.TouchState[index] |= touch;
-        }
-        else
-        {
-            // Copy FreeType Interpreter V40 and ignore instructions on the x-axis.
-            // This increases resolution on the x-axis and prevents glyph explosions on legacy fonts.
-            // https://github.com/freetype/freetype/blob/3ab1875cd22536b3d715b3b104b7fb744b9c25c5/src/truetype/ttinterp.h#L298
-            Vector2 point = zone.GetCurrent(index) + (distance * this.state.Freedom / this.fdotp);
-            zone.Current[index].Point.Y = point.Y;
+            zone.Current[index].Point.Y = cur.Y + dy;
             zone.TouchState[index] |= TouchState.Y;
         }
     }
@@ -1850,41 +1966,172 @@ internal class TrueTypeInterpreter
     {
         switch (this.state.RoundState)
         {
+            case RoundMode.Off:
+                // FreeType's Round_None with compensation = 0.
+                return value;
+
             case RoundMode.ToGrid:
-                return value >= 0 ? (float)Math.Round(value) : -(float)Math.Round(-value);
-            case RoundMode.ToHalfGrid:
-                return value >= 0 ? (float)Math.Floor(value) + 0.5f : -((float)Math.Floor(-value) + 0.5f);
-            case RoundMode.ToDoubleGrid:
-                return value >= 0 ? (float)(Math.Round(value * 2, MidpointRounding.AwayFromZero) / 2) : -(float)(Math.Round(-value * 2, MidpointRounding.AwayFromZero) / 2);
-            case RoundMode.DownToGrid:
-                return value >= 0 ? (float)Math.Floor(value) : -(float)Math.Floor(-value);
-            case RoundMode.UpToGrid:
-                return value >= 0 ? (float)Math.Ceiling(value) : -(float)Math.Ceiling(-value);
-            case RoundMode.Super:
-            case RoundMode.Super45:
-                float result;
-                if (value >= 0)
+            {
+                // Round_To_Grid with compensation = 0.
+                if (value >= 0F)
                 {
-                    result = value - this.roundPhase + this.roundThreshold;
-                    result = (float)Math.Truncate(result / this.roundPeriod) * this.roundPeriod;
-                    result += this.roundPhase;
-                    if (result < 0)
+                    float val = (float)Math.Floor(value + 0.5F);
+                    if (val < 0F)
                     {
-                        result = this.roundPhase;
+                        val = 0F;
                     }
+
+                    return val;
                 }
                 else
                 {
-                    result = -value - this.roundPhase + this.roundThreshold;
-                    result = -(float)Math.Truncate(result / this.roundPeriod) * this.roundPeriod;
-                    result -= this.roundPhase;
-                    if (result > 0)
+                    float val = -(float)Math.Floor(-value + 0.5F);
+                    if (val > 0F)
                     {
-                        result = -this.roundPhase;
+                        val = 0F;
                     }
-                }
 
-                return result;
+                    return val;
+                }
+            }
+
+            case RoundMode.ToHalfGrid:
+            {
+                // Round_To_Half_Grid with compensation = 0.
+                if (value >= 0F)
+                {
+                    float val = (float)Math.Floor(value) + 0.5F;
+                    if (val < 0F)
+                    {
+                        val = 0.5F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -((float)Math.Floor(-value) + 0.5F);
+                    if (val > 0F)
+                    {
+                        val = -0.5F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.DownToGrid:
+            {
+                // Round_Down_To_Grid with compensation = 0.
+                if (value >= 0F)
+                {
+                    float val = (float)Math.Floor(value);
+                    if (val < 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -(float)Math.Floor(-value);
+                    if (val > 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.UpToGrid:
+            {
+                // Round_Up_To_Grid with compensation = 0.
+                if (value >= 0F)
+                {
+                    float val = (float)Math.Ceiling(value);
+                    if (val < 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -(float)Math.Ceiling(-value);
+                    if (val > 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.ToDoubleGrid:
+            {
+                // Round_To_Double_Grid: grid step is 0.5 pixels.
+                const float step = 0.5F;
+
+                if (value >= 0F)
+                {
+                    float val = step * (float)Math.Floor((value / step) + 0.5F);
+                    if (val < 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -step * (float)Math.Floor((-value / step) + 0.5F);
+                    if (val > 0F)
+                    {
+                        val = 0F;
+                    }
+
+                    return val;
+                }
+            }
+
+            case RoundMode.Super:
+            case RoundMode.Super45:
+            {
+                // Round_Super / Round_Super_45 with compensation = 0.
+                float period = this.roundPeriod;
+                float phase = this.roundPhase;
+                float threshold = this.roundThreshold;
+
+                if (value >= 0F)
+                {
+                    float val = value - phase + threshold;
+                    val = (float)Math.Floor(val / period) * period;
+                    val += phase;
+
+                    if (val < 0F)
+                    {
+                        val = phase;
+                    }
+
+                    return val;
+                }
+                else
+                {
+                    float val = -value - phase + threshold;
+                    val = (float)Math.Floor(val / period) * period;
+                    val = -val - phase;
+
+                    if (val > 0F)
+                    {
+                        val = -phase;
+                    }
+
+                    return val;
+                }
+            }
 
             default:
                 return value;
@@ -2321,7 +2568,7 @@ internal class TrueTypeInterpreter
             this.IsTwilight = isTwilight;
             this.Current = controlPoints;
 
-            var original = new ControlPoint[controlPoints.Length];
+            ControlPoint[] original = new ControlPoint[controlPoints.Length];
             controlPoints.AsSpan().CopyTo(original);
             this.Original = original;
             this.TouchState = new TouchState[controlPoints.Length];

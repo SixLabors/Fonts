@@ -44,9 +44,11 @@ public class TextOptions
         this.VerticalAlignment = options.VerticalAlignment;
         this.LayoutMode = options.LayoutMode;
         this.KerningMode = options.KerningMode;
+        this.Tracking = options.Tracking;
         this.ColorFontSupport = options.ColorFontSupport;
         this.FeatureTags = new List<Tag>(options.FeatureTags);
         this.TextRuns = new List<TextRun>(options.TextRuns);
+        this.DecorationPositioningMode = options.DecorationPositioningMode;
     }
 
     /// <summary>
@@ -71,7 +73,7 @@ public class TextOptions
     /// <summary>
     /// Gets or sets the DPI (Dots Per Inch) to render/measure the text at.
     /// <para/>
-    /// Defaults to 72.
+    /// Defaults to <c>72F</c>.
     /// </summary>
     public float Dpi
     {
@@ -101,7 +103,7 @@ public class TextOptions
     /// <summary>
     /// Gets or sets the line spacing. Applied as a multiple of the line height.
     /// <para/>
-    /// Defaults to 1.
+    /// Defaults to <c>1F</c>.
     /// </summary>
     public float LineSpacing
     {
@@ -171,9 +173,21 @@ public class TextOptions
     public KerningMode KerningMode { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether to enable various color font formats.
+    /// Gets or sets the tracking (letter-spacing) value.
+    /// Tracking adjusts the spacing between all characters uniformly and is measured in em.
+    /// Positive values increase spacing, negative values decrease spacing, and zero applies no adjustment.
     /// </summary>
-    public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.MicrosoftColrFormat;
+    public float Tracking { get; set; }
+
+    /// <summary>
+    /// Gets or sets the positioning mode used for rendering decorations.
+    /// </summary>
+    public DecorationPositioningMode DecorationPositioningMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the color font support options.
+    /// </summary>
+    public ColorFontSupport ColorFontSupport { get; set; } = ColorFontSupport.ColrV1 | ColorFontSupport.ColrV0 | ColorFontSupport.Svg;
 
     /// <summary>
     /// Gets or sets the collection of additional feature tags to apply during glyph shaping.

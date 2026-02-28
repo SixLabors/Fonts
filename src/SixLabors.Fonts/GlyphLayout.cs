@@ -100,7 +100,7 @@ internal readonly struct GlyphLayout
 
     internal FontRectangle BoundingBox(float dpi)
     {
-        // Same logic as in TrueTypeGlyphMetrics.RenderTo
+        // Same logic as in GlyphMetrics.RenderTo
         Vector2 location = this.PenLocation;
         Vector2 offset = this.Offset;
 

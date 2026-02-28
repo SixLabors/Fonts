@@ -19,7 +19,12 @@ public enum VerticalAlignment
     Center = 1,
 
     /// <summary>
-    /// Aligns text upwards from the bottom
+    /// Aligns text upwards from the bottom.
     /// </summary>
-    Bottom = 2
+    Bottom = 2,
+
+    /// <summary>
+    /// Aligns text to the baseline.
+    /// </summary>
+    Baseline = 3
 }

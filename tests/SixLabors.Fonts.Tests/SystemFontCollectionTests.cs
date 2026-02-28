@@ -34,9 +34,9 @@ public class SystemFontCollectionTests
         FontFamily family = SystemFonts.Families.First();
 
         Assert.False(family == default);
-        Assert.Equal(family, SystemFonts.Get(family.Name, family.Culture));
+        Assert.Equal(family, SystemFonts.GetByCulture(family.Name, family.Culture));
 
-        SystemFonts.TryGet(family.Name, family.Culture, out FontFamily family2);
+        SystemFonts.TryGetByCulture(family.Name, family.Culture, out FontFamily family2);
 
         Assert.Equal(family, family2);
         Assert.Contains(family, SystemFonts.GetByCulture(family.Culture));
