@@ -24,8 +24,10 @@ internal static class TextLayoutTestUtilities
         bool includeGeometry = false,
         bool customDecorations = false,
         [CallerMemberName] string test = "",
+#if SUPPORTS_DRAWING
         Action<Image<Rgba32>> beforeAction = null,
         Action<Image<Rgba32>> afterAction = null,
+#endif
         params object[] properties)
     {
 #if SUPPORTS_DRAWING
