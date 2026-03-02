@@ -580,6 +580,8 @@ internal static class TextLayout
         penLocation.Y += offsetY;
         penLocation.X += offsetX;
 
+        float lineOriginX = penLocation.X;
+
         List<GlyphLayout> glyphs = new(textLine.Count);
 
         // Grapheme-scoped state for transformed glyph alignment.
@@ -699,7 +701,7 @@ internal static class TextLayout
                     // Normalize ink minX to 0 and center within the column width.
                     // This is grapheme-correct and avoids centering based only on the "first" entry,
                     // which is not representative for marks like reph in Devanagari.
-                    currentGraphemeAlignX = -minX + ((scaledMaxLineHeight - inkWidth) * .5F);
+                    currentGraphemeAlignX = -minX + ((unscaledLineHeight - inkWidth) * .5F);
                 }
             }
 
@@ -740,7 +742,7 @@ internal static class TextLayout
                 glyphs.Add(new GlyphLayout(
                     new Glyph(metric, data.PointSize),
                     boxLocation,
-                    penLocation + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
+                    penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
                     offset,
                     advanceW,
                     data.ScaledAdvance + yExtraAdvance,
@@ -762,8 +764,8 @@ internal static class TextLayout
             if (data.IsLastInGrapheme)
             {
                 penLocation.Y += data.ScaledAdvance + yExtraAdvance;
-                boxLocation.X = originX;
-                penLocation.X = originX;
+                boxLocation.X = lineOriginX;
+                penLocation.X = lineOriginX;
             }
         }
 
@@ -921,7 +923,7 @@ internal static class TextLayout
                     // - Take half the difference between the max line height (scaledMaxLineHeight)
                     //   and the current glyph's line height (data.ScaledLineHeight).
                     // - The line height includes both ascender and descender metrics.
-                    float baselineDelta = (scaledMaxLineHeight - data.ScaledLineHeight) * .5F;
+                    float baselineDelta = (unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F;
 
                     // Adjust the horizontal offset further by considering the descender differences:
                     // - Subtract the current glyph's descender (data.ScaledDescender) to align it properly.
@@ -962,7 +964,7 @@ internal static class TextLayout
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
                         boxLocation,
-                        penLocation + new Vector2((scaledMaxLineHeight - data.ScaledLineHeight) * .5F, 0),
+                        penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
                         offset,
                         advanceX,
                         data.ScaledAdvance + yExtraAdvance,
