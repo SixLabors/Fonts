@@ -539,23 +539,11 @@ internal static class TextLayout
         }
 
         bool isFirstLine = index == 0;
-        float yExtraAdvance = 0;
         if (isFirstLine)
         {
-            // First vertical line: add extra ascent if the actual ink extends above
-            // the typographic ascender. This mirrors the horizontal logic but along
-            // the vertical flow direction of the column.
-            float requiredAscent = -textLine.ScaledMinY;
-            float extraAscent = requiredAscent - textLine.ScaledMaxAscender;
-
-            if (extraAscent > 0)
-            {
-                // Move the column baseline down so that the tallest ink above the
-                // baseline fits inside the image, and increase the advance so the
-                // column height matches the new extent.
-                offsetY += extraAscent;
-                yExtraAdvance += extraAscent;
-            }
+            // In vertical layout, first-line Y ascent compensation introduces unwanted
+            // leading space before the first glyph. Keep first-line handling limited
+            // to X-origin block alignment only.
 
             // Set the X-Origin for horizontal alignment.
             switch (options.HorizontalAlignment)
@@ -745,7 +733,7 @@ internal static class TextLayout
                     penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
                     offset,
                     advanceW,
-                    data.ScaledAdvance + yExtraAdvance,
+                    data.ScaledAdvance,
                     GlyphLayoutMode.Vertical,
                     i == 0 && j == 0,
                     data.GraphemeIndex,
@@ -763,7 +751,7 @@ internal static class TextLayout
 
             if (data.IsLastInGrapheme)
             {
-                penLocation.Y += data.ScaledAdvance + yExtraAdvance;
+                penLocation.Y += data.ScaledAdvance;
                 boxLocation.X = lineOriginX;
                 penLocation.X = lineOriginX;
             }
@@ -845,23 +833,11 @@ internal static class TextLayout
         }
 
         bool isFirstLine = index == 0;
-        float yExtraAdvance = 0;
         if (isFirstLine)
         {
-            // First mixed vertical line: compute any extra ascent required for this line.
-            // As with horizontal layout, ScaledMinY captures the true ink top in Y down,
-            // and ScaledMaxAscender is the typographic ascent used for line metrics.
-            float requiredAscent = -textLine.ScaledMinY;
-            float extraAscent = requiredAscent - textLine.ScaledMaxAscender;
-
-            if (extraAscent > 0)
-            {
-                // Push the baseline for the first column down so that tall stacks are
-                // fully visible, and store the extra amount so we can also expand the
-                // advance along the flow direction for all glyphs in this column.
-                offsetY += extraAscent;
-                yExtraAdvance += extraAscent;
-            }
+            // In vertical-mixed layout, first-line Y ascent compensation introduces
+            // unwanted leading space before the first glyph. Keep first-line handling
+            // limited to X-origin block alignment only.
 
             // Set the X-Origin for horizontal alignment.
             switch (options.HorizontalAlignment)
@@ -930,12 +906,7 @@ internal static class TextLayout
                     float descenderAbs = Math.Abs(data.ScaledDescender);
                     float descenderDelta = (Math.Abs(textLine.ScaledMaxDescender) - descenderAbs) * .5F;
 
-                    // For rotated glyphs, yExtraAdvance represents additional "height"
-                    // that we allocated to the column to fit tall stacks above the baseline.
-                    // Adding half of that to the horizontal center offset keeps sideways
-                    // glyphs visually centered within the now taller column.
                     float centerOffsetX = baselineDelta + descenderAbs + descenderDelta;
-                    centerOffsetX += yExtraAdvance * .5F;
 
                     glyphs.Add(new GlyphLayout(
                         new Glyph(metric, data.PointSize),
@@ -943,7 +914,7 @@ internal static class TextLayout
                         penLocation + new Vector2(centerOffsetX, 0),
                         Vector2.Zero,
                         advanceX,
-                        data.ScaledAdvance + yExtraAdvance,
+                        data.ScaledAdvance,
                         GlyphLayoutMode.VerticalRotated,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
@@ -967,7 +938,7 @@ internal static class TextLayout
                         penLocation + new Vector2((unscaledLineHeight - (data.ScaledLineHeight / options.LineSpacing)) * .5F, 0),
                         offset,
                         advanceX,
-                        data.ScaledAdvance + yExtraAdvance,
+                        data.ScaledAdvance,
                         GlyphLayoutMode.Vertical,
                         i == 0 && j == 0,
                         data.GraphemeIndex,
@@ -977,7 +948,7 @@ internal static class TextLayout
                 }
             }
 
-            penLocation.Y += data.ScaledAdvance + yExtraAdvance;
+            penLocation.Y += data.ScaledAdvance;
         }
 
         boxLocation.Y = originY;
