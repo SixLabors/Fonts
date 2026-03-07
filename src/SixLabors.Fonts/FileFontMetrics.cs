@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -118,6 +119,10 @@ internal sealed class FileFontMetrics : FontMetrics
     /// <inheritdoc/>
     internal override bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass)
         => this.fontMetrics.Value.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
+
+    /// <inheritdoc/>
+    public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
+        => this.fontMetrics.Value.TryGetVariationAxes(out variationAxes);
 
     /// <inheritdoc/>
     internal override bool IsInMarkFilteringSet(ushort markGlyphSetIndex, ushort glyphId)

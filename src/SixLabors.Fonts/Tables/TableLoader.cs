@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
@@ -17,9 +18,9 @@ namespace SixLabors.Fonts.Tables;
 
 internal class TableLoader
 {
-    private readonly Dictionary<string, Func<FontReader, Table?>> loaders = new();
-    private readonly Dictionary<Type, string> types = new();
-    private readonly Dictionary<Type, Func<FontReader, Table?>> typesLoaders = new();
+    private readonly Dictionary<string, Func<FontReader, Table?>> loaders = [];
+    private readonly Dictionary<Type, string> types = [];
+    private readonly Dictionary<Type, Func<FontReader, Table?>> typesLoaders = [];
 
     public TableLoader()
     {
@@ -47,6 +48,11 @@ internal class TableLoader
         this.Register(PostTable.TableName, PostTable.Load);
         this.Register(Cff1Table.TableName, Cff1Table.Load);
         this.Register(Cff2Table.TableName, Cff2Table.Load);
+        this.Register(AVarTable.TableName, AVarTable.Load);
+        this.Register(GVarTable.TableName, GVarTable.Load);
+        this.Register(FVarTable.TableName, FVarTable.Load);
+        this.Register(HVarTable.TableName, HVarTable.Load);
+        this.Register(VVarTable.TableName, VVarTable.Load);
         this.Register(SvgTable.TableName, SvgTable.Load);
     }
 
