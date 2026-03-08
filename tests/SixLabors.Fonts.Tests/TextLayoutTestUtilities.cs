@@ -24,12 +24,16 @@ internal static class TextLayoutTestUtilities
         bool includeGeometry = false,
         bool customDecorations = false,
         [CallerMemberName] string test = "",
+#if SUPPORTS_DRAWING
+        Action<Image<Rgba32>> beforeAction = null,
+        Action<Image<Rgba32>> afterAction = null,
+#endif
         params object[] properties)
     {
 #if SUPPORTS_DRAWING
-        FontRectangle advance = TextMeasurer.MeasureAdvance(text, options);
-        int width = (int)(Math.Ceiling(advance.Width) + Math.Ceiling(options.Origin.X));
-        int height = (int)(Math.Ceiling(advance.Height) + Math.Ceiling(options.Origin.Y));
+        FontRectangle renderBounds = TextMeasurer.MeasureRenderableBounds(text, options);
+        int width = (int)(Math.Ceiling(renderBounds.Width) + Math.Ceiling(options.Origin.X));
+        int height = (int)(Math.Ceiling(renderBounds.Height) + Math.Ceiling(options.Origin.Y));
 
         bool isVertical = !options.LayoutMode.IsHorizontal();
         int wrappingLength = isVertical
@@ -48,6 +52,8 @@ internal static class TextLayoutTestUtilities
         // First render the text using the rich text renderer.
         using Image<Rgba32> img = new(Configuration.Default, imageWidth, imageHeight, Color.White.ToPixel<Rgba32>());
 
+        beforeAction?.Invoke(img);
+
         img.Mutate(ctx => ctx.DrawText(FromTextOptions(options, customDecorations), text, Color.Black));
 
         if (options.WrappingLength > 0)
@@ -61,6 +67,8 @@ internal static class TextLayoutTestUtilities
                 img.Mutate(x => x.DrawLine(Color.Red, 1, new(wrappingLength, 0), new(wrappingLength, height)));
             }
         }
+
+        afterAction?.Invoke(img);
 
         img.DebugSave("png", test, properties: [.. extended]);
         img.CompareToReference(percentageTolerance: percentageTolerance, test: test, properties: [.. extended]);
