@@ -202,7 +202,16 @@ public static class TestFonts
 
     public static string RobotoRegular => GetFullPath("Roboto-Regular.ttf");
 
+    /// <summary>
+    /// Gets a CFF2 font with variations tables.
+    /// </summary>
     public static string RobotoFlex => GetFullPath("RobotoFlex.ttf");
+
+    /// <summary>
+    /// Gets a CFF2 font with variations tables.
+    /// From https://github.com/adobe-fonts/adobe-variable-font-prototype.git
+    /// </summary>
+    public static string AdobeVFPrototype => GetFullPath("AdobeVFPrototype.ttf");
 
     public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 

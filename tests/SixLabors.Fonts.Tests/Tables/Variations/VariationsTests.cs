@@ -9,6 +9,7 @@ public class VariationsTests
 {
     private static readonly FontCollection TestFontCollection = new();
     private static readonly Font RobotoFlexTTF = CreateFont(TestFonts.RobotoFlex);
+    private static readonly Font AdobeVFPrototype = CreateFont(TestFonts.AdobeVFPrototype);
 
     private static Font CreateFont(string testFont)
     {
@@ -17,7 +18,7 @@ public class VariationsTests
     }
 
     [Fact]
-    public void CanLoadVariationTables()
+    public void CanLoadVariationTables_RobotoFlex()
     {
         Assert.True(RobotoFlexTTF.FontMetrics.TryGetVariationAxes(out VariationAxis[] variationAxes));
         Assert.Equal(13, variationAxes.Length);
@@ -99,5 +100,24 @@ public class VariationsTests
         Assert.Equal(560, variationAxes[12].Min);
         Assert.Equal(788, variationAxes[12].Max);
         Assert.Equal(738, variationAxes[12].Default);
+    }
+
+    [Fact]
+    public void CanLoadVariationTables_AdobeVFPrototype()
+    {
+        Assert.True(AdobeVFPrototype.FontMetrics.TryGetVariationAxes(out VariationAxis[] variationAxes));
+        Assert.Equal(2, variationAxes.Length);
+
+        Assert.Equal("Weight", variationAxes[0].Name);
+        Assert.Equal("wght", variationAxes[0].Tag);
+        Assert.Equal(200, variationAxes[0].Min);
+        Assert.Equal(900, variationAxes[0].Max);
+        Assert.Equal(389.344, Math.Round(variationAxes[0].Default, 3));
+
+        Assert.Equal("Contrast", variationAxes[1].Name);
+        Assert.Equal("CNTR", variationAxes[1].Tag);
+        Assert.Equal(0, variationAxes[1].Min);
+        Assert.Equal(100, variationAxes[1].Max);
+        Assert.Equal(0, variationAxes[1].Default);
     }
 }
