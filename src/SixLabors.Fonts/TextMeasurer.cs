@@ -89,6 +89,8 @@ public static class TextMeasurer
     /// The union of the logical advance rectangle and the rendered glyph bounds if the text was to be rendered.
     /// </returns>
     /// <remarks>
+    /// The returned rectangle is normalized to <c>(0, 0)</c> and is large enough to contain both the logical advance
+    /// rectangle and the rendered glyph bounds.
     /// Use this method when both typographic advance and rendered glyph overshoot must fit within the same rectangle.
     /// </remarks>
     public static FontRectangle MeasureRenderableBounds(string text, TextOptions options)
@@ -112,6 +114,8 @@ public static class TextMeasurer
     /// The union of the logical advance rectangle and the rendered glyph bounds if the text was to be rendered.
     /// </returns>
     /// <remarks>
+    /// The returned rectangle is normalized to <c>(0, 0)</c> and is large enough to contain both the logical advance
+    /// rectangle and the rendered glyph bounds.
     /// Use this method when both typographic advance and rendered glyph overshoot must fit within the same rectangle.
     /// </remarks>
     public static FontRectangle MeasureRenderableBounds(ReadOnlySpan<char> text, TextOptions options)
@@ -122,7 +126,7 @@ public static class TextMeasurer
         }
 
         FontRectangle advance = MeasureAdvance(text, options);
-        FontRectangle bounds = MeasureBounds(text, options);
+        FontRectangle bounds = Normalize(MeasureBounds(text, options));
         return FontRectangle.Union(advance, bounds);
     }
 
@@ -183,6 +187,10 @@ public static class TextMeasurer
     /// <param name="options">The text shaping options.</param>
     /// <param name="bounds">The list of per-entry renderable bounds of the text if it was to be rendered.</param>
     /// <returns>Whether any of the entries had non-empty bounds.</returns>
+    /// <remarks>
+    /// Each returned rectangle is normalized to <c>(0, 0)</c> and is large enough to contain both the logical advance
+    /// rectangle and the rendered glyph bounds for the corresponding laid-out entry.
+    /// </remarks>
     public static bool TryMeasureCharacterRenderableBounds(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
         => TryMeasureCharacterRenderableBounds(text.AsSpan(), options, out bounds);
 
@@ -203,6 +211,10 @@ public static class TextMeasurer
     /// <param name="options">The text shaping options.</param>
     /// <param name="bounds">The list of per-entry renderable bounds of the text if it was to be rendered.</param>
     /// <returns>Whether any of the entries had non-empty bounds.</returns>
+    /// <remarks>
+    /// Each returned rectangle is normalized to <c>(0, 0)</c> and is large enough to contain both the logical advance
+    /// rectangle and the rendered glyph bounds for the corresponding laid-out entry.
+    /// </remarks>
     public static bool TryMeasureCharacterRenderableBounds(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
         => TryGetCharacterRenderableBounds(TextLayout.GenerateLayout(text, options), options.Dpi, out bounds);
 
@@ -511,7 +523,7 @@ public static class TextMeasurer
         {
             GlyphLayout g = glyphLayouts[i];
             FontRectangle advance = new(0, 0, g.AdvanceX * dpi, g.AdvanceY * dpi);
-            FontRectangle bounds = FontRectangle.Union(advance, g.BoundingBox(dpi));
+            FontRectangle bounds = FontRectangle.Union(advance, Normalize(g.BoundingBox(dpi)));
             hasSize |= bounds.Width > 0 || bounds.Height > 0;
             characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds, g.GraphemeIndex, g.StringIndex);
         }
@@ -519,4 +531,7 @@ public static class TextMeasurer
         characterBounds = characterBoundsList;
         return hasSize;
     }
+
+    private static FontRectangle Normalize(FontRectangle bounds)
+        => new(0, 0, bounds.Width, bounds.Height);
 }
