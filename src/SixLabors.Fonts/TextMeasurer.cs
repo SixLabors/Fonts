@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.Numerics;
-
 namespace SixLabors.Fonts;
 
 /// <summary>
@@ -11,134 +9,218 @@ namespace SixLabors.Fonts;
 public static class TextMeasurer
 {
     /// <summary>
-    /// Measures the advance (line-height and horizontal/vertical advance) of the text in pixel units.
+    /// Measures the logical advance of the text in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <returns>The advance of the text if it was to be rendered.</returns>
+    /// <returns>The logical advance rectangle of the text if it was to be rendered.</returns>
+    /// <remarks>
+    /// This measurement reflects line-box height and horizontal or vertical text advance from the layout model.
+    /// It does not guarantee that all rendered glyph pixels fit within the returned rectangle.
+    /// Use <see cref="MeasureBounds(string, TextOptions)"/> for glyph ink bounds or
+    /// <see cref="MeasureRenderableBounds(string, TextOptions)"/> for the union of logical advance and rendered bounds.
+    /// </remarks>
     public static FontRectangle MeasureAdvance(string text, TextOptions options)
         => MeasureAdvance(text.AsSpan(), options);
 
     /// <summary>
-    /// Measures the advance (line-height and horizontal/vertical advance) of the text in pixel units.
+    /// Measures the logical advance of the text in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <returns>The advance of the text if it was to be rendered.</returns>
+    /// <returns>The logical advance rectangle of the text if it was to be rendered.</returns>
+    /// <remarks>
+    /// This measurement reflects line-box height and horizontal or vertical text advance from the layout model.
+    /// It does not guarantee that all rendered glyph pixels fit within the returned rectangle.
+    /// Use <see cref="MeasureBounds(ReadOnlySpan{char}, TextOptions)"/> for glyph ink bounds or
+    /// <see cref="MeasureRenderableBounds(ReadOnlySpan{char}, TextOptions)"/> for the union of logical advance and rendered bounds.
+    /// </remarks>
     public static FontRectangle MeasureAdvance(ReadOnlySpan<char> text, TextOptions options)
-        => GetAdvance(TextLayout.GenerateLayout(text, options), options.Dpi);
+    {
+        if (text.IsEmpty)
+        {
+            return FontRectangle.Empty;
+        }
+
+        return GetAdvance(TextLayout.ProcessText(text, options), options.Dpi, options.LayoutMode.IsHorizontal());
+    }
 
     /// <summary>
-    /// Measures the minimum size required, in pixel units, to render the text.
+    /// Measures the normalized rendered size of the text in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <returns>The size of the text if it was to be rendered.</returns>
+    /// <returns>The rendered size of the text with the origin normalized to <c>(0, 0)</c>.</returns>
+    /// <remarks>
+    /// This is equivalent to measuring the rendered bounds and returning only the width and height.
+    /// Use <see cref="MeasureBounds(string, TextOptions)"/> when the returned X and Y offset are also required.
+    /// </remarks>
     public static FontRectangle MeasureSize(string text, TextOptions options)
         => MeasureSize(text.AsSpan(), options);
 
     /// <summary>
-    /// Measures the minimum size required, in pixel units, to render the text.
+    /// Measures the normalized rendered size of the text in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <returns>The size of the text if it was to be rendered.</returns>
+    /// <returns>The rendered size of the text with the origin normalized to <c>(0, 0)</c>.</returns>
+    /// <remarks>
+    /// This is equivalent to measuring the rendered bounds and returning only the width and height.
+    /// Use <see cref="MeasureBounds(ReadOnlySpan{char}, TextOptions)"/> when the returned X and Y offset are also required.
+    /// </remarks>
     public static FontRectangle MeasureSize(ReadOnlySpan<char> text, TextOptions options)
         => GetSize(TextLayout.GenerateLayout(text, options), options.Dpi);
 
     /// <summary>
-    /// Measures the text bounds in sub-pixel units.
+    /// Measures the rendered glyph bounds of the text in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <returns>The bounds of the text if it was to be rendered.</returns>
+    /// <returns>The rendered glyph bounds of the text if it was to be rendered.</returns>
     public static FontRectangle MeasureBounds(string text, TextOptions options)
         => MeasureBounds(text.AsSpan(), options);
 
     /// <summary>
-    /// Measures the text bounds in sub-pixel units.
+    /// Measures the full renderable bounds of the text in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <returns>The bounds of the text if it was to be rendered.</returns>
+    /// <returns>
+    /// The union of the logical advance rectangle and the rendered glyph bounds if the text was to be rendered.
+    /// </returns>
+    /// <remarks>
+    /// Use this method when both typographic advance and rendered glyph overshoot must fit within the same rectangle.
+    /// </remarks>
+    public static FontRectangle MeasureRenderableBounds(string text, TextOptions options)
+        => MeasureRenderableBounds(text.AsSpan(), options);
+
+    /// <summary>
+    /// Measures the rendered glyph bounds of the text in pixel units.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="options">The text shaping options.</param>
+    /// <returns>The rendered glyph bounds of the text if it was to be rendered.</returns>
     public static FontRectangle MeasureBounds(ReadOnlySpan<char> text, TextOptions options)
         => GetBounds(TextLayout.GenerateLayout(text, options), options.Dpi);
 
     /// <summary>
-    /// Measures the advance (line-height and horizontal/vertical advance) of each character of the text in pixel units.
+    /// Measures the full renderable bounds of the text in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <param name="advances">The list of character advances of the text if it was to be rendered.</param>
-    /// <returns>Whether any of the characters had non-empty advances.</returns>
+    /// <returns>
+    /// The union of the logical advance rectangle and the rendered glyph bounds if the text was to be rendered.
+    /// </returns>
+    /// <remarks>
+    /// Use this method when both typographic advance and rendered glyph overshoot must fit within the same rectangle.
+    /// </remarks>
+    public static FontRectangle MeasureRenderableBounds(ReadOnlySpan<char> text, TextOptions options)
+    {
+        if (text.IsEmpty)
+        {
+            return FontRectangle.Empty;
+        }
+
+        FontRectangle advance = MeasureAdvance(text, options);
+        FontRectangle bounds = MeasureBounds(text, options);
+        return FontRectangle.Union(advance, bounds);
+    }
+
+    /// <summary>
+    /// Measures the logical advance of each laid-out character entry in pixel units.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="options">The text shaping options.</param>
+    /// <param name="advances">The list of per-entry logical advances of the text if it was to be rendered.</param>
+    /// <returns>Whether any of the entries had non-empty advances.</returns>
     public static bool TryMeasureCharacterAdvances(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> advances)
         => TryMeasureCharacterAdvances(text.AsSpan(), options, out advances);
 
     /// <summary>
-    /// Measures the advance (line-height and horizontal/vertical advance) of each character of the text in pixel units.
+    /// Measures the logical advance of each laid-out character entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <param name="advances">The list of character advances of the text if it was to be rendered.</param>
-    /// <returns>Whether any of the characters had non-empty advances.</returns>
+    /// <param name="advances">The list of per-entry logical advances of the text if it was to be rendered.</param>
+    /// <returns>Whether any of the entries had non-empty advances.</returns>
     public static bool TryMeasureCharacterAdvances(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> advances)
         => TryGetCharacterAdvances(TextLayout.GenerateLayout(text, options), options.Dpi, out advances);
 
     /// <summary>
-    /// Measures the minimum size required, in pixel units, to render each character in the text.
+    /// Measures the normalized rendered size of each laid-out character entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <param name="sizes">The list of character dimensions of the text if it was to be rendered.</param>
-    /// <returns>Whether any of the characters had non-empty dimensions.</returns>
+    /// <param name="sizes">The list of per-entry rendered sizes with the origin normalized to <c>(0, 0)</c>.</param>
+    /// <returns>Whether any of the entries had non-empty dimensions.</returns>
     public static bool TryMeasureCharacterSizes(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> sizes)
         => TryMeasureCharacterSizes(text.AsSpan(), options, out sizes);
 
     /// <summary>
-    /// Measures the minimum size required, in pixel units, to render each character in the text.
+    /// Measures the normalized rendered size of each laid-out character entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <param name="sizes">The list of character dimensions of the text if it was to be rendered.</param>
-    /// <returns>Whether any of the characters had non-empty dimensions.</returns>
+    /// <param name="sizes">The list of per-entry rendered sizes with the origin normalized to <c>(0, 0)</c>.</param>
+    /// <returns>Whether any of the entries had non-empty dimensions.</returns>
     public static bool TryMeasureCharacterSizes(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> sizes)
         => TryGetCharacterSizes(TextLayout.GenerateLayout(text, options), options.Dpi, out sizes);
 
     /// <summary>
-    /// Measures the character bounds of the text in sub-pixel units.
+    /// Measures the rendered glyph bounds of each laid-out character entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <param name="bounds">The list of character bounds of the text if it was to be rendered.</param>
-    /// <returns>Whether any of the characters had non-empty bounds.</returns>
+    /// <param name="bounds">The list of per-entry rendered glyph bounds of the text if it was to be rendered.</param>
+    /// <returns>Whether any of the entries had non-empty bounds.</returns>
     public static bool TryMeasureCharacterBounds(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
         => TryMeasureCharacterBounds(text.AsSpan(), options, out bounds);
 
     /// <summary>
-    /// Measures the character bounds of the text in sub-pixel units.
+    /// Measures the full renderable bounds of each laid-out character entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <param name="bounds">The list of character bounds of the text if it was to be rendered.</param>
-    /// <returns>Whether any of the characters had non-empty bounds.</returns>
+    /// <param name="bounds">The list of per-entry renderable bounds of the text if it was to be rendered.</param>
+    /// <returns>Whether any of the entries had non-empty bounds.</returns>
+    public static bool TryMeasureCharacterRenderableBounds(string text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
+        => TryMeasureCharacterRenderableBounds(text.AsSpan(), options, out bounds);
+
+    /// <summary>
+    /// Measures the rendered glyph bounds of each laid-out character entry in pixel units.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="options">The text shaping options.</param>
+    /// <param name="bounds">The list of per-entry rendered glyph bounds of the text if it was to be rendered.</param>
+    /// <returns>Whether any of the entries had non-empty bounds.</returns>
     public static bool TryMeasureCharacterBounds(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
         => TryGetCharacterBounds(TextLayout.GenerateLayout(text, options), options.Dpi, out bounds);
 
     /// <summary>
-    /// Gets the number of lines contained within the text.
+    /// Measures the full renderable bounds of each laid-out character entry in pixel units.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <returns>The line count.</returns>
+    /// <param name="bounds">The list of per-entry renderable bounds of the text if it was to be rendered.</param>
+    /// <returns>Whether any of the entries had non-empty bounds.</returns>
+    public static bool TryMeasureCharacterRenderableBounds(ReadOnlySpan<char> text, TextOptions options, out ReadOnlySpan<GlyphBounds> bounds)
+        => TryGetCharacterRenderableBounds(TextLayout.GenerateLayout(text, options), options.Dpi, out bounds);
+
+    /// <summary>
+    /// Gets the number of laid-out lines contained within the text.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="options">The text shaping options.</param>
+    /// <returns>The laid-out line count.</returns>
     public static int CountLines(string text, TextOptions options)
         => CountLines(text.AsSpan(), options);
 
     /// <summary>
-    /// Gets the number of lines contained within the text.
+    /// Gets the number of laid-out lines contained within the text.
     /// </summary>
     /// <param name="text">The text.</param>
     /// <param name="options">The text shaping options.</param>
-    /// <returns>The line count.</returns>
+    /// <returns>The laid-out line count.</returns>
     public static int CountLines(ReadOnlySpan<char> text, TextOptions options)
     {
         if (text.IsEmpty)
@@ -269,106 +351,37 @@ public static class TextMeasurer
         return metrics;
     }
 
-    internal static FontRectangle GetAdvance(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
+    internal static FontRectangle GetAdvance(TextLayout.TextBox textBox, float dpi, bool isHorizontalLayout)
     {
-        if (glyphLayouts.Count == 0)
+        if (textBox.TextLines.Count == 0)
         {
             return FontRectangle.Empty;
         }
 
-        // Logical advance extents in layout units (before DPI scaling).
-        float logicalLeft = float.MaxValue;
-        float logicalTop = float.MaxValue;
-        float logicalRight = float.MinValue;
-        float logicalBottom = float.MinValue;
-
-        // Ink bounds in pixel units (BoundingBox already scales by DPI).
-        float inkLeft = float.MaxValue;
-        float inkTop = float.MaxValue;
-        float inkRight = float.MinValue;
-        float inkBottom = float.MinValue;
-
-        for (int i = 0; i < glyphLayouts.Count; i++)
+        if (isHorizontalLayout)
         {
-            GlyphLayout glyph = glyphLayouts[i];
-            Vector2 location = glyph.PenLocation;
-            float x = location.X;
-            float y = location.Y;
-
-            if (glyph.IsStartOfLine)
+            float width = 0;
+            float height = 0;
+            for (int i = 0; i < textBox.TextLines.Count; i++)
             {
-                // When the text contains a mix of glyphs of different sizes there can be line position overlap.
-                // To accurately measure we offset to ensure that we always start where the last line ended.
-                // Glyphs are always laid out from top-left to bottom-right so we can simply use the max.
-                if (glyph.LayoutMode == GlyphLayoutMode.Horizontal)
-                {
-                    y = MathF.Max(y, logicalBottom);
-                }
-                else
-                {
-                    x = MathF.Max(x, logicalRight);
-                }
+                TextLayout.TextLine line = textBox.TextLines[i];
+                width = MathF.Max(width, line.ScaledLineAdvance);
+                height += line.ScaledMaxLineHeight;
             }
 
-            float advanceX = x + glyph.AdvanceX;
-            float advanceY = y + glyph.AdvanceY;
-
-            if (logicalLeft > x)
-            {
-                logicalLeft = x;
-            }
-
-            if (logicalTop > y)
-            {
-                logicalTop = y;
-            }
-
-            if (logicalRight < advanceX)
-            {
-                logicalRight = advanceX;
-            }
-
-            if (logicalBottom < advanceY)
-            {
-                logicalBottom = advanceY;
-            }
-
-            // Ink bounds are in the same coordinate space as pen locations,
-            // but already scaled to pixels by BoundingBox(dpi).
-            FontRectangle box = glyph.BoundingBox(dpi);
-
-            if (inkLeft > box.Left)
-            {
-                inkLeft = box.Left;
-            }
-
-            if (inkTop > box.Top)
-            {
-                inkTop = box.Top;
-            }
-
-            if (inkRight < box.Right)
-            {
-                inkRight = box.Right;
-            }
-
-            if (inkBottom < box.Bottom)
-            {
-                inkBottom = box.Bottom;
-            }
+            return new FontRectangle(0, 0, width * dpi, height * dpi);
         }
 
-        // Logical advance rectangle, anchored at the origin in pixel space.
-        Vector2 logicalTopLeft = new(logicalLeft, logicalTop);
-        Vector2 logicalBottomRight = new(logicalRight, logicalBottom);
-        Vector2 logicalSize = (logicalBottomRight - logicalTopLeft) * dpi;
-        FontRectangle logicalRect = new(0, 0, logicalSize.X, logicalSize.Y);
+        float verticalWidth = 0;
+        float verticalHeight = 0;
+        for (int i = 0; i < textBox.TextLines.Count; i++)
+        {
+            TextLayout.TextLine line = textBox.TextLines[i];
+            verticalWidth += line.ScaledMaxLineHeight;
+            verticalHeight = MathF.Max(verticalHeight, line.ScaledLineAdvance);
+        }
 
-        // Ink bounds rectangle in pixel space.
-        FontRectangle inkRect = FontRectangle.FromLTRB(inkLeft, inkTop, inkRight, inkBottom);
-
-        // Final measurement is the union of logical advance and ink extents.
-        return FontRectangle.Union(inkRect, logicalRect);
+        return new FontRectangle(0, 0, verticalWidth * dpi, verticalHeight * dpi);
     }
 
     internal static FontRectangle GetSize(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi)
@@ -476,6 +489,29 @@ public static class TextMeasurer
         {
             GlyphLayout g = glyphLayouts[i];
             FontRectangle bounds = g.BoundingBox(dpi);
+            hasSize |= bounds.Width > 0 || bounds.Height > 0;
+            characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds, g.GraphemeIndex, g.StringIndex);
+        }
+
+        characterBounds = characterBoundsList;
+        return hasSize;
+    }
+
+    internal static bool TryGetCharacterRenderableBounds(IReadOnlyList<GlyphLayout> glyphLayouts, float dpi, out ReadOnlySpan<GlyphBounds> characterBounds)
+    {
+        bool hasSize = false;
+        if (glyphLayouts.Count == 0)
+        {
+            characterBounds = [];
+            return hasSize;
+        }
+
+        GlyphBounds[] characterBoundsList = new GlyphBounds[glyphLayouts.Count];
+        for (int i = 0; i < glyphLayouts.Count; i++)
+        {
+            GlyphLayout g = glyphLayouts[i];
+            FontRectangle advance = new(0, 0, g.AdvanceX * dpi, g.AdvanceY * dpi);
+            FontRectangle bounds = FontRectangle.Union(advance, g.BoundingBox(dpi));
             hasSize |= bounds.Width > 0 || bounds.Height > 0;
             characterBoundsList[i] = new GlyphBounds(g.Glyph.GlyphMetrics.CodePoint, in bounds, g.GraphemeIndex, g.StringIndex);
         }

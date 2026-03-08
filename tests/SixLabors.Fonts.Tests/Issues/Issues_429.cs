@@ -24,7 +24,7 @@ public class Issues_429
 
             // Only the Latin glyph + space should be rotated.
             // Any other glyphs that appear rotated have actually been substituted by the font.
-            int[] rotatedGlyphs = new int[] { 20, 21, 22, 23, 24, 25, 26, 27 };
+            int[] rotatedGlyphs = [20, 21, 22, 23, 24, 25, 26, 27];
 
             for (int i = 0; i < glyphs.Count; i++)
             {
@@ -57,11 +57,11 @@ public class Issues_429
 
             FontRectangle bounds = TextMeasurer.MeasureBounds(text, options);
             FontRectangle size = TextMeasurer.MeasureSize(text, options);
-            FontRectangle advance = TextMeasurer.MeasureAdvance(text, options);
+            FontRectangle renderable = TextMeasurer.MeasureRenderableBounds(text, options);
 
             Assert.Equal(new FontRectangle(0.83496094F, 2.8417969F, 28.31543F, 834.9464F), bounds, Comparer);
             Assert.Equal(new FontRectangle(0, 0, 28.31543F, 834.9464F), size, Comparer);
-            Assert.Equal(new FontRectangle(0, 0, 32.98462F, 839.3556F), advance, Comparer);
+            Assert.Equal(new FontRectangle(0, 0, 30F, 839.3556F), renderable, Comparer);
         }
     }
 }
