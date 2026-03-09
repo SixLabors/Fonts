@@ -31,9 +31,12 @@ internal static class TextLayoutTestUtilities
         params object[] properties)
     {
 #if SUPPORTS_DRAWING
-        FontRectangle renderBounds = TextMeasurer.MeasureRenderableBounds(text, options);
-        int width = (int)(Math.Ceiling(renderBounds.Width) + Math.Ceiling(options.Origin.X));
-        int height = (int)(Math.Ceiling(renderBounds.Height) + Math.Ceiling(options.Origin.Y));
+        FontRectangle advance = TextMeasurer.MeasureAdvance(text, options);
+        FontRectangle bounds = TextMeasurer.MeasureBounds(text, options);
+        FontRectangle renderBounds = FontRectangle.Union(advance, bounds);
+
+        int width = Math.Max(1, (int)Math.Ceiling(options.Origin.X + renderBounds.Right - Math.Min(0, renderBounds.Left)));
+        int height = Math.Max(1, (int)Math.Ceiling(options.Origin.Y + renderBounds.Bottom - Math.Min(0, renderBounds.Top)));
 
         bool isVertical = !options.LayoutMode.IsHorizontal();
         int wrappingLength = isVertical
