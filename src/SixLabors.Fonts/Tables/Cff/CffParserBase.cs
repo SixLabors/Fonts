@@ -75,7 +75,7 @@ internal abstract class CffParserBase
         }
     }
 
-    protected FontDict[] ReadFdArray(BigEndianBinaryReader reader, long offset, long fdArrayOffset)
+    protected FontDict[] ReadFdArray(BigEndianBinaryReader reader, long offset, long fdArrayOffset, bool cff2 = false)
     {
         if (fdArrayOffset is 0)
         {
@@ -84,7 +84,7 @@ internal abstract class CffParserBase
 
         reader.BaseStream.Position = offset + fdArrayOffset;
 
-        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
+        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets, cff2))
         {
             return [];
         }
@@ -135,7 +135,7 @@ internal abstract class CffParserBase
                         case "Subrs":
                             int localSubrsOffset = (int)dicEntry.Operands[0].RealNumValue;
                             reader.BaseStream.Position = offset + fdict.PrivateDicOffset + localSubrsOffset;
-                            fdict.LocalSubr = ReadSubrBuffer(reader);
+                            fdict.LocalSubr = ReadSubrBuffer(reader, cff2);
                             break;
 
                         case "vsindex":
@@ -206,7 +206,7 @@ internal abstract class CffParserBase
         return new CffDataDicEntry(@operator!, operands.ToArray());
     }
 
-    protected static bool TryReadIndexDataOffsets(BigEndianBinaryReader reader, [NotNullWhen(true)] out CffIndexOffset[]? value)
+    protected static bool TryReadIndexDataOffsets(BigEndianBinaryReader reader, [NotNullWhen(true)] out CffIndexOffset[]? value, bool cff2 = false)
     {
         // INDEX Data
         // An INDEX is an array of variable-sized objects.It comprises a
@@ -241,7 +241,8 @@ internal abstract class CffParserBase
         // Note 2
         // An INDEX may be skipped by jumping to the offset specified by the last
         // element of the offset array
-        ushort count = reader.ReadUInt16();
+        // CFF2 uses a 32-bit count; CFF1 uses 16-bit.
+        uint count = cff2 ? reader.ReadUInt32() : reader.ReadUInt16();
         if (count == 0)
         {
             value = null;
@@ -265,9 +266,9 @@ internal abstract class CffParserBase
         return true;
     }
 
-    protected static byte[][] ReadSubrBuffer(BigEndianBinaryReader reader)
+    protected static byte[][] ReadSubrBuffer(BigEndianBinaryReader reader, bool cff2 = false)
     {
-        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
+        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets, cff2))
         {
             return [];
         }

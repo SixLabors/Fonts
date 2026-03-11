@@ -209,7 +209,7 @@ public static class TestFonts
     public static string RobotoFlex => GetFullPath("RobotoFlex.ttf");
 
     /// <summary>
-    /// Gets the Adobe Variable Font Prototype with CFF2 outlines and weight variations.
+    /// Gets the Adobe Variable Font Prototype with TrueType/gvar outlines and weight/contrast variations.
     /// From <see href="https://github.com/adobe-fonts/adobe-variable-font-prototype"/>.
     /// </summary>
     public static string AdobeVFPrototype => GetFullPath("AdobeVFPrototype.ttf");

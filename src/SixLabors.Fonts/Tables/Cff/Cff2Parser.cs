@@ -1,7 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System.Diagnostics.CodeAnalysis;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.Cff;
@@ -37,15 +36,22 @@ internal class Cff2Parser : CffParserBase
             FDSelect = this.fdSelectOffset.GetValueOrDefault(),
         };
 
-        byte[][] globalSubrRawBuffers = ReadGlobalSubrIndex(reader);
+        byte[][] globalSubrRawBuffers = ReadSubrBuffer(reader, cff2: true);
 
-        // Length in bytes of the Item Variation Store structure that follows.
-        reader.Seek(this.variationStoreOffset, SeekOrigin.Begin);
-        ushort variationStoreLength = reader.ReadUInt16();
-        this.itemVariationStore = variationStoreLength == 0 ? EmptyItemVariationStoreTable : ItemVariationStore.Load(reader, this.variationStoreOffset + 2);
-
-        // Make sure we point to the stream to the end of the variation store data.
-        reader.Seek(offset + variationStoreLength, SeekOrigin.Begin);
+        // The Item Variation Store is optional. When present, its offset is
+        // relative to the start of the CFF2 table.
+        if (this.variationStoreOffset > 0)
+        {
+            reader.Seek(this.variationStoreOffset, SeekOrigin.Begin);
+            ushort variationStoreLength = reader.ReadUInt16();
+            this.itemVariationStore = variationStoreLength == 0
+                ? EmptyItemVariationStoreTable
+                : ItemVariationStore.Load(reader, this.variationStoreOffset + 2);
+        }
+        else
+        {
+            this.itemVariationStore = EmptyItemVariationStoreTable;
+        }
 
         if (this.fdSelectOffset.HasValue)
         {
@@ -56,14 +62,16 @@ internal class Cff2Parser : CffParserBase
         byte[][] charStringBuffers = ReadCharStringBuffers(reader, charStringOffsets);
 
         int fdArrayOffset = this.fdArrayOffset.GetValueOrDefault();
-        FontDict[] fontDicts = this.ReadFdArray(reader, this.offset, fdArrayOffset);
+        FontDict[] fontDicts = this.ReadFdArray(reader, this.offset, fdArrayOffset, cff2: true);
         CffTopDictionary topDictionary = new()
         {
             CidFontInfo = cidFontInfo,
             FontMatrix = this.fontMatrix ?? [0.001, 0, 0, 0.001, 0, 0]
         };
 
-        CffPrivateDictionary privateDictionary = new(fontDicts[0].LocalSubr, 0, 0);
+        CffPrivateDictionary privateDictionary = fontDicts.Length > 0
+            ? new(fontDicts[0].LocalSubr, 0, 0)
+            : new([], 0, 0);
         int glyphCount = charStringOffsets.Length;
         CffGlyphData[] glyphs = this.ReadCharStringsIndex(topDictionary, globalSubrRawBuffers, fontDicts, privateDictionary, charStringBuffers, glyphCount);
 
@@ -105,59 +113,10 @@ internal class Cff2Parser : CffParserBase
         }
     }
 
-    private static byte[][] ReadGlobalSubrIndex(BigEndianBinaryReader reader, bool cff2 = true)
-
-        // 16. Local / Global Subrs INDEXes
-        // Both Type 1 and Type 2 charstrings support the notion of
-        // subroutines or subrs.
-
-        // A subr is typically a sequence of charstring
-        // bytes representing a sub - program that occurs in more than one
-        // place in a font’s charstring data.
-
-        // This subr may be stored once
-        // but referenced many times from within one or more charstrings
-        // by the use of the call subr  operator whose operand is the
-        // number of the subr to be called.
-
-        // The subrs are local to a  particular font and
-        // cannot be shared between fonts.
-
-        // Type 2 charstrings also permit global subrs which function in the same
-        // way but are called by the call gsubr operator and may be shared
-        // across fonts.
-
-        // Local subrs are stored in an INDEX structure which is located via
-        // the offset operand of the Subrs  operator in the Private DICT.
-        // A font without local subrs has no Subrs operator in the Private DICT.
-
-        // Global subrs are stored in an INDEX structure which follows the
-        // String INDEX. A FontSet without any global subrs is represented
-        // by an empty Global Subrs INDEX.
-        => ReadSubrBuffer(reader, cff2);
-
-    private static byte[][] ReadSubrBuffer(BigEndianBinaryReader reader, bool cff2 = true)
-    {
-        if (!TryReadIndexDataOffsets(reader, cff2, out CffIndexOffset[]? offsets))
-        {
-            return [];
-        }
-
-        byte[][] rawBufferList = new byte[offsets.Length][];
-
-        for (int i = 0; i < rawBufferList.Length; ++i)
-        {
-            CffIndexOffset offset = offsets[i];
-            rawBufferList[i] = reader.ReadBytes(offset.Length);
-        }
-
-        return rawBufferList;
-    }
-
     private CffIndexOffset[] ReadCharStringIndex(BigEndianBinaryReader reader)
     {
         reader.BaseStream.Position = this.offset + this.charStringIndexOffset;
-        if (!TryReadIndexDataOffsets(reader, true, out CffIndexOffset[]? offsets))
+        if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets, cff2: true))
         {
             throw new InvalidFontFileException("No glyph data found.");
         }
@@ -252,91 +211,5 @@ internal class Cff2Parser : CffParserBase
         }
 
         return glyphs;
-    }
-
-    private static bool TryReadIndexDataOffsets(BigEndianBinaryReader reader, bool cff2, [NotNullWhen(true)] out CffIndexOffset[]? value)
-    {
-        // INDEX Data
-        // An INDEX is an array of variable-sized objects.It comprises a
-        // header, an offset array, and object data.
-        // The offset array specifies offsets within the object data.
-        // An object is retrieved by
-        // indexing the offset array and fetching the object at the
-        // specified offset.
-        // The object’s length can be determined by subtracting its offset
-        // from the next offset in the offset array.
-        // An additional offset is added at the end of the offset array so the
-        // length of the last object may be determined.
-        // The INDEX format is shown in Table 7
-
-        // Table 7 INDEX Format
-        // Type        Name                  Description
-        // Card16      count                 Number of objects stored in INDEX
-        // OffSize     offSize               Offset array element size
-        // Offset      offset[count + 1]     Offset array(from byte preceding object data)
-        // Card8       data[<varies>]        Object data
-
-        // Offsets in the offset array are relative to the byte that precedes
-        // the object data. Therefore the first element of the offset array
-        // is always 1. (This ensures that every object has a corresponding
-        // offset which is always nonzero and permits the efficient
-        // implementation of dynamic object loading.)
-
-        // An empty INDEX is represented by a count field with a 0 value
-        // and no additional fields.Thus, the total size of an empty INDEX
-        // is 2 bytes.
-
-        // Note 2
-        // An INDEX may be skipped by jumping to the offset specified by the last
-        // element of the offset array
-        uint count = cff2 ? reader.ReadUInt32() : reader.ReadUInt16();
-
-        if (count == 0)
-        {
-            value = null;
-            return false;
-        }
-
-        int offSize = reader.ReadByte();
-        int[] offsets = new int[count + 1];
-        CffIndexOffset[] indexElems = new CffIndexOffset[count];
-        for (int i = 0; i <= count; ++i)
-        {
-            offsets[i] = reader.ReadOffset(offSize);
-        }
-
-        for (int i = 0; i < count; ++i)
-        {
-            indexElems[i] = new CffIndexOffset(offsets[i], offsets[i + 1] - offsets[i]);
-        }
-
-        value = indexElems;
-        return true;
-    }
-
-    private List<CffDataDicEntry> ReadDICTData(BigEndianBinaryReader reader, int length)
-    {
-        // 4. DICT Data
-
-        // Font dictionary data comprising key-value pairs is represented
-        // in a compact tokenized format that is similar to that used to
-        // represent Type 1 charstrings.
-
-        // Dictionary keys are encoded as 1- or 2-byte operators and dictionary values are encoded as
-        // variable-size numeric operands that represent either integer or
-        // real values.
-
-        //-----------------------------
-        // A DICT is simply a sequence of
-        // operand(s)/operator bytes concatenated together.
-        int maxIndex = (int)(reader.BaseStream.Position + length);
-        List<CffDataDicEntry> dicData = new();
-        while (reader.BaseStream.Position < maxIndex)
-        {
-            CffDataDicEntry dicEntry = this.ReadEntry(reader);
-            dicData.Add(dicEntry);
-        }
-
-        return dicData;
     }
 }

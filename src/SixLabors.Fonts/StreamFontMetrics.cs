@@ -273,15 +273,16 @@ internal partial class StreamFontMetrics : FontMetrics
     /// <inheritdoc/>
     public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
     {
-        if (this.trueTypeFontTables?.Fvar == null)
+        FVarTable? fvar = this.trueTypeFontTables?.Fvar ?? this.compactFontTables?.FVar;
+        Tables.General.Name.NameTable? names = this.trueTypeFontTables?.Name ?? this.compactFontTables?.Name;
+
+        if (fvar == null)
         {
             variationAxes = [];
             return false;
         }
 
-        FVarTable? fvar = this.trueTypeFontTables?.Fvar;
-        Tables.General.Name.NameTable? names = this.trueTypeFontTables?.Name;
-        variationAxes = new VariationAxis[fvar!.Axes.Length];
+        variationAxes = new VariationAxis[fvar.Axes.Length];
         for (int i = 0; i < fvar.Axes.Length; i++)
         {
             VariationAxisRecord axis = fvar.Axes[i];

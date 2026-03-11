@@ -233,7 +233,7 @@ public class VariationFontTests
     }
 
     [Fact]
-    public void CFF2_VariedGlyphDiffersFromDefault()
+    public void GVar_AdobeVFPrototype_VariedGlyphDiffersFromDefault()
     {
         FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
         Font defaultFont = family.CreateFont(12);
@@ -250,7 +250,7 @@ public class VariationFontTests
     }
 
     [Fact]
-    public void CFF2_DifferentWeightsProduceDifferentBounds()
+    public void GVar_AdobeVFPrototype_DifferentWeightsProduceDifferentBounds()
     {
         FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
         Font font200 = family.CreateFont(12, new FontVariation("wght", 200));
@@ -265,7 +265,7 @@ public class VariationFontTests
     }
 
     [Fact]
-    public void CFF2_GSUB_SubstitutesGlyphAtHeavyWeight()
+    public void GVar_AdobeVFPrototype_GSUB_SubstitutesGlyphAtHeavyWeight()
     {
         // fontkit: AdobeVFPrototype at wght=900, '$' substitutes to 'dollar.nostroke' (glyphId 2).
         // GSUB FeatureVariations activate alternate glyphs based on axis values.
@@ -282,6 +282,81 @@ public class VariationFontTests
 
         // The GSUB substitution should produce a different glyph ID at wght=900.
         Assert.NotEqual(defaultRenderer.GlyphKeys[0].GlyphId, heavyRenderer.GlyphKeys[0].GlyphId);
+    }
+
+    [Fact]
+    public void CFF2_CanLoadFont()
+    {
+        // AdobeVFPrototype-Subset.otf is the only CFF2 font in the test suite.
+        // It contains 3 glyphs: .notdef, '$' (glyph 1), and 'dollar.nostroke' (glyph 2).
+        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        Font font = family.CreateFont(12);
+
+        Assert.NotNull(font.FontMetrics);
+    }
+
+    [Fact]
+    public void CFF2_CanLoadVariationAxes()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        Font font = family.CreateFont(12);
+
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[]? axes));
+        Assert.Equal(2, axes!.Length);
+        Assert.Equal("wght", axes[0].Tag);
+    }
+
+    [Fact]
+    public void CFF2_CanCreateFontWithVariation()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        Font variedFont = family.CreateFont(12, new FontVariation("wght", 900));
+
+        Assert.Single(variedFont.Variations.ToArray());
+    }
+
+    [Fact]
+    public void CFF2_RendersGlyphAtDefaultWeight()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        Font font = family.CreateFont(48);
+
+        GlyphRenderer renderer = new();
+        TextRenderer.RenderTextTo(renderer, "$", new TextOptions(font));
+
+        Assert.NotEmpty(renderer.GlyphKeys);
+        Assert.NotEmpty(renderer.ControlPoints);
+    }
+
+    [Fact]
+    public void CFF2_RendersGlyphAtVariedWeight()
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        Font font = family.CreateFont(48, new FontVariation("wght", 900));
+
+        GlyphRenderer renderer = new();
+        TextRenderer.RenderTextTo(renderer, "$", new TextOptions(font));
+
+        Assert.NotEmpty(renderer.GlyphKeys);
+        Assert.NotEmpty(renderer.ControlPoints);
+    }
+
+    [Fact]
+    public void CFF2_MultipleWeightsRenderSuccessfully()
+    {
+        // Verify the CFF2 parser handles charstrings at multiple weight values.
+        FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototypeSubset);
+        Font lightFont = family.CreateFont(48, new FontVariation("wght", 0));
+        Font heavyFont = family.CreateFont(48, new FontVariation("wght", 900));
+
+        GlyphRenderer lightRenderer = new();
+        TextRenderer.RenderTextTo(lightRenderer, "$", new TextOptions(lightFont));
+
+        GlyphRenderer heavyRenderer = new();
+        TextRenderer.RenderTextTo(heavyRenderer, "$", new TextOptions(heavyFont));
+
+        Assert.NotEmpty(lightRenderer.ControlPoints);
+        Assert.NotEmpty(heavyRenderer.ControlPoints);
     }
 
     [Fact]
@@ -450,7 +525,7 @@ public class VariationFontTests
     }
 
     [Fact]
-    public void Renderer_CFF2_VariedFontProducesGlyphs()
+    public void Renderer_GVar_AdobeVFPrototype_VariedFontProducesGlyphs()
     {
         FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
         Font variedFont = family.CreateFont(12, new FontVariation("wght", 900));
@@ -553,7 +628,7 @@ public class VariationFontTests
     [Theory]
     [InlineData(200, "Light")]
     [InlineData(900, "Black")]
-    public void VisualTest_AdobeVFPrototype_CFF2_WeightVariations(float weight, string label)
+    public void VisualTest_AdobeVFPrototype_GVar_WeightVariations(float weight, string label)
     {
         FontFamily family = new FontCollection().Add(TestFonts.AdobeVFPrototype);
         Font font = family.CreateFont(48, new FontVariation("wght", weight));
