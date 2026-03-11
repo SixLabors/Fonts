@@ -95,10 +95,6 @@ internal partial class StreamFontMetrics
 
     private static StreamFontMetrics LoadTrueTypeFont(FontReader reader)
     {
-        // TODO: This doesn't seem correct. The glyf table should only load the raw data.
-        // Transformations should probably be applied later when glyphs are requested.
-        // Load glyph variations related tables first, because glyph table needs them.
-
         // Load using recommended order for best performance.
         // https://learn.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
         // 'head', 'hhea', 'maxp', OS/2, 'hmtx', LTSH, VDMX, 'hdmx', 'cmap', 'fpgm', 'prep', 'cvt ', 'loca', 'glyf', 'kern', 'name', 'post', 'gasp', PCLT, DSIG
