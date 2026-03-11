@@ -455,6 +455,13 @@ internal partial class StreamFontMetrics : FontMetrics
 
         HorizontalMetrics horizontalMetrics = InitializeHorizontalMetrics(hhea, vhea, os2);
         VerticalMetrics verticalMetrics = InitializeVerticalMetrics(horizontalMetrics, vhea);
+
+        // Apply MVAR deltas for the current variation coordinates.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            this.ApplyMVarDeltas(horizontalMetrics, verticalMetrics);
+        }
+
         return (horizontalMetrics, verticalMetrics);
     }
 
@@ -556,6 +563,53 @@ internal partial class StreamFontMetrics : FontMetrics
         verticalMetrics.Synthesized = false;
 
         return verticalMetrics;
+    }
+
+    /// <summary>
+    /// Applies MVAR (Metrics Variations) deltas to all font-wide metrics.
+    /// MVAR adjusts global metrics (ascender, descender, line gap, strikeout, underline, etc.)
+    /// based on the current variation coordinates.
+    /// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/mvar"/>
+    /// </summary>
+    private void ApplyMVarDeltas(HorizontalMetrics horizontalMetrics, VerticalMetrics verticalMetrics)
+    {
+        GlyphVariationProcessor processor = this.GlyphVariationProcessor!;
+
+        // MVAR tags are 4-byte big-endian ASCII values.
+        // Horizontal metrics from OS/2 or hhea.
+        horizontalMetrics.Ascender += (short)MathF.Round(processor.GetMVarDelta(MVarTag.HorizontalAscender));
+        horizontalMetrics.Descender += (short)MathF.Round(processor.GetMVarDelta(MVarTag.HorizontalDescender));
+        horizontalMetrics.LineGap += (short)MathF.Round(processor.GetMVarDelta(MVarTag.HorizontalLineGap));
+        horizontalMetrics.LineHeight = (short)(horizontalMetrics.Ascender - horizontalMetrics.Descender + horizontalMetrics.LineGap);
+
+        // Vertical metrics from vhea.
+        if (!verticalMetrics.Synthesized)
+        {
+            verticalMetrics.Ascender += (short)MathF.Round(processor.GetMVarDelta(MVarTag.VerticalAscender));
+            verticalMetrics.Descender += (short)MathF.Round(processor.GetMVarDelta(MVarTag.VerticalDescender));
+            verticalMetrics.LineGap += (short)MathF.Round(processor.GetMVarDelta(MVarTag.VerticalLineGap));
+            verticalMetrics.LineHeight = (short)(verticalMetrics.Ascender - verticalMetrics.Descender + verticalMetrics.LineGap);
+        }
+
+        // OS/2 subscript metrics.
+        this.subscriptXSize += (short)MathF.Round(processor.GetMVarDelta(MVarTag.SubscriptXSize));
+        this.subscriptYSize += (short)MathF.Round(processor.GetMVarDelta(MVarTag.SubscriptYSize));
+        this.subscriptXOffset += (short)MathF.Round(processor.GetMVarDelta(MVarTag.SubscriptXOffset));
+        this.subscriptYOffset += (short)MathF.Round(processor.GetMVarDelta(MVarTag.SubscriptYOffset));
+
+        // OS/2 superscript metrics.
+        this.superscriptXSize += (short)MathF.Round(processor.GetMVarDelta(MVarTag.SuperscriptXSize));
+        this.superscriptYSize += (short)MathF.Round(processor.GetMVarDelta(MVarTag.SuperscriptYSize));
+        this.superscriptXOffset += (short)MathF.Round(processor.GetMVarDelta(MVarTag.SuperscriptXOffset));
+        this.superscriptYOffset += (short)MathF.Round(processor.GetMVarDelta(MVarTag.SuperscriptYOffset));
+
+        // OS/2 strikeout metrics.
+        this.strikeoutSize += (short)MathF.Round(processor.GetMVarDelta(MVarTag.StrikeoutSize));
+        this.strikeoutPosition += (short)MathF.Round(processor.GetMVarDelta(MVarTag.StrikeoutPosition));
+
+        // post underline metrics.
+        this.underlinePosition += (short)MathF.Round(processor.GetMVarDelta(MVarTag.UnderlinePosition));
+        this.underlineThickness += (short)MathF.Round(processor.GetMVarDelta(MVarTag.UnderlineThickness));
     }
 
     /// <summary>

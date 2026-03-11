@@ -103,7 +103,7 @@ internal class MVarTable : Table
     /// <param name="outerIndex">The outer index into the ItemVariationStore.</param>
     /// <param name="innerIndex">The inner index into the ItemVariationStore.</param>
     /// <returns>True if the tag was found; false otherwise.</returns>
-    public bool TryGetIndices(uint tag, out ushort outerIndex, out ushort innerIndex)
+    public bool TryGetIndices(Tag tag, out ushort outerIndex, out ushort innerIndex)
     {
         // ValueRecords are sorted by tag per the spec, so binary search is valid.
         int lo = 0;
@@ -111,7 +111,7 @@ internal class MVarTable : Table
         while (lo <= hi)
         {
             int mid = lo + ((hi - lo) >> 1);
-            uint midTag = this.ValueRecords[mid].Tag;
+            Tag midTag = this.ValueRecords[mid].Tag;
             if (midTag == tag)
             {
                 outerIndex = this.ValueRecords[mid].DeltaSetOuterIndex;
@@ -119,7 +119,7 @@ internal class MVarTable : Table
                 return true;
             }
 
-            if (midTag < tag)
+            if (midTag.Value < tag.Value)
             {
                 lo = mid + 1;
             }

@@ -325,9 +325,9 @@ internal class GlyphVariationProcessor
     /// Gets the delta adjustment for a global font metric from the MVAR table.
     /// Returns 0 if no MVAR table is present or the tag is not found.
     /// </summary>
-    /// <param name="tag">The 4-byte MVAR metric tag (e.g. 'hasc', 'hdsc').</param>
+    /// <param name="tag">The MVAR metric tag (e.g. 'hasc', 'hdsc').</param>
     /// <returns>The metric delta value.</returns>
-    public float GetMVarDelta(uint tag)
+    public float GetMVarDelta(Tag tag)
     {
         if (this.mVar is null)
         {

@@ -8,7 +8,7 @@ namespace SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 /// </summary>
 internal readonly struct MetricValueRecord
 {
-    public MetricValueRecord(uint tag, ushort deltaSetOuterIndex, ushort deltaSetInnerIndex)
+    public MetricValueRecord(Tag tag, ushort deltaSetOuterIndex, ushort deltaSetInnerIndex)
     {
         this.Tag = tag;
         this.DeltaSetOuterIndex = deltaSetOuterIndex;
@@ -18,7 +18,7 @@ internal readonly struct MetricValueRecord
     /// <summary>
     /// Gets the four-byte tag identifying the metric (e.g. 'hasc', 'hdsc').
     /// </summary>
-    public uint Tag { get; }
+    public Tag Tag { get; }
 
     /// <summary>
     /// Gets the outer index into the ItemVariationStore.
