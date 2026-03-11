@@ -127,6 +127,13 @@ internal partial class StreamFontMetrics
         VVarTable? vvar = reader.TryGetTable<VVarTable>();
         MVarTable? mvar = reader.TryGetTable<MVarTable>();
 
+        // cvar depends on axisCount from fvar, so it cannot be auto-loaded via TryGetTable.
+        CVarTable? cvar = null;
+        if (fvar is not null)
+        {
+            cvar = CVarTable.Load(reader, fvar.AxisCount);
+        }
+
         ColrTable? colr = reader.TryGetTable<ColrTable>();
         CpalTable? cpal = reader.TryGetTable<CpalTable>();
 
@@ -151,7 +158,8 @@ internal partial class StreamFontMetrics
             Vvar = vvar,
             Mvar = mvar,
             Avar = avar,
-            Svg = svg
+            Svg = svg,
+            Cvar = cvar
         };
 
         GlyphVariationProcessor? glyphVariationProcessor = null;
