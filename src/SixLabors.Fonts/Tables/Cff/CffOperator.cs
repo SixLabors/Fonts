@@ -3,25 +3,38 @@
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Represents a CFF DICT operator with its name and operand kind.
+/// Operators are registered in a static dictionary keyed by their byte encoding
+/// and looked up during DICT parsing.
+/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf"/>
+/// </summary>
 internal sealed class CFFOperator
 {
-    private static readonly Lazy<Dictionary<int, CFFOperator>> RegisteredOperators = new(() => CreateDictionary(), true);
-    private readonly byte b0;
-    private readonly byte b1;
-    private readonly OperatorOperandKind operatorOperandKind;
+    private static readonly Lazy<Dictionary<int, CFFOperator>> RegisteredOperators = new(CreateDictionary, true);
 
-    // b0 the first byte of a two byte value
-    // b1 the second byte of a two byte value
-    private CFFOperator(string name, byte b0, byte b1, OperatorOperandKind operatorOperandKind)
+    private CFFOperator(string name, OperatorOperandKind operandKind)
     {
-        this.b0 = b0;
-        this.b1 = b1;
         this.Name = name;
-        this.operatorOperandKind = operatorOperandKind;
+        this.OperandKind = operandKind;
     }
 
+    /// <summary>
+    /// Gets the name of the operator (e.g. "CharStrings", "FontMatrix", "Private").
+    /// </summary>
     public string Name { get; }
 
+    /// <summary>
+    /// Gets the expected operand format for this operator.
+    /// </summary>
+    public OperatorOperandKind OperandKind { get; }
+
+    /// <summary>
+    /// Looks up a registered CFF operator by its one- or two-byte encoding.
+    /// </summary>
+    /// <param name="b0">The first byte of the operator.</param>
+    /// <param name="b1">The second byte (0 for single-byte operators, or 12 prefix byte value).</param>
+    /// <returns>The matching <see cref="CFFOperator"/>, or <see langword="null"/> if not found.</returns>
     public static CFFOperator GetOperatorByKey(byte b0, byte b1)
     {
         RegisteredOperators.Value.TryGetValue((b1 << 8) | b0, out CFFOperator? found);
@@ -30,7 +43,7 @@ internal sealed class CFFOperator
 
     private static Dictionary<int, CFFOperator> CreateDictionary()
     {
-        Dictionary<int, CFFOperator> dictionary = new();
+        Dictionary<int, CFFOperator> dictionary = [];
 
         // Table 9: Top DICT Operator Entries
         Register(dictionary, 0, "version", OperatorOperandKind.SID);
@@ -84,24 +97,29 @@ internal sealed class CFFOperator
         Register(dictionary, 12, 13, "StemSnapV", OperatorOperandKind.Delta);
         Register(dictionary, 12, 14, "ForceBold", OperatorOperandKind.Boolean);
 
-        // reserved 12 15//https://typekit.files.wordpress.com/2013/05/5176.cff.pdf
-        // reserved 12 16//https://typekit.files.wordpress.com/2013/05/5176.cff.pdf
-        Register(dictionary, 12, 17, "LanguageGroup", OperatorOperandKind.Number); // https://typekit.files.wordpress.com/2013/05/5176.cff.pdf
-        Register(dictionary, 12, 18, "ExpansionFactor", OperatorOperandKind.Number); // https://typekit.files.wordpress.com/2013/05/5176.cff.pdf
-        Register(dictionary, 12, 19, "initialRandomSeed", OperatorOperandKind.Number); // https://typekit.files.wordpress.com/2013/05/5176.cff.pdf
+        // reserved 12 15
+        // reserved 12 16
+        Register(dictionary, 12, 17, "LanguageGroup", OperatorOperandKind.Number);
+        Register(dictionary, 12, 18, "ExpansionFactor", OperatorOperandKind.Number);
+        Register(dictionary, 12, 19, "initialRandomSeed", OperatorOperandKind.Number);
 
         Register(dictionary, 19, "Subrs", OperatorOperandKind.Number);
         Register(dictionary, 20, "defaultWidthX", OperatorOperandKind.Number);
         Register(dictionary, 21, "nominalWidthX", OperatorOperandKind.Number);
 
+        // CFF2 operators
+        Register(dictionary, 22, "vsindex", OperatorOperandKind.Number);
+        Register(dictionary, 23, "blend", OperatorOperandKind.Number);
+        Register(dictionary, 24, "vstore", OperatorOperandKind.Number);
+
         return dictionary;
     }
 
-    private static void Register(Dictionary<int, CFFOperator> dictionary, byte b0, byte b1, string operatorName, OperatorOperandKind opopKind)
-        => dictionary.Add((b1 << 8) | b0, new CFFOperator(operatorName, b0, b1, opopKind));
+    private static void Register(Dictionary<int, CFFOperator> dictionary, byte b0, byte b1, string name, OperatorOperandKind operandKind)
+        => dictionary.Add((b1 << 8) | b0, new CFFOperator(name, operandKind));
 
-    private static void Register(Dictionary<int, CFFOperator> dictionary, byte b0, string operatorName, OperatorOperandKind opopKind)
-        => dictionary.Add(b0, new CFFOperator(operatorName, b0, 0, opopKind));
+    private static void Register(Dictionary<int, CFFOperator> dictionary, byte b0, string name, OperatorOperandKind operandKind)
+        => dictionary.Add(b0, new CFFOperator(name, operandKind));
 
 #if DEBUG
     public override string ToString() => this.Name;

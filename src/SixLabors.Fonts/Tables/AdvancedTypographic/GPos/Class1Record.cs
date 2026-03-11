@@ -9,7 +9,7 @@ internal sealed class Class1Record
 
     public Class2Record[] Class2Records { get; }
 
-    public static Class1Record Load(BigEndianBinaryReader reader, int class2Count, ValueFormat valueFormat1, ValueFormat valueFormat2)
+    public static Class1Record Load(BigEndianBinaryReader reader, int class2Count, ValueFormat valueFormat1, ValueFormat valueFormat2, long parentBase = -1)
     {
         // +--------------+----------------------------+---------------------------------------------+
         // | Type         | Name                       | Description                                 |
@@ -20,7 +20,7 @@ internal sealed class Class1Record
         var class2Records = new Class2Record[class2Count];
         for (int i = 0; i < class2Records.Length; i++)
         {
-            class2Records[i] = new Class2Record(reader, valueFormat1, valueFormat2);
+            class2Records[i] = new Class2Record(reader, valueFormat1, valueFormat2, parentBase);
         }
 
         return new Class1Record(class2Records);

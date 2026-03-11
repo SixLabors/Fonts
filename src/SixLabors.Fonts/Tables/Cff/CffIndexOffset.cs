@@ -3,15 +3,18 @@
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Represents the position and length of an element within a CFF INDEX structure.
+/// </summary>
 internal readonly struct CffIndexOffset
 {
     /// <summary>
-    /// The starting offset
+    /// The starting offset of the element within the INDEX data.
     /// </summary>
     public readonly int Start;
 
     /// <summary>
-    /// The length
+    /// The length in bytes of the element.
     /// </summary>
     public readonly int Length;
 

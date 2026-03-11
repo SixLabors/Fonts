@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Diagnostics.CodeAnalysis;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.General.Colr;
 
@@ -74,7 +75,11 @@ internal sealed class ClipList
         return new ClipList(records, boxes);
     }
 
-    public bool TryGetClipBox(ushort glyphId, IVariationResolver? varResolver, [NotNullWhen(true)] out Bounds? bounds)
+    public bool TryGetClipBox(
+        ushort glyphId,
+        ColrTable colr,
+        GlyphVariationProcessor? processor,
+        [NotNullWhen(true)] out Bounds? bounds)
     {
         int lo = 0;
         int hi = this.Records.Length - 1;
@@ -103,7 +108,7 @@ internal sealed class ClipList
                 return false;
             }
 
-            bounds = box.GetBounds(varResolver);
+            bounds = box.GetBounds(colr, processor);
             return true;
         }
 

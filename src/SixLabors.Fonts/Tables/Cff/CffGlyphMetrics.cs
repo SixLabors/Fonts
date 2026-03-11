@@ -127,6 +127,16 @@ internal class CffGlyphMetrics : GlyphMetrics
             if (!UnicodeUtility.ShouldRenderWhiteSpaceOnly(this.CodePoint))
             {
                 Vector2 scale = new Vector2(scaledPPEM) / this.ScaleFactor;
+
+                // Apply the CFF FontMatrix to convert charstring coordinates to design units.
+                // The normalized FontMatrix (fontMatrix * unitsPerEM) is identity for the default
+                // [0.001, 0, 0, 0.001, 0, 0] with upm=1000.
+                if (this.glyphData.FontMatrix is double[] fm)
+                {
+                    float upm = this.UnitsPerEm;
+                    scale *= new Vector2((float)(fm[0] * upm), (float)(fm[3] * upm));
+                }
+
                 Vector2 scaledOffset = this.Offset * scale;
                 this.glyphData.RenderTo(renderer, renderLocation, scale, scaledOffset, rotation);
             }

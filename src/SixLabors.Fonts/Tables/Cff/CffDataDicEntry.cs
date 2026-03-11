@@ -7,6 +7,10 @@ using System.Text;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Represents a single key-value entry parsed from a CFF DICT structure.
+/// The key is a <see cref="CFFOperator"/> and the value is an array of <see cref="CffOperand"/>.
+/// </summary>
 internal class CffDataDicEntry
 {
     public CffDataDicEntry(CFFOperator @operator, CffOperand[] operands)
@@ -15,8 +19,14 @@ internal class CffDataDicEntry
         this.Operands = operands;
     }
 
+    /// <summary>
+    /// Gets the DICT operator that identifies this entry.
+    /// </summary>
     public CFFOperator Operator { get; }
 
+    /// <summary>
+    /// Gets the operand values associated with this operator.
+    /// </summary>
     public CffOperand[] Operands { get; }
 
 #if DEBUG

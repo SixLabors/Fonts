@@ -1,8 +1,13 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using Xunit;
 
 namespace SixLabors.Fonts.Tests;
 
@@ -196,6 +201,73 @@ public static class TestFonts
     public static string EbGaramond => GetFullPath("EBGaramond-Regular.ttf");
 
     public static string RobotoRegular => GetFullPath("Roboto-Regular.ttf");
+
+    /// <summary>
+    /// Gets the RobotoFlex variable font with CFF2 outlines and multiple variation axes
+    /// including weight, width, slant, and optical size.
+    /// </summary>
+    public static string RobotoFlex => GetFullPath("RobotoFlex.ttf");
+
+    /// <summary>
+    /// Gets the Adobe Variable Font Prototype with TrueType/gvar outlines and weight/contrast variations.
+    /// From <see href="https://github.com/adobe-fonts/adobe-variable-font-prototype"/>.
+    /// </summary>
+    public static string AdobeVFPrototype => GetFullPath("AdobeVFPrototype.ttf");
+
+    /// <summary>
+    /// Gets a subset of AdobeVFPrototype with CFF2 variations and GSUB feature variations.
+    /// From fontkit test data.
+    /// </summary>
+    public static string AdobeVFPrototypeSubset => GetFullPath("AdobeVFPrototype-Subset.otf");
+
+    /// <summary>
+    /// Gets a gvar test font using shared all-points deltas. From fontkit test data.
+    /// </summary>
+    public static string TestGVAROne => GetFullPath("TestGVAROne.ttf");
+
+    /// <summary>
+    /// Gets a gvar test font using shared enumerated-points deltas. From fontkit test data.
+    /// </summary>
+    public static string TestGVARTwo => GetFullPath("TestGVARTwo.ttf");
+
+    /// <summary>
+    /// Gets a gvar test font using no shared points. From fontkit test data.
+    /// </summary>
+    public static string TestGVARThree => GetFullPath("TestGVARThree.ttf");
+
+    /// <summary>
+    /// Gets a gvar test font with two axes (cntr and wght) and an HVAR table. From fontkit test data.
+    /// </summary>
+    public static string TestGVARFour => GetFullPath("TestGVARFour.ttf");
+
+    /// <summary>
+    /// Gets a test font with HVAR fallback (DeltaSetIndexMap) behavior. From fontkit test data.
+    /// </summary>
+    public static string TestHVARTwo => GetFullPath("TestHVARTwo.ttf");
+
+    /// <summary>
+    /// Gets the Mada variable font (Arabic) with GPOS mark anchor variations. From fontkit test data.
+    /// </summary>
+    public static string MadaVF => GetFullPath("Mada-VF.ttf");
+
+    /// <summary>
+    /// Gets the Noto Emoji variable font with a weight axis (300–700) using gvar/HVAR.
+    /// </summary>
+    public static string NotoEmojiVariableFont => GetFullPath("NotoEmoji-VariableFont_wght.ttf");
+
+    /// <summary>
+    /// Gets VotoSerif variable font with cvar table using shared points.
+    /// From fonttools test data. Axes: wght (28–194), wdth (70–100), opsz (12–72).
+    /// Contains 5 glyphs: .notdef, space (U+0020), 'h' (U+0068), 'n' (U+006E), 'o' (U+006F).
+    /// </summary>
+    public static string VotoSerifCvar => GetFullPath("VotoSerifGX-IUP-gvar-cvar.ttf");
+
+    /// <summary>
+    /// Gets VotoSerif variable font with cvar table without shared points.
+    /// From fonttools test data. Axes: wght (28–194), wdth (70–100), opsz (12–72).
+    /// Contains 5 glyphs: .notdef, space (U+0020), 'h' (U+0068), 'n' (U+006E), 'o' (U+006F).
+    /// </summary>
+    public static string VotoSerifCvarNoShared => GetFullPath("VotoSerifGX-IUP-gvar-cvar_noshared.ttf");
 
     public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 

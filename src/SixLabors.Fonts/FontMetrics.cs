@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -173,6 +174,14 @@ public abstract class FontMetrics
     internal abstract bool TryGetMarkAttachmentClass(ushort glyphId, [NotNullWhen(true)] out GlyphClassDef? markAttachmentClass);
 
     /// <summary>
+    /// Tries to get the variation axes that this font supports.
+    /// The font needs to have a fvar table.
+    /// </summary>
+    /// <param name="variationAxes">An array with Variation axes.</param>
+    /// <returns>True, if fvar table is present.</returns>
+    public abstract bool TryGetVariationAxes(out VariationAxis[]? variationAxes);
+
+    /// <summary>
     /// Returns a value indicating whether the specified glyph is in the given mark filtering set.
     /// The font needs to have a GDEF table defined.
     /// </summary>
@@ -267,4 +276,23 @@ public abstract class FontMetrics
     /// </summary>
     /// <param name="collection">The glyph positioning collection.</param>
     internal abstract void UpdatePositions(GlyphPositioningCollection collection);
+
+    /// <summary>
+    /// Computes a GPOS/GSUB variation delta for the given packed VariationIndex.
+    /// The delta is computed using the GDEF ItemVariationStore and the current
+    /// variation coordinates from the GlyphVariationProcessor.
+    /// </summary>
+    /// <param name="packedVariationIndex">
+    /// The packed VariationIndex: (outerIndex &lt;&lt; 16) | innerIndex.
+    /// A value of 0 returns 0.
+    /// </param>
+    /// <returns>The delta value in design units, or 0 if no variation data is available.</returns>
+    internal abstract float GetGDefVariationDelta(uint packedVariationIndex);
+
+    /// <summary>
+    /// Gets the normalized variation coordinates for this font instance.
+    /// Returns an empty span for non-variable fonts or fonts at default coordinates.
+    /// </summary>
+    /// <returns>The normalized coordinates, or an empty span.</returns>
+    internal abstract ReadOnlySpan<float> GetNormalizedCoordinates();
 }

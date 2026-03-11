@@ -13,6 +13,7 @@ namespace SixLabors.Fonts;
 /// </summary>
 public sealed class Font
 {
+    private readonly FontVariation[] variations;
     private readonly Lazy<FontMetrics?> metrics;
     private readonly Lazy<string> fontName;
 
@@ -42,6 +43,7 @@ public sealed class Font
         this.Family = family;
         this.RequestedStyle = style;
         this.Size = size;
+        this.variations = [];
         this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal, true);
         this.fontName = new Lazy<string>(this.LoadFontName, true);
     }
@@ -78,6 +80,24 @@ public sealed class Font
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Font"/> class with the specified variation axis settings.
+    /// </summary>
+    /// <param name="prototype">The prototype font providing family, size, and style.</param>
+    /// <param name="variations">The variation axis settings to apply.</param>
+    public Font(Font prototype, params FontVariation[] variations)
+    {
+        Guard.NotNull(prototype, nameof(prototype));
+        Guard.NotNull(variations, nameof(variations));
+
+        this.Family = prototype.Family;
+        this.RequestedStyle = prototype.RequestedStyle;
+        this.Size = prototype.Size;
+        this.variations = variations;
+        this.metrics = new Lazy<FontMetrics?>(this.LoadInstanceInternal, true);
+        this.fontName = new Lazy<string>(this.LoadFontName, true);
+    }
+
+    /// <summary>
     /// Gets the family.
     /// </summary>
     public FontFamily Family { get; }
@@ -107,6 +127,11 @@ public sealed class Font
     /// Gets a value indicating whether this <see cref="Font"/> is italic.
     /// </summary>
     public bool IsItalic => (this.FontMetrics.Description.Style & FontStyle.Italic) == FontStyle.Italic;
+
+    /// <summary>
+    /// Gets the variation axis settings applied to this font.
+    /// </summary>
+    public ReadOnlySpan<FontVariation> Variations => this.variations;
 
     /// <summary>
     /// Gets the requested style.
@@ -278,6 +303,33 @@ public sealed class Font
         => this.metrics.Value?.Description.FontName(this.Family.Culture) ?? string.Empty;
 
     private FontMetrics? LoadInstanceInternal()
+    {
+        FontMetrics? metrics = this.ResolveBaseMetrics();
+        if (metrics is null)
+        {
+            return null;
+        }
+
+        // If variations are specified and the base metrics supports them, create a variation instance.
+        if (this.variations.Length > 0)
+        {
+            StreamFontMetrics? streamMetrics = metrics switch
+            {
+                StreamFontMetrics s => s,
+                FileFontMetrics f => f.StreamFontMetrics,
+                _ => null
+            };
+
+            if (streamMetrics is not null)
+            {
+                return streamMetrics.CreateVariationInstance(this.variations);
+            }
+        }
+
+        return metrics;
+    }
+
+    private FontMetrics? ResolveBaseMetrics()
     {
         if (this.Family.TryGetMetrics(this.RequestedStyle, out FontMetrics? metrics))
         {

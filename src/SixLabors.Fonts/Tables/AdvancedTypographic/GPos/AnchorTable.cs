@@ -49,7 +49,7 @@ internal abstract class AnchorTable
         {
             1 => AnchorFormat1.Load(reader),
             2 => AnchorFormat2.Load(reader),
-            3 => AnchorFormat3.Load(reader),
+            3 => AnchorFormat3.LoadFormat3(reader, offset),
 
             // Harfbuzz (Anchor.hh) treats this as an empty table and does not throw..
             // NotoSans Regular can trigger this. See https://github.com/SixLabors/Fonts/issues/417
@@ -138,20 +138,26 @@ internal abstract class AnchorTable
 
     internal sealed class AnchorFormat3 : AnchorTable
     {
-        // TODO: actually use the xDeviceOffset.
-        private readonly ushort xDeviceOffset;
+        private const ushort VariationIndexFormat = 0x8000;
 
-        // TODO: actually use the yDeviceOffset.
-        private readonly ushort yDeviceOffset;
+        /// <summary>
+        /// Packed VariationIndex for X: (outerIndex &lt;&lt; 16) | innerIndex. 0 = none.
+        /// </summary>
+        private readonly uint xVariation;
 
-        public AnchorFormat3(short xCoordinate, short yCoordinate, ushort xDeviceOffset, ushort yDeviceOffset)
+        /// <summary>
+        /// Packed VariationIndex for Y: (outerIndex &lt;&lt; 16) | innerIndex. 0 = none.
+        /// </summary>
+        private readonly uint yVariation;
+
+        public AnchorFormat3(short xCoordinate, short yCoordinate, uint xVariation, uint yVariation)
             : base(xCoordinate, yCoordinate)
         {
-            this.xDeviceOffset = xDeviceOffset;
-            this.yDeviceOffset = yDeviceOffset;
+            this.xVariation = xVariation;
+            this.yVariation = yVariation;
         }
 
-        public static AnchorFormat3 Load(BigEndianBinaryReader reader)
+        public static AnchorFormat3 LoadFormat3(BigEndianBinaryReader reader, long anchorBase)
         {
             // +--------------+------------------------+-----------------------------------------------------------+
             // | Type         | Name                   | Description                                               |
@@ -161,8 +167,6 @@ internal abstract class AnchorTable
             // | int16        | xCoordinate            | Horizontal value, in design units.                        |
             // +--------------+------------------------+-----------------------------------------------------------+
             // | int16        | yCoordinate            | Vertical value, in design units.                          |
-            // +--------------+------------------------+-----------------------------------------------------------+
-            // | uint16       + anchorPoint            | Index to glyph contour point.                             +
             // +--------------+------------------------+-----------------------------------------------------------+
             // | Offset16     | xDeviceOffset          + Offset to Device table (non-variable font) /              |
             // |              |                        | VariationIndex table (variable font) for X coordinate,    |
@@ -176,11 +180,55 @@ internal abstract class AnchorTable
             short yCoordinate = reader.ReadInt16();
             ushort xDeviceOffset = reader.ReadOffset16();
             ushort yDeviceOffset = reader.ReadOffset16();
-            return new AnchorFormat3(xCoordinate, yCoordinate, xDeviceOffset, yDeviceOffset);
+
+            uint xVariation = ResolveVariationIndex(reader, anchorBase, xDeviceOffset);
+            uint yVariation = ResolveVariationIndex(reader, anchorBase, yDeviceOffset);
+
+            return new AnchorFormat3(xCoordinate, yCoordinate, xVariation, yVariation);
         }
 
         public override AnchorXY GetAnchor(FontMetrics fontMetrics, GlyphShapingData data, GlyphPositioningCollection collection)
-            => new(this.XCoordinate, this.YCoordinate);
+        {
+            short x = this.XCoordinate;
+            short y = this.YCoordinate;
+
+            if (this.xVariation != 0)
+            {
+                x += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(this.xVariation));
+            }
+
+            if (this.yVariation != 0)
+            {
+                y += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(this.yVariation));
+            }
+
+            return new(x, y);
+        }
+
+        private static uint ResolveVariationIndex(BigEndianBinaryReader reader, long anchorBase, ushort deviceOffset)
+        {
+            if (deviceOffset == 0)
+            {
+                return 0;
+            }
+
+            long savedPosition = reader.BaseStream.Position;
+            reader.BaseStream.Position = anchorBase + deviceOffset;
+
+            ushort first = reader.ReadUInt16();
+            ushort second = reader.ReadUInt16();
+            ushort format = reader.ReadUInt16();
+
+            reader.BaseStream.Position = savedPosition;
+
+            if (format == VariationIndexFormat)
+            {
+                return ((uint)first << 16) | second;
+            }
+
+            // TODO: Device table (per-ppem adjustments) — not yet implemented.
+            return 0;
+        }
     }
 
     internal sealed class EmptyAnchorTable : AnchorTable

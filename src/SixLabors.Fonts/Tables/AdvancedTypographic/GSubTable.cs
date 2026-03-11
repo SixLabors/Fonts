@@ -17,11 +17,12 @@ internal class GSubTable : Table
 {
     internal const string TableName = "GSUB";
 
-    public GSubTable(ScriptList? scriptList, FeatureListTable featureList, LookupListTable lookupList)
+    public GSubTable(ScriptList? scriptList, FeatureListTable featureList, LookupListTable lookupList, FeatureVariationsTable? featureVariations = null)
     {
         this.ScriptList = scriptList;
         this.FeatureList = featureList;
         this.LookupList = lookupList;
+        this.FeatureVariations = featureVariations;
     }
 
     public ScriptList? ScriptList { get; }
@@ -29,6 +30,8 @@ internal class GSubTable : Table
     public FeatureListTable FeatureList { get; }
 
     public LookupListTable LookupList { get; }
+
+    public FeatureVariationsTable? FeatureVariations { get; }
 
     public static GSubTable? Load(FontReader fontReader)
     {
@@ -91,8 +94,11 @@ internal class GSubTable : Table
 
         LookupListTable lookupList = LookupListTable.Load(reader, lookupListOffset);
 
-        // TODO: Feature Variations.
-        return new GSubTable(scriptList, featureList, lookupList);
+        FeatureVariationsTable? featureVariations = featureVariationsOffset != 0
+            ? FeatureVariationsTable.Load(reader, featureVariationsOffset, featureList)
+            : null;
+
+        return new GSubTable(scriptList, featureList, lookupList, featureVariations);
     }
 
     public void ApplySubstitution(FontMetrics fontMetrics, GlyphSubstitutionCollection collection)
@@ -202,7 +208,7 @@ internal class GSubTable : Table
         int maxOperationsCount,
         ref int currentOperations)
     {
-        if (this.TryGetFeatureLookups(in featureTag, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
+        if (this.TryGetFeatureLookups(fontMetrics, in featureTag, current, out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? lookups))
         {
             // Apply features in order.
             foreach ((Tag Feature, ushort Index, LookupTable LookupTable) featureLookup in lookups)
@@ -239,6 +245,7 @@ internal class GSubTable : Table
     }
 
     internal bool TryGetFeatureLookups(
+        FontMetrics fontMetrics,
         in Tag stageFeature,
         ScriptClass script,
         [NotNullWhen(true)] out List<(Tag Feature, ushort Index, LookupTable LookupTable)>? value)
@@ -248,6 +255,10 @@ internal class GSubTable : Table
             value = null;
             return false;
         }
+
+        // Resolve feature substitutions from FeatureVariations (variable fonts).
+        FeatureTableSubstitutionRecord[]? substitutions = this.FeatureVariations
+            ?.FindMatchingSubstitutions(fontMetrics.GetNormalizedCoordinates());
 
         ScriptListTable scriptListTable = this.ScriptList.Default();
         Tag[] tags = UnicodeScriptTagMap.Instance[script];
@@ -263,11 +274,11 @@ internal class GSubTable : Table
         LangSysTable? defaultLangSysTable = scriptListTable.DefaultLangSysTable;
         if (defaultLangSysTable != null)
         {
-            value = this.GetFeatureLookups(stageFeature, defaultLangSysTable);
+            value = this.GetFeatureLookups(stageFeature, substitutions, defaultLangSysTable);
             return value.Count > 0;
         }
 
-        value = this.GetFeatureLookups(stageFeature, scriptListTable.LangSysTables);
+        value = this.GetFeatureLookups(stageFeature, substitutions, scriptListTable.LangSysTables);
         return value.Count > 0;
     }
 
@@ -290,7 +301,10 @@ internal class GSubTable : Table
         return default;
     }
 
-    private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(in Tag stageFeature, params LangSysTable[] langSysTables)
+    private List<(Tag Feature, ushort Index, LookupTable LookupTable)> GetFeatureLookups(
+        in Tag stageFeature,
+        FeatureTableSubstitutionRecord[]? substitutions,
+        params LangSysTable[] langSysTables)
     {
         List<(Tag Feature, ushort Index, LookupTable LookupTable)> lookups = [];
         for (int i = 0; i < langSysTables.Length; i++)
@@ -298,7 +312,8 @@ internal class GSubTable : Table
             ushort[] featureIndices = langSysTables[i].FeatureIndices;
             for (int j = 0; j < featureIndices.Length; j++)
             {
-                FeatureTable featureTable = this.FeatureList.FeatureTables[featureIndices[j]];
+                ushort featureIndex = featureIndices[j];
+                FeatureTable featureTable = ResolveFeatureTable(this.FeatureList, featureIndex, substitutions);
                 Tag feature = featureTable.FeatureTag;
 
                 if (stageFeature != feature)
@@ -318,6 +333,25 @@ internal class GSubTable : Table
 
         lookups.Sort((x, y) => x.Index - y.Index);
         return lookups;
+    }
+
+    private static FeatureTable ResolveFeatureTable(
+        FeatureListTable featureList,
+        ushort featureIndex,
+        FeatureTableSubstitutionRecord[]? substitutions)
+    {
+        if (substitutions is not null)
+        {
+            for (int i = 0; i < substitutions.Length; i++)
+            {
+                if (substitutions[i].FeatureIndex == featureIndex)
+                {
+                    return substitutions[i].AlternateFeatureTable;
+                }
+            }
+        }
+
+        return featureList.FeatureTables[featureIndex];
     }
 
     private ScriptClass GetScriptClass(ScriptClass current)

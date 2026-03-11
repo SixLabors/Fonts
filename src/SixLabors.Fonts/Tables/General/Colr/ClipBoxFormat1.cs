@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
+
 namespace SixLabors.Fonts.Tables.General.Colr;
 
 // Format 1: int16 edges.
@@ -19,6 +21,6 @@ internal sealed class ClipBoxFormat1 : ClipBox
         this.yMax = yMax;
     }
 
-    public override Bounds GetBounds(IVariationResolver? varResolver)
+    public override Bounds GetBounds(ColrTable colr, GlyphVariationProcessor? processor)
         => new(this.xMin, this.yMin, this.xMax, this.yMax);
 }

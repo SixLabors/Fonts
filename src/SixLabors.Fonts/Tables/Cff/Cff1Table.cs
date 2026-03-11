@@ -1,8 +1,14 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
+
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Represents the Compact Font Format (CFF) version 1 table.
+/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf"/>
+/// </summary>
 internal sealed class Cff1Table : Table, ICffTable
 {
     internal const string TableName = "CFF "; // 4 chars
@@ -12,6 +18,8 @@ internal sealed class Cff1Table : Table, ICffTable
     public Cff1Table(CffFont cff1Font) => this.glyphs = cff1Font.Glyphs;
 
     public int GlyphCount => this.glyphs.Length;
+
+    public ItemVariationStore? ItemVariationStore => null;
 
     public CffGlyphData GetGlyph(int index)
         => this.glyphs[index];
@@ -52,7 +60,7 @@ internal sealed class Cff1Table : Table, ICffTable
         switch (major)
         {
             case 1:
-                CffParser parser = new();
+                Cff1Parser parser = new();
                 return new(parser.Load(reader, position));
 
             default:

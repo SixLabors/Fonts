@@ -77,7 +77,8 @@ internal static class LookupType2SubTable
             for (int i = 0; i < pairSetCount; i++)
             {
                 reader.Seek(offset + pairSetOffsets[i], SeekOrigin.Begin);
-                pairSets[i] = PairSetTable.Load(reader, offset + pairSetOffsets[i], valueFormat1, valueFormat2);
+                long pairSetBase = offset + pairSetOffsets[i];
+                pairSets[i] = PairSetTable.Load(reader, pairSetBase, valueFormat1, valueFormat2);
             }
 
             CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
@@ -117,10 +118,10 @@ internal static class LookupType2SubTable
                 if (pairSet.TryGetPairValueRecord(glyphId2, out PairValueRecord pairValueRecord))
                 {
                     ValueRecord record1 = pairValueRecord.ValueRecord1;
-                    AdvancedTypographicUtils.ApplyPosition(collection, index, record1, feature);
+                    AdvancedTypographicUtils.ApplyPosition(fontMetrics, collection, index, record1, feature);
 
                     ValueRecord record2 = pairValueRecord.ValueRecord2;
-                    AdvancedTypographicUtils.ApplyPosition(collection, index + 1, record2, feature);
+                    AdvancedTypographicUtils.ApplyPosition(fontMetrics, collection, index + 1, record2, feature);
 
                     return true;
                 }
@@ -151,7 +152,7 @@ internal static class LookupType2SubTable
                 PairValueRecord[] pairValueRecords = new PairValueRecord[pairValueCount];
                 for (int i = 0; i < pairValueRecords.Length; i++)
                 {
-                    pairValueRecords[i] = new PairValueRecord(reader, valueFormat1, valueFormat2);
+                    pairValueRecords[i] = new PairValueRecord(reader, valueFormat1, valueFormat2, offset);
                 }
 
                 return new PairSetTable(pairValueRecords);
@@ -241,7 +242,7 @@ internal static class LookupType2SubTable
             Class1Record[] class1Records = new Class1Record[class1Count];
             for (int i = 0; i < class1Records.Length; i++)
             {
-                class1Records[i] = Class1Record.Load(reader, class2Count, valueFormat1, valueFormat2);
+                class1Records[i] = Class1Record.Load(reader, class2Count, valueFormat1, valueFormat2, offset);
             }
 
             CoverageTable coverageTable = CoverageTable.Load(reader, offset + coverageOffset);
@@ -286,10 +287,10 @@ internal static class LookupType2SubTable
                 Class2Record class2Record = class1Record.Class2Records[classDef2];
 
                 ValueRecord record1 = class2Record.ValueRecord1;
-                AdvancedTypographicUtils.ApplyPosition(collection, index, record1, feature);
+                AdvancedTypographicUtils.ApplyPosition(fontMetrics, collection, index, record1, feature);
 
                 ValueRecord record2 = class2Record.ValueRecord2;
-                AdvancedTypographicUtils.ApplyPosition(collection, index + 1, record2, feature);
+                AdvancedTypographicUtils.ApplyPosition(fontMetrics, collection, index + 1, record2, feature);
 
                 return true;
             }

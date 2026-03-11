@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using SixLabors.Fonts.Tables;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Unicode;
 
 namespace SixLabors.Fonts;
@@ -43,6 +44,11 @@ internal sealed class FileFontMetrics : FontMetrics
     /// Gets the filesystem path to the font face source.
     /// </summary>
     public string Path { get; }
+
+    /// <summary>
+    /// Gets the underlying <see cref="StreamFontMetrics"/> that this file-backed instance delegates to.
+    /// </summary>
+    internal StreamFontMetrics StreamFontMetrics => this.fontMetrics.Value;
 
     /// <inheritdoc />
     public override ushort UnitsPerEm => this.fontMetrics.Value.UnitsPerEm;
@@ -120,6 +126,10 @@ internal sealed class FileFontMetrics : FontMetrics
         => this.fontMetrics.Value.TryGetMarkAttachmentClass(glyphId, out markAttachmentClass);
 
     /// <inheritdoc/>
+    public override bool TryGetVariationAxes(out VariationAxis[]? variationAxes)
+        => this.fontMetrics.Value.TryGetVariationAxes(out variationAxes);
+
+    /// <inheritdoc/>
     internal override bool IsInMarkFilteringSet(ushort markGlyphSetIndex, ushort glyphId)
         => this.fontMetrics.Value.IsInMarkFilteringSet(markGlyphSetIndex, glyphId);
 
@@ -162,6 +172,14 @@ internal sealed class FileFontMetrics : FontMetrics
     /// <inheritdoc/>
     internal override void UpdatePositions(GlyphPositioningCollection collection)
         => this.fontMetrics.Value.UpdatePositions(collection);
+
+    /// <inheritdoc/>
+    internal override float GetGDefVariationDelta(uint packedVariationIndex)
+        => this.fontMetrics.Value.GetGDefVariationDelta(packedVariationIndex);
+
+    /// <inheritdoc/>
+    internal override ReadOnlySpan<float> GetNormalizedCoordinates()
+        => this.fontMetrics.Value.GetNormalizedCoordinates();
 
     /// <summary>
     /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.

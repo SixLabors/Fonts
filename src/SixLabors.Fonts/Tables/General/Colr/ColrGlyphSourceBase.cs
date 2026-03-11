@@ -4,6 +4,7 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using SixLabors.Fonts.Rendering;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
 namespace SixLabors.Fonts.Tables.General.Colr;
@@ -56,15 +57,19 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
     /// <param name="transform">The affine matrix in document space.</param>
     /// <param name="mode">The active composite mode to apply to leaf paints, or null for default.</param>
     /// <param name="cpal">Optional CPAL palette for color resolution.</param>
+    /// <param name="colr">The COLR table for variation delta resolution.</param>
+    /// <param name="processor">The glyph variation processor, or null for non-variable fonts.</param>
     /// <param name="outLeaves">Collector for emitted leaf paints.</param>
     protected static void FlattenPaint(
         Paint node,
         Matrix3x2 transform,
         CompositeMode mode,
         CpalTable? cpal,
+        ColrTable colr,
+        GlyphVariationProcessor? processor,
         List<Rendering.Paint> outLeaves)
     {
-        // The input not will only be a paintable leaf here, as upstream resolution
+        // The input node will only be a paintable leaf here, as upstream resolution
         // should have eliminated glyph/colr-glyph nodes and flattened composites.
         switch (node)
         {
@@ -95,6 +100,33 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
                 return;
             }
 
+            case PaintVarSolid pvs:
+            {
+                float alpha = pvs.Alpha + colr.ResolveDelta(processor, pvs.VarIndexBase + 0u);
+
+                if (pvs.PaletteIndex == 0xFFFF)
+                {
+                    outLeaves.Add(new SolidPaint
+                    {
+                        Color = new GlyphColor(0, 0, 0, 0),
+                        Opacity = 1F,
+                        Transform = transform,
+                        CompositeMode = mode
+                    });
+                    return;
+                }
+
+                GlyphColor color = ResolveColor(cpal, pvs.PaletteIndex, alpha);
+                outLeaves.Add(new SolidPaint
+                {
+                    Color = color,
+                    Opacity = 1F,
+                    Transform = transform,
+                    CompositeMode = mode
+                });
+                return;
+            }
+
             case PaintLinearGradient pl:
             {
                 GradientStop[] stops = ResolveStops(pl.ColorLine, cpal);
@@ -115,13 +147,14 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
 
             case PaintVarLinearGradient vpl:
             {
-                GradientStop[] stops = ResolveStops(vpl.ColorLine, cpal);
+                uint vib = vpl.VarIndexBase;
+                GradientStop[] stops = ResolveStops(vpl.ColorLine, cpal, colr, processor);
                 outLeaves.Add(new LinearGradientPaint
                 {
                     Units = GradientUnits.UserSpaceOnUse,
-                    P0 = new Vector2(vpl.X0, vpl.Y0),
-                    P1 = new Vector2(vpl.X1, vpl.Y1),
-                    P2 = new Vector2(vpl.X2, vpl.Y2),
+                    P0 = new Vector2(vpl.X0 + colr.ResolveDelta(processor, vib + 0u), vpl.Y0 + colr.ResolveDelta(processor, vib + 1u)),
+                    P1 = new Vector2(vpl.X1 + colr.ResolveDelta(processor, vib + 2u), vpl.Y1 + colr.ResolveDelta(processor, vib + 3u)),
+                    P2 = new Vector2(vpl.X2 + colr.ResolveDelta(processor, vib + 4u), vpl.Y2 + colr.ResolveDelta(processor, vib + 5u)),
                     Spread = MapSpread(vpl.ColorLine.Extend),
                     Stops = stops,
                     Opacity = 1F,
@@ -152,14 +185,15 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
 
             case PaintVarRadialGradient vpr:
             {
-                GradientStop[] stops = ResolveStops(vpr.ColorLine, cpal);
+                uint vib = vpr.VarIndexBase;
+                GradientStop[] stops = ResolveStops(vpr.ColorLine, cpal, colr, processor);
                 outLeaves.Add(new RadialGradientPaint
                 {
                     Units = GradientUnits.UserSpaceOnUse,
-                    Center0 = new Vector2(vpr.X0, vpr.Y0),
-                    Radius0 = vpr.Radius0,
-                    Center1 = new Vector2(vpr.X1, vpr.Y1),
-                    Radius1 = vpr.Radius1,
+                    Center0 = new Vector2(vpr.X0 + colr.ResolveDelta(processor, vib + 0u), vpr.Y0 + colr.ResolveDelta(processor, vib + 1u)),
+                    Radius0 = (ushort)(vpr.Radius0 + colr.ResolveDelta(processor, vib + 2u)),
+                    Center1 = new Vector2(vpr.X1 + colr.ResolveDelta(processor, vib + 3u), vpr.Y1 + colr.ResolveDelta(processor, vib + 4u)),
+                    Radius1 = (ushort)(vpr.Radius1 + colr.ResolveDelta(processor, vib + 5u)),
                     Spread = MapSpread(vpr.ColorLine.Extend),
                     Stops = stops,
                     Opacity = 1F,
@@ -177,7 +211,7 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
                     Units = GradientUnits.UserSpaceOnUse,
                     Center = new Vector2(sw.CenterX, sw.CenterY),
 
-                    // Spec says: add 1.0 and multiply by 180° to retrieve counter-clockwise degrees.
+                    // Spec says: add 1.0 and multiply by 180 to retrieve counter-clockwise degrees.
                     StartAngle = (sw.StartAngle + 1F) * 180F,
                     EndAngle = (sw.EndAngle + 1F) * 180F,
                     Spread = MapSpread(sw.ColorLine.Extend),
@@ -191,13 +225,16 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
 
             case PaintVarSweepGradient vsw:
             {
-                GradientStop[] stops = ResolveStops(vsw.ColorLine, cpal);
+                uint vib = vsw.VarIndexBase;
+                GradientStop[] stops = ResolveStops(vsw.ColorLine, cpal, colr, processor);
+                float startAngle = vsw.StartAngle + colr.ResolveDelta(processor, vib + 2u);
+                float endAngle = vsw.EndAngle + colr.ResolveDelta(processor, vib + 3u);
                 outLeaves.Add(new SweepGradientPaint
                 {
                     Units = GradientUnits.UserSpaceOnUse,
-                    Center = new Vector2(vsw.CenterX, vsw.CenterY),
-                    StartAngle = (vsw.StartAngle + 1F) * 180F,
-                    EndAngle = (vsw.EndAngle + 1F) * 180F,
+                    Center = new Vector2(vsw.CenterX + colr.ResolveDelta(processor, vib + 0u), vsw.CenterY + colr.ResolveDelta(processor, vib + 1u)),
+                    StartAngle = (startAngle + 1F) * 180F,
+                    EndAngle = (endAngle + 1F) * 180F,
                     Spread = MapSpread(vsw.ColorLine.Extend),
                     Stops = stops,
                     Opacity = 1F,
@@ -344,14 +381,17 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
     }
 
     /// <summary>
-    /// Resolves a color line into concrete gradient stops. Offsets are clamped to [0,1].
+    /// Resolves a variable color line into concrete gradient stops with variation deltas applied.
+    /// Offsets are clamped to [0,1].
     /// 0xFFFF palette indices are treated as transparent here (foreground color handled by text color elsewhere).
     /// </summary>
-    /// <param name="line">The color line.</param>
+    /// <param name="line">The variable color line.</param>
     /// <param name="cpal">The CPAL table, or null if not present.</param>
+    /// <param name="colr">The COLR table for delta resolution.</param>
+    /// <param name="processor">The glyph variation processor, or null.</param>
     /// <returns>The resolved gradient stops.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static GradientStop[] ResolveStops(VarColorLine line, CpalTable? cpal)
+    private static GradientStop[] ResolveStops(VarColorLine line, CpalTable? cpal, ColrTable colr, GlyphVariationProcessor? processor)
     {
         VarColorStop[] src = line.Stops;
         GradientStop[] stops = new GradientStop[src.Length];
@@ -360,11 +400,15 @@ internal abstract class ColrGlyphSourceBase : IPaintedGlyphSource
         {
             ref readonly VarColorStop s = ref src[i];
 
+            // Per spec: VarColorStop has varIndexBase with offsets +0 = stopOffset, +1 = alpha.
+            float stopOffset = s.StopOffset + colr.ResolveDelta(processor, s.VarIndexBase + 0u);
+            float alpha = s.Alpha + colr.ResolveDelta(processor, s.VarIndexBase + 1u);
+
             GlyphColor c = s.PaletteIndex == 0xFFFF
                 ? new GlyphColor(0, 0, 0, 0) // transparent placeholder; renderer can blend with foreground
-                : ResolveColor(cpal, s.PaletteIndex, s.Alpha);
+                : ResolveColor(cpal, s.PaletteIndex, alpha);
 
-            float offset = Math.Clamp(s.StopOffset, 0F, 1F);
+            float offset = Math.Clamp(stopOffset, 0F, 1F);
 
             stops[i] = new GradientStop(offset, c);
         }

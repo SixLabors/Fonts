@@ -1,8 +1,10 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.Cff;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
@@ -22,8 +24,8 @@ internal partial class StreamFontMetrics
     private static StreamFontMetrics LoadCompactFont(FontReader reader)
     {
         // Load using recommended order for best performance.
-        // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
-        // 'head', 'hhea', 'maxp', OS/2, 'name', 'cmap', 'post', 'CFF '
+        // https://learn.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
+        // 'head', 'hhea', 'maxp', OS/2, 'name', 'cmap', 'post', 'CFF ' / 'CFF2'
         HeadTable head = reader.GetTable<HeadTable>();
         HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>();
         MaximumProfileTable maxp = reader.GetTable<MaximumProfileTable>();
@@ -31,7 +33,6 @@ internal partial class StreamFontMetrics
         NameTable name = reader.GetTable<NameTable>();
         CMapTable cmap = reader.GetTable<CMapTable>();
         PostTable post = reader.GetTable<PostTable>();
-
         ICffTable? cff = reader.TryGetTable<Cff1Table>() ?? (ICffTable?)reader.TryGetTable<Cff2Table>();
 
         // TODO: VORG
@@ -51,8 +52,27 @@ internal partial class StreamFontMetrics
 
         ColrTable? colr = reader.TryGetTable<ColrTable>();
         CpalTable? cpal = reader.TryGetTable<CpalTable>();
-
         SvgTable? svg = reader.TryGetTable<SvgTable>();
+
+        // Variations related tables.
+        FVarTable? fVar = reader.TryGetTable<FVarTable>();
+        AVarTable? aVar = reader.TryGetTable<AVarTable>();
+        GVarTable? gVar = reader.TryGetTable<GVarTable>();
+        HVarTable? hVar = reader.TryGetTable<HVarTable>();
+        VVarTable? vVar = reader.TryGetTable<VVarTable>();
+        MVarTable? mVar = reader.TryGetTable<MVarTable>();
+
+        GlyphVariationProcessor? glyphVariationProcessor = null;
+        if (cff?.ItemVariationStore != null)
+        {
+            if (fVar is null)
+            {
+                throw new InvalidFontFileException("missing fvar table required for glyph variations processing");
+            }
+
+            // TODO: The docs say that hvar and vvar can be used for CFF fonts so how do we determine when to use them?
+            glyphVariationProcessor = new GlyphVariationProcessor(cff.ItemVariationStore, fVar, aVar, gVar, hVar, vVar, mVar);
+        }
 
         CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff!)
         {
@@ -64,10 +84,16 @@ internal partial class StreamFontMetrics
             GPos = gPos,
             Colr = colr,
             Cpal = cpal,
+            FVar = fVar,
+            AVar = aVar,
+            GVar = gVar,
+            HVar = hVar,
+            VVar = vVar,
+            MVar = mVar,
             Svg = svg
         };
 
-        return new StreamFontMetrics(tables);
+        return new StreamFontMetrics(tables, glyphVariationProcessor);
     }
 
     private GlyphMetrics CreateCffGlyphMetrics(
@@ -85,11 +111,32 @@ internal partial class StreamFontMetrics
         ICffTable cff = tables.Cff;
         HorizontalMetricsTable htmx = tables.Htmx;
         VerticalMetricsTable? vtmx = tables.Vmtx;
+        FVarTable? fVar = tables.FVar;
+        AVarTable? aVar = tables.AVar;
+        GVarTable? gVar = tables.GVar;
 
         CffGlyphData vector = cff.GetGlyph(glyphId);
+        vector.FVar = fVar;
+        vector.AVar = aVar;
+        vector.GVar = gVar;
         Bounds bounds = vector.GetBounds();
+
+        // Apply the CFF FontMatrix to transform bounds from charstring space to design units.
+        if (vector.FontMatrix is double[] fm)
+        {
+            float upm = this.UnitsPerEm;
+            Vector2 fmScale = new((float)(fm[0] * upm), (float)(fm[3] * upm));
+            bounds = new Bounds(bounds.Min * fmScale, bounds.Max * fmScale);
+        }
+
         ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
         short lsb = htmx.GetLeftSideBearing(glyphId);
+
+        // Apply HVAR advance width adjustment if available.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            advanceWidth = (ushort)(advanceWidth + MathF.Round(this.GlyphVariationProcessor.AdvanceAdjustment(glyphId)));
+        }
 
         IMetricsHeader metrics = isVerticalLayout ? this.VerticalMetrics : this.HorizontalMetrics;
         ushort advancedHeight = (ushort)(metrics.Ascender - metrics.Descender);
@@ -98,6 +145,12 @@ internal partial class StreamFontMetrics
         {
             advancedHeight = vtmx.GetAdvancedHeight(glyphId);
             tsb = vtmx.GetTopSideBearing(glyphId);
+        }
+
+        // Apply VVAR advance height adjustment if available.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            advancedHeight = (ushort)(advancedHeight + MathF.Round(this.GlyphVariationProcessor.VerticalAdvanceAdjustment(glyphId)));
         }
 
         // TODO: Support CFF based COLR glyphs.

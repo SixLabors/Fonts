@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
@@ -11,6 +12,9 @@ using SixLabors.Fonts.Tables.General.Svg;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Contains the collection of OpenType tables required for fonts with CFF or CFF2 outlines.
+/// </summary>
 internal sealed class CompactFontTables : IFontTables
 {
     public CompactFontTables(
@@ -66,6 +70,18 @@ internal sealed class CompactFontTables : IFontTables
     public VerticalHeadTable? Vhea { get; set; }
 
     public VerticalMetricsTable? Vmtx { get; set; }
+
+    public FVarTable? FVar { get; set; }
+
+    public AVarTable? AVar { get; set; }
+
+    public GVarTable? GVar { get; set; }
+
+    public HVarTable? HVar { get; set; }
+
+    public VVarTable? VVar { get; set; }
+
+    public MVarTable? MVar { get; set; }
 
     public SvgTable? Svg { get; set; }
 

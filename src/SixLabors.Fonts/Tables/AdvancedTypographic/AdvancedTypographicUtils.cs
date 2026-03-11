@@ -319,6 +319,7 @@ internal static class AdvancedTypographicUtils
     }
 
     public static void ApplyPosition(
+        FontMetrics fontMetrics,
         GlyphPositioningCollection collection,
         int index,
         ValueRecord record,
@@ -329,6 +330,16 @@ internal static class AdvancedTypographicUtils
         current.Bounds.Height += record.YAdvance;
         current.Bounds.X += record.XPlacement;
         current.Bounds.Y += record.YPlacement;
+
+        // Apply variation deltas from VariationIndex tables (variable fonts).
+        if (record.HasVariation)
+        {
+            current.Bounds.X += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(record.XPlacementVariation));
+            current.Bounds.Y += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(record.YPlacementVariation));
+            current.Bounds.Width += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(record.XAdvanceVariation));
+            current.Bounds.Height += (short)MathF.Round(fontMetrics.GetGDefVariationDelta(record.YAdvanceVariation));
+        }
+
         current.AppliedFeatures.Add(feature);
     }
 

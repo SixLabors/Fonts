@@ -21,8 +21,8 @@ namespace SixLabors.Fonts.Tables.General.Svg;
 internal sealed class SvgGlyphSource : IPaintedGlyphSource
 {
     private readonly SvgTable svgTable;
-    private static readonly Dictionary<ushort, ParsedDoc> DocCache = [];
-    private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas)> CachedGlyphs = [];
+    private readonly Dictionary<ushort, ParsedDoc> docCache = [];
+    private readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas)> cachedGlyphs = [];
 
     private sealed class ParsedDoc
     {
@@ -40,7 +40,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
     /// <inheritdoc/>
     public bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvasMetadata canvas)
     {
-        (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas) result = CachedGlyphs.GetOrAdd(glyphId, gid =>
+        (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas) result = this.cachedGlyphs.GetOrAdd(glyphId, gid =>
         {
             if (this.TryGetParsedDoc(gid, out ParsedDoc? parsed))
             {
@@ -88,7 +88,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
             return false;
         }
 
-        if (DocCache.TryGetValue(glyphId, out parsed))
+        if (this.docCache.TryGetValue(glyphId, out parsed))
         {
             return true;
         }
@@ -124,7 +124,7 @@ internal sealed class SvgGlyphSource : IPaintedGlyphSource
                 IdMap = idMap
             };
 
-            DocCache[glyphId] = parsed;
+            this.docCache[glyphId] = parsed;
             return true;
         }
     }

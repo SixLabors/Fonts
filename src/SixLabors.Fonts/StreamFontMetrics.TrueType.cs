@@ -4,6 +4,7 @@
 using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.General;
 using SixLabors.Fonts.Tables.General.Colr;
 using SixLabors.Fonts.Tables.General.Kern;
@@ -67,7 +68,15 @@ internal partial class StreamFontMetrics
             CvtTable? cvt = tables.Cvt;
             PrepTable? prep = tables.Prep;
             float hintingScaleFactor = pixelSize / this.UnitsPerEm;
-            interpreter.SetControlValueTable(cvt?.ControlValues, hintingScaleFactor, pixelSize, prep?.Instructions);
+
+            // Apply cvar deltas to CVT values for variable fonts before hinting.
+            short[]? cvtValues = cvt?.ControlValues;
+            if (cvtValues is not null && this.GlyphVariationProcessor is not null)
+            {
+                cvtValues = this.GlyphVariationProcessor.ApplyCvtDeltas(cvtValues) ?? cvtValues;
+            }
+
+            interpreter.SetControlValueTable(cvtValues, hintingScaleFactor, pixelSize, prep?.Instructions);
 
             Bounds bounds = glyphVector.Bounds;
 
@@ -87,7 +96,7 @@ internal partial class StreamFontMetrics
     private static StreamFontMetrics LoadTrueTypeFont(FontReader reader)
     {
         // Load using recommended order for best performance.
-        // https://www.microsoft.com/typography/otspec/recom.htm#TableOrdering
+        // https://learn.microsoft.com/en-gb/typography/opentype/spec/recom#optimized-table-ordering
         // 'head', 'hhea', 'maxp', OS/2, 'hmtx', LTSH, VDMX, 'hdmx', 'cmap', 'fpgm', 'prep', 'cvt ', 'loca', 'glyf', 'kern', 'name', 'post', 'gasp', PCLT, DSIG
         HeadTable head = reader.GetTable<HeadTable>();
         HorizontalHeadTable hhea = reader.GetTable<HorizontalHeadTable>();
@@ -115,6 +124,20 @@ internal partial class StreamFontMetrics
         GSubTable? gSub = reader.TryGetTable<GSubTable>();
         GPosTable? gPos = reader.TryGetTable<GPosTable>();
 
+        FVarTable? fvar = reader.TryGetTable<FVarTable>();
+        AVarTable? avar = reader.TryGetTable<AVarTable>();
+        GVarTable? gvar = reader.TryGetTable<GVarTable>();
+        HVarTable? hvar = reader.TryGetTable<HVarTable>();
+        VVarTable? vvar = reader.TryGetTable<VVarTable>();
+        MVarTable? mvar = reader.TryGetTable<MVarTable>();
+
+        // cvar depends on axisCount from fvar, so it cannot be auto-loaded via TryGetTable.
+        CVarTable? cvar = null;
+        if (fvar is not null)
+        {
+            cvar = CVarTable.Load(reader, fvar.AxisCount);
+        }
+
         ColrTable? colr = reader.TryGetTable<ColrTable>();
         CpalTable? cpal = reader.TryGetTable<CpalTable>();
 
@@ -133,10 +156,26 @@ internal partial class StreamFontMetrics
             GPos = gPos,
             Colr = colr,
             Cpal = cpal,
-            Svg = svg
+            Fvar = fvar,
+            Gvar = gvar,
+            Hvar = hvar,
+            Vvar = vvar,
+            Mvar = mvar,
+            Avar = avar,
+            Svg = svg,
+            Cvar = cvar
         };
 
-        return new StreamFontMetrics(tables);
+        GlyphVariationProcessor? glyphVariationProcessor = null;
+        if (fvar != null)
+        {
+            // Use the item variation store from HVAR or VVAR if available (for metrics variations).
+            // A variable font may have gvar without HVAR/VVAR (using phantom points for metrics instead).
+            ItemVariationStore? itemVariationStore = hvar?.ItemVariationStore ?? vvar?.ItemVariationStore;
+            glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fvar, avar, gvar, hvar, vvar, mvar, cvar);
+        }
+
+        return new StreamFontMetrics(tables, glyphVariationProcessor);
     }
 
     private GlyphMetrics CreateTrueTypeGlyphMetrics(
@@ -157,10 +196,24 @@ internal partial class StreamFontMetrics
 
         GlyphVector vector = glyf.GetGlyph(glyphId);
 
+        // Apply gvar deltas to the glyph outline if a variation processor is present.
+        // Clone first so we don't mutate the shared glyph cache.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            vector = GlyphVector.DeepClone(vector);
+            this.GlyphVariationProcessor.TransformPoints(glyphId, ref vector);
+        }
+
         Bounds bounds = vector.Bounds;
 
         ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
         short lsb = htmx.GetLeftSideBearing(glyphId);
+
+        // Apply HVAR advance width adjustment if available.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            advanceWidth = (ushort)(advanceWidth + MathF.Round(this.GlyphVariationProcessor.AdvanceAdjustment(glyphId)));
+        }
 
         IMetricsHeader metrics = isVerticalLayout ? this.VerticalMetrics : this.HorizontalMetrics;
         ushort advancedHeight = (ushort)(metrics.Ascender - metrics.Descender);
@@ -171,11 +224,17 @@ internal partial class StreamFontMetrics
             tsb = vtmx.GetTopSideBearing(glyphId);
         }
 
+        // Apply VVAR advance height adjustment if available.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            advancedHeight = (ushort)(advancedHeight + MathF.Round(this.GlyphVariationProcessor.VerticalAdvanceAdjustment(glyphId)));
+        }
+
         ColrTable? colr = tables.Colr;
         if ((colorSupport & ColorFontSupport.ColrV1) == ColorFontSupport.ColrV1 && colr?.ContainsColorV1Glyph(glyphId) == true)
         {
             CpalTable? cpal = tables.Cpal;
-            ColrV1GlyphSource glyphSource = new(colr, cpal, i => glyf.GetGlyph(i));
+            ColrV1GlyphSource glyphSource = new(colr, cpal, i => glyf.GetGlyph(i), this.GlyphVariationProcessor);
 
             return new PaintedGlyphMetrics(
                 this,
