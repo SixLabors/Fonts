@@ -2,6 +2,7 @@
 // Licensed under the Six Labors Split License.
 
 using System.Diagnostics.CodeAnalysis;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.AdvancedTypographic;
 
@@ -25,6 +26,8 @@ internal sealed class GlyphDefinitionTable : Table
     public ClassDefinitionTable? MarkAttachmentClassDef { get; private set; }
 
     public MarkGlyphSetsTable? MarkGlyphSetsTable { get; private set; }
+
+    public ItemVariationStore? ItemVariationStore { get; private set; }
 
     public static GlyphDefinitionTable? Load(FontReader reader)
     {
@@ -154,14 +157,20 @@ internal sealed class GlyphDefinitionTable : Table
         ClassDefinitionTable.TryLoad(reader, markAttachClassDefOffset, out ClassDefinitionTable? markAttachmentClassDef);
         MarkGlyphSetsTable? markGlyphSetsTable = markGlyphSetsDefOffset is 0 ? null : MarkGlyphSetsTable.Load(reader, markGlyphSetsDefOffset);
 
-        // TODO: read itemVarStore.
+        ItemVariationStore? itemVariationStore = null;
+        if (itemVarStoreOffset != 0)
+        {
+            itemVariationStore = ItemVariationStore.Load(reader, itemVarStoreOffset);
+        }
+
         return new GlyphDefinitionTable()
         {
             GlyphClassDefinition = classDefinitionTable,
             AttachmentListTable = attachmentListTable,
             LigatureCaretList = ligatureCaretList,
             MarkAttachmentClassDef = markAttachmentClassDef,
-            MarkGlyphSetsTable = markGlyphSetsTable
+            MarkGlyphSetsTable = markGlyphSetsTable,
+            ItemVariationStore = itemVariationStore
         };
     }
 }
