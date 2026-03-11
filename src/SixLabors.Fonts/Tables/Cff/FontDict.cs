@@ -19,4 +19,6 @@ internal class FontDict
     public int PrivateDicOffset { get; }
 
     public byte[][]? LocalSubr { get; set; }
+
+    public int VsIndex { get; set; }
 }

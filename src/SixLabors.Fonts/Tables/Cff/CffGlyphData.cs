@@ -15,6 +15,7 @@ internal struct CffGlyphData
     private readonly int nominalWidthX;
     private readonly int version;
     private readonly ItemVariationStore? itemVariationStore;
+    private readonly int vsIndex;
 
     public CffGlyphData(
         ushort glyphIndex,
@@ -23,7 +24,8 @@ internal struct CffGlyphData
         int nominalWidthX,
         byte[] charStrings,
         int version,
-        ItemVariationStore? itemVariationStore = null)
+        ItemVariationStore? itemVariationStore = null,
+        int vsIndex = 0)
     {
         this.GlyphIndex = glyphIndex;
         this.globalSubrBuffers = globalSubrBuffers;
@@ -32,6 +34,7 @@ internal struct CffGlyphData
         this.charStrings = charStrings;
         this.version = version;
         this.itemVariationStore = itemVariationStore;
+        this.vsIndex = vsIndex;
 
         this.GlyphName = null;
 
@@ -61,7 +64,8 @@ internal struct CffGlyphData
             this.version,
             this.itemVariationStore,
             this.FVar,
-            this.AVar);
+            this.AVar,
+            this.vsIndex);
 
         return engine.GetBounds();
     }
@@ -76,7 +80,8 @@ internal struct CffGlyphData
              this.version,
              this.itemVariationStore,
              this.FVar,
-             this.AVar);
+             this.AVar,
+             this.vsIndex);
 
         engine.RenderTo(renderer, origin, scale, offset, transform);
     }

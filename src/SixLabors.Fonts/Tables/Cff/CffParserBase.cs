@@ -134,6 +134,10 @@ internal abstract class CffParserBase
                             fdict.LocalSubr = ReadSubrBuffer(reader);
                             break;
 
+                        case "vsindex":
+                            fdict.VsIndex = (int)dicEntry.Operands[0].RealNumValue;
+                            break;
+
                         case "defaultWidthX":
                         case "nominalWidthX":
                             break;

@@ -46,7 +46,8 @@ internal ref struct CffEvaluationEngine
         int version,
         ItemVariationStore? itemVariationStore = null,
         FVarTable? fVar = null,
-        AVarTable? aVar = null)
+        AVarTable? aVar = null,
+        int vsIndex = 0)
     {
         this.transforming = default;
         this.charStrings = charStrings;
@@ -77,8 +78,7 @@ internal ref struct CffEvaluationEngine
             this.glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fVar, aVar);
         }
 
-        // TODO: always 0 for now. Should be privateDict.vsindex
-        this.vsIndex = 0;
+        this.vsIndex = vsIndex;
     }
 
     public Bounds GetBounds()

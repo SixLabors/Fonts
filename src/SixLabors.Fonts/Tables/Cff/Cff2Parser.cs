@@ -215,6 +215,7 @@ internal class Cff2Parser : CffParserBase
         // Is the font a CID font?
         FDRangeProvider fdRangeProvider = new(topDictionary.CidFontInfo);
         bool isCidFont = topDictionary.CidFontInfo.FdRanges.Length > 0;
+        int vsIndex = fontDicts.Length > 0 ? fontDicts[0].VsIndex : 0;
         for (int i = 0; i < glyphCount; ++i)
         {
             byte[] charstringsBuffer = charStringBuffers[i];
@@ -224,7 +225,9 @@ internal class Cff2Parser : CffParserBase
             if (isCidFont)
             {
                 fdRangeProvider.SetCurrentGlyphIndex((ushort)i);
-                localSubBuffer = fontDicts[fdRangeProvider.SelectedFDArray].LocalSubr;
+                int fdIndex = fdRangeProvider.SelectedFDArray;
+                localSubBuffer = fontDicts[fdIndex].LocalSubr;
+                vsIndex = fontDicts[fdIndex].VsIndex;
             }
 
             glyphs[i] = new CffGlyphData(
@@ -234,7 +237,8 @@ internal class Cff2Parser : CffParserBase
                 privateDictionary?.NominalWidthX ?? 0,
                 charstringsBuffer,
                 2,
-                this.itemVariationStore);
+                this.itemVariationStore,
+                vsIndex);
         }
 
         return glyphs;
