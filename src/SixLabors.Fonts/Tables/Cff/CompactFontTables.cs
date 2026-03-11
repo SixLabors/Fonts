@@ -12,6 +12,9 @@ using SixLabors.Fonts.Tables.General.Svg;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Contains the collection of OpenType tables required for fonts with CFF or CFF2 outlines.
+/// </summary>
 internal sealed class CompactFontTables : IFontTables
 {
     public CompactFontTables(

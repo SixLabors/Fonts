@@ -203,15 +203,57 @@ public static class TestFonts
     public static string RobotoRegular => GetFullPath("Roboto-Regular.ttf");
 
     /// <summary>
-    /// Gets a CFF2 font with variations tables.
+    /// Gets the RobotoFlex variable font with CFF2 outlines and multiple variation axes
+    /// including weight, width, slant, and optical size.
     /// </summary>
     public static string RobotoFlex => GetFullPath("RobotoFlex.ttf");
 
     /// <summary>
-    /// Gets a CFF2 font with variations tables.
-    /// From https://github.com/adobe-fonts/adobe-variable-font-prototype.git
+    /// Gets the Adobe Variable Font Prototype with CFF2 outlines and weight variations.
+    /// From <see href="https://github.com/adobe-fonts/adobe-variable-font-prototype"/>.
     /// </summary>
     public static string AdobeVFPrototype => GetFullPath("AdobeVFPrototype.ttf");
+
+    /// <summary>
+    /// Gets a subset of AdobeVFPrototype with CFF2 variations and GSUB feature variations.
+    /// From fontkit test data.
+    /// </summary>
+    public static string AdobeVFPrototypeSubset => GetFullPath("AdobeVFPrototype-Subset.otf");
+
+    /// <summary>
+    /// Gets a gvar test font using shared all-points deltas. From fontkit test data.
+    /// </summary>
+    public static string TestGVAROne => GetFullPath("TestGVAROne.ttf");
+
+    /// <summary>
+    /// Gets a gvar test font using shared enumerated-points deltas. From fontkit test data.
+    /// </summary>
+    public static string TestGVARTwo => GetFullPath("TestGVARTwo.ttf");
+
+    /// <summary>
+    /// Gets a gvar test font using no shared points. From fontkit test data.
+    /// </summary>
+    public static string TestGVARThree => GetFullPath("TestGVARThree.ttf");
+
+    /// <summary>
+    /// Gets a gvar test font with two axes (cntr and wght) and an HVAR table. From fontkit test data.
+    /// </summary>
+    public static string TestGVARFour => GetFullPath("TestGVARFour.ttf");
+
+    /// <summary>
+    /// Gets a test font with HVAR fallback (DeltaSetIndexMap) behavior. From fontkit test data.
+    /// </summary>
+    public static string TestHVARTwo => GetFullPath("TestHVARTwo.ttf");
+
+    /// <summary>
+    /// Gets the Mada variable font (Arabic) with GPOS mark anchor variations. From fontkit test data.
+    /// </summary>
+    public static string MadaVF => GetFullPath("Mada-VF.ttf");
+
+    /// <summary>
+    /// Gets the Noto Emoji variable font with a weight axis (300–700) using gvar/HVAR.
+    /// </summary>
+    public static string NotoEmojiVariableFont => GetFullPath("NotoEmoji-VariableFont_wght.ttf");
 
     public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 

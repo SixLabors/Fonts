@@ -115,6 +115,12 @@ internal class GlyphVariationProcessor
         IList<ControlPoint> controlPoints = glyphPoints.ControlPoints;
         int pointCount = controlPoints.Count;
 
+        // gvar encodes deltas for outline points + 4 phantom points (LSB, advance width,
+        // TSB, advance height). We must decode all of them so X/Y delta streams stay aligned,
+        // even though we only apply deltas to the outline points.
+        const int PhantomPointCount = 4;
+        int totalPointCount = pointCount + PhantomPointCount;
+
         // Clone the original points for IUP reference (interpolation needs unmodified originals).
         GlyphVector originPoints = GlyphVector.DeepClone(glyphPoints);
         IList<ControlPoint> origPoints = originPoints.ControlPoints;
@@ -133,9 +139,10 @@ internal class GlyphVariationProcessor
             short[]? deltasY = tupleHeader.DeltasY;
 
             // If deltas were deferred (all-points case), decode them now that we know the point count.
+            // Use totalPointCount (outline + phantom) so Y deltas start at the correct stream offset.
             if (deltasX is null && tupleHeader.RawDeltaData is not null)
             {
-                DecodeAllPointDeltas(tupleHeader.RawDeltaData, pointCount, out deltasX, out deltasY);
+                DecodeAllPointDeltas(tupleHeader.RawDeltaData, totalPointCount, out deltasX, out deltasY);
             }
 
             if (deltasX is null || deltasY is null)
@@ -147,7 +154,7 @@ internal class GlyphVariationProcessor
 
             if (allPoints)
             {
-                // Deltas apply to all points directly.
+                // Deltas apply to all points directly. Only apply to outline points (skip phantom).
                 int deltaCount = Math.Min(deltasX.Length, pointCount);
                 for (int i = 0; i < deltaCount; i++)
                 {
@@ -173,8 +180,11 @@ internal class GlyphVariationProcessor
                     if (ptIdx < pointCount)
                     {
                         hasDelta[ptIdx] = 1;
-                        adjustX[ptIdx] = deltasX[i] * factor;
-                        adjustY[ptIdx] = deltasY[i] * factor;
+
+                        // Round before IUP interpolation to match fontkit / FreeType behavior.
+                        // IUP references rounded absolute positions, so rounding must happen first.
+                        adjustX[ptIdx] = MathF.Round(deltasX[i] * factor);
+                        adjustY[ptIdx] = MathF.Round(deltasY[i] * factor);
                     }
                 }
 
@@ -187,12 +197,13 @@ internal class GlyphVariationProcessor
                     adjustY,
                     hasDelta);
 
-                // Apply the accumulated deltas.
+                // Apply the accumulated deltas (already rounded for explicit points,
+                // IUP-interpolated for implicit points).
                 for (int i = 0; i < pointCount; i++)
                 {
                     ControlPoint cp = controlPoints[i];
-                    cp.Point.X += MathF.Round(adjustX[i]);
-                    cp.Point.Y += MathF.Round(adjustY[i]);
+                    cp.Point.X += adjustX[i];
+                    cp.Point.Y += adjustY[i];
                     controlPoints[i] = cp;
                 }
             }
@@ -921,9 +932,14 @@ internal class GlyphVariationProcessor
             (out1, out2) = (out2, out1);
         }
 
-        float scale = (in1 == in2 || out1 == out2)
-            ? 0
-            : (out2 - out1) / (in2 - in1);
+        // Per the OpenType spec / FreeType: if the two reference points have the same
+        // input coordinate but different output coordinates, the inferred delta is zero.
+        if (in1 == in2 && out1 != out2)
+        {
+            return;
+        }
+
+        float scale = in1 == in2 ? 0 : (out2 - out1) / (in2 - in1);
 
         for (int p = p1; p <= p2; p++)
         {

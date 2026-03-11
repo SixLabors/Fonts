@@ -3,9 +3,12 @@
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Single-byte Type 2 charstring operators (byte values 0-31).
+/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5177.Type2.pdf"/>
+/// </summary>
 internal enum Type2Operator1 : byte
 {
-    // Appendix A Type 2 Charstring Command Codes
     Reserved0_ = 0,
     Hstem, // 1
     Reserved2_, // 2

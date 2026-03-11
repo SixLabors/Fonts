@@ -1,8 +1,6 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace SixLabors.Fonts.Tables.Cff;
@@ -94,13 +92,13 @@ internal class Cff1Parser : CffParserBase
     {
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
-            return Array.Empty<string>();
+            return [];
         }
 
         string[] stringIndex = new string[offsets.Length];
 
         // Allow reusing the same buffer for shorter reads.
-        using Buffer<byte> buffer = new Buffer<byte>(512);
+        using Buffer<byte> buffer = new(512);
         Span<byte> bufferSpan = buffer.GetSpan();
 
         for (int i = 0; i < offsets.Length; ++i)
@@ -183,13 +181,13 @@ internal class Cff1Parser : CffParserBase
                     metrics.UnderlineThickness = entry.Operands[0].RealNumValue;
                     break;
                 case "FontBBox":
-                    metrics.FontBBox = new double[]
-                    {
+                    metrics.FontBBox =
+                    [
                         entry.Operands[0].RealNumValue,
                         entry.Operands[1].RealNumValue,
                         entry.Operands[2].RealNumValue,
                         entry.Operands[3].RealNumValue
-                    };
+                    ];
                     break;
                 case "CharStrings":
                     this.charStringsOffset = (int)entry.Operands[0].RealNumValue;
@@ -487,7 +485,7 @@ internal class Cff1Parser : CffParserBase
             glyphs[i] = new CffGlyphData(
                 (ushort)i,
                 globalSubrBuffers,
-                localSubBuffer ?? Array.Empty<byte[]>(),
+                localSubBuffer ?? [],
                 privateDictionary?.NominalWidthX ?? 0,
                 charstringsBuffer,
                 1);
@@ -565,7 +563,7 @@ internal class Cff1Parser : CffParserBase
 
         reader.BaseStream.Position = this.offset + this.privateDICTOffset;
         List<CffDataDicEntry> dicData = this.ReadDictData(reader, this.privateDICTLength);
-        byte[][] localSubrRawBuffers = Array.Empty<byte[]>();
+        byte[][] localSubrRawBuffers = [];
         int defaultWidthX = 0;
         int nominalWidthX = 0;
 

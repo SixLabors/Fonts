@@ -1,14 +1,14 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
-using System.Collections.Generic;
-
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Resolves the Font DICT index for a given glyph using the FDSelect data from a CIDFont.
+/// Supports FDSelect format 0 (per-glyph map) and formats 3/4 (range-based).
+/// </summary>
 internal struct FDRangeProvider
 {
-    // helper class
     private readonly int format;
     private readonly FDRange[] ranges;
     private readonly Dictionary<int, byte> fdSelectMap;

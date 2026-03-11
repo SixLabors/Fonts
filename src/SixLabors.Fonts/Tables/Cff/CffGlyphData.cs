@@ -54,9 +54,11 @@ internal struct CffGlyphData
 
     public GVarTable? GVar { get; set; }
 
-    public Bounds GetBounds()
+    public double[]? FontMatrix { get; set; }
+
+    public readonly Bounds GetBounds()
     {
-        using var engine = new CffEvaluationEngine(
+        using CffEvaluationEngine engine = new(
             this.charStrings,
             this.globalSubrBuffers,
             this.localSubrBuffers,
@@ -70,9 +72,9 @@ internal struct CffGlyphData
         return engine.GetBounds();
     }
 
-    public void RenderTo(IGlyphRenderer renderer, Vector2 origin, Vector2 scale, Vector2 offset, Matrix3x2 transform)
+    public readonly void RenderTo(IGlyphRenderer renderer, Vector2 origin, Vector2 scale, Vector2 offset, Matrix3x2 transform)
     {
-        using var engine = new CffEvaluationEngine(
+        using CffEvaluationEngine engine = new(
              this.charStrings,
              this.globalSubrBuffers,
              this.localSubrBuffers,

@@ -3,6 +3,10 @@
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// A lightweight big-endian binary reader over a <see cref="ReadOnlySpan{T}"/> buffer,
+/// used for reading Type 2 charstring data without allocations.
+/// </summary>
 internal ref struct SimpleBinaryReader
 {
     private readonly ReadOnlySpan<byte> buffer;

@@ -311,9 +311,19 @@ public sealed class Font
         }
 
         // If variations are specified and the base metrics supports them, create a variation instance.
-        if (this.variations.Length > 0 && metrics is StreamFontMetrics streamMetrics)
+        if (this.variations.Length > 0)
         {
-            return streamMetrics.CreateVariationInstance(this.variations);
+            StreamFontMetrics? streamMetrics = metrics switch
+            {
+                StreamFontMetrics s => s,
+                FileFontMetrics f => f.StreamFontMetrics,
+                _ => null
+            };
+
+            if (streamMetrics is not null)
+            {
+                return streamMetrics.CreateVariationInstance(this.variations);
+            }
         }
 
         return metrics;

@@ -3,6 +3,10 @@
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Represents data from a CFF Private DICT, which contains font-level hinting
+/// values and local subroutine references.
+/// </summary>
 internal class CffPrivateDictionary
 {
     public CffPrivateDictionary(byte[][]? localSubrRawBuffers, int defaultWidthX, int nominalWidthX)
@@ -12,9 +16,18 @@ internal class CffPrivateDictionary
         this.NominalWidthX = nominalWidthX;
     }
 
+    /// <summary>
+    /// Gets or sets the local subroutine raw byte buffers referenced by the Private DICT.
+    /// </summary>
     public byte[][]? LocalSubrRawBuffers { get; set; }
 
+    /// <summary>
+    /// Gets or sets the default width for glyphs that do not specify a width in the charstring.
+    /// </summary>
     public int DefaultWidthX { get; set; }
 
+    /// <summary>
+    /// Gets or sets the nominal width used as a bias for charstring width values.
+    /// </summary>
     public int NominalWidthX { get; set; }
 }

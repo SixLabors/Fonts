@@ -7,6 +7,10 @@ using System.Text;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Base class for CFF1 and CFF2 parsers providing shared DICT parsing,
+/// INDEX reading, FDSelect, and subroutine loading functionality.
+/// </summary>
 internal abstract class CffParserBase
 {
     private readonly StringBuilder pooledStringBuilder = new();
@@ -75,14 +79,14 @@ internal abstract class CffParserBase
     {
         if (fdArrayOffset is 0)
         {
-            return Array.Empty<FontDict>();
+            return [];
         }
 
         reader.BaseStream.Position = offset + fdArrayOffset;
 
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
-            return Array.Empty<FontDict>();
+            return [];
         }
 
         FontDict[] fontDicts = new FontDict[offsets.Length];
@@ -265,7 +269,7 @@ internal abstract class CffParserBase
     {
         if (!TryReadIndexDataOffsets(reader, out CffIndexOffset[]? offsets))
         {
-            return Array.Empty<byte[]>();
+            return [];
         }
 
         byte[][] rawBufferList = new byte[offsets.Length][];

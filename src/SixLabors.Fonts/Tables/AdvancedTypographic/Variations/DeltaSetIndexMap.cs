@@ -42,16 +42,18 @@ internal class DeltaSetIndexMap
         reader.Seek(offset, SeekOrigin.Begin);
         byte format = reader.ReadUInt8();
         byte entryFormat = reader.ReadUInt8();
-        ushort mapCount = reader.ReadUInt16();
 
-        if (format is not 0 or 1)
+        if (format is not (0 or 1))
         {
             throw new NotSupportedException("Only format 0 or 1 of DeltaSetIndexMap is supported");
         }
 
+        // Format 0 uses uint16 for mapCount, format 1 uses uint32.
+        int mapCount = format == 0 ? reader.ReadUInt16() : (int)reader.ReadUInt32();
+
         int entrySize = ((entryFormat & MapEntrySizeMask) >> 4) + 1;
-        int outerIndex = entrySize >> ((entryFormat & InnerIndexBitCountMask) + 1);
-        int innerIndex = entrySize & ((1 << ((entryFormat & InnerIndexBitCountMask) + 1)) - 1);
+        int innerBitCount = (entryFormat & InnerIndexBitCountMask) + 1;
+        int innerIndexMask = (1 << innerBitCount) - 1;
 
         DeltaSetIndexMap[] deltaSetIndexMaps = new DeltaSetIndexMap[mapCount];
         for (int i = 0; i < mapCount; i++)
@@ -64,7 +66,7 @@ internal class DeltaSetIndexMap
                 4 => (reader.ReadByte() << 24) | (reader.ReadByte() << 16) | (reader.ReadByte() << 8) | reader.ReadByte(),
                 _ => throw new NotSupportedException("unsupported delta set index map"),
             };
-            deltaSetIndexMaps[i] = new DeltaSetIndexMap((ushort)(entry & innerIndex), (ushort)(entry >> outerIndex));
+            deltaSetIndexMaps[i] = new DeltaSetIndexMap(entry >> innerBitCount, entry & innerIndexMask);
         }
 
         return deltaSetIndexMaps;

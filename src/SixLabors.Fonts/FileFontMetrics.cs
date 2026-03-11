@@ -45,6 +45,11 @@ internal sealed class FileFontMetrics : FontMetrics
     /// </summary>
     public string Path { get; }
 
+    /// <summary>
+    /// Gets the underlying <see cref="StreamFontMetrics"/> that this file-backed instance delegates to.
+    /// </summary>
+    internal StreamFontMetrics StreamFontMetrics => this.fontMetrics.Value;
+
     /// <inheritdoc />
     public override ushort UnitsPerEm => this.fontMetrics.Value.UnitsPerEm;
 

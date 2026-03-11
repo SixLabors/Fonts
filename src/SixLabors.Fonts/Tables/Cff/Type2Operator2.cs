@@ -3,9 +3,12 @@
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Two-byte Type 2 charstring operators (preceded by the escape byte 12).
+/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5177.Type2.pdf"/>
+/// </summary>
 internal enum Type2Operator2 : byte
 {
-    // Two-byte Type 2 Operators
     Reserved0_ = 0,
     Reserved1_,
     Reserved2_,

@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Numerics;
 using SixLabors.Fonts.Rendering;
 using SixLabors.Fonts.Tables.AdvancedTypographic;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
@@ -119,6 +120,15 @@ internal partial class StreamFontMetrics
         vector.AVar = aVar;
         vector.GVar = gVar;
         Bounds bounds = vector.GetBounds();
+
+        // Apply the CFF FontMatrix to transform bounds from charstring space to design units.
+        if (vector.FontMatrix is double[] fm)
+        {
+            float upm = this.UnitsPerEm;
+            Vector2 fmScale = new((float)(fm[0] * upm), (float)(fm[3] * upm));
+            bounds = new Bounds(bounds.Min * fmScale, bounds.Max * fmScale);
+        }
+
         ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
         short lsb = htmx.GetLeftSideBearing(glyphId);
 

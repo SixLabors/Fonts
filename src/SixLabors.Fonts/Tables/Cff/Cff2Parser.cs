@@ -7,7 +7,8 @@ using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 namespace SixLabors.Fonts.Tables.Cff;
 
 /// <summary>
-/// Parses a Compact Font Format (CFF) version 2 described in https://docs.microsoft.com/en-gb/typography/opentype/spec/cff2
+/// Parses a Compact Font Format (CFF) version 2 font program.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/cff2"/>
 /// </summary>
 internal class Cff2Parser : CffParserBase
 {
@@ -15,7 +16,7 @@ internal class Cff2Parser : CffParserBase
 
     private long offset;
 
-    private int fontMatrixOffset;
+    private double[]? fontMatrix;
     private int charStringIndexOffset;
     private int variationStoreOffset;
     private int? fdArrayOffset;
@@ -58,7 +59,8 @@ internal class Cff2Parser : CffParserBase
         FontDict[] fontDicts = this.ReadFdArray(reader, this.offset, fdArrayOffset);
         CffTopDictionary topDictionary = new()
         {
-            CidFontInfo = cidFontInfo
+            CidFontInfo = cidFontInfo,
+            FontMatrix = this.fontMatrix ?? [0.001, 0, 0, 0.001, 0, 0]
         };
 
         CffPrivateDictionary privateDictionary = new(fontDicts[0].LocalSubr, 0, 0);
@@ -78,7 +80,12 @@ internal class Cff2Parser : CffParserBase
             switch (dataDicEntry.Operator.Name)
             {
                 case "FontMatrix":
-                    this.fontMatrixOffset = (int)dataDicEntry.Operands[0].RealNumValue;
+                    this.fontMatrix = new double[dataDicEntry.Operands.Length];
+                    for (int i = 0; i < dataDicEntry.Operands.Length; i++)
+                    {
+                        this.fontMatrix[i] = dataDicEntry.Operands[i].RealNumValue;
+                    }
+
                     break;
                 case "CharStrings":
                     this.charStringIndexOffset = (int)dataDicEntry.Operands[0].RealNumValue;
@@ -133,7 +140,7 @@ internal class Cff2Parser : CffParserBase
     {
         if (!TryReadIndexDataOffsets(reader, cff2, out CffIndexOffset[]? offsets))
         {
-            return Array.Empty<byte[]>();
+            return [];
         }
 
         byte[][] rawBufferList = new byte[offsets.Length][];
@@ -233,12 +240,15 @@ internal class Cff2Parser : CffParserBase
             glyphs[i] = new CffGlyphData(
                 (ushort)i,
                 globalSubrBuffers,
-                localSubBuffer ?? Array.Empty<byte[]>(),
+                localSubBuffer ?? [],
                 privateDictionary?.NominalWidthX ?? 0,
                 charstringsBuffer,
                 2,
                 this.itemVariationStore,
-                vsIndex);
+                vsIndex)
+            {
+                FontMatrix = topDictionary.FontMatrix
+            };
         }
 
         return glyphs;

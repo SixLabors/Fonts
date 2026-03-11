@@ -1,11 +1,14 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
-using System;
 using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Represents the Compact Font Format (CFF) version 1 table.
+/// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf"/>
+/// </summary>
 internal sealed class Cff1Table : Table, ICffTable
 {
     internal const string TableName = "CFF "; // 4 chars

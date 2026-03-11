@@ -8,6 +8,10 @@ using SixLabors.Fonts.WellKnownIds;
 
 namespace SixLabors.Fonts.Tables.Cff;
 
+/// <summary>
+/// Represents the Compact Font Format (CFF) version 2 table.
+/// <see href="https://learn.microsoft.com/en-us/typography/opentype/spec/cff2"/>
+/// </summary>
 internal sealed class Cff2Table : Table, ICffTable
 {
     internal const string TableName = "CFF2";
