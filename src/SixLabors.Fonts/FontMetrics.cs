@@ -276,4 +276,16 @@ public abstract class FontMetrics
     /// </summary>
     /// <param name="collection">The glyph positioning collection.</param>
     internal abstract void UpdatePositions(GlyphPositioningCollection collection);
+
+    /// <summary>
+    /// Computes a GPOS/GSUB variation delta for the given packed VariationIndex.
+    /// The delta is computed using the GDEF ItemVariationStore and the current
+    /// variation coordinates from the GlyphVariationProcessor.
+    /// </summary>
+    /// <param name="packedVariationIndex">
+    /// The packed VariationIndex: (outerIndex &lt;&lt; 16) | innerIndex.
+    /// A value of 0 returns 0.
+    /// </param>
+    /// <returns>The delta value in design units, or 0 if no variation data is available.</returns>
+    internal abstract float GetGDefVariationDelta(uint packedVariationIndex);
 }

@@ -381,6 +381,31 @@ internal partial class StreamFontMetrics : FontMetrics
         }
     }
 
+    /// <inheritdoc/>
+    internal override float GetGDefVariationDelta(uint packedVariationIndex)
+    {
+        if (packedVariationIndex == 0 || this.GlyphVariationProcessor is null)
+        {
+            return 0;
+        }
+
+        GlyphDefinitionTable? gdef = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables!.Gdef
+            : this.compactFontTables!.Gdef;
+
+        if (gdef?.ItemVariationStore is null)
+        {
+            return 0;
+        }
+
+        // The packed index encodes two uint16 values:
+        // - Upper 16 bits: outer index (selects the ItemVariationData subtable)
+        // - Lower 16 bits: inner index (selects the DeltaSet within that subtable)
+        int outerIndex = (int)(packedVariationIndex >> 16);
+        int innerIndex = (int)(packedVariationIndex & 0xFFFF);
+        return this.GlyphVariationProcessor.Delta(gdef.ItemVariationStore, outerIndex, innerIndex);
+    }
+
     /// <summary>
     /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
     /// </summary>

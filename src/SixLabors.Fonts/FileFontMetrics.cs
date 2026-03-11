@@ -168,6 +168,10 @@ internal sealed class FileFontMetrics : FontMetrics
     internal override void UpdatePositions(GlyphPositioningCollection collection)
         => this.fontMetrics.Value.UpdatePositions(collection);
 
+    /// <inheritdoc/>
+    internal override float GetGDefVariationDelta(uint packedVariationIndex)
+        => this.fontMetrics.Value.GetGDefVariationDelta(packedVariationIndex);
+
     /// <summary>
     /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.
     /// </summary>

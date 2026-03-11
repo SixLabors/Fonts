@@ -477,6 +477,17 @@ internal class GlyphVariationProcessor
     }
 
     /// <summary>
+    /// Computes the delta adjustment for a specific item using an external ItemVariationStore.
+    /// Used for GDEF-based variation deltas in GPOS/GSUB device tables.
+    /// </summary>
+    /// <param name="store">The external ItemVariationStore (e.g. from GDEF).</param>
+    /// <param name="outerIndex">The outer index.</param>
+    /// <param name="innerIndex">The inner index.</param>
+    /// <returns>The delta value.</returns>
+    internal float Delta(ItemVariationStore store, int outerIndex, int innerIndex)
+        => this.ComputeDelta(store, outerIndex, innerIndex);
+
+    /// <summary>
     /// Computes a delta from a given ItemVariationStore using cached blend vectors.
     /// Shared by HVAR, VVAR, MVAR, and CFF2 delta lookups.
     /// </summary>
