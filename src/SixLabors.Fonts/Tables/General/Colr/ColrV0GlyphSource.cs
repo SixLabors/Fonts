@@ -50,7 +50,7 @@ internal sealed class ColrV0GlyphSource : ColrGlyphSourceBase
                     // Flatten paint graph: attach composite mode to leaves.
                     List<Rendering.Paint> leafPaints = [];
                     PaintSolid paint = new() { PaletteIndex = rl.PaletteIndex, Alpha = 1, Format = 2 };
-                    FlattenPaint(paint, Matrix3x2.Identity, CompositeMode.SrcOver, this.Cpal, leafPaints);
+                    FlattenPaint(paint, Matrix3x2.Identity, CompositeMode.SrcOver, this.Cpal, this.Colr, null, leafPaints);
 
                     // Emit one layer per leaf paint.
                     for (int p = 0; p < leafPaints.Count; p++)

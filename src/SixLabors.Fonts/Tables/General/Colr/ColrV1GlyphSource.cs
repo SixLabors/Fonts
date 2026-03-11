@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Numerics;
 using SixLabors.Fonts.Rendering;
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
 namespace SixLabors.Fonts.Tables.General.Colr;
@@ -16,23 +17,25 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
 {
     private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas)> CachedGlyphs = [];
 
+    private readonly GlyphVariationProcessor? processor;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ColrV1GlyphSource"/> class.
     /// </summary>
     /// <param name="colr">The COLR table.</param>
     /// <param name="cpal">The CPAL table, or null if not present.</param>
     /// <param name="glyphLoader">Delegate that loads a glyph outline for the given glyph id.</param>
-    public ColrV1GlyphSource(ColrTable colr, CpalTable? cpal, Func<ushort, GlyphVector?> glyphLoader)
+    /// <param name="processor">The glyph variation processor for variable fonts, or null.</param>
+    public ColrV1GlyphSource(ColrTable colr, CpalTable? cpal, Func<ushort, GlyphVector?> glyphLoader, GlyphVariationProcessor? processor = null)
         : base(colr, cpal, glyphLoader)
-    {
-    }
+        => this.processor = processor;
 
     /// <inheritdoc/>
     public override bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvasMetadata canvas)
     {
         (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas) result = CachedGlyphs.GetOrAdd(glyphId, _ =>
         {
-            if (this.Colr.TryGetColrV1Layers(glyphId, out List<ResolvedGlyphLayer>? resolved))
+            if (this.Colr.TryGetColrV1Layers(glyphId, this.processor, out List<ResolvedGlyphLayer>? resolved))
             {
                 List<PaintedLayer> layers = new(resolved.Count);
                 for (int i = 0; i < resolved.Count; i++)
@@ -49,7 +52,7 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
 
                     // Flatten paint graph: accumulate wrapper transforms; attach composite mode to leaves.
                     List<Rendering.Paint> leafPaints = [];
-                    FlattenPaint(rl.Paint, rl.Transform, rl.CompositeMode, this.Cpal, leafPaints);
+                    FlattenPaint(rl.Paint, rl.Transform, rl.CompositeMode, this.Cpal, this.Colr, this.processor, leafPaints);
 
                     // Emit one layer per leaf paint.
                     Bounds? clip = rl.ClipBox;

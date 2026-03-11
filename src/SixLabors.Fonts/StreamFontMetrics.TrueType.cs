@@ -233,7 +233,7 @@ internal partial class StreamFontMetrics
         if ((colorSupport & ColorFontSupport.ColrV1) == ColorFontSupport.ColrV1 && colr?.ContainsColorV1Glyph(glyphId) == true)
         {
             CpalTable? cpal = tables.Cpal;
-            ColrV1GlyphSource glyphSource = new(colr, cpal, i => glyf.GetGlyph(i));
+            ColrV1GlyphSource glyphSource = new(colr, cpal, i => glyf.GetGlyph(i), this.GlyphVariationProcessor);
 
             return new PaintedGlyphMetrics(
                 this,

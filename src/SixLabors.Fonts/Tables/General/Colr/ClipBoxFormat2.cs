@@ -1,6 +1,8 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using SixLabors.Fonts.Tables.AdvancedTypographic.Variations;
+
 namespace SixLabors.Fonts.Tables.General.Colr;
 
 // Format 2: int16 edges + varIndex per edge.
@@ -21,12 +23,12 @@ internal sealed class ClipBoxFormat2 : ClipBox
         this.varIndexBase = varIndexBase;
     }
 
-    public override Bounds GetBounds(IVariationResolver? varResolver)
+    public override Bounds GetBounds(ColrTable colr, GlyphVariationProcessor? processor)
     {
-        float dx0 = varResolver?.ResolveDelta(this.varIndexBase + 0u) ?? 0f;
-        float dy0 = varResolver?.ResolveDelta(this.varIndexBase + 1u) ?? 0f;
-        float dx1 = varResolver?.ResolveDelta(this.varIndexBase + 2u) ?? 0f;
-        float dy1 = varResolver?.ResolveDelta(this.varIndexBase + 3u) ?? 0f;
+        float dx0 = colr.ResolveDelta(processor, this.varIndexBase + 0u);
+        float dy0 = colr.ResolveDelta(processor, this.varIndexBase + 1u);
+        float dx1 = colr.ResolveDelta(processor, this.varIndexBase + 2u);
+        float dy1 = colr.ResolveDelta(processor, this.varIndexBase + 3u);
 
         float xMin = this.xMin + dx0;
         float yMin = this.yMin + dy0;
