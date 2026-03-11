@@ -656,4 +656,110 @@ public class VariationFontTests
             "Multiple variation axes",
             options);
     }
+
+    [Fact]
+    public void CVar_CanLoadFontWithCvarTable()
+    {
+        // VotoSerif has cvar, cvt, fpgm, prep, fvar, gvar tables.
+        // Axes: wght (28–194, default 94), wdth (70–100), opsz (12–72).
+        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvar);
+        Font font = family.CreateFont(12);
+
+        Assert.NotNull(font.FontMetrics);
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[]? axes));
+        Assert.Equal(3, axes!.Length);
+        Assert.Equal("wght", axes[0].Tag);
+        Assert.Equal("wdth", axes[1].Tag);
+        Assert.Equal("opsz", axes[2].Tag);
+    }
+
+    [Fact]
+    public void CVar_NoShared_CanLoadFontWithCvarTable()
+    {
+        // Same font but cvar uses no shared point numbers.
+        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvarNoShared);
+        Font font = family.CreateFont(12);
+
+        Assert.NotNull(font.FontMetrics);
+        Assert.True(font.FontMetrics.TryGetVariationAxes(out VariationAxis[]? axes));
+        Assert.Equal(3, axes!.Length);
+    }
+
+    [Fact]
+    public void CVar_HintedRenderingWithVariation()
+    {
+        // Exercise the cvar code path: hinting enabled + variation applied.
+        // cvar deltas modify CVT values before TrueType hinting instructions run.
+        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvar);
+        Font defaultFont = family.CreateFont(48);
+        Font variedFont = family.CreateFont(48, new FontVariation("wght", 194));
+
+        TextOptions defaultOptions = new(defaultFont) { HintingMode = HintingMode.Standard };
+        TextOptions variedOptions = new(variedFont) { HintingMode = HintingMode.Standard };
+
+        GlyphRenderer defaultRenderer = new();
+        TextRenderer.RenderTextTo(defaultRenderer, "hono", defaultOptions);
+
+        GlyphRenderer variedRenderer = new();
+        TextRenderer.RenderTextTo(variedRenderer, "hono", variedOptions);
+
+        Assert.NotEmpty(defaultRenderer.ControlPoints);
+        Assert.NotEmpty(variedRenderer.ControlPoints);
+    }
+
+    [Fact]
+    public void CVar_NoShared_HintedRenderingWithVariation()
+    {
+        // Same test with the no-shared-points variant of the cvar font.
+        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvarNoShared);
+        Font variedFont = family.CreateFont(48, new FontVariation("wght", 194));
+
+        TextOptions options = new(variedFont) { HintingMode = HintingMode.Standard };
+
+        GlyphRenderer renderer = new();
+        TextRenderer.RenderTextTo(renderer, "hono", options);
+
+        Assert.NotEmpty(renderer.ControlPoints);
+    }
+
+    [Fact]
+    public void CVar_HintedRenderingAtSmallSize()
+    {
+        // At small sizes, TrueType hinting with cvar-adjusted CVT values
+        // has a greater effect on grid-fitting. Verify both paths render successfully.
+        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvar);
+        Font font = family.CreateFont(12, new FontVariation("wght", 28));
+
+        TextOptions hintedOptions = new(font) { HintingMode = HintingMode.Standard };
+        TextOptions unhintedOptions = new(font) { HintingMode = HintingMode.None };
+
+        GlyphRenderer hintedRenderer = new();
+        TextRenderer.RenderTextTo(hintedRenderer, "hono", hintedOptions);
+
+        GlyphRenderer unhintedRenderer = new();
+        TextRenderer.RenderTextTo(unhintedRenderer, "hono", unhintedOptions);
+
+        Assert.NotEmpty(hintedRenderer.ControlPoints);
+        Assert.NotEmpty(unhintedRenderer.ControlPoints);
+    }
+
+    [Theory]
+    [InlineData(28, "Light", HintingMode.None)]
+    [InlineData(28, "Light", HintingMode.Standard)]
+    [InlineData(94, "Regular", HintingMode.None)]
+    [InlineData(94, "Regular", HintingMode.Standard)]
+    [InlineData(194, "Heavy", HintingMode.None)]
+    [InlineData(194, "Heavy", HintingMode.Standard)]
+    public void VisualTest_VotoSerif_CVar_WeightVariations(float weight, string label, HintingMode hintingMode)
+    {
+        FontFamily family = new FontCollection().Add(TestFonts.VotoSerifCvar);
+        Font font = family.CreateFont(48, new FontVariation("wght", weight));
+
+        TextOptions options = new(font) { HintingMode = hintingMode };
+
+        TextLayoutTestUtilities.TestLayout(
+            "hono",
+            options,
+            properties: [label, weight, hintingMode]);
+    }
 }

@@ -255,6 +255,20 @@ public static class TestFonts
     /// </summary>
     public static string NotoEmojiVariableFont => GetFullPath("NotoEmoji-VariableFont_wght.ttf");
 
+    /// <summary>
+    /// Gets VotoSerif variable font with cvar table using shared points.
+    /// From fonttools test data. Axes: wght (28–194), wdth (70–100), opsz (12–72).
+    /// Contains 5 glyphs: .notdef, space (U+0020), 'h' (U+0068), 'n' (U+006E), 'o' (U+006F).
+    /// </summary>
+    public static string VotoSerifCvar => GetFullPath("VotoSerifGX-IUP-gvar-cvar.ttf");
+
+    /// <summary>
+    /// Gets VotoSerif variable font with cvar table without shared points.
+    /// From fonttools test data. Axes: wght (28–194), wdth (70–100), opsz (12–72).
+    /// Contains 5 glyphs: .notdef, space (U+0020), 'h' (U+0068), 'n' (U+006E), 'o' (U+006F).
+    /// </summary>
+    public static string VotoSerifCvarNoShared => GetFullPath("VotoSerifGX-IUP-gvar-cvar_noshared.ttf");
+
     public static string SimpleTrueTypeCollection => GetFullPath("Sample.ttc");
 
     public static string WhitneyBookFile => GetFullPath("whitney-book.ttf");
