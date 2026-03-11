@@ -19,6 +19,11 @@ internal ref struct Buffer<T>
     private bool isDisposed;
 
     public Buffer(int length)
+        : this(length, clear: false)
+    {
+    }
+
+    public Buffer(int length, bool clear)
     {
         Guard.MustBeGreaterThanOrEqualTo(length, 0, nameof(length));
         int itemSizeBytes = Unsafe.SizeOf<T>();
@@ -29,6 +34,11 @@ internal ref struct Buffer<T>
         using ByteMemoryManager<T> manager = new(this.buffer);
         this.Memory = manager.Memory[..this.length];
         this.span = this.Memory.Span;
+
+        if (clear)
+        {
+            this.span.Clear();
+        }
 
         this.isDisposed = false;
     }

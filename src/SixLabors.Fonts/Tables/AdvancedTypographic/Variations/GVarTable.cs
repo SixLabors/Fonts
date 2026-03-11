@@ -138,19 +138,21 @@ internal class GVarTable : Table
         // Reader is positioned at table start
         long gvarEnd = gvarTableLength;
 
+        GlyphVariationData empty = new([]);
         for (int i = 0; i < glyphCount; i++)
         {
             long start = glyphDataBase + glyphVariationOffsets[i];
             long end = glyphDataBase + glyphVariationOffsets[i + 1]; // spec gives glyphCount+1 offsets
 
-            // Validate range (must be within table and non-decreasing)
-            if (start < glyphDataBase || end < start || end > gvarEnd || start + 2 > gvarEnd)
+            // Validate range (must be within table and non-decreasing).
+            // Equal offsets mean the glyph has no variation data.
+            if (start == end || start < glyphDataBase || end < start || end > gvarEnd || start + 2 > gvarEnd)
             {
-                glyphVariations[i] = new GlyphVariationData(); // or null if allowed
+                glyphVariations[i] = empty;
                 continue;
             }
 
-            glyphVariations[i] = GlyphVariationData.Load(reader, start, is32BitOffset, axisCount);
+            glyphVariations[i] = GlyphVariationData.Load(reader, start, axisCount);
         }
 
         return new GVarTable(axisCount, glyphCount, sharedTuples, glyphVariations);

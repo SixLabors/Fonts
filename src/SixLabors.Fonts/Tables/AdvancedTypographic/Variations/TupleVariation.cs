@@ -30,15 +30,49 @@ internal class TupleVariation
     /// </summary>
     internal const int TupleIndexMask = 0x0FFF;
 
-    public TupleVariation(int axisCount, float[]? embeddedPeak, float[]? intermediateStartRegion, float[]? intermediateEndRegion)
+    public TupleVariation(
+        int axisCount,
+        ushort variationDataSize,
+        ushort tupleIndex,
+        float[]? embeddedPeak,
+        float[]? intermediateStartRegion,
+        float[]? intermediateEndRegion)
     {
         this.AxisCount = axisCount;
+        this.VariationDataSize = variationDataSize;
+        this.TupleIndex = tupleIndex;
         this.EmbeddedPeak = embeddedPeak;
         this.IntermediateStartRegion = intermediateStartRegion;
         this.IntermediateEndRegion = intermediateEndRegion;
     }
 
     public int AxisCount { get; }
+
+    /// <summary>
+    /// Gets the size in bytes of the serialized data for this tuple variation table.
+    /// </summary>
+    public ushort VariationDataSize { get; }
+
+    /// <summary>
+    /// Gets the packed tuple index field containing flags (high 4 bits) and shared tuple records index (low 12 bits).
+    /// </summary>
+    public ushort TupleIndex { get; }
+
+    /// <summary>
+    /// Gets the shared tuple records index (low 12 bits of <see cref=”TupleIndex”/>).
+    /// Used to look up peak coordinates from <see cref=”GVarTable.SharedTuples”/> when no embedded peak is present.
+    /// </summary>
+    public int SharedTupleIndex => this.TupleIndex & TupleIndexMask;
+
+    /// <summary>
+    /// Gets a value indicating whether this tuple has private point numbers in its serialized data.
+    /// </summary>
+    public bool HasPrivatePointNumbers => (this.TupleIndex & PrivatePointNumbersMask) != 0;
+
+    /// <summary>
+    /// Gets a value indicating whether this tuple has an intermediate region (start/end coordinates).
+    /// </summary>
+    public bool IsIntermediateRegion => (this.TupleIndex & IntermediateRegionMask) != 0;
 
     public float[]? EmbeddedPeak { get; }
 
@@ -67,14 +101,10 @@ internal class TupleVariation
         // |                      |                                           | optional, determined by flags in the tupleIndex value.                       |
         // +----------------------+-------------------------------------------+------------------------------------------------------------------------------+
         ushort variationDataSize = reader.ReadUInt16();
-        int bytesRead = 0;
         ushort tupleIndex = reader.ReadUInt16();
-        bytesRead += 2;
 
-        int sharedTupleRecords = tupleIndex & TupleIndexMask;
-        bool hasPrivatePointNumbers = (tupleIndex & PrivatePointNumbersMask) == PrivatePointNumbersMask;
-        bool hasEmbeddedPeakTuple = (tupleIndex & EmbeddedPeakTupleMask) == EmbeddedPeakTupleMask;
-        bool hasIntermediateRegion = (tupleIndex & IntermediateRegionMask) == IntermediateRegionMask;
+        bool hasEmbeddedPeakTuple = (tupleIndex & EmbeddedPeakTupleMask) != 0;
+        bool hasIntermediateRegion = (tupleIndex & IntermediateRegionMask) != 0;
 
         float[]? embeddedPeak = null;
         if (hasEmbeddedPeakTuple)
@@ -83,7 +113,6 @@ internal class TupleVariation
             for (int i = 0; i < axisCount; i++)
             {
                 embeddedPeak[i] = reader.ReadF2Dot14();
-                bytesRead += 2;
             }
         }
 
@@ -95,17 +124,15 @@ internal class TupleVariation
             for (int i = 0; i < axisCount; i++)
             {
                 intermediateStartRegion[i] = reader.ReadF2Dot14();
-                bytesRead += 2;
             }
 
             intermediateEndRegion = new float[axisCount];
             for (int i = 0; i < axisCount; i++)
             {
                 intermediateEndRegion[i] = reader.ReadF2Dot14();
-                bytesRead += 2;
             }
         }
 
-        return new TupleVariation(axisCount, embeddedPeak, intermediateStartRegion, intermediateEndRegion);
+        return new TupleVariation(axisCount, variationDataSize, tupleIndex, embeddedPeak, intermediateStartRegion, intermediateEndRegion);
     }
 }

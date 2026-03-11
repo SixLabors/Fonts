@@ -153,10 +153,11 @@ internal partial class StreamFontMetrics
         };
 
         GlyphVariationProcessor? glyphVariationProcessor = null;
-        if (fvar != null && (hvar != null || vvar != null))
+        if (fvar != null)
         {
-            // vvar can only be present if hvar is absent and vice versa.
-            ItemVariationStore itemVariationStore = hvar != null ? hvar.ItemVariationStore : vvar!.ItemVariationStore;
+            // Use the item variation store from HVAR or VVAR if available (for metrics variations).
+            // A variable font may have gvar without HVAR/VVAR (using phantom points for metrics instead).
+            ItemVariationStore? itemVariationStore = hvar?.ItemVariationStore ?? vvar?.ItemVariationStore;
             glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fvar, avar, gvar, hvar, vvar);
         }
 
@@ -181,10 +182,19 @@ internal partial class StreamFontMetrics
 
         GlyphVector vector = glyf.GetGlyph(glyphId);
 
+        // Apply gvar deltas to the glyph outline if a variation processor is present.
+        this.GlyphVariationProcessor?.TransformPoints(glyphId, ref vector);
+
         Bounds bounds = vector.Bounds;
 
         ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
         short lsb = htmx.GetLeftSideBearing(glyphId);
+
+        // Apply HVAR advance width adjustment if available.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            advanceWidth = (ushort)(advanceWidth + MathF.Round(this.GlyphVariationProcessor.AdvanceAdjustment(glyphId)));
+        }
 
         IMetricsHeader metrics = isVerticalLayout ? this.VerticalMetrics : this.HorizontalMetrics;
         ushort advancedHeight = (ushort)(metrics.Ascender - metrics.Descender);
@@ -193,6 +203,12 @@ internal partial class StreamFontMetrics
         {
             advancedHeight = vtmx.GetAdvancedHeight(glyphId);
             tsb = vtmx.GetTopSideBearing(glyphId);
+        }
+
+        // Apply VVAR advance height adjustment if available.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            advancedHeight = (ushort)(advancedHeight + MathF.Round(this.GlyphVariationProcessor.VerticalAdvanceAdjustment(glyphId)));
         }
 
         ColrTable? colr = tables.Colr;

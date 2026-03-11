@@ -120,6 +120,12 @@ internal partial class StreamFontMetrics
         ushort advanceWidth = htmx.GetAdvancedWidth(glyphId);
         short lsb = htmx.GetLeftSideBearing(glyphId);
 
+        // Apply HVAR advance width adjustment if available.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            advanceWidth = (ushort)(advanceWidth + MathF.Round(this.GlyphVariationProcessor.AdvanceAdjustment(glyphId)));
+        }
+
         IMetricsHeader metrics = isVerticalLayout ? this.VerticalMetrics : this.HorizontalMetrics;
         ushort advancedHeight = (ushort)(metrics.Ascender - metrics.Descender);
         short tsb = (short)(metrics.Ascender - bounds.Max.Y);
@@ -127,6 +133,12 @@ internal partial class StreamFontMetrics
         {
             advancedHeight = vtmx.GetAdvancedHeight(glyphId);
             tsb = vtmx.GetTopSideBearing(glyphId);
+        }
+
+        // Apply VVAR advance height adjustment if available.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            advancedHeight = (ushort)(advancedHeight + MathF.Round(this.GlyphVariationProcessor.VerticalAdvanceAdjustment(glyphId)));
         }
 
         // TODO: Support CFF based COLR glyphs.
