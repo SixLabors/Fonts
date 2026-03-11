@@ -1,6 +1,7 @@
 // Copyright (c) Six Labors.
 // Licensed under the Six Labors Split License.
 
+using System.Collections.Concurrent;
 using System.Numerics;
 using SixLabors.Fonts.Tables.TrueType.Glyphs;
 
@@ -32,9 +33,18 @@ internal class GlyphVariationProcessor
 
     private readonly MVarTable? mVar;
 
+    private readonly CVarTable? cVar;
+
     private readonly float[] normalizedCoords;
 
-    private readonly Dictionary<ItemVariationData, float[]> blendVectors;
+    private readonly ConcurrentDictionary<ItemVariationData, float[]> blendVectors;
+
+    /// <summary>
+    /// Cached CVT values with cvar deltas applied, keyed by the base CVT array.
+    /// Computed once per unique base CVT since the result depends only on
+    /// normalized coordinates and the base values, not on the glyph.
+    /// </summary>
+    private readonly ConcurrentDictionary<short[], short[]> cvtCache = new(ReferenceEqualityComparer.Instance);
 
     public GlyphVariationProcessor(
         ItemVariationStore? itemStore,
@@ -44,6 +54,7 @@ internal class GlyphVariationProcessor
         HVarTable? hVar = null,
         VVarTable? vVar = null,
         MVarTable? mVar = null,
+        CVarTable? cVar = null,
         float[]? userCoordinates = null)
     {
         DebugGuard.NotNull(fVar, nameof(fVar));
@@ -55,8 +66,9 @@ internal class GlyphVariationProcessor
         this.hVar = hVar;
         this.vVar = vVar;
         this.mVar = mVar;
+        this.cVar = cVar;
         this.normalizedCoords = this.NormalizeCoords(userCoordinates);
-        this.blendVectors = [];
+        this.blendVectors = new();
     }
 
     /// <summary>
@@ -343,6 +355,96 @@ internal class GlyphVariationProcessor
     }
 
     /// <summary>
+    /// Applies cvar (CVT Variations) deltas to the base CVT values.
+    /// The result is computed once and cached, since cvar deltas depend only on
+    /// normalized axis coordinates, not on the glyph being processed.
+    /// Returns an adjusted copy of the CVT values with variation deltas applied,
+    /// or null if there is no cvar data.
+    /// </summary>
+    /// <param name="baseCvt">The base CVT values from the cvt table.</param>
+    /// <returns>The varied CVT values, or null if no cvar table is present.</returns>
+    public short[]? ApplyCvtDeltas(short[] baseCvt)
+    {
+        if (this.cVar is null || this.cVar.TupleVariations.Length == 0)
+        {
+            return null;
+        }
+
+        return this.cvtCache.GetOrAdd(baseCvt, this.ComputeCvtDeltas);
+    }
+
+    private short[] ComputeCvtDeltas(short[] baseCvt)
+    {
+        // Work on a copy so we don't modify the original CVT values.
+        short[] varied = new short[baseCvt.Length];
+        Array.Copy(baseCvt, varied, baseCvt.Length);
+
+        foreach (CVarTupleVariation cvarTuple in this.cVar!.TupleVariations)
+        {
+            TupleVariation tuple = cvarTuple.TupleVariation;
+
+            // cvar always has embedded peak coordinates (per spec).
+            float[]? peakCoords = tuple.EmbeddedPeak;
+            if (peakCoords is null)
+            {
+                continue;
+            }
+
+            float factor = this.TupleFactor(
+                tuple.IsIntermediateRegion,
+                peakCoords,
+                tuple.IntermediateStartRegion,
+                tuple.IntermediateEndRegion);
+
+            if (factor == 0)
+            {
+                continue;
+            }
+
+            short[]? deltas = cvarTuple.Deltas;
+            ushort[]? pointNumbers = cvarTuple.PointNumbers;
+
+            // Handle deferred decoding for "all points" case.
+            if (deltas is null && cvarTuple.RawDeltaData is not null)
+            {
+                using MemoryStream ms = new(cvarTuple.RawDeltaData);
+                using BigEndianBinaryReader deltaReader = new(ms, false);
+                deltas = GlyphVariationData.DecodePackedDeltas(deltaReader, baseCvt.Length);
+            }
+
+            if (deltas is null)
+            {
+                continue;
+            }
+
+            bool allPoints = pointNumbers is null or { Length: 0 };
+            if (allPoints)
+            {
+                // Deltas apply to all CVT entries.
+                int count = Math.Min(deltas.Length, varied.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    varied[i] += (short)MathF.Round(deltas[i] * factor);
+                }
+            }
+            else
+            {
+                // Deltas apply to specific CVT indices.
+                for (int i = 0; i < pointNumbers!.Length && i < deltas.Length; i++)
+                {
+                    int idx = pointNumbers[i];
+                    if (idx < varied.Length)
+                    {
+                        varied[idx] += (short)MathF.Round(deltas[i] * factor);
+                    }
+                }
+            }
+        }
+
+        return varied;
+    }
+
+    /// <summary>
     /// Computes the blend vector for the given outer index in the item variation store.
     /// Used by the CFF2 blend operator.
     /// </summary>
@@ -409,12 +511,12 @@ internal class GlyphVariationProcessor
     private float[] GetOrComputeBlendVector(ItemVariationStore store, int outerIndex)
     {
         ItemVariationData variationData = store.ItemVariations[outerIndex];
-        if (this.blendVectors.TryGetValue(variationData, out float[]? blendVector))
-        {
-            return blendVector;
-        }
+        return this.blendVectors.GetOrAdd(variationData, _ => this.ComputeBlendVector(store, variationData));
+    }
 
-        blendVector = new float[variationData.RegionIndexes.Length];
+    private float[] ComputeBlendVector(ItemVariationStore store, ItemVariationData variationData)
+    {
+        float[] blendVector = new float[variationData.RegionIndexes.Length];
         for (int i = 0; i < variationData.RegionIndexes.Length; i++)
         {
             float scalar = 1.0f;
@@ -466,7 +568,6 @@ internal class GlyphVariationProcessor
             blendVector[i] = scalar;
         }
 
-        this.blendVectors[variationData] = blendVector;
         return blendVector;
     }
 

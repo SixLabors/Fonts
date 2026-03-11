@@ -54,6 +54,7 @@ internal class TableLoader
         this.Register(HVarTable.TableName, HVarTable.Load);
         this.Register(VVarTable.TableName, VVarTable.Load);
         this.Register(MVarTable.TableName, MVarTable.Load);
+        this.Register<CVarTable>(CVarTable.TableName, _ => null);
         this.Register(SvgTable.TableName, SvgTable.Load);
     }
 

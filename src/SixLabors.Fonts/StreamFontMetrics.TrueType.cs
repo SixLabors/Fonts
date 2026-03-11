@@ -68,7 +68,15 @@ internal partial class StreamFontMetrics
             CvtTable? cvt = tables.Cvt;
             PrepTable? prep = tables.Prep;
             float hintingScaleFactor = pixelSize / this.UnitsPerEm;
-            interpreter.SetControlValueTable(cvt?.ControlValues, hintingScaleFactor, pixelSize, prep?.Instructions);
+
+            // Apply cvar deltas to CVT values for variable fonts before hinting.
+            short[]? cvtValues = cvt?.ControlValues;
+            if (cvtValues is not null && this.GlyphVariationProcessor is not null)
+            {
+                cvtValues = this.GlyphVariationProcessor.ApplyCvtDeltas(cvtValues) ?? cvtValues;
+            }
+
+            interpreter.SetControlValueTable(cvtValues, hintingScaleFactor, pixelSize, prep?.Instructions);
 
             Bounds bounds = glyphVector.Bounds;
 
@@ -168,7 +176,7 @@ internal partial class StreamFontMetrics
             // Use the item variation store from HVAR or VVAR if available (for metrics variations).
             // A variable font may have gvar without HVAR/VVAR (using phantom points for metrics instead).
             ItemVariationStore? itemVariationStore = hvar?.ItemVariationStore ?? vvar?.ItemVariationStore;
-            glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fvar, avar, gvar, hvar, vvar, mvar);
+            glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fvar, avar, gvar, hvar, vvar, mvar, cvar);
         }
 
         return new StreamFontMetrics(tables, glyphVariationProcessor);
