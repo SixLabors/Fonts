@@ -95,6 +95,43 @@ public struct FontFamily : IEquatable<FontFamily>
     }
 
     /// <summary>
+    /// Create a new instance of the <see cref="Font" /> for the named font family with regular styling
+    /// and the specified variation axis settings.
+    /// </summary>
+    /// <param name="size">The size of the font in PT units.</param>
+    /// <param name="variations">The variation axis settings to apply.</param>
+    /// <returns>The new <see cref="Font" />.</returns>
+    public readonly Font CreateFont(float size, params FontVariation[] variations)
+    {
+        if (this == default)
+        {
+            FontsThrowHelper.ThrowDefaultInstance();
+        }
+
+        Font baseFont = new(this, size);
+        return variations.Length > 0 ? new Font(baseFont, variations) : baseFont;
+    }
+
+    /// <summary>
+    /// Create a new instance of the <see cref="Font" /> for the named font family with the specified
+    /// style and variation axis settings.
+    /// </summary>
+    /// <param name="size">The size of the font in PT units.</param>
+    /// <param name="style">The font style.</param>
+    /// <param name="variations">The variation axis settings to apply.</param>
+    /// <returns>The new <see cref="Font" />.</returns>
+    public readonly Font CreateFont(float size, FontStyle style, params FontVariation[] variations)
+    {
+        if (this == default)
+        {
+            FontsThrowHelper.ThrowDefaultInstance();
+        }
+
+        Font baseFont = new(this, size, style);
+        return variations.Length > 0 ? new Font(baseFont, variations) : baseFont;
+    }
+
+    /// <summary>
     /// Gets the collection of <see cref="FontStyle" /> that are currently available.
     /// </summary>
     /// <returns>The <see cref="IEnumerable{T}" />.</returns>

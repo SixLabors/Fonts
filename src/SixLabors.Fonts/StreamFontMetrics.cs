@@ -95,6 +95,56 @@ internal partial class StreamFontMetrics : FontMetrics
         this.verticalMetrics = metrics.VerticalMetrics;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class as a variation instance,
+    /// sharing variation-independent caches from the base instance.
+    /// Only the glyph cache (which depends on variation coordinates) is fresh.
+    /// </summary>
+    private StreamFontMetrics(
+        TrueTypeFontTables tables,
+        GlyphVariationProcessor processor,
+        ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)> sharedGlyphIdCache,
+        ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> sharedCodePointCache)
+    {
+        this.trueTypeFontTables = tables;
+        this.outlineType = OutlineType.TrueType;
+        this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+        this.GlyphVariationProcessor = processor;
+        this.glyphIdCache = sharedGlyphIdCache;
+        this.codePointCache = sharedCodePointCache;
+        this.glyphCache = new();
+
+        (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
+        this.horizontalMetrics = metrics.HorizontalMetrics;
+        this.verticalMetrics = metrics.VerticalMetrics;
+
+        this.interpreterPool = new ObjectPool<TrueTypeInterpreter>(new TrueTypeInterpreterPooledObjectPolicy(this));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StreamFontMetrics"/> class as a variation instance,
+    /// sharing variation-independent caches from the base instance.
+    /// Only the glyph cache (which depends on variation coordinates) is fresh.
+    /// </summary>
+    private StreamFontMetrics(
+        CompactFontTables tables,
+        GlyphVariationProcessor processor,
+        ConcurrentDictionary<(int CodePoint, int NextCodePoint), (bool Success, ushort GlyphId, bool SkipNextCodePoint)> sharedGlyphIdCache,
+        ConcurrentDictionary<ushort, (bool Success, CodePoint CodePoint)> sharedCodePointCache)
+    {
+        this.compactFontTables = tables;
+        this.outlineType = OutlineType.CFF;
+        this.description = new FontDescription(tables.Name, tables.Os2, tables.Head);
+        this.GlyphVariationProcessor = processor;
+        this.glyphIdCache = sharedGlyphIdCache;
+        this.codePointCache = sharedCodePointCache;
+        this.glyphCache = new();
+
+        (HorizontalMetrics HorizontalMetrics, VerticalMetrics VerticalMetrics) metrics = this.Initialize(tables);
+        this.horizontalMetrics = metrics.HorizontalMetrics;
+        this.verticalMetrics = metrics.VerticalMetrics;
+    }
+
     public HeadTable.HeadFlags HeadFlags { get; private set; }
 
     public GlyphVariationProcessor? GlyphVariationProcessor { get; private set; }
@@ -411,6 +461,82 @@ internal partial class StreamFontMetrics : FontMetrics
         => this.GlyphVariationProcessor is not null
             ? this.GlyphVariationProcessor.NormalizedCoordinates
             : [];
+
+    /// <summary>
+    /// Creates a new <see cref="StreamFontMetrics"/> instance that shares all immutable table data
+    /// with this instance but uses a new <see cref="GlyphVariationProcessor"/> initialized
+    /// to the specified variation axis settings.
+    /// </summary>
+    /// <param name="variations">The variation axis settings to apply.</param>
+    /// <returns>A new <see cref="StreamFontMetrics"/> configured for the requested variation.</returns>
+    internal StreamFontMetrics CreateVariationInstance(FontVariation[] variations)
+    {
+        FVarTable? fvar = this.outlineType == OutlineType.TrueType
+            ? this.trueTypeFontTables?.Fvar
+            : this.compactFontTables?.FVar;
+
+        if (fvar is null)
+        {
+            // Not a variable font; return this instance unchanged.
+            return this;
+        }
+
+        // Map FontVariation tags to user coordinate array (indexed by fvar axis order).
+        // Start with default axis values so unspecified axes remain at their defaults.
+        float[] userCoordinates = new float[fvar.AxisCount];
+        for (int i = 0; i < fvar.AxisCount; i++)
+        {
+            userCoordinates[i] = fvar.Axes[i].DefaultValue;
+        }
+
+        for (int v = 0; v < variations.Length; v++)
+        {
+            FontVariation variation = variations[v];
+            for (int i = 0; i < fvar.AxisCount; i++)
+            {
+                if (string.Equals(fvar.Axes[i].Tag, variation.Tag, StringComparison.Ordinal))
+                {
+                    userCoordinates[i] = variation.Value;
+                    break;
+                }
+            }
+        }
+
+        // Create a new processor with the user coordinates. Shares all table references.
+        if (this.outlineType == OutlineType.TrueType)
+        {
+            TrueTypeFontTables tables = this.trueTypeFontTables!;
+            ItemVariationStore? itemVariationStore = tables.Hvar?.ItemVariationStore ?? tables.Vvar?.ItemVariationStore;
+            GlyphVariationProcessor processor = new(
+                itemVariationStore,
+                fvar,
+                tables.Avar,
+                tables.Gvar,
+                tables.Hvar,
+                tables.Vvar,
+                tables.Mvar,
+                tables.Cvar,
+                userCoordinates);
+
+            return new StreamFontMetrics(tables, processor, this.glyphIdCache, this.codePointCache);
+        }
+        else
+        {
+            CompactFontTables tables = this.compactFontTables!;
+            ItemVariationStore? itemVariationStore = tables.Cff.ItemVariationStore;
+            GlyphVariationProcessor processor = new(
+                itemVariationStore,
+                fvar,
+                tables.AVar,
+                tables.GVar,
+                tables.HVar,
+                tables.VVar,
+                tables.MVar,
+                userCoordinates: userCoordinates);
+
+            return new StreamFontMetrics(tables, processor, this.glyphIdCache, this.codePointCache);
+        }
+    }
 
     /// <summary>
     /// Reads a <see cref="StreamFontMetrics"/> from the specified stream.

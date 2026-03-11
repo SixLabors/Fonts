@@ -201,7 +201,12 @@ internal partial class StreamFontMetrics
         GlyphVector vector = glyf.GetGlyph(glyphId);
 
         // Apply gvar deltas to the glyph outline if a variation processor is present.
-        this.GlyphVariationProcessor?.TransformPoints(glyphId, ref vector);
+        // Clone first so we don't mutate the shared glyph cache.
+        if (this.GlyphVariationProcessor is not null)
+        {
+            vector = GlyphVector.DeepClone(vector);
+            this.GlyphVariationProcessor.TransformPoints(glyphId, ref vector);
+        }
 
         Bounds bounds = vector.Bounds;
 

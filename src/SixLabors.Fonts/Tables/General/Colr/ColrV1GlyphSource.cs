@@ -15,7 +15,7 @@ namespace SixLabors.Fonts.Tables.General.Colr;
 /// </summary>
 internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
 {
-    private static readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas)> CachedGlyphs = [];
+    private readonly ConcurrentDictionary<ushort, (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas)> cachedGlyphs = [];
 
     private readonly GlyphVariationProcessor? processor;
 
@@ -33,7 +33,7 @@ internal sealed class ColrV1GlyphSource : ColrGlyphSourceBase
     /// <inheritdoc/>
     public override bool TryGetPaintedGlyph(ushort glyphId, out PaintedGlyph glyph, out PaintedCanvasMetadata canvas)
     {
-        (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas) result = CachedGlyphs.GetOrAdd(glyphId, _ =>
+        (PaintedGlyph Glyph, PaintedCanvasMetadata Canvas) result = this.cachedGlyphs.GetOrAdd(glyphId, _ =>
         {
             if (this.Colr.TryGetColrV1Layers(glyphId, this.processor, out List<ResolvedGlyphLayer>? resolved))
             {
