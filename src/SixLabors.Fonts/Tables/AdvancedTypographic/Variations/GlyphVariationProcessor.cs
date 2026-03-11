@@ -30,6 +30,8 @@ internal class GlyphVariationProcessor
 
     private readonly VVarTable? vVar;
 
+    private readonly MVarTable? mVar;
+
     private readonly float[] normalizedCoords;
 
     private readonly Dictionary<ItemVariationData, float[]> blendVectors;
@@ -41,6 +43,7 @@ internal class GlyphVariationProcessor
         GVarTable? gVar = null,
         HVarTable? hVar = null,
         VVarTable? vVar = null,
+        MVarTable? mVar = null,
         float[]? userCoordinates = null)
     {
         DebugGuard.NotNull(fVar, nameof(fVar));
@@ -51,6 +54,7 @@ internal class GlyphVariationProcessor
         this.gVar = gVar;
         this.hVar = hVar;
         this.vVar = vVar;
+        this.mVar = mVar;
         this.normalizedCoords = this.NormalizeCoords(userCoordinates);
         this.blendVectors = [];
     }
@@ -318,6 +322,27 @@ internal class GlyphVariationProcessor
     }
 
     /// <summary>
+    /// Gets the delta adjustment for a global font metric from the MVAR table.
+    /// Returns 0 if no MVAR table is present or the tag is not found.
+    /// </summary>
+    /// <param name="tag">The 4-byte MVAR metric tag (e.g. 'hasc', 'hdsc').</param>
+    /// <returns>The metric delta value.</returns>
+    public float GetMVarDelta(uint tag)
+    {
+        if (this.mVar is null)
+        {
+            return 0;
+        }
+
+        if (!this.mVar.TryGetIndices(tag, out ushort outerIndex, out ushort innerIndex))
+        {
+            return 0;
+        }
+
+        return this.ComputeDelta(this.mVar.ItemVariationStore, outerIndex, innerIndex);
+    }
+
+    /// <summary>
     /// Computes the blend vector for the given outer index in the item variation store.
     /// Used by the CFF2 blend operator.
     /// </summary>
@@ -330,27 +355,76 @@ internal class GlyphVariationProcessor
             return [];
         }
 
-        ItemVariationData variationData = this.itemStore.ItemVariations[outerIndex];
+        return this.GetOrComputeBlendVector(this.itemStore, outerIndex);
+    }
+
+    /// <summary>
+    /// Computes the delta adjustment for a specific item in the item variation store.
+    /// </summary>
+    /// <param name="outerIndex">The outer index.</param>
+    /// <param name="innerIndex">The inner index.</param>
+    /// <returns>The delta value.</returns>
+    internal float Delta(int outerIndex, int innerIndex)
+    {
+        if (this.itemStore is null)
+        {
+            return 0;
+        }
+
+        return this.ComputeDelta(this.itemStore, outerIndex, innerIndex);
+    }
+
+    /// <summary>
+    /// Computes a delta from a given ItemVariationStore using cached blend vectors.
+    /// Shared by HVAR, VVAR, MVAR, and CFF2 delta lookups.
+    /// </summary>
+    private float ComputeDelta(ItemVariationStore store, int outerIndex, int innerIndex)
+    {
+        if (outerIndex >= store.ItemVariations.Length)
+        {
+            return 0;
+        }
+
+        ItemVariationData variationData = store.ItemVariations[outerIndex];
+        if (innerIndex >= variationData.DeltaSets.Length)
+        {
+            return 0;
+        }
+
+        DeltaSet deltaSet = variationData.DeltaSets[innerIndex];
+        float[] blendVector = this.GetOrComputeBlendVector(store, outerIndex);
+        float netAdjustment = 0;
+        for (int master = 0; master < variationData.RegionIndexes.Length; master++)
+        {
+            netAdjustment += deltaSet.Deltas[master] * blendVector[master];
+        }
+
+        return netAdjustment;
+    }
+
+    /// <summary>
+    /// Gets or computes the blend vector for a given outer index in the specified ItemVariationStore.
+    /// Results are cached by ItemVariationData instance.
+    /// </summary>
+    private float[] GetOrComputeBlendVector(ItemVariationStore store, int outerIndex)
+    {
+        ItemVariationData variationData = store.ItemVariations[outerIndex];
         if (this.blendVectors.TryGetValue(variationData, out float[]? blendVector))
         {
             return blendVector;
         }
 
         blendVector = new float[variationData.RegionIndexes.Length];
-
-        // Outer loop steps through master designs to be blended.
         for (int i = 0; i < variationData.RegionIndexes.Length; i++)
         {
             float scalar = 1.0f;
             ushort regionIndex = variationData.RegionIndexes[i];
-            RegionAxisCoordinates[] axes = this.itemStore.VariationRegionList.VariationRegions[regionIndex];
+            RegionAxisCoordinates[] axes = store.VariationRegionList.VariationRegions[regionIndex];
 
-            // Inner loop steps through axes in this region.
             for (int j = 0; j < axes.Length; j++)
             {
                 RegionAxisCoordinates axis = axes[j];
 
-                // Compute the scalar contribution of this axis, ignore invalid ranges.
                 float axisScalar;
                 if (axis.StartCoord > axis.PeakCoord || axis.PeakCoord > axis.EndCoord)
                 {
@@ -362,17 +436,14 @@ internal class GlyphVariationProcessor
                 }
                 else if (axis.PeakCoord == 0)
                 {
-                    // Peak of 0 means ignore this axis.
                     axisScalar = 1;
                 }
                 else if (this.normalizedCoords[j] < axis.StartCoord || this.normalizedCoords[j] > axis.EndCoord)
                 {
-                    // Ignore this region if coords are out of range.
                     axisScalar = 0;
                 }
                 else
                 {
-                    // Calculate a proportional factor.
                     if (this.normalizedCoords[j] == axis.PeakCoord)
                     {
                         axisScalar = 1;
@@ -389,7 +460,6 @@ internal class GlyphVariationProcessor
                     }
                 }
 
-                // Take product of all the axis scalars.
                 scalar *= axisScalar;
             }
 
@@ -397,38 +467,7 @@ internal class GlyphVariationProcessor
         }
 
         this.blendVectors[variationData] = blendVector;
-
         return blendVector;
-    }
-
-    /// <summary>
-    /// Computes the delta adjustment for a specific item in the item variation store.
-    /// </summary>
-    /// <param name="outerIndex">The outer index.</param>
-    /// <param name="innerIndex">The inner index.</param>
-    /// <returns>The delta value.</returns>
-    internal float Delta(int outerIndex, int innerIndex)
-    {
-        if (this.itemStore is null || outerIndex >= this.itemStore.ItemVariations.Length)
-        {
-            return 0;
-        }
-
-        ItemVariationData variationData = this.itemStore.ItemVariations[outerIndex];
-        if (innerIndex >= variationData.DeltaSets.Length)
-        {
-            return 0;
-        }
-
-        DeltaSet deltaSet = variationData.DeltaSets[innerIndex];
-        float[] blendVector = this.BlendVector(outerIndex);
-        float netAdjustment = 0;
-        for (int master = 0; master < variationData.RegionIndexes.Length; master++)
-        {
-            netAdjustment += deltaSet.Deltas[master] * blendVector[master];
-        }
-
-        return netAdjustment;
     }
 
     /// <summary>
@@ -630,26 +669,7 @@ internal class GlyphVariationProcessor
             innerIndex = glyphId;
         }
 
-        if (outerIndex >= store.ItemVariations.Length)
-        {
-            return 0;
-        }
-
-        ItemVariationData variationData = store.ItemVariations[outerIndex];
-        if (innerIndex >= variationData.DeltaSets.Length)
-        {
-            return 0;
-        }
-
-        DeltaSet deltaSet = variationData.DeltaSets[innerIndex];
-        float[] blendVector = this.BlendVector(outerIndex);
-        float netAdjustment = 0;
-        for (int master = 0; master < variationData.RegionIndexes.Length; master++)
-        {
-            netAdjustment += deltaSet.Deltas[master] * blendVector[master];
-        }
-
-        return netAdjustment;
+        return this.ComputeDelta(store, outerIndex, innerIndex);
     }
 
     /// <summary>

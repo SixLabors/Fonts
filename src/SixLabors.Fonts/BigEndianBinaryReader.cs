@@ -9,52 +9,86 @@ using System.Text;
 namespace SixLabors.Fonts;
 
 /// <summary>
+/// <para>
 /// A binary reader that reads in big-endian format.
+/// </para>
+/// <para>
+/// This reader captures the stream position at construction time as <c>startOfStream</c>.
+/// All offset values read from OpenType tables (via <see cref="ReadOffset16"/>,
+/// <see cref="ReadOffset32"/>, etc.) are raw values relative to wherever the spec says
+/// they originate (typically the start of the containing table).
+/// </para>
+/// <para>
+/// When seeking with <see cref="Seek"/> using <see cref="SeekOrigin.Begin"/>, the
+/// <c>startOfStream</c> is automatically added to the supplied offset.  This means
+/// table-relative offsets can be passed directly to <see cref="Seek"/> without manually
+/// adding the table's absolute position. Do <strong>not</strong> add the table start
+/// yourself — that would double-count and land at the wrong position.
+/// </para>
+/// <para>
+/// In contrast, <see cref="BaseStream"/>.<see cref="Stream.Position"/> always returns the
+/// <strong>absolute</strong> position within the underlying stream and is unaffected by
+/// <c>startOfStream</c>.
+/// </para>
 /// </summary>
 [DebuggerDisplay("Start: {StartOfStream}, Position: {BaseStream.Position}")]
 internal sealed class BigEndianBinaryReader : IDisposable
 {
     /// <summary>
-    /// Buffer used for temporary storage before conversion into primitives
+    /// Buffer used for temporary storage before conversion into primitives.
     /// </summary>
     private readonly byte[] buffer = new byte[16];
-
-    private readonly long startOfStream;
     private readonly bool leaveOpen;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BigEndianBinaryReader" /> class.
-    /// Constructs a new binary reader with the given bit converter, reading
-    /// to the given stream, using the given encoding.
+    /// The current position of <paramref name="stream"/> is captured as <c>startOfStream</c>
+    /// and used as the origin for all subsequent <see cref="Seek"/> calls with
+    /// <see cref="SeekOrigin.Begin"/>.
     /// </summary>
-    /// <param name="stream">Stream to read data from</param>
-    /// <param name="leaveOpen">if set to <c>true</c> [leave open].</param>
+    /// <param name="stream">Stream to read data from.</param>
+    /// <param name="leaveOpen">If <see langword="true"/>, the stream is not disposed when this reader is disposed.</param>
     public BigEndianBinaryReader(Stream stream, bool leaveOpen)
     {
         this.BaseStream = stream;
-        this.startOfStream = stream.Position;
+        this.StartOfStream = stream.Position;
         this.leaveOpen = leaveOpen;
     }
 
     /// <summary>
     /// Gets the underlying stream of the EndianBinaryReader.
+    /// Note that <see cref="Stream.Position"/> on this stream is always the
+    /// <strong>absolute</strong> position and is <strong>not</strong> adjusted by
+    /// <c>startOfStream</c>. Avoid using <c>BaseStream.Position</c> to compute
+    /// offsets for <see cref="Seek"/> — use raw offsets from <see cref="ReadOffset16"/>,
+    /// <see cref="ReadOffset32"/>, etc. instead.
     /// </summary>
     public Stream BaseStream { get; }
 
     /// <summary>
-    /// Seeks within the stream.
+    /// Gets the absolute stream position captured at construction time.
+    /// This is the origin for all <see cref="SeekOrigin.Begin"/> seeks.
     /// </summary>
-    /// <param name="offset">Offset to seek to.</param>
-    /// <param name="origin">Origin of seek operation. If SeekOrigin.Begin, the offset will be set to the start of stream position.</param>
+    public long StartOfStream { get; }
+
+    /// <summary>
+    /// Seeks within the stream.
+    /// When <paramref name="origin"/> is <see cref="SeekOrigin.Begin"/>, <c>startOfStream</c>
+    /// is automatically added to <paramref name="offset"/>, so callers should pass
+    /// table-relative offsets directly (e.g. values read from <see cref="ReadOffset16"/>
+    /// or <see cref="ReadOffset32"/>).  Do <strong>not</strong> add the table's absolute
+    /// position — that would double-count.
+    /// </summary>
+    /// <param name="offset">Offset to seek to, relative to <paramref name="origin"/>.</param>
+    /// <param name="origin">Origin of seek operation.</param>
     public void Seek(long offset, SeekOrigin origin)
     {
-        // If SeekOrigin.Begin, the offset will be set to the start of stream position.
         if (origin == SeekOrigin.Begin)
         {
-            offset += this.startOfStream;
+            offset += this.StartOfStream;
         }
 
-        this.BaseStream.Seek(offset, origin);
+        _ = this.BaseStream.Seek(offset, origin);
     }
 
     /// <summary>
@@ -67,10 +101,15 @@ internal sealed class BigEndianBinaryReader : IDisposable
         return this.buffer[0];
     }
 
+    /// <summary>
+    /// Reads a single byte from the stream and reinterprets it as the specified enum type.
+    /// </summary>
+    /// <typeparam name="TEnum">The enum type whose underlying type must be a single byte.</typeparam>
+    /// <returns>The enum value.</returns>
     public TEnum ReadByte<TEnum>()
         where TEnum : struct, Enum
     {
-        TryConvert(this.ReadByte(), out TEnum value);
+        _ = TryConvert(this.ReadByte(), out TEnum value);
         return value;
     }
 
@@ -84,6 +123,11 @@ internal sealed class BigEndianBinaryReader : IDisposable
         return unchecked((sbyte)this.buffer[0]);
     }
 
+    /// <summary>
+    /// Reads a 2.14 fixed-point number from the stream.
+    /// 2 bytes are read and divided by 16384 to produce a value in the range [-2, +2).
+    /// </summary>
+    /// <returns>The fixed-point value as a <see cref="float"/>.</returns>
     public float ReadF2Dot14()
     {
         const float f2Dot14ToFloat = 16384F;
@@ -102,10 +146,15 @@ internal sealed class BigEndianBinaryReader : IDisposable
         return BinaryPrimitives.ReadInt16BigEndian(this.buffer);
     }
 
+    /// <summary>
+    /// Reads a 16-bit integer from the stream and reinterprets it as the specified enum type.
+    /// </summary>
+    /// <typeparam name="TEnum">The enum type whose underlying type must be 16 bits.</typeparam>
+    /// <returns>The enum value.</returns>
     public TEnum ReadInt16<TEnum>()
         where TEnum : struct, Enum
     {
-        TryConvert(this.ReadUInt16(), out TEnum value);
+        _ = TryConvert(this.ReadUInt16(), out TEnum value);
         return value;
     }
 
@@ -115,6 +164,11 @@ internal sealed class BigEndianBinaryReader : IDisposable
     /// <returns>A 16-bit signed integer read from the stream, interpreted as an FWORD value.</returns>
     public short ReadFWORD() => this.ReadInt16();
 
+    /// <summary>
+    /// Reads an array of FWORD (signed 16-bit) values from the stream.
+    /// </summary>
+    /// <param name="length">The number of values to read.</param>
+    /// <returns>An array of 16-bit signed integers.</returns>
     public short[] ReadFWORDArray(int length) => this.ReadInt16Array(length);
 
     /// <summary>
@@ -171,25 +225,31 @@ internal sealed class BigEndianBinaryReader : IDisposable
 
     /// <summary>
     /// Reads a 16-bit unsigned integer from the stream representing an offset position.
-    /// 2 bytes are read.
+    /// 2 bytes are read. The returned value is the raw offset as stored in the font file
+    /// (typically relative to the start of the containing table). Pass it directly to
+    /// <see cref="Seek"/> with <see cref="SeekOrigin.Begin"/> — do not add the table's
+    /// absolute position.
     /// </summary>
     /// <returns>The 16-bit unsigned integer read.</returns>
     public ushort ReadOffset16() => this.ReadUInt16();
 
+    /// <summary>
+    /// Reads a 16-bit unsigned integer from the stream and reinterprets it as the specified enum type.
+    /// </summary>
+    /// <typeparam name="TEnum">The enum type whose underlying type must be 16 bits.</typeparam>
+    /// <returns>The enum value.</returns>
     public TEnum ReadUInt16<TEnum>()
         where TEnum : struct, Enum
     {
-        TryConvert(this.ReadUInt16(), out TEnum value);
+        _ = TryConvert(this.ReadUInt16(), out TEnum value);
         return value;
     }
 
     /// <summary>
-    /// Reads array of 16-bit unsigned integers from the stream.
+    /// Reads an array of 16-bit unsigned integers from the stream.
     /// </summary>
-    /// <param name="length">The length.</param>
-    /// <returns>
-    /// The 16-bit unsigned integer read.
-    /// </returns>
+    /// <param name="length">The number of values to read.</param>
+    /// <returns>An array of 16-bit unsigned integers.</returns>
     public ushort[] ReadUInt16Array(int length)
     {
         ushort[] data = new ushort[length];
@@ -214,12 +274,10 @@ internal sealed class BigEndianBinaryReader : IDisposable
     }
 
     /// <summary>
-    /// Reads array or 32-bit unsigned integers from the stream.
+    /// Reads an array of 32-bit unsigned integers from the stream.
     /// </summary>
-    /// <param name="length">The length.</param>
-    /// <returns>
-    /// The 32-bit unsigned integer read.
-    /// </returns>
+    /// <param name="length">The number of values to read.</param>
+    /// <returns>An array of 32-bit unsigned integers.</returns>
     public uint[] ReadUInt32Array(int length)
     {
         uint[] data = new uint[length];
@@ -231,6 +289,11 @@ internal sealed class BigEndianBinaryReader : IDisposable
         return data;
     }
 
+    /// <summary>
+    /// Reads an array of 8-bit unsigned integers (bytes) from the stream.
+    /// </summary>
+    /// <param name="length">The number of bytes to read.</param>
+    /// <returns>A byte array of the requested length.</returns>
     public byte[] ReadUInt8Array(int length)
     {
         byte[] data = new byte[length];
@@ -241,12 +304,10 @@ internal sealed class BigEndianBinaryReader : IDisposable
     }
 
     /// <summary>
-    /// Reads array of 16-bit unsigned integers from the stream.
+    /// Reads an array of 16-bit signed integers from the stream.
     /// </summary>
-    /// <param name="length">The length.</param>
-    /// <returns>
-    /// The 16-bit signed integer read.
-    /// </returns>
+    /// <param name="length">The number of values to read.</param>
+    /// <returns>An array of 16-bit signed integers.</returns>
     public short[] ReadInt16Array(int length)
     {
         short[] data = new short[length];
@@ -292,6 +353,14 @@ internal sealed class BigEndianBinaryReader : IDisposable
         return (uint)((highByte << 16) | this.ReadUInt16());
     }
 
+    /// <summary>
+    /// Reads a 24-bit unsigned integer from the stream representing an offset position.
+    /// 3 bytes are read. The returned value is the raw offset as stored in the font file
+    /// (typically relative to the start of the containing table). Pass it directly to
+    /// <see cref="Seek"/> with <see cref="SeekOrigin.Begin"/> — do not add the table's
+    /// absolute position.
+    /// </summary>
+    /// <returns>The 24-bit unsigned integer read.</returns>
     public uint ReadOffset24() => this.ReadUInt24();
 
     /// <summary>
@@ -308,7 +377,10 @@ internal sealed class BigEndianBinaryReader : IDisposable
 
     /// <summary>
     /// Reads a 32-bit unsigned integer from the stream representing an offset position.
-    /// 4 bytes are read.
+    /// 4 bytes are read. The returned value is the raw offset as stored in the font file
+    /// (typically relative to the start of the containing table). Pass it directly to
+    /// <see cref="Seek"/> with <see cref="SeekOrigin.Begin"/> — do not add the table's
+    /// absolute position.
     /// </summary>
     /// <returns>The 32-bit unsigned integer read.</returns>
     public uint ReadOffset32() => this.ReadUInt32();
@@ -360,9 +432,9 @@ internal sealed class BigEndianBinaryReader : IDisposable
     }
 
     /// <summary>
-    /// Reads the uint32 string.
+    /// Reads a 4-byte OpenType tag from the stream as a UTF-8 string.
     /// </summary>
-    /// <returns>a 4 character long UTF8 encoded string.</returns>
+    /// <returns>A 4-character string representing the tag (e.g. "glyf", "GPOS").</returns>
     public string ReadTag()
     {
         this.ReadInternal(this.buffer, 4);
@@ -371,11 +443,15 @@ internal sealed class BigEndianBinaryReader : IDisposable
     }
 
     /// <summary>
-    /// Reads an offset consuming the given number of bytes.
+    /// Reads an offset consuming the given number of bytes (1–4).
+    /// The returned value is the raw offset as stored in the font file
+    /// (typically relative to the start of the containing table). Pass it directly to
+    /// <see cref="Seek"/> with <see cref="SeekOrigin.Begin"/> — do not add the table's
+    /// absolute position.
     /// </summary>
-    /// <param name="size">The offset size in bytes.</param>
+    /// <param name="size">The offset size in bytes (1, 2, 3, or 4).</param>
     /// <returns>The 32-bit signed integer representing the offset.</returns>
-    /// <exception cref="InvalidOperationException">Size is not in range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when <paramref name="size"/> is not 1–4.</exception>
     public int ReadOffset(int size)
         => size switch
         {

@@ -125,6 +125,7 @@ internal partial class StreamFontMetrics
         GVarTable? gvar = reader.TryGetTable<GVarTable>();
         HVarTable? hvar = reader.TryGetTable<HVarTable>();
         VVarTable? vvar = reader.TryGetTable<VVarTable>();
+        MVarTable? mvar = reader.TryGetTable<MVarTable>();
 
         ColrTable? colr = reader.TryGetTable<ColrTable>();
         CpalTable? cpal = reader.TryGetTable<CpalTable>();
@@ -148,6 +149,7 @@ internal partial class StreamFontMetrics
             Gvar = gvar,
             Hvar = hvar,
             Vvar = vvar,
+            Mvar = mvar,
             Avar = avar,
             Svg = svg
         };
@@ -158,7 +160,7 @@ internal partial class StreamFontMetrics
             // Use the item variation store from HVAR or VVAR if available (for metrics variations).
             // A variable font may have gvar without HVAR/VVAR (using phantom points for metrics instead).
             ItemVariationStore? itemVariationStore = hvar?.ItemVariationStore ?? vvar?.ItemVariationStore;
-            glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fvar, avar, gvar, hvar, vvar);
+            glyphVariationProcessor = new GlyphVariationProcessor(itemVariationStore, fvar, avar, gvar, hvar, vvar, mvar);
         }
 
         return new StreamFontMetrics(tables, glyphVariationProcessor);

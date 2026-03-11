@@ -59,6 +59,7 @@ internal partial class StreamFontMetrics
         GVarTable? gVar = reader.TryGetTable<GVarTable>();
         HVarTable? hVar = reader.TryGetTable<HVarTable>();
         VVarTable? vVar = reader.TryGetTable<VVarTable>();
+        MVarTable? mVar = reader.TryGetTable<MVarTable>();
 
         GlyphVariationProcessor? glyphVariationProcessor = null;
         if (cff?.ItemVariationStore != null)
@@ -69,7 +70,7 @@ internal partial class StreamFontMetrics
             }
 
             // TODO: The docs say that hvar and vvar can be used for CFF fonts so how do we determine when to use them?
-            glyphVariationProcessor = new GlyphVariationProcessor(cff.ItemVariationStore, fVar, aVar, gVar, hVar, vVar);
+            glyphVariationProcessor = new GlyphVariationProcessor(cff.ItemVariationStore, fVar, aVar, gVar, hVar, vVar, mVar);
         }
 
         CompactFontTables tables = new(cmap, head, hhea, htmx, maxp, name, os2, post, cff!)
@@ -87,6 +88,7 @@ internal partial class StreamFontMetrics
             GVar = gVar,
             HVar = hVar,
             VVar = vVar,
+            MVar = mVar,
             Svg = svg
         };
 
